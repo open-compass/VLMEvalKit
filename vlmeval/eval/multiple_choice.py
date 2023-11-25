@@ -213,15 +213,11 @@ def eval_result(args):
 
     suffix = eval_file.split('.')[-1]
     assert eval_method in ['gpt']
-    if eval_method == 'openai':
-        model = OpenAIWrapperInternal('gpt-3.5-turbo-0613', verbose=True)
-    elif eval_method == 'pjlm':
-        model = PJLMWrapper()
-    elif eval_method == 'ernie':
-        model = ErnieWrapper()
+
+    assert args.model == 'gpt-3.5-turbo-0613'
+    model = OpenAIWrapper(args.model, verbose=True)
         
     double_log(f'Evaluating {eval_file}', fout)
-
     result_file = eval_file.replace(f'.{suffix}', f'_{eval_method}_result.pkl')
     result = {}
     if osp.exists(result_file):
@@ -315,7 +311,7 @@ def eval_result(args):
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM used for inference. ", default='openai')
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613')
     parser.add_argument("--dataset", type=str, default='mmbench', help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=12)
     parser.add_argument("--verbose", action='store_true')
@@ -327,7 +323,6 @@ if __name__ == '__main__':
     suffix = args.data.split('.')[-1]
     log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
     fout = open(log_pth, 'a')
-
     acc = eval_result(args)
 
     
