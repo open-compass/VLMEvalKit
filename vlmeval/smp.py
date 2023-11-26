@@ -115,7 +115,7 @@ def double_log(msg, fout=None):
         fout.flush()
 
 def timestr(second=False, minute=False):
-    s = datetime.now().strftime('%Y%m%d_%H%M%S')[2:]
+    s = datetime.now().strftime('%Y%m%d%H%M%S')[2:]
     if second:
         return s
     elif minute:
