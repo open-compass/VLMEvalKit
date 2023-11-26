@@ -3,26 +3,27 @@ from vlmeval.smp import *
 
 LAST_MODIFIED = 231126000000
 
+dataset_URLs = {
+    'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
+    'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv", 
+    'MMBench_DEV_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv", 
+    'MMBench_TEST_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv", 
+    "MMBench": "https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv",  # Link Invalid, Internal Only
+    "MMBench_CN": "https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv",    # Link Invalid, Internal Only
+    'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
+    'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
+    'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
+}
+
 class TSVDataset:
 
-    def __init__(self, dataset='MMBench', data_root=None, img_root=None):
+    def __init__(self, dataset='MMBench', img_root=None):
 
-        self.data_root = data_root if data_root is not None else LMUDataRoot()
+        self.data_root = LMUDataRoot()
         assert osp.exists(self.data_root)
 
         self.dataset = dataset
-        self.dataset_URLs = {
-            'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
-            'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv", 
-            'MMBench_DEV_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv", 
-            'MMBench_TEST_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv", 
-            "MMBench": "https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv",  # Link Invalid, Internal Only
-            "MMBench_CN": "https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv",    # Link Invalid, Internal Only
-            'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
-            'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
-            'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
-        }
-        url = self.dataset_URLs[dataset]
+        url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
 

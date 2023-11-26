@@ -1,12 +1,13 @@
 import os.path as osp
 import pandas as pd
 from tqdm import tqdm
-from vlmeval.chat_api import OpenAIWrapper
+from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.utils import can_infer, track_progress_rich, dataset_URLs
 from vlmeval.smp import *
-from vlmeval.utils import can_infer, track_progress_rich
 import numpy as np
 
 fout = None
+INTERNAL = False
 
 abbrs = {
     'coarse_preception': 'CP', 
@@ -206,19 +207,26 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
 
 def eval_result(args):
     eval_file = args.data
-    eval_method = args.model
-    verbose = args.verbose
     dataset = args.dataset
     rd.seed(2680)
 
-    suffix = eval_file.split('.')[-1]
-    assert eval_method in ['gpt']
+    meta_url = dataset_URLs[dataset]
+    file_name = meta_url.split('/')[-1]
+    file_root = LMUDataRoot()
+    meta_path = osp.join(file_root, file_name)
+    if not osp.exists(meta_path):
+        download_file(meta_url, meta_path)
 
+    suffix = eval_file.split('.')[-1]
     assert args.model == 'gpt-3.5-turbo-0613'
-    model = OpenAIWrapper(args.model, verbose=True)
-        
+
+    if INTERNAL:
+        model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
+    else:
+        model = OpenAIWrapper(args.model, verbose=args.verbose)
+
     double_log(f'Evaluating {eval_file}', fout)
-    result_file = eval_file.replace(f'.{suffix}', f'_{eval_method}_result.pkl')
+    result_file = eval_file.replace(f'.{suffix}', f'_{args.model}_result.pkl')
     result = {}
     if osp.exists(result_file):
         result = load(result_file)
@@ -229,16 +237,7 @@ def eval_result(args):
     for k in data.keys():
         data[k.lower() if k not in 'ABCD' else k] = data.pop(k)
 
-    meta_pth = None
-    if dataset == 'mmbench':
-        meta_pth = '/home/kenny/mmbench/mmbench_1003/mmbench_meta.tsv'
-    elif dataset == 'mmbench_cn':
-        meta_pth = '/home/kenny/mmbench/mmbench_1003/mmbench_cn_meta.tsv'
-    elif dataset == 'ccbench':
-        meta_pth = '/home/kenny/mmbench/mmbench_1003/ccbench_meta.tsv'
-    else:
-        raise NotImplementedError
-    meta = load(meta_pth)
+    meta = load(meta_path)
 
     cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
@@ -296,8 +295,8 @@ def eval_result(args):
         data_main['split'] = [split_map[i] for i in indices]
     
     # load split
-    dump(data_main, eval_file.replace(f'.{suffix}', f'_{eval_method}_result.{suffix}'))
-    data_main = load(eval_file.replace(f'.{suffix}', f'_{eval_method}_result.{suffix}'))
+    dump(data_main, eval_file.replace(f'.{suffix}', f'_{args.model}_result.{suffix}'))
+    data_main = load(eval_file.replace(f'.{suffix}', f'_{args.model}_result.{suffix}'))
     
     acc = report_acc(data_main)
     dump(acc, eval_file.replace(f'.{suffix}', f'_acc.csv'))
@@ -312,7 +311,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613')
-    parser.add_argument("--dataset", type=str, default='mmbench', help='The dataset to evaluate')
+    parser.add_argument("--dataset", type=str, default='MMBench', help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=12)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
@@ -320,9 +319,8 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
+    assert args.dataset in ['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench']
     suffix = args.data.split('.')[-1]
     log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
     fout = open(log_pth, 'a')
     acc = eval_result(args)
-
-    
