@@ -247,10 +247,20 @@ def ls(dirname='.', match='', mode='all', level=1):
     return ans
 
 def download_file(url, filename=None):
+    import urllib.request
+
+    class DownloadProgressBar(tqdm):
+        def update_to(self, b=1, bsize=1, tsize=None):
+            if tsize is not None:
+                self.total = tsize
+            self.update(b * bsize - self.n)
+        
     if filename is None:
         filename = url.split('/')[-1]
-    response = requests.get(url)
-    open(filename, 'wb').write(response.content)
+
+    with DownloadProgressBar(unit='B', unit_scale=True,
+                             miniters=1, desc=url.split('/')[-1]) as t:
+        urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
 
 def gen_bash(cfgs, num_gpus, gpus_per_task=1):
     rd.shuffle(cfgs)
