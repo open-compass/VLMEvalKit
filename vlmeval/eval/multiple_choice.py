@@ -2,7 +2,7 @@ import os.path as osp
 import pandas as pd
 from tqdm import tqdm
 from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
-from vlmeval.utils import can_infer, track_progress_rich, dataset_URLs
+from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
 from vlmeval.smp import *
 import numpy as np
 
@@ -210,13 +210,6 @@ def eval_result(args):
     dataset = args.dataset
     rd.seed(2680)
 
-    meta_url = dataset_URLs[dataset]
-    file_name = meta_url.split('/')[-1]
-    file_root = LMUDataRoot()
-    meta_path = osp.join(file_root, file_name)
-    if not osp.exists(meta_path):
-        download_file(meta_url, meta_path)
-
     suffix = eval_file.split('.')[-1]
     assert args.model == 'gpt-3.5-turbo-0613'
 
@@ -237,7 +230,7 @@ def eval_result(args):
     for k in data.keys():
         data[k.lower() if k not in 'ABCD' else k] = data.pop(k)
 
-    meta = load(meta_path)
+    meta = TSVDataset(dataset).data
 
     cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}

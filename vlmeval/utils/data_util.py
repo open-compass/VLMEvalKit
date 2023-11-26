@@ -48,6 +48,9 @@ class TSVDataset:
         os.makedirs(img_root, exist_ok=True)
         self.img_root = img_root
 
+    def __len__(self):
+        return len(self.data)
+
     def build_prompt(self, line, dataset=None):
         if dataset is None:
             dataset = self.dataset
