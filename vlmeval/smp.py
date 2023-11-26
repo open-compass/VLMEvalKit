@@ -114,7 +114,7 @@ def double_log(msg, fout=None):
         fout.write(str(msg) + '\n')
         fout.flush()
 
-def timestr(second=False, minute=False):
+def timestr(second=True, minute=False):
     s = datetime.now().strftime('%Y%m%d%H%M%S')[2:]
     if second:
         return s
@@ -122,6 +122,13 @@ def timestr(second=False, minute=False):
         return s[:-2]
     else:
         return s[:-4]
+    
+def last_modified(pth):
+    stamp = osp.getmtime(pth)
+    m_ti = time.ctime(stamp)
+    t_obj = time.strptime(m_ti)
+    t = time.strftime('%Y%m%d%H%M%S', t_obj)[2:]
+    return t
 
 def mmqa_display(question):
     question = {k.lower(): v for k, v in question.items()}
