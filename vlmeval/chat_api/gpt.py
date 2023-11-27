@@ -110,6 +110,7 @@ class OpenAIWrapper(BaseAPI):
                     warnings.warn(response)
                 except:
                     pass
+            return -1, self.fail_msg, 'API Call Failed'
 
     def get_token_len(self, prompt: str) -> int:
         import tiktoken
