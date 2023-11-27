@@ -7,7 +7,7 @@ from vlmeval.smp import *
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, nargs='+', required=True)
+    parser.add_argument('--data', type=str, nargs='+', required=True)
     parser.add_argument("--model", type=str, nargs='+', required=True)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
