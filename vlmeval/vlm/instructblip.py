@@ -21,10 +21,12 @@ class InstructBLIP:
                 '/mnt/petrelfs/share_data/duanhaodong/vicuna-13b-v1.1',
                 'lmsys/vicuna-13b-v1.1'
             ]
-        }   
+        }
+
+        this_dir = osp.dirname(__file__)   
         self.config_map = {
-            'instructblip_7b': 'misc/blip2_instruct_vicuna7b.yaml', 
-            'instructblip_13b': 'misc/blip2_instruct_vicuna13b.yaml', 
+            'instructblip_7b': f'{this_dir}/misc/blip2_instruct_vicuna7b.yaml', 
+            'instructblip_13b': f'{this_dir}/misc/blip2_instruct_vicuna13b.yaml', 
         }
 
         self.file_path = __file__
