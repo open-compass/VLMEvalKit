@@ -1,9 +1,9 @@
 import torch 
 import torch.distributed as dist
-from ..vlm import model_cls_map
-from ..utils import TSVDataset
-from ..eval.mme_rating import MME_rating
-from ..smp import *
+from vlmeval.vlm import model_cls_map
+from vlmeval.utils import TSVDataset
+from vlmeval.eval.mme_rating import MME_rating
+from vlmeval.smp import *
 
 def parse_args():
     parser = argparse.ArgumentParser()
