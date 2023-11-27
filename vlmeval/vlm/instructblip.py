@@ -15,10 +15,12 @@ class InstructBLIP:
         self.name_map = {
             'instructblip_7b': [
                 '/mnt/petrelfs/share_data/duanhaodong/vicuna-7b-v1.1',
+                '/cpfs01/shared/llmeval/dhd/vicuna-7b-v1.1',
                 'lmsys/vicuna-7b-v1.1'
             ],
             'instructblip_13b': [
                 '/mnt/petrelfs/share_data/duanhaodong/vicuna-13b-v1.1',
+                '/cpfs01/shared/llmeval/dhd/vicuna-13b-v1.1',
                 'lmsys/vicuna-13b-v1.1'
             ]
         }

@@ -12,6 +12,7 @@ portalocker
 torch>=1.13.0
 timeout-decorator
 transformers<=4.33.0
+opencv-python==4.4.0.46
 pillow
 omegaconf
 matplotlib
