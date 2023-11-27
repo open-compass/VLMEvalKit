@@ -7,6 +7,22 @@ model:
   prompt_template: '###Human: {} ###Assistant: '
   ckpt: "please set this value to the path of pretrained checkpoint"
 
+  # vit encoder
+  image_size: 224
+  drop_path_rate: 0
+  use_grad_checkpoint: False
+  vit_precision: "fp16"
+  freeze_vit: True
+  freeze_qformer: True
+
+  # Q-Former
+  num_query_token: 32
+
+  # generation configs
+  prompt: ""
+
+  llama_model: "please set this value to the path of vicuna-7b-v0"
+
 
 datasets:
   cc_sbu_align:
