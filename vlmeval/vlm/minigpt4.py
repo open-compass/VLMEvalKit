@@ -46,7 +46,7 @@ class MiniGPT4:
         model_cls = registry.get_model_class(model_cfg.arch)
         model = model_cls.from_config(model_cfg).to(device)
         model.eval()
-        vis_processor_cfg = cfg.datasets_cfg.cc_sbu_align.vis_processor.train
+        vis_processor_cfg = cfg.datasets.cc_sbu_align.vis_processor.train
         vis_processor = registry.get_processor_class(vis_processor_cfg.name).from_config(vis_processor_cfg)
         self.model = model
         self.vis_processor = vis_processor  
