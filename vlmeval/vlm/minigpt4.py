@@ -3,6 +3,7 @@ import sys
 from abc import abstractproperty
 import os.path as osp
 from transformers import StoppingCriteriaList
+from omegaconf import OmegaConf
 from PIL import Image
 
 class MiniGPT4:
@@ -37,10 +38,9 @@ class MiniGPT4:
         device = torch.cuda.current_device()
         self.device = device
         
-        args = abstractproperty()
-        args.cfg_path = self.cfg
-        args.options = []
-        cfg = Config(args)
+        cfg_path = self.cfg
+        cfg = OmegaConf.load(cfg_path)
+            
         model_cfg = cfg.model_cfg
         model_cfg.device_8bit = device 
         model_cls = registry.get_model_class(model_cfg.arch)
@@ -50,7 +50,6 @@ class MiniGPT4:
         vis_processor = registry.get_processor_class(vis_processor_cfg.name).from_config(vis_processor_cfg)
         self.model = model
         self.vis_processor = vis_processor  
-
         
     def generate(self, image_path, prompt):
         raw_image = Image.open(image_path).convert('RGB')

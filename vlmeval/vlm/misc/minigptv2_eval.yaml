@@ -9,6 +9,18 @@ model:
   lora_r: 64
   lora_alpha: 16
 
+  # vit encoder
+  image_size: 448
+  drop_path_rate: 0
+  use_grad_checkpoint: False
+  vit_precision: "fp16"
+  freeze_vit: True
+
+  # generation configs
+  prompt: ""
+
+  # LLM 
+  llama_model: "please set this value to the path of llama2-chat-7b"
 
 datasets:
   cc_sbu_align:
