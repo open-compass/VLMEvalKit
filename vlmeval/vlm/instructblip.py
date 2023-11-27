@@ -7,14 +7,19 @@ from vlmeval.smp import *
 
 
 class InstructBLIP:
+
+    INSTALL_REQ = True
+
     def __init__(self, name):
 
         self.name_map = {
             'instructblip_7b': [
                 '/mnt/petrelfs/share_data/duanhaodong/vicuna-7b-v1.1',
+                'lmsys/vicuna-7b-v1.1'
             ],
             'instructblip_13b': [
                 '/mnt/petrelfs/share_data/duanhaodong/vicuna-13b-v1.1',
+                'lmsys/vicuna-13b-v1.1'
             ]
         }   
         self.config_map = {
@@ -31,6 +36,8 @@ class InstructBLIP:
         if name in self.name_map:
             for pth in self.name_map[name]:
                 if osp.exists(pth):
+                    model_path = pth
+                elif len(pth.split('/')) == 2:
                     model_path = pth
         else:
             model_path = name
@@ -59,7 +66,7 @@ class InstructBLIP:
         vis_processors, _ = load_preprocess(preprocess_cfg)
         self.vis_processors = vis_processors
 
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         vis_processors = self.vis_processors
         raw_image = Image.open(image_path).convert('RGB')
         image_tensor = vis_processors["eval"](raw_image).unsqueeze(0).to(self.device)
