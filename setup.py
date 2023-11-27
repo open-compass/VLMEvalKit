@@ -9,7 +9,9 @@ pandas>=1.5.3
 tiktoken
 rich
 portalocker
+torch>=1.13.0
 timeout-decorator
+transformers<=4.34.0
 pillow
 omegaconf
 matplotlib
