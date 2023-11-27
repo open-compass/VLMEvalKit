@@ -53,7 +53,7 @@ class OpenAIWrapper(BaseAPI):
 
         openai_key = os.environ.get('OPENAI_API_KEY', None) if openai_key is None else openai_key
         self.openai_key = openai_key
-        
+
         assert isinstance(openai_key, str) and openai_key.startswith('sk-')
 
         if api_base in APIBASES:
@@ -91,7 +91,7 @@ class OpenAIWrapper(BaseAPI):
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
         try:
-            response = self.client.completions.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=input_msgs,
                 max_tokens=max_tokens,
