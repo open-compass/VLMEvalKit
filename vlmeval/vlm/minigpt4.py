@@ -32,7 +32,6 @@ class MiniGPT4:
 
         self.cfg = osp.join(this_dir, 'misc', cfg)
         sys.path.append(self.root)
-        from minigpt4.common.config import Config
         from minigpt4.common.registry import registry
 
         device = torch.cuda.current_device()
