@@ -9,11 +9,7 @@ from .idefics import IDEFICS
 from .llava import LLaVA
 from .instructblip import InstructBLIP
 from .visualglm import VisualGLM
-from .otteri import OtterI
-from .viscpm_api import VisCPM_API
 from .minigpt4 import MiniGPT4
-from .minigpt4_mllm import MiniGPT4_mllm
-from .sphinx import Sphinx
 from .xcomposer import XComposer
 from .mplug_owl2 import mPLUG_Owl2
 
