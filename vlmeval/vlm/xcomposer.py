@@ -1,7 +1,7 @@
 import torch
 import os.path as osp
 from transformers import AutoModel, AutoTokenizer
-from vlmeval import *
+from vlmeval.smp import *
 
 from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
@@ -19,13 +19,19 @@ class StoppingCriteriaSub(StoppingCriteria):
         return False
 
 class XComposer:
+
+    INSTALL_REQ = False
     
     def __init__(self, model_paths=['/mnt/petrelfs/share_data/duanhaodong/internlm-xcomposer-vl-7b', 
-                                   '/cpfs01/shared/llmeval/dhd/internlm-xcomposer-vl-7b']):
+                                   '/cpfs01/shared/llmeval/dhd/internlm-xcomposer-vl-7b', 
+                                   'internlm/internlm-xcomposer-vl-7b']):
         self.model_path = None
         for pth in model_paths:
             if osp.exists(pth):
                 self.model_path = pth
+            elif len(pth.split('/')) == 2:
+                self.model_path = pth
+
         assert self.model_path is not None
             
         model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True).cuda().eval()
@@ -39,7 +45,7 @@ class XComposer:
         ]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
 
-    def generate(self, image_path, prompt):
+    def vanilla_generate(self, image_path, prompt):
         return self.model.generate(prompt, image_path)
     
     def mmbench_generate(self, image_path, prompt):
@@ -81,29 +87,45 @@ class XComposer:
         output_text = output_text.split('<|Bot|>')[-1].strip()
         return output_text
     
-    def build_mmbench_prompt(self, img_dir, line):
-        os.makedirs(img_dir, exist_ok=True)
+    def generate(self, image_path, prompt, dataset=None):
+        if dataset is None:
+            return self.vanilla_generate(image_path, prompt)
+        assert isinstance(dataset, str)
+        if 'mmbench' in dataset.lower():
+            return self.mmbench_generate(image_path, prompt)
+        else:
+            return self.vanilla_generate(image_path, prompt)
+    
+    def build_prompt(self, line, dataset_name=None):
+        from ..utils import img_root_map
+        assert dataset_name is None or isinstance(dataset_name, str)
+        img_root = osp.join('images', img_root_map[dataset_name])
+
+        os.makedirs(img_root, exist_ok=True)
         idx = line['index']
         img = line['image']
-        tgt_path = osp.join(img_dir, f'{idx}.jpg')
+        tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        question = line['question']
-        option_candidate = ['A', 'B', 'C', 'D', 'E']
-        options = {
-            cand: line[cand]
-            for cand in option_candidate
-            if cand in line and not pd.isna(line[cand])
-        }
-        options_prompt = ''
-        for key, item in options.items():
-            options_prompt += f'{key}. {item}\n'
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        if dataset_name is not None and 'mmbench' in dataset_name.lower():
+            question = line['question']
+            option_candidate = ['A', 'B', 'C', 'D', 'E']
+            options = {
+                cand: line[cand]
+                for cand in option_candidate
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = ''
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
 
-        img_prompt = ' <|User|>:<ImageHere>'
-        txt_prompt = 'Please answer this question by choosing the correct choice.'
-        context = 'N/A' if hint is None else hint
-        mid_prompt = 'Context: ' + context + '\nQuestion: ' + question + '\nOptions: ' + options_prompt
-        ans_prompt = ' <|Bot|>: Answer: The answer is'
-        text = img_prompt + txt_prompt + mid_prompt + '<TOKENS_UNUSED_0>' + ans_prompt
-        return {'image': tgt_path, 'text': text}
+            img_prompt = ' <|User|>:<ImageHere>'
+            txt_prompt = 'Please answer this question by choosing the correct choice.'
+            context = 'N/A' if hint is None else hint
+            mid_prompt = 'Context: ' + context + '\nQuestion: ' + question + '\nOptions: ' + options_prompt
+            ans_prompt = ' <|Bot|>: Answer: The answer is'
+            prompt = img_prompt + txt_prompt + mid_prompt + '<TOKENS_UNUSED_0>' + ans_prompt
+        else:
+            prompt = line['question']
+        return {'image': tgt_path, 'text': prompt}

@@ -1,20 +1,23 @@
-import torch
-from PIL import Image
-from abc import abstractproperty
 import os.path as osp
-import os 
 from vlmeval.smp import *
 
 
 class VisualGLM:
+
+    INSTALL_REQ = False
+
     def __init__(self):
         self.model_paths = [
             '/mnt/lustre/duanhaodong/petrel_share/visualglm-6b'
+            "THUDM/visualglm-6b"
         ]
-        model_path = "THUDM/visualglm-6b"
+        model_path = None
         for m in self.model_paths:
             if osp.exists(m):
                 model_path = m
+            elif len(m.split('/')) == 2:
+                model_path = m
+        assert model_path is not None
                 
         from transformers import AutoModel
         from transformers import AutoTokenizer
@@ -22,7 +25,7 @@ class VisualGLM:
         model =  AutoModel.from_pretrained(model_path, trust_remote_code=True).half().cuda()
         self.model = model
 
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         
         output, _ = self.model.chat(
             image_path = image_path,

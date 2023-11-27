@@ -5,6 +5,8 @@ import os.path as osp
 from transformers import StoppingCriteriaList
 
 class MiniGPT4:
+
+    INSTALL_REQ = True
     
     def __init__(self, 
                  mode='v2', 

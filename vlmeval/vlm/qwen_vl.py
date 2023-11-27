@@ -3,16 +3,21 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import os.path as osp
 
 class QwenVL:
+
+    INSTALL_REQ = False
+
     def __init__(self, name):
         self.name = name
         pths = {
             'qwen_base': [
                 '/mnt/petrelfs/share_data/duanhaodong/Qwen-VL',
-                '/cpfs01/shared/llmeval/dhd/Qwen-VL'
+                '/cpfs01/shared/llmeval/dhd/Qwen-VL',
+                'Qwen/Qwen-VL'
             ],
             'qwen_chat': [
                 '/mnt/petrelfs/share_data/duanhaodong/Qwen-VL-Chat',
-                '/cpfs01/shared/llmeval/dhd/Qwen-VL-Chat'
+                '/cpfs01/shared/llmeval/dhd/Qwen-VL-Chat',
+                'Qwen/Qwen-VL-Chat'
             ]
         }[self.name]
         pth = None 
@@ -24,7 +29,7 @@ class QwenVL:
         self.model = AutoModelForCausalLM.from_pretrained(pth, device_map='cuda', trust_remote_code=True).eval()
         torch.cuda.empty_cache()
     
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         vl_pair = [{'image': image_path}, {'text': prompt}]
         query = self.tokenizer.from_list_format(vl_pair)
         

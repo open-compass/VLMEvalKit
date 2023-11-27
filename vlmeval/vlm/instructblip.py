@@ -23,8 +23,8 @@ class InstructBLIP:
             ]
         }   
         self.config_map = {
-            'instructblip_7b': 'configs/blip2_instruct_vicuna7b.yaml', 
-            'instructblip_13b': 'configs/blip2_instruct_vicuna13b.yaml', 
+            'instructblip_7b': 'misc/blip2_instruct_vicuna7b.yaml', 
+            'instructblip_13b': 'misc/blip2_instruct_vicuna13b.yaml', 
         }
 
         self.file_path = __file__

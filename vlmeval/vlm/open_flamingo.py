@@ -3,6 +3,9 @@ import requests
 from PIL import Image
 
 class OpenFlamingo: 
+
+    INSTALL_REQ = True
+
     def __init__(self, 
                  name, 
                  with_context=False,
@@ -28,12 +31,12 @@ class OpenFlamingo:
         self.model = model.eval().cuda()
         self.tokenizer = tokenizer
         self.tokenizer.padding_side = "left"
-        self.demo1 = Image.open("/mnt/petrelfs/share_data/duanhaodong/000000039769.jpg")
-        self.demo2 = Image.open("/mnt/petrelfs/share_data/duanhaodong/000000028137.jpg")
+        self.demo1 = Image.open("misc/000000039769.jpg")
+        self.demo2 = Image.open("misc/000000028137.jpg")
 
         self.image_proc = image_processor
                 
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         if self.with_context:
             vision_x = [self.image_proc(x).unsqueeze(0) for x in [self.demo1, self.demo2, Image.open(image_path)]]
             vision_x = torch.cat(vision_x, dim=0)

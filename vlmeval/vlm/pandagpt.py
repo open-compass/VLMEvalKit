@@ -4,6 +4,9 @@ import os.path as osp
 
 
 class PandaGPT:
+
+    INSTALL_REQ = True
+
     def __init__(self, name, root='/mnt/petrelfs/share_data/duanhaodong/PandaGPT/'):
         assert name == 'PandaGPT_13B'
         self.name = name
@@ -29,7 +32,7 @@ class PandaGPT:
         torch.cuda.empty_cache()
         self.model = model.eval().half().cuda()
         
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         struct = {
             'prompt': prompt, 
             'image_paths': [image_path], 
