@@ -13,7 +13,7 @@ class MiniGPT4:
     def __init__(self, 
                  mode='v2', 
                  root='/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/', 
-                 temperature=0.01, 
+                 temperature=1, 
                  max_out_len=512):
         if mode == 'v2':
             cfg = 'minigptv2_eval.yaml'
