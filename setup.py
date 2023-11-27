@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 REQUIRES = """
 numpy>=1.23.4
-openai
+openai==1.3.5
 requests
 tqdm
 pandas>=1.5.3
