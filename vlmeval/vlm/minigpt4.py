@@ -56,7 +56,7 @@ class MiniGPT4:
         stop_words_ids = [torch.tensor(ids).to(device) for ids in stop_words_ids]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
         
-    def generate(self, image_path, prompt, dataset):
+    def generate(self, image_path, prompt, dataset=None):
         from minigpt4.conversation.conversation import Chat
         if self.mode == 'v2':
             chat = Chat(self.model, self.vis_processor, device=self.device)
@@ -68,5 +68,6 @@ class MiniGPT4:
         _ = chat.upload_img(image_path, chat_state, img_list)
         chat.encode_img(img_list)
         chat.ask(prompt, chat_state)
-        msg = chat.answer(conv=chat_state, img_list=img_list)[0]
+        with torch.inference_mode():
+            msg = chat.answer(conv=chat_state, img_list=img_list)[0]
         return msg
