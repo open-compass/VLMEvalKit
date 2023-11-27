@@ -41,7 +41,7 @@ class MiniGPT4:
         cfg_path = self.cfg
         cfg = OmegaConf.load(cfg_path)
             
-        model_cfg = cfg.model_cfg
+        model_cfg = cfg.model
         model_cfg.device_8bit = device 
         model_cls = registry.get_model_class(model_cfg.arch)
         model = model_cls.from_config(model_cfg).to(device)
