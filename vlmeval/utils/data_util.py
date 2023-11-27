@@ -15,7 +15,21 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
 }
 
+img_root_map = {
+    'MMBench_DEV_EN': "MMBench", 
+    'MMBench_TEST_EN': "MMBench", 
+    'MMBench_DEV_CN': "MMBench", 
+    'MMBench_TEST_CN': "MMBench", 
+    "MMBench": "MMBench",  # Link Invalid, Internal Only
+    "MMBench_CN": "MMBench",    # Link Invalid, Internal Only
+    'CCBench': "CCBench", 
+    'MME': "MME", 
+    'SEEDBench_IMG': "SEEDBench_IMG", 
+}
+
 class TSVDataset:
+
+    
 
     def __init__(self, dataset='MMBench', img_root=None):
 
@@ -64,7 +78,7 @@ class TSVDataset:
         
         if dataset == 'MME':
             prompt = line['question']
-        elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench']:
+        elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench_IMG']:
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {

@@ -11,6 +11,7 @@ rich
 portalocker
 timeout-decorator
 pillow
+omegaconf
 matplotlib
 seaborn
 tabulate
