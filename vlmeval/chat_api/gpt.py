@@ -46,15 +46,15 @@ class OpenAIWrapper(BaseAPI):
 
         self.model = model
         self.cur_idx = 0
-        self.fail_cnt = defaultdict(lambda: 0)
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
 
         openai_key = os.environ.get('OPENAI_API_KEY', None) if openai_key is None else openai_key
         assert isinstance(openai_key, str) and openai_key.startswith('sk-')
-            
-        self.openai_key = openai_key
+
+        self.openai_key = openai_key   
+        openai.openai_key = openai_key
         if api_base in APIBASES:
             openai.api_base = APIBASES[api_base]
         elif api_base.startswith('http'):
@@ -91,33 +91,25 @@ class OpenAIWrapper(BaseAPI):
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
-        for i in range(self.num_keys):
-            idx = (self.cur_idx + i) % self.num_keys
-            if self.fail_cnt[idx] >= min(self.fail_cnt.values()) + 20:
-                continue
-            try:
-                openai.api_key = self.keys[idx]
-                response = openai.ChatCompletion.create(
-                    model=self.model,
-                    messages=input_msgs,
-                    max_tokens=max_tokens,
-                    n=1,
-                    stop=None,
-                    temperature=temperature,
-                    **kwargs)
-                
-                result = response.choices[0].message.content.strip()
-                self.cur_idx = idx
-                return 0, result, 'API Call Succeed'
-            except:
-                self.fail_cnt[idx] += 1
-                if self.verbose:
-                    warnings.warn(f'OPENAI KEY {self.keys[idx]} FAILED !!!')
-                    try:
-                        warnings.warn(response)
-                    except:
-                        pass
-        x = 1 / 0
+        try:
+            response = openai.ChatCompletion.create(
+                model=self.model,
+                messages=input_msgs,
+                max_tokens=max_tokens,
+                n=1,
+                stop=None,
+                temperature=temperature,
+                **kwargs)
+            
+            result = response.choices[0].message.content.strip()
+            return 0, result, 'API Call Succeed'
+        except:
+            if self.verbose:
+                warnings.warn(f'OPENAI KEY {self.openai_key} FAILED !!!')
+                try:
+                    warnings.warn(response)
+                except:
+                    pass
 
     def get_token_len(self, prompt: str) -> int:
         import tiktoken
