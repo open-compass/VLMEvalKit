@@ -29,8 +29,10 @@ class XComposer:
         for pth in model_paths:
             if osp.exists(pth):
                 self.model_path = pth
+                break
             elif len(pth.split('/')) == 2:
                 self.model_path = pth
+                break
 
         assert self.model_path is not None
             

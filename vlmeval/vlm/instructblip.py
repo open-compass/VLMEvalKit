@@ -37,8 +37,10 @@ class InstructBLIP:
             for pth in self.name_map[name]:
                 if osp.exists(pth):
                     model_path = pth
+                    break
                 elif len(pth.split('/')) == 2:
                     model_path = pth
+                    break
         else:
             model_path = name
         assert model_path is not None

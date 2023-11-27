@@ -24,6 +24,11 @@ class QwenVL:
         for p in pths:
             if osp.exists(p):
                 pth = p
+                break
+            elif len(p.split('/')) == 2:
+                pth = p
+                break
+
         assert pth is not None
         self.tokenizer = AutoTokenizer.from_pretrained(pth, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(pth, device_map='cuda', trust_remote_code=True).eval()

@@ -24,8 +24,10 @@ class IDEFICS:
                 for s in self.name_map[name]:
                     if osp.exists(s):
                         pth = s
+                        break
                     elif len(s.split('/')) == 2:
                         pth = s
+                        break
                 assert pth is not None
         else:
             pth = name

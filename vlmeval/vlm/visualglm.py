@@ -15,8 +15,10 @@ class VisualGLM:
         for m in self.model_paths:
             if osp.exists(m):
                 model_path = m
+                break
             elif len(m.split('/')) == 2:
                 model_path = m
+                break
         assert model_path is not None
                 
         from transformers import AutoModel
