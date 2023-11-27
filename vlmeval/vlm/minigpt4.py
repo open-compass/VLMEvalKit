@@ -33,6 +33,7 @@ class MiniGPT4:
         self.cfg = osp.join(this_dir, 'misc', cfg)
         sys.path.append(self.root)
         from minigpt4.common.registry import registry
+        from minigpt4.conversation.conversation import StoppingCriteriaSub, CONV_VISION_Vicuna0, CONV_VISION_minigptv2
 
         device = torch.cuda.current_device()
         self.device = device
@@ -49,23 +50,23 @@ class MiniGPT4:
         vis_processor = registry.get_processor_class(vis_processor_cfg.name).from_config(vis_processor_cfg)
         self.model = model
         self.vis_processor = vis_processor  
+
+        self.CONV_VISION = CONV_VISION_minigptv2 if self.mode == 'v2' else CONV_VISION_Vicuna0
+        stop_words_ids = [[835], [2277, 29937]]
+        stop_words_ids = [torch.tensor(ids).to(device) for ids in stop_words_ids]
+        self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
         
-    def generate(self, image_path, prompt):
-        raw_image = Image.open(image_path).convert('RGB')
-        images = self.vis_processor(raw_image).unsqueeze(0)
-        img_prompt = '###Human: <Img><ImageHere></Img> '
-        prompt = img_prompt + ' ' + prompt
-        texts = [prompt]
-        outputs = self.model.generate(
-            images,
-            texts,
-            num_beams=1,
-            max_new_tokens=20,
-            min_length=1,
-            top_p=0.9,
-            repetition_penalty=1,
-            length_penalty=1,
-            temperature=1,
-            do_sample=False,
-            stop_words_ids=[2])
-        return outputs[0]
+    def generate(self, image_path, prompt, dataset):
+        from minigpt4.conversation.conversation import Chat
+        if self.mode == 'v2':
+            chat = Chat(self.model, self.vis_processor, device=self.device)
+        else:
+            chat = Chat(self.model, self.vis_processor, device=self.device, stopping_criteria=self.stopping_criteria)
+
+        chat_state = self.CONV_VISION.copy()
+        img_list = []
+        _ = chat.upload_img(image_path, chat_state, img_list)
+        chat.encode_img(img_list)
+        chat.ask(prompt, chat_state)
+        msg = chat.answer(conv=chat_state, img_list=img_list)[0]
+        return msg
