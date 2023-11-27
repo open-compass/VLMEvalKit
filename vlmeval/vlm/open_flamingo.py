@@ -1,6 +1,7 @@
 import torch
 import requests
 from PIL import Image
+import os.path as osp
 
 class OpenFlamingo: 
 
@@ -31,8 +32,11 @@ class OpenFlamingo:
         self.model = model.eval().cuda()
         self.tokenizer = tokenizer
         self.tokenizer.padding_side = "left"
-        self.demo1 = Image.open("misc/000000039769.jpg")
-        self.demo2 = Image.open("misc/000000028137.jpg")
+
+        this_dir = osp.dirname(__file__)
+    
+        self.demo1 = Image.open(f"{this_dir}/misc/000000039769.jpg")
+        self.demo2 = Image.open(f"{this_dir}/misc/000000028137.jpg")
 
         self.image_proc = image_processor
                 
