@@ -59,7 +59,7 @@ class LLaVA:
 
     def build_prompt(self, line, dataset_name=None):
         from ..utils import img_root_map
-        assert dataset_name is not None and isinstance(dataset_name, str)
+        assert dataset_name is None or isinstance(dataset_name, str)
         img_root = osp.join('images', img_root_map[dataset_name])
 
         os.makedirs(img_root, exist_ok=True)
@@ -69,7 +69,7 @@ class LLaVA:
         tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        if 'mmbench' in dataset_name.lower():
+        if dataset_name is not None and 'mmbench' in dataset_name.lower():
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
             if hint is not None:

@@ -1,15 +1,13 @@
 import os, torch
 from PIL import Image
-from vlmeval import *
+from vlmeval.smp import *
 
 
 class mPLUG_Owl2:
 
     def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', max_new_tokens=10, temperature=0.7): 
-        from mplug_owl2.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
-        from mplug_owl2.conversation import conv_templates, SeparatorStyle
         from mplug_owl2.model.builder import load_pretrained_model
-        from mplug_owl2.mm_utils import process_images, tokenizer_image_token, get_model_name_from_path, KeywordsStoppingCriteria
+        from mplug_owl2.mm_utils import get_model_name_from_path
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, None, model_name, load_8bit=False, load_4bit=False, device="cpu")
 
@@ -23,32 +21,42 @@ class mPLUG_Owl2:
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
 
-    def build_mmbench_prompt(self, img_dir, line):
-        os.makedirs(img_dir, exist_ok=True)
+    def build_prompt(self, line, dataset_name=None):
+        from ..utils import img_root_map
+        assert dataset_name is None or isinstance(dataset_name, str)
+        img_root = osp.join('images', img_root_map[dataset_name])
+        
+        os.makedirs(img_root, exist_ok=True)
         prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
         idx = line['index']
         img = line['image']
-        tgt_path = osp.join(img_dir, f'{idx}.jpg')
+        tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        question = line['question']
-        option_candidate = ['A', 'B', 'C', 'D', 'E']
-        options = {
-            cand: line[cand]
-            for cand in option_candidate
-            if cand in line and not pd.isna(line[cand])
-        }
-        options_prompt = ''
-        for key, item in options.items():
-            options_prompt += f'{key}. {item}\n'
-        
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
-        prompt = prompt_tmpl.format(hint, question, options_prompt)
+        if dataset_name is not None and 'mmbench' in dataset_name.lower():
+            question = line['question']
+            option_candidate = ['A', 'B', 'C', 'D', 'E']
+            options = {
+                cand: line[cand]
+                for cand in option_candidate
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = ''
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            
+            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
+            prompt = prompt_tmpl.format(hint, question, options_prompt)
+        else:
+            prompt = line['question']
+
         return {'image': tgt_path, 'text': prompt}
     
-    def generate(self, image_path, prompt):
+    def vanilla_generate(self, image_path, prompt):
+        from mplug_owl2.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
+        from mplug_owl2.conversation import conv_templates
+        from mplug_owl2.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         conv = conv_templates["mplug_owl2"].copy()
-        roles = conv.roles
 
         image = Image.open(image_path).convert('RGB')
         max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
@@ -80,6 +88,8 @@ class mPLUG_Owl2:
         return outputs.split('</s>')[0]
 
     def mmbench_generate(self, image_path, prompt):
+        from mplug_owl2.constants import IMAGE_TOKEN_INDEX
+        from mplug_owl2.mm_utils import process_images, tokenizer_image_token
         image = Image.open(image_path).convert('RGB')
         max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
         image = image.resize((max_edge, max_edge))
@@ -102,3 +112,9 @@ class mPLUG_Owl2:
                 use_cache=True)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
+
+    def generate(self, image_path, prompt, dataset=None):
+        if dataset is None or 'mmbench' not in dataset.lower():
+            return self.vanilla_generate(image_path, prompt)
+        elif 'mmbench' in dataset.lower():
+            return self.mmbench_generate(image_path, prompt)
