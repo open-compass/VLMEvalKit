@@ -1,5 +1,6 @@
 from vlmeval.smp import *
 import os, openai
+from openai import OpenAI
 from .base import BaseAPI
 
 APIBASES = {
@@ -53,14 +54,10 @@ class OpenAIWrapper(BaseAPI):
         openai_key = os.environ.get('OPENAI_API_KEY', None) if openai_key is None else openai_key
         assert isinstance(openai_key, str) and openai_key.startswith('sk-')
 
-        self.openai_key = openai_key   
-        openai.openai_key = openai_key
         if api_base in APIBASES:
-            openai.api_base = APIBASES[api_base]
-        elif api_base.startswith('http'):
-            openai.api_base = api_base
+            self.client = OpenAI(api_key=openai_key, base_url=APIBASES[api_base])
         else:
-            raise NotImplementedError
+            self.client = OpenAI(api_key=openai_key)
         
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
@@ -92,7 +89,7 @@ class OpenAIWrapper(BaseAPI):
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.completions.create(
                 model=self.model,
                 messages=input_msgs,
                 max_tokens=max_tokens,
