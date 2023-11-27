@@ -23,10 +23,9 @@ class InstructBLIP:
             ]
         }
 
-        this_dir = osp.dirname(__file__)   
         self.config_map = {
-            'instructblip_7b': f'{this_dir}/misc/blip2_instruct_vicuna7b.yaml', 
-            'instructblip_13b': f'{this_dir}/misc/blip2_instruct_vicuna13b.yaml', 
+            'instructblip_7b': f'misc/blip2_instruct_vicuna7b.yaml', 
+            'instructblip_13b': f'misc/blip2_instruct_vicuna13b.yaml', 
         }
 
         self.file_path = __file__
