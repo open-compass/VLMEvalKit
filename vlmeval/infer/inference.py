@@ -118,10 +118,14 @@ def main():
         pred_root = model_name
 
         for i, dataset_name in enumerate(args.data):
+            if local_rank == 0:
+                dataset = TSVDataset(dataset_name)
+            if world_size > 1:
+                dist.barrier()
             dataset = TSVDataset(dataset_name)
             tmpl = f'{pred_root}/' + '{}' + f'{world_size}_{dataset_name}.pkl'
 
-            lt = len(data)
+            lt = len(dataset)
             indices = list(range(local_rank, lt, world_size))
             out_file = tmpl.format(local_rank)
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
