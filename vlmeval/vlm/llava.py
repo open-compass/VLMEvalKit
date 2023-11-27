@@ -24,7 +24,8 @@ class LLaVA:
                 'liuhaotian/llava_v1.5_13b'
             ],
             'llava_v1_7b': [
-                '/mnt/petrelfs/share_data/duanhaodong/LLaVA-7B-v1'
+                '/mnt/petrelfs/share_data/duanhaodong/LLaVA-7B-v1',
+                '/cpfs01/shared/llmeval/dhd/LLaVA-7B-v1',
             ],
         }
         model_path = None
