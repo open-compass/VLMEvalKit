@@ -27,7 +27,9 @@ class MiniGPT4:
         self.temperature = temperature 
         self.max_out_len = max_out_len
         self.root = root 
-        self.cfg = osp.join('misc', cfg)
+        this_dir = osp.dirname(__file__)
+
+        self.cfg = osp.join(this_dir, 'misc', cfg)
         sys.path.append(self.root)
         from minigpt4.common.config import Config
         from minigpt4.common.registry import registry

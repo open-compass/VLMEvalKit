@@ -1,4 +1,5 @@
 import os.path as osp
+import warnings
 from vlmeval.smp import *
 
 
@@ -7,6 +8,10 @@ class VisualGLM:
     INSTALL_REQ = False
 
     def __init__(self):
+        try:
+            import sat
+        except:
+            warnings.warn("Please install SwissArmyTransformer to use VisualGLM")
         self.model_paths = [
             '/mnt/lustre/duanhaodong/petrel_share/visualglm-6b',
             "THUDM/visualglm-6b"

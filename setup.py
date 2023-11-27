@@ -11,7 +11,7 @@ rich
 portalocker
 torch>=1.13.0
 timeout-decorator
-transformers<=4.34.0
+transformers<=4.33.0
 pillow
 omegaconf
 matplotlib
