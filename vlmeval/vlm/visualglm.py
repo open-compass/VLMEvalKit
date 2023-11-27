@@ -8,7 +8,7 @@ class VisualGLM:
 
     def __init__(self):
         self.model_paths = [
-            '/mnt/lustre/duanhaodong/petrel_share/visualglm-6b'
+            '/mnt/lustre/duanhaodong/petrel_share/visualglm-6b',
             "THUDM/visualglm-6b"
         ]
         model_path = None
