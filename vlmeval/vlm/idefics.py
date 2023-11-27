@@ -3,12 +3,16 @@ from PIL import Image
 import os.path as osp
 
 class IDEFICS:
+
+    INSTALL_REQ = False
+
     def __init__(self, name, with_context=False):
         assert name in ['idefics_9b_instruct', 'idefics_80b_instruct'] or osp.exists(name)
         self.name_map = {
             'idefics_9b_instruct': [
                 '/mnt/petrelfs/share_data/duanhaodong/idefics-9b-instruct/',
-                '/cpfs01/shared/llmeval/dhd/idefics-9b-instruct/'
+                '/cpfs01/shared/llmeval/dhd/idefics-9b-instruct/',
+                "HuggingFaceM4/idefics-9b-instruct"
             ],
             'idefics_80b_instruct': "HuggingFaceM4/idefics-80b-instruct"
         }
@@ -20,6 +24,8 @@ class IDEFICS:
                 for s in self.name_map[name]:
                     if osp.exists(s):
                         pth = s
+                    elif len(s.split('/')) == 2:
+                        pth = s
                 assert pth is not None
         else:
             pth = name
@@ -28,7 +34,7 @@ class IDEFICS:
         self.processor = AutoProcessor.from_pretrained(pth)
         self.with_context = with_context
 
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         if self.with_context:
             prompts = [
                 [

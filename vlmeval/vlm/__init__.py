@@ -37,9 +37,6 @@ model_cls_map = {
     'MiniGPT-4-v2': partial(MiniGPT4, mode='v2'),
     'MiniGPT-4-v1-7B': partial(MiniGPT4, mode='v1_7b'),
     'MiniGPT-4-v1-13B': partial(MiniGPT4, mode='v1_13b'),
-    'MiniGPT4_mmbench_v2': partial(MiniGPT4_mllm, mode = 'v2'),
-    'MiniGPT4_mmbench_v1_7B': partial(MiniGPT4_mllm, mode = 'v1_7b'),
-    'MiniGPT4_mmbench_v1_13B': partial(MiniGPT4_mllm, mode = 'v1_13b'),
     "XComposer": XComposer, 
     "mPLUG-Owl2": mPLUG_Owl2
 }

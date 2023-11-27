@@ -57,8 +57,7 @@ class TSVDataset:
         data['image'] = [image_map[k] for k in data['index']]
         self.data = data
 
-        img_root = img_root if img_root is not None else 'images'
-        img_root = osp.join(img_root, self.dataset)
+        img_root = img_root if img_root is not None else osp.join('images', img_root_map[dataset])
         os.makedirs(img_root, exist_ok=True)
         self.img_root = img_root
 

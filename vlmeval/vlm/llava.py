@@ -6,17 +6,22 @@ import os.path as osp
 from vlmeval.smp import *
 
 class LLaVA:
+
+    INSTALL_REQ = True
+
     def __init__(self, name, do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1):
         from llava.model.builder import load_pretrained_model
         from llava.mm_utils import get_model_name_from_path
         self.name_map = {
             'llava_v1.5_7b': [
                 '/mnt/petrelfs/share_data/duanhaodong/llava-v1.5-7b',
-                '/cpfs01/shared/llmeval/dhd/llava-v1.5-7b'
+                '/cpfs01/shared/llmeval/dhd/llava-v1.5-7b',
+                'liuhaotian/llava_v1.5_7b'
             ],
             'llava_v1.5_13b': [
                 '/mnt/petrelfs/share_data/duanhaodong/llava-v1.5-13b',
-                '/cpfs01/shared/llmeval/dhd/llava-v1.5-13b'
+                '/cpfs01/shared/llmeval/dhd/llava-v1.5-13b',
+                'liuhaotian/llava_v1.5_13b'
             ],
             'llava_v1_7b': [
                 '/mnt/petrelfs/share_data/duanhaodong/LLaVA-7B-v1'
@@ -27,6 +32,8 @@ class LLaVA:
         if name in self.name_map:
             for pth in self.name_map[name]:
                 if osp.exists(pth):
+                    model_path = pth
+                elif len(pth.split('/')) == 2:
                     model_path = pth
         else:
             model_path = name
@@ -50,35 +57,44 @@ class LLaVA:
         self.top_p = top_p
         self.num_beams = num_beams
 
-    def build_mmbench_prompt(self, img_dir, line):
-        os.makedirs(img_dir, exist_ok=True)
+    def build_prompt(self, line, dataset_name=None):
+        from ..utils import img_root_map
+        assert dataset_name is not None and isinstance(dataset_name, str)
+        img_root = osp.join('images', img_root_map[dataset_name])
+
+        os.makedirs(img_root, exist_ok=True)
         idx = line['index']
         img = line['image']
-        tgt_path = osp.join(img_dir, f'{idx}.jpg')
+
+        tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        question = line['question']
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
-        if hint is not None:
-            question + hint + '\n' + question
+        if 'mmbench' in dataset_name.lower():
+            question = line['question']
+            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+            if hint is not None:
+                question + hint + '\n' + question
 
-        option_candidate = ['A', 'B', 'C', 'D', 'E']
-        options = {
-            cand: line[cand]
-            for cand in option_candidate
-            if cand in line and not pd.isna(line[cand])
-        }
-        for key, item in options.items():
-            question += f'\n{key}. {item}'
-        prompt = question
+            option_candidate = ['A', 'B', 'C', 'D', 'E']
+            options = {
+                cand: line[cand]
+                for cand in option_candidate
+                if cand in line and not pd.isna(line[cand])
+            }
+            for key, item in options.items():
+                question += f'\n{key}. {item}'
+            prompt = question
 
-        if not cn_string(prompt):
-            prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
+            if not cn_string(prompt):
+                prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
+            else:
+                prompt = prompt + "\n" + "请直接回答选项字母。"
         else:
-            prompt = prompt + "\n" + "请直接回答选项字母。"
+            prompt = line['question']
+
         return {'image': tgt_path, 'text': prompt}
 
-    def generate(self, image_path, prompt):
+    def generate(self, image_path, prompt, dataset=None):
         from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
         from llava.conversation import conv_templates, SeparatorStyle
