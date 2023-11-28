@@ -98,10 +98,10 @@ class XComposer:
         else:
             return self.vanilla_generate(image_path, prompt)
     
-    def build_prompt(self, line, dataset_name=None):
+    def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
-        assert dataset_name is None or isinstance(dataset_name, str)
-        img_root = osp.join('images', img_root_map[dataset_name])
+        assert dataset is None or isinstance(dataset, str)
+        img_root = osp.join('images', img_root_map[dataset])
 
         os.makedirs(img_root, exist_ok=True)
         idx = line['index']
@@ -109,7 +109,7 @@ class XComposer:
         tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        if dataset_name is not None and 'mmbench' in dataset_name.lower():
+        if dataset is not None and 'mmbench' in dataset.lower():
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
