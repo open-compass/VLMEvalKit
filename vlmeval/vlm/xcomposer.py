@@ -109,7 +109,7 @@ class XComposer:
         tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        if dataset is not None and 'mmbench' in dataset.lower():
+        if dataset is not None and ('mmbench' in dataset.lower() or 'seedbench' in dataset.lower()):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
