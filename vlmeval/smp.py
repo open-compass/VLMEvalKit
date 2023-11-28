@@ -21,7 +21,7 @@ from multiprocessing import Pool, current_process
 from tqdm import tqdm
 from PIL import Image
 from uuid import uuid4
-from datetime import datetime
+import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tabulate import tabulate
@@ -115,7 +115,7 @@ def double_log(msg, fout=None):
         fout.flush()
 
 def timestr(second=True, minute=False):
-    s = datetime.now().strftime('%Y%m%d%H%M%S')[2:]
+    s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')[2:]
     if second:
         return s
     elif minute:
