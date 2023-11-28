@@ -1,5 +1,6 @@
 import torch 
 import torch.distributed as dist
+import datetime
 from vlmeval.vlm import model_cls_map
 from vlmeval.utils import TSVDataset
 from vlmeval.eval import MME_rating, MME_postproc
@@ -99,7 +100,7 @@ def main():
 
     if world_size > 1:
         torch.cuda.set_device(local_rank)
-        dist.init_process_group(backend='nccl')
+        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=5400))
 
     for _, model_name in enumerate(args.model):
         model = None
