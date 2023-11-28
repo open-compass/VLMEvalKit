@@ -127,13 +127,13 @@ def MME_eval(args):
             preds_map[k] = v
         data['prediction'] = [preds_map[idx] for idx in data['index']]
 
-    dump(data, args.data)
-    score = MME_rating(args.data)
-    tgt = args.data.replace('prefetch.xlsx', 'score.xlsx') if 'prefetch' in args.data else args.data.replace('.xlsx', '_score.xlsx')
-    dump(score, tgt)
+    storage = args.data.replace('prefetch.xlsx', 'auxmatch.xlsx') if 'prefetch' in args.data else args.data.replace('.xlsx', '_auxmatch.xlsx')
+    dump(data, storage)
+    score = MME_rating(storage)
+    score_tgt = storage.replace('auxmatch.xlsx', 'score.xlsx')
+    dump(score, score_tgt)
 
     return score
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
