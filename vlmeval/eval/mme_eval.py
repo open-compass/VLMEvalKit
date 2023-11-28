@@ -127,7 +127,7 @@ def MME_eval(args):
             preds_map[k] = v
         data['prediction'] = [preds_map[idx] for idx in data['index']]
 
-    storage = args.data.replace('prefetch.xlsx', 'auxmatch.xlsx') if 'prefetch' in args.data else args.data.replace('.xlsx', '_auxmatch.xlsx')
+    storage = args.data.replace('.xlsx', '_auxmatch.xlsx')
     dump(data, storage)
     score = MME_rating(storage)
     score_tgt = storage.replace('auxmatch.xlsx', 'score.xlsx')
