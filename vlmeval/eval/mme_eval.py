@@ -41,3 +41,15 @@ def MME_rating(data_file):
     ret.update(scores)
     ret = d2df(ret)
     return ret
+
+
+def MME_postproc(data):
+    data['yes'] = data["prediction"].str.contains("Yes", case=False)
+    data["no"] = data["prediction"].str.contains("No", case=False)
+    data['raw_prediction'] = data['prediction']
+    data['prediction'] = data.apply(
+        lambda x: "Yes" if x["yes"] and not x["no"] else "No" if x["no"] and not x["yes"] else "Unknown", axis=1
+    )
+    data.drop(["yes", "no"], axis=1, inplace=True)
+    data["score"] = (data["answer"] == data["prediction"])
+    return data

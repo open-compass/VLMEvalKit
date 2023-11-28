@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 from vlmeval.vlm import model_cls_map
 from vlmeval.utils import TSVDataset
-from vlmeval.eval.mme_rating import MME_rating
+from vlmeval.eval import MME_rating, MME_postproc
 from vlmeval.smp import *
 
 def parse_args():
@@ -89,16 +89,6 @@ def prefetch_acc(result_file):
         res['acc'].append(hit[k] / match[k] * 100)
     res = pd.DataFrame(res)
     return res
-
-def MME_postproc(data):
-    data['yes'] = data["prediction"].str.contains("Yes", case=False)
-    data["no"] = data["prediction"].str.contains("No", case=False)
-    data['prediction'] = data.apply(
-        lambda x: "Yes" if x["yes"] and not x["no"] else "No" if x["no"] and not x["yes"] else "Unknown", axis=1
-    )
-    data.drop(["yes", "no"], axis=1, inplace=True)
-    data["score"] = (data["answer"] == data["prediction"])
-    return data
         
 def main():
     args = parse_args()
@@ -166,7 +156,7 @@ def main():
                 time.sleep(3)
                 res = MME_rating(result_file)
                 print(model_name, res)
-                dump(res, result_file.replace('.xlsx', '_score.xlsx'))
+                dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
 
 if __name__ == '__main__':
     main()

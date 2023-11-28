@@ -1,1 +1,1 @@
-from .mme_rating import MME_rating
+from .mme_eval import MME_rating, MME_postproc
