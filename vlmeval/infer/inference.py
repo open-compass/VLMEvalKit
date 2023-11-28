@@ -1,6 +1,6 @@
 import torch 
 import torch.distributed as dist
-import datetime
+from datetime import datetime
 from vlmeval.vlm import model_cls_map
 from vlmeval.utils import TSVDataset
 from vlmeval.eval import MME_rating, MME_postproc
