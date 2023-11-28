@@ -44,12 +44,16 @@ class MiniGPT4:
         model_cfg = cfg.model
         model_cfg.device_8bit = device 
         model_cls = registry.get_model_class(model_cfg.arch)
-        model = model_cls.from_config(model_cfg).to(device)
+        model = model_cls.from_config(model_cfg)
+        model = model.to(device)
+        for k, v in model.named_parameters():
+            if v.device != device:
+                print(k, v.device)
         model.eval()
         vis_processor_cfg = cfg.datasets.cc_sbu_align.vis_processor.train
         vis_processor = registry.get_processor_class(vis_processor_cfg.name).from_config(vis_processor_cfg)
         self.model = model
-        self.vis_processor = vis_processor  
+        self.vis_processor = vis_processor
 
         self.CONV_VISION = CONV_VISION_minigptv2 if self.mode == 'v2' else CONV_VISION_Vicuna0
         stop_words_ids = [[835], [2277, 29937]]
