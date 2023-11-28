@@ -1,20 +1,24 @@
 import sys
 import torch
 import os.path as osp
-
+import warnings
 
 class PandaGPT:
 
     INSTALL_REQ = True
 
     def __init__(self, name, root='/mnt/petrelfs/share_data/duanhaodong/PandaGPT/'):
+        if root is None:
+            warnings.warn('Please set `root` to PandaGPT code directory, which is cloned from here: ')
+            exit(-1)
+
         assert name == 'PandaGPT_13B'
         self.name = name
         sys.path.append(osp.join(root, 'code'))
         try:
             from model.openllama import OpenLLAMAPEFTModel
         except:
-            raise ImportError('Please first install PandaGPT and set the root path to use PandaGPT. ')
+            raise ImportError('Please first install PandaGPT and set the root path to use PandaGPT, which is cloned from here: https://github.com/yxuansu/PandaGPT. ')
         self.args = {
             'model': 'openllama_peft',
             'imagebind_ckpt_path': osp.join(root, 'pretrained_ckpt/imagebind_ckpt'),

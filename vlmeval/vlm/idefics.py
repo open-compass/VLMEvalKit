@@ -9,11 +9,7 @@ class IDEFICS:
     def __init__(self, name, with_context=False):
         assert name in ['idefics_9b_instruct', 'idefics_80b_instruct'] or osp.exists(name)
         self.name_map = {
-            'idefics_9b_instruct': [
-                '/mnt/petrelfs/share_data/duanhaodong/idefics-9b-instruct/',
-                '/cpfs01/shared/llmeval/dhd/idefics-9b-instruct/',
-                "HuggingFaceM4/idefics-9b-instruct"
-            ],
+            'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
             'idefics_80b_instruct': "HuggingFaceM4/idefics-80b-instruct"
         }
         if name in self.name_map:

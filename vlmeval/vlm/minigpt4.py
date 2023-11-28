@@ -2,6 +2,7 @@ import torch
 import sys
 from abc import abstractproperty
 import os.path as osp
+import warnings
 from transformers import StoppingCriteriaList
 from omegaconf import OmegaConf
 from PIL import Image
@@ -15,6 +16,10 @@ class MiniGPT4:
                  root='/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/', 
                  temperature=1, 
                  max_out_len=512):
+        
+        if root is None:
+            warnings.warn('Please set root to the directory of MiniGPT-4, which is cloned from here: https://github.com/Vision-CAIR/MiniGPT-4. ')
+
         if mode == 'v2':
             cfg = 'minigptv2_eval.yaml'
         elif mode == 'v1_7b':

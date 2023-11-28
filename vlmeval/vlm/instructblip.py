@@ -14,13 +14,9 @@ class InstructBLIP:
 
         self.name_map = {
             'instructblip_7b': [
-                '/mnt/petrelfs/share_data/duanhaodong/vicuna-7b-v1.1',
-                '/cpfs01/shared/llmeval/dhd/vicuna-7b-v1.1',
                 'lmsys/vicuna-7b-v1.1'
             ],
             'instructblip_13b': [
-                '/mnt/petrelfs/share_data/duanhaodong/vicuna-13b-v1.1',
-                '/cpfs01/shared/llmeval/dhd/vicuna-13b-v1.1',
                 'lmsys/vicuna-13b-v1.1'
             ]
         }
@@ -48,9 +44,13 @@ class InstructBLIP:
             model_path = name
         assert model_path is not None
             
-        from lavis.models import load_preprocess
-        from omegaconf import OmegaConf
-        from lavis.common.registry import registry
+        try:
+            from lavis.models import load_preprocess
+            from omegaconf import OmegaConf
+            from lavis.common.registry import registry
+        except:
+            warnings.warn("Please install lavis before using InstructBLIP. ")
+            exit(-1)
 
         assert name in self.config_map
         cfg_path = osp.join(config_root, self.config_map[name])

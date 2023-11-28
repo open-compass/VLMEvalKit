@@ -2,6 +2,7 @@ import torch
 import requests
 from PIL import Image
 import os.path as osp
+import warnings
 
 class OpenFlamingo: 
 
@@ -12,6 +13,13 @@ class OpenFlamingo:
                  with_context=False,
                  mpt_pth='/mnt/petrelfs/share_data/duanhaodong/mpt-7b/',
                  ckpt_pth='/mnt/petrelfs/share_data/duanhaodong/OpenFlamingo-9B-vitl-mpt7b/checkpoint.pt'):
+        if mpt_pth is None:
+            warnings.warn('Please set `mpt_pth` to the directory of MPT-7B, which is cloned from here: https://huggingface.co/mosaicml/mpt-7b. ')
+            exit(-1)
+        if ckpt_pth is None:
+            warnings.warn('Please set `ckpt_pth` to the openflamingo ckpt, which is the `checkpoint.pt` file downloaded from: https://huggingface.co/openflamingo/OpenFlamingo-9B-vitl-mpt7b/tree/main. ' )
+            exit(-1)
+
         self.name = name
         assert name in ['v2']
         self.mpt_pth = mpt_pth

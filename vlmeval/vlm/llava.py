@@ -10,22 +10,22 @@ class LLaVA:
     INSTALL_REQ = True
 
     def __init__(self, name, do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1):
-        from llava.model.builder import load_pretrained_model
-        from llava.mm_utils import get_model_name_from_path
+        try:
+            from llava.model.builder import load_pretrained_model
+            from llava.mm_utils import get_model_name_from_path
+        except:
+            warnings.warn("Please install llava before using LLaVA")
+            exit(-1)
+            
         self.name_map = {
             'llava_v1.5_7b': [
-                '/mnt/petrelfs/share_data/duanhaodong/llava-v1.5-7b',
-                '/cpfs01/shared/llmeval/dhd/llava-v1.5-7b',
                 'liuhaotian/llava_v1.5_7b'
             ],
             'llava_v1.5_13b': [
-                '/mnt/petrelfs/share_data/duanhaodong/llava-v1.5-13b',
-                '/cpfs01/shared/llmeval/dhd/llava-v1.5-13b',
                 'liuhaotian/llava_v1.5_13b'
             ],
             'llava_v1_7b': [
-                '/mnt/petrelfs/share_data/duanhaodong/LLaVA-7B-v1',
-                '/cpfs01/shared/llmeval/dhd/LLaVA-7B-v1',
+                'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. ',
             ],
         }
         model_path = None
@@ -40,7 +40,7 @@ class LLaVA:
                     break
         else:
             model_path = name
-        assert model_path is not None
+        assert model_path is not None, self.name_map[name] if name in self.name_map else name
         
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path, 
