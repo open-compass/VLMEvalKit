@@ -93,7 +93,7 @@ class XComposer:
         if dataset is None:
             return self.vanilla_generate(image_path, prompt)
         assert isinstance(dataset, str)
-        if 'mmbench' in dataset.lower():
+        if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower():
             return self.mmbench_generate(image_path, prompt)
         else:
             return self.vanilla_generate(image_path, prompt)
