@@ -7,7 +7,7 @@ class PandaGPT:
 
     INSTALL_REQ = True
 
-    def __init__(self, name, root='/mnt/petrelfs/share_data/duanhaodong/PandaGPT/'):
+    def __init__(self, name, root=None, **kwargs):
         if root is None:
             warnings.warn('Please set `root` to PandaGPT code directory, which is cloned from here: ')
             exit(-1)
@@ -35,6 +35,10 @@ class PandaGPT:
         model.load_state_dict(delta_ckpt, strict=False)
         torch.cuda.empty_cache()
         self.model = model.eval().half().cuda()
+        kwargs_default = {'top_p': 0.9, 'do_sample': False, 'max_tgt_len': 256}
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
         
     def generate(self, image_path, prompt, dataset=None):
         struct = {
@@ -43,10 +47,8 @@ class PandaGPT:
             'audio_paths': [],
             'video_paths': [],
             'thermal_paths': [],
-            'top_p': 0.9, 
-            'temperature': 0.001, 
-            'max_tgt_len': 256, 
             'modality_embeds': []
         }
+        struct.update(self.kwargs)
         resp = self.model.generate(struct)
         return resp

@@ -8,7 +8,7 @@ class mPLUG_Owl2:
 
     INSTALL_REQ = True
 
-    def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', max_new_tokens=10, temperature=0.7): 
+    def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', **kwargs): 
         try:
             from mplug_owl2.model.builder import load_pretrained_model
             from mplug_owl2.mm_utils import get_model_name_from_path
@@ -26,8 +26,13 @@ class mPLUG_Owl2:
         tokenizer.pad_token_id = tokenizer.eos_token_id
         self.tokenizer = tokenizer
         self.context_len = context_len
-        self.max_new_tokens = max_new_tokens
-        self.temperature = temperature
+
+        kwargs_default = dict(
+            temperature=0.7, max_new_tokens=10, do_sample=False, num_beams=1, 
+            min_new_tokens=1, length_penalty=1, num_return_sequences=1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
     def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
@@ -86,11 +91,9 @@ class mPLUG_Owl2:
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
-                do_sample=True,
-                temperature=self.temperature,
-                max_new_tokens=self.max_new_tokens,
                 use_cache=True,
-                stopping_criteria=[stopping_criteria])
+                stopping_criteria=[stopping_criteria],
+                **self.kwargs)
 
         outputs = self.tokenizer.decode(output_ids[0, input_ids.shape[1]:]).strip()
         return outputs.split('</s>')[0]
@@ -110,14 +113,9 @@ class mPLUG_Owl2:
             output_ids = self.model.generate(
                 input_ids=input_ids, 
                 images=image_tensor, 
-                do_sample=False, 
-                num_beams=1, 
-                max_new_tokens=self.max_new_tokens, 
-                min_new_tokens=1, 
-                length_penalty=1, 
-                num_return_sequences=1, 
                 output_hidden_states=True, 
-                use_cache=True)
+                use_cache=True, 
+                **self.kwargs)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
 

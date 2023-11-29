@@ -11,8 +11,10 @@ class OpenFlamingo:
     def __init__(self, 
                  name, 
                  with_context=False,
-                 mpt_pth='/mnt/petrelfs/share_data/duanhaodong/mpt-7b/',
-                 ckpt_pth='/mnt/petrelfs/share_data/duanhaodong/OpenFlamingo-9B-vitl-mpt7b/checkpoint.pt'):
+                 mpt_pth=None,
+                 ckpt_pth=None, 
+                 **kwargs):
+        
         if mpt_pth is None:
             warnings.warn('Please set `mpt_pth` to the directory of MPT-7B, which is cloned from here: https://huggingface.co/mosaicml/mpt-7b. ')
             exit(-1)
@@ -45,8 +47,12 @@ class OpenFlamingo:
     
         self.demo1 = Image.open(f"{this_dir}/misc/000000039769.jpg")
         self.demo2 = Image.open(f"{this_dir}/misc/000000028137.jpg")
-
         self.image_proc = image_processor
+
+        kwargs_default = dict(max_new_tokens=256, num_beams=3)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
                 
     def generate(self, image_path, prompt, dataset=None):
         if self.with_context:
@@ -68,8 +74,7 @@ class OpenFlamingo:
             vision_x=vision_x.cuda(), 
             lang_x=lang_x['input_ids'].cuda(), 
             attention_mask=lang_x['attention_mask'].cuda(), 
-            max_new_tokens=256, 
-            num_beams=3)
+            **self.kwargs)
         generated_text = self.tokenizer.decode(generated_text[0])
         text = generated_text[len(prompt): ].split('<|endofchunk|>')[0]
         return text            

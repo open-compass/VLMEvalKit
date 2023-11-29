@@ -1,45 +1,48 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import warnings
 import os.path as osp
 
 class QwenVL:
 
     INSTALL_REQ = False
 
-    def __init__(self, name):
-        self.name = name
-        pths = {
-            'qwen_base': [
-                'Qwen/Qwen-VL'
-            ],
-            'qwen_chat': [
-                'Qwen/Qwen-VL-Chat'
-            ]
-        }[self.name]
-        pth = None 
-        for p in pths:
-            if osp.exists(p):
-                pth = p
-                break
-            elif len(p.split('/')) == 2:
-                pth = p
-                break
-
-        assert pth is not None
-        self.tokenizer = AutoTokenizer.from_pretrained(pth, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(pth, device_map='cuda', trust_remote_code=True).eval()
+    def __init__(self, model_path='Qwen/Qwen-VL', **kwargs):
+        assert model_path is not None
+        self.model_path = model_path
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cuda', trust_remote_code=True).eval()
+        self.kwargs = kwargs
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
         torch.cuda.empty_cache()
     
     def generate(self, image_path, prompt, dataset=None):
         vl_pair = [{'image': image_path}, {'text': prompt}]
         query = self.tokenizer.from_list_format(vl_pair)
         
-        if self.name == 'qwen_base':
-            inputs = self.tokenizer(query, return_tensors='pt')
-            inputs = inputs.to(self.model.device)
-            pred = self.model.generate(**inputs)
-            response = self.tokenizer.decode(pred.cpu()[0], skip_special_tokens=False)
-            response = response.split(prompt)[1].split('<|endoftext|>')[0]
-        elif self.name == 'qwen_chat':
-            response, _ = self.model.chat(self.tokenizer, query=query, history=None)
+        inputs = self.tokenizer(query, return_tensors='pt')
+        inputs = inputs.to(self.model.device)
+        pred = self.model.generate(**inputs, **self.kwargs)
+        response = self.tokenizer.decode(pred.cpu()[0], skip_special_tokens=False)
+        response = response.split(prompt)[1].split('<|endoftext|>')[0]
+        return response
+    
+class QwenVLChat:
+
+    INSTALL_REQ = False
+
+    def __init__(self, model_path='Qwen/Qwen-VL-Chat', **kwargs):
+        assert model_path is not None
+        self.model_path = model_path
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cuda', trust_remote_code=True).eval()
+        torch.cuda.empty_cache()
+        self.kwargs = kwargs
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+    
+    def generate(self, image_path, prompt, dataset=None):
+        vl_pair = [{'image': image_path}, {'text': prompt}]
+        query = self.tokenizer.from_list_format(vl_pair)
+        
+        response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response

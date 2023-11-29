@@ -24,17 +24,9 @@ class XComposer:
 
     INSTALL_REQ = False
     
-    def __init__(self, model_paths=['internlm/internlm-xcomposer-vl-7b']):
-        self.model_path = None
-        for pth in model_paths:
-            if osp.exists(pth):
-                self.model_path = pth
-                break
-            elif len(pth.split('/')) == 2:
-                self.model_path = pth
-                break
-
-        assert self.model_path is not None
+    def __init__(self, model_path='internlm/internlm-xcomposer-vl-7b'):
+        assert model_path is not None
+        self.model_path = model_path
             
         model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True).cuda().eval()
         tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)

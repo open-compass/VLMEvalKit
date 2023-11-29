@@ -26,6 +26,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from tabulate import tabulate
 
+def splitlen(s, sym='/'):
+    return len(s.split(sym))
+
 def listinstr(lst, s):
     assert isinstance(lst, list)
     for item in lst:

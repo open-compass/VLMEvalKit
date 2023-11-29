@@ -22,7 +22,7 @@ model:
   num_query_token: 32
 
   # path to Vicuna checkpoint
-  llm_model: ""
+  llm_model: "Please set the path to your vicuna-7b-v1.1"
 
   # generation configs
   prompt: ""

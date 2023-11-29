@@ -11,16 +11,6 @@ class InstructBLIP:
     INSTALL_REQ = True
 
     def __init__(self, name):
-
-        self.name_map = {
-            'instructblip_7b': [
-                'lmsys/vicuna-7b-v1.1'
-            ],
-            'instructblip_13b': [
-                'lmsys/vicuna-13b-v1.1'
-            ]
-        }
-
         self.config_map = {
             'instructblip_7b': f'misc/blip2_instruct_vicuna7b.yaml', 
             'instructblip_13b': f'misc/blip2_instruct_vicuna13b.yaml', 
@@ -28,21 +18,6 @@ class InstructBLIP:
 
         self.file_path = __file__
         config_root = osp.dirname(self.file_path)
-
-        model_path = None
-        assert name in self.name_map or osp.exists(name)
-
-        if name in self.name_map:
-            for pth in self.name_map[name]:
-                if osp.exists(pth):
-                    model_path = pth
-                    break
-                elif len(pth.split('/')) == 2:
-                    model_path = pth
-                    break
-        else:
-            model_path = name
-        assert model_path is not None
             
         try:
             from lavis.models import load_preprocess
@@ -57,7 +32,7 @@ class InstructBLIP:
         cfg = OmegaConf.load(cfg_path)
 
         model_cfg = cfg.model
-        OmegaConf.update(model_cfg, "llm_model", model_path)
+        assert osp.exists(model_cfg.llm_model) or splitlen(model_cfg.llm_model) == 2
         model_cls = registry.get_model_class(name="blip2_vicuna_instruct")
         model = model_cls.from_config(model_cfg)
         model.eval()
@@ -75,5 +50,5 @@ class InstructBLIP:
         vis_processors = self.vis_processors
         raw_image = Image.open(image_path).convert('RGB')
         image_tensor = vis_processors["eval"](raw_image).unsqueeze(0).to(self.device)
-        outputs = self.model.generate(dict(image=image_tensor, prompt=prompt))
+        outputs = self.model.generate(dict(image=image_tensor, prompt=prompt, **self.kwargs))
         return outputs[0]

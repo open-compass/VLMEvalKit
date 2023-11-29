@@ -10,7 +10,14 @@ class LLaVA:
 
     INSTALL_REQ = True
 
-    def __init__(self, name, do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1):
+    def __init__(self, 
+                 name,
+                 model_path_map = {
+                     'llava_v1.5_7b': 'liuhaotian/llava_v1.5_7b',
+                     'llava_v1.5_13b': 'liuhaotian/llava_v1.5_13b',
+                     'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
+                 },
+                 **kwargs): 
         try:
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
@@ -18,30 +25,14 @@ class LLaVA:
             warnings.warn("Please install llava before using LLaVA")
             exit(-1)
             
-        self.name_map = {
-            'llava_v1.5_7b': [
-                'liuhaotian/llava_v1.5_7b'
-            ],
-            'llava_v1.5_13b': [
-                'liuhaotian/llava_v1.5_13b'
-            ],
-            'llava_v1_7b': [
-                'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. ',
-            ],
-        }
-        model_path = None
-        assert name in self.name_map or osp.exists(name)
-        if name in self.name_map:
-            for pth in self.name_map[name]:
-                if osp.exists(pth):
-                    model_path = pth
-                    break
-                elif len(pth.split('/')) == 2:
-                    model_path = pth
-                    break
+        self.model_path_map = model_path_map
+        assert name in self.model_path_map or osp.exists(name)
+        if name in self.model_path_map:
+            model_path = self.model_path_map[name]
         else:
             model_path = name
-        assert model_path is not None, self.name_map[name] if name in self.name_map else name
+
+        assert osp.exists(model_path) or splitlen(model_path) == 2
         
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path, 
@@ -55,11 +46,11 @@ class LLaVA:
             self.conv_mode =  'llava_v1'
         else:
             self.conv_mode = 'vicuna_v1'
-        self.do_sample = do_sample
-        self.temperature = temperature
-        self.max_new_tokens = max_new_tokens
-        self.top_p = top_p
-        self.num_beams = num_beams
+
+        kwargs_default = dict(do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
     def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
@@ -121,9 +112,6 @@ class LLaVA:
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
-            output_ids = self.model.generate(
-                input_ids, images=image_tensor, do_sample=self.do_sample, temperature=self.temperature, 
-                top_p=self.top_p, num_beams=self.num_beams, max_new_tokens=self.max_new_tokens, 
-                stopping_criteria=[stopping_criteria])
+            output_ids = self.model.generate(input_ids, images=image_tensor, stopping_criteria=[stopping_criteria], **self.kwargs)
         output = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip().split("</s>")[0]
         return output
