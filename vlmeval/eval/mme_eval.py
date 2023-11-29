@@ -102,32 +102,36 @@ def MME_eval(args):
 
     preds_map = {x: y for x, y in zip(data['index'], data['prediction'])}
     unknown = data[data['prediction'] == 'Unknown']
-
-    if args.model is not None:
-        assert args.model == 'gpt-3.5-turbo-0613'
-
-        if INTERNAL:
-            model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
-        else:
-            model = OpenAIWrapper(args.model, verbose=args.verbose)
-
-        lt = len(unknown)
-        lines = [unknown.iloc[i: i + 1] for i in range(lt)]
-        tups = [(model, line) for line in lines]
-        indices = list(unknown['index'])
-
-        # Do not save temporary file due to the 
-        res = track_progress_rich(
-            MME_auxeval,
-            tups, 
-            nproc=args.nproc,
-            chunksize=args.nproc)
-
-        for k, v in zip(indices, res):
-            preds_map[k] = v
-        data['prediction'] = [preds_map[idx] for idx in data['index']]
-
     storage = args.data.replace('.xlsx', '_auxmatch.xlsx')
+    
+    if not osp.exists(storage):
+        if args.model is not None:
+            assert args.model == 'gpt-3.5-turbo-0613'
+
+            if INTERNAL:
+                model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
+            else:
+                model = OpenAIWrapper(args.model, verbose=args.verbose)
+
+            lt = len(unknown)
+            lines = [unknown.iloc[i: i + 1] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = list(unknown['index'])
+
+            # Do not save temporary file due to the 
+            res = track_progress_rich(
+                MME_auxeval,
+                tups, 
+                nproc=args.nproc,
+                chunksize=args.nproc)
+
+            for k, v in zip(indices, res):
+                preds_map[k] = v
+            data['prediction'] = [preds_map[idx] for idx in data['index']]
+        dump(data, storage)
+    
+    data = load(storage)
+    data["score"] = (data["answer"] == data["prediction"])
     dump(data, storage)
     score = MME_rating(storage)
     score_tgt = storage.replace('auxmatch.xlsx', 'score.xlsx')
