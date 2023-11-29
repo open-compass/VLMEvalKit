@@ -1,7 +1,7 @@
 import torch 
 import torch.distributed as dist
 import datetime
-from vlmeval.vlm import model_cls_map
+from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset
 from vlmeval.eval import MME_rating, MME_postproc
 from vlmeval.smp import *
@@ -33,7 +33,7 @@ def infer_data(model_name, dataset, indices, out_file, verbose=False):
         return 
 
     if isinstance(model_name, str):
-        model = model_cls_map[model_name]()
+        model = supported_VLM[model_name]()
     else:
         model = model_name
 

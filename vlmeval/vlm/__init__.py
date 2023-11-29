@@ -1,8 +1,7 @@
 import torch
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
-from functools import partial
-from .qwen_vl import QwenVL
+from .qwen_vl import QwenVL, QwenVLChat
 from .pandagpt import PandaGPT
 from .open_flamingo import OpenFlamingo
 from .idefics import IDEFICS
@@ -12,27 +11,3 @@ from .visualglm import VisualGLM
 from .minigpt4 import MiniGPT4
 from .xcomposer import XComposer
 from .mplug_owl2 import mPLUG_Owl2
-
-
-model_cls_map = {
-    'qwen_base': partial(QwenVL, name='qwen_base'), 
-    'qwen_chat': partial(QwenVL, name='qwen_chat'),
-    'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=None),
-    'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth=None, ckpt_pth=None),
-    'flamingov2_fs': partial(OpenFlamingo, name='v2', with_context=True, mpt_pth=None, ckpt_pth=None),
-    'idefics_9b_instruct': partial(IDEFICS, name='idefics_9b_instruct'), 
-    'idefics_80b_instruct': partial(IDEFICS, name='idefics_80b_instruct'),
-    'idefics_9b_instruct_fs': partial(IDEFICS, name='idefics_9b_instruct', with_context=True), 
-    'idefics_80b_instruct_fs': partial(IDEFICS, name='idefics_80b_instruct', with_context=True),
-    'llava_v1.5_7b': partial(LLaVA, name='llava_v1.5_7b'),
-    'llava_v1.5_13b': partial(LLaVA, name='llava_v1.5_13b'),
-    'llava_v1_7b': partial(LLaVA, name='llava_v1_7b'),
-    'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
-    'instructblip_13b': partial(InstructBLIP, name='instructblip_13b'),
-    'VisualGLM_6b': VisualGLM,
-    'MiniGPT-4-v2': partial(MiniGPT4, mode='v2', root=None),
-    'MiniGPT-4-v1-7B': partial(MiniGPT4, mode='v1_7b', root=None),
-    'MiniGPT-4-v1-13B': partial(MiniGPT4, mode='v1_13b', root=None),
-    "XComposer": XComposer, 
-    "mPLUG-Owl2": mPLUG_Owl2
-}
