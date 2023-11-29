@@ -1,6 +1,7 @@
 import os, torch
 from PIL import Image
 from vlmeval.smp import *
+from vlmeval.utils import DATASET_TYPE
 
 
 class mPLUG_Owl2:
@@ -35,7 +36,7 @@ class mPLUG_Owl2:
         tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        if dataset is not None and 'mmbench' in dataset.lower():
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
@@ -116,7 +117,7 @@ class mPLUG_Owl2:
         return answer.split('</s>')[0]
 
     def generate(self, image_path, prompt, dataset=None):
-        if dataset is None or 'mmbench' not in dataset.lower():
+        if dataset is None or DATASET_TYPE(dataset) == 'multi-choice':
             return self.vanilla_generate(image_path, prompt)
         elif 'mmbench' in dataset.lower():
             return self.mmbench_generate(image_path, prompt)

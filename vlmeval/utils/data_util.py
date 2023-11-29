@@ -27,16 +27,23 @@ img_root_map = {
     'SEEDBench_IMG': "SEEDBench_IMG", 
 }
 
+def DATASET_TYPE(dataset):
+    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower():
+        return 'multi-choice'
+    elif 'MME' in dataset:
+        return 'Y/N'
+    return 'QA'
+
 class TSVDataset:
-
     
-
     def __init__(self, dataset='MMBench', img_root=None):
 
         self.data_root = LMUDataRoot()
         assert osp.exists(self.data_root)
 
         self.dataset = dataset
+        self.dataset_type = DATASET_TYPE(dataset)
+        
         url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
