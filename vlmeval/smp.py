@@ -47,28 +47,6 @@ def LMUDataRoot():
     os.makedirs(root, exist_ok=True)
     return root
 
-def circular_pred(df, extract_func):
-    df = df.sort_values('index')
-    from lmutil.mllm.llm_fastroll_0630 import can_infer_option
-    shift = int(1e6)
-
-    choices = [extract_func(x) for x in df['prediction']]
-    pred_map = {i: c for i, c in zip(df['index'], choices)}
-    flag_map = {i: True for i in pred_map if i < 1e6}
-    valid_map = {i: True for i in pred_map if i < 1e6}
-    for i in df['index']:
-        if i >= shift and pred_map[i] and pred_map[i - shift]:
-            if pred_map[i] not in 'ABCDE' or pred_map[i - shift] not in 'ABCDE':
-                valid_map[i % shift] = False
-                continue
-            if (ord(pred_map[i]) - ord(pred_map[i - shift])) % 4 == 1:
-                continue
-            else:
-                flag_map[i % shift] = False
-    flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
-    flags = list(flag_map.values())
-    return np.mean(flags)
-
 def cn_string(s):
     import re
     if re.search(u'[\u4e00-\u9fff]', s):
