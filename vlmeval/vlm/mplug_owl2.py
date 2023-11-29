@@ -120,7 +120,7 @@ class mPLUG_Owl2:
         return answer.split('</s>')[0]
 
     def generate(self, image_path, prompt, dataset=None):
-        if dataset is None or DATASET_TYPE(dataset) == 'multi-choice':
-            return self.vanilla_generate(image_path, prompt)
-        elif 'mmbench' in dataset.lower():
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             return self.mmbench_generate(image_path, prompt)
+        else:
+            return self.vanilla_generate(image_path, prompt)

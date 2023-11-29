@@ -85,7 +85,7 @@ class XComposer:
         if dataset is None:
             return self.vanilla_generate(image_path, prompt)
         assert isinstance(dataset, str)
-        if 'mmbench' in DATASET_TYPE(dataset) == 'multi-choice':
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             return self.mmbench_generate(image_path, prompt)
         else:
             return self.vanilla_generate(image_path, prompt)
