@@ -10,13 +10,9 @@ class QwenVL:
         self.name = name
         pths = {
             'qwen_base': [
-                '/mnt/petrelfs/share_data/duanhaodong/Qwen-VL',
-                '/cpfs01/shared/llmeval/dhd/Qwen-VL',
                 'Qwen/Qwen-VL'
             ],
             'qwen_chat': [
-                '/mnt/petrelfs/share_data/duanhaodong/Qwen-VL-Chat',
-                '/cpfs01/shared/llmeval/dhd/Qwen-VL-Chat',
                 'Qwen/Qwen-VL-Chat'
             ]
         }[self.name]

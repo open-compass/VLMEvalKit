@@ -13,8 +13,6 @@ class VisualGLM:
         except:
             warnings.warn("Please install SwissArmyTransformer to use VisualGLM")
         self.model_paths = [
-            '/mnt/lustre/duanhaodong/petrel_share/visualglm-6b',
-            '/cpfs01/shared/llmeval/dhd/visualglm-6b',
             "THUDM/visualglm-6b"
         ]
         model_path = None

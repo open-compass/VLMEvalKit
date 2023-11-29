@@ -9,8 +9,13 @@ class mPLUG_Owl2:
     INSTALL_REQ = True
 
     def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', max_new_tokens=10, temperature=0.7): 
-        from mplug_owl2.model.builder import load_pretrained_model
-        from mplug_owl2.mm_utils import get_model_name_from_path
+        try:
+            from mplug_owl2.model.builder import load_pretrained_model
+            from mplug_owl2.mm_utils import get_model_name_from_path
+        except:
+            warnings.warn('Please install mPLUG_Owl2 before using mPLUG_Owl2. ')
+            exit(-1)
+            
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, None, model_name, load_8bit=False, load_4bit=False, device="cpu")
 

@@ -24,9 +24,7 @@ class XComposer:
 
     INSTALL_REQ = False
     
-    def __init__(self, model_paths=['/mnt/petrelfs/share_data/duanhaodong/internlm-xcomposer-vl-7b', 
-                                   '/cpfs01/shared/llmeval/dhd/internlm-xcomposer-vl-7b', 
-                                   'internlm/internlm-xcomposer-vl-7b']):
+    def __init__(self, model_paths=['internlm/internlm-xcomposer-vl-7b']):
         self.model_path = None
         for pth in model_paths:
             if osp.exists(pth):
