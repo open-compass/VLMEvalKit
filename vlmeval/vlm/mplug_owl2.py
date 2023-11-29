@@ -28,7 +28,7 @@ class mPLUG_Owl2:
         self.context_len = context_len
 
         kwargs_default = dict(
-            temperature=0.7, max_new_tokens=10, do_sample=False, num_beams=1, 
+            max_new_tokens=10, do_sample=False, num_beams=1, 
             min_new_tokens=1, length_penalty=1, num_return_sequences=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
