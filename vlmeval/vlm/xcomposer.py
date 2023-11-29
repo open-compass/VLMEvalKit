@@ -18,6 +18,8 @@ class StoppingCriteriaSub(StoppingCriteria):
 
         return False
 
+from vlmeval.utils import DATASET_TYPE
+
 class XComposer:
 
     INSTALL_REQ = False
@@ -91,7 +93,7 @@ class XComposer:
         if dataset is None:
             return self.vanilla_generate(image_path, prompt)
         assert isinstance(dataset, str)
-        if 'mmbench' in dataset.lower():
+        if 'mmbench' in DATASET_TYPE(dataset) == 'multi-choice':
             return self.mmbench_generate(image_path, prompt)
         else:
             return self.vanilla_generate(image_path, prompt)
@@ -107,7 +109,7 @@ class XComposer:
         tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        if dataset is not None and 'mmbench' in dataset.lower():
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {

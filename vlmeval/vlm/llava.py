@@ -4,6 +4,7 @@ from abc import abstractproperty
 import os
 import os.path as osp
 from vlmeval.smp import *
+from vlmeval.utils import DATASET_TYPE
 
 class LLaVA:
 
@@ -72,7 +73,7 @@ class LLaVA:
         tgt_path = osp.join(img_root, f'{idx}.jpg')
         decode_base64_to_image_file(img, tgt_path)
 
-        if dataset is not None and 'mmbench' in dataset.lower():
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
             if hint is not None:
