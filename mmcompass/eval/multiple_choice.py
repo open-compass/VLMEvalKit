@@ -211,12 +211,16 @@ def eval_result(args):
     rd.seed(2680)
 
     suffix = eval_file.split('.')[-1]
-    assert args.model == 'gpt-3.5-turbo-0613'
+    assert args.model in ['gpt-3.5-turbo-0613', None]
 
-    if INTERNAL:
-        model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
-    else:
-        model = OpenAIWrapper(args.model, verbose=args.verbose)
+    model_name = args.model 
+    
+    if args.model is not None:
+        if INTERNAL:
+            model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
+        else:
+            model = OpenAIWrapper(args.model, verbose=args.verbose)
+    
 
     double_log(f'Evaluating {eval_file}', fout)
     result_file = eval_file.replace(f'.{suffix}', f'_{args.model}_result.pkl')
@@ -303,7 +307,7 @@ def eval_result(args):
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613')
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613', choices=['gpt-3.5-turbo-0613', None])
     parser.add_argument("--dataset", type=str, default='MMBench', help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=12)
     parser.add_argument("--verbose", action='store_true')
@@ -314,6 +318,7 @@ if __name__ == '__main__':
     args = parse_args()
     assert args.dataset in ['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG']
     suffix = args.data.split('.')[-1]
-    log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
+    model_name = args.model if args.model is not None else "exact_matching"
+    log_pth = args.data.replace('.' + suffix, f'_{model_name}_eval.log')
     fout = open(log_pth, 'a')
     acc = eval_result(args)
