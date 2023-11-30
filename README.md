@@ -1,1 +1,1 @@
-# VLMEvalKit
+# OpenCompass VLMEval
