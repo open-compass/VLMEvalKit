@@ -1,4 +1,4 @@
-from vlmeval.smp import *
+from ..smp import *
 import os, openai
 from openai import OpenAI
 from .base import BaseAPI
