@@ -33,9 +33,9 @@ with open('README.md') as f:
 
 def do_setup():
     setup(
-        name='vlmeval',
+        name='mmcompass',
         version='0.1.0',
-        description='MLLM utils, collected by Kenny',
+        description='OpenCompass VLM Evaluation Kit',
         # url="",
         author="Haodong Duan",
         long_description=readme,
@@ -50,9 +50,7 @@ def do_setup():
         ]),
         keywords=['AI', 'NLP', 'in-context learning'],
         entry_points={
-            "console_scripts": [
-                "mllm_infer = vlmeval.mllm.inference:main",
-            ]
+            "console_scripts": []
         },
         classifiers=[
             'Programming Language :: Python :: 3.7',

@@ -3,7 +3,7 @@ from PIL import Image
 from abc import abstractproperty
 import os.path as osp
 import os 
-from vlmeval.smp import *
+from ..smp import *
 
 
 class InstructBLIP:

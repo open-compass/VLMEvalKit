@@ -3,8 +3,8 @@ from PIL import Image
 from abc import abstractproperty
 import os
 import os.path as osp
-from vlmeval.smp import *
-from vlmeval.utils import DATASET_TYPE
+from ..smp import *
+from ..utils import DATASET_TYPE
 
 class LLaVA:
 

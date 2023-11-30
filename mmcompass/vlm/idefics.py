@@ -2,7 +2,7 @@ import torch
 from PIL import Image
 import os.path as osp
 import warnings
-from vlmeval.smp import splitlen
+from ..smp import splitlen
 
 class IDEFICS:
 

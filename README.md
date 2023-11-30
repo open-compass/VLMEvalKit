@@ -1,1 +1,1 @@
-# OpenCompass VLMEval
+# MMCompass

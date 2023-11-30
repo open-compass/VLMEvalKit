@@ -1,7 +1,7 @@
 import os, torch
 from PIL import Image
-from vlmeval.smp import *
-from vlmeval.utils import DATASET_TYPE
+from ..smp import *
+from ..utils import DATASET_TYPE
 
 
 class mPLUG_Owl2:

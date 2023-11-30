@@ -1,7 +1,7 @@
 import json
 import warnings
 import requests
-from vlmeval.smp import *
+from ..smp import *
 from .gpt import GPT_context_window
 from .base import BaseAPI
 

@@ -1,7 +1,7 @@
 import string
 import copy as cp
 import os
-from vlmeval.smp import *
+from ..smp import *
 
 def can_infer_option(answer, num_choice=5):
     verbose = os.environ.get('VERBOSE', 0)

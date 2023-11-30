@@ -1,7 +1,7 @@
 import torch
 import os.path as osp
 from transformers import AutoModel, AutoTokenizer
-from vlmeval.smp import *
+from ..smp import *
 
 from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
@@ -18,7 +18,7 @@ class StoppingCriteriaSub(StoppingCriteria):
 
         return False
 
-from vlmeval.utils import DATASET_TYPE
+from ..utils import DATASET_TYPE
 
 class XComposer:
 

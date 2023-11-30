@@ -1,6 +1,6 @@
 import os.path as osp
 import warnings
-from vlmeval.smp import *
+from ..smp import *
 
 
 class VisualGLM:

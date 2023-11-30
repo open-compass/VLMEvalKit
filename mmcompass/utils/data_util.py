@@ -1,18 +1,18 @@
 import pandas as pd
-from vlmeval.smp import *
+from mmcompass.smp import *
 
 LAST_MODIFIED = 231126000000
 
 dataset_URLs = {
-    'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
-    'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv", 
-    'MMBench_DEV_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv", 
-    'MMBench_TEST_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv", 
-    "MMBench": "https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv",  # Link Invalid, Internal Only
-    "MMBench_CN": "https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv",    # Link Invalid, Internal Only
-    'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
-    'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
-    'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
+    'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/MMCompass/MMBench_DEV_EN.tsv", 
+    'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/MMCompass/MMBench_TEST_EN.tsv", 
+    'MMBench_DEV_CN': "https://opencompass.openxlab.space/utils/MMCompass/MMBench_DEV_CN.tsv", 
+    'MMBench_TEST_CN': "https://opencompass.openxlab.space/utils/MMCompass/MMBench_TEST_CN.tsv", 
+    "MMBench": "https://opencompass.openxlab.space/utils/MMCompass/MMBench.tsv",  # Link Invalid, Internal Only
+    "MMBench_CN": "https://opencompass.openxlab.space/utils/MMCompass/MMBench_CN.tsv",    # Link Invalid, Internal Only
+    'CCBench': "https://opencompass.openxlab.space/utils/MMCompass/CCBench.tsv", 
+    'MME': "https://opencompass.openxlab.space/utils/MMCompass/MME.tsv", 
+    'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/MMCompass/SEEDBench_IMG.tsv", 
 }
 
 img_root_map = {
