@@ -15,7 +15,7 @@ llava_model_path_map = {
     'llava_v1.5_7b': 'liuhaotian/llava_v1.5_7b',
     'llava_v1.5_13b': 'liuhaotian/llava_v1.5_13b',
     'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
-},
+}
 
 supported_VLM = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'), 
