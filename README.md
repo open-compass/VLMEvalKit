@@ -93,6 +93,8 @@ The following script use ChatGPT
 
 **Yes / No Problems (MME)**
 
+
+
 ## How to implement a new Benchmark / VLM in MMCompass? 
 
 
