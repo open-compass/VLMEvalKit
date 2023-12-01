@@ -1,19 +1,19 @@
-# MMCompass
+# VLMEvalKit
 
 ![LOGO](assets/LOGO.svg)
 
-**MMCompass** is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In MMCompass, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
+**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
 **The codebase can:**
 
 1. Provide an **easy-to-use**, **opensource evaluation toolkit** to make it convenient for researchers & developers to evaluate existing LVLMs and make evaluation results **easy to reproduce**.
-2. Make it easy for VLM developers to evaluate their own models. To evaluate the VLM on multiple MMCompass supported benchmarks, one just need to **implement a single `generate` function**, all other workloads (data downloading, data preprocessing, prediction inference, metric calculation) are handled by MMCompass. 
+2. Make it easy for VLM developers to evaluate their own models. To evaluate the VLM on multiple supported benchmarks, one just need to **implement a single `generate` function**, all other workloads (data downloading, data preprocessing, prediction inference, metric calculation) are handled by the codebase. 
 
 **The codebase can not: **
 
 1. Reproduce the exact accuracy number reported in the original papers of all **3rd party benchmarks**. The reason can be two-fold:
-   1. MMCompass **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in MMCompass. 
-   2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by MMCompass at this time). We encourage VLM developers to implement their own prompt template in MMCompass, if that is not covered currently. That will help to improve the reproducibility. 
+   1. VLMEvalKit **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in the codebase. 
+   2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility. 
 
 ## Supported Datasets and Models
 
@@ -45,16 +45,16 @@ Basically, there are two stages for evaluating an VLM on a benchmark, namely **p
 
 ### Configuration
 
-**VLM Configuration**: All VLMs are configured in `mmcompass/config.py`, for some VLMs, you need to configure the code root (MiniGPT-4, PandaGPT, etc.) or the model_weight root (LLaVA-v1-7B, etc.) before conducting the evaluation. During evaluation, you should use the model name specified in `supported_VLM` in `mmcompass/config.py` to select the VLM. For MiniGPT-4 and InstructBLIP, you also need to modify the config files in `mmcompass/vlm/misc` to configure LLM path and ckpt path.
+**VLM Configuration**: All VLMs are configured in `vlmeval/config.py`, for some VLMs, you need to configure the code root (MiniGPT-4, PandaGPT, etc.) or the model_weight root (LLaVA-v1-7B, etc.) before conducting the evaluation. During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. For MiniGPT-4 and InstructBLIP, you also need to modify the config files in `vlmeval/vlm/misc` to configure LLM path and ckpt path.
 
 ### Prediction Inference
 
-We use the script `mmcompass/infer/inference.py` for prediction inference. To use the script, you can go into the directory `mmcompass/infer/` or create a soft-link of the script (so that you can use the script anywhere):
+We use the script `vlmeval/infer/inference.py` for prediction inference. To use the script, you can go into the directory `vlmeval/infer/` or create a soft-link of the script (so that you can use the script anywhere):
 
 **Arguments**
 
-- For `--data`, you can only set the dataset names that are supported in MMCompass (defined in `mmcompass/utils/data_util.py`), including: MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench
-- For `--model`, you can only set the VLM names that are supported in MMCompass (defined in `supported_VLM` in `mmcompass/config.py`). 
+- For `--data`, you can only set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`), including: MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench
+- For `--model`, you can only set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`). 
 - `--data` and `--model` receive list as arguments, you can select multiple benchmarks and VLMs for prediction inference at a time. 
 
 **Command**
@@ -88,14 +88,14 @@ We use the script `mmcompass/infer/inference.py` for prediction inference. To us
 
 The following script use ChatGPT
 
-- **Script**: `mmcompass/eval/multiple_choice.py` 
+- **Script**: `vlmeval/eval/multiple_choice.py` 
 - **Usage**: `python multiple_choice.py {MMBench_or_SEEDBench_prediction_file.xlsx} --model {llm_for_choice_matching} --dataset {dataset_name} --nproc {num_process_for_API_calling}`
 
 **Yes / No Problems (MME)**
 
 
 
-## How to implement a new Benchmark / VLM in MMCompass? 
+## How to implement a new Benchmark / VLM in VLMEvalKit? 
 
 
 
