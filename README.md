@@ -15,7 +15,7 @@
    1. VLMEvalKit **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in the codebase. 
    2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility. 
 
-## Datasets, Models, and Evaluation Results
+# Datasets, Models, and Evaluation Results
 
 **Supported Dataset**
 
@@ -45,7 +45,7 @@
 - [x] [MME](results/MME.md)
 - [x] [SEEDBench_IMG](results/SEEDBench_IMG.md)
 
-## How to run the evaluation?
+# How to run the evaluation?
 
 Basically, there are two stages for evaluating an VLM on a benchmark, namely **prediction inference** and **metric calculation**. 
 
@@ -108,7 +108,7 @@ The following script use ChatGPT for answer matching and calculate the MME score
 - **Script:** `vlmeval/eval/mme_eval.py`
 - **Usage:** `python mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}`
 
-## How to implement a new Benchmark / VLM in VLMEvalKit? 
+# How to implement a new Benchmark / VLM in VLMEvalKit? 
 
 ### Implement a new benchmark
 
