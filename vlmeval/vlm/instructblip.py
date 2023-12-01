@@ -50,5 +50,5 @@ class InstructBLIP:
         vis_processors = self.vis_processors
         raw_image = Image.open(image_path).convert('RGB')
         image_tensor = vis_processors["eval"](raw_image).unsqueeze(0).to(self.device)
-        outputs = self.model.generate(dict(image=image_tensor, prompt=prompt, **self.kwargs))
+        outputs = self.model.generate(dict(image=image_tensor, prompt=prompt))
         return outputs[0]
