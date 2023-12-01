@@ -273,9 +273,12 @@ def eval_result(args):
                 result=result, 
                 result_file=result_file)
         else:
-
-            
-
+            warnings.warn("Exact Matching mode, will not do GPT-based answer matching. ")
+            keys = [x.iloc[0]['index'] % 1e6 for x in data_groups]
+            for k in keys:
+                result[k] = dict(hit=0, log="Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.")
+            dump(result, result_file)
+        
     tmp_pth = f'/tmp/{timestr()}.xlsx'
     dump(data_main, tmp_pth)
     data_main = load(tmp_pth)
@@ -298,7 +301,7 @@ def eval_result(args):
     data_main = load(eval_file.replace(f'.{suffix}', f'_{args.model}_result.{suffix}'))
     
     acc = report_acc(data_main)
-    dump(acc, eval_file.replace(f'.{suffix}', f'_acc.csv'))
+    dump(acc, eval_file.replace(f'.{suffix}', f'_{args.model}_acc.csv'))
     double_log(acc)
     
     if fout is not None:
