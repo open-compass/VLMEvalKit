@@ -9,7 +9,7 @@
 1. Provide an **easy-to-use**, **opensource evaluation toolkit** to make it convenient for researchers & developers to evaluate existing LVLMs and make evaluation results **easy to reproduce**.
 2. Make it easy for VLM developers to evaluate their own models. To evaluate the VLM on multiple supported benchmarks, one just need to **implement a single `generate` function**, all other workloads (data downloading, data preprocessing, prediction inference, metric calculation) are handled by the codebase. 
 
-**The codebase can not: **
+**The codebase can not:**
 
 1. Reproduce the exact accuracy number reported in the original papers of all **3rd party benchmarks**. The reason can be two-fold:
    1. VLMEvalKit **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in the codebase. 
@@ -105,7 +105,7 @@ The following script use ChatGPT / Exact Matching for answer matching and calcul
 
 The following script use ChatGPT for answer matching and calculate the MME score (The score of Exact matching is already calculated in `*_prefetch.xlsx`).
 
-- **Script: ** `vlmeval/eval/mme_eval.py`
+- **Script:** `vlmeval/eval/mme_eval.py`
 - **Usage:** `python mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}`
 
 ## How to implement a new Benchmark / VLM in VLMEvalKit? 
