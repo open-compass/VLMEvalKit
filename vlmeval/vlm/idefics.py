@@ -30,6 +30,7 @@ class IDEFICS:
         kwargs_default = {'max_length': 256}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
+        self.file_root = osp.dirname(__file__)
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
     def generate(self, image_path, prompt, dataset=None):
@@ -37,7 +38,7 @@ class IDEFICS:
             prompts = [
                 [
                     "User: What is in this image?",
-                    Image.open('/mnt/petrelfs/share_data/duanhaodong/Idefics.jpg'),
+                    Image.open(osp.join(self.file_root, 'Idefics.jpg')),
                     "<end_of_utterance>",
                     "\nAssistant: This picture depicts Idefix, the dog of Obelix in Asterix and Obelix. Idefix is running on the ground.<end_of_utterance>",
                     "\nUser: " + prompt,
