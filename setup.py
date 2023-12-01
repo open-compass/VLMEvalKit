@@ -33,7 +33,7 @@ with open('README.md') as f:
 
 def do_setup():
     setup(
-        name='mmcompass',
+        name='vlmeval',
         version='0.1.0',
         description='OpenCompass VLM Evaluation Kit',
         # url="",

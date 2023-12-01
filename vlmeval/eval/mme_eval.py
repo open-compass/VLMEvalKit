@@ -1,6 +1,6 @@
-from mmcompass.chat_api import OpenAIWrapper, OpenAIWrapperInternal
-from mmcompass.smp import *
-from mmcompass.utils import track_progress_rich
+from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.smp import *
+from vlmeval.utils import track_progress_rich
 
 INTERNAL = False
 

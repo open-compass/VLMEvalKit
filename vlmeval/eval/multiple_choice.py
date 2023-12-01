@@ -1,9 +1,9 @@
 import os.path as osp
 import pandas as pd
 from tqdm import tqdm
-from mmcompass.chat_api import OpenAIWrapper, OpenAIWrapperInternal
-from mmcompass.utils import can_infer, track_progress_rich, TSVDataset
-from mmcompass.smp import *
+from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
+from vlmeval.smp import *
 import numpy as np
 
 fout = None

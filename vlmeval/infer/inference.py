@@ -1,10 +1,10 @@
 import torch 
 import torch.distributed as dist
 import datetime
-from mmcompass.config import supported_VLM
-from mmcompass.utils import TSVDataset
-from mmcompass.eval import MME_rating, MME_postproc
-from mmcompass.smp import *
+from vlmeval.config import supported_VLM
+from vlmeval.utils import TSVDataset
+from vlmeval.eval import MME_rating, MME_postproc
+from vlmeval.smp import *
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -62,7 +62,7 @@ def infer_data(model_name, dataset, indices, out_file, verbose=False):
 
 def prefetch_acc(result_file):
     data = load(result_file)
-    from mmcompass.eval.multiple_choice import build_choices, can_infer
+    from vlmeval.eval.multiple_choice import build_choices, can_infer
     tot = defaultdict(lambda: 0)
     match = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
