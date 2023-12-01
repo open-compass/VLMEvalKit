@@ -41,13 +41,15 @@
 
 ## How to run the evaluation?
 
-Basically, there are two stages for evaluating an VLM on a benchmark, namely **prediction inference** and **metric calculation**. Besides, before running the evaluation script, you need to **configure** the VLMs and set the model_paths properly. 
+Basically, there are two stages for evaluating an VLM on a benchmark, namely **prediction inference** and **metric calculation**. 
 
-### Configuration
+Besides, before running the evaluation script, you need to **configure** the VLMs and set the model_paths properly. 
+
+### Step1. Configuration
 
 **VLM Configuration**: All VLMs are configured in `vlmeval/config.py`, for some VLMs, you need to configure the code root (MiniGPT-4, PandaGPT, etc.) or the model_weight root (LLaVA-v1-7B, etc.) before conducting the evaluation. During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. For MiniGPT-4 and InstructBLIP, you also need to modify the config files in `vlmeval/vlm/misc` to configure LLM path and ckpt path.
 
-### Prediction Inference
+### Step2. Prediction Inference
 
 We use the script `vlmeval/infer/inference.py` for prediction inference. To use the script, you can go into the directory `vlmeval/infer/` or create a soft-link of the script (so that you can use the script anywhere):
 
@@ -82,20 +84,33 @@ We use the script `vlmeval/infer/inference.py` for prediction inference. To use 
   - `{model_name}/{model_name}_{dataset_name}.xlsx`: The file that contain the VLM predictions. 
   - `{model_name}/{model_name}_{dataset_name}_prefetch.xlsx`: The file that contain the basic statistics of the VLM predictions. For example, the score / accuracy based on exact matching. 
 
-### Metric Calculation
+### Step3. Metric Calculation
 
- **Multiple Choice Problems (MMBenchs, SEEDBench_IMG)** 
+ **Multiple Choice Problems (MMBench Series, SEEDBench_IMG)** 
 
-The following script use ChatGPT
+The following script use ChatGPT / Exact Matching for answer matching and calculate the accuracy (**CircularEval** for MMBench, **VanillaEval** for SEEDBench_IMG).
 
 - **Script**: `vlmeval/eval/multiple_choice.py` 
 - **Usage**: `python multiple_choice.py {MMBench_or_SEEDBench_prediction_file.xlsx} --model {llm_for_choice_matching} --dataset {dataset_name} --nproc {num_process_for_API_calling}`
+  - `--model`: supported choices are `gpt-3.5-turbo-0613` and `exact_matching`. 
+
 
 **Yes / No Problems (MME)**
 
+The following script use ChatGPT for answer matching and calculate the MME score (The score of Exact matching is already calculated in `*_prefetch.xlsx`).
 
+- **Script: ** `vlmeval/eval/mme_eval.py`
+- **Usage:** `python mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}`
 
 ## How to implement a new Benchmark / VLM in VLMEvalKit? 
+
+### Implement a new benchmark
+
+
+
+### Implement a new model
+
+
 
 
 
