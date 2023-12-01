@@ -119,8 +119,8 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 | MMBench_DEV_CN/EN     | √     | √     | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
 | MMBench_TEST_CN/EN    | √     | √     | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
 | CCBench               | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| MME                   | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| SEEDBench_IMG         | √     | √     | √        |      |      |      |      |      | √      | √        |             |       |
+| SEEDBench_IMG         | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
+| MME                   | √     | √     | √        |      |      |      |      |      | √      | √        |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
