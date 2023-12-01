@@ -38,7 +38,7 @@ class IDEFICS:
             prompts = [
                 [
                     "User: What is in this image?",
-                    Image.open(osp.join(self.file_root, 'Idefics.jpg')),
+                    Image.open(osp.join(self.file_root, 'misc/Idefics.jpg')),
                     "<end_of_utterance>",
                     "\nAssistant: This picture depicts Idefix, the dog of Obelix in Asterix and Obelix. Idefix is running on the ground.<end_of_utterance>",
                     "\nUser: " + prompt,
