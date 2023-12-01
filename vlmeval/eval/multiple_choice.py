@@ -211,17 +211,15 @@ def eval_result(args):
     rd.seed(2680)
 
     suffix = eval_file.split('.')[-1]
-    assert args.model in ['gpt-3.5-turbo-0613', None]
+    assert args.model in ['gpt-3.5-turbo-0613', "exact_matching"]
 
-    model_name = args.model 
-    
-    if args.model is not None:
+    model = None
+    if args.model != 'exact_matching':
         if INTERNAL:
             model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
         else:
             model = OpenAIWrapper(args.model, verbose=args.verbose)
     
-
     double_log(f'Evaluating {eval_file}', fout)
     result_file = eval_file.replace(f'.{suffix}', f'_{args.model}_result.pkl')
     result = {}
@@ -266,13 +264,17 @@ def eval_result(args):
         data_groups.append(sub_data)
 
     if len(data_groups):
-        eval_data_groups(
-            model=model, 
-            data_groups=data_groups, 
-            answer_map=answer_map,
-            nproc=args.nproc, 
-            result=result, 
-            result_file=result_file)
+        if model is not None:
+            eval_data_groups(
+                model=model, 
+                data_groups=data_groups, 
+                answer_map=answer_map,
+                nproc=args.nproc, 
+                result=result, 
+                result_file=result_file)
+        else:
+
+            
 
     tmp_pth = f'/tmp/{timestr()}.xlsx'
     dump(data_main, tmp_pth)
@@ -307,7 +309,7 @@ def eval_result(args):
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613', choices=['gpt-3.5-turbo-0613', None])
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613', choices=['gpt-3.5-turbo-0613', 'exact_matching'])
     parser.add_argument("--dataset", type=str, default='MMBench', help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=12)
     parser.add_argument("--verbose", action='store_true')
@@ -318,7 +320,6 @@ if __name__ == '__main__':
     args = parse_args()
     assert args.dataset in ['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG']
     suffix = args.data.split('.')[-1]
-    model_name = args.model if args.model is not None else "exact_matching"
-    log_pth = args.data.replace('.' + suffix, f'_{model_name}_eval.log')
+    log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
     fout = open(log_pth, 'a')
     acc = eval_result(args)
