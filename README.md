@@ -15,7 +15,7 @@
    1. VLMEvalKit **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in the codebase. 
    2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility. 
 
-# Datasets, Models, and Evaluation Results
+# 📊 Datasets, Models, and Evaluation Results
 
 **Supported Dataset**
 
@@ -45,7 +45,7 @@
 - [x] [MME](results/MME.md)
 - [x] [SEEDBench_IMG](results/SEEDBench_IMG.md)
 
-# How to run the evaluation?
+# 🏗️ How to run the evaluation?
 
 Basically, there are two stages for evaluating an VLM on a benchmark, namely **prediction inference** and **metric calculation**. 
 
@@ -108,7 +108,7 @@ The following script use ChatGPT for answer matching and calculate the MME score
 - **Script:** `vlmeval/eval/mme_eval.py`
 - **Usage:** `python mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}`
 
-# How to implement a new Benchmark / VLM in VLMEvalKit? 
+# 🛠️ How to implement a new Benchmark / VLM in VLMEvalKit? 
 
 ### Implement a new benchmark
 
@@ -140,10 +140,29 @@ All existing models are implemented in `vlmeval/vlm`. For a minimal model, your 
 Besides, your model can support custom prompt building by implementing an optional method `build_prompt(line, dataset=None)`. In this function, the line is a dictionary that includes the necessary information of a data sample, while `dataset` can be used as the flag for the model to switch among various prompt building strategies. 
 
 
+# 🖊️ Citation
 
+If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
+```bib
+@article{MMBench,
+    author  = {Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, Dahua Lin},
+    journal = {arXiv:2307.06281},
+    title   = {MMBench: Is Your Multi-modal Model an All-around Player?},
+    year    = {2023},
+}
 
+@misc{2023opencompass,
+    title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
+    author={OpenCompass Contributors},
+    howpublished = {\url{https://github.com/open-compass/opencompass}},
+    year={2023}
+}
+```
 
+# 💻 Other Projects in OpenCompass
 
-
-
+- [opencompass](https://github.com/open-compass/opencompass/): An LLM evaluation platform, supporting a wide range of models (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude, etc) over 50+ datasets.
+- [MMBench](https://github.com/open-compass/MMBench/): Official Repo of "MMBench: Is Your Multi-modal Model an All-around Player?"
+- [BotChat](https://github.com/open-compass/BotChat/): Evaluating LLMs' multi-round chatting capability.
+- [LawBench](https://github.com/open-compass/LawBench): Benchmarking Legal Knowledge of Large Language Models. 
