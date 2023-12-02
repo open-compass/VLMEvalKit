@@ -26,7 +26,7 @@ class LLaVA:
             exit(-1)
             
         self.model_path_map = model_path_map
-        assert name in self.model_path_map or osp.exists(name)
+        assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
         if name in self.model_path_map:
             model_path = self.model_path_map[name]
         else:
