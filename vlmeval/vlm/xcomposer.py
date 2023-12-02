@@ -120,6 +120,9 @@ class XComposer:
             mid_prompt = 'Context: ' + context + '\nQuestion: ' + question + '\nOptions: ' + options_prompt
             ans_prompt = ' <|Bot|>: Answer: The answer is'
             prompt = img_prompt + txt_prompt + mid_prompt + '<TOKENS_UNUSED_0>' + ans_prompt
+        if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
+            question = line['question']
+            prompt = f' <|User|>:<ImageHere> {question} Answer this question briefly' + self.model.eoh + ' <|Bot|>: '
         else:
             prompt = line['question']
         return {'image': tgt_path, 'text': prompt}
