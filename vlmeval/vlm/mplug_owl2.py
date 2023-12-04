@@ -129,7 +129,11 @@ class mPLUG_Owl2:
     def multi_generate(self, image_paths, prompt, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
-        prompt_tmpl = "USER: " + "<|image|>" * len(image_paths) + "{}\nASSISTANT: "
+        image_prompt = ''
+        for i in range(len(image_paths)):
+            image_prompt += f'Image {i + 1}: <|image|>; '
+
+        prompt_tmpl = "USER: " + image_prompt + "{}\nASSISTANT: "
         prompt = prompt_tmpl.format(prompt)
         
         images = []
