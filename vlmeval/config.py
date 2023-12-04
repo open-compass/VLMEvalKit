@@ -33,8 +33,6 @@ supported_VLM = {
     'llava_v1_7b': partial(LLaVA, name='llava_v1_7b', model_path_map=llava_model_path_map),
     'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
     'instructblip_13b': partial(InstructBLIP, name='instructblip_13b'),
-    'instructblip_7b_hf': partial(InstructBLIPHF, model_path='Salesforce/instructblip-vicuna-7b'),
-    'instructblip_13b_hf': partial(InstructBLIPHF, model_path='Salesforce/instructblip-vicuna-13b'),
     'VisualGLM_6b': partial(VisualGLM, model_path="THUDM/visualglm-6b"),
     'MiniGPT-4-v2': partial(MiniGPT4, mode='v2', root=MiniGPT4_ROOT),
     'MiniGPT-4-v1-7B': partial(MiniGPT4, mode='v1_7b', root=MiniGPT4_ROOT),

@@ -7,7 +7,6 @@ from .open_flamingo import OpenFlamingo
 from .idefics import IDEFICS
 from .llava import LLaVA
 from .instructblip import InstructBLIP
-from .instructblip_hf import InstructBLIPHF
 from .visualglm import VisualGLM
 from .minigpt4 import MiniGPT4
 from .xcomposer import XComposer
