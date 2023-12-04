@@ -27,12 +27,14 @@
 
 **Supported Models**
 
-| [**IDEFICS-9B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct), [**IDEFICS-80B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct)  🎞️ | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)  🎞️ |
+| [**IDEFICS-9B-Instruct**🎞️](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct), [**IDEFICS-80B-Instruct**🎞️](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct) | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)  🎞️ |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)  🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL), [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)  🎞️ | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b) | [**InternLM-XComposer-7B** ](https://huggingface.co/internlm/internlm-xcomposer-7b) 🎞️ |
+| [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL), [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)  🎞️ | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b) | [**InternLM-XComposer-7B** ](https://huggingface.co/internlm/internlm-xcomposer-7b) 🎞️ |
 | [**ShareGPT4V-7B**](https://sharegpt4v.github.io)            |                                                              |                                                              |                                                              |                                                              |
 
 🎞️: Support multiple images as inputs, via the `multi_generate` interface. 
+
+Dem
 
 **Evaluation Results**
 

@@ -96,7 +96,7 @@ class XComposer:
         for i, pth in enumerate(image_paths):
             img_prompt += f'Image {i + 1}: <ImageHere>'
             image = Image.open(pth).convert('RGB')
-            image = self.model.vis_processor(image).unsequeeze(0).to(self.device)
+            image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
             img_embeds.append(self.model.encode_img(image))
         
         prompt = f'<|User|>: ' + img_prompt + self.model.eoh + ' <|Bot|>: '
