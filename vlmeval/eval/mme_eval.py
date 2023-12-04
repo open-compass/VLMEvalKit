@@ -133,7 +133,7 @@ def MME_eval(args):
     data["score"] = (data["answer"] == data["prediction"])
     dump(data, storage)
     score = MME_rating(storage)
-    score_tgt = storage.replace('auxmatch.xlsx', 'score.xlsx')
+    score_tgt = storage.replace('auxmatch.xlsx', 'score.csv')
     dump(score, score_tgt)
 
     return score
