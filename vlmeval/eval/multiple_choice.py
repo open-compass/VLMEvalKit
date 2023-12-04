@@ -315,7 +315,7 @@ def parse_args():
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613', choices=['gpt-3.5-turbo-0613', 'exact_matching'])
     parser.add_argument("--dataset", type=str, default='MMBench', help='The dataset to evaluate')
-    parser.add_argument("--nproc", type=int, default=12)
+    parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
     return args
