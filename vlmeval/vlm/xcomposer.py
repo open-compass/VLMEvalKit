@@ -43,7 +43,7 @@ class XComposer:
     def vanilla_generate(self, image_path, prompt):
         return self.model.generate(prompt, image_path)
     
-    def mmbench_generate(self, image_path, prompt):
+    def eval_generate(self, image_path, prompt):
         image = Image.open(image_path).convert("RGB")
         image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
         img_embeds = self.model.encode_img(image)
@@ -86,8 +86,8 @@ class XComposer:
         if dataset is None:
             return self.vanilla_generate(image_path, prompt)
         assert isinstance(dataset, str)
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            return self.mmbench_generate(image_path, prompt)
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+            return self.eval_generate(image_path, prompt)
         else:
             return self.vanilla_generate(image_path, prompt)
     
@@ -168,7 +168,7 @@ class XComposer:
             mid_prompt = 'Context: ' + context + '\nQuestion: ' + question + '\nOptions: ' + options_prompt
             ans_prompt = ' <|Bot|>: Answer: The answer is'
             prompt = img_prompt + txt_prompt + mid_prompt + '<TOKENS_UNUSED_0>' + ans_prompt
-        if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
             prompt = f' <|User|>:<ImageHere> {question} Answer this question briefly' + self.model.eoh + ' <|Bot|>: '
         else:
