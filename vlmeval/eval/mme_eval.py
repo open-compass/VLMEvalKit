@@ -2,7 +2,7 @@ from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 
-INTERNAL = False
+INTERNAL = os.environ.get('INTERNAL', 0)
 
 def MME_rating(data_file):
     data = load(data_file)

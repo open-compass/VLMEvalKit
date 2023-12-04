@@ -7,7 +7,7 @@ from vlmeval.smp import *
 import numpy as np
 
 fout = None
-INTERNAL = False
+INTERNAL = os.environ.get('INTERNAL', 0)
 
 abbrs = {
     'coarse_preception': 'CP', 
