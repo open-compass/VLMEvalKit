@@ -117,15 +117,17 @@ def MME_eval(args):
         tups = [(model, line) for line in lines]
         indices = list(unknown['index'])
 
-        # Do not save temporary file due to the 
-        res = track_progress_rich(
-            MME_auxeval,
-            tups, 
-            nproc=args.nproc,
-            chunksize=args.nproc)
+        if len(tups):
+            # Do not save temporary file due to the fast speed
+            res = track_progress_rich(
+                MME_auxeval,
+                tups, 
+                nproc=args.nproc,
+                chunksize=args.nproc)
 
-        for k, v in zip(indices, res):
-            preds_map[k] = v
+            for k, v in zip(indices, res):
+                preds_map[k] = v
+
         data['prediction'] = [preds_map[idx] for idx in data['index']]
         dump(data, storage)
     
