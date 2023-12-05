@@ -18,10 +18,10 @@ class OpenAIWrapperInternal(BaseAPI):
     def __init__(self, 
                  model: str = 'gpt-3.5-turbo-0613', 
                  retry: int = 5,
-                 wait: int = 5,
+                 wait: int = 3,
                  verbose: bool = True,
                  temperature: float = 0, 
-                 timeout: int = 300,
+                 timeout: int = 30,
                  system_prompt: str = None, 
                  max_tokens: int = 1024,
                  **kwargs):
@@ -76,7 +76,7 @@ class OpenAIWrapperInternal(BaseAPI):
             temperature=temperature,
             **kwargs)
         
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
 
