@@ -4,27 +4,25 @@ import torch
 from abc import abstractproperty
 from ..smp import *
 from ..utils import DATASET_TYPE
-current_dir = os.path.dirname(os.path.abspath(__file__))
-##需下载 https://github.com/PCIResearch/TransCore-M 至 VLMEvalKit 同级目录
-project_root = os.path.abspath(os.path.join(current_dir, "../../../TransCore-M-main"))
-sys.path.append(project_root)
-from transcorem.model.builder import load_pretrained_model
-from transcorem.mm_utils import get_model_name_from_path
 
-class TransCroe_M:
+class TransCoreM:
 
     INSTALL_REQ = True
 
     def __init__(self,
-                 model_path='/TransCoreM',
+                 root=None,
                  **kwargs):
-        assert model_path is not None
-        self.model_path = model_path
+        
+        self.root = root
+        sys.path.append(root)
+        from transcorem.model.builder import load_pretrained_model
+
+        model_path = 'PCIResearch/TransCore-M'
         assert osp.exists(model_path) or splitlen(model_path) == 2
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path,
             model_base=None,
-            model_name=get_model_name_from_path(model_path)
+            model_name=None
         )
         self.model = self.model.cuda()
         print("==============conv_mode: transcorem_v1")
@@ -36,6 +34,7 @@ class TransCroe_M:
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
     def build_prompt(self, line, dataset=None):
+
         from ..utils import img_root_map
         assert dataset is None or isinstance(dataset, str)
         img_root = osp.join('images', img_root_map[dataset])

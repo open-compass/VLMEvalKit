@@ -20,7 +20,7 @@ llava_model_path_map = {
 supported_VLM = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'), 
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
-    'TransCore_M': partial(TransCroe_M,model_path='/home/llm-deploy/data/model/TransCroeM'),
+    'TransCore_M': partial(TransCoreM, root=None),
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
     'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth=MPT_7B_PTH, ckpt_pth=Flamingov2_CKPT_PTH),
     'flamingov2_fs': partial(OpenFlamingo, name='v2', with_context=True, mpt_pth=MPT_7B_PTH, ckpt_pth=Flamingov2_CKPT_PTH),
