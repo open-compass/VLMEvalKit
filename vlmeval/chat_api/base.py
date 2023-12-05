@@ -46,10 +46,10 @@ class BaseAPI:
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
                     return answer
                 elif self.verbose:
-                    warnings.warn(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
+                    print(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
             except:
                 if self.verbose:
-                    warnings.warn(f"An unknown exception occurs during try {i}")
+                    print(f"An unknown exception occurs during try {i}")
             time.sleep(self.wait)
         return self.fail_msg if answer in ['', None] else answer
         
