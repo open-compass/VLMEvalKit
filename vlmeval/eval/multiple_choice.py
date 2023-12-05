@@ -322,7 +322,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    assert args.dataset in ['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG']
+    assert args.dataset in ['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench']
     suffix = args.data.split('.')[-1]
     log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
     fout = open(log_pth, 'a')
