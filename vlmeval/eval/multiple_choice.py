@@ -7,7 +7,7 @@ from vlmeval.smp import *
 import numpy as np
 
 fout = None
-INTERNAL = False
+INTERNAL = os.environ.get('INTERNAL', 0)
 
 abbrs = {
     'coarse_preception': 'CP', 
@@ -219,9 +219,10 @@ def eval_result(args):
             model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
         else:
             model = OpenAIWrapper(args.model, verbose=args.verbose)
+    name_str = 'openai' if args.model == 'gpt-3.5-turbo-0613' else args.model
     
     double_log(f'Evaluating {eval_file}', fout)
-    result_file = eval_file.replace(f'.{suffix}', f'_{args.model}_result.pkl')
+    result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
     result = {}
     if osp.exists(result_file):
         result = load(result_file)
@@ -297,11 +298,11 @@ def eval_result(args):
         data_main['split'] = [split_map[i] for i in indices]
     
     # load split
-    dump(data_main, eval_file.replace(f'.{suffix}', f'_{args.model}_result.{suffix}'))
-    data_main = load(eval_file.replace(f'.{suffix}', f'_{args.model}_result.{suffix}'))
+    dump(data_main, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+    data_main = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
     
     acc = report_acc(data_main)
-    dump(acc, eval_file.replace(f'.{suffix}', f'_{args.model}_acc.csv'))
+    dump(acc, eval_file.replace(f'.{suffix}', f'_acc.csv'))
     double_log(acc)
     
     if fout is not None:
@@ -314,7 +315,7 @@ def parse_args():
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613', choices=['gpt-3.5-turbo-0613', 'exact_matching'])
     parser.add_argument("--dataset", type=str, default='MMBench', help='The dataset to evaluate')
-    parser.add_argument("--nproc", type=int, default=12)
+    parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
     return args

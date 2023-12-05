@@ -7,6 +7,7 @@ from ..utils import DATASET_TYPE
 class mPLUG_Owl2:
 
     INSTALL_REQ = True
+    MULTI_IMG = True
 
     def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', **kwargs): 
         try:
@@ -124,3 +125,35 @@ class mPLUG_Owl2:
             return self.mmbench_generate(image_path, prompt)
         else:
             return self.vanilla_generate(image_path, prompt)
+        
+    def multi_generate(self, image_paths, prompt, dataset=None):
+        from mplug_owl2.constants import IMAGE_TOKEN_INDEX
+        from mplug_owl2.mm_utils import process_images, tokenizer_image_token
+        image_prompt = ''
+        for i in range(len(image_paths)):
+            image_prompt += f'Image {i + 1}: <|image|>; '
+
+        prompt_tmpl = "USER: " + image_prompt + "{}\nASSISTANT: "
+        prompt = prompt_tmpl.format(prompt)
+        
+        images = []
+        for pth in image_paths:
+            image = Image.open(pth).convert('RGB')
+            max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
+            image = image.resize((max_edge, max_edge))
+            images.append(image)
+
+        image_tensor = process_images(images, self.image_processor)
+        image_tensor = image_tensor.to(self.device, dtype=torch.float16)
+        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
+        
+        with torch.inference_mode():
+            output_ids = self.model.generate(
+                input_ids=input_ids, 
+                images=image_tensor, 
+                output_hidden_states=True, 
+                use_cache=True, 
+                **self.kwargs)
+        answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
+        return answer.split('</s>')[0]
+    
