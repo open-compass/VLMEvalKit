@@ -1,4 +1,5 @@
 import time
+import random as rd
 from abc import abstractmethod
 import warnings
 
@@ -6,7 +7,7 @@ class BaseAPI:
     
     def __init__(self, 
                  retry=5, 
-                 wait=5, 
+                 wait=3, 
                  system_prompt=None, 
                  verbose=True,
                  fail_msg='Failed to obtain answer via API.',
@@ -41,6 +42,8 @@ class BaseAPI:
 
         answer = None
         for i in range(self.retry):
+            T = rd.random() * self.wait * 2
+            time.sleep(T)
             try:
                 ret_code, answer, log = self.generate_inner(inputs, **kwargs)
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
@@ -50,7 +53,7 @@ class BaseAPI:
             except:
                 if self.verbose:
                     print(f"An unknown exception occurs during try {i}")
-            time.sleep(self.wait)
+                    
         return self.fail_msg if answer in ['', None] else answer
         
 
