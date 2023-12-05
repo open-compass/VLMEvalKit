@@ -1,6 +1,16 @@
 import os.path as osp
 import pandas as pd
 from tqdm import tqdm
+
+
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+sys.path.append(project_root)
+
+
 from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
 from vlmeval.smp import *

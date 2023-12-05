@@ -18,14 +18,15 @@ llava_model_path_map = {
 }
 
 supported_VLM = {
-    'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'), 
+    'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
+    'TransCore_M': partial(TransCroe_M, model_path='/home/llm-deploy/data/model/TransCroe-M'),
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
     'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth=MPT_7B_PTH, ckpt_pth=Flamingov2_CKPT_PTH),
     'flamingov2_fs': partial(OpenFlamingo, name='v2', with_context=True, mpt_pth=MPT_7B_PTH, ckpt_pth=Flamingov2_CKPT_PTH),
-    'idefics_9b_instruct': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map), 
+    'idefics_9b_instruct': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map),
     'idefics_80b_instruct': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map),
-    'idefics_9b_instruct_fs': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map, with_context=True), 
+    'idefics_9b_instruct_fs': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map, with_context=True),
     'idefics_80b_instruct_fs': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map, with_context=True),
     'llava_v1.5_7b': partial(LLaVA, name='llava_v1.5_7b', model_path_map=llava_model_path_map),
     'llava_v1.5_13b': partial(LLaVA, name='llava_v1.5_13b', model_path_map=llava_model_path_map),
@@ -36,6 +37,6 @@ supported_VLM = {
     'MiniGPT-4-v2': partial(MiniGPT4, mode='v2', root=MiniGPT4_ROOT),
     'MiniGPT-4-v1-7B': partial(MiniGPT4, mode='v1_7b', root=MiniGPT4_ROOT),
     'MiniGPT-4-v1-13B': partial(MiniGPT4, mode='v1_13b', root=MiniGPT4_ROOT),
-    "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'), 
+    "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
     "mPLUG-Owl2": partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b')
 }

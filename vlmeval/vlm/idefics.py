@@ -12,7 +12,7 @@ class IDEFICS:
                  name, 
                  with_context=False, 
                  model_path_map = {
-                     'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
+                     '': "HuggingFaceM4/idefics-9b-instruct",
                      'idefics_80b_instruct': "HuggingFaceM4/idefics-80b-instruct"
                  },
                  **kwargs):

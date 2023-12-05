@@ -8,3 +8,4 @@ from .eval import *
 from .utils import *
 from .vlm import *
 from .smp import *
+from .infer import *

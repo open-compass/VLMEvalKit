@@ -1,0 +1,1 @@
+python inference.py --data MMBench_DEV_EN MMBench_DEV_CN CCBench --model TransCore_M --verbose

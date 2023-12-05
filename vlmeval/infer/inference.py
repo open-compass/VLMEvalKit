@@ -1,10 +1,19 @@
-import torch 
+import torch
 import torch.distributed as dist
 import datetime
+import os
+import sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
+sys.path.append(project_root)
+print(project_root)
+
 from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset
 from vlmeval.eval import MME_rating, MME_postproc
 from vlmeval.smp import *
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -38,6 +47,7 @@ def infer_data(model_name, dataset, indices, out_file, verbose=False):
         model = model_name
 
     for i in tqdm(range(lt)):
+        # print(">>>>>>>>>>>>>>>>>>: "+str(i))
         idx = data.iloc[i]['index']
         if idx in res:
             continue
@@ -45,6 +55,7 @@ def infer_data(model_name, dataset, indices, out_file, verbose=False):
         if hasattr(model, 'build_prompt'):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
+
             struct = dataset.build_prompt(data.iloc[i])
 
         response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
@@ -139,14 +150,14 @@ def main():
 
                     data = dataset.data
                     assert len(data_all) == len(data)
-                    
+
                     data['prediction'] = [data_all[x] for x in data['index']]
                     data.pop('image')
 
                     if dataset_name == 'MME':
                         data = MME_postproc(data)
 
-                    dump(data, result_file)   
+                    dump(data, result_file)
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          

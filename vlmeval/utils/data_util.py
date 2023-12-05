@@ -4,15 +4,13 @@ from vlmeval.smp import *
 LAST_MODIFIED = 231126000000
 
 dataset_URLs = {
-    'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
-    'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv", 
-    'MMBench_DEV_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv", 
-    'MMBench_TEST_CN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv", 
-    "MMBench": "https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv",  # Link Invalid, Internal Only
-    "MMBench_CN": "https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv",    # Link Invalid, Internal Only
-    'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
-    'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
-    'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
+    'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/mmbench_dev_en_20231003.tsv",
+    'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/VLMEval/mmbench_test_en_20231003.tsv",
+    'MMBench_DEV_CN': "https://opencompass.openxlab.space/utils/VLMEval/mmbench_dev_cn_20231003.tsv",
+    'MMBench_TEST_CN': "https://opencompass.openxlab.space/utils/VLMEval/mmbench_test_cn_20231003.tsv",
+    'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/ccbench_1003.tsv",
+    # 'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv",
+    # 'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv",
 }
 
 img_root_map = {
@@ -23,12 +21,12 @@ img_root_map = {
     "MMBench": "MMBench",  # Link Invalid, Internal Only
     "MMBench_CN": "MMBench",    # Link Invalid, Internal Only
     'CCBench': "CCBench", 
-    'MME': "MME", 
-    'SEEDBench_IMG': "SEEDBench_IMG", 
+    # 'MME': "MME",
+    # 'SEEDBench_IMG': "SEEDBench_IMG",
 }
 
 def DATASET_TYPE(dataset):
-    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower():
+    if 'mmbench' in dataset.lower() or 'ccbench' in dataset.lower()  or 'seedbench' in dataset.lower():
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
@@ -72,8 +70,10 @@ class TSVDataset:
         return len(self.data)
 
     def build_prompt(self, line, dataset=None):
+
         if dataset is None:
             dataset = self.dataset
+
 
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -81,10 +81,9 @@ class TSVDataset:
         tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
         if not osp.exists(tgt_path):
             decode_base64_to_image_file(line['image'], tgt_path)
-        
         if dataset == 'MME':
             prompt = line['question']
-        elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench_IMG']:
+        elif dataset in ['MMBench', 'MMBench_CN','MMBench_DEV_EN','MMBench_TEST_EN','MMBench_DEV_CN','MMBench_TEST_CN','CCBench','SEEDBench_IMG']:
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {

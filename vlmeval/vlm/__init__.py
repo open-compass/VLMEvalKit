@@ -2,6 +2,7 @@ import torch
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
 from .qwen_vl import QwenVL, QwenVLChat
+from .TransCroe import TransCroe_M
 from .pandagpt import PandaGPT
 from .open_flamingo import OpenFlamingo
 from .idefics import IDEFICS
