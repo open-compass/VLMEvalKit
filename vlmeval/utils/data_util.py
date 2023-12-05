@@ -13,6 +13,7 @@ dataset_URLs = {
     'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
     'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
+    "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv"
 }
 
 img_root_map = {
@@ -24,6 +25,7 @@ img_root_map = {
     "MMBench_CN": "MMBench",    # Link Invalid, Internal Only
     'CCBench': "CCBench", 
     'MME': "MME", 
+    "CORE_MM": "CORE_MM", 
     'SEEDBench_IMG': "SEEDBench_IMG", 
 }
 
@@ -78,11 +80,19 @@ class TSVDataset:
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
-        if not osp.exists(tgt_path):
-            decode_base64_to_image_file(line['image'], tgt_path)
+        if isinstance(line['image'], str):
+            tgt_path = []
+            for img, im_name in zip(line['image'], line['image_path']):
+                path = osp.join(self.img_root, im_name)
+                if not osp.exists(path):
+                    decode_base64_to_image_file(img, path)
+                tgt_path.append(path)
+        else:
+            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            if not osp.exists(tgt_path):
+                decode_base64_to_image_file(line['image'], tgt_path)
         
-        if dataset == 'MME':
+        if dataset == ['MME', 'CORE_MM']:
             prompt = line['question']
         elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench_IMG']:
             question = line['question']
