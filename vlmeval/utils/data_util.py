@@ -80,7 +80,7 @@ class TSVDataset:
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if isinstance(line['image'], str):
+        if isinstance(line['image'], list):
             tgt_path = []
             for img, im_name in zip(line['image'], line['image_path']):
                 path = osp.join(self.img_root, im_name)
