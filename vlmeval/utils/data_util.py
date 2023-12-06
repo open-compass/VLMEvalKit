@@ -24,11 +24,12 @@ img_root_map = {
     "MMBench_CN": "MMBench",    # Link Invalid, Internal Only
     'CCBench': "CCBench", 
     'MME': "MME", 
-    'SEEDBench_IMG': "SEEDBench_IMG", 
+    'SEEDBench_IMG': "SEEDBench_IMG",
+    'MMVet':'MMVet',
 }
 
 def DATASET_TYPE(dataset):
-    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
+    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower():
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
@@ -43,7 +44,7 @@ class TSVDataset:
 
         self.dataset = dataset
         self.dataset_type = DATASET_TYPE(dataset)
-        
+        '''
         url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
@@ -53,7 +54,8 @@ class TSVDataset:
         else:
             warnings.warn("The dataset tsv is not downloaded")
             download_file(url, data_path)
-
+        '''
+        data_path = '/mnt/petrelfs/qiaoyuxuan/share_data/mm-vet/mmvet.tsv'
         data = load(data_path)
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k, v in image_map.items():
@@ -82,7 +84,7 @@ class TSVDataset:
         if not osp.exists(tgt_path):
             decode_base64_to_image_file(line['image'], tgt_path)
         
-        if dataset == 'MME':
+        if dataset in ['MME','MMVet']:
             prompt = line['question']
         elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench_IMG']:
             question = line['question']
