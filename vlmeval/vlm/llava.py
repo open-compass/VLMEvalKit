@@ -26,7 +26,7 @@ class LLaVA:
             exit(-1)
             
         self.model_path_map = model_path_map
-        assert name in self.model_path_map or osp.exists(name)
+        assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
         if name in self.model_path_map:
             model_path = self.model_path_map[name]
         else:
@@ -34,18 +34,16 @@ class LLaVA:
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
         
+        model_name = 'llava-v1.5-7b' if model_path == 'Lin-Chen/ShareGPT4V-7B' else get_model_name_from_path(model_path)
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path, 
             model_base=None, 
-            model_name=get_model_name_from_path(model_path), 
+            model_name=model_name, 
             device='cpu', 
             device_map='cpu'
         )
         self.model = self.model.cuda()
-        if 'v1' in model_path.lower():
-            self.conv_mode =  'llava_v1'
-        else:
-            self.conv_mode = 'vicuna_v1'
+        self.conv_mode =  'llava_v1'
 
         kwargs_default = dict(do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)

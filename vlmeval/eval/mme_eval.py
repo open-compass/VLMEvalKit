@@ -2,7 +2,7 @@ from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 
-INTERNAL = False
+INTERNAL = os.environ.get('INTERNAL', 0)
 
 def MME_rating(data_file):
     data = load(data_file)
@@ -117,15 +117,17 @@ def MME_eval(args):
         tups = [(model, line) for line in lines]
         indices = list(unknown['index'])
 
-        # Do not save temporary file due to the 
-        res = track_progress_rich(
-            MME_auxeval,
-            tups, 
-            nproc=args.nproc,
-            chunksize=args.nproc)
+        if len(tups):
+            # Do not save temporary file due to the fast speed
+            res = track_progress_rich(
+                MME_auxeval,
+                tups, 
+                nproc=args.nproc,
+                chunksize=args.nproc)
 
-        for k, v in zip(indices, res):
-            preds_map[k] = v
+            for k, v in zip(indices, res):
+                preds_map[k] = v
+
         data['prediction'] = [preds_map[idx] for idx in data['index']]
         dump(data, storage)
     
@@ -133,7 +135,7 @@ def MME_eval(args):
     data["score"] = (data["answer"] == data["prediction"])
     dump(data, storage)
     score = MME_rating(storage)
-    score_tgt = storage.replace('auxmatch.xlsx', 'score.xlsx')
+    score_tgt = storage.replace('auxmatch.xlsx', 'score.csv')
     dump(score, score_tgt)
 
     return score
@@ -142,7 +144,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default="gpt-3.5-turbo-0613", choices=['gpt-3.5-turbo-0613'])
-    parser.add_argument("--nproc", type=int, default=4)
+    parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
     return args
