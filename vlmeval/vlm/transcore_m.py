@@ -22,7 +22,9 @@ class TransCoreM:
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path,
             model_base=None,
-            model_name=None
+            model_name=None,
+            device='cpu', 
+            device_map='cpu'
         )
         self.model = self.model.cuda()
         print("==============conv_mode: transcorem_v1")
