@@ -10,7 +10,7 @@ fout = None
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 abbrs = {
-    'coarse_preception': 'CP', 
+    'coarse_perception': 'CP', 
     'finegrained_perception (instance-level)': 'FP-S', 
     'finegrained_perception (cross-instance)': 'FP-C', 
     'logic_reasoning': 'LR',
