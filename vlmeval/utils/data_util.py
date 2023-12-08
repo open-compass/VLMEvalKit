@@ -81,10 +81,16 @@ class TSVDataset:
         tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
         if not osp.exists(tgt_path):
             decode_base64_to_image_file(line['image'], tgt_path)
+
+        def listin(lst, s):
+            for item in lst:
+                if item in s:
+                    return True
+            return False
         
-        if dataset == 'MME':
-            prompt = line['question']
-        elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench_IMG']:
+        prompt = line['question']
+        
+        if listin(['MMBench', 'CCBench', 'SEEDBench'], dataset):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
