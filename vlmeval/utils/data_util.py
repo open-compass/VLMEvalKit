@@ -59,7 +59,7 @@ class TSVDataset:
         data = load(data_path)
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k, v in image_map.items():
-            if k >= 1000000 and self.dataset in ['MMBench', 'MMBench_CN', 'CCBench']:
+            if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
                 image_map[k] = image_map[k % 1000000]
             elif k % 2 == 1 and self.dataset in ['MME']:
                 image_map[k] = image_map[k - 1]
@@ -91,10 +91,10 @@ class TSVDataset:
             tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
-        
-        if dataset == ['MME', 'CORE_MM']:
-            prompt = line['question']
-        elif dataset in ['MMBench', 'MMBench_CN', 'CCBench', 'SEEDBench_IMG']:
+       
+        prompt = line['question']
+
+        if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
