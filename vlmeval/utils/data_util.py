@@ -27,6 +27,12 @@ img_root_map = {
     'SEEDBench_IMG': "SEEDBench_IMG", 
 }
 
+def listin(lst, s):
+    for item in lst:
+        if item in s:
+            return True
+    return False
+
 def DATASET_TYPE(dataset):
     if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
         return 'multi-choice'
@@ -57,7 +63,7 @@ class TSVDataset:
         data = load(data_path)
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k, v in image_map.items():
-            if k >= 1000000 and self.dataset in ['MMBench', 'MMBench_CN', 'CCBench']:
+            if k >= 1000000 and listin(['MMBench', 'CCBench'], self.dataset):
                 image_map[k] = image_map[k % 1000000]
             elif k % 2 == 1 and self.dataset in ['MME']:
                 image_map[k] = image_map[k - 1]
@@ -81,15 +87,9 @@ class TSVDataset:
         tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
         if not osp.exists(tgt_path):
             decode_base64_to_image_file(line['image'], tgt_path)
-
-        def listin(lst, s):
-            for item in lst:
-                if item in s:
-                    return True
-            return False
         
         prompt = line['question']
-        
+
         if listin(['MMBench', 'CCBench', 'SEEDBench'], dataset):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
