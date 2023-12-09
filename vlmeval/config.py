@@ -5,6 +5,7 @@ PandaGPT_ROOT = None
 MPT_7B_PTH = None
 Flamingov2_CKPT_PTH = None
 MiniGPT4_ROOT = None
+TransCore_ROOT = None
 
 idefics_model_path_map = {
     'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
@@ -18,7 +19,8 @@ llava_model_path_map = {
 }
 
 supported_VLM = {
-    'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'), 
+    'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
+    'TransCore_M': partial(TransCoreM, root=TransCore_ROOT),
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
     'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth=MPT_7B_PTH, ckpt_pth=Flamingov2_CKPT_PTH),
