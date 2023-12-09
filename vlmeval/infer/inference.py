@@ -49,7 +49,7 @@ def infer_data(model_name, dataset, indices, out_file, verbose=False):
 
         if dataset_name in ['CORE_MM']:
             assert hasattr(model, 'multi_generate')
-            response = model.multi_generate(prompt=struct['text'], images_paths=struct['image'], dataset=dataset_name)
+            response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
         else:
             response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()
