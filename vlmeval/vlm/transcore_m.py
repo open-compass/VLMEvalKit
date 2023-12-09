@@ -66,12 +66,12 @@ class TransCoreM:
         if isinstance(line['image'], list):
             tgt_path = []
             for img, im_name in zip(line['image'], line['image_path']):
-                path = osp.join(self.img_root, im_name)
+                path = osp.join(img_root, im_name)
                 if not osp.exists(path):
                     decode_base64_to_image_file(img, path)
                 tgt_path.append(path)
         else:
-            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            tgt_path = osp.join(img_root, f"{line['index']}.jpg")
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
         
