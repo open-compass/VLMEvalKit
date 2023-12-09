@@ -19,18 +19,17 @@
 
 **Supported Dataset**
 
-- [x] [MMBench Series](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench
-- [x] [MME](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation)
-- [x] [SEEDBench_IMG](https://github.com/AILab-CVC/SEED-Bench)
-- [ ] [MM-VET]()
-- [ ] ......
+| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**Core-MM**](https://github.com/core-mm/core-mm) |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
+| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                 |
+| **Evaluation Support** | √                                                            | √                                                            | √                                                            |                                                   |
 
 **Supported Models**
 
 | [**IDEFICS-9B-Instruct**🎞️🚅](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct), [**IDEFICS-80B-Instruct**🎞️🚅](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct) | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B🚅/v1.5-13B🚅]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**🎞️](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2) |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**🎞️🚅](https://huggingface.co/Qwen/Qwen-VL), [**Qwen-VL-Chat**🎞️🚅](https://huggingface.co/Qwen/Qwen-VL-Chat) | [**VisualGLM-6B**🚅](https://huggingface.co/THUDM/visualglm-6b) | [**InternLM-XComposer-7B**🎞️🚅](https://huggingface.co/internlm/internlm-xcomposer-7b) |
-| [**ShareGPT4V-7B**🚅](https://sharegpt4v.github.io)           |                                                              |                                                              |                                                              |                                                              |
+| [**ShareGPT4V-7B**🚅](https://sharegpt4v.github.io)           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |                                                              |                                                              |                                                              |
 
 🎞️: Support multiple images as inputs, via the `multi_generate` interface. 
 
@@ -123,13 +122,14 @@ The following script use ChatGPT for answer matching and calculate the MME score
 
 Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded to `$LMUData` (default path is `$HOME/LMUData`, if not set explicitly). All existing benchmark TSV files are handled by `TSVDataset` implemented in `vlmeval/utils/data_util.py`. 
 
-| Dataset Name \ Fields | index | image | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
-| --------------------- | ----- | ----- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
-| MMBench_DEV_CN/EN     | √     | √     | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
-| MMBench_TEST_CN/EN    | √     | √     | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
-| CCBench               | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| SEEDBench_IMG         | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| MME                   | √     | √     | √        |      |      |      |      |      | √      | √        |             |       |
+| Dataset Name \ Fields | index | image | image_path | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
+| --------------------- | ----- | ----- | ---------- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
+| MMBench_DEV_CN/EN     | √     | √     |            | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
+| MMBench_TEST_CN/EN    | √     | √     |            | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
+| CCBench               | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
+| SEEDBench_IMG         | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
+| MME                   | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
+| CORE_MM               | √     | √     | √          | √        |      |      |      |      |      |        | √        |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 

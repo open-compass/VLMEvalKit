@@ -26,6 +26,30 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from tabulate import tabulate
 
+def circular_pred(df, extract_func=None):
+    if extract_func is None:
+        extract_func = lambda x: x
+    df = df.sort_values('index')
+    from vlmeval.utils import can_infer_option
+    shift = int(1e6)
+
+    choices = [extract_func(x) for x in df['prediction']]
+    pred_map = {i: c for i, c in zip(df['index'], choices)}
+    flag_map = {i: True for i in pred_map if i < 1e6}
+    valid_map = {i: True for i in pred_map if i < 1e6}
+    for i in df['index']:
+        if i >= shift and pred_map[i] and pred_map[i - shift]:
+            if pred_map[i] not in 'ABCDE' or pred_map[i - shift] not in 'ABCDE':
+                valid_map[i % shift] = False
+                continue
+            if (ord(pred_map[i]) - ord(pred_map[i - shift])) % 4 == 1:
+                continue
+            else:
+                flag_map[i % shift] = False
+    flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
+    flags = list(flag_map.values())
+    return np.mean(flags)
+
 def splitlen(s, sym='/'):
     return len(s.split(sym))
 
@@ -117,19 +141,23 @@ def mmqa_display(question):
     if 'index' in keys:
         keys.remove('index')
     keys.remove('image')
-    image = question['image']
-    image = decode_base64_to_image(image)
+
+    images = question['image']
+    if isinstance(images, str):
+        images = [images]
+
     idx = 'XXX'
     if 'index' in question:
         idx = question.pop('index')
-    
     print(f'INDEX: {idx}')
-    
-    w, h = image.size
-    ratio = 500 / h
-    image = image.resize((int(ratio * w), int(ratio * h)))
-    
-    display(image)
+
+    for im in images:
+        image = decode_base64_to_image(im)
+        w, h = image.size
+        ratio = 500 / h
+        image = image.resize((int(ratio * w), int(ratio * h)))
+        display(image)
+        
     for k in keys:
         if not pd.isna(question[k]):
             print(f'{k.upper()}. {question[k]}')

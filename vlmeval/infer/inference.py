@@ -47,7 +47,11 @@ def infer_data(model_name, dataset, indices, out_file, verbose=False):
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
+        if dataset_name in ['CORE_MM']:
+            assert hasattr(model, 'multi_generate')
+            response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
+        else:
+            response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()
         
         if verbose:
@@ -127,6 +131,13 @@ def main():
             if model is None:
                 model = model_name # which is only a name
 
+            # CHECKER
+            if dataset_name == 'CORE_MM':
+                MULTI_IMG = getattr(supported_VLM[model_name].func, 'MULTI_IMG', False)
+                if not MULTI_IMG:
+                    print(f'Model {model_name} does not support the `multi_generate` interface, which is required for testing CORE_MM, skip it. ')
+                    continue
+
             if not osp.exists(result_file):
                 model = infer_data(model, dataset=dataset, indices=indices, out_file=out_file, verbose=args.verbose)
                 if world_size > 1:
@@ -150,7 +161,7 @@ def main():
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
-            if local_rank == 0 and dataset_name != 'MME':
+            if local_rank == 0 and dataset_name not in ['MME', 'CORE_MM']:
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)
