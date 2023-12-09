@@ -13,6 +13,7 @@ dataset_URLs = {
     'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
     'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
+    "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv"
 }
 
 img_root_map = {
@@ -24,8 +25,11 @@ img_root_map = {
     "MMBench_CN": "MMBench",    # Link Invalid, Internal Only
     'CCBench': "CCBench", 
     'MME': "MME", 
+    "CORE_MM": "CORE_MM", 
     'SEEDBench_IMG': "SEEDBench_IMG", 
 }
+
+assert set(dataset_URLs) == set(img_root_map)
 
 def DATASET_TYPE(dataset):
     if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
@@ -33,6 +37,9 @@ def DATASET_TYPE(dataset):
     elif 'MME' in dataset:
         return 'Y/N'
     return 'QA'
+
+def isliststr(s):
+    return (s[0] == '[') and (s[-1] == ']')
 
 class TSVDataset:
     
@@ -55,13 +62,23 @@ class TSVDataset:
             download_file(url, data_path)
 
         data = load(data_path)
+
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
-        for k, v in image_map.items():
+        for k in image_map:
             if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
                 image_map[k] = image_map[k % 1000000]
             elif k % 2 == 1 and self.dataset in ['MME']:
                 image_map[k] = image_map[k - 1]
-        data['image'] = [image_map[k] for k in data['index']]
+    
+        data['image'] = [
+            eval(image_map[k]) if isliststr(image_map[k]) else image_map[k] 
+            for k in data['index']
+        ]
+        if 'image_path' in data:
+            data['image_path'] = [
+                eval(pths) if isliststr(pths) else pths for pths in data['image_path']
+            ]
+
         self.data = data
 
         img_root = img_root if img_root is not None else osp.join('images', img_root_map[dataset])
@@ -78,10 +95,18 @@ class TSVDataset:
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
-        if not osp.exists(tgt_path):
-            decode_base64_to_image_file(line['image'], tgt_path)
-        
+        if isinstance(line['image'], list):
+            tgt_path = []
+            for img, im_name in zip(line['image'], line['image_path']):
+                path = osp.join(self.img_root, im_name)
+                if not osp.exists(path):
+                    decode_base64_to_image_file(img, path)
+                tgt_path.append(path)
+        else:
+            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            if not osp.exists(tgt_path):
+                decode_base64_to_image_file(line['image'], tgt_path)
+       
         prompt = line['question']
 
         if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):

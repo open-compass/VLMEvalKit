@@ -19,11 +19,10 @@
 
 **Supported Dataset**
 
-- [x] [MMBench Series](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench
-- [x] [MME](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation)
-- [x] [SEEDBench_IMG](https://github.com/AILab-CVC/SEED-Bench)
-- [ ] [MM-VET]()
-- [ ] ......
+| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**Core-MM**](https://github.com/core-mm/core-mm) |      |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- | ---- |
+| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                 |      |
+| **Evaluation Support** | √                                                            | √                                                            | √                                                            |                                                   |      |
 
 **Supported Models**
 
@@ -123,13 +122,14 @@ The following script use ChatGPT for answer matching and calculate the MME score
 
 Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded to `$LMUData` (default path is `$HOME/LMUData`, if not set explicitly). All existing benchmark TSV files are handled by `TSVDataset` implemented in `vlmeval/utils/data_util.py`. 
 
-| Dataset Name \ Fields | index | image | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
-| --------------------- | ----- | ----- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
-| MMBench_DEV_CN/EN     | √     | √     | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
-| MMBench_TEST_CN/EN    | √     | √     | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
-| CCBench               | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| SEEDBench_IMG         | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| MME                   | √     | √     | √        |      |      |      |      |      | √      | √        |             |       |
+| Dataset Name \ Fields | index | image | image_path | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
+| --------------------- | ----- | ----- | ---------- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
+| MMBench_DEV_CN/EN     | √     | √     |            | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
+| MMBench_TEST_CN/EN    | √     | √     |            | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
+| CCBench               | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
+| SEEDBench_IMG         | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
+| MME                   | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
+| CORE_MM               | √     | √     | √          | √        |      |      |      |      |      |        | √        |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 

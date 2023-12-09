@@ -141,19 +141,23 @@ def mmqa_display(question):
     if 'index' in keys:
         keys.remove('index')
     keys.remove('image')
-    image = question['image']
-    image = decode_base64_to_image(image)
+
+    images = question['image']
+    if isinstance(images, str):
+        images = [images]
+
     idx = 'XXX'
     if 'index' in question:
         idx = question.pop('index')
-    
     print(f'INDEX: {idx}')
-    
-    w, h = image.size
-    ratio = 500 / h
-    image = image.resize((int(ratio * w), int(ratio * h)))
-    
-    display(image)
+
+    for im in images:
+        image = decode_base64_to_image(im)
+        w, h = image.size
+        ratio = 500 / h
+        image = image.resize((int(ratio * w), int(ratio * h)))
+        display(image)
+        
     for k in keys:
         if not pd.isna(question[k]):
             print(f'{k.upper()}. {question[k]}')

@@ -56,11 +56,18 @@ class LLaVA:
         img_root = osp.join('images', img_root_map[dataset])
 
         os.makedirs(img_root, exist_ok=True)
-        idx = line['index']
-        img = line['image']
 
-        tgt_path = osp.join(img_root, f'{idx}.jpg')
-        decode_base64_to_image_file(img, tgt_path)
+        if isinstance(line['image'], list):
+            tgt_path = []
+            for img, im_name in zip(line['image'], line['image_path']):
+                path = osp.join(self.img_root, im_name)
+                if not osp.exists(path):
+                    decode_base64_to_image_file(img, path)
+                tgt_path.append(path)
+        else:
+            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            if not osp.exists(tgt_path):
+                decode_base64_to_image_file(line['image'], tgt_path)
 
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
