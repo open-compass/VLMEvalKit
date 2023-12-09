@@ -130,6 +130,7 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 | SEEDBench_IMG         | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
 | MME                   | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
 | CORE_MM               | √     | √     | √          | √        |      |      |      |      |      |        | √        |             |       |
+| MMVet                 | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
