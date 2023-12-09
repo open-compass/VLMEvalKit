@@ -161,7 +161,7 @@ def main():
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
-            if local_rank == 0 and dataset_name not in ['MME', 'CORE_MM']:
+            if local_rank == 0 and dataset_name not in ['MME', 'CORE_MM', 'MMVet']:
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)

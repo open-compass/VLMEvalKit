@@ -19,10 +19,10 @@
 
 **Supported Dataset**
 
-| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**Core-MM**](https://github.com/core-mm/core-mm) |
-| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
-| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                 |
-| **Evaluation Support** | √                                                            | √                                                            | √                                                            |                                                   |
+| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**MM-Vet**](https://github.com/yuweihao/MM-Vet) | [**Core-MM**](https://github.com/core-mm/core-mm) |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------- |
+| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                | √                                                 |
+| **Evaluation Support** | √                                                            | √                                                            | √                                                            | √                                                |                                                   |
 
 **Supported Models**
 
@@ -130,6 +130,7 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 | SEEDBench_IMG         | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
 | MME                   | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
 | CORE_MM               | √     | √     | √          | √        |      |      |      |      |      |        | √        |             |       |
+| MMVet                 | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 

@@ -13,7 +13,8 @@ dataset_URLs = {
     'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
     'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
-    "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv"
+    "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
+    "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
 }
 
 img_root_map = {
@@ -26,13 +27,14 @@ img_root_map = {
     'CCBench': "CCBench", 
     'MME': "MME", 
     "CORE_MM": "CORE_MM", 
-    'SEEDBench_IMG': "SEEDBench_IMG", 
+    'SEEDBench_IMG': "SEEDBench_IMG",
+    'MMVet':'MMVet',
 }
 
 assert set(dataset_URLs) == set(img_root_map)
 
 def DATASET_TYPE(dataset):
-    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
+    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower():
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
@@ -50,7 +52,7 @@ class TSVDataset:
 
         self.dataset = dataset
         self.dataset_type = DATASET_TYPE(dataset)
-        
+
         url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
@@ -62,7 +64,6 @@ class TSVDataset:
             download_file(url, data_path)
 
         data = load(data_path)
-
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):

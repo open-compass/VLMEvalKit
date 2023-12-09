@@ -47,13 +47,15 @@ class BaseAPI:
             try:
                 ret_code, answer, log = self.generate_inner(inputs, **kwargs)
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
+                    if self.verbose:
+                        print(answer)
                     return answer
                 elif self.verbose:
                     print(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
             except:
                 if self.verbose:
                     print(f"An unknown exception occurs during try {i}")
-                    
+        
         return self.fail_msg if answer in ['', None] else answer
         
 
