@@ -29,12 +29,17 @@ img_root_map = {
     'SEEDBench_IMG': "SEEDBench_IMG", 
 }
 
+assert set(dataset_URLs) == set(img_root_map)
+
 def DATASET_TYPE(dataset):
     if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
     return 'QA'
+
+def isliststr(s):
+    return s[0] == '[' and s[1] == ']'
 
 class TSVDataset:
     
@@ -57,13 +62,19 @@ class TSVDataset:
             download_file(url, data_path)
 
         data = load(data_path)
+
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
-        for k, v in image_map.items():
+        for k in image_map:
             if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
                 image_map[k] = image_map[k % 1000000]
             elif k % 2 == 1 and self.dataset in ['MME']:
                 image_map[k] = image_map[k - 1]
-        data['image'] = [image_map[k] for k in data['index']]
+    
+        data['image'] = [
+            eval(image_map[k]) if isliststr(image_map[k]) else image_map[k] 
+            for k in data['index']
+        ]
+
         self.data = data
 
         img_root = img_root if img_root is not None else osp.join('images', img_root_map[dataset])
