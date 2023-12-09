@@ -19,10 +19,10 @@
 
 **Supported Dataset**
 
-| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**Core-MM**](https://github.com/core-mm/core-mm) |      |
-| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- | ---- |
-| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                 |      |
-| **Evaluation Support** | √                                                            | √                                                            | √                                                            |                                                   |      |
+| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**Core-MM**](https://github.com/core-mm/core-mm) |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
+| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                 |
+| **Evaluation Support** | √                                                            | √                                                            | √                                                            |                                                   |
 
 **Supported Models**
 
