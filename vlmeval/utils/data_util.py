@@ -39,7 +39,7 @@ def DATASET_TYPE(dataset):
     return 'QA'
 
 def isliststr(s):
-    return s[0] == '[' and s[1] == ']'
+    return (s[0] == '[') and (s[-1] == ']')
 
 class TSVDataset:
     
@@ -74,6 +74,10 @@ class TSVDataset:
             eval(image_map[k]) if isliststr(image_map[k]) else image_map[k] 
             for k in data['index']
         ]
+        if 'image_path' in data:
+            data['image_path'] = [
+                eval(pths) if isliststr(pths) else pths for pths in data['image_path']
+            ]
 
         self.data = data
 
