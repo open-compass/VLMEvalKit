@@ -52,7 +52,7 @@ class TSVDataset:
 
         self.dataset = dataset
         self.dataset_type = DATASET_TYPE(dataset)
-        
+
         url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
@@ -63,6 +63,7 @@ class TSVDataset:
             warnings.warn("The dataset tsv is not downloaded")
             download_file(url, data_path)
 
+        data = load(data_path)
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
