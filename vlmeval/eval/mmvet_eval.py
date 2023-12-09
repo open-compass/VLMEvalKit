@@ -3,6 +3,8 @@ from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 from collections import defaultdict
 
+INTERNAL = os.environ.get('INTERNAL', 0)
+
 def build_mmvet_gpt4_prompt(line):
     question = line['question']
     gt = str(line['answer'])
@@ -19,14 +21,31 @@ def build_mmvet_gpt4_prompt(line):
     Can you explain this meme? | This meme is poking fun at the fact that the names of the countries Iceland and Greenland are misleading. Despite its name, Iceland is known for its beautiful green landscapes, while Greenland is mostly covered in ice and snow. The meme is saying that the person has trust issues because the names of these countries do not accurately represent their landscapes. | The meme talks about Iceland and Greenland. It's pointing out that despite their names, Iceland is not very icy and Greenland isn't very green. | 0.4
     Can you explain this meme? | This meme is poking fun at the fact that the names of the countries Iceland and Greenland are misleading. Despite its name, Iceland is known for its beautiful green landscapes, while Greenland is mostly covered in ice and snow. The meme is saying that the person has trust issues because the names of these countries do not accurately represent their landscapes. | The meme is using humor to point out the misleading nature of Iceland's and Greenland's names. Iceland, despite its name, has lush green landscapes while Greenland is mostly covered in ice and snow. The text 'This is why I have trust issues' is a playful way to suggest that these contradictions can lead to distrust or confusion. The humor in this meme is derived from the unexpected contrast between the names of the countries and their actual physical characteristics. | 1.0
     """
-    gpt4_prompt = prompt + '\n' + ' | '.join([question, gt.replace("<AND>", " <AND> ").replace("<OR>", " <OR> "), prediction, ""]) + "\nPredict the correctness of the answer (digit): "
+    gpt4_prompt = prompt + '\n' + ' | '.join([question, gt.replace("<AND>", " <AND> ").replace("<OR>", " <OR> "), prediction, ""])
     return gpt4_prompt
 
 def MMVet_auxeval(model, line):
-    prompt = build_mmvet_gpt4_prompt(line)
-    output = model.generate(prompt)
-    return output
+    def float_cvt(s):
+        try:
+            return float(s)
+        except ValueError:
+            return None
 
+    prompt = build_mmvet_gpt4_prompt(line)
+    log = ''
+    retry = 5
+    for i in range(retry):
+        output = model.generate(prompt, temperature=i * 0.5)
+        score = float_cvt(output)
+        if score is None:
+            log += f'Try {i}: output is {output}, failed to parse.\n'
+        elif score < 0 or score > 1:
+            log += f'Try {i}: output is {output}, invalid score: {score}.\n'
+        else:
+            log += 'Succeed'
+            return dict(log=log, score=score)
+    log += 'All 5 retries failed.\n'
+    return dict(log=log, score=0.0)
 
 def MMVet_acc(result_file):
     data = load(result_file)
@@ -51,47 +70,65 @@ def MMVet_acc(result_file):
         res['tot'].append(tot[k])
         res['acc'].append(score[k] / tot[k] * 100)
     res = pd.DataFrame(res)
-    result_file = result_file.replace('.xlsx','_score.xlsx')
+    result_file = result_file.replace('.xlsx','_score.csv')
     dump(res,result_file)
     return res
 
 def MMVet_eval(args):
     data = load(args.data)
-    gpt_version = "gpt-4-0613"
-    gpt_model = OpenAIWrapperInternal(model= gpt_version, max_tokens=3)
-    storage = args.data.replace('.xlsx', '_gpt4.xlsx')
+    gpt_version = args.model
+    storage = args.data.replace('.xlsx', f'_{gpt_version}.xlsx')
+
+    model_map = {
+        'gpt-4-turbo': 'gpt-4-1106-preview', 
+        'gpt-4-0613': 'gpt-4-0613',
+        'chatgpt-1106': 'gpt-3.5-turbo-1106',
+        'chatgpt-0613': 'gpt-3.5-turbo-0613'
+    }
+    model_version = model_map[gpt_version]
+
+    if INTERNAL:
+        model = OpenAIWrapperInternal(model_version, verbose=args.verbose, max_tokens=3)
+    else:
+        model = OpenAIWrapper(model_version, verbose=args.verbose, max_tokens=3)
+    
     lt = len(data)
     lines = [data.iloc[i] for i in range(lt)]
+    tups = [(model, line) for line in lines]
+    indices = [line['index'] for line in lines]
 
-    if osp.exists(storage):
-        data = load(storage)
-        failed = data[data['score'] == 'Failed to obtain answer via API.']
-        indices = list(failed['index'])
-        score_map = data['score']
-        for k in tqdm(indices): 
-            score_map[k-1] = MMVet_auxeval(gpt_model, lines[k-1])
-        data['score'] = [score_map[idx-1] for idx in data['index']]
-    else:
-        indices = list(data['index'])
+    res = track_progress_rich(
+        MMVet_auxeval,
+        tups, 
+        nproc=args.nproc,
+        chunksize=args.nproc)
 
-        score_map = defaultdict(lambda:0.0)
-        for k in tqdm(indices): 
-            score_map[k] = MMVet_auxeval(gpt_model, lines[k-1])
-            print(score_map[k])
-        data['score'] = [score_map[idx] for idx in data['index']]
+    log_map, score_map = {}, {}
+    for k, v in zip(indices, res):
+        log_map[k] = v['log']
+        score_map[k] = v['score']
+    data['score'] = [score_map[idx] for idx in data['index']]
+    data['log'] = [log_map[idx] for idx in data['index']]
     dump(data, storage)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("--data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    #parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default="gpt-3.5-turbo-0613", choices=['gpt-3.5-turbo-0613'])
+    parser.add_argument(
+        "--model", 
+        type=str, 
+        help="The LLM (GPT) used for inference. ", 
+        default="gpt-4-turbo", 
+        choices=['gpt-4-0613', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0613'])
     parser.add_argument("--nproc", type=int, default=4)
-    #parser.add_argument("--verbose", action='store_true')
+    parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
-    MMVet_eval(args)
-    storage = args.data.replace('.xlsx', '_gpt4.xlsx')
-    MMVet_acc(storage)
+    storage = args.data.replace('.xlsx', f'_{args.model}.xlsx')
+    if not osp.exists(storage):
+        MMVet_eval(args)
+    score = MMVet_acc(storage)
+    print(score)

@@ -13,7 +13,8 @@ dataset_URLs = {
     'CCBench': "https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv", 
     'MME': "https://opencompass.openxlab.space/utils/VLMEval/MME.tsv", 
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
-    "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv"
+    "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
+    "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
 }
 
 img_root_map = {
