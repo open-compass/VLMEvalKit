@@ -25,7 +25,7 @@ while True:
             score_file = f'{f}/{f}_{D}_{suff}'
             if osp.exists(pred_file) and not osp.exists(score_file):
                 cmd = f'python {scri} {pred_file} --verbose'
-                if D != 'MME':
+                if D not in ['MME', 'MMVet']:
                     cmd += f' --dataset {D}'
                 print(cmd)
                 time.sleep(1)
