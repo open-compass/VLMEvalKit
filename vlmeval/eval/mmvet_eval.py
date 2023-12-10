@@ -113,7 +113,7 @@ def MMVet_eval(args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
-    parser.add_argument("--data", type=str, help="The question set for inference, in excel / tsv / json format. ")
+    parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument(
         "--model", 
         type=str, 
