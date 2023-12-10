@@ -2,9 +2,9 @@ from vlmeval.smp import *
 import time
 from datetime import datetime
 
-dataset = ['MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN']
-suffix = ['score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv']
-script = ['mme_eval.py', 'multiple_choice.py', 'multiple_choice.py', 'multiple_choice.py', 'multiple_choice.py']
+dataset = ['MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN', 'MMVet']
+suffix = ['score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'gpt-4-turbo_score.csv']
+script = ['mme_eval.py', 'multiple_choice.py', 'multiple_choice.py', 'multiple_choice.py', 'multiple_choice.py', 'mmvet_eval.py']
 
 N = len(dataset)
 assert N == len(suffix) == len(script)
