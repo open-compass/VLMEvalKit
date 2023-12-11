@@ -59,10 +59,7 @@ def MMVet_acc(result_file):
         cate2 = cate.replace(',','_')
         if cate2 not in cate2_list:
             cate2_list.append(cate2)
-        try:
-            grade = float(item['score'])
-        except:
-            grade = 0.0
+        grade = float(item['score'])
         cate_list = ['rec','ocr','know','gen','spat','math']
         for capa in cate_list:
             if capa in cate:
@@ -74,13 +71,13 @@ def MMVet_acc(result_file):
         score[cate2] += grade
 
     res = defaultdict(list)
+    res2 = defaultdict(list)
     cate_list.append('Overall')
     cate2_list.append('Overall')
     for k in cate_list:
         res['Category'].append(k)
         res['tot'].append(tot[k])
         res['acc'].append(score[k] / tot[k] * 100)
-    res2 = defaultdict(list)
     for v in cate2_list:
         res2['Category'].append(v)
         res2['tot'].append(tot[v])
