@@ -19,11 +19,13 @@
 
 **Supported Dataset**
 
-| Dataset                | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | [**MM-Vet**](https://github.com/yuweihao/MM-Vet) | [**Core-MM**](https://github.com/core-mm/core-mm) |
-| ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------- |
-| **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                | √                                                 |
-| **Evaluation Support** | √                                                            | √                                                            | √                                                            | √                                                |                                                   |
-| **Evaluation Results** | [**MMBench Series Result**](https://mmbench.opencompass.org.cn/leaderboard) | [**MME Results**](results/MME.md)                            | [**SEEDBench_IMG Results**](results/SEEDBench_IMG.md)        | [**MM-Vet Results**](results/MMVet.md)           |                                                   |
+| Dataset                                                      | Inference | Evaluation | Results                                                      |
+| ------------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | √         | √          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | √         | √          | [**MME**](results/MME.md)                                    |
+| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | √         | √          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
+| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | √         | √          | [**MM-Vet**](results/MMVet.md)                               |
+| [**Core-MM**](https://github.com/core-mm/core-mm)            | √         |            |                                                              |
 
 **Supported Models**
 
