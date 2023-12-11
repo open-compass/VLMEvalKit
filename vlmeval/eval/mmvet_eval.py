@@ -52,9 +52,13 @@ def MMVet_acc(result_file):
     tot = defaultdict(lambda: 0)
     score = defaultdict(lambda: 0)
     lt = len(data)
+    cate2_list = []
     for i in range(lt):
         item = data.iloc[i]
         cate = item['category']
+        cate2 = cate.replace(',','_')
+        if cate2 not in cate2_list:
+            cate2_list.append(cate2)
         grade = float(item['score'])
         cate_list = ['rec','ocr','know','gen','spat','math']
         for capa in cate_list:
@@ -62,17 +66,29 @@ def MMVet_acc(result_file):
                 tot[capa] += 1
                 score[capa] += grade
         tot['Overall'] += 1
+        tot[cate2] += 1
         score['Overall'] += grade
+        score[cate2] += grade
 
     res = defaultdict(list)
-    for k in tot.keys():
+    res2 = defaultdict(list)
+    cate_list.append('Overall')
+    cate2_list.append('Overall')
+    for k in cate_list:
         res['Category'].append(k)
         res['tot'].append(tot[k])
         res['acc'].append(score[k] / tot[k] * 100)
+    for v in cate2_list:
+        res2['Category'].append(v)
+        res2['tot'].append(tot[v])
+        res2['acc'].append(score[v] / tot[v] * 100)
     res = pd.DataFrame(res)
-    result_file = result_file.replace('.xlsx','_score.csv')
-    dump(res,result_file)
-    return res
+    res2 = pd.DataFrame(res2)
+    result_file1 = result_file.replace('.xlsx','_score.csv')
+    result_file2= result_file.replace('.xlsx','_score2.csv')
+    dump(res,result_file1)
+    dump(res2,result_file2)
+    return res,res2
 
 def MMVet_eval(args):
     data = load(args.data)
