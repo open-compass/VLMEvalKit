@@ -8,6 +8,7 @@
 | Model                     | Overall | [Overall (Official Leaderboard)](https://paperswithcode.com/sota/visual-question-answering-on-mm-vet) |  ocr | math | spat |  rec | know |  gen |
 | :------------------------ | ------: | -----------------------------------------------------------: | ---: | ---: | ---: | ---: | ---: | ---: |
 | qwen_chat                 |    47.3 |                                                          N/A | 37.2 | 22.3 | 42.8 | 52.5 | 45.4 | 40.3 |
+| idefics_80b_instruct      |    39.7 |                                                          N/A | 29.9 |   15 | 30.7 | 45.6 | 38.6 | 37.1 |
 | llava_v1.5_13b            |    38.3 |                                                     36.3±0.2 | 28.8 | 11.5 | 31.5 |   42 | 23.1 |   23 |
 | XComposer                 |    35.2 |                                                          N/A | 21.8 |  3.8 | 24.7 | 43.1 | 28.9 | 27.5 |
 | sharegpt4v_7b             |    34.7 |                                                         37.6 | 30.2 | 18.5 |   30 | 36.1 | 20.2 | 18.1 |
