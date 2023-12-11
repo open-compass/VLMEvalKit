@@ -23,6 +23,7 @@
 | ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ | ------------------------------------------------- |
 | **Inference Support**  | √                                                            | √                                                            | √                                                            | √                                                | √                                                 |
 | **Evaluation Support** | √                                                            | √                                                            | √                                                            | √                                                |                                                   |
+| **Evaluation Results** | [**MMBench Series Result**](https://mmbench.opencompass.org.cn/leaderboard) | [**MME Results**](results/MME.md)                            | [**SEEDBench_IMG Results**](results/SEEDBench_IMG.md)        | [**MM-Vet Results**](results/MMVet.md)           |                                                   |
 
 **Supported Models**
 
@@ -47,12 +48,6 @@ ret = model.multi_generate(['assets/apple.jpg', 'assets/apple.jpg'], 'How many a
 print(ret)  # There are two apples in the provided images.
 ```
 
-**Evaluation Results**
-
-- [x] [MMBench Series](https://mmbench.opencompass.org.cn/leaderboard)
-- [x] [MME](results/MME.md)
-- [x] [SEEDBench_IMG](results/SEEDBench_IMG.md)
-
 ## 🏗️ How to run the evaluation?
 
 Basically, there are two stages for evaluating an VLM on a benchmark, namely **prediction inference** and **metric calculation**. 
@@ -65,56 +60,71 @@ Besides, before running the evaluation script, you need to **configure** the VLM
 
 ### Step2. Prediction Inference
 
-We use the script `vlmeval/infer/inference.py` for prediction inference. To use the script, you can go into the directory `vlmeval/infer/` or create a soft-link of the script (so that you can use the script anywhere):
+We use `vlmeval/infer/inference.py` for prediction inference. To use the script, you can go into the directory `vlmeval/infer/` or create a soft-link of the script (to use the script anywhere):
 
 **Arguments**
 
-- For `--data`, you can only set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`), including: MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench
+- For `--data`, you can only set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`). 
+  - including: `MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench, Core_MM, MMVet`
+
 - For `--model`, you can only set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`). 
 - `--data` and `--model` receive list as arguments, you can select multiple benchmarks and VLMs for prediction inference at a time. 
 
 **Command**
 
-- You can run the script with `python` or `torchrun`:
-  - When running with `python`, only one VLM instance is instantiated, and it might use multiple GPUs (depending on its default behavior). That is recommended for evaluating very large VLMs (like IDEFICS-80B-Instruct):
+You can run the script with `python` or `torchrun`:
 
-    ```bash
-    # Inference IDEFICS-80B-Instruct on MMBench_DEV_EN, MME, and SEEDBench_IMG
-    python inference.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct --verbose
-    ```
+```bash
+# When running with `python`, only one VLM instance is instantiated, and it might use multiple GPUs (depending on its default behavior). 
+# That is recommended for evaluating very large VLMs (like IDEFICS-80B-Instruct).
 
-  - When running with `torchrun`, one VLM instance is instantiated on each GPU. It can speed up the inference. However, that is only suitable for VLMs that consume small amounts of GPU memory. 
+# Inference IDEFICS-80B-Instruct on MMBench_DEV_EN, MME, and SEEDBench_IMG
+python inference.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct --verbose
 
-    ```bash
-    # Inference IDEFICS-9B-Instruct, Qwen-VL-Chat, mPLUG-Owl2 on MMBench_DEV_EN, MME, and SEEDBench_IMG. On a node with 8 GPU. 
-    torchrun --nproc-per-node=8 inference.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct qwen_chat mPLUG-Owl2 --verbose
-    # Inference Qwen-VL-Chat on MME. On a node with 2 GPU. 
-    torchrun --nproc-per-node=2 inference.py --data MME --model qwen_chat --verbose
-    ```
+# When running with `torchrun`, one VLM instance is instantiated on each GPU. It can speed up the inference. 
+# However, that is only suitable for VLMs that consume small amounts of GPU memory. 
+
+# Inference IDEFICS-9B-Instruct, Qwen-VL-Chat, mPLUG-Owl2 on MMBench_DEV_EN, MME, and SEEDBench_IMG. On a node with 8 GPU. 
+torchrun --nproc-per-node=8 inference.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct qwen_chat mPLUG-Owl2 --verbose
+# Inference Qwen-VL-Chat on MME. On a node with 2 GPU. 
+torchrun --nproc-per-node=2 inference.py --data MME --model qwen_chat --verbose
+```
 
 **Generated Files**
 
-- Two files will be generated with `inference.py`:
-  - `{model_name}/{model_name}_{dataset_name}.xlsx`: The file that contain the VLM predictions. 
-  - `{model_name}/{model_name}_{dataset_name}_prefetch.xlsx`: The file that contain the basic statistics of the VLM predictions. For example, the score / accuracy based on exact matching. 
+Two files will be generated with `inference.py`:
+- `{model_name}/{model_name}_{dataset_name}.xlsx`: The file that contain the VLM predictions. 
+- `{model_name}/{model_name}_{dataset_name}_prefetch.xlsx`: The file that contain the basic statistics of the VLM predictions. For example, the score / accuracy based on exact matching. 
 
 ### Step3. Metric Calculation
 
- **Multiple Choice Problems (MMBench Series, SEEDBench_IMG)** 
+**Multiple Choice Problems (MMBench Series, SEEDBench_IMG)** 
 
-The following script use ChatGPT / Exact Matching for answer matching and calculate the accuracy (**CircularEval** for MMBench, **VanillaEval** for SEEDBench_IMG).
-
-- **Script**: `vlmeval/eval/multiple_choice.py` 
-- **Usage**: `python multiple_choice.py {MMBench_or_SEEDBench_prediction_file.xlsx} --model {llm_for_choice_matching} --dataset {dataset_name} --nproc {num_process_for_API_calling}`
-  - `--model`: supported choices are `gpt-3.5-turbo-0613` and `exact_matching`. 
-
+> The following script use ChatGPT / Exact Matching for answer matching and calculate the accuracy (**CircularEval** for MMBench, **VanillaEval** for SEEDBench_IMG).
+>
+> ```bash
+> python vlmeval/eval/multiple_choice.py {MMBench_or_SEEDBench_prediction_file.xlsx} --model {llm_for_choice_matching} --dataset {dataset_name} --nproc {num_process_for_API_calling}
+> ```
+>
+> - `--model`: supported choices are `gpt-3.5-turbo-0613 (default)` and `exact_matching`. 
 
 **Yes / No Problems (MME)**
 
-The following script use ChatGPT for answer matching and calculate the MME score (The score of Exact matching is already calculated in `*_prefetch.xlsx`).
+> The following script use ChatGPT for answer matching and calculate the MME score (The score of Exact matching is already calculated in `*_prefetch.xlsx`).
+>
+> ```bash
+> python vlmeval/eval/mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}
+> ```
 
-- **Script:** `vlmeval/eval/mme_eval.py`
-- **Usage:** `python mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}`
+**GPT-based Scoring for Open-ended Problems (MMVet)**
+
+> The following script use GPT-4-Turbo for scoring and calculate MMVet accuracies.
+>
+> ```bash
+> python vlmeval/eval/mmvet_eval.py {MMVet_prediction_file.xlsx} --model {llm_for_scoring} --nproc {num_process_for_API_calling}
+> ```
+>
+> `--model`: supported choices are `gpt-4-turbo (default), gpt-4-0613, chatgpt-1106, chatgpt-0613`. 
 
 ## 🛠️ How to implement a new Benchmark / VLM in VLMEvalKit? 
 
