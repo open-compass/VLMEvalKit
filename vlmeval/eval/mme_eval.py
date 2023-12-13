@@ -91,26 +91,25 @@ def MME_auxeval_tup(tup):
     model, line = tup
     return MME_auxeval(model, line)
 
-def MME_eval(args):
-    eval_file = args.data
-    rd.seed(2680)
-
-    suffix = eval_file.split('.')[-1]
-    data = load(args.data)
+def MME_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False):
+    logger = get_logger('Evaluation')
+    
+    data = load(eval_file)
     if 'raw_prediction' not in data:
         data = MME_postproc(data)
 
     preds_map = {x: y for x, y in zip(data['index'], data['prediction'])}
     unknown = data[data['prediction'] == 'Unknown']
-    storage = args.data.replace('.xlsx', '_auxmatch.xlsx')
+    storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')
     
     if not osp.exists(storage):
-        assert args.model == 'gpt-3.5-turbo-0613'
+        assert model == 'chatgpt-0613'
+        model_name = 'gpt-3.5-turbo-0613'
 
         if INTERNAL:
-            model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
+            model = OpenAIWrapperInternal(model_name, verbose=verbose)
         else:
-            model = OpenAIWrapper(args.model, verbose=args.verbose)
+            model = OpenAIWrapper(model_name, verbose=verbose)
 
         lt = len(unknown)
         lines = [unknown.iloc[i: i + 1] for i in range(lt)]
@@ -119,17 +118,15 @@ def MME_eval(args):
 
         if len(tups):
             # Do not save temporary file due to the fast speed
-            res = track_progress_rich(
-                MME_auxeval,
-                tups, 
-                nproc=args.nproc,
-                chunksize=args.nproc)
+            res = track_progress_rich(MME_auxeval, tups, nproc=nproc, chunksize=nproc)
 
             for k, v in zip(indices, res):
                 preds_map[k] = v
 
         data['prediction'] = [preds_map[idx] for idx in data['index']]
         dump(data, storage)
+    else:
+        logger.warning(f"GPT matching file {storage} already exists, will reuse it in MME_eval. ")
     
     data = load(storage)
     data["score"] = (data["answer"] == data["prediction"])
@@ -137,22 +134,20 @@ def MME_eval(args):
     score = MME_rating(storage)
     score_tgt = storage.replace('auxmatch.xlsx', 'score.csv')
     dump(score, score_tgt)
-
+    logger.info(f'MME_eval successfully finished evaluating {eval_file}, results saved in {score_tgt}')
+    logger.info('Score: ')
+    logger.info(score)
     return score
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default="gpt-3.5-turbo-0613", choices=['gpt-3.5-turbo-0613'])
-    parser.add_argument("--nproc", type=int, default=6)
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default="chatgpt-0613", choices=['chatgpt-0613'])
+    parser.add_argument("--nproc", type=int, default=4)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
-    
-    suffix = args.data.split('.')[-1]
-    log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
-    acc = MME_eval(args)
-    print(acc)
+    acc = MME_eval(eval_file=args.data, model=args.model, nproc=args.nproc, verbose=args.verbose)

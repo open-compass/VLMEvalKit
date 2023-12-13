@@ -25,6 +25,7 @@ import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 from tabulate import tabulate
+from mmcv import get_logger
 
 def circular_pred(df, extract_func=None):
     if extract_func is None:
@@ -112,12 +113,6 @@ def build_options(option_list):
         else:
             return s
     return s
-
-def double_log(msg, fout=None):
-    print(msg)
-    if fout is not None:
-        fout.write(str(msg) + '\n')
-        fout.flush()
 
 def timestr(second=True, minute=False):
     s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')[2:]

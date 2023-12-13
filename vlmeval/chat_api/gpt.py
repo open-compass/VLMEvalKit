@@ -53,8 +53,8 @@ class OpenAIWrapper(BaseAPI):
 
         openai_key = os.environ.get('OPENAI_API_KEY', None) if openai_key is None else openai_key
         self.openai_key = openai_key
-
-        assert isinstance(openai_key, str) and openai_key.startswith('sk-')
+        
+        assert isinstance(openai_key, str) and openai_key.startswith('sk-'), f'Illegal openai_key {openai_key}. Please set the environment variable OPENAI_API_KEY to your openai key. '
 
         if api_base in APIBASES:
             self.client = OpenAI(api_key=openai_key, base_url=APIBASES[api_base])
@@ -86,7 +86,7 @@ class OpenAIWrapper(BaseAPI):
         context_window = GPT_context_window(self.model)
         max_tokens = min(max_tokens, context_window - self.get_token_len(inputs))
         if 0 < max_tokens <= 100:
-            warnings.warn('Less than 100 tokens left, may exceed the context window with some additional meta symbols. ')
+            self.logger.warning('Less than 100 tokens left, may exceed the context window with some additional meta symbols. ')
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
@@ -104,9 +104,9 @@ class OpenAIWrapper(BaseAPI):
             return 0, result, 'API Call Succeed'
         except:
             if self.verbose:
-                warnings.warn(f'OPENAI KEY {self.openai_key} FAILED !!!')
+                self.logger.warning(f'OPENAI KEY {self.openai_key} FAILED !!!')
                 try:
-                    warnings.warn(response)
+                    self.logger.warning(response)
                 except:
                     pass
             return -1, self.fail_msg, 'API Call Failed'

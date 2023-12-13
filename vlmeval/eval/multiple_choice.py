@@ -98,6 +98,7 @@ def prefetch_answer(item):
     return can_infer(item['prediction'], choices)
 
 def extract_answer_from_item(model, item):
+    logger = get_logger('Evaluation')
     # It will return: (pred, raw, llm_time)
     options = extract_options(item)
     option_str = build_options(options)
@@ -117,14 +118,14 @@ def extract_answer_from_item(model, item):
         ans = model.generate(prompt)
         if 'Failed to obtain answer via API' in ans:
             msg = 'GPT API failed to answer. '
-            double_log(msg, fout)
+            logger.warning(msg)
             retry -= 1
         else:
             ret = can_infer(ans, choices)
             if ret:
                 return dict(opt=ret, log=ans)
             else:
-                double_log(f'GPT output includes 0 or more than 1 letter in "ABCD": {ans}', fout)
+                logger.warning(f'GPT output includes 0 or more than 1 letter in "ABCD": {ans}')
                 retry -= 1
 
         if retry == 0:
@@ -205,23 +206,25 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
             result[k] = v
     dump(result, result_file)
 
-def eval_result(args):
-    eval_file = args.data
-    dataset = args.dataset
+def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4, verbose=False):
+    logger = get_logger('Evaluation')
+
+    assert dataset is not None
     rd.seed(2680)
-
     suffix = eval_file.split('.')[-1]
-    assert args.model in ['gpt-3.5-turbo-0613', "exact_matching"]
+    assert model in ['chatgpt-0613', "exact_matching"]
+    name_str = 'openai' if model == 'chatgpt-0613' else model
 
-    model = None
-    if args.model != 'exact_matching':
+    if model == 'exact_matching':
+        model = None
+    else:
+        model_name = 'gpt-3.5-turbo-0613'
         if INTERNAL:
-            model = OpenAIWrapperInternal(args.model, verbose=args.verbose)
+            model = OpenAIWrapperInternal(model_name, verbose=verbose)
         else:
-            model = OpenAIWrapper(args.model, verbose=args.verbose)
-    name_str = 'openai' if args.model == 'gpt-3.5-turbo-0613' else args.model
+            model = OpenAIWrapper(model_name, verbose=verbose)
     
-    double_log(f'Evaluating {eval_file}', fout)
+    logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
     result = {}
     if osp.exists(result_file):
@@ -270,11 +273,11 @@ def eval_result(args):
                 model=model, 
                 data_groups=data_groups, 
                 answer_map=answer_map,
-                nproc=args.nproc, 
+                nproc=nproc, 
                 result=result, 
                 result_file=result_file)
         else:
-            warnings.warn("Exact Matching mode, will not do GPT-based answer matching. ")
+            logger.warning("Exact Matching mode, will not do GPT-based answer matching. ")
             keys = [x.iloc[0]['index'] % 1e6 for x in data_groups]
             for k in keys:
                 result[k] = dict(hit=0, log="Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.")
@@ -302,19 +305,23 @@ def eval_result(args):
     data_main = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
     
     acc = report_acc(data_main)
-    dump(acc, eval_file.replace(f'.{suffix}', f'_acc.csv'))
-    double_log(acc)
-    
-    if fout is not None:
-        fout.close()
-
+    score_file = eval_file.replace(f'.{suffix}', f'_acc.csv')
+    dump(acc, score_file)
+    logger.info(f'multiple_choice_eval successfully finished evaluating {eval_file}, results saved in {score_file}')
+    logger.info(f'Score: ')
+    logger.info(acc)
     return acc
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='gpt-3.5-turbo-0613', choices=['gpt-3.5-turbo-0613', 'exact_matching'])
-    parser.add_argument("--dataset", type=str, default='MMBench', help='The dataset to evaluate')
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='chatgpt-0613', choices=['chatgpt-0613', 'exact_matching'])
+    parser.add_argument(
+        "--dataset", 
+        type=str, 
+        default='MMBench', 
+        help='The dataset to evaluate', 
+        choices=['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench'])
     parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
@@ -322,8 +329,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    assert args.dataset in ['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench']
-    suffix = args.data.split('.')[-1]
-    log_pth = args.data.replace('.' + suffix, f'_{args.model}_eval.log')
-    fout = open(log_pth, 'a')
-    acc = eval_result(args)
+    acc = multiple_choice_eval(eval_file=args.data, model=args.model, dataset=args.dataset, nproc=args.nproc, verbose=args.verbose)
+    

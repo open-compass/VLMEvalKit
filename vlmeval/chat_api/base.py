@@ -1,7 +1,7 @@
 import time
 import random as rd
 from abc import abstractmethod
-import warnings
+from ..smp import get_logger
 
 class BaseAPI:
     
@@ -18,13 +18,14 @@ class BaseAPI:
         self.kwargs = kwargs
         self.verbose = verbose
         self.fail_msg = fail_msg
+        self.logger = get_logger('ChatAPI')
         if len(kwargs):
-            warnings.warn(f'BaseAPI received the following kwargs: {kwargs}')
-            warnings.warn(f'Will try to use them as kwargs for `generate`. ')
+            self.logger.info(f'BaseAPI received the following kwargs: {kwargs}')
+            self.logger.info(f'Will try to use them as kwargs for `generate`. ')
 
     @abstractmethod
     def generate_inner(self, inputs, **kwargs):
-        warnings.warn(f'For APIBase, generate_inner is an abstract method. ')
+        self.logger.warning(f'For APIBase, generate_inner is an abstract method. ')
         assert 0, 'generate_inner not defined'
         ret_code, answer, log = None, None, None
         # if ret_code is 0, means succeed
