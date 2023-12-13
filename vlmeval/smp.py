@@ -27,6 +27,11 @@ import seaborn as sns
 from tabulate import tabulate
 from mmcv import get_logger
 
+def get_rank_and_world_size():
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    return local_rank, world_size
+
 def circular_pred(df, extract_func=None):
     if extract_func is None:
         extract_func = lambda x: x
