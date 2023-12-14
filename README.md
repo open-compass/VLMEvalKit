@@ -1,7 +1,7 @@
 ![LOGO](assets/LOGO.svg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center">
-<a href="#-content">📊Datasets, Models, Evaluation Results </a> • <a href="#-doc">🏗️ QuickStart </a> • <a href="#-custom">🛠️ Custom Benchmark & Model </a> •   <a href="#-goal">🎯 The Goal of VLMEvalKit </a> •   <a href="#-citation"> 🖊️ Citation </a> 
+<a href="#-content">📊Datasets, Models, Evaluation Results </a> • <a href="#-doc">🏗️ QuickStart </a> • <a href="#-custom">🛠️ Custom Benchmark & Model </a> •   <a href="#-goal">🎯 Goal </a> •   <a href="#-citation"> 🖊️ Citation </a> 
 </div>
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
