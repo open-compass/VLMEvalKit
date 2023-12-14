@@ -67,6 +67,7 @@ def check_md5(data_path, dataset):
         if str(hash.hexdigest()) == dataset_md5_dict[dataset]:
             return True
         else:
+            warnings.warn('this data file is incomplete, so it needs to be downloaded again.')
             return False
     except:
         return False
