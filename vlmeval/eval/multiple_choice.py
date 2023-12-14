@@ -210,6 +210,11 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     logger = get_logger('Evaluation')
 
     assert dataset is not None
+    if dataset == 'MMBench_TEST_CN':
+        dataset = 'MMBench_CN'
+    elif dataset == 'MMBench_TEST_EN':
+        dataset = 'MMBench'
+
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
     assert model in ['chatgpt-0613', "exact_matching"]
