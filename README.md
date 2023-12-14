@@ -1,7 +1,6 @@
 ![LOGO](assets/LOGO.svg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center">
-<a href="#-content">📊Datasets, Models, Evaluation Results </a> • <a href="#-doc">🏗️ QuickStart </a> • <a href="#-custom">🛠️ Custom Benchmark & Model </a> •   <a href="#-The Goal of VLMEvalKit">🎯 Goal </a> •   <a href="#-citation"> 🖊️ Citation </a> 
 </div>
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
@@ -102,9 +101,9 @@ torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 
 The evaluation results will be printed as logs, besides. **Result Files** will also be generated in the directory `$YOUR_WORKING_DIRECTORY/{model_name}`. Files ending with `.csv` contain the evaluated metrics. 
 
-## 🛠️ How to implement a new Benchmark / VLM in VLMEvalKit? 
+## 🛠️ Custom Benchmark or VLM
 
-Please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
+To implement a custom benchmark or VLM in VLMEvalKit, please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
 
 ## 🎯 The Goal of VLMEvalKit
 
@@ -119,7 +118,7 @@ Please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
    1. VLMEvalKit **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in the codebase. 
    2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility. 
 
-# 🖊️ Citation
+## 🖊️ Citation
 
 If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
@@ -139,7 +138,7 @@ If you use VLMEvalKit in your research or wish to refer to the published OpenSou
 }
 ```
 
-# 💻 Other Projects in OpenCompass
+## 💻 Other Projects in OpenCompass
 
 - [opencompass](https://github.com/open-compass/opencompass/): An LLM evaluation platform, supporting a wide range of models (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude, etc) over 50+ datasets.
 - [MMBench](https://github.com/open-compass/MMBench/): Official Repo of "MMBench: Is Your Multi-modal Model an All-around Player?"
