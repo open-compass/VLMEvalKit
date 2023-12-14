@@ -34,7 +34,7 @@ img_root_map = {
 assert set(dataset_URLs) == set(img_root_map)
 
 def DATASET_TYPE(dataset):
-    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower():
+    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
