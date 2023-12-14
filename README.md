@@ -1,7 +1,6 @@
 ![LOGO](assets/LOGO.svg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
-<div align="center">
-<a href="#-content">📊Datasets, Models, Evaluation Results </a> • <a href="#-doc">🏗️ QuickStart </a> • <a href="#-custom">🛠️ Custom Benchmark & Model </a> •   <a href="#-goal">🎯 Goal </a> •   <a href="#-citation"> 🖊️ Citation </a> 
+<div align="center"><br><br>
 </div>
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
@@ -102,9 +101,9 @@ torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 
 The evaluation results will be printed as logs, besides. **Result Files** will also be generated in the directory `$YOUR_WORKING_DIRECTORY/{model_name}`. Files ending with `.csv` contain the evaluated metrics. 
 
-## 🛠️ How to implement a new Benchmark / VLM in VLMEvalKit? 
+## 🛠️ Custom Benchmark or VLM
 
-Please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
+To implement a custom benchmark or VLM in VLMEvalKit, please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
 
 ## 🎯 The Goal of VLMEvalKit
 
