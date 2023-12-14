@@ -1,4 +1,5 @@
 import pandas as pd
+import hashlib
 from vlmeval.smp import *
 
 LAST_MODIFIED = 231126000000
@@ -15,6 +16,20 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
+}
+
+dataset_md5_dict = {
+    'MMBench_DEV_EN': "b6caf1133a01c6bb705cf753bb527ed8", 
+    'MMBench_TEST_EN': "6939fadb0ce626fefc0bdc9c64efc528", 
+    'MMBench_DEV_CN': "08b8fc3324a5ed74155350f57be69fbd", 
+    'MMBench_TEST_CN': "7e1239baf0ee4c8b513e19705a0f317e", 
+    "MMBench": "4115aea3383f3dd0083be6a633e0f820",  # Link Invalid, Internal Only
+    "MMBench_CN": "2e053ffc90ea598b1feae13c36dc13ee",    # Link Invalid, Internal Only
+    'CCBench': "5e1d7fff66b9da9c103d01bf48f4f5af", 
+    'MME': "b36b43c3f09801f5d368627fb92187c3", 
+    'SEEDBench_IMG': "68017231464752261a2526d6ca3a10c0", 
+    "CORE_MM": "8a8da2f2232e79caf98415bfdf0a202d",
+    "MMVet": "f400d7f513a585a0f218cbd6882e0671",
 }
 
 img_root_map = {
@@ -43,6 +58,21 @@ def DATASET_TYPE(dataset):
 def isliststr(s):
     return (s[0] == '[') and (s[-1] == ']')
 
+def check_md5(data_path, dataset):
+    try:
+        with open(data_path, 'rb') as f:
+            hash = hashlib.new('md5')
+            for chunk in iter(lambda: f.read(2**20), b''):
+                hash.update(chunk)
+        if str(hash.hexdigest()) == dataset_md5_dict[dataset]:
+            return True
+        else:
+            warnings.warn('this data file is incomplete, so it needs to be downloaded again.')
+            return False
+    except:
+        return False
+
+
 class TSVDataset:
     
     def __init__(self, dataset='MMBench', img_root=None):
@@ -57,7 +87,7 @@ class TSVDataset:
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
 
-        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED:
+        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED and check_md5(data_path, dataset):
             pass
         else:
             warnings.warn("The dataset tsv is not downloaded")
