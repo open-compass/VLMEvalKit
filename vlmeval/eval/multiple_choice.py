@@ -321,7 +321,7 @@ def parse_args():
         type=str, 
         default='MMBench', 
         help='The dataset to evaluate', 
-        choices=['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench'])
+        choices=['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench', 'MMBench_TEST_CN', 'MMBench_TEST_EN'])
     parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()

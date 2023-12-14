@@ -5,6 +5,9 @@ from datetime import datetime
 dataset = ['MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN', 'MMVet']
 suffix = ['score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'gpt-4-turbo_score.csv']
 script = ['mme_eval.py', 'multiple_choice.py', 'multiple_choice.py', 'multiple_choice.py', 'multiple_choice.py', 'mmvet_eval.py']
+dataset.extend(['MMBench_DEV_CN', 'MMBench_DEV_EN', 'MMBench_TEST_CN', 'MMBench_TEST_EN'])
+suffix.extend(['acc.csv'] * 4)
+script.extend(['multiple_choice.py'] * 4)
 
 N = len(dataset)
 assert N == len(suffix) == len(script)
