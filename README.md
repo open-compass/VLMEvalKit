@@ -1,6 +1,8 @@
-# VLMEvalKit
-
 ![LOGO](assets/LOGO.svg)
+<div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
+<div align="center">
+<a href="#-content">📊Datasets, Models, Evaluation Results </a> • <a href="#-doc">🏗️ QuickStart </a> • <a href="#-custom">🛠️ Custom Benchmark & Model </a> •   <a href="#-goal">🎯 The Goal of VLMEvalKit </a> •   <a href="#-citation"> 🖊️ Citation </a> 
+</div>
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
@@ -39,11 +41,19 @@ ret = model.multi_generate(['assets/apple.jpg', 'assets/apple.jpg'], 'How many a
 print(ret)  # There are two apples in the provided images.
 ```
 
-## 🏗️ How to run the evaluation?
+## 🏗️ QuickStart
 
 Before running the evaluation script, you need to **configure** the VLMs and set the model_paths properly. 
 
 After that, you can use a single script `run.py` to inference and evaluate multiple VLMs and benchmarks at a same time. 
+
+### Step0. Installation
+
+```bash
+git clone https://github.com/open-compass/VLMEvalKit.git
+cd VLMEvalKit
+pip install -e .
+```
 
 ### Step1. Configuration
 
@@ -63,7 +73,6 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 
 - `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`). 
   - including: `MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench, Core_MM, MMVet`
-
 - `--model (list[str])`: Set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`). 
 - `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
 - `--nproc (int, default to 4)`: The number of threads for OpenAI API calling.
