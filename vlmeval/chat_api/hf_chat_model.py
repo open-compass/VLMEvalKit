@@ -1,8 +1,6 @@
 import os
-import warnings
 import os.path as osp
 import torch
-from .base import BaseAPI
 from ..smp import *
 
 def get_gpu_num(model_name):
@@ -29,7 +27,7 @@ validated_llms = [
 ]
 Auto_model = ['chatglm']
 
-class HFChatModel(BaseAPI):
+class HFChatModel:
 
     def _get_context_length(self, model, model_path):
         # By default, we use model.config.seq_length
@@ -50,7 +48,7 @@ class HFChatModel(BaseAPI):
             context_window = self._get_context_length(model, model_path)
             return context_window
         except:
-            warnings.warn(
+            self.logger.critical(
                 "Failed to extract context_window information from config / generation_config. "
                 "Please read the above code and check if the logic works for you model path"
             )
@@ -61,11 +59,13 @@ class HFChatModel(BaseAPI):
                  system_prompt: str=None,
                  **kwargs):
         
+        self.logger = get_logger('HFChatModel')
         if 'vicuna' in model_path.lower():
             try:
                 from fastchat.model import get_conversation_template
             except:
-                warnings.warn("Please install fastchat first to use vicuna. ")
+                self.logger.critical("Please install fastchat first to use vicuna. ")
+                exit(-1)
 
         self.explicit_device = kwargs.pop('device', None)
 
@@ -81,7 +81,7 @@ class HFChatModel(BaseAPI):
         from transformers.generation import GenerationConfig
         
         if model_path not in validated_llms:
-            warnings.warn(f"{model_path} not in validated LLMs, may have inference troubles. ")
+            self.logger.warning(f"{model_path} not in validated LLMs, may have inference troubles. ")
 
         self.model_path = model_path
         if listinstr(Auto_model, model_path):
@@ -116,7 +116,7 @@ class HFChatModel(BaseAPI):
         self.answer_buffer = 192
         self.system_prompt = system_prompt
         for k, v in kwargs.items():
-            warnings.warn(f'Following args are passed and will be used as generation hyper-paras (If not set specifically), {k}: {v}. ')
+            self.logger.info(f'Following args are passed and will be used as generation hyper-paras (If not set specifically), {k}: {v}. ')
         self.kwargs = kwargs
         
     def generate_str(self, input, **kwargs):

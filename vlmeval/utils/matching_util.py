@@ -34,7 +34,8 @@ def can_infer_option(answer, num_choice=5):
     if count(splits, choices) == 1:
         for ch in choices:
             if 'A' in splits and len(splits) > 3 and verbose:
-                double_log(f'A might be a quantifier in the string: {answer}. ', fout)
+                logger = get_logger('Evaluation')
+                logger.info(f'A might be a quantifier in the string: {answer}.')
                 return False
             if ch in splits:
                 return ch 

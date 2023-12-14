@@ -1,7 +1,6 @@
 from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
-from collections import defaultdict
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 
@@ -84,48 +83,56 @@ def MMVet_acc(result_file):
         res2['acc'].append(score[v] / tot[v] * 100)
     res = pd.DataFrame(res)
     res2 = pd.DataFrame(res2)
-    result_file1 = result_file.replace('.xlsx','_score.csv')
-    result_file2= result_file.replace('.xlsx','_score2.csv')
-    dump(res,result_file1)
-    dump(res2,result_file2)
-    return res,res2
+    return res, res2
 
-def MMVet_eval(args):
-    data = load(args.data)
-    gpt_version = args.model
-    storage = args.data.replace('.xlsx', f'_{gpt_version}.xlsx')
+def MMVet_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
+    logger = get_logger('Evaluation')
 
-    model_map = {
-        'gpt-4-turbo': 'gpt-4-1106-preview', 
-        'gpt-4-0613': 'gpt-4-0613',
-        'chatgpt-1106': 'gpt-3.5-turbo-1106',
-        'chatgpt-0613': 'gpt-3.5-turbo-0613'
-    }
-    model_version = model_map[gpt_version]
-
-    if INTERNAL:
-        model = OpenAIWrapperInternal(model_version, verbose=args.verbose, max_tokens=3)
+    storage = eval_file.replace('.xlsx', f'_{model}.xlsx')
+    if osp.exists(storage):
+        logger.warning(f"GPT scoring file {storage} already exists, will reuse it in MMVet_eval. ")
     else:
-        model = OpenAIWrapper(model_version, verbose=args.verbose, max_tokens=3)
-    
-    lt = len(data)
-    lines = [data.iloc[i] for i in range(lt)]
-    tups = [(model, line) for line in lines]
-    indices = [line['index'] for line in lines]
+        data = load(eval_file)
+        gpt_version = model
 
-    res = track_progress_rich(
-        MMVet_auxeval,
-        tups, 
-        nproc=args.nproc,
-        chunksize=args.nproc)
+        model_map = {
+            'gpt-4-turbo': 'gpt-4-1106-preview', 
+            'gpt-4-0613': 'gpt-4-0613',
+            'chatgpt-1106': 'gpt-3.5-turbo-1106',
+            'chatgpt-0613': 'gpt-3.5-turbo-0613'
+        }
+        model_version = model_map[gpt_version]
 
-    log_map, score_map = {}, {}
-    for k, v in zip(indices, res):
-        log_map[k] = v['log']
-        score_map[k] = v['score']
-    data['score'] = [score_map[idx] for idx in data['index']]
-    data['log'] = [log_map[idx] for idx in data['index']]
-    dump(data, storage)
+        if INTERNAL:
+            # We follow the original codebase to set max_tokens == 3
+            model = OpenAIWrapperInternal(model_version, verbose=verbose, max_tokens=3)
+        else:
+            model = OpenAIWrapper(model_version, verbose=verbose, max_tokens=3)
+        
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        tups = [(model, line) for line in lines]
+        indices = [line['index'] for line in lines]
+
+        res = track_progress_rich(MMVet_auxeval, tups, nproc=nproc, chunksize=nproc)
+
+        log_map, score_map = {}, {}
+        for k, v in zip(indices, res):
+            log_map[k] = v['log']
+            score_map[k] = v['score']
+        data['score'] = [score_map[idx] for idx in data['index']]
+        data['log'] = [log_map[idx] for idx in data['index']]
+        dump(data, storage)
+
+    score, score_fine = MMVet_acc(storage)
+    score_pth = storage.replace('.xlsx', '_score.csv')
+    score_fine_pth = storage.replace('.xlsx', '_score_fine.csv')
+
+    dump(score, score_pth)
+    dump(score_fine, score_fine_pth)
+    logger.info(f'MMVet_eval successfully finished evaluating {eval_file}, results saved in {score_pth} and {score_fine_pth}')
+    logger.info(f'Score: ')
+    logger.info(score)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
@@ -143,8 +150,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    storage = args.data.replace('.xlsx', f'_{args.model}.xlsx')
-    if not osp.exists(storage):
-        MMVet_eval(args)
-    score = MMVet_acc(storage)
-    print(score)
+    MMVet_eval(eval_file=args.data, model=args.model, nproc=args.nproc, verbose=args.verbose)
+    

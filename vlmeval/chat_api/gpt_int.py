@@ -30,6 +30,8 @@ class OpenAIWrapperInternal(BaseAPI):
         if 'KEYS' in os.environ and osp.exists(os.environ['KEYS']):
             keys = load(os.environ['KEYS'])
             headers['alles-apin-token'] = keys.get('alles-apin-token', '')
+        elif 'ALLES' in os.environ:
+            headers['alles-apin-token'] = os.environ['ALLES']
         self.headers = headers
         self.temperature = temperature
         self.timeout = timeout
