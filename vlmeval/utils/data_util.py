@@ -16,6 +16,7 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
+    "COCO": "https://opencompass.openxlab.space/utils/VLMEval/COCO.tsv", #Link Invalid, Internal Only
 }
 
 dataset_md5_dict = {
@@ -30,6 +31,7 @@ dataset_md5_dict = {
     'SEEDBench_IMG': "68017231464752261a2526d6ca3a10c0", 
     "CORE_MM": "8a8da2f2232e79caf98415bfdf0a202d",
     "MMVet": "f400d7f513a585a0f218cbd6882e0671",
+    'COCO': "fc264ffeef2c9610b0e74fe3460a608d",   # Link Invalid, Internal Only
 }
 
 img_root_map = {
@@ -44,6 +46,7 @@ img_root_map = {
     "CORE_MM": "CORE_MM", 
     'SEEDBench_IMG': "SEEDBench_IMG",
     'MMVet':'MMVet',
+    'COCO':'COCO',
 }
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -139,6 +142,9 @@ class TSVDataset:
                 decode_base64_to_image_file(line['image'], tgt_path)
        
         prompt = line['question']
+        
+        if listinstr(['COCO'], dataset):
+            prompt = 'Please Describe this image in general.'
 
         if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
             question = line['question']
