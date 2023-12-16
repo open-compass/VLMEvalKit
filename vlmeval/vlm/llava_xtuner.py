@@ -28,11 +28,8 @@ class LLaVA_XTuner:
                  **kwargs):
         try:
             from peft import PeftModel
-            from xtuner.dataset.utils import expand2square
-            from xtuner.model.utils import prepare_inputs_labels_for_multimodal
             from xtuner.tools.utils import get_chat_utils
-            from xtuner.utils import (DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX,
-                                      PROMPT_TEMPLATE)
+            from xtuner.utils import PROMPT_TEMPLATE
         except Exception:
             warnings.warn(
                 'Please install xtuner with `pip install -U xtuner` before '
@@ -53,7 +50,8 @@ class LLaVA_XTuner:
 
         llm = AutoModelForCausalLM.from_pretrained(llm_path,
                                                    trust_remote_code=True,
-                                                   torch_dtype=torch_dtype)
+                                                   torch_dtype=torch_dtype,
+                                                   device_map='auto')
         tokenizer = AutoTokenizer.from_pretrained(llm_path,
                                                   trust_remote_code=True,
                                                   encode_special_tokens=True)
@@ -91,7 +89,6 @@ class LLaVA_XTuner:
                                               torch_dtype=torch_dtype)
         print(f'Load projector from {llava_path}')
 
-        llm.cuda()
         llm.eval()
         visual_encoder.cuda()
         visual_encoder.eval()
@@ -117,10 +114,11 @@ class LLaVA_XTuner:
                               pad_token_id=self.tokenizer.pad_token_id
                               if self.tokenizer.pad_token_id is not None else
                               self.tokenizer.eos_token_id)
-        kwargs_default.update(kwargs)
+        if len(kwargs) > 0:
+            kwargs_default.update(kwargs)
+            warnings.warn(f'Following kwargs received: {kwargs}, '
+                          'will use as generation config.')
         self.gen_config = GenerationConfig(**kwargs_default)
-        warnings.warn(f'Following kwargs received: {self.kwargs}, '
-                      'will use as generation config.')
 
     def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
@@ -168,6 +166,9 @@ class LLaVA_XTuner:
         return {'image': tgt_path, 'text': prompt}
 
     def generate(self, image_path, prompt, dataset=None):
+        from xtuner.dataset.utils import expand2square
+        from xtuner.model.utils import prepare_inputs_labels_for_multimodal
+        from xtuner.utils import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
         image = Image.open(image_path).convert('RGB')
         image = expand2square(
             image,
