@@ -143,7 +143,7 @@ class LLaVA_XTuner:
             hint = line['hint'] if ('hint' in line
                                     and not pd.isna(line['hint'])) else None
             if hint is not None:
-                question + hint + '\n' + question
+                question = hint + ' ' + question
 
             option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
@@ -151,9 +151,10 @@ class LLaVA_XTuner:
                 for cand in option_candidate
                 if cand in line and not pd.isna(line[cand])
             }
+            options_prompt = 'There are several options:\n'
             for key, item in options.items():
-                question += f'\n{key}. {item}'
-            prompt = question
+                options_prompt += f'{key}. {item}\n'
+            prompt = question + ' ' + options_prompt
 
             if not cn_string(prompt):
                 prompt = prompt + '\n' + ("Answer with the option's letter "
