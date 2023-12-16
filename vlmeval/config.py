@@ -42,5 +42,5 @@ supported_VLM = {
     "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'), 
     "mPLUG-Owl2": partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'llava-internlm-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm-chat-7b', llava_path='xtuner/llava-internlm-7b', visual_encoder_path='openai/clip-vit-large-patch14-336', visual_select_layer=-2, prompt_template='internlm_chat'),
-    'llava-v1.5_7b_xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5_7b_xtuner', visual_encoder_path='openai/clip-vit-large-patch14-336', visual_select_layer=-2, prompt_template='vicuna')
+    'llava-v1.5-7b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5-7b-xtuner', visual_encoder_path='openai/clip-vit-large-patch14-336', visual_select_layer=-2, prompt_template='vicuna')
 }
