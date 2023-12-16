@@ -16,6 +16,7 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
+    "MMMU": "https://opencompass.openxlab.space/utils/VLMEval/MMMU.tsv",
 }
 
 dataset_md5_dict = {
@@ -44,6 +45,7 @@ img_root_map = {
     "CORE_MM": "CORE_MM", 
     'SEEDBench_IMG': "SEEDBench_IMG",
     'MMVet':'MMVet',
+    'MMMU':'MMMU'
 }
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -53,6 +55,8 @@ def DATASET_TYPE(dataset):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
+    elif 'MMMU' in dataset:
+        return 'multi-choice & QA'
     return 'QA'
 
 def isliststr(s):
@@ -140,9 +144,11 @@ class TSVDataset:
        
         prompt = line['question']
 
-        if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
+        if listinstr(['MMBench', 'CCBench', 'SEEDBench', 'MMMU'], dataset):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
+            if listinstr(['MMMU'], dataset):
+                option_candidate = ['A', 'B', 'C', 'D', 'E' ,'F', 'G', 'H', 'I']
             options = {
                 cand: line[cand]
                 for cand in option_candidate

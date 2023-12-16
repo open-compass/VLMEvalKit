@@ -45,7 +45,7 @@ def can_infer_text(answer, choices):
     answer = answer.lower()
     assert isinstance(choices, dict)
     for k in choices:
-        assert k in 'ABCD'
+        assert k in 'ABCDEFGHI'
         choices[k] = str(choices[k]).lower()
     cands = []
     for k in choices:

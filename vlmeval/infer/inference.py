@@ -3,7 +3,7 @@ import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset
-from vlmeval.eval import MME_rating, MME_postproc
+from vlmeval.eval import MME_rating, MME_postproc, MMMU_eval
 from vlmeval.smp import *
 
 def parse_args():
@@ -159,7 +159,7 @@ def main():
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
-            if rank == 0 and dataset_name not in ['MME', 'CORE_MM', 'MMVet']:
+            if rank == 0 and dataset_name not in ['MME', 'CORE_MM', 'MMVet', 'MMMU']:
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)
@@ -171,5 +171,10 @@ def main():
                 print(model_name, res)
                 dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
 
+            if rank == 0 and dataset_name == 'MMMU':
+                time.sleep(3)
+                res = MMMU_eval(result_file)
+                print(model_name, res)
+                
 if __name__ == '__main__':
     main()
