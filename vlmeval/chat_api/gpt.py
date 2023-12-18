@@ -153,7 +153,7 @@ class OpenAIWrapper(BaseAPI):
             if inputs.startswith('http') or osp.exists(inputs):
                 return 65 if self.img_detail == 'low' else 130
             else:
-                return enc.encode(inputs)
+                return len(enc.encode(inputs))
         elif isinstance(inputs, dict):
             assert 'content' in inputs
             return self.get_token_len(inputs['content'])
