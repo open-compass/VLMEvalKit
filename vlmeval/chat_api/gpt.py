@@ -82,7 +82,7 @@ class OpenAIWrapper(BaseAPI):
         if isinstance(inputs, str):
             input_msgs.append(dict(role='user', content=inputs))
             return input_msgs
-        assert isinstance(inputs, list):
+        assert isinstance(inputs, list)
         dict_flag = [isinstance(x, dict) for x in inputs]
         if np.all(dict_flag):
             input_msgs.extend(inputs)
