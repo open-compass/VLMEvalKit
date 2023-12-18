@@ -146,7 +146,20 @@ class OpenAIWrapper(BaseAPI):
                     pass
             return -1, self.fail_msg, 'API Call Failed'
 
-    def get_token_len(self, prompt: str) -> int:
+    def get_token_len(self, inputs) -> int:
         import tiktoken
         enc = tiktoken.encoding_for_model(self.model)
-        return len(enc.encode(prompt))
+        if isinstance(inputs, str):
+            if inputs.startswith('http') or osp.exists(inputs):
+                return 65 if self.img_detail == 'low' else 130
+            else:
+                return enc.encode(prompt)
+        elif isinstance(inputs, dict):
+            assert 'content' in inputs
+            return self.get_token_len(inputs['content'])
+        assert isinstance(inputs, list)
+        res = 0
+        for item in inputs:
+            res += self.get_token_len(item)
+        return res
+    
