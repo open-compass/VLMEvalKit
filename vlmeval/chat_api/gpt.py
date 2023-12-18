@@ -93,7 +93,7 @@ class OpenAIWrapper(BaseAPI):
             img_flag = [x.startswith('http') or osp.exists(x) for x in inputs]
             if np.any(img_flag):
                 content_list = []
-                for fl, msg in zip(img_flag, input):
+                for fl, msg in zip(img_flag, inputs):
                     if not fl:
                         content_list.append(dict(type='text', text=msg))
                     elif msg.startswith('http'):
