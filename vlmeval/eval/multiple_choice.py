@@ -86,9 +86,13 @@ def build_prompt_cn(question, options, prediction):
     )
     return tmpl.format(question, options, prediction)
 
-def build_choices(item):
+def build_choices(item, is_mmmu=False):
     ret = {}
-    for ch in 'ABCDEFGHI':
+    if is_mmmu:
+        option_string = 'ABCDEFGHI'
+    else:
+        option_string = 'ABCD'
+    for ch in option_string:
         if not pd.isna(item[ch]):
             ret[ch] = item[ch]
     return ret
