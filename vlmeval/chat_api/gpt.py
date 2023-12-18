@@ -88,7 +88,6 @@ class OpenAIWrapper(BaseAPI):
             input_msgs.extend(inputs)
             return input_msgs
         str_flag = [isinstance(x, str) for x in inputs]
-        list_flag = [isinstance(x, list) for x in inputs]
         if np.all(str_flag):
             img_flag = [x.startswith('http') or osp.exists(x) for x in inputs]
             if np.any(img_flag):
@@ -104,7 +103,7 @@ class OpenAIWrapper(BaseAPI):
                         b64 = encode_image_to_base64(img, target_size=self.img_size)
                         img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
                         content_list.append(dict(type='image_url', image_url=img_struct))
-                input_msgs.append(role='user', content=content_list)
+                input_msgs.append(dict(role='user', content=content_list))
                 return input_msgs
             else:
                 roles = ['user', 'assistant'] if len(inputs) % 2 == 1 else ['assistant', 'user']
