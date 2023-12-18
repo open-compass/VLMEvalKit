@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.eval import MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc
+from vlmeval.eval import MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc, MMMU_eval
 from vlmeval.infer import infer_data, prefetch_acc
 from vlmeval.utils import TSVDataset
 from vlmeval.config import supported_VLM
@@ -67,8 +67,13 @@ def main():
 
                     if dataset_name == 'MME':
                         data = MME_postproc(data)
-
-                    dump(data, result_file)   
+                    
+                    # MMMU的data中会产生字符'$',如果使用openpyxl会出现openpyxl.utils.exceptions.IllegalCharacterError
+                    if dataset_name != 'MMMU':
+                        dump(data, result_file)
+                    else:
+                        data.to_excel(result_file, engine='xlsxwriter')   
+                    
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
@@ -77,7 +82,9 @@ def main():
                 res = None
                 if dataset_name == 'MME':
                     res = MME_rating(result_file)
-                elif dataset_name not in ['CORE_MM', 'MMVet']:
+                elif dataset_name == 'MMMU':
+                    res = MMMU_eval(result_file)
+                elif dataset_name not in ['CORE_MM', 'MMVet', 'MMMU']:
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
