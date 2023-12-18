@@ -16,7 +16,7 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
-    "MMMU": "https://opencompass.openxlab.space/utils/VLMEval/MMMU.tsv",
+    "MMMU": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_s.tsv",
 }
 
 dataset_md5_dict = {
@@ -86,7 +86,6 @@ class TSVDataset:
 
         self.dataset = dataset
         self.dataset_type = DATASET_TYPE(dataset)
-        '''
         url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
@@ -95,9 +94,7 @@ class TSVDataset:
         else:
             warnings.warn("The dataset tsv is not downloaded")
             download_file(url, data_path)
-        '''
-        if dataset == 'MMMU':
-            data_path = '/mnt/petrelfs/qiaoyuxuan/share_data/MMMU/mmmu_s.tsv'
+            
         data = load(data_path)
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
