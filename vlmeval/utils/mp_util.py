@@ -18,10 +18,13 @@ class _Worker:
 
     def __call__(self, inputs):
         inputs, idx = inputs
-        if not isinstance(inputs, (tuple, list)):
+        if not isinstance(inputs, (tuple, list, dict)):
             inputs = (inputs, )
 
-        return self.func(*inputs), idx
+        if isinstance(inputs, dict):
+            return self.func(**inputs), idx
+        else:
+            return self.func(*inputs), idx
 
 
 class _SkipFirstTimeRemainingColumn(TimeRemainingColumn):
