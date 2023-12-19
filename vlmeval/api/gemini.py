@@ -1,5 +1,5 @@
 from vlmeval.smp import *
-from vlmeval.chat_api.base import BaseAPI
+from vlmeval.api.base import BaseAPI
 import google.generativeai as genai
 
 headers = 'Content-Type: application/json'
