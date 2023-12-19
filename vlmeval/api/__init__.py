@@ -5,5 +5,5 @@ from .gemini import GeminiWrapper, GeminiProVision
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'OpenAIWrapperInternal', 'GeminiWrapper',
-    'GPT4V', 'GPT4V_INTERNAL', 'GeminiProVision'
+    'GPT4V', 'GPT4V_Internal', 'GeminiProVision'
 ]
