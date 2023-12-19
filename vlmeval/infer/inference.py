@@ -49,7 +49,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         assert world_size == 1
         data = dataset.data
         lt, indices = len(data), data['index']
-        structs = [dataset.build_prompt(data.iloc[i: i + 1]) for i in range(lt)]
+        structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
         
         if dataset_name in ['CORE_MM']:
             assert hasattr(model, 'multi_generate')
