@@ -16,6 +16,7 @@ opencv-python==4.4.0.46
 pillow
 omegaconf
 matplotlib
+google-generativeai
 openpyxl
 seaborn
 tabulate

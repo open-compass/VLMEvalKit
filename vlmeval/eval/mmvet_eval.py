@@ -1,4 +1,4 @@
-from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 
