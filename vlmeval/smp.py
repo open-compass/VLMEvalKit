@@ -27,6 +27,11 @@ import seaborn as sns
 from tabulate import tabulate_formats
 import logging
 
+def proxy_set(s):
+    import os
+    for key in ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY']:
+        os.environ[key] = s
+
 logger_initialized = {}
 
 def get_logger(name, log_file=None, log_level=logging.INFO, file_mode='w'):
