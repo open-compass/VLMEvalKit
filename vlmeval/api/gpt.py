@@ -163,3 +163,18 @@ class OpenAIWrapper(BaseAPI):
             res += self.get_token_len(item)
         return res
     
+
+class GPT4V(OpenAIWrapper):
+
+    def generate(self, image_path, prompt, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V, self).generate([image_path, prompt])
+    
+    def multi_generate(self, image_paths, prompt, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V, self).generate(image_paths + [prompt])
+    
+    def interleave_generate(self, ti_list, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V, self).generate(ti_list)
+    

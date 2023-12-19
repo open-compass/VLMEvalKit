@@ -70,3 +70,15 @@ class GeminiWrapper(BaseAPI):
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)    
         gen_config.update(self.kwargs)
         return model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
+
+
+class GeminiProVision(GeminiWrapper):
+
+    def generate(self, image_path, prompt, dataset=None):
+        return super(GeminiProVision, self).generate([image_path, prompt])
+    
+    def multi_generate(self, image_paths, prompt, dataset=None):
+        return super(GeminiProVision, self).generate(image_paths + [prompt])
+    
+    def interleave_generate(self, ti_list, dataset=None):
+        return super(GeminiProVision, self).generate(ti_list)

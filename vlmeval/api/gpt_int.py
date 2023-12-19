@@ -87,3 +87,17 @@ class OpenAIWrapperInternal(OpenAIWrapper):
             pass
         return ret_code, answer, response
     
+
+class GPT4V_Internal(OpenAIWrapperInternal):
+
+    def generate(self, image_path, prompt, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V_Internal, self).generate([image_path, prompt])
+    
+    def multi_generate(self, image_paths, prompt, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V_Internal, self).generate(image_paths + [prompt])
+    
+    def interleave_generate(self, ti_list, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V_Internal, self).generate(ti_list)
