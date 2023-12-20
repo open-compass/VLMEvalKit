@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.eval import MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc
+from vlmeval.eval import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc
 from vlmeval.infer import infer_data, prefetch_acc
 from vlmeval.utils import TSVDataset
 from vlmeval.config import supported_VLM
@@ -13,6 +13,7 @@ def parse_args():
     parser.add_argument("--mode", type=str, default='all', choices=['all', 'infer'])
     parser.add_argument("--nproc", type=int, default=4, help="Parallel API calling")
     parser.add_argument("--verbose", action='store_true')
+    parser.add_argument("--prefetch", action='store_true')
     args = parser.parse_args()
     return args
 
@@ -77,7 +78,7 @@ def main():
                 res = None
                 if dataset_name == 'MME':
                     res = MME_rating(result_file)
-                elif dataset_name not in ['CORE_MM', 'MMVet']:
+                elif not listinstr(['CORE_MM', 'MMVet', 'COCO'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
@@ -93,6 +94,8 @@ def main():
                     MME_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
+                elif listinstr(['COCO'], dataset_name):
+                    COCO_eval(result_file, nproc=args.nproc, verbose=args.verbose)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             

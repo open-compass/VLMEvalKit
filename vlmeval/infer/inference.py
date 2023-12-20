@@ -184,7 +184,7 @@ def main():
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
-            if rank == 0 and dataset_name not in ['MME', 'CORE_MM', 'MMVet']:
+            if rank == 0 and not listinstr(['MME', 'CORE_MM', 'MMVet', 'COCO'], dataset_name):
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)
