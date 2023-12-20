@@ -16,7 +16,7 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
-    "COCO": "https://opencompass.openxlab.space/utils/VLMEval/COCO.tsv", #Link Invalid, Internal Only
+    "COCO_VAL": "https://opencompass.openxlab.space/utils/VLMEval/COCO_VAL.tsv",
 }
 
 dataset_md5_dict = {
@@ -31,7 +31,7 @@ dataset_md5_dict = {
     'SEEDBench_IMG': "68017231464752261a2526d6ca3a10c0", 
     "CORE_MM": "8a8da2f2232e79caf98415bfdf0a202d",
     "MMVet": "f400d7f513a585a0f218cbd6882e0671",
-    'COCO': "fc264ffeef2c9610b0e74fe3460a608d",   # Link Invalid, Internal Only
+    'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
 }
 
 img_root_map = {
@@ -46,7 +46,7 @@ img_root_map = {
     "CORE_MM": "CORE_MM", 
     'SEEDBench_IMG': "SEEDBench_IMG",
     'MMVet':'MMVet',
-    'COCO':'COCO',
+    'COCO_VAL':'COCO',
 }
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -56,6 +56,8 @@ def DATASET_TYPE(dataset):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
+    elif 'COCO' in dataset:
+        return 'Caption'
     return 'QA'
 
 def isliststr(s):
@@ -75,7 +77,6 @@ def check_md5(data_path, dataset):
     except:
         return False
 
-
 class TSVDataset:
     
     def __init__(self, dataset='MMBench', img_root=None):
@@ -90,7 +91,7 @@ class TSVDataset:
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
 
-        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED and check_md5(data_path, dataset):
+        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED and md5(data_path) == dataset_md5_dict[dataset]:
             pass
         else:
             warnings.warn("The dataset tsv is not downloaded")
@@ -141,11 +142,11 @@ class TSVDataset:
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
        
-        prompt = line['question']
-        
         if listinstr(['COCO'], dataset):
             prompt = 'Please Describe this image in general.'
+            return dict(image=tgt_path, text=prompt)
 
+        prompt = line['question']
         if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
