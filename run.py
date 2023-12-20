@@ -51,7 +51,7 @@ def main():
                     logger.error(f'Dataset {dataset_name} does not support `evaluation` now, will skip the evaluation. ')
 
             if not osp.exists(result_file):
-                model = infer_data(model, dataset_name=dataset_name, out_file=out_file, verbose=args.verbose)
+                model = infer_data(model, dataset_name=dataset_name, out_file=out_file, verbose=args.verbose, api_nproc=args.nproc)
                 if world_size > 1:
                     dist.barrier()
 
