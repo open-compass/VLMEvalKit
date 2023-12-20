@@ -1,6 +1,4 @@
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import *
-from vlmeval.utils import track_progress_rich
 from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.cider.cider import Cider
