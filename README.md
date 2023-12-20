@@ -3,13 +3,14 @@
 <div align="center"><br><br>
 </div>
 
-**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
-
 [**📊 Datasets, Models, and Evaluation Results**](#-datasets-models-and-evaluation-results), 
 [**🏗️ QuickStart**](#️-quickstart),
 [**🛠️ Custom Benchmark or VLM**](#️-custom-benchmark-or-vlm),
+
 [**🎯 The Goal of VLMEvalKit**](#-the-goal-of-vlmevalkit),
 [**🖊️ Citation**](#️-citation)
+
+**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
 ## 🆕 News
 
