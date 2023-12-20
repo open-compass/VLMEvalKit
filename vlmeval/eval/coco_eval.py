@@ -1,11 +1,9 @@
-from vlmeval.chat_api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.cider.cider import Cider
-from pycocoevalcap.spice.spice import Spice
 
 
 class COCO_Caption_Scorer():
