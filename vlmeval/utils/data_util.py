@@ -142,11 +142,11 @@ class TSVDataset:
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
        
-        prompt = line['question']
-        
         if listinstr(['COCO'], dataset):
             prompt = 'Please Describe this image in general.'
+            return dict(image=tgt_path, text=prompt)
 
+        prompt = line['question']
         if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
             question = line['question']
             option_candidate = ['A', 'B', 'C', 'D', 'E']
