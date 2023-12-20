@@ -2,8 +2,7 @@ import json
 import warnings
 import requests
 from ..smp import *
-from .gpt import GPT_context_window
-from .base import BaseAPI
+from .gpt import GPT_context_window, OpenAIWrapper
 
 
 url = "http://ecs.sv.us.alles-apin.openxlab.org.cn/v1/openai/v2/text/chat"
@@ -11,7 +10,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-class OpenAIWrapperInternal(BaseAPI):
+class OpenAIWrapperInternal(OpenAIWrapper):
 
     is_api: bool = True
 
@@ -20,13 +19,15 @@ class OpenAIWrapperInternal(BaseAPI):
                  retry: int = 5,
                  wait: int = 3,
                  verbose: bool = True,
+                 system_prompt: str = None, 
                  temperature: float = 0, 
                  timeout: int = 30,
-                 system_prompt: str = None, 
                  max_tokens: int = 1024,
+                 img_size: int = 512, 
+                 img_detail: str = 'low',
                  **kwargs):
+        
         self.model = model
-
         if 'KEYS' in os.environ and osp.exists(os.environ['KEYS']):
             keys = load(os.environ['KEYS'])
             headers['alles-apin-token'] = keys.get('alles-apin-token', '')
@@ -37,25 +38,20 @@ class OpenAIWrapperInternal(BaseAPI):
         self.timeout = timeout
         self.max_tokens = max_tokens
 
-        super().__init__(
+        assert img_size > 0 or img_size == -1
+        self.img_size = img_size
+        assert img_detail in ['high', 'low']
+        self.img_detail = img_detail
+
+        self.vision = False
+        if model == 'gpt-4-vision-preview':
+            self.vision = True
+
+        super(OpenAIWrapper, self).__init__(
             wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def generate_inner(self, inputs, **kwargs) -> str:
-        input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
-
-        if isinstance(inputs, str):
-            input_msgs.append(dict(role='user', content=inputs))
-        elif isinstance(inputs[0], str):
-            roles = ['user', 'assistant'] if len(inputs) % 2 == 1 else ['assistant', 'user']
-            roles = roles * len(inputs)
-            for role, msg in zip(roles, inputs):
-                input_msgs.append(dict(role=role, content=msg))
-        elif isinstance(inputs[0], dict):
-            input_msgs.extend(inputs)
-        else:
-            raise NotImplementedError
+        input_msgs = self.prepare_inputs(inputs)
         
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
@@ -91,7 +87,17 @@ class OpenAIWrapperInternal(BaseAPI):
             pass
         return ret_code, answer, response
     
-    def get_token_len(self, prompt: str) -> int:
-        import tiktoken
-        enc = tiktoken.encoding_for_model(self.model)
-        return len(enc.encode(prompt))
+
+class GPT4V_Internal(OpenAIWrapperInternal):
+
+    def generate(self, image_path, prompt, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V_Internal, self).generate([image_path, prompt])
+    
+    def multi_generate(self, image_paths, prompt, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V_Internal, self).generate(image_paths + [prompt])
+    
+    def interleave_generate(self, ti_list, dataset=None):
+        assert self.model == 'gpt-4-vision-preview'
+        return super(GPT4V_Internal, self).generate(ti_list)
