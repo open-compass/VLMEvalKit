@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
->>>>>>> cb4d534067b36b1b1fca3b6d2007009d07adf1dc
 from vlmeval.smp import *
 from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.rouge.rouge import Rouge
