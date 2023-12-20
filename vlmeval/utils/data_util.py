@@ -52,7 +52,7 @@ img_root_map = {
 assert set(dataset_URLs) == set(img_root_map)
 
 def DATASET_TYPE(dataset):
-    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
+    if listinstr(['mmbench', 'seedbench', 'ccbench'], dataset.lower()):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
@@ -98,6 +98,11 @@ class TSVDataset:
             download_file(url, data_path)
 
         data = load(data_path)
+
+        # Prompt for Captioning
+        if listinstr(['COCO'], dataset):
+            data['question'] = ['Please describe this image in general.'] * len(data)
+
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
@@ -141,10 +146,6 @@ class TSVDataset:
             tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
-       
-        if listinstr(['COCO'], dataset):
-            prompt = 'Please Describe this image in general.'
-            return dict(image=tgt_path, text=prompt)
 
         prompt = line['question']
         if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
