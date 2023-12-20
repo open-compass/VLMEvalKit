@@ -2,26 +2,19 @@
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center"><br><br>
 </div>
+
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
+
+[**📊 Datasets, Models, and Evaluation Results**](#-datasets-models-and-evaluation-results), 
+[**🏗️ QuickStart**](#️-quickstart),
+[**🛠️ Custom Benchmark or VLM**](#️-custom-benchmark-or-vlm),
+[**🎯 The Goal of VLMEvalKit**](#-the-goal-of-vlmevalkit),
+[**🖊️ Citation**](#️-citation)
 
 ## 🆕 News
 
 - **[2023-12-20]** We support a new benchmark: **COCO Caption**. The evaluation is undergoing.  🔥🔥🔥
 - **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
-
-## 📖 Table of Contents
-
-- [🆕 News](#-news)
-- [📖 Table of Contents](#-table-of-contents)
-- [📊 Datasets, Models, and Evaluation Results](#-datasets-models-and-evaluation-results)
-- [🏗️ QuickStart](#️-quickstart)
-  - [Step0. Installation](#step0-installation)
-  - [Step1. Configuration](#step1-configuration)
-  - [Step2. Evaluation](#step2-evaluation)
-- [🛠️ Custom Benchmark or VLM](#️-custom-benchmark-or-vlm)
-- [🎯 The Goal of VLMEvalKit](#-the-goal-of-vlmevalkit)
-- [🖊️ Citation](#️-citation)
-- [💻 Other Projects in OpenCompass](#-other-projects-in-opencompass)
 
 ## 📊 Datasets, Models, and Evaluation Results
 
