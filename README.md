@@ -6,7 +6,22 @@
 
 ## 🆕 News
 
+- **[2023-12-20]** We support a new benchmark: **COCO Caption**. The evaluation is undergoing.  🔥🔥🔥
 - **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
+
+## 📖 Table of Contents
+
+- [🆕 News](#-news)
+- [📖 Table of Contents](#-table-of-contents)
+- [📊 Datasets, Models, and Evaluation Results](#-datasets-models-and-evaluation-results)
+- [🏗️ QuickStart](#️-quickstart)
+  - [Step0. Installation](#step0-installation)
+  - [Step1. Configuration](#step1-configuration)
+  - [Step2. Evaluation](#step2-evaluation)
+- [🛠️ Custom Benchmark or VLM](#️-custom-benchmark-or-vlm)
+- [🎯 The Goal of VLMEvalKit](#-the-goal-of-vlmevalkit)
+- [🖊️ Citation](#️-citation)
+- [💻 Other Projects in OpenCompass](#-other-projects-in-opencompass)
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -14,11 +29,12 @@
 
 | Dataset                                                      | Inference | Evaluation | Results                                                      |
 | ------------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
-| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | √         | √          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | √         | √          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |- [🆕 News](#-news)
 | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | √         | √          | [**MME**](results/MME.md)                                    |
 | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | √         | √          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | √         | √          | [**MM-Vet**](results/MMVet.md)                               |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | √         |            |                                                              |
+| [**COCO Caption**](https://cocodataset.org)                  | √         | √          |                                                              |
 
 **Supported API Models**
 

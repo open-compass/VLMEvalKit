@@ -101,7 +101,7 @@ class TSVDataset:
 
         # Prompt for Captioning
         if listinstr(['COCO'], dataset):
-            data['question'] = ['Please describe this image in general.'] * len(data)
+            data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
 
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:

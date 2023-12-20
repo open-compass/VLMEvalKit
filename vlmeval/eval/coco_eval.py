@@ -24,11 +24,11 @@ class COCO_Caption_Scorer():
             score, scores = scorer.compute_score(self.gt, self.ref)
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):
-                    print("%s: %0.3f" % (m, sc))
-                total_scores["Bleu"] = score
+                    print("%s: %0.3f" % (m, sc * 100))
+                total_scores["Bleu"] = [x * 100 for x in scores]
             else:
-                print("%s: %0.3f" % (method, score))
-                total_scores[method] = score
+                print("%s: %0.3f" % (method, score * 100))
+                total_scores[method] = score * 100
         
         print('*****DONE*****')
         for key, value in total_scores.items():
