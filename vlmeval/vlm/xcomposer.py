@@ -23,7 +23,6 @@ from ..utils import DATASET_TYPE
 class XComposer:
 
     INSTALL_REQ = False
-    MULTI_IMG = True
     
     def __init__(self, model_path='internlm/internlm-xcomposer-vl-7b'):
         assert model_path is not None

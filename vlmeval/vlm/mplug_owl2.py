@@ -7,7 +7,6 @@ from ..utils import DATASET_TYPE
 class mPLUG_Owl2:
 
     INSTALL_REQ = True
-    MULTI_IMG = True
 
     def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', **kwargs): 
         try:
