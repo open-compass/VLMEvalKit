@@ -24,8 +24,16 @@ from uuid import uuid4
 import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
+import hashlib
 from tabulate import tabulate_formats
 import logging
+
+def md5(file_pth):
+    with open(file_pth, 'rb') as f:
+        hash = hashlib.new('md5')
+        for chunk in iter(lambda: f.read(2**20), b''):
+            hash.update(chunk)
+    return str(hash.hexdigest())
 
 def proxy_set(s):
     import os
