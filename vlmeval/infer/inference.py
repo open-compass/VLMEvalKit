@@ -48,7 +48,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     is_api = getattr(model, 'is_api', False)
     if is_api:
         assert world_size == 1
-        lt, indices = len(data), data['index']
+        lt, indices = len(data), list(data['index'])
         structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
         
         if dataset_name in ['CORE_MM']:
