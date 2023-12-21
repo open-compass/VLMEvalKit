@@ -109,8 +109,10 @@ class LLaVA_XTuner:
 
         _, self.stop_criteria = get_chat_utils(self.llm)
 
-        kwargs_default = dict(max_new_tokens=100,
-                              do_sample=False,
+        kwargs_default = dict(max_new_tokens=512,
+                              do_sample=True,
+                              num_beams=1,
+                              temperature=0.2,
                               eos_token_id=self.tokenizer.eos_token_id,
                               pad_token_id=self.tokenizer.pad_token_id
                               if self.tokenizer.pad_token_id is not None else
