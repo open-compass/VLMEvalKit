@@ -109,7 +109,7 @@ class LLaVA_XTuner:
 
         _, self.stop_criteria = get_chat_utils(self.llm)
 
-        kwargs_default = dict(max_new_tokens=512,
+        kwargs_default = dict(max_new_tokens=1024,
                               do_sample=True,
                               num_beams=1,
                               temperature=0.2,
