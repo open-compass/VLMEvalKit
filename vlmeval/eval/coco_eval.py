@@ -25,7 +25,7 @@ class COCO_Caption_Scorer():
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):
                     print("%s: %0.3f" % (m, sc * 100))
-                total_scores["Bleu"] = [x * 100 for x in scores]
+                total_scores["Bleu"] = [x * 100 for x in score]
             else:
                 print("%s: %0.3f" % (method, score * 100))
                 total_scores[method] = score * 100
