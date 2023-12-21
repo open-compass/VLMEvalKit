@@ -6,7 +6,6 @@ from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
 from vlmeval.smp import *
 import numpy as np
 
-fout = None
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 abbrs = {

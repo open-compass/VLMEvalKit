@@ -7,7 +7,6 @@ from ..smp import splitlen
 class IDEFICS:
 
     INSTALL_REQ = False
-    MULTI_IMG = True
 
     def __init__(self, 
                  name, 

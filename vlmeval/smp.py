@@ -1,4 +1,4 @@
-# flake8: noqa: F401, F403
+    # flake8: noqa: F401, F403
 import abc
 import argparse
 import csv
@@ -25,8 +25,38 @@ import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import hashlib
-from tabulate import tabulate_formats
+from tabulate import tabulate_formats, tabulate
+from huggingface_hub import scan_cache_dir
 import logging
+
+def read_ok(img_path):
+    if not osp.exists(img_path):
+        return False
+    try:
+        im = Image.open(img_path)
+        assert im.size[0] > 0 and im.size[1] > 0
+        return True
+    except:
+        return False
+
+def get_cache_path(repo_id):
+    hf_cache_info = scan_cache_dir()
+    repos = list(hf_cache_info.repos)
+    repo = None
+    for r in repos:
+        if r.repo_id == repo_id:
+            repo = r
+            break
+    if repo is None:
+        return None
+    revs = list(repo.revisions)
+    rev2keep, last_modified = None, 0
+    for rev in revs:
+        if rev.last_modified > last_modified:
+            rev2keep, last_modified = rev, rev.last_modified 
+    if rev2keep is None:
+        return None
+    return str(rev2keep.snapshot_path)
 
 def md5(file_pth):
     with open(file_pth, 'rb') as f:
@@ -137,27 +167,6 @@ def cn_string(s):
     if re.search(u'[\u4e00-\u9fff]', s):
         return True
     return False
-
-def stack_image(imgs, shape=(1, 3)):
-    total_imgs = shape[0] * shape[1]
-    assert len(imgs) <= total_imgs
-    h, w, _ = imgs[0].shape
-    import cv2
-    imgs = [cv2.resize(im, dsize=(w, h)) for im in imgs]
-    for i in range(total_imgs - len(imgs)):
-        imgs.append(np.ones((h, w, 3)).astype(np.uint8) * 127)
-    rows = []
-    for i in range(shape[0]):
-        if shape[1] == 1:
-            rows.append(imgs[i])
-        else:
-            rows.append(np.hstack(imgs[i * shape[1]: (i + 1) * shape[1]]))
-    if shape[0] == 1:
-        return rows[0]
-    else:
-        return np.vstack(rows)
-
-fout = None
 
 try:
     import decord

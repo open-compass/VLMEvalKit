@@ -25,7 +25,7 @@ class COCO_Caption_Scorer():
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):
                     print("%s: %0.3f" % (m, sc * 100))
-                total_scores["Bleu"] = [x * 100 for x in scores]
+                total_scores["Bleu"] = [x * 100 for x in score]
             else:
                 print("%s: %0.3f" % (method, score * 100))
                 total_scores[method] = score * 100
@@ -38,25 +38,21 @@ class COCO_Caption_Scorer():
 def COCO_eval(eval_file, nproc=4, verbose=False):
     logger = get_logger('Evaluation')
 
-    storage = eval_file.replace('.xlsx', '_pycocoeval.xlsx')
-    if osp.exists(storage):
-        logger.warning(f"scoring file {storage} already exists, will reuse it in COCO_eval. ")
-    else:
-        data = load(eval_file)
-        
-        lt = len(data)
-        lines = [data.iloc[i] for i in range(lt)]
-        ref = {}
-        gt = {}
-        for i,(line) in enumerate(lines):
-            ref[str(i)] = [line['prediction']]
-            gt[str(i)] = eval(line['answer'])
+    data = load(eval_file)
+    
+    lt = len(data)
+    lines = [data.iloc[i] for i in range(lt)]
+    ref = {}
+    gt = {}
+    for i,(line) in enumerate(lines):
+        ref[str(i)] = [line['prediction']]
+        gt[str(i)] = eval(line['answer'])
 
-        scorer = COCO_Caption_Scorer(ref,gt)
-        coco_caption_score_dict = scorer.compute_scores()
+    scorer = COCO_Caption_Scorer(ref,gt)
+    coco_caption_score_dict = scorer.compute_scores()
         
-    score_pth = storage.replace('.xlsx','_score.json')
-    dump(coco_caption_score_dict,score_pth)
+    score_pth = eval_file.replace('.xlsx','_score.json')
+    dump(coco_caption_score_dict, score_pth)
     logger.info(f'MMVet_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
     logger.info(f'Score: ')
     for key, value in coco_caption_score_dict.items():
