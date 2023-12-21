@@ -46,7 +46,7 @@ def get_cache_path(repo_id):
             rev2keep, last_modified = rev, rev.last_modified 
     if rev2keep is None:
         return None
-    return rev2keep.snapshot_path
+    return str(rev2keep.snapshot_path)
 
 def md5(file_pth):
     with open(file_pth, 'rb') as f:
