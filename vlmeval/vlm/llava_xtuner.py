@@ -10,7 +10,7 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           CLIPImageProcessor, CLIPVisionModel,
                           GenerationConfig)
 
-from ..smp import cn_string, decode_base64_to_image_file
+from ..smp import cn_string, decode_base64_to_image_file, get_cache_path, read_ok
 from ..utils import DATASET_TYPE
 
 
@@ -36,8 +36,13 @@ class LLaVA_XTuner:
                 'using LLaVA_XTuner')
             exit(-1)
 
-        llava_path = snapshot_download(
-            repo_id=llava_path) if not osp.isdir(llava_path) else llava_path
+        if not osp.isdir(llava_path):
+            cache_path = get_cache_path(llava_path)
+            if cache_path is not None:
+                llava_path = cache_path
+            else:
+                llava_path = snapshot_download(repo_id=llava_path)
+        assert osp.exists(llava_path) and osp.isdir(llava_path)
 
         # build visual_encoder
         if 'llm' in os.listdir(llava_path):
@@ -51,7 +56,7 @@ class LLaVA_XTuner:
         llm = AutoModelForCausalLM.from_pretrained(llm_path,
                                                    trust_remote_code=True,
                                                    torch_dtype=torch_dtype,
-                                                   device_map='auto')
+                                                   device_map='cpu')
         tokenizer = AutoTokenizer.from_pretrained(llm_path,
                                                   trust_remote_code=True,
                                                   encode_special_tokens=True)
@@ -67,7 +72,7 @@ class LLaVA_XTuner:
             assert visual_encoder_path is not None, (
                 'Please specify the `visual_encoder_path`!')
         visual_encoder = CLIPVisionModel.from_pretrained(
-            visual_encoder_path, torch_dtype=torch_dtype)
+            visual_encoder_path, torch_dtype=torch_dtype, device_map='cpu')
         image_processor = CLIPImageProcessor.from_pretrained(
             visual_encoder_path)
         print(f'Load visual_encoder from {visual_encoder_path}')
@@ -75,31 +80,27 @@ class LLaVA_XTuner:
         # load adapter
         if 'llm_adapter' in os.listdir(llava_path):
             adapter_path = osp.join(llava_path, 'llm_adapter')
-            llm = PeftModel.from_pretrained(llm, adapter_path)
+            llm = PeftModel.from_pretrained(llm, adapter_path, device_map='cpu')
             print(f'Load LLM adapter from {llava_path}')
         if 'visual_encoder_adapter' in os.listdir(llava_path):
             adapter_path = osp.join(llava_path, 'visual_encoder_adapter')
-            visual_encoder = PeftModel.from_pretrained(visual_encoder,
-                                                       adapter_path)
+            visual_encoder = PeftModel.from_pretrained(visual_encoder, adapter_path, device_map='cpu')
             print(f'Load visual_encoder adapter from {llava_path}')
 
         # build projector
         projector_path = osp.join(llava_path, 'projector')
-        projector = AutoModel.from_pretrained(projector_path,
-                                              torch_dtype=torch_dtype)
+        projector = AutoModel.from_pretrained(projector_path, torch_dtype=torch_dtype, device_map='cpu')
         print(f'Load projector from {llava_path}')
 
         llm.eval()
-        visual_encoder.cuda()
         visual_encoder.eval()
-        projector.cuda()
         projector.eval()
 
-        self.llm = llm
+        self.llm = llm.cuda()
         self.tokenizer = tokenizer
-        self.visual_encoder = visual_encoder
+        self.visual_encoder = visual_encoder.cuda()
         self.image_processor = image_processor
-        self.projector = projector
+        self.projector = projector.cuda()
         self.visual_select_layer = visual_select_layer
         if prompt_template is not None:
             self.prompt_template = PROMPT_TEMPLATE[prompt_template]
@@ -130,12 +131,12 @@ class LLaVA_XTuner:
             tgt_path = []
             for img, im_name in zip(line['image'], line['image_path']):
                 path = osp.join(img_root, im_name)
-                if not osp.exists(path):
+                if not read_ok(path):
                     decode_base64_to_image_file(img, path)
                 tgt_path.append(path)
         else:
             tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not osp.exists(tgt_path):
+            if not read_ok(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
 
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
