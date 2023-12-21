@@ -13,6 +13,7 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 | MME                   | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
 | CORE_MM               | √     | √     | √          | √        |      |      |      |      |      |        | √        |             |       |
 | MMVet                 | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
+| COCO_VAL              | √     | √     |            |          |      |      |      |      |      | √      |          |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 

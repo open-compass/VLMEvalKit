@@ -3,7 +3,19 @@
 <div align="center"><br><br>
 </div>
 
+[**📊 Datasets, Models, and Evaluation Results**](#-datasets-models-and-evaluation-results), 
+[**🏗️ QuickStart**](#️-quickstart),
+[**🛠️ Custom Benchmark or VLM**](#️-custom-benchmark-or-vlm),
+
+[**🎯 The Goal of VLMEvalKit**](#-the-goal-of-vlmevalkit),
+[**🖊️ Citation**](#️-citation)
+
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
+
+## 🆕 News
+
+- **[2023-12-20]** We support a new benchmark: **COCO Caption**. The evaluation is undergoing.  🔥🔥🔥
+- **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -11,13 +23,19 @@
 
 | Dataset                                                      | Inference | Evaluation | Results                                                      |
 | ------------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
-| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | √         | √          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | √         | √          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |- [🆕 News](#-news)
 | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | √         | √          | [**MME**](results/MME.md)                                    |
 | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | √         | √          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | √         | √          | [**MM-Vet**](results/MMVet.md)                               |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | √         |            |                                                              |
+| [**COCO Caption**](https://cocodataset.org)                  | √         | √          |                                                              |
 
-**Supported Models**
+**Supported API Models**
+
+| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+
+**Supported PyTorch / HF Models**
 
 | [**IDEFICS-9B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅, [**IDEFICS-80B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |

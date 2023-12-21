@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
-from vlmeval.utils import TSVDataset
+from vlmeval.utils import TSVDataset, track_progress_rich
 from vlmeval.eval import MME_rating, MME_postproc
 from vlmeval.smp import *
 
@@ -14,7 +14,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def infer_data(model_name, dataset_name, out_file, verbose=False):
+def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
@@ -38,11 +38,40 @@ def infer_data(model_name, dataset_name, out_file, verbose=False):
             all_finished = False
     if all_finished:
         return 
+    data = data[~data['index'].isin(res)]
+    lt = len(data)
 
     if isinstance(model_name, str):
         model = supported_VLM[model_name]()
     else:
         model = model_name
+
+    is_api = getattr(model, 'is_api', False)
+    if is_api:
+        assert world_size == 1
+        lt, indices = len(data), list(data['index'])
+        structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
+        
+        if dataset_name in ['CORE_MM']:
+            assert hasattr(model, 'multi_generate')
+            structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        else:
+            structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        inference_results = track_progress_rich(
+            model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
+            structs, 
+            nproc=api_nproc, 
+            chunksize=api_nproc, 
+            save=out_file,
+            keys=indices)
+        res = load(out_file)
+        for idx, text in zip(indices, inference_results):
+            if idx in res:
+                assert res[idx] == text 
+            else:
+                res[idx] = text
+        dump(res, out_file)
+        return model
 
     for i in tqdm(range(lt)):
         idx = data.iloc[i]['index']
@@ -131,8 +160,8 @@ def main():
 
             # CHECKER
             if dataset_name == 'CORE_MM':
-                MULTI_IMG = getattr(supported_VLM[model_name].func, 'MULTI_IMG', False)
-                if not MULTI_IMG:
+                MULTI_IMG = getattr(supported_VLM[model_name].func, 'multi_generate', None)
+                if MULTI_IMG is not None:
                     logger.error(f'Model {model_name} does not support the `multi_generate` interface, which is required for testing CORE_MM, skip it. ')
                     continue
 
@@ -159,7 +188,7 @@ def main():
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
-            if rank == 0 and dataset_name not in ['MME', 'CORE_MM', 'MMVet']:
+            if rank == 0 and not listinstr(['MME', 'CORE_MM', 'MMVet', 'COCO'], dataset_name):
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)

@@ -18,10 +18,13 @@ class _Worker:
 
     def __call__(self, inputs):
         inputs, idx = inputs
-        if not isinstance(inputs, (tuple, list)):
+        if not isinstance(inputs, (tuple, list, dict)):
             inputs = (inputs, )
 
-        return self.func(*inputs), idx
+        if isinstance(inputs, dict):
+            return self.func(**inputs), idx
+        else:
+            return self.func(*inputs), idx
 
 
 class _SkipFirstTimeRemainingColumn(TimeRemainingColumn):
@@ -170,7 +173,7 @@ def track_progress_rich(func: Callable,
                                 ans = load(save)
                                 ans[keys[idx]] = result
 
-                                if os.environ.get('VERBOSE', True):
+                                if os.environ.get('VERBOSE', False):
                                     print(keys[idx], result, flush=True)
 
                                 dump(ans, save)

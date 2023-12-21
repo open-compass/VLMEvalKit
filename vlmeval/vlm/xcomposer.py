@@ -23,7 +23,6 @@ from ..utils import DATASET_TYPE
 class XComposer:
 
     INSTALL_REQ = False
-    MULTI_IMG = True
     
     def __init__(self, model_path='internlm/internlm-xcomposer-vl-7b'):
         assert model_path is not None
@@ -148,12 +147,12 @@ class XComposer:
             tgt_path = []
             for img, im_name in zip(line['image'], line['image_path']):
                 path = osp.join(img_root, im_name)
-                if not osp.exists(path):
+                if not read_ok(path):
                     decode_base64_to_image_file(img, path)
                 tgt_path.append(path)
         else:
             tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not osp.exists(tgt_path):
+            if not read_ok(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
 
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
