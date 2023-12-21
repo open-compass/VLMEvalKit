@@ -39,6 +39,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     if all_finished:
         return 
     data = data[~data['index'].isin(res)]
+    lt = len(data)
 
     if isinstance(model_name, str):
         model = supported_VLM[model_name]()
