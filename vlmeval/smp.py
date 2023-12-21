@@ -29,6 +29,16 @@ from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
 
+def read_ok(img_path):
+    if not osp.exists(img_path):
+        return False
+    try:
+        im = Image.open(img_path)
+        assert im.size[0] > 0 and im.size[1] > 0
+        return True
+    except:
+        return False
+
 def get_cache_path(repo_id):
     hf_cache_info = scan_cache_dir()
     repos = list(hf_cache_info.repos)
