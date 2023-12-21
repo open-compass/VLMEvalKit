@@ -25,8 +25,7 @@ import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import hashlib
-import tabulate
-from tabulate import tabulate_formats
+from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
 
