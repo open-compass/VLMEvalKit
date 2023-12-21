@@ -53,7 +53,10 @@ def gen_table(models, datasets):
     res = defaultdict(dict)
     for m in models:
         for d in datasets:
-            res[m].update(get_score(m, d))
+            try:
+                res[m].update(get_score(m, d))
+            except:
+                pass
     keys = []
     for m in models:
         for d in res[m]:
