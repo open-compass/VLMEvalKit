@@ -69,8 +69,16 @@ class GeminiWrapper(BaseAPI):
                     messages.append(s)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)    
         gen_config.update(self.kwargs)
-        answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
-        return 0, answer, 'Succeeded! '
+        try:
+            answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
+            return 0, answer, 'Succeeded! '
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(err)
+                self.logger.error(f"The input messages are {inputs}.")
+
+            return -1, '', ''
+        
 
 
 class GeminiProVision(GeminiWrapper):

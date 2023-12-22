@@ -21,7 +21,7 @@ class OpenAIWrapperInternal(OpenAIWrapper):
                  verbose: bool = True,
                  system_prompt: str = None, 
                  temperature: float = 0, 
-                 timeout: int = 30,
+                 timeout: int = 60,
                  max_tokens: int = 1024,
                  img_size: int = 512, 
                  img_detail: str = 'low',
