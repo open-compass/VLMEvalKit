@@ -31,10 +31,12 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
     
     lt, indices = len(data), list(data['index'])
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-        
+    
+    out_file = f'{model_name}/{model_name}_{dataset_name}_supp.pkl'
+    
     if listinstr(['MMMU'], dataset_name):
         interleave_list = [dict(ti_list= dataset.build_interleave_list(struct), dataset=dataset_name) for struct in structs]
-        res = track_progress_rich(
+        inference_results = track_progress_rich(
             model.interleave_generate,
             interleave_list, 
             nproc=api_nproc, 
@@ -48,10 +50,9 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
         else:
             structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
 
-    out_file = f'{model_name}/{model_name}_{dataset_name}_supp.pkl'
-    inference_results = track_progress_rich(
-        model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
-        structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
+        inference_results = track_progress_rich(
+            model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
+            structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
     
     res = load(out_file)
     for idx, text in zip(indices, inference_results):
