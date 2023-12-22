@@ -17,6 +17,7 @@ dataset_URLs = {
     "COCO_VAL": "https://opencompass.openxlab.space/utils/VLMEval/COCO_VAL.tsv",
     "OCRVQA_TEST": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TEST.tsv",
     "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
+    'TextVQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv",
 }
 
 dataset_md5_dict = {
@@ -33,7 +34,8 @@ dataset_md5_dict = {
     "MMVet": "f400d7f513a585a0f218cbd6882e0671",
     'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
-    'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97'
+    'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
+    'TextVQA_VAL': '1584b957f5ca367e835518865816fbba'
 }
 
 img_root_map = {
@@ -50,7 +52,8 @@ img_root_map = {
     'MMVet':'MMVet',
     'COCO_VAL':'COCO',
     'OCRVQA_TEST': 'OCRVQA',
-    'OCRVQA_TESTCORE': 'OCRVQA'
+    'OCRVQA_TESTCORE': 'OCRVQA',
+    'TextVQA_VAL': 'TextVQA'
 }
 
 assert set(dataset_URLs) == set(img_root_map)
