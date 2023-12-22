@@ -29,12 +29,13 @@ from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
 
-def isint(s):
-    if isinstance(s, int):
+def istype(s, type):
+    if isinstance(s, type):
         return True
-    elif isinstance(s, str) and re.match("-?\d+$", s):
-        return True
-    return False
+    try:
+        return isinstance(eval(s), type)
+    except Exception as _:
+        return False
 
 def read_ok(img_path):
     if not osp.exists(img_path):

@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.eval import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc
+from vlmeval.eval import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc, VQAEval
 from vlmeval.infer import infer_data, prefetch_acc
 from vlmeval.utils import TSVDataset
 from vlmeval.config import supported_VLM
@@ -95,7 +95,9 @@ def main():
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
-                    COCO_eval(result_file, nproc=args.nproc, verbose=args.verbose)
+                    COCO_eval(result_file)
+                elif listinstr(['OCRVQA'], dataset_name):
+                    VQAEval(result_file)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             
