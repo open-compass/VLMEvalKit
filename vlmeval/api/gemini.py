@@ -73,7 +73,10 @@ class GeminiWrapper(BaseAPI):
             answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
             return 0, answer, 'Succeeded! '
         except Exception as err:
-            self.logger.error(err)
+            if self.verbose:
+                self.logger.error(err)
+                self.logger.error(f"The input messages are {inputs}.")
+
             return -1, '', ''
         
 
