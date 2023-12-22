@@ -6,7 +6,7 @@ from ..smp import get_logger
 class BaseAPI:
     
     def __init__(self, 
-                 retry=5, 
+                 retry=10, 
                  wait=3, 
                  system_prompt=None, 
                  verbose=True,
