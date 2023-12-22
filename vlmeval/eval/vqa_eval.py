@@ -205,20 +205,20 @@ def VQAEval(eval_file, full_score_weight=0.3, **kwargs):
     lines = [data.iloc[i] for i in range(lt)]
     res = pool.map(process_line, lines)
     hit = [np.mean(x['match']) >= full_score_weight for x in res]
-    res = dict()
-    res['Overall'] = np.mean(hit) * 100
+    ret = dict()
+    ret['Overall'] = np.mean(hit) * 100
     if 'category' in data:
         cates = list(set(data['category']))
         cates.sort()
         for c in cates:
             sub = [r for l, r in zip(lines, res) if l['category'] == c]
             hit = [np.mean(x['match']) >= full_score_weight for x in sub]
-            res[c] = np.mean(hit) * 100
-    res = d2df(res)
-    res.round(2)
+            ret[c] = np.mean(hit) * 100
+    ret = d2df(ret)
+    ret.round(2)
 
     suffix = eval_file.replace('.')[-1]
     result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
     logger.info(f'VQA Eval Finished. Saved to {result_file}. ')
-    logger.info(res)
-    dump(res, result_file)
+    logger.info(ret)
+    dump(ret, result_file)
