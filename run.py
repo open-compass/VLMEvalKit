@@ -55,7 +55,7 @@ def main():
                 res = None
                 if dataset_name == 'MME':
                     res = MME_rating(result_file)
-                elif not listinstr(['CORE_MM', 'MMVet', 'COCO'], dataset_name):
+                elif listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
