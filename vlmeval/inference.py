@@ -182,6 +182,7 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
     else:
         data = load(result_file)
         failed_set = []
+        data['prediction'] = [str(x) for x in data['prediction']]
         for idx, pred in zip(data['index'], data['prediction']):
             if FAIL_MSG in pred:
                 failed_set.append(idx)
