@@ -52,18 +52,22 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         lt, indices = len(data), data['index']
         structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
         
-        if dataset_name in ['CORE_MM']:
-            assert hasattr(model, 'multi_generate')
-            structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        if listinstr(['MMMU'], dataset_name):
+            interleave_list = [dict(ti_list= dataset.build_interleave_list(struct), dataset=dataset_name) for struct in structs]
+            res = track_progress_rich(
+                model.interleave_generate,
+                interleave_list, 
+                nproc=api_nproc, 
+                chunksize=api_nproc, 
+                save=out_file,
+                keys=indices)
         else:
-            structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
-        res = track_progress_rich(
-            model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
-            structs, 
-            nproc=api_nproc, 
-            chunksize=api_nproc, 
-            save=out_file,
-            keys=indices)
+            if dataset_name in ['CORE_MM']:
+                assert hasattr(model, 'multi_generate')
+                structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+            else:
+                structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+            
         result = load(out_file)
         for idx, text in zip(indices, res):
             if idx in result:
@@ -85,8 +89,8 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
             response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
         elif listinstr(['MMMU'], dataset_name):
             if hasattr(model, 'interleave_generate'):
-                response = model.interleave_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
-                INTERLEAVE = True
+                interleave_list = dataset.build_interleave_list(struct)
+                response = model.interleave_generate(interleave_list, dataset=dataset_name)
             else:
                 struct['image'] = struct['image'][0]
                 response = model.generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)

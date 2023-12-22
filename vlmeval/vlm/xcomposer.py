@@ -2,6 +2,7 @@ import torch
 import os.path as osp
 from transformers import AutoModel, AutoTokenizer
 from ..smp import *
+import re
 
 from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
@@ -102,7 +103,7 @@ class XComposer:
         prompt = f'<|User|>: ' + img_prompt + self.model.eoh + ' <|Bot|>: '
         prompt_segs = prompt.split('<ImageHere>')
         assert len(prompt_segs) == len(img_embeds) + 1
-        
+        print(prompt_segs)
         prompt_seg_tokens = [
             self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=i == 0).to(self.device).input_ids
             for i, seg in enumerate(prompt_segs)
@@ -138,7 +139,7 @@ class XComposer:
         output_text = output_text.split('<|Bot|>')[-1].strip()
         return output_text
     
-    def interleave_generate(self, image_paths, prompt, dataset=None):
+    def interleave_generate(self, image_paths, prompt, pattern=r'<image \d>',dataset=None):
         img_embeds, img_prompt = [], ''
         assert isinstance(image_paths, list), "Interleave generate should have image list."
         interleave_prompt = [prompt]

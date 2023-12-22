@@ -1,5 +1,6 @@
 import pandas as pd
 import hashlib
+import re
 from vlmeval.smp import *
 
 LAST_MODIFIED = 231126000000
@@ -179,6 +180,23 @@ class TSVDataset:
 
         return dict(image=tgt_path, text=prompt)
     
+    def build_interleave_list(self, struct, pattern=r'<image \d>'):
+        prompt = struct['text']
+        image_paths = struct['image']
+        interleave_list = [prompt]
+        for i, pth in enumerate(image_paths,start=1):
+            for slice in interleave_list:
+                slice_index = interleave_list.index(slice)
+                spt_chart = pattern.replace('\d',f'{i}')
+                spts = re.split(spt_chart,slice)
+                interleave_list[slice_index] = spts[0]
+                insert_index = slice_index + 1
+                for j in range(1,len(spts)):
+                    interleave_list.insert(insert_index,image_paths[i-1])
+                    interleave_list.insert(insert_index+1,spts[j])
+                    insert_index += 2
+        return interleave_list
+                    
     def display(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]

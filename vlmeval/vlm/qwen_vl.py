@@ -40,28 +40,23 @@ class QwenVL:
         response = response.split(prompt)[1].split('<|endoftext|>')[0]
         return response
     
-    def interleave_generate(self, image_paths, prompt, pattern=r'<image \d>', dataset=None):
-        assert isinstance(image_paths, list), "Interleave generate should have image list."
-        interleave_prompt = [prompt]
-        for i, pth in enumerate(image_paths,start=1):
-            for slice in interleave_prompt:
-                slice_index = interleave_prompt.index(slice)
-                spt_chart = pattern.replace('\d',f'{i}')
-                spts = re.split(spt_chart,slice)
-                interleave_prompt[slice_index] = spts[0]
-                insert_index = slice_index + 1
-                for j in range(1,len(spts)):
-                    interleave_prompt.insert(insert_index,image_paths[i-1])
-                    interleave_prompt.insert(insert_index+1,spts[j])
-                    insert_index += 2
+    def interleave_generate(self, interleave_list, dataset=None):
                     
-        query = self.tokenizer.from_list_format(interleave_prompt)
+        final_seg = interleave_list[-1]
+        
+        for idx,seg in enumerate(interleave_list):
+            if seg.endswith('.jpg'):
+                interleave_list[idx] = {'image':seg}
+            else:
+                interleave_list[idx] = {'text':seg}
+
+        query = self.tokenizer.from_list_format(interleave_list)
         
         inputs = self.tokenizer(query, return_tensors='pt')
         inputs = inputs.to(self.model.device)
         pred = self.model.generate(**inputs, **self.kwargs)
         response = self.tokenizer.decode(pred.cpu()[0], skip_special_tokens=False)
-        response = response.split(prompt)[1].split('<|endoftext|>')[0]
+        response = response.split(final_seg)[1].split('<|endoftext|>')[0]
         return response
     
 class QwenVLChat:
@@ -92,21 +87,15 @@ class QwenVLChat:
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
     
-    def interleave_generate(self, image_paths, prompt, pattern=r'<image \d>', dataset=None):
-        assert isinstance(image_paths, list), "Interleave generate should have image list."
-        interleave_prompt = [prompt]
-        for i, pth in enumerate(image_paths,start=1):
-            for slice in interleave_prompt:
-                slice_index = interleave_prompt.index(slice)
-                spt_chart = pattern.replace('\d',f'{i}')
-                spts = re.split(spt_chart,slice)
-                interleave_prompt[slice_index] = spts[0]
-                insert_index = slice_index + 1
-                for j in range(1,len(spts)):
-                    interleave_prompt.insert(insert_index,image_paths[i-1])
-                    interleave_prompt.insert(insert_index+1,spts[j])
-                    insert_index += 2
-        query = self.tokenizer.from_list_format(interleave_prompt)
+    def interleave_generate(self, interleave_list, dataset=None):
+                            
+        for idx,seg in enumerate(interleave_list):
+            if seg.endswith('.jpg'):
+                interleave_list[idx] = {'image':seg}
+            else:
+                interleave_list[idx] = {'text':seg}
+        
+        query = self.tokenizer.from_list_format(interleave_list)
         
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
