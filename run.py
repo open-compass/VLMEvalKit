@@ -43,41 +43,14 @@ def main():
 
             # CHECKER
             if dataset_name == 'CORE_MM':
-                MULTI_IMG = getattr(supported_VLM[model_name].func, 'MULTI_IMG', False)
-                if not MULTI_IMG:
+                MULTI_IMG = getattr(supported_VLM[model_name].func, 'multi_generate', None)
+                if MULTI_IMG is not None:
                     logger.error(f'Model {model_name} does not support the `multi_generate` interface, which is required for testing CORE_MM, skip it. ')
                     continue
                 if args.mode == 'all':
                     logger.error(f'Dataset {dataset_name} does not support `evaluation` now, will skip the evaluation. ')
 
-            if not osp.exists(result_file):
-                model = infer_data(model, dataset_name=dataset_name, out_file=out_file, verbose=args.verbose)
-                if world_size > 1:
-                    dist.barrier()
-
-                if rank == 0:
-
-                    data_all = {}
-                    for i in range(world_size):
-                        data_all.update(load(tmpl.format(i)))
-
-                    data = TSVDataset(dataset_name).data
-                    assert len(data_all) == len(data)
-                    data['prediction'] = [data_all[x] for x in data['index']]
-                    data.pop('image')
-
-                    if dataset_name == 'MME':
-                        data = MME_postproc(data)
-                    
-                    # MMMU的data中会产生字符'$',如果使用openpyxl会出现openpyxl.utils.exceptions.IllegalCharacterError
-                    if dataset_name != 'MMMU':
-                        dump(data, result_file)
-                    else:
-                        data.to_excel(result_file, engine='xlsxwriter')   
-                    
-                    for i in range(world_size):
-                        os.remove(tmpl.format(i))
-                         
+            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc)                     
             if rank == 0:
                 time.sleep(3)
                 res = None

@@ -7,7 +7,6 @@ import re
 class QwenVL:
 
     INSTALL_REQ = False
-    MULTI_IMG = True
 
     def __init__(self, model_path='Qwen/Qwen-VL', **kwargs):
         assert model_path is not None
@@ -62,7 +61,6 @@ class QwenVL:
 class QwenVLChat:
 
     INSTALL_REQ = False
-    MULTI_IMG = True
 
     def __init__(self, model_path='Qwen/Qwen-VL-Chat', **kwargs):
         assert model_path is not None
