@@ -37,6 +37,12 @@ def istype(s, type):
     except Exception as _:
         return False
 
+def bincount(lst):
+    bins = defaultdict(lambda: 0)
+    for item in lst:
+        bins[item] += 1
+    return bins
+
 def read_ok(img_path):
     if not osp.exists(img_path):
         return False
