@@ -198,6 +198,8 @@ def VQAEval(eval_file, full_score_weight=0.3, **kwargs):
     logger = get_logger('Evaluation')
     data = load(eval_file)
     assert 'answer' in data and 'prediction' in data
+    data['prediction'] = [str(x) for x in data['prediction']]
+    data['answer'] = [str(x) for x in data['answer']]
     lt = len(data)
     pool = mp.Pool(16)
     lines = [data.iloc[i] for i in range(lt)]
