@@ -6,7 +6,7 @@ from vlmeval.utils import TSVDataset, track_progress_rich
 from vlmeval.eval import MME_rating, MME_postproc
 from vlmeval.smp import *
 
-FAIL_MSG = 'Failed to obtain answer via API.',
+FAIL_MSG = 'Failed to obtain answer via API.'
 
 def parse_args():
     parser = argparse.ArgumentParser()
