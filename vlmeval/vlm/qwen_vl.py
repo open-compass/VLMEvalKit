@@ -40,8 +40,6 @@ class QwenVL:
         return response
     
     def interleave_generate(self, interleave_list, dataset=None):
-                    
-        final_seg = interleave_list[-1]
         
         for idx,seg in enumerate(interleave_list):
             if seg.endswith('.jpg'):
@@ -55,7 +53,7 @@ class QwenVL:
         inputs = inputs.to(self.model.device)
         pred = self.model.generate(**inputs, **self.kwargs)
         response = self.tokenizer.decode(pred.cpu()[0], skip_special_tokens=False)
-        response = response.split(final_seg)[1].split('<|endoftext|>')[0]
+        response = response.split(query)[1].split('<|endoftext|>')[0]
         return response
     
 class QwenVLChat:
