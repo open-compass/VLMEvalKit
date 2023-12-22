@@ -10,7 +10,8 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           CLIPImageProcessor, CLIPVisionModel,
                           GenerationConfig)
 
-from ..smp import cn_string, decode_base64_to_image_file, get_cache_path, read_ok
+from ..smp import (cn_string, decode_base64_to_image_file, get_cache_path,
+                   read_ok)
 from ..utils import DATASET_TYPE
 
 
@@ -24,8 +25,7 @@ class LLaVA_XTuner:
                  visual_encoder_path=None,
                  visual_select_layer=-2,
                  prompt_template=None,
-                 torch_dtype=torch.float16,
-                 **kwargs):
+                 torch_dtype=torch.float16):
         try:
             from peft import PeftModel
             from xtuner.tools.utils import get_chat_utils
@@ -80,16 +80,22 @@ class LLaVA_XTuner:
         # load adapter
         if 'llm_adapter' in os.listdir(llava_path):
             adapter_path = osp.join(llava_path, 'llm_adapter')
-            llm = PeftModel.from_pretrained(llm, adapter_path, device_map='cpu')
+            llm = PeftModel.from_pretrained(llm,
+                                            adapter_path,
+                                            device_map='cpu')
             print(f'Load LLM adapter from {llava_path}')
         if 'visual_encoder_adapter' in os.listdir(llava_path):
             adapter_path = osp.join(llava_path, 'visual_encoder_adapter')
-            visual_encoder = PeftModel.from_pretrained(visual_encoder, adapter_path, device_map='cpu')
+            visual_encoder = PeftModel.from_pretrained(visual_encoder,
+                                                       adapter_path,
+                                                       device_map='cpu')
             print(f'Load visual_encoder adapter from {llava_path}')
 
         # build projector
         projector_path = osp.join(llava_path, 'projector')
-        projector = AutoModel.from_pretrained(projector_path, torch_dtype=torch_dtype, device_map='cpu')
+        projector = AutoModel.from_pretrained(projector_path,
+                                              torch_dtype=torch_dtype,
+                                              device_map='cpu')
         print(f'Load projector from {llava_path}')
 
         llm.eval()
@@ -109,19 +115,24 @@ class LLaVA_XTuner:
 
         _, self.stop_criteria = get_chat_utils(self.llm)
 
-        kwargs_default = dict(max_new_tokens=1024,
-                              do_sample=True,
-                              num_beams=1,
-                              temperature=0.2,
-                              eos_token_id=self.tokenizer.eos_token_id,
-                              pad_token_id=self.tokenizer.pad_token_id
-                              if self.tokenizer.pad_token_id is not None else
-                              self.tokenizer.eos_token_id)
-        if len(kwargs) > 0:
-            kwargs_default.update(kwargs)
-            warnings.warn(f'Following kwargs received: {kwargs}, '
-                          'will use as generation config.')
-        self.gen_config = GenerationConfig(**kwargs_default)
+    def build_gen_config(self, dataset):
+        gen_kwargs = dict(max_new_tokens=1024,
+                          do_sample=True,
+                          temperature=1,
+                          num_beams=5,
+                          eos_token_id=self.tokenizer.eos_token_id,
+                          pad_token_id=self.tokenizer.pad_token_id
+                          if self.tokenizer.pad_token_id is not None else
+                          self.tokenizer.eos_token_id)
+
+        # For single word generation
+        if (dataset is not None
+                and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']):
+            gen_kwargs.update(
+                dict(max_new_tokens=5,
+                     do_sample=False,
+                     num_beams=1))
+        return GenerationConfig(**gen_kwargs)
 
     def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
@@ -206,9 +217,10 @@ class LLaVA_XTuner:
         mm_inputs = prepare_inputs_labels_for_multimodal(
             llm=self.llm, input_ids=ids, pixel_values=pixel_values)
 
+        gen_config = self.build_gen_config(dataset)
         generate_output = self.llm.generate(
             **mm_inputs,
-            generation_config=self.gen_config,
+            generation_config=gen_config,
             streamer=None,
             bos_token_id=self.tokenizer.bos_token_id,
             stopping_criteria=self.stop_criteria)
