@@ -224,9 +224,9 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     else:
         model_name = 'gpt-3.5-turbo-0613'
         if INTERNAL:
-            model = OpenAIWrapperInternal(model_name, verbose=verbose)
+            model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
         else:
-            model = OpenAIWrapper(model_name, verbose=verbose)
+            model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
     
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
