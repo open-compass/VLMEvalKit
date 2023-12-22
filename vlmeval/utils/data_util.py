@@ -105,10 +105,10 @@ class TSVDataset:
 
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
-            if isint(image_map[k]):
-                idx = int(image_map[k])
+            if len(image_map[k]) <= 64:
+                idx = image_map[k]
+                assert idx in image_map and len(image_map[idx]) > 64
                 image_map[k] = image_map[idx]
-                assert not isint(image_map[idx])
     
         data['image'] = [
             eval(image_map[k]) if isliststr(image_map[k]) else image_map[k] 
