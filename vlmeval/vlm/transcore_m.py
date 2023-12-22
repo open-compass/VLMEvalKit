@@ -81,7 +81,10 @@ class TransCoreM:
             if hint is not None:
                 question = hint + '\n' + question
 
-            option_candidate = ['A', 'B', 'C', 'D']
+            if listinstr(['MMMU'], dataset):
+                option_candidate = ['A', 'B', 'C', 'D', 'E' ,'F', 'G', 'H', 'I']
+            else:
+                option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
                 cand: line[cand]
                 for cand in option_candidate

@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
-from vlmeval.utils import TSVDataset
+from vlmeval.utils import TSVDataset, track_progress_rich
 from vlmeval.eval import MME_rating, MME_postproc, MMMU_eval
 from vlmeval.smp import *
 
@@ -14,7 +14,8 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def infer_data(model_name, dataset_name, out_file, verbose=False):
+
+def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
@@ -44,6 +45,31 @@ def infer_data(model_name, dataset_name, out_file, verbose=False):
     else:
         model = model_name
 
+    is_api = getattr(model, 'is_api', False)
+    if is_api:
+        assert world_size == 1
+        data = dataset.data
+        lt, indices = len(data), data['index']
+        structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
+        
+        if dataset_name in ['CORE_MM']:
+            assert hasattr(model, 'multi_generate')
+            structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        else:
+            structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        res = track_progress_rich(
+            model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
+            structs, 
+            nproc=api_nproc, 
+            chunksize=api_nproc, 
+            save=out_file,
+            keys=indices)
+        result = load(out_file)
+        for idx, text in zip(indices, res):
+            if idx in result:
+                assert result[idx] == text 
+        return model
+
     for i in tqdm(range(lt)):
         idx = data.iloc[i]['index']
         if idx in res:
@@ -57,6 +83,13 @@ def infer_data(model_name, dataset_name, out_file, verbose=False):
         if dataset_name in ['CORE_MM']:
             assert hasattr(model, 'multi_generate')
             response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
+        elif listinstr(['MMMU'], dataset_name):
+            if hasattr(model, 'interleave_generate'):
+                response = model.interleave_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
+                INTERLEAVE = True
+            else:
+                struct['image'] = struct['image'][0]
+                response = model.generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
         else:
             response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()
@@ -159,7 +192,7 @@ def main():
                     for i in range(world_size):
                         os.remove(tmpl.format(i))
                          
-            if rank == 0 and dataset_name not in ['MME', 'CORE_MM', 'MMVet', 'MMMU']:
+            if rank == 0 and not listinstr(['MME', 'CORE_MM', 'MMVet', 'COCO', 'MMMU'], dataset_name):
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)
@@ -171,7 +204,7 @@ def main():
                 print(model_name, res)
                 dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
 
-            if rank == 0 and dataset_name == 'MMMU':
+            if rank == 0 and listinstr(['MMMU'], dataset_name):
                 time.sleep(3)
                 res = MMMU_eval(result_file)
                 print(model_name, res)

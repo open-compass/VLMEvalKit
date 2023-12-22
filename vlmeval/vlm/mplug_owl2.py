@@ -57,7 +57,10 @@ class mPLUG_Owl2:
 
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
+            if listinstr(['MMMU'], dataset):
+                option_candidate = ['A', 'B', 'C', 'D', 'E' ,'F', 'G', 'H', 'I']
+            else:
+                option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
                 cand: line[cand]
                 for cand in option_candidate

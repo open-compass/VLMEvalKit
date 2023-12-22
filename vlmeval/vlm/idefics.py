@@ -3,6 +3,7 @@ from PIL import Image
 import os.path as osp
 import warnings
 from ..smp import splitlen
+import re
 
 class IDEFICS:
 
@@ -49,6 +50,33 @@ class IDEFICS:
         generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
         text = generated_text[0].split("\nAssistant: ")[-1]
         return text
+    
+    def interleave_generate(self, image_paths, prompt, pattern=r'<image \d>', dataset=None):
+        assert isinstance(image_paths, list), "Interleave generate should have image list."
+        interleave_prompt = [prompt]
+        for i, pth in enumerate(image_paths,start=1):
+            for slice in interleave_prompt:
+                slice_index = interleave_prompt.index(slice)
+                spt_chart = pattern.replace('\d',f'{i}')
+                spts = re.split(spt_chart,slice)
+                interleave_prompt[slice_index] = spts[0]
+                insert_index = slice_index + 1
+                for j in range(1,len(spts)):
+                    interleave_prompt.insert(insert_index,image_paths[i-1])
+                    interleave_prompt.insert(insert_index+1,spts[j])
+                    insert_index += 2
+        print(interleave_prompt)
+        
+        prompts = ['Users:'] + interleave_prompt + ['<end_of_utterance>', '\nAssistant: ']
+        inputs = self.processor(prompts, add_end_of_utterance_token=False, return_tensors="pt").to("cuda")
+        exit_condition = self.processor.tokenizer("<end_of_utterance>", add_special_tokens=False).input_ids
+        bad_words_ids = self.processor.tokenizer(["<image>", "<fake_token_around_image>"], add_special_tokens=False).input_ids
+
+        generated_ids = self.model.generate(**inputs, eos_token_id=exit_condition, bad_words_ids=bad_words_ids, **self.kwargs)
+        generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
+        text = generated_text[0].split("\nAssistant: ")[-1]
+        return text
+            
 
     def generate(self, image_path, prompt, dataset=None):
         if self.with_context:

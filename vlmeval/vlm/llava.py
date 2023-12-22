@@ -68,13 +68,16 @@ class LLaVA:
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice','multi-choice & QA']:
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
             if hint is not None:
                 question + hint + '\n' + question
 
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
+            if listinstr(['MMMU'], dataset):
+                option_candidate = ['A', 'B', 'C', 'D', 'E' ,'F', 'G', 'H', 'I']
+            else:
+                option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
                 cand: line[cand]
                 for cand in option_candidate

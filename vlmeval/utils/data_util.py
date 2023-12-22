@@ -16,7 +16,9 @@ dataset_URLs = {
     'SEEDBench_IMG': "https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv", 
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
-    "MMMU": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_s.tsv",
+    "MMMU": "https://opencompass.openxlab.space/utils/VLMEval/MMMU.tsv",
+    "MMMU_DEV_VAL": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv",
+    "COCO_VAL": "https://opencompass.openxlab.space/utils/VLMEval/COCO_VAL.tsv",
 }
 
 dataset_md5_dict = {
@@ -31,6 +33,9 @@ dataset_md5_dict = {
     'SEEDBench_IMG': "68017231464752261a2526d6ca3a10c0", 
     "CORE_MM": "8a8da2f2232e79caf98415bfdf0a202d",
     "MMVet": "f400d7f513a585a0f218cbd6882e0671",
+    'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
+    'MMMU': "374034c4623f3e480b0f8c8204ab3d98",
+    'MMMU_DEV_VAL': "c15ef1fa8bd2a1cf9d96d0adb9dc27fa",
 }
 
 img_root_map = {
@@ -45,18 +50,22 @@ img_root_map = {
     "CORE_MM": "CORE_MM", 
     'SEEDBench_IMG': "SEEDBench_IMG",
     'MMVet':'MMVet',
-    'MMMU':'MMMU'
+    'MMMU':'MMMU',
+    'COCO_VAL':'COCO',
+    'MMMU_DEV_VAL':'MMMU'
 }
 
 assert set(dataset_URLs) == set(img_root_map)
 
 def DATASET_TYPE(dataset):
-    if 'mmbench' in dataset.lower() or 'seedbench' in dataset.lower() or 'ccbench' in dataset.lower():
+    if listinstr(['mmbench', 'seedbench', 'ccbench'], dataset.lower()):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
     elif 'MMMU' in dataset:
         return 'multi-choice & QA'
+    elif 'COCO' in dataset:
+        return 'Caption'
     return 'QA'
 
 def isliststr(s):
@@ -76,7 +85,6 @@ def check_md5(data_path, dataset):
     except:
         return False
 
-
 class TSVDataset:
     
     def __init__(self, dataset='MMBench', img_root=None):
@@ -89,13 +97,19 @@ class TSVDataset:
         url = dataset_URLs[dataset]
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
-        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED and check_md5(data_path, dataset):
+
+        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED and md5(data_path) == dataset_md5_dict[dataset]:
             pass
         else:
             warnings.warn("The dataset tsv is not downloaded")
             download_file(url, data_path)
             
         data = load(data_path)
+
+        # Prompt for Captioning
+        if listinstr(['COCO'], dataset):
+            data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
+
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
@@ -124,7 +138,7 @@ class TSVDataset:
     def build_prompt(self, line, dataset=None):
         if dataset is None:
             dataset = self.dataset
-
+        
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -139,14 +153,14 @@ class TSVDataset:
             tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
             if not osp.exists(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
-       
-        prompt = line['question']
 
+        prompt = line['question']
         if listinstr(['MMBench', 'CCBench', 'SEEDBench', 'MMMU'], dataset):
             question = line['question']
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
             if listinstr(['MMMU'], dataset):
                 option_candidate = ['A', 'B', 'C', 'D', 'E' ,'F', 'G', 'H', 'I']
+            else:
+                option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
                 cand: line[cand]
                 for cand in option_candidate

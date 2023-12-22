@@ -24,8 +24,21 @@ from uuid import uuid4
 import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
+import hashlib
 from tabulate import tabulate_formats
 import logging
+
+def md5(file_pth):
+    with open(file_pth, 'rb') as f:
+        hash = hashlib.new('md5')
+        for chunk in iter(lambda: f.read(2**20), b''):
+            hash.update(chunk)
+    return str(hash.hexdigest())
+
+def proxy_set(s):
+    import os
+    for key in ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY']:
+        os.environ[key] = s
 
 logger_initialized = {}
 
@@ -201,8 +214,12 @@ def mmqa_display(question):
         display(image)
         
     for k in keys:
-        if not pd.isna(question[k]):
-            print(f'{k.upper()}. {question[k]}')
+        try: 
+            if not pd.isna(question[k]):
+                print(f'{k.upper()}. {question[k]}')
+        except ValueError:
+            if False in pd.isna(question[k]):
+                print(f'{k.upper()}. {question[k]}')
 
 def encode_image_to_base64(img, target_size=-1):
     # if target_size == -1, will not do resizing
@@ -312,6 +329,7 @@ def download_file(url, filename=None):
     with DownloadProgressBar(unit='B', unit_scale=True,
                              miniters=1, desc=url.split('/')[-1]) as t:
         urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    return filename
 
 def gen_bash(cfgs, num_gpus, gpus_per_task=1):
     rd.shuffle(cfgs)
