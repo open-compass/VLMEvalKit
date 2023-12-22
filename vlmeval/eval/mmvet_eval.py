@@ -105,9 +105,9 @@ def MMVet_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
 
         if INTERNAL:
             # We follow the original codebase to set max_tokens == 3
-            model = OpenAIWrapperInternal(model_version, verbose=verbose, max_tokens=3, retry=99)
+            model = OpenAIWrapperInternal(model_version, verbose=verbose, max_tokens=3, retry=9)
         else:
-            model = OpenAIWrapper(model_version, verbose=verbose, max_tokens=3, retry=99)
+            model = OpenAIWrapper(model_version, verbose=verbose, max_tokens=3, retry=9)
         
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]

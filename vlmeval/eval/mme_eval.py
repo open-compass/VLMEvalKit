@@ -107,9 +107,9 @@ def MME_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False):
         model_name = 'gpt-3.5-turbo-0613'
 
         if INTERNAL:
-            model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=99)
+            model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=9)
         else:
-            model = OpenAIWrapper(model_name, verbose=verbose, retry=99)
+            model = OpenAIWrapper(model_name, verbose=verbose, retry=9)
 
         lt = len(unknown)
         lines = [unknown.iloc[i: i + 1] for i in range(lt)]

@@ -55,7 +55,7 @@ class BaseAPI:
                     self.logger.info(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
             except Exception as error:
                 if self.verbose:
-                    self.logger.error(f'An error occured during try {i}: {error}')
+                    self.logger.error(f'An error occured during try {i}: {error.msg}')
         
         return self.fail_msg if answer in ['', None] else answer
         
