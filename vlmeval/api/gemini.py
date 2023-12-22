@@ -69,8 +69,6 @@ class GeminiWrapper(BaseAPI):
                     messages.append(s)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)    
         gen_config.update(self.kwargs)
-        if self.verbose:
-            self.logger.info('Messages: ', messages)
         answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
         return 0, answer, 'Succeeded! '
 
