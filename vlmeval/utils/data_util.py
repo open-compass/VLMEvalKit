@@ -2,8 +2,6 @@ import pandas as pd
 import hashlib
 from vlmeval.smp import *
 
-LAST_MODIFIED = 231126000000
-
 dataset_URLs = {
     'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
     'MMBench_TEST_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv", 
@@ -17,6 +15,8 @@ dataset_URLs = {
     "CORE_MM": "https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv",
     "MMVet": "https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv",
     "COCO_VAL": "https://opencompass.openxlab.space/utils/VLMEval/COCO_VAL.tsv",
+    "OCRVQA_TEST": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TEST.tsv",
+    "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
 }
 
 dataset_md5_dict = {
@@ -32,6 +32,8 @@ dataset_md5_dict = {
     "CORE_MM": "8a8da2f2232e79caf98415bfdf0a202d",
     "MMVet": "f400d7f513a585a0f218cbd6882e0671",
     'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
+    'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
+    'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97'
 }
 
 img_root_map = {
@@ -47,6 +49,8 @@ img_root_map = {
     'SEEDBench_IMG': "SEEDBench_IMG",
     'MMVet':'MMVet',
     'COCO_VAL':'COCO',
+    'OCRVQA_TEST': 'OCRVQA',
+    'OCRVQA_TESTCORE': 'OCRVQA'
 }
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -58,6 +62,8 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'COCO' in dataset:
         return 'Caption'
+    elif 'OCRVQA' in dataset:
+        return 'VQA'
     return 'QA'
 
 def isliststr(s):
@@ -91,7 +97,7 @@ class TSVDataset:
         file_name = url.split('/')[-1]
         data_path = osp.join(self.data_root, file_name)
 
-        if osp.exists(data_path) and int(last_modified(data_path)) > LAST_MODIFIED and md5(data_path) == dataset_md5_dict[dataset]:
+        if osp.exists(data_path) and md5(data_path) == dataset_md5_dict[dataset]:
             pass
         else:
             warnings.warn("The dataset tsv is not downloaded")
