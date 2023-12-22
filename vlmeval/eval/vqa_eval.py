@@ -217,7 +217,7 @@ def VQAEval(eval_file, full_score_weight=0.3, **kwargs):
     ret = d2df(ret)
     ret.round(2)
 
-    suffix = eval_file.replace('.')[-1]
+    suffix = eval_file.split('.')[-1]
     result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
     logger.info(f'VQA Eval Finished. Saved to {result_file}. ')
     logger.info(ret)
