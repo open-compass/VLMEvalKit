@@ -52,10 +52,10 @@ class BaseAPI:
                         print(answer)
                     return answer
                 elif self.verbose:
-                    print(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
-            except:
+                    self.logger.info(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
+            except Exception as error:
                 if self.verbose:
-                    print(f"An unknown exception occurs during try {i}")
+                    self.logger.error(f'An error occured during try {i}: {error}')
         
         return self.fail_msg if answer in ['', None] else answer
         
