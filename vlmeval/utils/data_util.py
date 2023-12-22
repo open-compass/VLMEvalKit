@@ -105,10 +105,10 @@ class TSVDataset:
 
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
-            if k >= 1000000 and listinstr(['MMBench', 'CCBench'], self.dataset):
-                image_map[k] = image_map[k % 1000000]
-            elif k % 2 == 1 and self.dataset in ['MME']:
-                image_map[k] = image_map[k - 1]
+            if isint(image_map[k]):
+                idx = int(image_map[k])
+                image_map[k] = image_map[idx]
+                assert not isint(image_map[idx])
     
         data['image'] = [
             eval(image_map[k]) if isliststr(image_map[k]) else image_map[k] 
