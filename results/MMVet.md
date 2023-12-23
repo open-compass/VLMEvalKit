@@ -7,6 +7,8 @@
 
 | Model                     | Overall | [Overall (Official Leaderboard)](https://paperswithcode.com/sota/visual-question-answering-on-mm-vet) |  ocr | math | spat |  rec | know |  gen |
 | :------------------------ | ------: | -----------------------------------------------------------: | ---: | ---: | ---: | ---: | ---: | ---: |
+| GeminiProVision           |    59.2 |                                                     64.3±0.4 | 63.6 | 41.5 | 61.2 | 59.8 | 51.0 | 48.0 |
+| GPT-4v (detail: low)      |    56.8 |                                                     60.2±0.3 | 59.4 | 61.2 | 52.5 | 59.7 | 48.0 | 46.5 |
 | qwen_chat                 |    47.3 |                                                          N/A | 37.2 | 22.3 | 42.8 | 52.5 | 45.4 | 40.3 |
 | idefics_80b_instruct      |    39.7 |                                                          N/A | 29.9 |   15 | 30.7 | 45.6 | 38.6 | 37.1 |
 | llava_v1.5_13b            |    38.3 |                                                     36.3±0.2 | 28.8 | 11.5 | 31.5 |   42 | 23.1 |   23 |

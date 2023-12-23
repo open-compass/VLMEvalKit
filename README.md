@@ -14,6 +14,7 @@
 
 ## 🆕 News
 
+- **[2023-12-23]** We update the performance of GPT-4v and GeminiPro on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
 - **[2023-12-20]** We support a new benchmark: **COCO Caption**. The evaluation is undergoing.  🔥🔥🔥
 - **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
 
