@@ -1,10 +1,11 @@
 import os, torch
 from PIL import Image
 from ..smp import *
+from .utils import CustomPrompt
 from ..utils import DATASET_TYPE
 
 
-class mPLUG_Owl2:
+class mPLUG_Owl2(CustomPrompt):
 
     INSTALL_REQ = True
 
@@ -34,46 +35,35 @@ class mPLUG_Owl2:
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
-    def build_prompt(self, line, dataset=None):
-        from ..utils import img_root_map
-        assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
-        
-        os.makedirs(img_root, exist_ok=True)
-        prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
-        
-        if isinstance(line['image'], list):
-            tgt_path = []
-            for img, im_name in zip(line['image'], line['image_path']):
-                path = osp.join(img_root, im_name)
-                if not read_ok(path):
-                    decode_base64_to_image_file(img, path)
-                tgt_path.append(path)
-        else:
-            tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not read_ok(tgt_path):
-                decode_base64_to_image_file(line['image'], tgt_path)
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            question = line['question']
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
-            options = {
-                cand: line[cand]
-                for cand in option_candidate
-                if cand in line and not pd.isna(line[cand])
-            }
-            options_prompt = ''
-            for key, item in options.items():
-                options_prompt += f'{key}. {item}\n'
-            
-            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
-            prompt = prompt_tmpl.format(hint, question, options_prompt)
-        else:
-            prompt = line['question']
+    def build_prompt(self, line, dataset=None):
+        assert dataset is None or isinstance(dataset, str)
+        assert self.use_custom_prompt(dataset)
+        tgt_path = self.dump_image(line, dataset)
+        
+        prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = ''
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
+        prompt = prompt_tmpl.format(hint, question, options_prompt)
 
         return {'image': tgt_path, 'text': prompt}
     
-    def vanilla_generate(self, image_path, prompt):
+    def generate_vanilla(self, image_path, prompt):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
         from mplug_owl2.conversation import conv_templates
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
@@ -106,7 +96,7 @@ class mPLUG_Owl2:
         outputs = self.tokenizer.decode(output_ids[0, input_ids.shape[1]:]).strip()
         return outputs.split('</s>')[0]
 
-    def mmbench_generate(self, image_path, prompt):
+    def generate_multichoice(self, image_path, prompt):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
         image = Image.open(image_path).convert('RGB')
@@ -129,9 +119,9 @@ class mPLUG_Owl2:
 
     def generate(self, image_path, prompt, dataset=None):
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            return self.mmbench_generate(image_path, prompt)
+            return self.generate_multichoice(image_path, prompt)
         else:
-            return self.vanilla_generate(image_path, prompt)
+            return self.generate_vanilla(image_path, prompt)
         
     def multi_generate(self, image_paths, prompt, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
