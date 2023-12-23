@@ -118,10 +118,18 @@ class mPLUG_Owl2(CustomPrompt):
         return answer.split('</s>')[0]
 
     def generate(self, image_path, prompt, dataset=None):
+        if dataset in ['MMVet']:
+            num_beams_old = self.kwargs.pop('num_beams')
+            self.kwargs['num_beams'] = 5
+            
+        ret = None
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            return self.generate_multichoice(image_path, prompt)
+            ret = self.generate_multichoice(image_path, prompt)
         else:
-            return self.generate_vanilla(image_path, prompt)
+            ret = self.generate_vanilla(image_path, prompt)
+        
+        if dataset in ['MMVet']:
+            self.kwargs['num_beams'] = num_beams_old
         
     def multi_generate(self, image_paths, prompt, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
