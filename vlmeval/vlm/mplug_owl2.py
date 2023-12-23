@@ -37,7 +37,7 @@ class mPLUG_Owl2(CustomPrompt):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'multi-choice' or dataset == 'MMVet':
             return True
         return False
 
@@ -45,21 +45,25 @@ class mPLUG_Owl2(CustomPrompt):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
-        
-        prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
 
-        question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
-        options_prompt = ''
-        for key, item in options.items():
-            options_prompt += f'{key}. {item}\n'
-        
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
-        prompt = prompt_tmpl.format(hint, question, options_prompt)
+        if dataset == 'MMVet':
+            prompt_tmpl = "USER: <|image|>{}\nAnswer the question directly. ASSISTANT:"
+            prompt = prompt_tmpl.format(line['question'])
+        elif DATASET_TYPE(dataset) == 'multi-choice':
+            prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = ''
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            
+            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
+            prompt = prompt_tmpl.format(hint, line['question'], options_prompt)
+        else:
+            raise NotImplementedError
 
         return {'image': tgt_path, 'text': prompt}
     
@@ -129,7 +133,6 @@ class mPLUG_Owl2(CustomPrompt):
 
         input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
         kwargs = cp.deepcopy(self.kwargs)
-        kwargs['num_beams'] = 5
         kwargs['max_new_tokens'] = 64
         kwargs['length_penalty'] = 0
 
