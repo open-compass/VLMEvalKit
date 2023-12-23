@@ -35,7 +35,7 @@ dataset_md5_dict = {
     'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
-    'TextVQA_VAL': '1584b957f5ca367e835518865816fbba'
+    'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd'
 }
 
 img_root_map = {
