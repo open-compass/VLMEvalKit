@@ -130,6 +130,7 @@ class mPLUG_Owl2(CustomPrompt):
         
         if dataset in ['MMVet']:
             self.kwargs['num_beams'] = num_beams_old
+        return ret
         
     def multi_generate(self, image_paths, prompt, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
