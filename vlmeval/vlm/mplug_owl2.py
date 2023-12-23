@@ -116,21 +116,38 @@ class mPLUG_Owl2(CustomPrompt):
                 **self.kwargs)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
+    
+    def generate_mmvet(self, image_path, prompt):
+        from mplug_owl2.constants import IMAGE_TOKEN_INDEX
+        from mplug_owl2.mm_utils import process_images, tokenizer_image_token
+        image = Image.open(image_path).convert('RGB')
+        max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
+        image = image.resize((max_edge, max_edge))
+
+        image_tensor = process_images([image], self.image_processor)
+        image_tensor = image_tensor.to(self.device, dtype=torch.float16)
+
+        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
+        kwargs = cp.deepcopy(self.kwargs)
+        kwargs['num_beams'] = 5
+
+        with torch.inference_mode():
+            output_ids = self.model.generate(
+                input_ids=input_ids, 
+                images=image_tensor, 
+                output_hidden_states=True, 
+                use_cache=True, 
+                **kwargs)
+        answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
+        return answer.split('</s>')[0]
 
     def generate(self, image_path, prompt, dataset=None):
-        if dataset in ['MMVet']:
-            num_beams_old = self.kwargs.pop('num_beams')
-            self.kwargs['num_beams'] = 5
-            
-        ret = None
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            ret = self.generate_multichoice(image_path, prompt)
+            return self.generate_multichoice(image_path, prompt)
+        elif dataset == 'MMVet':
+            return self.generate_mmvet(image_path, prompt)
         else:
-            ret = self.generate_vanilla(image_path, prompt)
-        
-        if dataset in ['MMVet']:
-            self.kwargs['num_beams'] = num_beams_old
-        return ret
+            return self.generate_vanilla(image_path, prompt)
         
     def multi_generate(self, image_paths, prompt, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
