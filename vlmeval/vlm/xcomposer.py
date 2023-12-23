@@ -4,6 +4,7 @@ from transformers import AutoModel, AutoTokenizer
 from ..smp import *
 
 from transformers import StoppingCriteria, StoppingCriteriaList
+from .utils import CustomPrompt
 from PIL import Image
 
 class StoppingCriteriaSub(StoppingCriteria):
@@ -20,7 +21,7 @@ class StoppingCriteriaSub(StoppingCriteria):
 
 from ..utils import DATASET_TYPE
 
-class XComposer:
+class XComposer(CustomPrompt):
 
     INSTALL_REQ = False
     
@@ -39,10 +40,10 @@ class XComposer:
         ]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
 
-    def vanilla_generate(self, image_path, prompt):
+    def generate_vanilla(self, image_path, prompt):
         return self.model.generate(prompt, image_path)
     
-    def mmbench_generate(self, image_path, prompt):
+    def generate_multichoice(self, image_path, prompt):
         image = Image.open(image_path).convert("RGB")
         image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
         img_embeds = self.model.encode_img(image)
@@ -83,12 +84,12 @@ class XComposer:
     
     def generate(self, image_path, prompt, dataset=None):
         if dataset is None:
-            return self.vanilla_generate(image_path, prompt)
+            return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            return self.mmbench_generate(image_path, prompt)
+            return self.generate_multichoice(image_path, prompt)
         else:
-            return self.vanilla_generate(image_path, prompt)
+            return self.generate_vanilla(image_path, prompt)
     
     def multi_generate(self, image_paths, prompt, dataset=None):
         img_embeds, img_prompt = [], ''
@@ -137,43 +138,33 @@ class XComposer:
         output_text = output_text.split('<|Bot|>')[-1].strip()
         return output_text
     
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
+    
     def build_prompt(self, line, dataset=None):
-        from ..utils import img_root_map
         assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
-        os.makedirs(img_root, exist_ok=True)
+        assert self.use_custom_prompt(dataset)
+        tgt_path = self.dump_image(line, dataset)
 
-        if isinstance(line['image'], list):
-            tgt_path = []
-            for img, im_name in zip(line['image'], line['image_path']):
-                path = osp.join(img_root, im_name)
-                if not read_ok(path):
-                    decode_base64_to_image_file(img, path)
-                tgt_path.append(path)
-        else:
-            tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not read_ok(tgt_path):
-                decode_base64_to_image_file(line['image'], tgt_path)
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = ''
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            question = line['question']
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
-            options = {
-                cand: line[cand]
-                for cand in option_candidate
-                if cand in line and not pd.isna(line[cand])
-            }
-            options_prompt = ''
-            for key, item in options.items():
-                options_prompt += f'{key}. {item}\n'
-            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
-
-            img_prompt = ' <|User|>:<ImageHere>'
-            txt_prompt = 'Please answer this question by choosing the correct choice.'
-            context = 'N/A' if hint is None else hint
-            mid_prompt = 'Context: ' + context + '\nQuestion: ' + question + '\nOptions: ' + options_prompt
-            ans_prompt = ' <|Bot|>: Answer: The answer is'
-            prompt = img_prompt + txt_prompt + mid_prompt + '<TOKENS_UNUSED_0>' + ans_prompt
-        else:
-            prompt = line['question']
+        img_prompt = ' <|User|>:<ImageHere>'
+        txt_prompt = 'Please answer this question by choosing the correct choice.'
+        context = 'N/A' if hint is None else hint
+        mid_prompt = 'Context: ' + context + '\nQuestion: ' + question + '\nOptions: ' + options_prompt
+        ans_prompt = ' <|Bot|>: Answer: The answer is'
+        prompt = img_prompt + txt_prompt + mid_prompt + '<TOKENS_UNUSED_0>' + ans_prompt
+        
         return {'image': tgt_path, 'text': prompt}

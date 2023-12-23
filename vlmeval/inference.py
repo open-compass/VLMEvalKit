@@ -94,7 +94,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         if idx in res:
             continue
 
-        if hasattr(model, 'build_prompt'):
+        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
             struct = dataset.build_prompt(data.iloc[i])
@@ -183,7 +183,7 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
         data = load(result_file)
         failed_set = []
         for idx, pred in zip(data['index'], data['prediction']):
-            if FAIL_MSG in pred:
+            if FAIL_MSG in str(pred):
                 failed_set.append(idx)
         if len(failed_set):
             print(f'{len(failed_set)} records failed in the original result file {result_file}. ')
