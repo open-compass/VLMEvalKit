@@ -131,6 +131,7 @@ class mPLUG_Owl2(CustomPrompt):
         kwargs = cp.deepcopy(self.kwargs)
         kwargs['num_beams'] = 5
         kwargs['max_new_tokens'] = 64
+        kwargs['length_penalty'] = 0
 
         with torch.inference_mode():
             output_ids = self.model.generate(
