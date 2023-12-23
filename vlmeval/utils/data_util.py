@@ -112,6 +112,7 @@ class TSVDataset:
         if listinstr(['COCO'], dataset):
             data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
 
+        data['index'] = [str(x) for x in data['index']]
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if len(image_map[k]) <= 64:
