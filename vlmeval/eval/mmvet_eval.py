@@ -88,7 +88,9 @@ def MMVet_acc(result_file):
 def MMVet_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
     logger = get_logger('Evaluation')
 
-    storage = eval_file.replace('.xlsx', f'_{model}.xlsx')
+    suffix = eval_file.split('.')[-1]
+    storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+    tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
     if osp.exists(storage):
         logger.warning(f"GPT scoring file {storage} already exists, will reuse it in MMVet_eval. ")
     else:
@@ -114,12 +116,26 @@ def MMVet_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
         tups = [(model, line) for line in lines]
         indices = [line['index'] for line in lines]
 
-        res = track_progress_rich(MMVet_auxeval, tups, nproc=nproc, chunksize=nproc)
-
+        ans = {}
+        if osp.exists(tmp_file):
+            ans = load(tmp_file)
+        tups = [x for x, i in zip(tups, indices) if i not in ans]
+        indices = [i for i in indices if i not in ans]
+        
+        if len(indices):
+            new_results = track_progress_rich(
+                MMVet_auxeval, tups, nproc=nproc, chunksize=nproc,
+                keys=indices, save=tmp_file)
+            ans = load(tmp_file)
+            for k, v in zip(indices, new_results):
+                assert k in ans 
+                assert ans[k]['log'] == v['log'] and ans[k]['score'] == v['score']
+        
         log_map, score_map = {}, {}
-        for k, v in zip(indices, res):
-            log_map[k] = v['log']
-            score_map[k] = v['score']
+        all_inds = [line['index'] for line in lines]
+        for k in all_inds:
+            log_map[k] = ans[k]['log']
+            score_map[k] = ans[k]['score']
         data['score'] = [score_map[idx] for idx in data['index']]
         data['log'] = [log_map[idx] for idx in data['index']]
         dump(data, storage)
