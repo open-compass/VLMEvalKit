@@ -83,12 +83,11 @@ class TSVDataset(CustomPrompt):
         tgt_path = self.dump_image(line, dataset)
 
         prompt = line['question']
-        if listinstr(['MMBench', 'CCBench', 'SEEDBench'], dataset):
+        if DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
             options = {
                 cand: line[cand]
-                for cand in option_candidate
+                for cand in string.ascii_uppercase
                 if cand in line and not pd.isna(line[cand])
             }
             options_prompt = 'Options:\n'
@@ -101,7 +100,11 @@ class TSVDataset(CustomPrompt):
             prompt += f'Question: {question}\n'
             prompt += options_prompt
             prompt += 'Please select the correct answer from the options above. \n'
-
+        elif DATASET_TYPE(dataset) == 'VQA':
+            prompt += "\nPlease answer this question briefly and accurately according to the image content.\n"
+            if listinstr(['OCRVQA'], dataset):
+                prompt += 'Answer with exact text shown in this image, if applicable.\n'
+        
         return dict(image=tgt_path, text=prompt)
     
     def display(self, line):

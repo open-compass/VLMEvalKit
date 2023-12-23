@@ -63,6 +63,6 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'COCO' in dataset:
         return 'Caption'
-    elif 'OCRVQA' in dataset:
+    elif listinstr(['ocrvqa', 'textvqa'], dataset.lower()):
         return 'VQA'
-    return 'QA'
+    return None
