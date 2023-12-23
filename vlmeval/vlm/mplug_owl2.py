@@ -130,6 +130,7 @@ class mPLUG_Owl2(CustomPrompt):
         input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
         kwargs = cp.deepcopy(self.kwargs)
         kwargs['num_beams'] = 5
+        kwargs['max_new_tokens'] = 64
 
         with torch.inference_mode():
             output_ids = self.model.generate(
