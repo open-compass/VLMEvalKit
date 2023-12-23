@@ -1,11 +1,11 @@
 import torch
 import os.path as osp
 from transformers import AutoModel, AutoTokenizer
-from ..smp import *
-
 from transformers import StoppingCriteria, StoppingCriteriaList
-from .utils import CustomPrompt
 from PIL import Image
+from ..smp import *
+from ..utils import CustomPrompt
+
 
 class StoppingCriteriaSub(StoppingCriteria):
     def __init__(self, stops=[], encounters=1):

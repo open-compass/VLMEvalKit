@@ -1,8 +1,7 @@
 import os, torch
 from PIL import Image
 from ..smp import *
-from .utils import CustomPrompt
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
 
 class mPLUG_Owl2(CustomPrompt):
