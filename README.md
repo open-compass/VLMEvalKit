@@ -1,11 +1,13 @@
 ![LOGO](assets/LOGO.svg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
-<div align="center"><br><br>
+<div align="center"><br>
+<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
+<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
+<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#%EF%B8%8F-custom-benchmark-or-vlm">🛠️Support New </a> •
+<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#-the-goal-of-vlmevalkit">🎯Goal </a> •
+<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#%EF%B8%8F-citation">🖊️Citation </a>
+<br>
 </div>
-
-[**📊 Datasets, Models, and Evaluation Results**](#-datasets-models-and-evaluation-results), [**🏗️ QuickStart**](#️-quickstart),[**🛠️ Custom Benchmark or VLM**](#️-custom-benchmark-or-vlm),
-
-[**🎯 The Goal of VLMEvalKit**](#-the-goal-of-vlmevalkit),[**🖊️ Citation**](#️-citation)
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
