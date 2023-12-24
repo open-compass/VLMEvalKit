@@ -4,16 +4,18 @@
 
 Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded to `$LMUData` (default path is `$HOME/LMUData`, if not set explicitly). All existing benchmark TSV files are handled by `TSVDataset` implemented in `vlmeval/utils/data_util.py`. 
 
-| Dataset Name \ Fields | index | image | image_path | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
-| --------------------- | ----- | ----- | ---------- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
-| MMBench_DEV_CN/EN     | √     | √     |            | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
-| MMBench_TEST_CN/EN    | √     | √     |            | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
-| CCBench               | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| SEEDBench_IMG         | √     | √     |            | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| MME                   | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
-| CORE_MM               | √     | √     | √          | √        |      |      |      |      |      |        | √        |             |       |
-| MMVet                 | √     | √     |            | √        |      |      |      |      |      | √      | √        |             |       |
-| COCO_VAL              | √     | √     |            |          |      |      |      |      |      | √      |          |             |       |
+| Dataset Name \ Fields  | index | image | image_path | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
+| ---------------------- | ----- | ----- | ---------- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
+| MMBench_DEV_[CN/EN]    | ✅     | ✅     |            | ✅        | ✅    | ✅    | ✅    | ✅    | ✅    | ✅      | ✅        | ✅           | ✅     |
+| MMBench_TEST_[CN/EN]   | ✅     | ✅     |            | ✅        | ✅    | ✅    | ✅    | ✅    | ✅    |        | ✅        | ✅           | ✅     |
+| CCBench                | ✅     | ✅     |            | ✅        |      | ✅    | ✅    | ✅    | ✅    | ✅      | ✅        |             |       |
+| SEEDBench_IMG          | ✅     | ✅     |            | ✅        |      | ✅    | ✅    | ✅    | ✅    | ✅      | ✅        |             |       |
+| MME                    | ✅     | ✅     |            | ✅        |      |      |      |      |      | ✅      | ✅        |             |       |
+| CORE_MM                | ✅     | ✅     | ✅          | ✅        |      |      |      |      |      |        | ✅        |             |       |
+| MMVet                  | ✅     | ✅     |            | ✅        |      |      |      |      |      | ✅      | ✅        |             |       |
+| COCO_VAL               | ✅     | ✅     |            |          |      |      |      |      |      | ✅      |          |             |       |
+| OCRVQA_[TEST/TESTCORE] | ✅     | ✅     |            | ✅        |      |      |      |      |      | ✅      |          |             |       |
+| TextVQA_VAL            | ✅     | ✅     |            | ✅        |      |      |      |      |      | ✅      |          |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 

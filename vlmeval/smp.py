@@ -29,6 +29,14 @@ from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
 
+def istype(s, type):
+    if isinstance(s, type):
+        return True
+    try:
+        return isinstance(eval(s), type)
+    except Exception as _:
+        return False
+
 def bincount(lst):
     bins = defaultdict(lambda: 0)
     for item in lst:

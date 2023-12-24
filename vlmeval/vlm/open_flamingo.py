@@ -49,7 +49,7 @@ class OpenFlamingo:
         self.demo2 = Image.open(f"{this_dir}/misc/000000028137.jpg")
         self.image_proc = image_processor
 
-        kwargs_default = dict(max_new_tokens=256, num_beams=3)
+        kwargs_default = dict(max_new_tokens=128, num_beams=3)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
