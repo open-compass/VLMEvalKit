@@ -3,7 +3,6 @@ from PIL import Image
 import os.path as osp
 import warnings
 from ..smp import splitlen
-import re
 
 class IDEFICS:
 
@@ -61,7 +60,6 @@ class IDEFICS:
         text = generated_text[0].split("\nAssistant: ")[-1]
         return text
             
-
     def generate(self, image_path, prompt, dataset=None):
         if self.with_context:
             prompts = [

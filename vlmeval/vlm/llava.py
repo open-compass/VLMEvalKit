@@ -71,9 +71,9 @@ class LLaVA(CustomPrompt):
             for cand in string.ascii_uppercase
             if cand in line and not pd.isna(line[cand])
         }
-        option_str = ''
         for key, item in options.items():
-            option_str += f'\n{key}. {item}'
+            question += f'\n{key}. {item}'
+        prompt = question
 
         if len(options):
             prompt += "\n请直接回答选项字母。" if cn_string(prompt) else "\nAnswer with the option's letter from the given choices directly."
