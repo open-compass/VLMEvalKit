@@ -1,11 +1,11 @@
 ![LOGO](assets/LOGO.svg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center"><br>
-<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
-<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
-<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#%EF%B8%8F-custom-benchmark-or-vlm">🛠️Support New </a> •
-<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#-the-goal-of-vlmevalkit">🎯Goal </a> •
-<a href="https://github.com/open-compass/VLMEvalKit/tree/ocrvqa?tab=readme-ov-file#%EF%B8%8F-citation">🖊️Citation </a>
+<a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
+<a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
+<a href="#%EF%B8%8F-custom-benchmark-or-vlm">🛠️Support New </a> •
+<a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
+<a href="#%EF%B8%8F-citation">🖊️Citation </a>
 <br>
 </div>
 
