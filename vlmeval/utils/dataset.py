@@ -100,10 +100,6 @@ class TSVDataset(CustomPrompt):
             prompt += f'Question: {question}\n'
             prompt += options_prompt
             prompt += 'Please select the correct answer from the options above. \n'
-        elif DATASET_TYPE(dataset) == 'VQA':
-            prompt += "\nPlease answer this question briefly and accurately according to the image content.\n"
-            if listinstr(['OCRVQA'], dataset):
-                prompt += 'Answer with exact text shown in this image, if applicable.\n'
         
         return dict(image=tgt_path, text=prompt)
     
