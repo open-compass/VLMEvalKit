@@ -64,7 +64,7 @@ def MMMU_eval(result_file):
             tot[cate] += 1
         
         if item['question_type'] == 'multiple-choice':
-            choices = build_choices(item, is_mmmu=True)
+            choices = build_choices(item)
             matched = can_infer(item['prediction'], choices)
             if matched:
                 match['Overall'] += 1
