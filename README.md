@@ -9,7 +9,7 @@
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
-## 🆕 News (10 latest)
+## 🆕 News
 
 - **[2023-12-24]** We support two VQA Datasets: **OCRVQA** (Dataset Name: OCRVQA_TEST, OCRVQA_TESTCORE) and **TextVQA** (Dataset Name: TextVQA_VAL).  The evaluation is undergoing.  🔥🔥🔥
 - **[2023-12-23]** We update the performance of GPT-4v and GeminiPro on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
