@@ -9,6 +9,9 @@ dataset_str = ' '.join(datasets)
 models = list(supported_VLM)
 models = [x for x in models if 'fs' not in x]
 models = [x for x in models if not is_api(x)]
+small_models = [x for x in models if '80b' not in x]
+large_models = [x for x in models if '80b' in x]
+models = small_models + large_models
 
 for m in models:
     if '80b' in m:
