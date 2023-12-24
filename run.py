@@ -1,9 +1,8 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.eval import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc
+from vlmeval.eval import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval
 from vlmeval.inference import infer_data_job, prefetch_acc
-from vlmeval.utils import TSVDataset
 from vlmeval.config import supported_VLM
 
 def parse_args():
@@ -56,7 +55,7 @@ def main():
                 res = None
                 if dataset_name == 'MME':
                     res = MME_rating(result_file)
-                elif not listinstr(['CORE_MM', 'MMVet', 'COCO'], dataset_name):
+                elif listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
@@ -73,7 +72,9 @@ def main():
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
-                    COCO_eval(result_file, nproc=args.nproc, verbose=args.verbose)
+                    COCO_eval(result_file)
+                elif listinstr(['OCRVQA', 'TextVQA'], dataset_name):
+                    VQAEval(result_file)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             

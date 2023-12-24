@@ -4,8 +4,7 @@ import torch
 from abc import abstractproperty
 import math
 from ..smp import *
-from .utils import CustomPrompt
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
 class TransCoreM(CustomPrompt):
 
@@ -32,7 +31,7 @@ class TransCoreM(CustomPrompt):
         print("==============conv_mode: default")
         self.conv_mode = "default"
 
-        kwargs_default = dict(do_sample=False, temperature=0.0, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, temperature=0.0, max_new_tokens=128, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
@@ -94,10 +93,6 @@ class TransCoreM(CustomPrompt):
         from transcorem.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
         from transcorem.conversation import conv_templates, SeparatorStyle
 
-        temperature=0.0
-        top_p=None
-        num_beams=1
-
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
@@ -120,12 +115,8 @@ class TransCoreM(CustomPrompt):
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
-                do_sample=True if temperature > 0 else False,
-                temperature=temperature,
-                top_p=top_p,
-                num_beams=num_beams,
-                max_new_tokens=1024,
-                use_cache=True)
+                use_cache=True,
+                **self.kwargs)
 
         input_token_len = input_ids.shape[1]
         n_diff_input_output = (input_ids != output_ids[:, :input_token_len]).sum().item()

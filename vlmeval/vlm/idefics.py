@@ -27,7 +27,7 @@ class IDEFICS:
         self.model = IdeficsForVisionText2Text.from_pretrained(pth, torch_dtype=torch.bfloat16, device_map='auto')
         self.processor = AutoProcessor.from_pretrained(pth)
         self.with_context = with_context
-        kwargs_default = {'max_length': 256}
+        kwargs_default = {'max_length': 128}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         self.file_root = osp.dirname(__file__)

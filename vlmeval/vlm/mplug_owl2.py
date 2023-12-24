@@ -1,8 +1,7 @@
 import os, torch
 from PIL import Image
 from ..smp import *
-from .utils import CustomPrompt
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
 
 class mPLUG_Owl2(CustomPrompt):
@@ -67,7 +66,7 @@ class mPLUG_Owl2(CustomPrompt):
 
         return {'image': tgt_path, 'text': prompt}
     
-    def generate_vanilla(self, image_path, prompt):
+    def generate_vanilla(self, image_path, prompt, **kwargs):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
         from mplug_owl2.conversation import conv_templates
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
@@ -89,13 +88,16 @@ class mPLUG_Owl2(CustomPrompt):
         stop_str = conv.sep2
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+        gen_kwargs = cp.deepcopy(self.kwargs)
+        gen_kwargs.update(kwargs)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
                 use_cache=True,
                 stopping_criteria=[stopping_criteria],
-                **self.kwargs)
+                **gen_kwargs)
 
         outputs = self.tokenizer.decode(output_ids[0, input_ids.shape[1]:]).strip()
         return outputs.split('</s>')[0]
@@ -152,7 +154,11 @@ class mPLUG_Owl2(CustomPrompt):
         elif dataset == 'MMVet':
             return self.generate_mmvet(image_path, prompt)
         else:
-            return self.generate_vanilla(image_path, prompt)
+            if dataset is not None and DATASET_TYPE(dataset) in ['VQA', 'Caption']:
+                gen_config = {'max_new_tokens': 128, 'length_penalty': 0}
+                return self.generate_vanilla(image_path, prompt, **gen_config)
+            else:
+                return self.generate_vanilla(image_path, prompt)
         
     def multi_generate(self, image_paths, prompt, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX

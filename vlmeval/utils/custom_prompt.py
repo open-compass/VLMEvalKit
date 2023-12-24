@@ -1,5 +1,5 @@
-from ...smp import *
-from ...utils import img_root_map
+from ..smp import *
+from .dataset_config import img_root_map
 from abc import abstractmethod
 
 class CustomPrompt:

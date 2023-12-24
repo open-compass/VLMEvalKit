@@ -1,11 +1,11 @@
 import torch
 import os.path as osp
 from transformers import AutoModel, AutoTokenizer
-from ..smp import *
-
 from transformers import StoppingCriteria, StoppingCriteriaList
-from .utils import CustomPrompt
 from PIL import Image
+from ..smp import *
+from ..utils import CustomPrompt
+
 
 class StoppingCriteriaSub(StoppingCriteria):
     def __init__(self, stops=[], encounters=1):
@@ -25,7 +25,7 @@ class XComposer(CustomPrompt):
 
     INSTALL_REQ = False
     
-    def __init__(self, model_path='internlm/internlm-xcomposer-vl-7b'):
+    def __init__(self, model_path='internlm/internlm-xcomposer-vl-7b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
             
@@ -38,10 +38,16 @@ class XComposer(CustomPrompt):
             torch.tensor([103027]).to(self.device), ### end of human
             torch.tensor([103028]).to(self.device), ### end of bot
         ]
+        default_kwargs = {
+            'max_new_tokens': 128, 'num_beams': 5, 'do_sample': False, 
+            'min_length': 1, 'repetition_penalty': 1.5, 'length_penalty': 1.0
+        }
+        default_kwargs.update(kwargs)
+        self.kwargs = default_kwargs
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
 
     def generate_vanilla(self, image_path, prompt):
-        return self.model.generate(prompt, image_path)
+        return self.model.generate(prompt, image_path, **self.kwargs)
     
     def generate_multichoice(self, image_path, prompt):
         image = Image.open(image_path).convert("RGB")
@@ -119,14 +125,8 @@ class XComposer(CustomPrompt):
         
         outputs = self.model.internlm_model.generate(
             inputs_embeds=prompt_embs,
-            max_new_tokens=500,
-            num_beams=5,
-            do_sample=False,
-            min_length=1,
-            repetition_penalty=1.5,
-            length_penalty=1.0,
             stopping_criteria=self.stopping_criteria,
-        )
+            **self.kwargs)
         output_token = outputs[0]
         if output_token[0] == 0:
             output_token = output_token[1:]
