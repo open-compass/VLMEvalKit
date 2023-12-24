@@ -35,7 +35,7 @@ class PandaGPT:
         model.load_state_dict(delta_ckpt, strict=False)
         torch.cuda.empty_cache()
         self.model = model.eval().half().cuda()
-        kwargs_default = {'top_p': 0.9, 'do_sample': False, 'max_tgt_len': 256, 'temperature': 0.001}
+        kwargs_default = {'top_p': 0.9, 'do_sample': False, 'max_tgt_len': 128, 'temperature': 0.001}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
