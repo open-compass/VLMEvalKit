@@ -99,7 +99,7 @@ def build_prompt_cn(question, options, prediction):
 def build_choices(item):
     ret = {}
     for ch in string.ascii_uppercase:
-        if not pd.isna(item[ch]):
+        if ch in item and (not pd.isna(item[ch])):
             ret[ch] = item[ch]
     return ret
 

@@ -21,6 +21,7 @@ pycocoevalcap
 openpyxl
 seaborn
 tabulate
+xlsxwriter
 """
 
 
