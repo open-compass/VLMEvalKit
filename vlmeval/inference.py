@@ -3,7 +3,7 @@ import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset, track_progress_rich
-from vlmeval.eval import MME_rating, MME_postproc, MMMU_eval
+from vlmeval.evaluate import MME_rating, MME_postproc, MMMU_eval
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -165,7 +165,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
 
 def prefetch_acc(result_file):
     data = load(result_file)
-    from vlmeval.eval.multiple_choice import build_choices, can_infer
+    from vlmeval.evaluate.multiple_choice import build_choices, can_infer
     tot = defaultdict(lambda: 0)
     match = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
