@@ -35,7 +35,7 @@ dataset_md5_dict = {
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
     'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
-    'MMMU_DEV_VAL': "c15ef1fa8bd2a1cf9d96d0adb9dc27fa",
+    'MMMU_DEV_VAL': "6948d37b86d90751983a06adcc94a39e",
 }
 
 img_root_map = {
