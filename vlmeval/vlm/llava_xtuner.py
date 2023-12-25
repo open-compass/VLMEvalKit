@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+import string
 import warnings
 
 import pandas as pd
@@ -10,12 +11,11 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           CLIPImageProcessor, CLIPVisionModel,
                           GenerationConfig)
 
-from ..smp import (cn_string, decode_base64_to_image_file, get_cache_path,
-                   read_ok)
-from ..utils import DATASET_TYPE
+from ..smp import cn_string, get_cache_path
+from ..utils import DATASET_TYPE, CustomPrompt
 
 
-class LLaVA_XTuner:
+class LLaVA_XTuner(CustomPrompt):
 
     INSTALL_REQ = True
 
@@ -124,59 +124,43 @@ class LLaVA_XTuner:
                           pad_token_id=self.tokenizer.pad_token_id
                           if self.tokenizer.pad_token_id is not None else
                           self.tokenizer.eos_token_id)
-
         # For single word generation
         if (dataset is not None
                 and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']):
             gen_kwargs.update(
-                dict(max_new_tokens=5,
-                     do_sample=False,
-                     num_beams=1))
+                dict(max_new_tokens=5, do_sample=False, num_beams=1))
         return GenerationConfig(**gen_kwargs)
 
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
+
     def build_prompt(self, line, dataset=None):
-        from ..utils import img_root_map
+        assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
-        os.makedirs(img_root, exist_ok=True)
+        tgt_path = self.dump_image(line, dataset)
 
-        if isinstance(line['image'], list):
-            tgt_path = []
-            for img, im_name in zip(line['image'], line['image_path']):
-                path = osp.join(img_root, im_name)
-                if not read_ok(path):
-                    decode_base64_to_image_file(img, path)
-                tgt_path.append(path)
+        question = line['question']
+        hint = line['hint'] if ('hint' in line
+                                and not pd.isna(line['hint'])) else None
+        if hint is not None:
+            question = hint + '\n' + question
+
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        for key, item in options.items():
+            question += f'\n{key}. {item}'
+
+        if not cn_string(question):
+            prompt = question + '\n' + ("Answer with the option's letter "
+                                        'from the given choices directly.')
         else:
-            tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not read_ok(tgt_path):
-                decode_base64_to_image_file(line['image'], tgt_path)
-
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            question = line['question']
-            hint = line['hint'] if ('hint' in line
-                                    and not pd.isna(line['hint'])) else None
-            if hint is not None:
-                question = hint + ' ' + question
-
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
-            options = {
-                cand: line[cand]
-                for cand in option_candidate
-                if cand in line and not pd.isna(line[cand])
-            }
-            options_prompt = 'There are several options:\n'
-            for key, item in options.items():
-                options_prompt += f'{key}. {item}\n'
-            prompt = question + ' ' + options_prompt
-
-            if not cn_string(prompt):
-                prompt = prompt + '\n' + ("Answer with the option's letter "
-                                          'from the given choices directly.')
-            else:
-                prompt = prompt + '\n' + '请直接回答选项字母。'
-        else:
-            prompt = line['question']
+            prompt = question + '\n' + '请直接回答选项字母。'
 
         return {'image': tgt_path, 'text': prompt}
 
