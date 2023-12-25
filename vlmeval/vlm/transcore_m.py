@@ -2,10 +2,11 @@ import os
 import sys
 import torch
 from abc import abstractproperty
+import math
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
-class TransCoreM:
+class TransCoreM(CustomPrompt):
 
     INSTALL_REQ = True
 
@@ -30,7 +31,7 @@ class TransCoreM:
         print("==============conv_mode: default")
         self.conv_mode = "default"
 
-        kwargs_default = dict(do_sample=False, temperature=0.0, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, temperature=0.0, max_new_tokens=128, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
@@ -44,7 +45,6 @@ class TransCoreM:
             parsed_options.append(option_value)
         return parsed_options
 
-
     def is_none(self,value):
         if value is None:
             return True
@@ -55,59 +55,43 @@ class TransCoreM:
         if type(value) is str and value.lower() == 'none':
             return True
         return False
+    
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
 
     def build_prompt(self, line, dataset=None):
-
-        from ..utils import img_root_map
         assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
-        os.makedirs(img_root, exist_ok=True)
+        assert self.use_custom_prompt(dataset)
+        tgt_path = self.dump_image(line, dataset)
 
-        if isinstance(line['image'], list):
-            tgt_path = []
-            for img, im_name in zip(line['image'], line['image_path']):
-                path = osp.join(img_root, im_name)
-                if not read_ok(path):
-                    decode_base64_to_image_file(img, path)
-                tgt_path.append(path)
+        question = line['question']
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        if hint is not None:
+            question = hint + '\n' + question
+
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        for key, item in options.items():
+            question += f'\n{key}. {item}'
+        prompt = question
+
+        if not cn_string(prompt):
+            prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
         else:
-            tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not read_ok(tgt_path):
-                decode_base64_to_image_file(line['image'], tgt_path)
-        
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            question = line['question']
-            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
-            if hint is not None:
-                question = hint + '\n' + question
-
-            option_candidate = ['A', 'B', 'C', 'D']
-            options = {
-                cand: line[cand]
-                for cand in option_candidate
-                if cand in line and not pd.isna(line[cand])
-            }
-            for key, item in options.items():
-                question += f'\n{key}. {item}'
-            prompt = question
-
-            if not cn_string(prompt):
-                prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
-            else:
-                prompt = prompt + "\n" + "请直接回答选项字母。"
-        else:
-            prompt = line['question']
+            prompt = prompt + "\n" + "请直接回答选项字母。"
+            
         return {'image': tgt_path, 'text': prompt}
 
     def generate(self, image_path, prompt, dataset=None):
         from transcorem.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from transcorem.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
         from transcorem.conversation import conv_templates, SeparatorStyle
-
-        temperature=0.0
-        top_p=None
-        num_beams=1
-
 
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
@@ -131,12 +115,8 @@ class TransCoreM:
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
-                do_sample=True if temperature > 0 else False,
-                temperature=temperature,
-                top_p=top_p,
-                num_beams=num_beams,
-                max_new_tokens=1024,
-                use_cache=True)
+                use_cache=True,
+                **self.kwargs)
 
         input_token_len = input_ids.shape[1]
         n_diff_input_output = (input_ids != output_ids[:, :input_token_len]).sum().item()

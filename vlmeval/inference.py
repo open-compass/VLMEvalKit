@@ -94,7 +94,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         if idx in res:
             continue
 
-        if hasattr(model, 'build_prompt'):
+        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
             struct = dataset.build_prompt(data.iloc[i])
@@ -169,7 +169,7 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
 
             data = TSVDataset(dataset_name).data
             assert len(data_all) == len(data)
-            data['prediction'] = [data_all[x] for x in data['index']]
+            data['prediction'] = [str(data_all[x]) for x in data['index']]
             data.pop('image')
 
             if dataset_name == 'MME':
@@ -182,8 +182,9 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
     else:
         data = load(result_file)
         failed_set = []
+        data['prediction'] = [str(x) for x in data['prediction']]
         for idx, pred in zip(data['index'], data['prediction']):
-            if FAIL_MSG in pred:
+            if FAIL_MSG in str(pred):
                 failed_set.append(idx)
         if len(failed_set):
             print(f'{len(failed_set)} records failed in the original result file {result_file}. ')
@@ -192,7 +193,7 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
             answer_map = {x: y for x, y in zip(data['index'], data['prediction'])}
             res = infer_data_api(model_name, dataset_name, failed_set, api_nproc=api_nproc)
             answer_map.update(res)
-            data['prediction'] = [answer_map[x] for x in data['index']]
+            data['prediction'] = [str(answer_map[x]) for x in data['index']]
             if dataset_name == 'MME':
                 data = MME_postproc(data)
             dump(data, result_file)

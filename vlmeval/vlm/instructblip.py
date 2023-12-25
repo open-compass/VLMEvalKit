@@ -41,6 +41,7 @@ class InstructBLIP:
         device = self.device
         model.to(device)
         self.model = model
+        self.kwargs = {'max_length': 128}
 
         preprocess_cfg = cfg.preprocess
         vis_processors, _ = load_preprocess(preprocess_cfg)
