@@ -6,7 +6,6 @@ from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
 from vlmeval.smp import *
 import numpy as np
 
-fout = None
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 abbrs = {
@@ -215,6 +214,11 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     elif dataset == 'MMBench_TEST_EN':
         dataset = 'MMBench'
 
+    if listinstr(['mmbench', 'ccbench'], dataset.lower()):
+        data = load(eval_file)
+        data['index'] = [int(x) for x in data['index']]
+        dump(data, eval_file)
+
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
     assert model in ['chatgpt-0613', "exact_matching"]
@@ -225,9 +229,9 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     else:
         model_name = 'gpt-3.5-turbo-0613'
         if INTERNAL:
-            model = OpenAIWrapperInternal(model_name, verbose=verbose)
+            model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
         else:
-            model = OpenAIWrapper(model_name, verbose=verbose)
+            model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
     
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
