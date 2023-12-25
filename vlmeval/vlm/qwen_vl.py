@@ -2,6 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
 import os.path as osp
+from vlmeval.smp import isimg
 import re
 
 class QwenVL:
@@ -40,14 +41,8 @@ class QwenVL:
         return response
     
     def interleave_generate(self, interleave_list, dataset=None):
-        
-        for idx,seg in enumerate(interleave_list):
-            if seg.endswith('.jpg'):
-                interleave_list[idx] = {'image':seg}
-            else:
-                interleave_list[idx] = {'text':seg}
-
-        query = self.tokenizer.from_list_format(interleave_list)
+        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in interleave_list]
+        query = self.tokenizer.from_list_format(vl_list)
         
         inputs = self.tokenizer(query, return_tensors='pt')
         inputs = inputs.to(self.model.device)
@@ -84,14 +79,8 @@ class QwenVLChat:
         return response
     
     def interleave_generate(self, interleave_list, dataset=None):
-                            
-        for idx,seg in enumerate(interleave_list):
-            if seg.endswith('.jpg'):
-                interleave_list[idx] = {'image':seg}
-            else:
-                interleave_list[idx] = {'text':seg}
-        
-        query = self.tokenizer.from_list_format(interleave_list)
+        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in interleave_list]
+        query = self.tokenizer.from_list_format(vl_list)
         
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
