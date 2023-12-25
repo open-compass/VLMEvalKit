@@ -68,4 +68,6 @@ def DATASET_TYPE(dataset):
         return 'Caption'
     elif listinstr(['ocrvqa', 'textvqa'], dataset.lower()):
         return 'VQA'
+    elif listinstr(['mmmu'], dataset.lower()):
+        return 'MMMU'
     return None

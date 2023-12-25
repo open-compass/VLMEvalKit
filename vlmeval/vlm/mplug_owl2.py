@@ -164,26 +164,27 @@ class mPLUG_Owl2(CustomPrompt):
                 return self.generate_vanilla(image_path, prompt)
         
     def multi_generate(self, image_paths, prompt, dataset=None):
+        return self.interleave_generate(image_paths + [prompt], dataset)
+    
+    def interleave_generate(self, tilist, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
-        image_prompt = ''
-        for i in range(len(image_paths)):
-            image_prompt += f'Image {i + 1}: <|image|>; '
-
-        prompt_tmpl = "USER: " + image_prompt + "{}\nASSISTANT: "
-        prompt = prompt_tmpl.format(prompt)
-        
+        prompt_full = "USER: "
         images = []
-        for pth in image_paths:
-            image = Image.open(pth).convert('RGB')
-            max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
-            image = image.resize((max_edge, max_edge))
-            images.append(image)
-
+        for s in tilist:
+            if isimg(s):
+                image = Image.open(s).convert('RGB')
+                max_edge = max(image.size)
+                image = image.resize((max_edge, max_edge))
+                images.appned(image)
+                prompt_full += f"<|image|>"
+            else:
+                prompt_full += s
+        prompt_full += "\nASSISTANT: "
         image_tensor = process_images(images, self.image_processor)
         image_tensor = image_tensor.to(self.device, dtype=torch.float16)
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
-        
+        input_ids = tokenizer_image_token(prompt_full, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids=input_ids, 
@@ -193,4 +194,3 @@ class mPLUG_Owl2(CustomPrompt):
                 **self.kwargs)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
-    
