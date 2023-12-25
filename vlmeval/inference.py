@@ -39,23 +39,16 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
         assert hasattr(model, 'interleave_generate')
         gen_func = model.interleave_generate
         structs = [dict(ti_list=split_MMMU(struct), dataset=dataset_name) for struct in structs]
-        inference_results = track_progress_rich(
-            model.interleave_generate,
-            interleave_list, 
-            nproc=api_nproc, 
-            chunksize=api_nproc, 
-            save=out_file,
-            keys=indices)
+    elif listinstr(['CORE_MM'], dataset_name):
+        assert hasattr(model, 'multi_generate')
+        gen_func = model.multi_generate
+        structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
     else:
-        if dataset_name in ['CORE_MM']:
-            assert hasattr(model, 'multi_generate')
-            structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
-        else:
-            structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        gen_func = model.generate
+        structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
 
-        inference_results = track_progress_rich(
-            model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
-            structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
+    inference_results = track_progress_rich(
+        gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
     
     res = load(out_file)
     for idx, text in zip(indices, inference_results):
@@ -91,8 +84,8 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     lt = len(data)
 
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
-    is_api = getattr(model, 'is_api', False)
 
+    is_api = getattr(model, 'is_api', False)
     if is_api:
         assert world_size == 1
         lt, indices = len(data), list(data['index'])
@@ -102,35 +95,6 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         res.update(supp)
         dump(res, out_file)
         return model_name
-
-    is_api = getattr(model, 'is_api', False)
-    if is_api:
-        assert world_size == 1
-        data = dataset.data
-        lt, indices = len(data), data['index']
-        structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-        
-        if listinstr(['MMMU'], dataset_name):
-            interleave_list = [dict(ti_list= dataset.build_interleave_list(struct), dataset=dataset_name) for struct in structs]
-            res = track_progress_rich(
-                model.interleave_generate,
-                interleave_list, 
-                nproc=api_nproc, 
-                chunksize=api_nproc, 
-                save=out_file,
-                keys=indices)
-        else:
-            if dataset_name in ['CORE_MM']:
-                assert hasattr(model, 'multi_generate')
-                structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
-            else:
-                structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
-            
-        result = load(out_file)
-        for idx, text in zip(indices, res):
-            if idx in result:
-                assert result[idx] == text 
-        return model
 
     for i in tqdm(range(lt)):
         idx = data.iloc[i]['index']
@@ -147,11 +111,9 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
             response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
         elif listinstr(['MMMU'], dataset_name):
             if hasattr(model, 'interleave_generate'):
-                interleave_list = dataset.build_interleave_list(struct)
-                response = model.interleave_generate(interleave_list, dataset=dataset_name)
+                response = model.interleave_generate(ti_list=split_MMMU(struct), dataset=dataset_name)
             else:
-                struct['image'] = struct['image'][0]
-                response = model.generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
+                response = model.generate(prompt=struct['text'], image_paths=struct['image'][0], dataset=dataset_name)
         else:
             response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()
