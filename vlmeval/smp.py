@@ -29,6 +29,9 @@ from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
 
+def isimg(s):
+    return osp.exists(s) or s.startswith('http')
+
 def istype(s, type):
     if isinstance(s, type):
         return True
@@ -353,42 +356,6 @@ def download_file(url, filename=None):
                              miniters=1, desc=url.split('/')[-1]) as t:
         urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
     return filename
-
-def gen_bash(cfgs, num_gpus, gpus_per_task=1):
-    rd.shuffle(cfgs)
-    num_bash = num_gpus // gpus_per_task
-    cmds_main = []
-    for i in range(num_bash):
-        cmds = []
-        for c in cfgs[i::num_bash]:
-            port = rd.randint(30000, 50000)
-            gpu_ids = list(range(i, num_gpus, num_bash))
-            gpu_ids = ','.join([str(x) for x in gpu_ids])
-            cmds.append(
-                f'CUDA_VISIBLE_DEVICES={gpu_ids} PORT={port} bash tools/dist_train.sh {c} {gpus_per_task} '
-                '--validate --test-last --test-best'
-            )
-        cmds_main.append('  &&  '.join(cmds) + '  &')
-    timestamp = time.strftime('%m%d%H%M%S', time.localtime())
-    mwlines(cmds_main, f'train_{timestamp}.sh')
-
-def h2r(value):
-    value = value.lstrip('#')
-    lv = len(value)
-    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
-def r2h(rgb):
-    return '#%02x%02x%02x' % rgb
-
-def fnp(model, input=None):
-    from fvcore.nn import FlopCountAnalysis, parameter_count
-    params = parameter_count(model)['']
-    print('Parameter Size: {:.4f} M'.format(params / 1024 / 1024))
-    if input is not None:
-        flops = FlopCountAnalysis(model, input).total()
-        print('FLOPs: {:.4f} G'.format(flops / 1024 / 1024 / 1024))
-        return params, flops
-    return params, None
 
 # LOAD & DUMP
 def dump(data, f, **kwargs):
