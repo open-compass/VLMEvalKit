@@ -49,8 +49,8 @@ class IDEFICS:
         text = generated_text[0].split("\nAssistant: ")[-1]
         return text
     
-    def interleave_generate(self, interleave_list, dataset=None):
-        prompts = ['Users:'] + interleave_list + ['<end_of_utterance>', '\nAssistant: ']
+    def interleave_generate(self, ti_list, dataset=None):
+        prompts = ['Users:'] + ti_list + ['<end_of_utterance>', '\nAssistant: ']
         inputs = self.processor(prompts, add_end_of_utterance_token=False, return_tensors="pt").to("cuda")
         exit_condition = self.processor.tokenizer("<end_of_utterance>", add_special_tokens=False).input_ids
         bad_words_ids = self.processor.tokenizer(["<image>", "<fake_token_around_image>"], add_special_tokens=False).input_ids

@@ -96,11 +96,11 @@ class XComposer(CustomPrompt):
         else:
             return self.generate_vanilla(image_path, prompt)
         
-    def list_to_prompt_embs(self, tilist):
-        assert isinstance(tilist, list)
+    def list_to_prompt_embs(self, ti_list):
+        assert isinstance(ti_list, list)
         img_embeds = []
         prompt_full = '<|User|>: '
-        for s in tilist:
+        for s in ti_list:
             if isimg(s):
                 image = Image.open(s).convert('RGB')
                 image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
@@ -125,8 +125,7 @@ class XComposer(CustomPrompt):
         return prompt_embs
     
     def multi_generate(self, image_paths, prompt, dataset=None):
-        tilist = image_paths + [prompt]
-        prompt_embs = self.list_to_prompt_embs(tilist)
+        prompt_embs = self.list_to_prompt_embs(image_paths + [prompt])
         
         outputs = self.model.internlm_model.generate(
             inputs_embeds=prompt_embs,
@@ -144,8 +143,8 @@ class XComposer(CustomPrompt):
         output_text = output_text.split('<|Bot|>')[-1].strip()
         return output_text
     
-    def interleave_generate(self, tilist, dataset=None):
-        prompt_embs = self.list_to_prompt_embs(tilist)
+    def interleave_generate(self, ti_list, dataset=None):
+        prompt_embs = self.list_to_prompt_embs(ti_list)
         outputs = self.model.internlm_model.generate(
             inputs_embeds=prompt_embs,
             stopping_criteria=self.stopping_criteria,

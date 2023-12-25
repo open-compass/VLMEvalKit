@@ -20,6 +20,20 @@ def check_md5(data_path, dataset):
             return False
     except:
         return False
+    
+def split_MMMU(struct):
+    assert 'image' in struct and 'text' in struct
+    text, images = struct['text'], struct['image']
+    lt = len(images)
+    segs = []
+    for i in range(lt):
+        assert f'<image {i + 1}>' in text
+        pref, text = text.split(f'<image {i + 1}>')
+        segs.append(pref)
+        segs.append(images[i])
+    assert '<image' not in text
+    segs.append(text)
+    return segs
 
 class TSVDataset(CustomPrompt):
     

@@ -166,12 +166,12 @@ class mPLUG_Owl2(CustomPrompt):
     def multi_generate(self, image_paths, prompt, dataset=None):
         return self.interleave_generate(image_paths + [prompt], dataset)
     
-    def interleave_generate(self, tilist, dataset=None):
+    def interleave_generate(self, ti_list, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
         prompt_full = "USER: "
         images = []
-        for s in tilist:
+        for s in ti_list:
             if isimg(s):
                 image = Image.open(s).convert('RGB')
                 max_edge = max(image.size)

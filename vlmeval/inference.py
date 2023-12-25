@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
-from vlmeval.utils import TSVDataset, track_progress_rich
+from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
 from vlmeval.evaluate import MME_rating, MME_postproc
 from vlmeval.smp import *
 
@@ -34,8 +34,11 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
     
     out_file = f'{model_name}/{model_name}_{dataset_name}_supp.pkl'
     
+    gen_func = None
     if listinstr(['MMMU'], dataset_name):
-        interleave_list = [dict(ti_list= dataset.build_interleave_list(struct), dataset=dataset_name) for struct in structs]
+        assert hasattr(model, 'interleave_generate')
+        gen_func = model.interleave_generate
+        structs = [dict(ti_list=split_MMMU(struct), dataset=dataset_name) for struct in structs]
         inference_results = track_progress_rich(
             model.interleave_generate,
             interleave_list, 
@@ -221,13 +224,8 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
 
             if dataset_name == 'MME':
                 data = MME_postproc(data)
-                
-            # MMMU的data中会产生字符'$',如果使用openpyxl会出现openpyxl.utils.exceptions.IllegalCharacterError
-            if dataset_name != 'MMMU':
-                dump(data, result_file)
-            else:
-                data.to_excel(result_file, engine='xlsxwriter')
-                         
+            
+            dump(data, result_file)             
             for i in range(world_size):
                 os.remove(tmpl.format(i))
         return model

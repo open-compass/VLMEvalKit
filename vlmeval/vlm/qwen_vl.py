@@ -40,8 +40,8 @@ class QwenVL:
         response = response.split(prompt)[1].split('<|endoftext|>')[0]
         return response
     
-    def interleave_generate(self, interleave_list, dataset=None):
-        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in interleave_list]
+    def interleave_generate(self, ti_list, dataset=None):
+        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in ti_list]
         query = self.tokenizer.from_list_format(vl_list)
         
         inputs = self.tokenizer(query, return_tensors='pt')
@@ -78,8 +78,8 @@ class QwenVLChat:
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
     
-    def interleave_generate(self, interleave_list, dataset=None):
-        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in interleave_list]
+    def interleave_generate(self, ti_list, dataset=None):
+        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in ti_list]
         query = self.tokenizer.from_list_format(vl_list)
         
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
