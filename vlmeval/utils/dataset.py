@@ -63,7 +63,9 @@ class TSVDataset(CustomPrompt):
             data['image_path'] = [
                 eval(pths) if isliststr(pths) else pths for pths in data['image_path']
             ]
-
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+            
         self.data = data
 
         img_root = img_root if img_root is not None else osp.join('images', img_root_map[dataset])
