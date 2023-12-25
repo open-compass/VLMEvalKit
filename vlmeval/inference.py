@@ -3,7 +3,7 @@ import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset, track_progress_rich
-from vlmeval.evaluate import MME_rating, MME_postproc, MMMU_eval
+from vlmeval.evaluate import MME_rating, MME_postproc
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -291,11 +291,6 @@ def main():
                 res = MME_rating(result_file)
                 print(model_name, res)
                 dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
-
-            if rank == 0 and listinstr(['MMMU'], dataset_name):
-                time.sleep(3)
-                res = MMMU_eval(result_file)
-                print(model_name, res)
                 
 if __name__ == '__main__':
     main()

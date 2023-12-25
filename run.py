@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.evaluate import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval, MMMU_eval
+from vlmeval.evaluate import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
 
@@ -75,8 +75,6 @@ def main():
                     COCO_eval(result_file)
                 elif listinstr(['OCRVQA', 'TextVQA'], dataset_name):
                     VQAEval(result_file)
-                elif listinstr(['MMMU'], dataset_name):
-                    MMMU_eval(result_file)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             
