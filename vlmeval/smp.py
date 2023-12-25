@@ -371,7 +371,7 @@ def dump(data, f, **kwargs):
             fout.write('\n'.join(lines))
 
     def dump_xlsx(data, f, **kwargs):
-        data.to_excel(f, index=False)
+        data.to_excel(f, index=False, engine='xlsxwriter')
 
     def dump_csv(data, f, quoting=csv.QUOTE_MINIMAL):
         data.to_csv(f, index=False, encoding='utf-8', quoting=quoting)
