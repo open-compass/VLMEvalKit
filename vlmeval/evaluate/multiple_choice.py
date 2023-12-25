@@ -37,16 +37,15 @@ def report_acc(df):
     res = defaultdict(list)
 
     if 'split' in df:
-        res['split'] = ['full', 'dev', 'test']
+        splits = list(set(df['split']))
+        res['split'] = splits
     else:
-        res['split'] = 'dev'
-    
+        df['split'] = ['dev'] * len(df)
+        res['split'] = ['dev']
+
     for group in [None, 'l2-category', 'category']:
         if group is None:
-            if 'split' in df:
-                res['Overall'] = [np.mean(df['hit']), np.mean(df[df['split'] == 'dev']['hit']), np.mean(df[df['split'] == 'test']['hit'])]
-            else:
-                res['Overall'] = [np.mean(df['hit'])]
+            res['Overall'] = [np.mean(df[df['split'] == sp]['hit']) for sp in res['split']]
         elif group not in df:
             continue
         else:
@@ -55,10 +54,7 @@ def report_acc(df):
             for ab in abilities:
                 ab_name = abbrs[ab] if ab in abbrs else ab
                 sub_df = df[df[group] == ab]
-                if 'split' in df:
-                    res[ab_name] = [np.mean(sub_df['hit']), np.mean(sub_df[sub_df['split'] == 'dev']['hit']), np.mean(sub_df[sub_df['split'] == 'test']['hit'])]
-                else:
-                    res[ab_name] = [np.mean(sub_df['hit'])]
+                res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
     return pd.DataFrame(res)
 
 def extract_options(item):
