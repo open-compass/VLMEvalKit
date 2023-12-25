@@ -95,42 +95,43 @@ class XComposer(CustomPrompt):
             return self.generate_multichoice(image_path, prompt)
         else:
             return self.generate_vanilla(image_path, prompt)
-    
-    def multi_generate(self, image_paths, prompt, dataset=None):
-        img_embeds, img_prompt = [], ''
-        for i, pth in enumerate(image_paths):
-            img_prompt += f'Image {i + 1}: <ImageHere>'
-            image = Image.open(pth).convert('RGB')
-            image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
-            img_embeds.append(self.model.encode_img(image))
         
-        prompt = f'<|User|>: ' + img_prompt + self.model.eoh + ' <|Bot|>: '
-        prompt_segs = prompt.split('<ImageHere>')
+    def list_to_prompt_embs(self, tilist):
+        assert isinstance(tilist, list)
+        img_embeds = []
+        prompt_full = '<|User|>: '
+        for s in tilist:
+            if isimg(s):
+                image = Image.open(s).convert('RGB')
+                image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
+                img_embeds.append(self.model.encode_img(image))
+                prompt_full += f'Image {len(img_embeds)}: <ImageHere>'
+            else:
+                prompt_full += s 
+        prompt_full += self.model.eoh + ' <|Bot|>: '
+        prompt_segs = prompt_full.split('<ImageHere>')
         assert len(prompt_segs) == len(img_embeds) + 1
-        print(prompt_segs)
+        
         prompt_seg_tokens = [
-            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=i == 0).to(self.device).input_ids
+            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=i==0).to(self.device).input_ids
             for i, seg in enumerate(prompt_segs)
         ]
-        prompt_seg_embs = [
-            self.model.internlm_model.model.embed_tokens(seg)
-            for seg in prompt_seg_tokens
-        ]
+        prompt_seg_embs = [self.model.internlm_model.model.embed_tokens(seg) for seg in prompt_seg_tokens]
         all_embeddings = []
         for i in range(len(img_embeds)):
             all_embeddings.extend([prompt_seg_embs[i], img_embeds[i]])
         all_embeddings.append(prompt_seg_embs[-1])
         prompt_embs = torch.cat(all_embeddings, dim=1)
+        return prompt_embs
+    
+    def multi_generate(self, image_paths, prompt, dataset=None):
+        tilist = image_paths + [prompt]
+        prompt_embs = self.list_to_prompt_embs(tilist)
         
         outputs = self.model.internlm_model.generate(
             inputs_embeds=prompt_embs,
-            max_new_tokens=500,
-            num_beams=5,
-            do_sample=False,
-            min_length=1,
-            repetition_penalty=1.5,
-            length_penalty=1.0,
             stopping_criteria=self.stopping_criteria,
+            **self.kwargs
         )
         output_token = outputs[0]
         if output_token[0] == 0:
@@ -143,43 +144,8 @@ class XComposer(CustomPrompt):
         output_text = output_text.split('<|Bot|>')[-1].strip()
         return output_text
     
-    def interleave_generate(self, image_paths, prompt, pattern=r'<image \d>',dataset=None):
-        img_embeds, img_prompt = [], ''
-        assert isinstance(image_paths, list), "Interleave generate should have image list."
-        interleave_prompt = [prompt]
-        for i, pth in enumerate(image_paths,start=1):
-            for slice in interleave_prompt:
-                slice_index = interleave_prompt.index(slice)
-                spt_chart = pattern.replace('\d',f'{i}')
-                spts = re.split(spt_chart,slice)
-                interleave_prompt[slice_index] = spts[0]
-                insert_index = slice_index + 1
-                for j in range(1,len(spts)):
-                    interleave_prompt.insert(insert_index,image_paths[i-1])
-                    interleave_prompt.insert(insert_index+1,spts[j])
-                    insert_index += 2
-        
-        prompt_segs = [seg  for seg in interleave_prompt if not seg.endswith('.jpg')]
-        image_segs = [seg  for seg in interleave_prompt if seg.endswith('.jpg')]
-        for i, pth in enumerate(image_segs):
-            image = Image.open(pth).convert('RGB')
-            image = self.model.vis_processor(image).unsqueeze(0).to(self.device)
-            img_embeds.append(self.model.encode_img(image))
-        
-        prompt_seg_tokens = [
-            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=i == 0).to(self.device).input_ids
-            for i, seg in enumerate(prompt_segs)
-        ]
-        prompt_seg_embs = [
-            self.model.internlm_model.model.embed_tokens(seg)
-            for seg in prompt_seg_tokens
-        ]
-        all_embeddings = []
-        for i in range(len(img_embeds)):
-            all_embeddings.extend([prompt_seg_embs[i], img_embeds[i]])
-        all_embeddings.append(prompt_seg_embs[-1])
-        prompt_embs = torch.cat(all_embeddings, dim=1)
-        
+    def interleave_generate(self, tilist, dataset=None):
+        prompt_embs = self.list_to_prompt_embs(tilist)
         outputs = self.model.internlm_model.generate(
             inputs_embeds=prompt_embs,
             stopping_criteria=self.stopping_criteria,
