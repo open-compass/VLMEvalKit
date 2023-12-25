@@ -147,7 +147,7 @@ def circular_pred(df, extract_func=None):
     valid_map = {i: True for i in pred_map if i < 1e6}
     for i in df['index']:
         if i >= shift and pred_map[i] and pred_map[i - shift]:
-            if pred_map[i] not in 'ABCDE' or pred_map[i - shift] not in 'ABCDE':
+            if pred_map[i] not in list(string.ascii_uppercase) or pred_map[i - shift] not in list(string.ascii_uppercase):
                 valid_map[i % shift] = False
                 continue
             if (ord(pred_map[i]) - ord(pred_map[i - shift])) % 4 == 1:

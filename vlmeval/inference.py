@@ -112,8 +112,10 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         elif listinstr(['MMMU'], dataset_name):
             if hasattr(model, 'interleave_generate'):
                 response = model.interleave_generate(ti_list=split_MMMU(struct), dataset=dataset_name)
-            else:
+            elif len(struct['image']) == 1:
                 response = model.generate(prompt=struct['text'], image_paths=struct['image'][0], dataset=dataset_name)
+            else:
+                response = '[MMMU] Failed, multiple images exist while the model only support single-image generate API. '
         else:
             response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()

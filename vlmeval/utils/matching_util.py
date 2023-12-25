@@ -15,9 +15,9 @@ def can_infer_option(answer, num_choice=5):
     ]
     for err in bard_err:
         if err in answer:
-            return 'E'
+            return 'Z'
     
-    def count(splits, choices='ABCD', prefix='', suffix=''):
+    def count(splits, choices=string.ascii_uppercase, prefix='', suffix=''):
         cnt = 0
         for c in choices:
             if prefix + c + suffix in splits:
