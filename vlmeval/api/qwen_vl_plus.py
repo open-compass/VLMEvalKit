@@ -21,12 +21,12 @@ class QwenVLWrapper(BaseAPI):
                  **kwargs):
 
         self.fail_msg = 'Failed to obtain answer via API. '
-        dashscope.api_key = key
         self.max_tokens = max_tokens
         self.temperature = temperature
         if key is None:
             key = os.environ.get('DASHSCOPE_API_KEY', None)
         assert key is not None
+        dashscope.api_key = key
         if proxy is not None:
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
