@@ -22,6 +22,7 @@ openpyxl
 seaborn
 tabulate
 xlsxwriter
+dashscope
 """
 
 
