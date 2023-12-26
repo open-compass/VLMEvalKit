@@ -25,7 +25,7 @@ class QwenVLWrapper(BaseAPI):
         self.temperature = temperature
         if key is None:
             key = os.environ.get('DASHSCOPE_API_KEY', None)
-        assert key is not None
+        assert key is not None, "Please set the API Key (obtain it here: https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start)"
         dashscope.api_key = key
         if proxy is not None:
             proxy_set(proxy)
