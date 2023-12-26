@@ -16,6 +16,7 @@ dataset_URLs = {
     "OCRVQA_TEST": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TEST.tsv",
     "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
     'TextVQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv",
+    "MMMU_DEV_VAL": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv",
 }
 
 dataset_md5_dict = {
@@ -33,7 +34,8 @@ dataset_md5_dict = {
     'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
-    'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd'
+    'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
+    'MMMU_DEV_VAL': "501f84dc642a9b17e35363b78c0191e1",
 }
 
 img_root_map = {
@@ -51,13 +53,14 @@ img_root_map = {
     'COCO_VAL':'COCO',
     'OCRVQA_TEST': 'OCRVQA',
     'OCRVQA_TESTCORE': 'OCRVQA',
-    'TextVQA_VAL': 'TextVQA'
+    'TextVQA_VAL': 'TextVQA',
+    'MMMU_DEV_VAL': 'MMMU'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
-    if listinstr(['mmbench', 'seedbench', 'ccbench'], dataset.lower()):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu'], dataset.lower()):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
