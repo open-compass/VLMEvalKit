@@ -17,6 +17,7 @@ dataset_URLs = {
     "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
     'TextVQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv",
     "MMMU_DEV_VAL": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv",
+    "MathVista_MINI": "https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv"
 }
 
 dataset_md5_dict = {
@@ -36,6 +37,7 @@ dataset_md5_dict = {
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
     'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
     'MMMU_DEV_VAL': "501f84dc642a9b17e35363b78c0191e1",
+    'MathVista_MINI': '71297fa6b32e8e4de8538c7b20b9274b'
 }
 
 img_root_map = {
@@ -54,7 +56,8 @@ img_root_map = {
     'OCRVQA_TEST': 'OCRVQA',
     'OCRVQA_TESTCORE': 'OCRVQA',
     'TextVQA_VAL': 'TextVQA',
-    'MMMU_DEV_VAL': 'MMMU'
+    'MMMU_DEV_VAL': 'MMMU',
+    'MathVista_MINI': 'MathVista'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
@@ -66,6 +69,6 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'COCO' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa'], dataset.lower()):
+    elif listinstr(['ocrvqa', 'textvqa', 'mathvista'], dataset.lower()):
         return 'VQA'
     return None
