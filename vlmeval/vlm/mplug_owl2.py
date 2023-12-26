@@ -178,7 +178,7 @@ class mPLUG_Owl2(CustomPrompt):
                 image = Image.open(s).convert('RGB')
                 max_edge = max(image.size)
                 image = image.resize((max_edge, max_edge))
-                images.appned(image)
+                images.append(image)
                 prompt_full += f"<|image|>"
             else:
                 prompt_full += s
