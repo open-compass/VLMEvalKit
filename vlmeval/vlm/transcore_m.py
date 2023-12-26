@@ -81,10 +81,10 @@ class TransCoreM(CustomPrompt):
             question += f'\n{key}. {item}'
         prompt = question
 
-        if not cn_string(prompt):
-            prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
+        if len(options):
+            prompt += "\n请直接回答选项字母。" if cn_string(prompt) else "\nAnswer with the option's letter from the given choices directly."
         else:
-            prompt = prompt + "\n" + "请直接回答选项字母。"
+            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
             
         return {'image': tgt_path, 'text': prompt}
 
@@ -109,8 +109,6 @@ class TransCoreM(CustomPrompt):
 
         input_ids = tokenizer_image_token(prompt_conv, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
-        keywords = [stop_str]
-        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,

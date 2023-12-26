@@ -73,11 +73,12 @@ class LLaVA(CustomPrompt):
         }
         for key, item in options.items():
             question += f'\n{key}. {item}'
+        prompt = question
 
-        if not cn_string(question):
-            prompt = question + "\n" + "Answer with the option's letter from the given choices directly."
+        if len(options):
+            prompt += "\n请直接回答选项字母。" if cn_string(prompt) else "\nAnswer with the option's letter from the given choices directly."
         else:
-            prompt = question + "\n" + "请直接回答选项字母。"
+            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
 
         return {'image': tgt_path, 'text': prompt}
 

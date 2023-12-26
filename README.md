@@ -13,30 +13,32 @@
 
 ## 🆕 News
 
+- **[2023-12-26]** We support **QwenVLPlus** API now. The evaluation result is on the road. 🔥🔥🔥
+- **[2023-12-26]** We support **MMMU** now (Dataset Name: MMMU_DEV_VAL).  The evaluation result is available at [**MMMU**](results/MMMU.md).  🔥🔥🔥
 - **[2023-12-24]** We support two VQA Datasets: **OCRVQA** (Dataset Name: OCRVQA_TEST, OCRVQA_TESTCORE) and **TextVQA** (Dataset Name: TextVQA_VAL).  The evaluation is undergoing.  🔥🔥🔥
-- **[2023-12-23]** We update the performance of GPT-4v and GeminiPro on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
+- **[2023-12-23]** We update the performance of **GPT-4v** and **GeminiProVision** on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
 - **[2023-12-20]** We support a new benchmark: **COCO Caption** (Dataset Name: COCO_VAL). The evaluation is undergoing.  🔥🔥🔥
-- **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
 **Supported Dataset**
 
-| Dataset                                                      | Inference | Evaluation | Results                                                      |
-| ------------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
-| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | ✅         | ✅          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
-| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | ✅         | ✅          | [**MME**](results/MME.md)                                    |
-| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
-| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
-| [**COCO Caption**](https://cocodataset.org)                  | ✅         | ✅          |                                                              |
-| [**OCRVQA**](https://ocr-vqa.github.io)                      | ✅         | ✅          |                                                              |
-| [**TextVQA**](https://textvqa.org)                           | ✅         | ✅          |                                                              |
-| [**Core-MM**](https://github.com/core-mm/core-mm)            | ✅         |            |                                                              |
+| Dataset                                                      | Dataset Names (for run.py)                             | Inference | Evaluation | Results                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench-DEV-[EN/CN]<br>MMBench-TEST-[EN/CN]<br>CCBench | ✅         | ✅          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | MME                                                    | ✅         | ✅          | [**MME**](results/MME.md)                                    |
+| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG                                          | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
+| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
+| [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL                                           | ✅         | ✅          | [**MMMU**](results/MMMU.md)                                  |
+| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          |                                                              |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_TESTCORE, OCRVQA_TEST                           | ✅         | ✅          |                                                              |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          |                                                              |
+| [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
 
 **Supported API Models**
 
-| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) | [**QwenVLPlus**](https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start) |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 
 **Supported PyTorch / HF Models**
 
