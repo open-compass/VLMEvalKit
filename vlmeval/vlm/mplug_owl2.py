@@ -36,6 +36,8 @@ class mPLUG_Owl2(CustomPrompt):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MMMU'], dataset):
+            return False
         if DATASET_TYPE(dataset) == 'multi-choice' or dataset == 'MMVet':
             return True
         return False

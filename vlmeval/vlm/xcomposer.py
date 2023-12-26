@@ -162,6 +162,8 @@ class XComposer(CustomPrompt):
     
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MMMU'], dataset):
+            return False
         if DATASET_TYPE(dataset) == 'multi-choice':
             return True
         return False
