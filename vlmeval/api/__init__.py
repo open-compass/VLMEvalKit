@@ -6,5 +6,5 @@ from .qwen_vl_plus import QwenVLWrapper,QwenVLPlus
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'OpenAIWrapperInternal', 'GeminiWrapper',
-    'GPT4V', 'GPT4V_Internal', 'GeminiProVision'
+    'GPT4V', 'GPT4V_Internal', 'GeminiProVision','QwenVLWrapper','QwenVLPlus'
 ]
