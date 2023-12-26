@@ -62,6 +62,8 @@ class TSVDataset(CustomPrompt):
             data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
 
         data['index'] = [str(x) for x in data['index']]
+        data['image'] = [str(x) for x in data['image']]
+        
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if len(image_map[k]) <= 64:
