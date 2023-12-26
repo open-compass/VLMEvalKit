@@ -26,7 +26,7 @@ dataset_md5_dict = {
     'MMBench_TEST_CN': "7e1239baf0ee4c8b513e19705a0f317e", 
     "MMBench": "4115aea3383f3dd0083be6a633e0f820",  # Link Invalid, Internal Only
     "MMBench_CN": "2e053ffc90ea598b1feae13c36dc13ee",    # Link Invalid, Internal Only
-    'CCBench': "5e1d7fff66b9da9c103d01bf48f4f5af", 
+    'CCBench': "1de88b4257e7eee3f60b18d45eda6f07", 
     'MME': "b36b43c3f09801f5d368627fb92187c3", 
     'SEEDBench_IMG': "68017231464752261a2526d6ca3a10c0", 
     "CORE_MM": "8a8da2f2232e79caf98415bfdf0a202d",
