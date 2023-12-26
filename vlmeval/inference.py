@@ -2,8 +2,8 @@ import torch
 import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
-from vlmeval.utils import TSVDataset, track_progress_rich
-from vlmeval.eval import MME_rating, MME_postproc
+from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
+from vlmeval.evaluate import MME_rating, MME_postproc
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -31,17 +31,24 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
     
     lt, indices = len(data), list(data['index'])
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-        
-    if dataset_name in ['CORE_MM']:
+    
+    out_file = f'{model_name}/{model_name}_{dataset_name}_supp.pkl'
+    
+    gen_func = None
+    if listinstr(['MMMU'], dataset_name):
+        assert hasattr(model, 'interleave_generate')
+        gen_func = model.interleave_generate
+        structs = [dict(ti_list=split_MMMU(struct), dataset=dataset_name) for struct in structs]
+    elif listinstr(['CORE_MM'], dataset_name):
         assert hasattr(model, 'multi_generate')
+        gen_func = model.multi_generate
         structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
     else:
+        gen_func = model.generate
         structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
 
-    out_file = f'{model_name}/{model_name}_{dataset_name}_supp.pkl'
     inference_results = track_progress_rich(
-        model.multi_generate if dataset_name in ['CORE_MM'] else model.generate, 
-        structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
+        gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
     
     res = load(out_file)
     for idx, text in zip(indices, inference_results):
@@ -77,8 +84,8 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     lt = len(data)
 
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
-    is_api = getattr(model, 'is_api', False)
 
+    is_api = getattr(model, 'is_api', False)
     if is_api:
         assert world_size == 1
         lt, indices = len(data), list(data['index'])
@@ -102,6 +109,13 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
         if dataset_name in ['CORE_MM']:
             assert hasattr(model, 'multi_generate')
             response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
+        elif listinstr(['MMMU'], dataset_name):
+            if hasattr(model, 'interleave_generate'):
+                response = model.interleave_generate(ti_list=split_MMMU(struct), dataset=dataset_name)
+            elif len(struct['image']) == 1:
+                response = model.generate(prompt=struct['text'], image_path=struct['image'][0], dataset=dataset_name)
+            else:
+                response = '[MMMU] Failed, multiple images exist while the model only support single-image generate API. '
         else:
             response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()
@@ -118,7 +132,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
 
 def prefetch_acc(result_file):
     data = load(result_file)
-    from vlmeval.eval.multiple_choice import build_choices, can_infer
+    from vlmeval.evaluate.multiple_choice import build_choices, can_infer
     tot = defaultdict(lambda: 0)
     match = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
@@ -174,8 +188,8 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
 
             if dataset_name == 'MME':
                 data = MME_postproc(data)
-
-            dump(data, result_file)   
+            
+            dump(data, result_file)             
             for i in range(world_size):
                 os.remove(tmpl.format(i))
         return model
@@ -228,7 +242,7 @@ def main():
                 model = model_name # which is only a name
             model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc)
                          
-            if rank == 0 and not listinstr(['MME', 'CORE_MM', 'MMVet', 'COCO'], dataset_name):
+            if rank == 0 and not listinstr(['MME', 'CORE_MM', 'MMVet', 'COCO', 'MMMU'], dataset_name):
                 time.sleep(3)
                 res = prefetch_acc(result_file)
                 print(model_name, res)
@@ -239,6 +253,6 @@ def main():
                 res = MME_rating(result_file)
                 print(model_name, res)
                 dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
-
+                
 if __name__ == '__main__':
     main()
