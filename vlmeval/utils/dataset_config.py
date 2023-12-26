@@ -16,6 +16,7 @@ dataset_URLs = {
     "OCRVQA_TEST": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TEST.tsv",
     "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
     'TextVQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv",
+    'ChartQA_VALTEST_HUMAN': "https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv", # Link Invalid, Internal Only
 }
 
 dataset_md5_dict = {
@@ -33,7 +34,8 @@ dataset_md5_dict = {
     'COCO_VAL': "72a5079dead060269ac222c5aa5128af",
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
-    'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd'
+    'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
+    'ChartQA_VALTEST_HUMAN':'ae43721b9903d20e498753111497855e',
 }
 
 img_root_map = {
@@ -51,7 +53,8 @@ img_root_map = {
     'COCO_VAL':'COCO',
     'OCRVQA_TEST': 'OCRVQA',
     'OCRVQA_TESTCORE': 'OCRVQA',
-    'TextVQA_VAL': 'TextVQA'
+    'TextVQA_VAL': 'TextVQA',
+    'ChartQA_VALTEST_HUMAN': 'ChartQA',
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
@@ -63,6 +66,6 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'COCO' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa'], dataset.lower()):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa'], dataset.lower()):
         return 'VQA'
     return None
