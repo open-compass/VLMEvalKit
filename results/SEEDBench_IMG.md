@@ -12,7 +12,7 @@
 
 | Model                | ExactMatchRate | MatchedAcc | ExactMatchAcc | LLMMatchAcc | [Official Leaderboard (Eval Method)](https://huggingface.co/spaces/AILab-CVC/SEED-Bench_Leaderboard) |
 | :------------------- | -------------: | ---------: | ------------: | ----------: | -----------------------------------------------------------: |
-| GPT-4v               |          95.58 |      73.92 |         70.65 |       71.59 |                                                   69.1 (Gen) |
+| GPT-4v (detail: low) |          95.58 |      73.92 |         70.65 |       71.59 |                                                   69.1 (Gen) |
 | GeminiProVision      |          99.38 |      71.09 |         70.65 |       70.74 |                                                           NA |
 | sharegpt4v_7b        |            100 |      69.25 |         69.25 |       69.25 |                                                   69.7 (Gen) |
 | llava_v1.5_13b       |            100 |      68.11 |         68.11 |       68.11 |                                                   68.2 (Gen) |
