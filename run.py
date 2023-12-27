@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.evaluate import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval, MathVista_eval, MathVista_prefetch_acc
+from vlmeval.evaluate import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval, MathVista_eval
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
 
@@ -57,8 +57,6 @@ def main():
                     res = MME_rating(result_file)
                 elif listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench'], dataset_name):
                     res = prefetch_acc(result_file)
-                elif listinstr(['MathVista'], dataset_name):
-                    res = MathVista_prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
                 if res is not None:

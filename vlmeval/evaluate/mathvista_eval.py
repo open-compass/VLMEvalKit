@@ -60,19 +60,31 @@ def build_mathvista_gpt4_prompt(line):
 def list_to_dict(lst):
     return {chr(65 + i): val for i, val in enumerate(lst)}
 
-def post_proc(response,line):
-    if line['question_type'] == 'multi_choice':
-        choices = list_to_dict(line['choices'])
-        res = can_infer(response, choices)
-        return res
-    elif line['answer_type'] == 'integer':
-        try:
+def post_check(line):
+    response = line['res']
+    res = None
+    ans = line['answer']
+    try:
+        if line['question_type'] == 'multi_choice':
+            choices = list_to_dict(eval(line['choices']))
+            res = can_infer(response, choices)
+            if res == line['answer_option']:
+                return True
+            else:
+                return False
+        elif line['answer_type'] == 'integer':
             res = int(response)
-            return res
-        except:
-            return None
+            ans = int(line['answer'])
+        elif line['answer_type'] == 'float':
+            res = float(response)
+            ans = float(line['answer'])
+    except:
+        pass
+    
+    if res == ans:
+        return True
     else:
-        return response
+        return False
     
 def MathVista_auxeval(model, line):
     prompt = build_mathvista_gpt4_prompt(line)
@@ -80,7 +92,7 @@ def MathVista_auxeval(model, line):
     retry = 5
     for i in range(retry):
         response = model.generate(prompt, temperature=i * 0.5)
-        res = post_proc(response)
+        res = post_proc(response, line)
         if res is None:
             log += f'Try {i}: output is {response}, failed to parse.\n'
         else:
@@ -89,31 +101,33 @@ def MathVista_auxeval(model, line):
     log += 'All 5 retries failed.\n'
     return dict(log=log, res='')
 
-def MathVista_prefetch_acc(result_file):
+def MathVista_acc(result_file):
     data = load(result_file)
     tot = defaultdict(lambda: 0)
     match = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
     for i in range(lt):
-            item = data.iloc[i]
-            cate = item['task']
-            tot['Overall'] += 1
-            tot[cate] += 1
-            matched = post_proc(item['prediction'],item)
-            if matched:
-                match['Overall'] += 1
-                match[cate] += 1
-                if matched == item['answer']:
-                    hit['Overall'] += 1
-                    hit[cate] += 1
+        item = data.iloc[i]
+        index = data.index[i]
+        cate = item['task']
+        tot['Overall'] += 1
+        tot[cate] += 1
+        log_check = item['log']
+        if log_check == 'Succeed':
+            match['Overall'] += 1
+            match[cate] += 1
+            if post_check(item):
+                hit['Overall'] += 1
+                hit[cate] += 1
+                    
     res = defaultdict(list)
     for k in tot.keys():
         res['Task'].append(k)
         res['tot'].append(tot[k])
-        res['match'].append(match[k])
+        res['fetch'].append(match[k])
         res['hit'].append(hit[k])
-        res['match_rate'].append(match[k] / tot[k] * 100)
+        res['fetch_rate'].append(match[k] / tot[k] * 100)
         if match[k] == 0:
             res['acc'].append(0)
         else:
@@ -122,7 +136,7 @@ def MathVista_prefetch_acc(result_file):
     return res
 
 def MathVista_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
-    logger =  ('Evaluation')
+    logger =  get_logger('Evaluation')
 
     suffix = eval_file.split('.')[-1]
     storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
@@ -143,9 +157,9 @@ def MathVista_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
 
         if INTERNAL:
             # We follow the original codebase to set max_tokens == 3
-            model = OpenAIWrapperInternal(model_version, verbose=verbose, max_tokens=3, retry=10)
+            model = OpenAIWrapperInternal(model_version, verbose=verbose, max_tokens=128, retry=10)
         else:
-            model = OpenAIWrapper(model_version, verbose=verbose, max_tokens=3, retry=10)
+            model = OpenAIWrapper(model_version, verbose=verbose, max_tokens=128, retry=10)
         
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
@@ -165,18 +179,18 @@ def MathVista_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
             ans = load(tmp_file)
             for k, v in zip(indices, new_results):
                 assert k in ans 
-                assert ans[k]['log'] == v['log'] and ans[k]['score'] == v['score']
+                assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
         
-        log_map, score_map = {}, {}
+        log_map, res_map = {}, {}
         all_inds = [line['index'] for line in lines]
         for k in all_inds:
             log_map[k] = ans[k]['log']
-            score_map[k] = ans[k]['score']
-        data['score'] = [score_map[idx] for idx in data['index']]
+            res_map[k] = ans[k]['res']
+        data['res'] = [res_map[idx] for idx in data['index']]
         data['log'] = [log_map[idx] for idx in data['index']]
         dump(data, storage)
     
-    score = MathVista_prefetch_acc(storage)
+    score = MathVista_acc(storage)
     score_pth = storage.replace('.xlsx','_score.csv')
     
     dump(score,score_pth)
