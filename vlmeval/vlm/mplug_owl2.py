@@ -1,13 +1,12 @@
 import os, torch
 from PIL import Image
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
 
-class mPLUG_Owl2:
+class mPLUG_Owl2(CustomPrompt):
 
     INSTALL_REQ = True
-    MULTI_IMG = True
 
     def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', **kwargs): 
         try:
@@ -35,32 +34,27 @@ class mPLUG_Owl2:
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if listinstr(['MMMU'], dataset):
+            return False
+        if DATASET_TYPE(dataset) == 'multi-choice' or dataset == 'MMVet':
+            return True
+        return False
+    
     def build_prompt(self, line, dataset=None):
-        from ..utils import img_root_map
         assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
-        
-        os.makedirs(img_root, exist_ok=True)
-        prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
-        
-        if isinstance(line['image'], list):
-            tgt_path = []
-            for img, im_name in zip(line['image'], line['image_path']):
-                path = osp.join(img_root, im_name)
-                if not osp.exists(path):
-                    decode_base64_to_image_file(img, path)
-                tgt_path.append(path)
-        else:
-            tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-            if not osp.exists(tgt_path):
-                decode_base64_to_image_file(line['image'], tgt_path)
+        assert self.use_custom_prompt(dataset)
+        tgt_path = self.dump_image(line, dataset)
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            question = line['question']
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
+        if dataset == 'MMVet':
+            prompt_tmpl = "USER: <|image|>{}\nAnswer the question directly. ASSISTANT:"
+            prompt = prompt_tmpl.format(line['question'])
+        elif DATASET_TYPE(dataset) == 'multi-choice':
+            prompt_tmpl = "USER: <|image|>{}\n{}\n{}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
             options = {
                 cand: line[cand]
-                for cand in option_candidate
+                for cand in string.ascii_uppercase
                 if cand in line and not pd.isna(line[cand])
             }
             options_prompt = ''
@@ -68,13 +62,16 @@ class mPLUG_Owl2:
                 options_prompt += f'{key}. {item}\n'
             
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
-            prompt = prompt_tmpl.format(hint, question, options_prompt)
+            if len(options):
+                prompt = f"USER: <|image|>{hint}\n{line['question']}\n{options_prompt}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
+            else:
+                prompt = f"USER: <|image|>{hint}\n{line['question']}\nAnswer the question directly. ASSISTANT:"
         else:
-            prompt = line['question']
+            raise NotImplementedError
 
         return {'image': tgt_path, 'text': prompt}
     
-    def vanilla_generate(self, image_path, prompt):
+    def generate_vanilla(self, image_path, prompt, **kwargs):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
         from mplug_owl2.conversation import conv_templates
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
@@ -96,18 +93,21 @@ class mPLUG_Owl2:
         stop_str = conv.sep2
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+        gen_kwargs = cp.deepcopy(self.kwargs)
+        gen_kwargs.update(kwargs)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
                 use_cache=True,
                 stopping_criteria=[stopping_criteria],
-                **self.kwargs)
+                **gen_kwargs)
 
         outputs = self.tokenizer.decode(output_ids[0, input_ids.shape[1]:]).strip()
         return outputs.split('</s>')[0]
 
-    def mmbench_generate(self, image_path, prompt):
+    def generate_multichoice(self, image_path, prompt):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
         image = Image.open(image_path).convert('RGB')
@@ -127,34 +127,66 @@ class mPLUG_Owl2:
                 **self.kwargs)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
+    
+    def generate_mmvet(self, image_path, prompt):
+        from mplug_owl2.constants import IMAGE_TOKEN_INDEX
+        from mplug_owl2.mm_utils import process_images, tokenizer_image_token
+        image = Image.open(image_path).convert('RGB')
+        max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
+        image = image.resize((max_edge, max_edge))
+
+        image_tensor = process_images([image], self.image_processor)
+        image_tensor = image_tensor.to(self.device, dtype=torch.float16)
+
+        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
+        kwargs = cp.deepcopy(self.kwargs)
+        kwargs['max_new_tokens'] = 64
+        kwargs['length_penalty'] = 0
+
+        with torch.inference_mode():
+            output_ids = self.model.generate(
+                input_ids=input_ids, 
+                images=image_tensor, 
+                output_hidden_states=True, 
+                use_cache=True, 
+                **kwargs)
+        answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
+        return answer.split('</s>')[0]
 
     def generate(self, image_path, prompt, dataset=None):
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            return self.mmbench_generate(image_path, prompt)
+            return self.generate_multichoice(image_path, prompt)
+        elif dataset == 'MMVet':
+            return self.generate_mmvet(image_path, prompt)
         else:
-            return self.vanilla_generate(image_path, prompt)
+            if dataset is not None and DATASET_TYPE(dataset) in ['VQA', 'Caption']:
+                gen_config = {'max_new_tokens': 128, 'length_penalty': 0}
+                return self.generate_vanilla(image_path, prompt, **gen_config)
+            else:
+                return self.generate_vanilla(image_path, prompt)
         
     def multi_generate(self, image_paths, prompt, dataset=None):
+        return self.interleave_generate(image_paths + [prompt], dataset)
+    
+    def interleave_generate(self, ti_list, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
-        image_prompt = ''
-        for i in range(len(image_paths)):
-            image_prompt += f'Image {i + 1}: <|image|>; '
-
-        prompt_tmpl = "USER: " + image_prompt + "{}\nASSISTANT: "
-        prompt = prompt_tmpl.format(prompt)
-        
+        prompt_full = "USER: "
         images = []
-        for pth in image_paths:
-            image = Image.open(pth).convert('RGB')
-            max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
-            image = image.resize((max_edge, max_edge))
-            images.append(image)
-
+        for s in ti_list:
+            if isimg(s):
+                image = Image.open(s).convert('RGB')
+                max_edge = max(image.size)
+                image = image.resize((max_edge, max_edge))
+                images.append(image)
+                prompt_full += f"<|image|>"
+            else:
+                prompt_full += s
+        prompt_full += "\nASSISTANT: "
         image_tensor = process_images(images, self.image_processor)
         image_tensor = image_tensor.to(self.device, dtype=torch.float16)
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
-        
+        input_ids = tokenizer_image_token(prompt_full, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids=input_ids, 
@@ -164,4 +196,3 @@ class mPLUG_Owl2:
                 **self.kwargs)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
-    

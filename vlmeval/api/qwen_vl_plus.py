@@ -1,10 +1,11 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-import google.generativeai as genai
+from dashscope import MultiModalConversation
+import dashscope
 
 headers = 'Content-Type: application/json'
 
-class GeminiWrapper(BaseAPI):
+class QwenVLWrapper(BaseAPI):
 
     is_api: bool = True
 
@@ -23,9 +24,9 @@ class GeminiWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
         if key is None:
-            key = os.environ.get('GOOGLE_API_KEY', None)
-        assert key is not None
-        genai.configure(api_key=key)
+            key = os.environ.get('DASHSCOPE_API_KEY', None)
+        assert key is not None, "Please set the API Key (obtain it here: https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start)"
+        dashscope.api_key = key
         if proxy is not None:
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
@@ -33,17 +34,21 @@ class GeminiWrapper(BaseAPI):
     @staticmethod
     def build_msgs(msgs_raw, system_prompt=None):
         msgs = cp.deepcopy(msgs_raw) 
-        assert len(msgs) % 2 == 1
-
-        if system_prompt is not None:
-            msgs[0] = [system_prompt, msgs[0]]
         ret = []
-        for i, msg in enumerate(msgs):
-            role = 'user' if i % 2 == 0 else 'model'
-            parts = msg if isinstance(msg, list) else [msg]
-            ret.append(dict(role=role, parts=parts))
+        if system_prompt is not None:
+            content = list(dict(text=system_prompt))
+            ret.append(dict(role='system', content=content))
+        content = []
+        for i,msg in enumerate(msgs):
+            if osp.exists(msg):
+                content.append(dict(image='file://' + msg))
+            elif msg.startswith('http'):
+                content.append(dict(image=msg))
+            else:
+                content.append(dict(text=msg))
+        ret.append(dict(role='user', content=content))
         return ret
-
+                
     def generate_inner(self, inputs, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         pure_text = True
@@ -51,26 +56,14 @@ class GeminiWrapper(BaseAPI):
             for pth in inputs:
                 if osp.exists(pth) or pth.startswith('http'):
                     pure_text = False
-        model = genai.GenerativeModel('gemini-pro') if pure_text else genai.GenerativeModel('gemini-pro-vision')
-        if isinstance(inputs, str):
-            messages = [inputs] if self.system_prompt is None else [self.system_prompt, inputs]
-        elif pure_text:
-            messages = self.build_msgs(inputs, self.system_prompt)
-        else:
-            messages = [] if self.system_prompt is None else [self.system_prompt]
-            for s in inputs:
-                if osp.exists(s):
-                    messages.append(Image.open(s))
-                elif s.startswith('http'):
-                    pth = download_file(s)
-                    messages.append(Image.open(pth))
-                    shutil.remove(pth)
-                else:
-                    messages.append(s)
+        assert not pure_text
+        model = 'qwen-vl-plus' 
+        messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)    
         gen_config.update(self.kwargs)
         try:
-            answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
+            response = MultiModalConversation.call(model=model, messages=messages)
+            answer = response.output.choices[0]['message']['content'][0]['text']
             return 0, answer, 'Succeeded! '
         except Exception as err:
             if self.verbose:
@@ -78,16 +71,15 @@ class GeminiWrapper(BaseAPI):
                 self.logger.error(f"The input messages are {inputs}.")
 
             return -1, '', ''
-        
 
-
-class GeminiProVision(GeminiWrapper):
+class QwenVLPlus(QwenVLWrapper):
 
     def generate(self, image_path, prompt, dataset=None):
-        return super(GeminiProVision, self).generate([image_path, prompt])
+        return super(QwenVLPlus, self).generate([image_path, prompt])
     
     def multi_generate(self, image_paths, prompt, dataset=None):
-        return super(GeminiProVision, self).generate(image_paths + [prompt])
+        return super(QwenVLPlus, self).generate(image_paths + [prompt])
     
     def interleave_generate(self, ti_list, dataset=None):
-        return super(GeminiProVision, self).generate(ti_list)
+        return super(QwenVLPlus, self).generate(ti_list)
+            

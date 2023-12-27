@@ -173,7 +173,7 @@ def track_progress_rich(func: Callable,
                                 ans = load(save)
                                 ans[keys[idx]] = result
 
-                                if os.environ.get('VERBOSE', True):
+                                if os.environ.get('VERBOSE', False):
                                     print(keys[idx], result, flush=True)
 
                                 dump(ans, save)

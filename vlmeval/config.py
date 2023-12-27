@@ -1,5 +1,5 @@
 from .vlm import *
-from .api import GPT4V, GPT4V_Internal, GeminiProVision
+from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLPlus
 from functools import partial
 
 PandaGPT_ROOT = None
@@ -43,6 +43,7 @@ supported_VLM = {
     "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'), 
     "mPLUG-Owl2": partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'GPT4V': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low'),
-    'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low'),
-    'GeminiProVision': partial(GeminiProVision, temperature=0)
+    'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
+    'QwenVLPlus': partial(QwenVLPlus, temperature=0, retry=10)
 }

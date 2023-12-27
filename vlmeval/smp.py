@@ -1,4 +1,4 @@
-# flake8: noqa: F401, F403
+    # flake8: noqa: F401, F403
 import abc
 import argparse
 import csv
@@ -25,8 +25,55 @@ import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 import hashlib
-from tabulate import tabulate_formats
+from tabulate import tabulate_formats, tabulate
+from huggingface_hub import scan_cache_dir
 import logging
+
+def isimg(s):
+    return osp.exists(s) or s.startswith('http')
+
+def istype(s, type):
+    if isinstance(s, type):
+        return True
+    try:
+        return isinstance(eval(s), type)
+    except Exception as _:
+        return False
+
+def bincount(lst):
+    bins = defaultdict(lambda: 0)
+    for item in lst:
+        bins[item] += 1
+    return bins
+
+def read_ok(img_path):
+    if not osp.exists(img_path):
+        return False
+    try:
+        im = Image.open(img_path)
+        assert im.size[0] > 0 and im.size[1] > 0
+        return True
+    except:
+        return False
+
+def get_cache_path(repo_id):
+    hf_cache_info = scan_cache_dir()
+    repos = list(hf_cache_info.repos)
+    repo = None
+    for r in repos:
+        if r.repo_id == repo_id:
+            repo = r
+            break
+    if repo is None:
+        return None
+    revs = list(repo.revisions)
+    rev2keep, last_modified = None, 0
+    for rev in revs:
+        if rev.last_modified > last_modified:
+            rev2keep, last_modified = rev, rev.last_modified 
+    if rev2keep is None:
+        return None
+    return str(rev2keep.snapshot_path)
 
 def md5(file_pth):
     with open(file_pth, 'rb') as f:
@@ -100,7 +147,7 @@ def circular_pred(df, extract_func=None):
     valid_map = {i: True for i in pred_map if i < 1e6}
     for i in df['index']:
         if i >= shift and pred_map[i] and pred_map[i - shift]:
-            if pred_map[i] not in 'ABCDE' or pred_map[i - shift] not in 'ABCDE':
+            if pred_map[i] not in list(string.ascii_uppercase) or pred_map[i - shift] not in list(string.ascii_uppercase):
                 valid_map[i % shift] = False
                 continue
             if (ord(pred_map[i]) - ord(pred_map[i - shift])) % 4 == 1:
@@ -137,27 +184,6 @@ def cn_string(s):
     if re.search(u'[\u4e00-\u9fff]', s):
         return True
     return False
-
-def stack_image(imgs, shape=(1, 3)):
-    total_imgs = shape[0] * shape[1]
-    assert len(imgs) <= total_imgs
-    h, w, _ = imgs[0].shape
-    import cv2
-    imgs = [cv2.resize(im, dsize=(w, h)) for im in imgs]
-    for i in range(total_imgs - len(imgs)):
-        imgs.append(np.ones((h, w, 3)).astype(np.uint8) * 127)
-    rows = []
-    for i in range(shape[0]):
-        if shape[1] == 1:
-            rows.append(imgs[i])
-        else:
-            rows.append(np.hstack(imgs[i * shape[1]: (i + 1) * shape[1]]))
-    if shape[0] == 1:
-        return rows[0]
-    else:
-        return np.vstack(rows)
-
-fout = None
 
 try:
     import decord
@@ -214,8 +240,12 @@ def mmqa_display(question):
         display(image)
         
     for k in keys:
-        if not pd.isna(question[k]):
-            print(f'{k.upper()}. {question[k]}')
+        try: 
+            if not pd.isna(question[k]):
+                print(f'{k.upper()}. {question[k]}')
+        except ValueError:
+            if False in pd.isna(question[k]):
+                print(f'{k.upper()}. {question[k]}')
 
 def encode_image_to_base64(img, target_size=-1):
     # if target_size == -1, will not do resizing
@@ -327,42 +357,6 @@ def download_file(url, filename=None):
         urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
     return filename
 
-def gen_bash(cfgs, num_gpus, gpus_per_task=1):
-    rd.shuffle(cfgs)
-    num_bash = num_gpus // gpus_per_task
-    cmds_main = []
-    for i in range(num_bash):
-        cmds = []
-        for c in cfgs[i::num_bash]:
-            port = rd.randint(30000, 50000)
-            gpu_ids = list(range(i, num_gpus, num_bash))
-            gpu_ids = ','.join([str(x) for x in gpu_ids])
-            cmds.append(
-                f'CUDA_VISIBLE_DEVICES={gpu_ids} PORT={port} bash tools/dist_train.sh {c} {gpus_per_task} '
-                '--validate --test-last --test-best'
-            )
-        cmds_main.append('  &&  '.join(cmds) + '  &')
-    timestamp = time.strftime('%m%d%H%M%S', time.localtime())
-    mwlines(cmds_main, f'train_{timestamp}.sh')
-
-def h2r(value):
-    value = value.lstrip('#')
-    lv = len(value)
-    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
-def r2h(rgb):
-    return '#%02x%02x%02x' % rgb
-
-def fnp(model, input=None):
-    from fvcore.nn import FlopCountAnalysis, parameter_count
-    params = parameter_count(model)['']
-    print('Parameter Size: {:.4f} M'.format(params / 1024 / 1024))
-    if input is not None:
-        flops = FlopCountAnalysis(model, input).total()
-        print('FLOPs: {:.4f} G'.format(flops / 1024 / 1024 / 1024))
-        return params, flops
-    return params, None
-
 # LOAD & DUMP
 def dump(data, f, **kwargs):
     def dump_pkl(data, pth, **kwargs):
@@ -377,12 +371,12 @@ def dump(data, f, **kwargs):
             fout.write('\n'.join(lines))
 
     def dump_xlsx(data, f, **kwargs):
-        data.to_excel(f, index=False)
+        data.to_excel(f, index=False, engine='xlsxwriter')
 
-    def dump_csv(data, f, quoting=csv.QUOTE_MINIMAL):
+    def dump_csv(data, f, quoting=csv.QUOTE_ALL):
         data.to_csv(f, index=False, encoding='utf-8', quoting=quoting)
 
-    def dump_tsv(data, f, quoting=csv.QUOTE_MINIMAL):
+    def dump_tsv(data, f, quoting=csv.QUOTE_ALL):
         data.to_csv(f, sep='\t', index=False, encoding='utf-8', quoting=quoting)
 
     handlers = dict(pkl=dump_pkl, json=dump_json, jsonl=dump_jsonl, xlsx=dump_xlsx, csv=dump_csv, tsv=dump_tsv)

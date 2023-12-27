@@ -6,7 +6,7 @@ from ..smp import get_logger
 class BaseAPI:
     
     def __init__(self, 
-                 retry=5, 
+                 retry=10, 
                  wait=3, 
                  system_prompt=None, 
                  verbose=True,
@@ -52,10 +52,11 @@ class BaseAPI:
                         print(answer)
                     return answer
                 elif self.verbose:
-                    print(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
-            except:
+                    self.logger.info(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
+            except Exception as err:
                 if self.verbose:
-                    print(f"An unknown exception occurs during try {i}")
+                    self.logger.error(f'An error occured during try {i}:')
+                    self.logger.error(err)
         
         return self.fail_msg if answer in ['', None] else answer
         
