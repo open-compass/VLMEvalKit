@@ -64,7 +64,7 @@ class LLaVA(CustomPrompt):
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         if hint is not None:
-            question + hint + '\n' + question
+            question = hint + '\n' + question
 
         options = {
             cand: line[cand]
