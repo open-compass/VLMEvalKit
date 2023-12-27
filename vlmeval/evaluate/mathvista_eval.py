@@ -91,8 +91,7 @@ def MathVista_auxeval(model, line):
     log = ''
     retry = 5
     for i in range(retry):
-        response = model.generate(prompt, temperature=i * 0.5)
-        res = post_proc(response, line)
+        res = model.generate(prompt, temperature=i * 0.5)
         if res is None:
             log += f'Try {i}: output is {response}, failed to parse.\n'
         else:
