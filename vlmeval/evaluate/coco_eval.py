@@ -54,7 +54,7 @@ def COCO_eval(eval_file, nproc=4, verbose=False):
         
     score_pth = eval_file.replace('.xlsx','_score.json')
     dump(coco_caption_score_dict, score_pth)
-    logger.info(f'MMVet_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
+    logger.info(f'COCO_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
     logger.info(f'Score: ')
     for key, value in coco_caption_score_dict.items():
         logger.info('{}:{}'.format(key, value))
