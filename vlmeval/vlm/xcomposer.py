@@ -143,27 +143,25 @@ class XComposer(CustomPrompt):
         output_text = output_text.split('<|Bot|>')[-1].strip()
         return output_text
     
-    def interleave_generate(self, ti_list, dataset=None):
-        prompt_embs = self.list_to_prompt_embs(ti_list)
-        outputs = self.model.internlm_model.generate(
-            inputs_embeds=prompt_embs,
-            stopping_criteria=self.stopping_criteria,
-            **self.kwargs)
-        output_token = outputs[0]
-        if output_token[0] == 0:
-            output_token = output_token[1:]
-        if output_token[0] == 1:
-            output_token = output_token[1:]
-        output_text = self.model.tokenizer.decode(output_token, add_special_tokens=False)
+    # def interleave_generate(self, ti_list, dataset=None):
+    #     prompt_embs = self.list_to_prompt_embs(ti_list)
+    #     outputs = self.model.internlm_model.generate(
+    #         inputs_embeds=prompt_embs,
+    #         stopping_criteria=self.stopping_criteria,
+    #         **self.kwargs)
+    #     output_token = outputs[0]
+    #     if output_token[0] == 0:
+    #         output_token = output_token[1:]
+    #     if output_token[0] == 1:
+    #         output_token = output_token[1:]
+    #     output_text = self.model.tokenizer.decode(output_token, add_special_tokens=False)
 
-        output_text = output_text.split(self.model.eoa)[0]
-        output_text = output_text.split('<|Bot|>')[-1].strip()
-        return output_text
+    #     output_text = output_text.split(self.model.eoa)[0]
+    #     output_text = output_text.split('<|Bot|>')[-1].strip()
+    #     return output_text
     
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMMU'], dataset):
-            return False
         if DATASET_TYPE(dataset) == 'multi-choice':
             return True
         return False
