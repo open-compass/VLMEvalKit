@@ -63,20 +63,15 @@ def list_to_dict(lst):
 def post_check(line, prefetch=False):
     res = None
     ans = line['answer']
+    response = line['prediction'] if prefetch else line['res']
     try:
         if line['question_type'] == 'multi_choice':
             ans = line['answer_option']
             choices = list_to_dict(eval(line['choices']))
+            res = can_infer(response, choices)
             if prefetch:
-                response = line['prediction']
-                if can_infer(response, choices):
-                    return True
-            else:
-                response = line['res']
-                if can_infer(response, choices) == ans:
-                    return True
+                return res
         else:
-            response = line['res']
             if line['answer_type'] == 'integer':
                 res = int(response)
                 ans = int(line['answer'])
@@ -90,7 +85,7 @@ def post_check(line, prefetch=False):
         pass
     
     if res == ans:
-        return True
+        return res
     else:
         return False
 
@@ -99,8 +94,7 @@ def MathVista_auxeval(model, line):
     log = ''
     retry = 5
     if post_check(line, prefetch=True):
-        choices = list_to_dict(eval(line['choices']))
-        res = can_infer(line['prediction'], choices)
+        res = post_check(line, prefetch=True)
         return dict(log='Prefetch succeed', res=res)
     for i in range(retry):
         prediction = line['prediction']
@@ -116,7 +110,6 @@ def MathVista_auxeval(model, line):
 def MathVista_acc(result_file):
     data = load(result_file)
     tot = defaultdict(lambda: 0)
-    match = defaultdict(lambda: 0)
     fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
