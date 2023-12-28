@@ -61,17 +61,20 @@ def list_to_dict(lst):
     return {chr(65 + i): val for i, val in enumerate(lst)}
 
 def post_check(line, prefetch=False):
-    if prefetch:
-        response = line['prediction']
-    else:
-        response = line['res']
     res = None
     ans = line['answer']
     try:
         if line['question_type'] == 'multi_choice':
+            ans = line['answer_option']
             choices = list_to_dict(eval(line['choices']))
-            if can_infer(response, choices):
-                return True
+            if prefetch:
+                response = line['prediction']
+                if can_infer(response, choices):
+                    return True
+            else:
+                response = line['res']
+                if can_infer(response, choices) == ans:
+                    return True
         elif line['answer_type'] == 'integer':
             res = int(response)
             ans = int(line['answer'])
@@ -91,7 +94,8 @@ def MathVista_auxeval(model, line):
     log = ''
     retry = 5
     if post_check(line, prefetch=True):
-        res = line['prediction']
+        choices = list_to_dict(eval(line['choices']))
+        res = can_infer(line['prediction'], choices)
         return dict(log='Prefetch succeed', res=res)
     for i in range(retry):
         prediction = line['prediction']
@@ -108,6 +112,7 @@ def MathVista_acc(result_file):
     data = load(result_file)
     tot = defaultdict(lambda: 0)
     match = defaultdict(lambda: 0)
+    fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
     for i in range(lt):
@@ -116,25 +121,21 @@ def MathVista_acc(result_file):
         cate = item['task']
         tot['Overall'] += 1
         tot[cate] += 1
-        log_check = item['log']
-        if log_check == 'Succeed':
-            match['Overall'] += 1
-            match[cate] += 1
-            if post_check(item, prefetch=False):
-                hit['Overall'] += 1
-                hit[cate] += 1
+        if item['log'] == 'Prefetch succeed':
+            fetch['Overall'] += 1
+            fetch[cate] += 1
+        if post_check(item, prefetch=False):
+            hit['Overall'] += 1
+            hit[cate] += 1
                     
     res = defaultdict(list)
     for k in tot.keys():
         res['Task'].append(k)
         res['tot'].append(tot[k])
-        res['fetch'].append(match[k])
+        res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])
-        res['fetch_rate'].append(match[k] / tot[k] * 100)
-        if match[k] == 0:
-            res['acc'].append(0)
-        else:
-            res['acc'].append(hit[k] / match[k] * 100)
+        res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
+        res['acc'].append(hit[k] / tot[k] * 100)
     res = pd.DataFrame(res)
     return res
 
