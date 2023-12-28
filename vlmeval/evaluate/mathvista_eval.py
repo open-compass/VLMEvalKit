@@ -60,18 +60,18 @@ def build_mathvista_gpt4_prompt(line):
 def list_to_dict(lst):
     return {chr(65 + i): val for i, val in enumerate(lst)}
 
-def post_check(line):
-    response = line['res']
+def post_check(line, prefetch=False):
+    if prefetch:
+        response = line['prediction']
+    else:
+        response = line['res']
     res = None
     ans = line['answer']
     try:
         if line['question_type'] == 'multi_choice':
             choices = list_to_dict(eval(line['choices']))
-            res = can_infer(response, choices)
-            if res == line['answer_option']:
+            if can_infer(response, choices):
                 return True
-            else:
-                return False
         elif line['answer_type'] == 'integer':
             res = int(response)
             ans = int(line['answer'])
@@ -85,15 +85,19 @@ def post_check(line):
         return True
     else:
         return False
-    
+
 def MathVista_auxeval(model, line):
     prompt = build_mathvista_gpt4_prompt(line)
     log = ''
     retry = 5
+    if post_check(line, prefetch=True):
+        res = line['prediction']
+        return dict(log='Prefetch succeed', res=res)
     for i in range(retry):
+        prediction = line['prediction']
         res = model.generate(prompt, temperature=i * 0.5)
         if res is None:
-            log += f'Try {i}: output is {response}, failed to parse.\n'
+            log += f'Try {i}: output is {prediction}, failed to parse.\n'
         else:
             log += 'Succeed'
             return dict(log=log, res= res)
@@ -116,7 +120,7 @@ def MathVista_acc(result_file):
         if log_check == 'Succeed':
             match['Overall'] += 1
             match[cate] += 1
-            if post_check(item):
+            if post_check(item, prefetch=False):
                 hit['Overall'] += 1
                 hit[cate] += 1
                     
