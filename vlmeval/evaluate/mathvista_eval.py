@@ -132,8 +132,6 @@ def MathVista_acc(result_file):
         if post_check(item, prefetch=False):
             hit['Overall'] += 1
             hit[cate] += 1
-        if index == 57:
-            print(index, post_check(item))
                     
     res = defaultdict(list)
     for k in tot.keys():
