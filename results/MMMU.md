@@ -8,7 +8,6 @@
 >   - MMMU include two types of questions: **multi-choice questions** & **open-ended QA**. 
 >   - For **open-ended QA (62/1050)**, we re-formulate it as multi-choice questions: `{'question': 'QQQ', 'answer': 'AAA'} -> {'question': 'QQQ', 'A': 'AAA', 'B': 'Other Answers', 'answer': 'A'}`, and then adopt the same evaluation paradigm for **multi-choice questions**. 
 >   - For **multi-choice questions (988/1050)**, we use **GPT-3.5-Turbo-0613** for matching prediction with options if heuristic matching does not work. 
-> - No specific prompt template adopted for **ALL VLMs**.
 
 ### MMMU Scores
 
