@@ -5,12 +5,12 @@ from termcolor import colored
 logger = get_logger('Report Missing')
 
 dataset = [
-    'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN', 
-    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL'
+    'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN',
+    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL', 'COCO_VAL', 'MMMU_DEV_VAL'
 ]
 suffix = [
-    'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv', 
-    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv'
+    'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv',
+    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv', 'score.json', 'acc.csv'
 ]
 
 N = len(dataset)
