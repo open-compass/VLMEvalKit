@@ -75,13 +75,18 @@ def post_check(line, prefetch=False):
                 response = line['res']
                 if can_infer(response, choices) == ans:
                     return True
-        elif line['answer_type'] == 'integer':
-            res = int(response)
-            ans = int(line['answer'])
-        elif line['answer_type'] == 'float':
-            res = float(response)
-            ans = float(line['answer'])
-    except:
+        else:
+            response = line['res']
+            if line['answer_type'] == 'integer':
+                res = int(response)
+                ans = int(line['answer'])
+            elif line['answer_type'] == 'float':
+                res = float(response)
+                ans = float(line['answer'])
+            else:
+                res = str(res)
+                ans = str(ans)
+    except ValueError:
         pass
     
     if res == ans:
@@ -117,7 +122,7 @@ def MathVista_acc(result_file):
     lt = len(data)
     for i in range(lt):
         item = data.iloc[i]
-        index = data.index[i]
+        index = item['index']
         cate = item['task']
         tot['Overall'] += 1
         tot[cate] += 1
@@ -127,6 +132,8 @@ def MathVista_acc(result_file):
         if post_check(item, prefetch=False):
             hit['Overall'] += 1
             hit[cate] += 1
+        if index == 57:
+            print(index, post_check(item))
                     
     res = defaultdict(list)
     for k in tot.keys():
