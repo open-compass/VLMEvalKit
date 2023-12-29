@@ -73,7 +73,7 @@ def main():
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
                     COCO_eval(result_file)
-                elif listinstr(['OCRVQA', 'TextVQA'], dataset_name):
+                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA'], dataset_name):
                     VQAEval(result_file)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
