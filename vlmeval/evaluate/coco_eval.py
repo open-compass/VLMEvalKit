@@ -6,7 +6,6 @@ from pycocoevalcap.cider.cider import Cider
 
 class COCO_Caption_Scorer():
     def __init__(self, ref, gt):
-
         self.ref = ref
         self.gt = gt
         print('setting up scorers...')
@@ -26,7 +25,7 @@ class COCO_Caption_Scorer():
             if type(method) == list:
                 for sc, scs, m in zip(score, scores, method):
                     print("%s: %0.3f" % (m, sc * 100))
-                total_scores["Bleu"] = [sc * 100 for sc, scs, m in zip(score, scores, method)]
+                total_scores["Bleu"] = [x * 100 for x in score]
             else:
                 print("%s: %0.3f" % (method, score * 100))
                 total_scores[method] = score * 100
