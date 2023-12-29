@@ -29,5 +29,5 @@ for f in models:
         suff = suffix[i]
         pred_file = f'{f}/{f}_{D}.xlsx'
         score_file = f'{f}/{f}_{D}_{suff}'
-        if osp.exists(pred_file) and not osp.exists(score_file):
+        if not osp.exists(score_file):
             logger.info(colored(f'Model {f} x Dataset {D}: Not Found. ', 'red'))
