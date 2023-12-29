@@ -13,6 +13,7 @@
 
 ## 🆕 News
 
+- **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
 - **[2023-12-26]** We support **QwenVLPlus** API now. The evaluation result is on the road. 🔥🔥🔥
 - **[2023-12-26]** We support **MMMU** now (Dataset Name: MMMU_DEV_VAL).  The evaluation result is available at [**MMMU**](results/MMMU.md).  🔥🔥🔥
 - **[2023-12-24]** We support two VQA Datasets: **OCRVQA** (Dataset Name: OCRVQA_TEST, OCRVQA_TESTCORE) and **TextVQA** (Dataset Name: TextVQA_VAL).  The evaluation is undergoing.  🔥🔥🔥
@@ -30,7 +31,7 @@
 | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG                                          | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
 | [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL                                           | ✅         | ✅          | [**MMMU**](results/MMMU.md)                                  |
-| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          |                                                              |
+| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption**](results/Caption.md)                            |
 | [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_TESTCORE, OCRVQA_TEST                           | ✅         | ✅          |                                                              |
 | [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          |                                                              |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
