@@ -113,22 +113,35 @@ def MathVista_acc(result_file):
     fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
+    skill_list = []
     for i in range(lt):
         item = data.iloc[i]
         index = item['index']
         cate = item['task']
         tot['Overall'] += 1
+        try:
+            skills = eval(item['skills'])
+        except SyntaxError:
+            skills = [item['skills']]
+        for skill in skills:
+            if skill not in skill_list:
+                skill_list.append(skill)
+            tot[skill] += 1
         tot[cate] += 1
         if item['log'] == 'Prefetch succeed':
             fetch['Overall'] += 1
             fetch[cate] += 1
+            for skill in skills:
+                fetch[skill] += 1
         if post_check(item, prefetch=False):
             hit['Overall'] += 1
             hit[cate] += 1
+            for skill in skills:
+                hit[skill] += 1
                     
     res = defaultdict(list)
     for k in tot.keys():
-        res['Task'].append(k)
+        res['Task&Skill'].append(k)
         res['tot'].append(tot[k])
         res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])
