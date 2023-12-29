@@ -4,6 +4,7 @@ from vlmeval.smp import *
 from vlmeval.evaluate import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
+from vlmeval.utils import dataset_URLs, abbr2full
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -33,6 +34,13 @@ def main():
         pred_root = model_name
 
         for i, dataset_name in enumerate(args.data):
+            if dataset_name not in dataset_URLs:
+                dataset_name = abbr2full(dataset_name)
+            
+            if dataset_name not in dataset_URLs:
+                logger.error(f'Unknown dataset: {dataset_name}. ')
+                continue
+
             tmpl = f'{pred_root}/' + '{}' + f'{world_size}_{dataset_name}.pkl'
             out_file = tmpl.format(rank)
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'

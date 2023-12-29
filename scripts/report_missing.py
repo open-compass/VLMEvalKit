@@ -6,11 +6,13 @@ logger = get_logger('Report Missing')
 
 dataset = [
     'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN',
-    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL', 'COCO_VAL', 'MMMU_DEV_VAL'
+    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL', 'COCO_VAL', 'MMMU_DEV_VAL',
+    'ChartQA_VALTEST_HUMAN'
 ]
 suffix = [
     'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv',
-    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv', 'score.json', 'acc.csv'
+    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv', 'score.json', 'acc.csv',
+    'acc.csv'
 ]
 
 N = len(dataset)
