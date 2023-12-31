@@ -1,10 +1,10 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.eval import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, MME_postproc
+from vlmeval.evaluate import COCO_eval, MME_eval, MMVet_eval, multiple_choice_eval, MME_rating, VQAEval
 from vlmeval.inference import infer_data_job, prefetch_acc
-from vlmeval.utils import TSVDataset
 from vlmeval.config import supported_VLM
+from vlmeval.utils import dataset_URLs, abbr2full
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -12,6 +12,7 @@ def parse_args():
     parser.add_argument("--model", type=str, nargs='+', required=True)
     parser.add_argument("--mode", type=str, default='all', choices=['all', 'infer'])
     parser.add_argument("--nproc", type=int, default=4, help="Parallel API calling")
+    parser.add_argument("--ignore", action='store_true', help="Ignore failed indices. ")
     parser.add_argument("--verbose", action='store_true')
     parser.add_argument("--prefetch", action='store_true')
     args = parser.parse_args()
@@ -34,8 +35,13 @@ def main():
         pred_root = model_name
 
         for i, dataset_name in enumerate(args.data):
-            tmpl = f'{pred_root}/' + '{}' + f'{world_size}_{dataset_name}.pkl'
-            out_file = tmpl.format(rank)
+            if dataset_name not in dataset_URLs:
+                dataset_name = abbr2full(dataset_name)
+            
+            if dataset_name not in dataset_URLs:
+                logger.error(f'Unknown dataset: {dataset_name}. ')
+                continue
+
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
             
             if model is None:
@@ -50,13 +56,13 @@ def main():
                 if args.mode == 'all':
                     logger.error(f'Dataset {dataset_name} does not support `evaluation` now, will skip the evaluation. ')
 
-            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc)                     
+            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)                     
             if rank == 0:
                 time.sleep(3)
                 res = None
                 if dataset_name == 'MME':
                     res = MME_rating(result_file)
-                elif not listinstr(['CORE_MM', 'MMVet', 'COCO', 'ScienceQA'], dataset_name):
+                elif listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
@@ -66,14 +72,16 @@ def main():
                     dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
                 
             if rank == 0 and args.mode == 'all':
-                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'ScienceQA'], dataset_name):
+                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA'], dataset_name):
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif dataset_name == 'MME':
                     MME_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
-                    COCO_eval(result_file, nproc=args.nproc, verbose=args.verbose)
+                    COCO_eval(result_file)
+                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA'], dataset_name):
+                    VQAEval(result_file)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             

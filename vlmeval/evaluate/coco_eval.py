@@ -45,7 +45,7 @@ def COCO_eval(eval_file, nproc=4, verbose=False):
     ref = {}
     gt = {}
     for i,(line) in enumerate(lines):
-        ref[str(i)] = [line['prediction']]
+        ref[str(i)] = [str(line['prediction'])]
         gt[str(i)] = eval(line['answer'])
 
     scorer = COCO_Caption_Scorer(ref,gt)
@@ -53,7 +53,7 @@ def COCO_eval(eval_file, nproc=4, verbose=False):
         
     score_pth = eval_file.replace('.xlsx','_score.json')
     dump(coco_caption_score_dict, score_pth)
-    logger.info(f'MMVet_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
+    logger.info(f'COCO_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
     logger.info(f'Score: ')
     for key, value in coco_caption_score_dict.items():
         logger.info('{}:{}'.format(key, value))

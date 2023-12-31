@@ -1,46 +1,52 @@
 ![LOGO](assets/LOGO.svg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
-<div align="center"><br><br>
+<div align="center"><br>
+<a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
+<a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
+<a href="#%EF%B8%8F-custom-benchmark-or-vlm">🛠️Support New </a> •
+<a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
+<a href="#%EF%B8%8F-citation">🖊️Citation </a>
+<br>
 </div>
-
-[**📊 Datasets, Models, and Evaluation Results**](#-datasets-models-and-evaluation-results), 
-[**🏗️ QuickStart**](#️-quickstart),
-[**🛠️ Custom Benchmark or VLM**](#️-custom-benchmark-or-vlm),
-
-[**🎯 The Goal of VLMEvalKit**](#-the-goal-of-vlmevalkit),
-[**🖊️ Citation**](#️-citation)
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
 ## 🆕 News
 
-- **[2023-12-20]** We support a new benchmark: **COCO Caption**. The evaluation is undergoing.  🔥🔥🔥
-- **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
+- **[2023-12-31]** We release the [**preliminary results**](/results/VQA.md) of three VQA datasets (**OCRVQA**, **TextVQA**, **ChatVQA**). The results are obtained by exact matching and may not faithfully reflect the real performance of VLMs on the corresponding task.
+- **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
+- **[2023-12-26]** We support **QwenVLPlus** API now. The evaluation result is on the road. 🔥🔥🔥
+- **[2023-12-26]** We support **MMMU** now (Dataset Name: MMMU_DEV_VAL).  The evaluation result is available at [**MMMU**](results/MMMU.md).  🔥🔥🔥
+- **[2023-12-23]** We update the performance of **GPT-4v** and **GeminiProVision** on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
 **Supported Dataset**
 
-| Dataset                                                      | Inference | Evaluation | Results                                                      |
-| ------------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
-| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | √         | √          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |- [🆕 News](#-news)
-| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | √         | √          | [**MME**](results/MME.md)                                    |
-| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | √         | √          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
-| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | √         | √          | [**MM-Vet**](results/MMVet.md)                               |
-| [**Core-MM**](https://github.com/core-mm/core-mm)            | √         |            |                                                              |
-| [**COCO Caption**](https://cocodataset.org)                  | √         | √          |                                                              |
+| Dataset                                                      | Dataset Names (for run.py)                             | Inference | Evaluation | Results                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench-DEV-[EN/CN]<br>MMBench-TEST-[EN/CN]<br>CCBench | ✅         | ✅          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | MME                                                    | ✅         | ✅          | [**MME**](results/MME.md)                                    |
+| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG                                          | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
+| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
+| [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL                                           | ✅         | ✅          | [**MMMU**](results/MMMU.md)                                  |
+| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption**](results/Caption.md)                            |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_TESTCORE, OCRVQA_TEST                           | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
 
 **Supported API Models**
 
-| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) | [**QwenVLPlus**](https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start) |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 
 **Supported PyTorch / HF Models**
 
-| [**IDEFICS-9B-Instruct**🎞️🚅](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct), [**IDEFICS-80B-Instruct**🎞️🚅](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct) | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**🎞️](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2) |
+| [**IDEFICS-9B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅, [**IDEFICS-80B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**🎞️🚅](https://huggingface.co/Qwen/Qwen-VL), [**Qwen-VL-Chat**🎞️🚅](https://huggingface.co/Qwen/Qwen-VL-Chat) | [**VisualGLM-6B**🚅](https://huggingface.co/THUDM/visualglm-6b) | [**InternLM-XComposer-7B**🎞️🚅](https://huggingface.co/internlm/internlm-xcomposer-7b) |
-| [**ShareGPT4V-7B**🚅](https://sharegpt4v.github.io)           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |                                                              |                                                              |                                                              |
+| [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️🚅 | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b)🎞️🚅 |
+| [**ShareGPT4V-7B**](https://sharegpt4v.github.io)🚅           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) | [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅   |                                                              |                                                              |
 
 🎞️: Support multiple images as inputs, via the `multi_generate` interface. 
 
@@ -78,7 +84,7 @@ pip install -e .
 
 Following VLMs require the configuration step:
 
-**Code Preparation & Installation**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)). 
+**Code Preparation & Installation**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)), LLaVA-XTuner ([XTuner](https://github.com/InternLM/xtuner)). 
 
 **Manual Weight Preparation & Configuration**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, OpenFlamingo-v2, PandaGPT-13B
 
