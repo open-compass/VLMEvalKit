@@ -36,6 +36,7 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
+        res = {k: v for k, v in res.items() if FAIL_MSG not in v}
     
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
