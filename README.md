@@ -13,12 +13,11 @@
 
 ## 🆕 News
 
+- **[2023-12-31]** We release the [**preliminary results**](/results/VQA.md) of three VQA datasets (**OCRVQA**, **TextVQA**, **ChatVQA**). The results are obtained by exact matching and may not faithfully reflect the real performance of VLMs on the corresponding task.
 - **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
 - **[2023-12-26]** We support **QwenVLPlus** API now. The evaluation result is on the road. 🔥🔥🔥
 - **[2023-12-26]** We support **MMMU** now (Dataset Name: MMMU_DEV_VAL).  The evaluation result is available at [**MMMU**](results/MMMU.md).  🔥🔥🔥
-- **[2023-12-24]** We support two VQA Datasets: **OCRVQA** (Dataset Name: OCRVQA_TEST, OCRVQA_TESTCORE) and **TextVQA** (Dataset Name: TextVQA_VAL).  The evaluation is undergoing.  🔥🔥🔥
 - **[2023-12-23]** We update the performance of **GPT-4v** and **GeminiProVision** on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
-- **[2023-12-20]** We support a new benchmark: **COCO Caption** (Dataset Name: COCO_VAL). The evaluation is undergoing.  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -32,8 +31,9 @@
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
 | [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL                                           | ✅         | ✅          | [**MMMU**](results/MMMU.md)                                  |
 | [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption**](results/Caption.md)                            |
-| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_TESTCORE, OCRVQA_TEST                           | ✅         | ✅          |                                                              |
-| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          |                                                              |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_TESTCORE, OCRVQA_TEST                           | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
 
 **Supported API Models**
