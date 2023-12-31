@@ -157,7 +157,7 @@ def MathVista_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
     storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
     tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
     if osp.exists(storage):
-        logger.warning(f"GPT scoring file {storage} already exists, will reuse it in MMVet_eval. ")
+        logger.warning(f"GPT scoring file {storage} already exists, will reuse it in MathVista_eval. ")
     else:
         data = load(eval_file)
         gpt_version = model
