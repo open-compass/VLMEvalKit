@@ -171,7 +171,7 @@ def prefetch_acc(result_file):
     res = pd.DataFrame(res)
     return res
 
-def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
+def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
 
     result_file = f'{model_name}/{model_name}_{dataset_name}.xlsx'
     rank, world_size = get_rank_and_world_size()   
@@ -207,7 +207,7 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4):
         for idx, pred in zip(data['index'], data['prediction']):
             if FAIL_MSG in str(pred):
                 failed_set.append(idx)
-        if len(failed_set):
+        if len(failed_set) and (not ignore_failed):
             print(f'{len(failed_set)} records failed in the original result file {result_file}. ')
             assert rank == 0 and world_size == 1
             failed_set = set(failed_set)
