@@ -206,14 +206,21 @@ def VQAEval(eval_file, full_score_weight=0.3, **kwargs):
     res = pool.map(process_line, lines)
     hit = [np.mean(x['match']) >= full_score_weight for x in res]
     ret = dict()
-    ret['Overall'] = np.mean(hit) * 100
-    if 'category' in data:
-        cates = list(set(data['category']))
-        cates.sort()
-        for c in cates:
-            sub = [r for l, r in zip(lines, res) if l['category'] == c]
+    if 'split' in data:
+        splits = set(data['split'])
+        for sp in splits:
+            sub = [r for l, r in zip(lines, res) if l['split'] == sp]
             hit = [np.mean(x['match']) >= full_score_weight for x in sub]
-            ret[c] = np.mean(hit) * 100
+            ret[sp] = np.mean(hit) * 100
+    else:
+        ret['Overall'] = np.mean(hit) * 100
+        if 'category' in data:
+            cates = list(set(data['category']))
+            cates.sort()
+            for c in cates:
+                sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                hit = [np.mean(x['match']) >= full_score_weight for x in sub]
+                ret[c] = np.mean(hit) * 100
     ret = d2df(ret)
     ret.round(2)
 
