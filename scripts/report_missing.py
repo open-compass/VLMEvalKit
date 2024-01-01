@@ -12,7 +12,7 @@ dataset = [
 suffix = [
     'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv',
     'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv', 'score.json', 'acc.csv',
-    'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv'
+    'acc.csv', 'acc.csv', 'acc.csv', 'gpt-4-turbo_score.csv'
 ]
 
 N = len(dataset)
