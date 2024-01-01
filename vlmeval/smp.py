@@ -264,6 +264,8 @@ def encode_image_file_to_base64(image_path):
     if image_path.endswith('.png'):
         tmp_name = f'{timestr(second=True)}.jpg'
         img = Image.open(image_path)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
         img.save(tmp_name)
         result = encode_image_file_to_base64(tmp_name)
         os.remove(tmp_name)
