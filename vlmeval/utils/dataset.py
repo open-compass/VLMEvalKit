@@ -37,7 +37,7 @@ def split_MMMU(struct):
 
 class TSVDataset(CustomPrompt):
     
-    def __init__(self, dataset='MMBench', img_root=None):
+    def __init__(self, dataset='MMBench', img_root=None, skip_noimg=True):
 
         self.data_root = LMUDataRoot()
         assert osp.exists(self.data_root)
@@ -56,6 +56,9 @@ class TSVDataset(CustomPrompt):
             download_file(url, data_path)
 
         data = load(data_path)
+        self.skip_noimg = skip_noimg
+        if skip_noimg:
+            data = data[~pd.isna(data['image'])]
 
         # Prompt for Captioning
         if listinstr(['COCO'], dataset):

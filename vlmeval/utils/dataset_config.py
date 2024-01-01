@@ -17,7 +17,9 @@ dataset_URLs = {
     "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
     'TextVQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv",
     "MMMU_DEV_VAL": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv",
-    'ChartQA_VALTEST_HUMAN': "https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv", # Link Invalid, Internal Only
+    'ChartQA_VALTEST_HUMAN': "https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv",
+    'ScienceQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv",
+    'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv"
 }
 
 dataset_md5_dict = {
@@ -38,6 +40,8 @@ dataset_md5_dict = {
     'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
     'MMMU_DEV_VAL': "501f84dc642a9b17e35363b78c0191e1",
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
+    'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
+    'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f'
 }
 
 img_root_map = {
@@ -58,12 +62,14 @@ img_root_map = {
     'TextVQA_VAL': 'TextVQA',
     'MMMU_DEV_VAL': 'MMMU',
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
+    'ScienceQA_VAL': 'ScienceQA',
+    'ScienceQA_TEST': 'ScienceQA'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu'], dataset.lower()):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa'], dataset.lower()):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'

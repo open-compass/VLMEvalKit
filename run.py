@@ -62,7 +62,7 @@ def main():
                 res = None
                 if dataset_name == 'MME':
                     res = MME_rating(result_file)
-                elif listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench'], dataset_name):
+                elif listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
@@ -72,7 +72,7 @@ def main():
                     dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
                 
             if rank == 0 and args.mode == 'all':
-                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU'], dataset_name):
+                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA'], dataset_name):
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif dataset_name == 'MME':
                     MME_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
