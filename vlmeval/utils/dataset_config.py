@@ -69,7 +69,7 @@ img_root_map = {
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu'], dataset.lower()):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa'], dataset.lower()):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'
