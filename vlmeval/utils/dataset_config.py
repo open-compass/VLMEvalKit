@@ -40,8 +40,8 @@ dataset_md5_dict = {
     'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
     'MMMU_DEV_VAL': "501f84dc642a9b17e35363b78c0191e1",
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
-    'ScienceQA_VAL': '3b68dc496c038aaa7767b8daaa093ba8',
-    'ScienceQA_TEST': '8cc11869f78ff31edfc464911e33288c'
+    'ScienceQA_VAL': 'aa2f016981641291ec222a8edcfea654',
+    'ScienceQA_TEST': '697edc25710388397e58b167de87aa4b'
 }
 
 img_root_map = {
