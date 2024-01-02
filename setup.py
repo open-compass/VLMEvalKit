@@ -17,6 +17,12 @@ pillow
 omegaconf
 matplotlib
 google-generativeai
+einops
+sentencepiece
+xformers
+termcolor
+xtuner
+SwissArmyTransformer 
 pycocoevalcap
 openpyxl
 seaborn
