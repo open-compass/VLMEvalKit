@@ -17,6 +17,6 @@ for m in models:
     if '80b' in m:
         cmd = f'python run.py --data {dataset_str} --model {m}'
     else:
-        cmd = f'torchrun --nproc-per-node=8 run.py --data {dataset_str} --model {m}'
+        cmd = f'bash run.sh --data {dataset_str} --model {m}'
     print(cmd)
     os.system(cmd)

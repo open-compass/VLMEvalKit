@@ -5,12 +5,14 @@ from termcolor import colored
 logger = get_logger('Report Missing')
 
 dataset = [
-    'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN', 
-    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL'
+    'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN',
+    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL', 'COCO_VAL', 'MMMU_DEV_VAL',
+    'ChartQA_VALTEST_HUMAN', 'ScienceQA_VAL', 'ScienceQA_TEST', 'MathVista_MINI'
 ]
 suffix = [
-    'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv', 
-    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv'
+    'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv',
+    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv', 'score.json', 'acc.csv',
+    'acc.csv', 'acc.csv', 'acc.csv', 'gpt-4-turbo_score.csv'
 ]
 
 N = len(dataset)
@@ -27,5 +29,5 @@ for f in models:
         suff = suffix[i]
         pred_file = f'{f}/{f}_{D}.xlsx'
         score_file = f'{f}/{f}_{D}_{suff}'
-        if osp.exists(pred_file) and not osp.exists(score_file):
+        if not osp.exists(score_file):
             logger.info(colored(f'Model {f} x Dataset {D}: Not Found. ', 'red'))
