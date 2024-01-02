@@ -1,4 +1,4 @@
-import os
+import os, sys
 import os.path as osp
 import string
 import warnings
@@ -34,7 +34,7 @@ class LLaVA_XTuner(CustomPrompt):
             warnings.warn(
                 'Please install xtuner with `pip install -U xtuner` before '
                 'using LLaVA_XTuner')
-            exit(-1)
+            sys.exit(-1)
 
         if not osp.isdir(llava_path):
             cache_path = get_cache_path(llava_path)
