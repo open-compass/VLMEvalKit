@@ -50,14 +50,14 @@ def default_rating(data_file):
     data = load(data_file)
     res = {}
     res['Overall'] = np.mean(data['score']) * 100
-    if 'category' in data_file:
+    if 'category' in data:
         cates = list(set(data['category']))
         cates = [c for c in cates if not pd.isna(c)]
         cates.sort()
         for c in cates:
             sub = data[data['category'] == c]
             res[c] = np.mean(sub['score']) * 100
-    if 'l2-category' in data_file:
+    if 'l2-category' in data:
         cates = list(set(data['l2-category']))
         cates = [c for c in cates if not pd.isna(c)]
         cates.sort()
