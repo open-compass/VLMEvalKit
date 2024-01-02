@@ -3,7 +3,6 @@ import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
-from vlmeval.evaluate import MME_rating, MME_postproc
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -192,9 +191,6 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4, 
             assert len(data_all) == len(data)
             data['prediction'] = [str(data_all[x]) for x in data['index']]
             data.pop('image')
-
-            if dataset_name == 'MME':
-                data = MME_postproc(data)
             
             dump(data, result_file)             
             for i in range(world_size):
@@ -215,8 +211,6 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4, 
             res = infer_data_api(model_name, dataset_name, failed_set, api_nproc=api_nproc)
             answer_map.update(res)
             data['prediction'] = [str(answer_map[x]) for x in data['index']]
-            if dataset_name == 'MME':
-                data = MME_postproc(data)
             dump(data, result_file)
         return model_name
 
@@ -249,15 +243,9 @@ def main():
                 model = model_name # which is only a name
             model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc)
                          
-            if rank == 0 and not listinstr(['MME', 'CORE_MM', 'MMVet', 'COCO', 'MMMU', 'MathVista'], dataset_name):
+            if rank == 0 and listinstr(['MMBench', 'CCBench', 'SEEDBench', 'ScienceQA', 'MMMU'], dataset_name):
                 time.sleep(3)
                 res = prefetch_acc(result_file)
-                print(model_name, res)
-                dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
-            
-            if rank == 0 and dataset_name == 'MME':
-                time.sleep(3)
-                res = MME_rating(result_file)
                 print(model_name, res)
                 dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
                 

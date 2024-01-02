@@ -19,7 +19,7 @@ llava_model_path_map = {
     'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 }
 
-supported_VLM = {
+models = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
     'TransCore_M': partial(TransCoreM, root=TransCore_ROOT),
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
@@ -42,11 +42,27 @@ supported_VLM = {
     'MiniGPT-4-v1-13B': partial(MiniGPT4, mode='v1_13b', root=MiniGPT4_ROOT),
     "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
     "mPLUG-Owl2": partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
-    'GPT4V': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low'),
+}
+
+api_models = {
+    'GPT4V': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GPT4V_SHORT': partial(
+        GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10, 
+        system_prompt="Please responde to the following question / request in a short reply. "),
+    'GPT4V_SHORT_INT': partial(
+        GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
+        system_prompt="Please responde to the following question / request in a short reply. "),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
     'QwenVLPlus': partial(QwenVLPlus, temperature=0, retry=10),
-    'llava-internlm-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm-chat-7b', llava_path='xtuner/llava-internlm-7b', visual_encoder_path='openai/clip-vit-large-patch14-336', visual_select_layer=-2, prompt_template='internlm_chat'),
-    'llava-v1.5-7b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5-7b-xtuner', visual_encoder_path='openai/clip-vit-large-patch14-336', visual_select_layer=-2, prompt_template='vicuna'),
-    'llava-v1.5-13b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-13b-v1.5', llava_path='xtuner/llava-v1.5-13b-xtuner', visual_encoder_path='openai/clip-vit-large-patch14-336', visual_select_layer=-2, prompt_template='vicuna'),
 }
+
+xtuner_models = {
+    'llava-internlm-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm-chat-7b', llava_path='xtuner/llava-internlm-7b', visual_select_layer=-2, prompt_template='internlm_chat'),
+    'llava-v1.5-7b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5-7b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
+    'llava-v1.5-13b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-13b-v1.5', llava_path='xtuner/llava-v1.5-13b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
+}
+
+supported_VLM = {}
+for model_set in [models, api_models, xtuner_models]:
+    supported_VLM.update(model_set)

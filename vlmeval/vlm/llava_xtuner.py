@@ -22,7 +22,7 @@ class LLaVA_XTuner(CustomPrompt):
     def __init__(self,
                  llava_path,
                  llm_path=None,
-                 visual_encoder_path=None,
+                 visual_encoder_path='openai/clip-vit-large-patch14-336',
                  visual_select_layer=-2,
                  prompt_template=None,
                  torch_dtype=torch.float16):
