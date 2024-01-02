@@ -20,7 +20,9 @@ dataset_URLs = {
     "MathVista_MINI": "https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv",
     'ChartQA_VALTEST_HUMAN': "https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv",
     'ScienceQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv",
-    'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv"
+    'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
+    "DocVQA_MINI": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_MINI.tsv",
+    "DocVQA_TRAIN_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_TRAIN_VAL.tsv"
 }
 
 dataset_md5_dict = {
@@ -43,7 +45,9 @@ dataset_md5_dict = {
     'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464',
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
-    'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f'
+    'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
+    'DocVQA_MINI': "4a1351bab770a110f1ceadc0e2995ea3",
+    'DocVQA_TRAIN_VAL': "a356e2052fe1d29a3009d56dc791df82"
 }
 
 img_root_map = {
@@ -66,7 +70,9 @@ img_root_map = {
     'MathVista_MINI': 'MathVista',
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
     'ScienceQA_VAL': 'ScienceQA',
-    'ScienceQA_TEST': 'ScienceQA'
+    'ScienceQA_TEST': 'ScienceQA',
+    'DocVQA_MINI': 'DocVQA',
+    'DocVQA_TRAIN_VAL': 'DocVQA'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
@@ -78,7 +84,7 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'COCO' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista'], dataset.lower()):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa'], dataset.lower()):
         return 'VQA'
     return None
 

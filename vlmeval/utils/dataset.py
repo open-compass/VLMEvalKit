@@ -64,6 +64,9 @@ class TSVDataset(CustomPrompt):
         if listinstr(['COCO'], dataset):
             data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
 
+        if listinstr(['DocVQA'], dataset):
+            data['question'] = [question + '\nPlease answer as short as possile.' for question in data['question']]
+            
         data['index'] = [str(x) for x in data['index']]
         data['image'] = [str(x) for x in data['image']]
         
