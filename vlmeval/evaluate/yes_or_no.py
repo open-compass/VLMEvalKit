@@ -46,6 +46,57 @@ def MME_rating(data_file):
     ret = d2df(ret)
     return ret
 
+def Hallusion_rating(data_file):
+    def calc_fAcc(data):
+        res = defaultdict(list)
+        lt = len(data)
+        for i in range(lt):
+            line = data.iloc[i]
+            res[f"{line['l2-category']}_{line['set_id']}_{line['figure_id']}"].append(line['score'])
+        return np.mean([np.all(x) for x in res.values()]) * 100
+    
+    def calc_qAcc(data):
+        res = defaultdict(list)
+        lt = len(data)
+        for i in range(lt):
+            line = data.iloc[i]
+            res[f"{line['l2-category']}_{line['set_id']}_{line['question_id']}"].append(line['score'])
+        return np.mean([np.all(x) for x in res.values()]) * 100
+    
+    def calc_aAcc(data):
+        return np.mean(data['score']) * 100
+        
+    data = load(data_file)
+    data['set_id'] = [x.split('_')[3] for x in data['index']]
+    data['figure_id'] = [x.split('_')[4] for x in data['index']]
+    data['question_id'] = [x.split('_')[5] for x in data['index']]
+
+    res = dict(split=[], aAcc=[], fAcc=[], qAcc=[])
+    res['split'].append('Overall')
+    res['aAcc'].append(calc_aAcc(data))
+    res['fAcc'].append(calc_fAcc(data))
+    res['qAcc'].append(calc_qAcc(data))
+    
+    if 'category' in data:
+        cates = list(set(data['category']))
+        for c in cates:
+            sub = data[data['category'] == c]
+            res['split'].append(c)
+            res['aAcc'].append(calc_aAcc(sub))
+            res['fAcc'].append(calc_fAcc(sub))
+            res['qAcc'].append(calc_qAcc(sub))
+
+    if 'l2-category' in data:
+        cates = list(set(data['l2-category']))
+        for c in cates:
+            sub = data[data['l2-category'] == c]
+            res['split'].append(c)
+            res['aAcc'].append(calc_aAcc(sub))
+            res['fAcc'].append(calc_fAcc(sub))
+            res['qAcc'].append(calc_qAcc(sub))
+    ret = d2df(res)
+    return ret
+
 def default_rating(data_file):
     data = load(data_file)
     res = {}
@@ -147,6 +198,8 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
     
     if dataset is not None and listinstr(['MME'], dataset):
         score = MME_rating(storage)
+    elif dataset is not None and listinstr(['Hallusion'], dataset):
+        score = Hallusion_rating(storage)
     else:
         score = default_rating(storage)
 
