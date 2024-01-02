@@ -94,7 +94,7 @@ def Hallusion_rating(data_file):
             res['aAcc'].append(calc_aAcc(sub))
             res['fAcc'].append(calc_fAcc(sub))
             res['qAcc'].append(calc_qAcc(sub))
-    ret = d2df(res)
+    ret = pd.DataFrame(res)
     return ret
 
 def default_rating(data_file):
