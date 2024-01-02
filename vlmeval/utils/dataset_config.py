@@ -20,7 +20,8 @@ dataset_URLs = {
     "MathVista_MINI": "https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv",
     'ChartQA_VALTEST_HUMAN': "https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv",
     'ScienceQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv",
-    'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv"
+    'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
+    'HallusionBench': "https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv",
 }
 
 dataset_md5_dict = {
@@ -43,7 +44,8 @@ dataset_md5_dict = {
     'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464',
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
-    'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f'
+    'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
+    'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c'
 }
 
 img_root_map = {
@@ -65,8 +67,9 @@ img_root_map = {
     'MMMU_DEV_VAL': 'MMMU',
     'MathVista_MINI': 'MathVista',
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
-    'ScienceQA_VAL': 'ScienceQA',
-    'ScienceQA_TEST': 'ScienceQA'
+    'ScienceQA_VAL': 'ScienceQA_VAL',
+    'ScienceQA_TEST': 'ScienceQA_TEST',
+    'HallusionBench': 'Hallusion'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)

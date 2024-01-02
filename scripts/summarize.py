@@ -4,7 +4,7 @@ def get_score(model, dataset):
     file_name = f'{model}/{model}_{dataset}'
     if listinstr(['CCBench', 'MMBench', 'SEEDBench_IMG'], dataset):
         file_name += '_acc.csv'
-    elif listinstr(['MME'], dataset):
+    elif listinstr(['MME', 'Hallusion'], dataset):
         file_name += '_score.csv'
     elif listinstr(['MMVet'], dataset):
         file_name += '_gpt-4-turbo_score.csv'

@@ -256,37 +256,28 @@ def encode_image_to_base64(img, target_size=-1):
     if target_size > 0:
         img.thumbnail((target_size, target_size))
     img.save(tmp)
-    ret = encode_image_file_to_base64(tmp)
+    with open(tmp, 'rb') as image_file:
+        image_data = image_file.read()
+    ret = base64.b64encode(image_data).decode('utf-8')
     os.remove(tmp)
     return ret
 
-def encode_image_file_to_base64(image_path):
-    if image_path.endswith('.png'):
-        tmp_name = f'{timestr(second=True)}.jpg'
-        img = Image.open(image_path)
-        if img.mode in ("RGBA", "P"):
-            img = img.convert("RGB")
-        img.save(tmp_name)
-        result = encode_image_file_to_base64(tmp_name)
-        os.remove(tmp_name)
-        return result
-    with open(image_path, 'rb') as image_file:
-        image_data = image_file.read()
-        
-    encoded_image = base64.b64encode(image_data)
-    return encoded_image.decode('utf-8')
-
-def decode_base64_to_image_file(base64_string, image_path):
-    image_data = base64.b64decode(base64_string)
-    image = Image.open(io.BytesIO(image_data))
-    image.save(image_path)
+def encode_image_file_to_base64(image_path, target_size=-1):
+    image = Image.open(image_path)
+    return encode_image_to_base64(image, target_size=target_size)
     
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
+    if image.mode in ('RGBA', 'P'):
+        image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
     return image
+
+def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
+    image = decode_base64_to_image(base64_string, target_size=target_size)
+    image.save(image_path)
 
 def mrlines(fname, sp='\n'):
     f = open(fname).read().split(sp)
