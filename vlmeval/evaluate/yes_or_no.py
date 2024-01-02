@@ -46,18 +46,28 @@ def MME_rating(data_file):
     ret = d2df(ret)
     return ret
 
-def MME_postproc(data):
-    data['yes'] = data["prediction"].str.contains("Yes", case=False)
-    data["no"] = data["prediction"].str.contains("No", case=False)
-    data['raw_prediction'] = data['prediction']
-    data['prediction'] = data.apply(
-        lambda x: "Yes" if x["yes"] and not x["no"] else "No" if x["no"] and not x["yes"] else "Unknown", axis=1
-    )
-    data.drop(["yes", "no"], axis=1, inplace=True)
-    data["score"] = (data["answer"] == data["prediction"])
-    return data
-
-def MME_build_matching_prompt(line):
+def default_rating(data_file):
+    data = load(data_file)
+    res = {}
+    res['Overall'] = np.mean(data['score']) * 100
+    if 'category' in data_file:
+        cates = list(set(data['category']))
+        cates = [c for c in cates if not pd.isna(c)]
+        cates.sort()
+        for c in cates:
+            sub = data[data['category'] == c]
+            res[c] = np.mean(sub['score']) * 100
+    if 'l2-category' in data_file:
+        cates = list(set(data['l2-category']))
+        cates = [c for c in cates if not pd.isna(c)]
+        cates.sort()
+        for c in cates:
+            sub = data[data['l2-category'] == c]
+            res[c] = np.mean(sub['score']) * 100
+    ret = d2df(res)
+    return ret
+        
+def YOrN_match_prompt(line):
     tmpl = (
         "You are an AI assistant who will help me to match an answer with two options of a question. "
         "The options are only Yes / No. "
@@ -71,9 +81,9 @@ def MME_build_matching_prompt(line):
         "Example 3: \n"
         "Question: {}?\nAnswer: {}\nYour output: "
     )
-    return tmpl.format(line['question'], line['raw_prediction'])
+    return tmpl.format(line['question'], line['prediction'])
 
-def MME_answer_extraction(output):
+def YOrN_Extraction(output):
     s = output.lower()
     if 'yes' in s and 'no' not in s:
         return 'Yes'
@@ -81,29 +91,34 @@ def MME_answer_extraction(output):
         return 'No'
     return 'Unknown'
 
-def MME_auxeval(model, line):
-    prompt = MME_build_matching_prompt(line)
-    output = model.generate(prompt)
-    ans = MME_answer_extraction(output)
-    return ans
+def YOrN_auxeval(model, line):
+    prompt = YOrN_match_prompt(line)
+    retry = 5
+    for i in range(retry):
+        output = model.generate(prompt, temperature=0.5 * i)
+        ans = YOrN_Extraction(output)
+        if ans != 'Unknown':
+            return ans
+    return 'Unknown'
 
-def MME_auxeval_tup(tup):
-    model, line = tup
-    return MME_auxeval(model, line)
-
-def MME_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False):
+def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=None):
     logger = get_logger('Evaluation')
-    
     data = load(eval_file)
-    if 'raw_prediction' not in data:
-        data = MME_postproc(data)
-
-    preds_map = {x: y for x, y in zip(data['index'], data['prediction'])}
-    unknown = data[data['prediction'] == 'Unknown']
     storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')
-    
+    tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+
     if not osp.exists(storage):
-        assert model == 'chatgpt-0613'
+        ans_map = {k: YOrN_Extraction(v) for k, v in zip(data['index'], data['prediction'])}
+        if osp.exists(tmp_file):
+            tmp = load(tmp_file)
+            for k in tmp:
+                if ans_map[k] == 'Unknown' and tmp[k] != 'Unknown':
+                    ans_map[k] = tmp[k]
+
+        data['extracted'] = [ans_map[x] for x in data['index']]
+        unknown = data[data['extracted'] == 'Unknown']
+    
+        assert model in 'chatgpt-0613'
         model_name = 'gpt-3.5-turbo-0613'
 
         if INTERNAL:
@@ -112,29 +127,33 @@ def MME_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False):
             model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
 
         lt = len(unknown)
-        lines = [unknown.iloc[i: i + 1] for i in range(lt)]
+        lines = [unknown.iloc[i] for i in range(lt)]
         tups = [(model, line) for line in lines]
         indices = list(unknown['index'])
 
         if len(tups):
-            # Do not save temporary file due to the fast speed
-            res = track_progress_rich(MME_auxeval, tups, nproc=nproc, chunksize=nproc)
-
+            res = track_progress_rich(YOrN_auxeval, tups, nproc=nproc, chunksize=nproc, keys=indices, save=tmp_file)
             for k, v in zip(indices, res):
-                preds_map[k] = v
+                ans_map[k] = v
 
-        data['prediction'] = [preds_map[idx] for idx in data['index']]
+        data['extracted'] = [ans_map[x] for x in data['index']]
         dump(data, storage)
     else:
-        logger.warning(f"GPT matching file {storage} already exists, will reuse it in MME_eval. ")
+        logger.warning(f"GPT matching file {storage} already exists, will reuse it in YOrN_eval. ")
     
     data = load(storage)
-    data["score"] = (data["answer"] == data["prediction"])
+    data["score"] = (data["answer"] == data["extracted"])
     dump(data, storage)
-    score = MME_rating(storage)
-    score_tgt = storage.replace('auxmatch.xlsx', 'score.csv')
+    
+    if dataset is not None and listinstr(['MME', dataset]):
+        score = MME_rating(storage)
+    else:
+        score = default_rating(storage)
+
+    score_tgt = eval_file.replace('.xlsx', '_score.csv')
     dump(score, score_tgt)
-    logger.info(f'MME_eval successfully finished evaluating {eval_file}, results saved in {score_tgt}')
+
+    logger.info(f'YOrN_eval successfully finished evaluating {eval_file}, results saved in {score_tgt}')
     logger.info('Score: ')
     logger.info(score)
     return score
@@ -144,10 +163,11 @@ def parse_args():
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default="chatgpt-0613", choices=['chatgpt-0613'])
     parser.add_argument("--nproc", type=int, default=4)
+    parser.add_argument("--dataset", type=str, default=None)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
-    acc = MME_eval(eval_file=args.data, model=args.model, nproc=args.nproc, verbose=args.verbose)
+    acc = YOrN_eval(eval_file=args.data, model=args.model, nproc=args.nproc, verbose=args.verbose, dataset=args.dataset)
