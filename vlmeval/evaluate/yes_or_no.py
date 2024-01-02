@@ -145,7 +145,7 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
     data["score"] = (data["answer"] == data["extracted"])
     dump(data, storage)
     
-    if dataset is not None and listinstr(['MME', dataset]):
+    if dataset is not None and listinstr(['MME'], dataset):
         score = MME_rating(storage)
     else:
         score = default_rating(storage)
