@@ -258,7 +258,7 @@ def encode_image_to_base64(img, target_size=-1):
     img.save(tmp)
     with open(tmp, 'rb') as image_file:
         image_data = image_file.read()
-    ret = base64.b64decode(image_data).decode('utf-8')
+    ret = base64.b64encode(image_data).decode('utf-8')
     os.remove(tmp)
     return ret
 
