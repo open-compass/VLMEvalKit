@@ -45,7 +45,7 @@ dataset_md5_dict = {
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
-    'HallusionBench': 'f6ebbe6071e34fd70acf24cd04e899d9'
+    'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c'
 }
 
 img_root_map = {
