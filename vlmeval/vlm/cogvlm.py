@@ -20,8 +20,13 @@ class CogVlm:
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
         ).to('cuda').eval()
-        
 
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
+        
     def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
         assert dataset is None or isinstance(dataset, str)

@@ -16,11 +16,14 @@ class SharedCaptioner:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map="cuda", trust_remote_code=True).eval()
         self.model.tokenizer = tokenizer
-
         self.model.cuda()
         self.model.half()
 
-       
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
 
     def build_prompt(self, line, dataset=None):
         from ..utils import img_root_map
@@ -76,17 +79,18 @@ class SharedCaptioner:
                 image = self.model.encode_img(image)
                 input_emb = torch.cat(
                     [tmp_seg_emb1, image, tmp_seg_emb2], dim=1)
-                out_embeds = self.model.internlm_model.generate(inputs_embeds=input_emb,
-                                                           max_length=500,
-                                                           num_beams=3,
-                                                           min_length=1,
-                                                           do_sample=True,
-                                                           repetition_penalty=1.5,
-                                                           length_penalty=1.0,
-                                                           temperature=1.,
-                                                           eos_token_id=self.model.tokenizer.eos_token_id,
-                                                           num_return_sequences=1,
-                                                           )
+                out_embeds = self.model.internlm_model.generate(
+                    inputs_embeds=input_emb,
+                    max_length=500,
+                    num_beams=3,
+                    min_length=1,
+                    do_sample=True,
+                    repetition_penalty=1.5,
+                    length_penalty=1.0,
+                    temperature=1.,
+                    eos_token_id=self.model.tokenizer.eos_token_id,
+                    num_return_sequences=1)
+                
         for j, out in enumerate(out_embeds):
             out[out == -1] = 2
             response = self.model.decode_text([out])
