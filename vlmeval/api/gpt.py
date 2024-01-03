@@ -4,7 +4,6 @@ from .base import BaseAPI
 
 APIBASES = {
     'OFFICIAL': "https://api.openai.com/v1/chat/completions",
-    'INTERNAL': "https://ai-proxy.shlab.tech/internal"
 }
 
 
