@@ -40,6 +40,7 @@ class OpenAIWrapper(BaseAPI):
                  verbose: bool = True, 
                  system_prompt: str = None,
                  temperature: float = 0,
+                 timeout: int = 60,
                  api_base: str = 'OFFICIAL',
                  max_tokens: int = 1024,
                  img_size: int = 512, 
@@ -62,6 +63,7 @@ class OpenAIWrapper(BaseAPI):
         self.vision = False
         if model == 'gpt-4-vision-preview':
             self.vision = True
+        self.timeout = timeout
         
         assert isinstance(openai_key, str) and openai_key.startswith('sk-'), f'Illegal openai_key {openai_key}. Please set the environment variable OPENAI_API_KEY to your openai key. '
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
