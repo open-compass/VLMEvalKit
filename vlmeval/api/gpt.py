@@ -142,7 +142,7 @@ class OpenAIWrapper(BaseAPI):
         answer = self.fail_msg
         try:
             resp_struct = json.loads(response.text)
-            answer = resp_struct['data']['choices'][0]['message']['content'].strip()
+            answer = resp_struct['choices'][0]['message']['content'].strip()
         except:
             pass
         return ret_code, answer, response
