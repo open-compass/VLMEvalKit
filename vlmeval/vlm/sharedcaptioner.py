@@ -26,17 +26,10 @@ class SharedCaptioner:
         return False
 
     def build_prompt(self, line, dataset=None):
-        from ..utils import img_root_map
         assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
-
-        os.makedirs(img_root, exist_ok=True)
-        idx = line['index']
-        img = line['image']
-
-        tgt_path = osp.join(img_root, f'{idx}.jpg')
-        decode_base64_to_image_file(img, tgt_path)
-
+        assert self.use_custom_prompt(dataset)
+        tgt_path = self.dump_image(line, dataset)
+        
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
@@ -62,6 +55,7 @@ class SharedCaptioner:
         # prompt = 'Analyze the image in a comprehensive and detailed manner.'
 
         return {'image': tgt_path, 'text': prompt}
+    
     def generate(self, image_path, prompt, dataset=None):
         seg1 = '<|User|>:'
         seg2 = f'{prompt}{self.model.eoh}\n<|Bot|>:'
