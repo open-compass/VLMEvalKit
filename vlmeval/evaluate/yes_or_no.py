@@ -155,6 +155,7 @@ def YOrN_auxeval(model, line):
 def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=None):
     logger = get_logger('Evaluation')
     data = load(eval_file)
+    data['prediction'] = [str(x) for x in data['prediction']]
     storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')
     tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
 

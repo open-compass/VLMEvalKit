@@ -1,4 +1,4 @@
-import os, torch
+import os, torch, sys
 from PIL import Image
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
@@ -14,7 +14,7 @@ class mPLUG_Owl2(CustomPrompt):
             from mplug_owl2.mm_utils import get_model_name_from_path
         except:
             warnings.warn('Please install mPLUG_Owl2 before using mPLUG_Owl2. ')
-            exit(-1)
+            sys.exit(-1)
             
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, None, model_name, load_8bit=False, load_4bit=False, device="cpu")

@@ -2,7 +2,7 @@ import torch
 from PIL import Image
 from abc import abstractproperty
 import os.path as osp
-import os 
+import os, sys
 from ..smp import *
 
 
@@ -25,7 +25,7 @@ class InstructBLIP:
             from lavis.common.registry import registry
         except:
             warnings.warn("Please install lavis before using InstructBLIP. ")
-            exit(-1)
+            sys.exit(-1)
 
         assert name in self.config_map
         cfg_path = osp.join(config_root, self.config_map[name])

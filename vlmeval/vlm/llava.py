@@ -1,7 +1,7 @@
 import torch
 from PIL import Image
 from abc import abstractproperty
-import os
+import os, sys
 import os.path as osp
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
@@ -23,7 +23,7 @@ class LLaVA(CustomPrompt):
             from llava.mm_utils import get_model_name_from_path
         except:
             warnings.warn("Please install llava before using LLaVA")
-            exit(-1)
+            sys.exit(-1)
             
         self.model_path_map = model_path_map
         assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2

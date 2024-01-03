@@ -1,3 +1,4 @@
+import sys
 import torch
 import requests
 from PIL import Image
@@ -17,10 +18,10 @@ class OpenFlamingo:
         
         if mpt_pth is None:
             warnings.warn('Please set `mpt_pth` to the directory of MPT-7B, which is cloned from here: https://huggingface.co/mosaicml/mpt-7b. ')
-            exit(-1)
+            sys.exit(-1)
         if ckpt_pth is None:
             warnings.warn('Please set `ckpt_pth` to the openflamingo ckpt, which is the `checkpoint.pt` file downloaded from: https://huggingface.co/openflamingo/OpenFlamingo-9B-vitl-mpt7b/tree/main. ' )
-            exit(-1)
+            sys.exit(-1)
 
         self.name = name
         assert name in ['v2']

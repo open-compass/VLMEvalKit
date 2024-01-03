@@ -13,3 +13,5 @@ from .minigpt4 import MiniGPT4
 from .xcomposer import XComposer
 from .mplug_owl2 import mPLUG_Owl2
 from .llava_xtuner import LLaVA_XTuner
+from .cogvlm import CogVlm
+from .sharedcaptioner import SharedCaptioner

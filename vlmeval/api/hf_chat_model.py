@@ -1,4 +1,4 @@
-import os
+import os, sys
 import os.path as osp
 import torch
 from ..smp import *
@@ -65,7 +65,7 @@ class HFChatModel:
                 from fastchat.model import get_conversation_template
             except:
                 self.logger.critical("Please install fastchat first to use vicuna. ")
-                exit(-1)
+                sys.exit(-1)
 
         self.explicit_device = kwargs.pop('device', None)
 
