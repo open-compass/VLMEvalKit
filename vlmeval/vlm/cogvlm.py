@@ -4,10 +4,10 @@ from abc import abstractproperty
 import os
 import os.path as osp
 from ..smp import *
-from ..utils import DATASET_TYPE
-from transformers import AutoModelForCausalLM, AutoTokenizer,LlamaTokenizer
+from ..utils import DATASET_TYPE, CustomPrompt
+from transformers import AutoModelForCausalLM, LlamaTokenizer
 
-class CogVlm:
+class CogVlm(CustomPrompt):
 
     INSTALL_REQ = True
 

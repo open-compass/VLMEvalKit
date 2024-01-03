@@ -3,9 +3,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
 import os.path as osp
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
-class SharedCaptioner:
+class SharedCaptioner(CustomPrompt):
 
     INSTALL_REQ = False
 
