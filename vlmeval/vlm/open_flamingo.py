@@ -32,15 +32,15 @@ class OpenFlamingo:
                     ckpt_pth = osp.join(ckpt_pth, 'checkpoint.pt')
                     if not osp.exists(ckpt_pth):
                         sys.exit(-1)
-                elif splitlen(ckpt_pth, '/') == 2:
-                    cache_path = get_cache_path(ckpt_pth)
-                    if cache_path is None:
-                        snapshot_download(ckpt_pth)
-                    cache_path = get_cache_path(ckpt_pth)
-                    if cache_path is None:
-                        sys.exit(-1)
-                    else:
-                        ckpt_pth = osp.join(cache_path, 'checkpoint.pt')
+            elif splitlen(ckpt_pth, '/') == 2:
+                cache_path = get_cache_path(ckpt_pth)
+                if cache_path is None:
+                    snapshot_download(ckpt_pth)
+                cache_path = get_cache_path(ckpt_pth)
+                if cache_path is None:
+                    sys.exit(-1)
+                else:
+                    ckpt_pth = osp.join(cache_path, 'checkpoint.pt')
                         
         self.name = name
         assert name in ['v2']
