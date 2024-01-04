@@ -19,6 +19,11 @@ llava_model_path_map = {
     'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 }
 
+emu_model_path_map={
+    "emu2":"BAAI/Emu2",
+    "emu2_chat":"BAAI/Emu2_Chat"
+}
+
 models = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
     'TransCore_M': partial(TransCoreM, root=TransCore_ROOT),
@@ -45,6 +50,8 @@ models = {
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'sharedcaptioner':partial(SharedCaptioner, model_path='Lin-Chen/ShareCaptioner'),
+    'emu2':partial(Emu, name='emu2', model_path_map=emu_model_path_map),
+    'emu_chat':partial(Emu, name='emu_chat', model_path_map=emu_model_path_map)
 }
 
 api_models = {
