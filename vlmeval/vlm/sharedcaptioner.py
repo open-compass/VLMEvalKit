@@ -36,7 +36,7 @@ class SharedCaptioner(CustomPrompt):
             if hint is not None:
                 question + hint + '\n' + question
 
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
+            option_candidate = string.ascii_uppercase
             options = {
                 cand: line[cand]
                 for cand in option_candidate
