@@ -20,6 +20,7 @@ xformers
 termcolor
 xtuner
 SwissArmyTransformer 
+huggingface_hub
 visual_genome
 wandb
 pycocoevalcap

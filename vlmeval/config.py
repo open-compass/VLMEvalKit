@@ -3,7 +3,6 @@ from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLPlus
 from functools import partial
 
 PandaGPT_ROOT = None
-Flamingov2_CKPT_PTH = None
 MiniGPT4_ROOT = None
 TransCore_ROOT = None
 
@@ -23,8 +22,8 @@ models = {
     'TransCore_M': partial(TransCoreM, root=TransCore_ROOT),
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
-    'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth='anas-awadalla/mpt-7b', ckpt_pth=Flamingov2_CKPT_PTH),
-    'flamingov2_fs': partial(OpenFlamingo, name='v2', with_context=True, mpt_pth='anas-awadalla/mpt-7b', ckpt_pth=Flamingov2_CKPT_PTH),
+    'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth='anas-awadalla/mpt-7b', ckpt_pth='openflamingo/OpenFlamingo-9B-vitl-mpt7b'),
+    'flamingov2_fs': partial(OpenFlamingo, name='v2', with_context=True, mpt_pth='anas-awadalla/mpt-7b', ckpt_pth='openflamingo/OpenFlamingo-9B-vitl-mpt7b'),
     'idefics_9b_instruct': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map),
     'idefics_80b_instruct': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map),
     'idefics_9b_instruct_fs': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map, with_context=True),
