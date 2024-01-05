@@ -135,7 +135,7 @@ def extract_answer_from_item(model, item):
             if ret:
                 return dict(opt=ret, log=ans)
             else:
-                logger.warning(f'GPT output includes 0 or more than 1 letter in uppercase letters: {ans}')
+                logger.warning(f'Output includes 0 / > 1 letter among candidates {set(choices)} and Z: {ans}')
                 retry -= 1
 
         if retry == 0:
