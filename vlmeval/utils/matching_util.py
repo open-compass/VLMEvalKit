@@ -60,5 +60,5 @@ def can_infer_text(answer, choices):
 
 def can_infer(answer, choices):
     answer = str(answer)
-    copt = can_infer_option(answer)
+    copt = can_infer_option(answer, choices)
     return copt if copt else can_infer_text(answer, choices)
