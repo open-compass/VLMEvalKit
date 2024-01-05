@@ -35,8 +35,10 @@
 | GeminiProVision               |   63.9 |   37.3 |   34.3 |
 | Qwen-VL-Chat                  |   56.4 |   27.7 |   26.4 |
 | MiniGPT-4-v1-7B               |   52.4 |   17.3 |   25.9 |
+| CogVLM-17B-Chat               |   55.1 |   26.3 |   24.8 |
 | InternLM-XComposer-VL         |   57   |   26.3 |   24.6 |
 | MiniGPT-4-v1-13B              |   51.3 |   16.2 |   24.6 |
+| SharedCaptioner               |   55.6 |   22.8 |   24.2 |
 | MiniGPT-4-v2                  |   52.6 |   16.5 |   21.1 |
 | InstructBLIP-7B               |   53.6 |   20.2 |   19.8 |
 | Qwen-VL                       |   57.6 |   12.4 |   19.6 |
@@ -55,4 +57,3 @@
 | TransCore-M                   |   44.7 |   16.5 |   10.1 |
 | LLaVA-v1-7B                   |   44.1 |   13.6 |    9.5 |
 | PandaGPT-13B                  |   43.1 |    9.2 |    7.7 |
-​
