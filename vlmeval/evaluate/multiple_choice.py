@@ -70,12 +70,12 @@ def build_prompt(question, options, prediction):
     tmpl = (
         "You are an AI assistant who will help me to match an answer with several options of a single-choice question. "
         "You are provided with a question, several options, and an answer, and you need to find which option is most similar to the answer. "
-        "If the meaning of all options are significantly different from the answer, output E. "\
-        "Your should output a single uppercase character in A, B, C, D (if they are valid options), and E. \n"
+        "If the meaning of all options are significantly different from the answer, output Z. "\
+        "Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n"
         "Example 1: \n"
         "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: a cute teddy bear\nYour output: A\n"
         "Example 2: \n"
-        "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: Spider\nYour output: E\n"
+        "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: Spider\nYour output: Z\n"
         "Example 3: \n"
         "Question: {}?\nOptions: {}\nAnswer: {}\nYour output: "
     )
@@ -85,12 +85,12 @@ def build_prompt_cn(question, options, prediction):
     tmpl = (
         "你是一个帮助我匹配答案与单选题中多个选项的 AI 助手。"
         "你会被提供：一个问题，多个选项，一个答案。你的任务是找到与答案意义最相近的选项。"
-        "如果所有选项的意义都与答案显著不同，则输出 E。"
-        "你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 E。"
+        "如果所有选项的意义都与答案显著不同，则输出 Z。"
+        "你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 Z。"
         "例 1:"
         "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 一只可爱的泰迪熊\n输出: A\n"
         "例 2: \n"
-        "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 蜘蛛\n输出: E\n"
+        "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 蜘蛛\n输出: Z\n"
         "例 3: \n"
         "问题: {}?\n选项: {}\n答案: {}\n输出: "
     )
@@ -135,7 +135,7 @@ def extract_answer_from_item(model, item):
             if ret:
                 return dict(opt=ret, log=ans)
             else:
-                logger.warning(f'GPT output includes 0 or more than 1 letter in uppercase letters: {ans}')
+                logger.warning(f'Output includes 0 / > 1 letter among candidates {set(choices)} and Z: {ans}')
                 retry -= 1
 
         if retry == 0:
@@ -344,8 +344,7 @@ def parse_args():
         "--dataset", 
         type=str, 
         default='MMBench', 
-        help='The dataset to evaluate', 
-        choices=['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench', 'MMBench_TEST_CN', 'MMBench_TEST_EN'])
+        help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
