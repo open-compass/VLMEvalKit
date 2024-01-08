@@ -1,6 +1,8 @@
 # VQA Results
 
 > **Warning:** Currently, we only provide the **preliminary results**, obtained by checking if the prediction of a VLM ***exactly* matches** some reference answers. The accuracy numbers may not faithfully reflect the real performance of the VLM on the corresponding task. We will further provide more results based on ChatGPT matching, stay tuned. 
+>
+> - **Zero-Shot** Inference is adopted for all VLMs.
 
 ## **Supported Datasets:**
 
@@ -15,6 +17,7 @@
 | Model                         |   OCRVQA_TESTCORE |   TextVQA_VAL |   ChartQA_VAL |   ChartQA_TEST |
 |:------------------------------|------------------:|--------------:|--------------:|---------------:|
 | InternLM-XComposer-VL         |              54.5 |          38.5 |           9.1 |            9.5 |
+| SharedCaptioner               |              50.2 |          38   |          12.3 |           10.6 |
 | Qwen-VL                       |              63.5 |          12.7 |          14.6 |           14.6 |
 | Qwen-VL-Chat                  |              57.7 |          10.5 |          16.2 |           14.6 |
 | InstructBLIP-13B              |              53   |          32   |           6.6 |            6.5 |
@@ -33,11 +36,11 @@
 | MiniGPT-4-v1-13B              |               0.5 |           0.5 |           0.2 |            0.1 |
 | MiniGPT-4-v1-7B               |               0.3 |           0.6 |           0.1 |            0.1 |
 | IDEFICS-80B-Instruct          |               0   |           0   |           0   |            0.1 |
+| CogVLM-17B-Chat               |               0   |           0   |           0   |            0   |
 | GPT-4v (detail: low)          |               0   |           0   |           0   |            0   |
 | LLaVA-v1-7B                   |               0   |           0   |           0   |            0   |
 | VisualGLM                     |               0   |           0   |           0   |            0   |
 | MiniGPT-4-v2                  |               0   |           0   |           0   |            0   |
 | PandaGPT-13B                  |               0   |           0   |           0   |            0   |
-
 
 

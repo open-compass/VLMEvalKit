@@ -19,9 +19,11 @@ VLMs are sorted by the descending order of Total score.
 | LLaVA-v1.5-7B                 | 1775        | 1490         | 285         |
 | GPT-4v (detail: low)          | 1737 / 1771 | 1300 / 1334  | 437         |
 | LLaVA-v1.5-13B (LoRA, XTuner) | 1766        | 1475         | 291         |
+| CogVLM-17B-Chat               | 1727 / 1737 | 1437 / 1438  | 290 / 299   |
 | LLaVA-v1.5-7B (LoRA, XTuner)  | 1716        | 1434         | 282         |
 | TransCore-M                   | 1681 / 1701 | 1427 / 1429  | 254 / 272   |
 | instructblip_13b              | 1624 / 1646 | 1381 / 1383  | 243 / 263   |
+| SharedCaptioner               | 1592 / 1643 | 1247 / 1295  | 345 / 348   |
 | LLaVA-InternLM-7B (LoRA)      | 1637        | 1393         | 244         |
 | IDEFICS-80B-Instruct          | 1507 / 1519 | 1276 / 1285  | 231 / 234   |
 | InstructBLIP-7B               | 1313 / 1391 | 1084 / 1137  | 229 / 254   |
@@ -42,6 +44,6 @@ For most VLMs, using ChatGPT as the answer extractor or not may not significantl
 | MME Score Improvement with ChatGPT Answer Extractor | Models                                                       |
 | --------------------------------------------------- | ------------------------------------------------------------ |
 | **No (0)**                                          | XComposer, llava_v1.5_7b, idefics_9b_instruct, PandaGPT_13B, MiniGPT-4-v2, <br>VisualGLM_6b, flamingov2, LLaVA-XTuner Series |
-| **Minor (1~20)**                                    | qwen_chat (11), llava_v1.5_13b (5), mPLUG-Owl2 (5), idefics_80b_instruct (12), llava_v1_7b (17), <br>sharegpt4v_7b (9), TransCore_M (19), GeminiProVision (18) |
-| **Moderate (21~100)**                               | instructblip_13b (22), instructblip_7b (78), GPT-4v (34)     |
+| **Minor (1~20)**                                    | qwen_chat (11), llava_v1.5_13b (5), mPLUG-Owl2 (5), idefics_80b_instruct (12), llava_v1_7b (17), <br>sharegpt4v_7b (9), TransCore_M (19), GeminiProVision (18), CogVLM-17B-Chat (10) |
+| **Moderate (21~100)**                               | instructblip_13b (22), instructblip_7b (78), GPT-4v (34), SharedCaptioner (51)  |
 | **Huge (> 100)**                                    | MiniGPT-4-v1-7B (242), MiniGPT-4-v1-13B (419), qwen_base (477) |

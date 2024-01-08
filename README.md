@@ -8,11 +8,12 @@
 <a href="#%EF%B8%8F-citation">🖊️Citation </a>
 <br><br>
 </div>
+
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
 ## 🆕 News
 
-- **[2024-01-03]** We support **ScienceQA (Img)** (Dataset Name: ScienceQA_[VAL/TEST], [**eval results**](results/ScienceQA.md)), **HallusionBench** (Dataset Name: HallusionBench, [**eval results**](/results/HallusionBench.md)).  🔥🔥🔥
+- **[2024-01-03]** We support **ScienceQA (Img)** (Dataset Name: ScienceQA_[VAL/TEST], [**eval results**](results/ScienceQA.md)), **HallusionBench** (Dataset Name: HallusionBench, [**eval results**](/results/HallusionBench.md)), and **MathVista** (Dataset Name: MathVista_MINI, [**eval results**](/results/MathVista.md)).  🔥🔥🔥
 - **[2023-12-31]** We release the [**preliminary results**](/results/VQA.md) of three VQA datasets (**OCRVQA**, **TextVQA**, **ChatVQA**). The results are obtained by exact matching and may not faithfully reflect the real performance of VLMs on the corresponding task.
 - **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
 - **[2023-12-26]** We support **QwenVLPlus** API now. The evaluation result is on the road. 🔥🔥🔥
@@ -30,6 +31,7 @@
 | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG                                          | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
 | [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL                                           | ✅         | ✅          | [**MMMU**](results/MMMU.md)                                  |
+| [**MathVista**](https://mathvista.github.io)                 | MathVista_MINI                                         | ✅         | ✅          | [**MathVista**](/results/MathVista.md)                       |
 | [**ScienceQA_IMG**](https://scienceqa.github.io)             | ScienceQA_[VAL/TEST]                                   | ✅         | ✅          | [**ScienceQA**](/results/ScienceQA.md)                       |
 | [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption**](results/Caption.md)                            |
 | [**HallusionBench**](https://github.com/tianyi-lab/HallusionBench) | HallusionBench                                         | ✅         | ✅          | [**HallusionBench**](/results/HallusionBench.md)             |
@@ -40,18 +42,18 @@
 
 **Supported API Models**
 
-| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) | [**QwenVLPlus**](https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start) |
+| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**QwenVLPlus**](https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start)🎞️🚅 |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 
 **Supported PyTorch / HF Models**
 
-| [**IDEFICS-9B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅, [**IDEFICS-80B-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) |
+| [**IDEFICS-[9B/80B]-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️**🚅** |
-| [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b) | [**ShareGPT4V-7B**](https://sharegpt4v.github.io)🚅           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
-| [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 |                                                              |                                                              |                                                              |
+| [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅🎞️ | [**ShareGPT4V-7B**](https://sharegpt4v.github.io)🚅           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
+| [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-17B-Chat**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**SharedCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
 
-🎞️: Support multiple images as inputs, via the `multi_generate` interface. 
+🎞️: Support multiple images as inputs, via the `multi_generate / interleave_generate` interface. 
 
 🚅: Model can be used without any additional configuration / operation. 
 
@@ -87,9 +89,9 @@ pip install -e .
 
 Following VLMs require the configuration step:
 
-**Code Preparation & Installation**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)), LLaVA-XTuner ([XTuner](https://github.com/InternLM/xtuner)). 
+**Code Preparation & Installation**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)). 
 
-**Manual Weight Preparation & Configuration**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, OpenFlamingo-v2, PandaGPT-13B
+**Manual Weight Preparation & Configuration**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, PandaGPT-13B
 
 ### Step2. Evaluation 
 
