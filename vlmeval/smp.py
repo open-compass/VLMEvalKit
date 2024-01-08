@@ -1,4 +1,4 @@
-    # flake8: noqa: F401, F403
+# flake8: noqa: F401, F403
 import abc
 import argparse
 import csv
@@ -28,6 +28,14 @@ import hashlib
 from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
+
+def gpt_key_set():
+    openai_key = os.environ.get('OPENAI_API_KEY', None)
+    return isinstance(openai_key, str) and openai_key.startswith('sk-')
+
+def apiok(wrapper):
+    s = wrapper.generate("Hello!")
+    return wrapper.fail_msg not in s
 
 def isimg(s):
     return osp.exists(s) or s.startswith('http')
@@ -219,24 +227,17 @@ def last_modified(pth):
 def mmqa_display(question):
     question = {k.lower(): v for k, v in question.items()}
     keys = list(question.keys())
-    if 'index' in keys:
-        keys.remove('index')
-    keys.remove('image')
+    keys = [k for k in keys if k not in ['index', 'image']]
 
     images = question['image']
     if isinstance(images, str):
         images = [images]
 
-    idx = 'XXX'
-    if 'index' in question:
-        idx = question.pop('index')
+    idx = question.pop('index', 'XXX')
     print(f'INDEX: {idx}')
 
     for im in images:
-        image = decode_base64_to_image(im)
-        w, h = image.size
-        ratio = 500 / h
-        image = image.resize((int(ratio * w), int(ratio * h)))
+        image = decode_base64_to_image(im, target_size=512)
         display(image)
         
     for k in keys:
@@ -288,13 +289,6 @@ def mrlines(fname, sp='\n'):
 def mwlines(lines, fname):
     with open(fname, 'w') as fout:
         fout.write('\n'.join(lines))
-
-def default_set(self, args, name, default):
-    if hasattr(args, name):
-        val = getattr(args, name)
-        setattr(self, name, val)
-    else:
-        setattr(self, name, default)
 
 def dict_merge(dct, merge_dct):
     for k, _ in merge_dct.items():
