@@ -241,8 +241,11 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
         model_name = 'gpt-3.5-turbo-0613'
         if INTERNAL:
             model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
-        else:
+        elif gpt_key_set():
             model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
+        else:
+            logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
     
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
