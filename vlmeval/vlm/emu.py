@@ -57,7 +57,7 @@ class Emu:
                 length_penalty=-1)
 
         output_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        return output_text
+        return output_text[0]
     
     def interleave_generate(self, ti_list, dataset=None):
         query, images = '',[]
@@ -84,4 +84,4 @@ class Emu:
                 length_penalty=-1)
 
         output_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        return output_text
+        return output_text[0]
