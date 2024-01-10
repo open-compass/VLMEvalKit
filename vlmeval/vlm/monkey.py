@@ -13,7 +13,9 @@ class Monkey:
         assert model_path is not None
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cuda', trust_remote_code=True).eval()
+        model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cpu', trust_remote_code=True)
+        model.eval()
+        self.model = model.cuda()
         self.kwargs = kwargs
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
         torch.cuda.empty_cache()
