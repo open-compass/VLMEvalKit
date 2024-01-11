@@ -1,6 +1,7 @@
 ![LOGO](https://github-production-user-asset-6210df.s3.amazonaws.com/34324155/295443340-a300f073-4995-48a5-af94-495141606cf7.jpg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center"><br>
+<a href="https://opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
 <a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
 <a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
 <a href="#%EF%B8%8F-custom-benchmark-or-vlm">🛠️Support New </a> •
@@ -13,13 +14,11 @@
 
 ## 🆕 News
 
+- **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
 - **[2024-01-09]** The performance numbers on our official multi-modal leaderboards can be downloaded in json files: [**MMBench Leaderboard**](http://opencompass.openxlab.space/utils/MMBench.json), [**OpenCompass Multi-Modal Leaderboard**](http://opencompass.openxlab.space/utils/MMLB.json). We also add a [notebook](scripts/visualize.ipynb) to visualize these results.🔥🔥🔥
 - **[2024-01-03]** We support **ScienceQA (Img)** (Dataset Name: ScienceQA_[VAL/TEST], [**eval results**](results/ScienceQA.md)), **HallusionBench** (Dataset Name: HallusionBench, [**eval results**](/results/HallusionBench.md)), and **MathVista** (Dataset Name: MathVista_MINI, [**eval results**](/results/MathVista.md)).  🔥🔥🔥
 - **[2023-12-31]** We release the [**preliminary results**](/results/VQA.md) of three VQA datasets (**OCRVQA**, **TextVQA**, **ChatVQA**). The results are obtained by exact matching and may not faithfully reflect the real performance of VLMs on the corresponding task.
 - **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
-- **[2023-12-26]** We support **QwenVLPlus** API now. The evaluation result is on the road. 🔥🔥🔥
-- **[2023-12-26]** We support **MMMU** now (Dataset Name: MMMU_DEV_VAL).  The evaluation result is available at [**MMMU**](results/MMMU.md).  🔥🔥🔥
-- **[2023-12-23]** We update the performance of **GPT-4v** and **GeminiProVision** on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -160,13 +159,6 @@ To implement a custom benchmark or VLM in VLMEvalKit, please refer to [Custom_Be
 If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@article{MMBench,
-    author  = {Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, Dahua Lin},
-    journal = {arXiv:2307.06281},
-    title   = {MMBench: Is Your Multi-modal Model an All-around Player?},
-    year    = {2023},
-}
-
 @misc{2023opencompass,
     title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
     author={OpenCompass Contributors},

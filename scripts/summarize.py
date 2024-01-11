@@ -38,17 +38,17 @@ def get_score(model, dataset):
         ret[dataset] = data['perception'][0] + data['reasoning'][0]
     elif 'MMVet' == dataset:
         data = data[data['Category'] == 'Overall']
-        ret[dataset] = float(data['acc'][0])
+        ret[dataset] = float(data.iloc[0]['acc'])
     elif 'HallusionBench' == dataset:
         data = data[data['split'] == 'Overall']
         for met in ['aAcc', 'qAcc', 'fAcc']:
-            ret[dataset + f' ({met})'] = float(data[met][0])
+            ret[dataset + f' ({met})'] = float(data.iloc[0][met])
     elif 'MMMU' in dataset:
         data = data[data['split'] == 'validation']
-        ret['MMMU (val)'] = float(data['Overall'][0]) * 100
+        ret['MMMU (val)'] = float(data.iloc[0]['Overall']) * 100
     elif 'MathVista' in dataset:
         data = data[data['Task&Skill'] == 'Overall']
-        ret[dataset] = float(data['acc'][0])
+        ret[dataset] = float(data.iloc[0]['acc'])
      
     return ret
 
@@ -83,7 +83,10 @@ def gen_table(models, datasets):
                 final[k].append(None)
     final = pd.DataFrame(final)
     dump(final, 'summ.csv')
-    print(tabulate(final, headers=['Model'] + keys))
+    if len(final) >= len(final.iloc[0].keys()):
+        print(tabulate(final))
+    else:
+        print(tabulate(final.T))
     
 if __name__ == '__main__':
     args = parse_args()
