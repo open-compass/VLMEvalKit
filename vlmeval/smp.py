@@ -28,6 +28,21 @@ import hashlib
 from tabulate import tabulate_formats, tabulate
 from huggingface_hub import scan_cache_dir
 import logging
+from sty import fg, bg, ef, rs
+
+def h2r(value):
+    if value[0] == '#':
+        value = value[1:]
+    assert len(value) == 6
+    return tuple(int(value[i:i + 2], 16) for i in range(0, 6, 2))
+
+def r2h(rgb):
+    return '#%02x%02x%02x' % rgb
+
+def colored(s, color):
+    if isinstance(color, str):
+        color = h2r(color)
+    return fg(*color) + s + fg.rs
 
 def gpt_key_set():
     openai_key = os.environ.get('OPENAI_API_KEY', None)

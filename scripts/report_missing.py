@@ -1,6 +1,5 @@
 from vlmeval.smp import *
 from vlmeval.config import supported_VLM
-from termcolor import colored
 
 logger = get_logger('Report Missing')
 
@@ -30,4 +29,4 @@ for f in models:
         pred_file = f'{f}/{f}_{D}.xlsx'
         score_file = f'{f}/{f}_{D}_{suff}'
         if not osp.exists(score_file):
-            logger.info(colored(f'Model {f} x Dataset {D}: Not Found. ', 'red'))
+            logger.info(colored(f'Model {f} x Dataset {D}: Not Found. ', '#FF0000'))
