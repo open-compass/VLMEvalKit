@@ -160,13 +160,6 @@ To implement a custom benchmark or VLM in VLMEvalKit, please refer to [Custom_Be
 If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@article{MMBench,
-    author  = {Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, Dahua Lin},
-    journal = {arXiv:2307.06281},
-    title   = {MMBench: Is Your Multi-modal Model an All-around Player?},
-    year    = {2023},
-}
-
 @misc{2023opencompass,
     title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
     author={OpenCompass Contributors},
