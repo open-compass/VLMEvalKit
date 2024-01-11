@@ -3,6 +3,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
 import os.path as osp
 from vlmeval.smp import isimg
+from ..utils import CustomPrompt
 import re
 
 class Monkey:
@@ -21,7 +22,7 @@ class Monkey:
         torch.cuda.empty_cache()
     
     def generate(self, image_path, prompt, dataset=None):
-        cur_prompt = f'<img>{image_path}</img> {prompt} Answer: '
+        cur_prompt = f'<img>{image_path}</img>\n{prompt} Answer:'
         input_ids = self.tokenizer(cur_prompt, return_tensors='pt', padding='longest')
         attention_mask = input_ids.attention_mask
         input_ids = input_ids.input_ids
