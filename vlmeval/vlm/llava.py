@@ -1,7 +1,7 @@
 import torch
 from PIL import Image
 from abc import abstractproperty
-import os
+import os, sys
 import os.path as osp
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
@@ -23,7 +23,7 @@ class LLaVA(CustomPrompt):
             from llava.mm_utils import get_model_name_from_path
         except:
             warnings.warn("Please install llava before using LLaVA")
-            exit(-1)
+            sys.exit(-1)
             
         self.model_path_map = model_path_map
         assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
@@ -64,7 +64,7 @@ class LLaVA(CustomPrompt):
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         if hint is not None:
-            question + hint + '\n' + question
+            question = hint + '\n' + question
 
         options = {
             cand: line[cand]
@@ -73,11 +73,12 @@ class LLaVA(CustomPrompt):
         }
         for key, item in options.items():
             question += f'\n{key}. {item}'
+        prompt = question
 
-        if not cn_string(question):
-            prompt = question + "\n" + "Answer with the option's letter from the given choices directly."
+        if len(options):
+            prompt += "\n请直接回答选项字母。" if cn_string(prompt) else "\nAnswer with the option's letter from the given choices directly."
         else:
-            prompt = question + "\n" + "请直接回答选项字母。"
+            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
 
         return {'image': tgt_path, 'text': prompt}
 

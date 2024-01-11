@@ -20,10 +20,24 @@ def check_md5(data_path, dataset):
             return False
     except:
         return False
+    
+def split_MMMU(struct):
+    assert 'image' in struct and 'text' in struct
+    text, images = struct['text'], struct['image']
+    text_segs = text.split('<image ')
+    segs = [text_segs[0]]
+    for i, seg in enumerate(text_segs):
+        if i == 0:
+            continue
+        assert istype(seg[0], int) and seg[1] == '>'
+        image_idx = int(seg[0]) - 1
+        segs.append(images[image_idx])
+        segs.append(seg[2:])
+    return segs
 
 class TSVDataset(CustomPrompt):
     
-    def __init__(self, dataset='MMBench', img_root=None):
+    def __init__(self, dataset='MMBench', img_root=None, skip_noimg=True):
 
         self.data_root = LMUDataRoot()
         assert osp.exists(self.data_root)
@@ -42,12 +56,17 @@ class TSVDataset(CustomPrompt):
             download_file(url, data_path)
 
         data = load(data_path)
+        self.skip_noimg = skip_noimg
+        if skip_noimg:
+            data = data[~pd.isna(data['image'])]
 
         # Prompt for Captioning
         if listinstr(['COCO'], dataset):
             data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
 
         data['index'] = [str(x) for x in data['index']]
+        data['image'] = [str(x) for x in data['image']]
+        
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if len(image_map[k]) <= 64:
@@ -100,8 +119,9 @@ class TSVDataset(CustomPrompt):
             if hint is not None:
                 prompt += f'Hint: {hint}\n'
             prompt += f'Question: {question}\n'
-            prompt += options_prompt
-            prompt += 'Please select the correct answer from the options above. \n'
+            if len(options):
+                prompt += options_prompt
+                prompt += 'Please select the correct answer from the options above. \n'
         
         return dict(image=tgt_path, text=prompt)
     

@@ -1,4 +1,4 @@
-import os, torch
+import os, torch, sys
 from PIL import Image
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
@@ -14,7 +14,7 @@ class mPLUG_Owl2(CustomPrompt):
             from mplug_owl2.mm_utils import get_model_name_from_path
         except:
             warnings.warn('Please install mPLUG_Owl2 before using mPLUG_Owl2. ')
-            exit(-1)
+            sys.exit(-1)
             
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, None, model_name, load_8bit=False, load_4bit=False, device="cpu")
@@ -36,10 +36,12 @@ class mPLUG_Owl2(CustomPrompt):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MMMU'], dataset):
+            return False
         if DATASET_TYPE(dataset) == 'multi-choice' or dataset == 'MMVet':
             return True
         return False
-
+    
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
@@ -60,7 +62,10 @@ class mPLUG_Owl2(CustomPrompt):
                 options_prompt += f'{key}. {item}\n'
             
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else 'N/A'
-            prompt = prompt_tmpl.format(hint, line['question'], options_prompt)
+            if len(options):
+                prompt = f"USER: <|image|>{hint}\n{line['question']}\n{options_prompt}\nAnswer with the option’s letter from the given choices directly. ASSISTANT:"
+            else:
+                prompt = f"USER: <|image|>{hint}\n{line['question']}\nAnswer the question directly. ASSISTANT:"
         else:
             raise NotImplementedError
 
@@ -161,26 +166,27 @@ class mPLUG_Owl2(CustomPrompt):
                 return self.generate_vanilla(image_path, prompt)
         
     def multi_generate(self, image_paths, prompt, dataset=None):
+        return self.interleave_generate(image_paths + [prompt], dataset)
+    
+    def interleave_generate(self, ti_list, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX
         from mplug_owl2.mm_utils import process_images, tokenizer_image_token
-        image_prompt = ''
-        for i in range(len(image_paths)):
-            image_prompt += f'Image {i + 1}: <|image|>; '
-
-        prompt_tmpl = "USER: " + image_prompt + "{}\nASSISTANT: "
-        prompt = prompt_tmpl.format(prompt)
-        
+        prompt_full = "USER: "
         images = []
-        for pth in image_paths:
-            image = Image.open(pth).convert('RGB')
-            max_edge = max(image.size) # We recommand you to resize to squared image for BEST performance.
-            image = image.resize((max_edge, max_edge))
-            images.append(image)
-
+        for s in ti_list:
+            if isimg(s):
+                image = Image.open(s).convert('RGB')
+                max_edge = max(image.size)
+                image = image.resize((max_edge, max_edge))
+                images.append(image)
+                prompt_full += f"<|image|>"
+            else:
+                prompt_full += s
+        prompt_full += "\nASSISTANT: "
         image_tensor = process_images(images, self.image_processor)
         image_tensor = image_tensor.to(self.device, dtype=torch.float16)
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
-        
+        input_ids = tokenizer_image_token(prompt_full, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(self.device)
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids=input_ids, 
@@ -190,4 +196,3 @@ class mPLUG_Owl2(CustomPrompt):
                 **self.kwargs)
         answer = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip()
         return answer.split('</s>')[0]
-    

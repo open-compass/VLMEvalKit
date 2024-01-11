@@ -1,51 +1,66 @@
-![LOGO](assets/LOGO.svg)
+![LOGO](https://github-production-user-asset-6210df.s3.amazonaws.com/34324155/295443340-a300f073-4995-48a5-af94-495141606cf7.jpg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center"><br>
+<a href="https://opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
 <a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
 <a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
 <a href="#%EF%B8%8F-custom-benchmark-or-vlm">🛠️Support New </a> •
 <a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
 <a href="#%EF%B8%8F-citation">🖊️Citation </a>
-<br>
+<br><br>
 </div>
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
 
 ## 🆕 News
 
-- **[2023-12-24]** We support two VQA Datasets: **OCRVQA** (Dataset Name: OCRVQA_TEST, OCRVQA_TESTCORE) and **TextVQA** (Dataset Name: TextVQA_VAL).  The evaluation is undergoing.  🔥🔥🔥
-- **[2023-12-23]** We update the performance of GPT-4v and GeminiPro on all existing benchmarks, [**check the result**](https://opencompass.org.cn/leaderboard-multimodal).  🔥🔥🔥
-- **[2023-12-20]** We support a new benchmark: **COCO Caption** (Dataset Name: COCO_VAL). The evaluation is undergoing.  🔥🔥🔥
-- **[2023-12-19]** We support two VLM APIs: **GPT-4-Vision-Preview** and **GeminiProVision**. The evaluation is undergoing.  🔥🔥🔥
+- **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
+- **[2024-01-09]** The performance numbers on our official multi-modal leaderboards can be downloaded in json files: [**MMBench Leaderboard**](http://opencompass.openxlab.space/utils/MMBench.json), [**OpenCompass Multi-Modal Leaderboard**](http://opencompass.openxlab.space/utils/MMLB.json). We also add a [notebook](scripts/visualize.ipynb) to visualize these results.🔥🔥🔥
+- **[2024-01-03]** We support **ScienceQA (Img)** (Dataset Name: ScienceQA_[VAL/TEST], [**eval results**](results/ScienceQA.md)), **HallusionBench** (Dataset Name: HallusionBench, [**eval results**](/results/HallusionBench.md)), and **MathVista** (Dataset Name: MathVista_MINI, [**eval results**](/results/MathVista.md)).  🔥🔥🔥
+- **[2023-12-31]** We release the [**preliminary results**](/results/VQA.md) of three VQA datasets (**OCRVQA**, **TextVQA**, **ChatVQA**). The results are obtained by exact matching and may not faithfully reflect the real performance of VLMs on the corresponding task.
+- **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
+**The performance numbers on our official multi-modal leaderboards can be downloaded from here !**
+
+[**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard): http://opencompass.openxlab.space/utils/MMBench.json
+
+[**OpenCompass Multi-Modal Leaderboard**](https://opencompass.org.cn/leaderboard-multimodal): http://opencompass.openxlab.space/utils/MMLB.json
+
 **Supported Dataset**
 
-| Dataset                                                      | Inference | Evaluation | Results                                                      |
-| ------------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
-| [**MMBench Series**](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench | ✅         | ✅          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
-| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | ✅         | ✅          | [**MME**](results/MME.md)                                    |
-| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
-| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
-| [**COCO Caption**](https://cocodataset.org)                  | ✅         | ✅          |                                                              |
-| [**OCRVQA**](https://ocr-vqa.github.io)                      | ✅         | ✅          |                                                              |
-| [**TextVQA**](https://textvqa.org)                           | ✅         | ✅          |                                                              |
-| [**Core-MM**](https://github.com/core-mm/core-mm)            | ✅         |            |                                                              |
+| Dataset                                                      | Dataset Names (for run.py)                             | Inference | Evaluation | Results                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench-DEV-[EN/CN]<br>MMBench-TEST-[EN/CN]<br>CCBench | ✅         | ✅          | [**MMBench Series**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | MME                                                    | ✅         | ✅          | [**MME**](results/MME.md)                                    |
+| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG                                          | ✅         | ✅          | [**SEEDBench_IMG**](results/SEEDBench_IMG.md)                |
+| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**MM-Vet**](results/MMVet.md)                               |
+| [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL                                           | ✅         | ✅          | [**MMMU**](results/MMMU.md)                                  |
+| [**MathVista**](https://mathvista.github.io)                 | MathVista_MINI                                         | ✅         | ✅          | [**MathVista**](/results/MathVista.md)                       |
+| [**ScienceQA_IMG**](https://scienceqa.github.io)             | ScienceQA_[VAL/TEST]                                   | ✅         | ✅          | [**ScienceQA**](/results/ScienceQA.md)                       |
+| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption**](results/Caption.md)                            |
+| [**HallusionBench**](https://github.com/tianyi-lab/HallusionBench) | HallusionBench                                         | ✅         | ✅          | [**HallusionBench**](/results/HallusionBench.md)             |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
+| [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
 
 **Supported API Models**
 
-| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision) | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision) |
-| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**QwenVLPlus**](https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start)🎞️🚅 |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 
 **Supported PyTorch / HF Models**
 
-| [**IDEFICS-9B-Instruct**🎞️🚅](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct), [**IDEFICS-80B-Instruct**🎞️🚅](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct) | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) | [**mPLUG-Owl2**🎞️](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2) |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**🎞️🚅](https://huggingface.co/Qwen/Qwen-VL), [**Qwen-VL-Chat**🎞️🚅](https://huggingface.co/Qwen/Qwen-VL-Chat) | [**VisualGLM-6B**🚅](https://huggingface.co/THUDM/visualglm-6b) | [**InternLM-XComposer-7B**🎞️🚅](https://huggingface.co/internlm/internlm-xcomposer-7b) |
-| [**ShareGPT4V-7B**🚅](https://sharegpt4v.github.io)           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |                                                              |                                                              |                                                              |
+| [**IDEFICS-[9B/80B]-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️**🚅** |
+| [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅🎞️ | [**ShareGPT4V-7B**](https://sharegpt4v.github.io)🚅           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
+| [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-17B-Chat**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**SharedCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
+| [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅 | | | |
 
-🎞️: Support multiple images as inputs, via the `multi_generate` interface. 
+🎞️: Support multiple images as inputs, via the `multi_generate / interleave_generate` interface. 
 
 🚅: Model can be used without any additional configuration / operation. 
 
@@ -83,7 +98,7 @@ Following VLMs require the configuration step:
 
 **Code Preparation & Installation**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)). 
 
-**Manual Weight Preparation & Configuration**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, OpenFlamingo-v2, PandaGPT-13B
+**Manual Weight Preparation & Configuration**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, PandaGPT-13B
 
 ### Step2. Evaluation 
 
@@ -144,13 +159,6 @@ To implement a custom benchmark or VLM in VLMEvalKit, please refer to [Custom_Be
 If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@article{MMBench,
-    author  = {Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, Dahua Lin},
-    journal = {arXiv:2307.06281},
-    title   = {MMBench: Is Your Multi-modal Model an All-around Player?},
-    year    = {2023},
-}
-
 @misc{2023opencompass,
     title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
     author={OpenCompass Contributors},

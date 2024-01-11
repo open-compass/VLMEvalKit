@@ -10,7 +10,7 @@ class PandaGPT:
     def __init__(self, name, root=None, **kwargs):
         if root is None:
             warnings.warn('Please set `root` to PandaGPT code directory, which is cloned from here: ')
-            exit(-1)
+            sys.exit(-1)
 
         assert name == 'PandaGPT_13B'
         self.name = name

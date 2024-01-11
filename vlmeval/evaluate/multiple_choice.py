@@ -17,21 +17,35 @@ abbrs = {
     'attribute_reasoning': 'AR'
 }
 
+def MMMU_preproc(data):
+    logger = get_logger('Evaluation')
+    cnt = 0
+    As, Bs, Ans = list(data['A']), list(data['B']), list(data['answer'])
+    lt = len(data)
+    for i in range(lt):
+        if pd.isna(As[i]):
+            As[i] = Ans[i]
+            Bs[i] = 'Other Answers'
+            cnt += 1
+    logger.info(f'During MMMU_preproc in Evaluation, {cnt} open questions are re-formulated to multi-choice ones. ')
+    data['A'] = As
+    data['B'] = Bs
+    return data
+
 def report_acc(df):
     # assert group in [None, 'category', 'l2-category']
     res = defaultdict(list)
 
     if 'split' in df:
-        res['split'] = ['full', 'dev', 'test']
+        splits = list(set(df['split']))
+        res['split'] = splits
     else:
-        res['split'] = 'dev'
-    
+        df['split'] = ['dev'] * len(df)
+        res['split'] = ['dev']
+
     for group in [None, 'l2-category', 'category']:
         if group is None:
-            if 'split' in df:
-                res['Overall'] = [np.mean(df['hit']), np.mean(df[df['split'] == 'dev']['hit']), np.mean(df[df['split'] == 'test']['hit'])]
-            else:
-                res['Overall'] = [np.mean(df['hit'])]
+            res['Overall'] = [np.mean(df[df['split'] == sp]['hit']) for sp in res['split']]
         elif group not in df:
             continue
         else:
@@ -40,15 +54,12 @@ def report_acc(df):
             for ab in abilities:
                 ab_name = abbrs[ab] if ab in abbrs else ab
                 sub_df = df[df[group] == ab]
-                if 'split' in df:
-                    res[ab_name] = [np.mean(sub_df['hit']), np.mean(sub_df[sub_df['split'] == 'dev']['hit']), np.mean(sub_df[sub_df['split'] == 'test']['hit'])]
-                else:
-                    res[ab_name] = [np.mean(sub_df['hit'])]
+                res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
     return pd.DataFrame(res)
 
 def extract_options(item):
     options = []
-    for c in 'ABCD':
+    for c in list(string.ascii_uppercase):
         if c in item and not pd.isna(item[c]):
             options.append(item[c])
         else:
@@ -59,12 +70,12 @@ def build_prompt(question, options, prediction):
     tmpl = (
         "You are an AI assistant who will help me to match an answer with several options of a single-choice question. "
         "You are provided with a question, several options, and an answer, and you need to find which option is most similar to the answer. "
-        "If the meaning of all options are significantly different from the answer, output E. "\
-        "Your should output a single uppercase character in A, B, C, D (if they are valid options), and E. \n"
+        "If the meaning of all options are significantly different from the answer, output Z. "\
+        "Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n"
         "Example 1: \n"
         "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: a cute teddy bear\nYour output: A\n"
         "Example 2: \n"
-        "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: Spider\nYour output: E\n"
+        "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: Spider\nYour output: Z\n"
         "Example 3: \n"
         "Question: {}?\nOptions: {}\nAnswer: {}\nYour output: "
     )
@@ -74,12 +85,12 @@ def build_prompt_cn(question, options, prediction):
     tmpl = (
         "你是一个帮助我匹配答案与单选题中多个选项的 AI 助手。"
         "你会被提供：一个问题，多个选项，一个答案。你的任务是找到与答案意义最相近的选项。"
-        "如果所有选项的意义都与答案显著不同，则输出 E。"
-        "你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 E。"
+        "如果所有选项的意义都与答案显著不同，则输出 Z。"
+        "你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 Z。"
         "例 1:"
         "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 一只可爱的泰迪熊\n输出: A\n"
         "例 2: \n"
-        "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 蜘蛛\n输出: E\n"
+        "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 蜘蛛\n输出: Z\n"
         "例 3: \n"
         "问题: {}?\n选项: {}\n答案: {}\n输出: "
     )
@@ -87,8 +98,8 @@ def build_prompt_cn(question, options, prediction):
 
 def build_choices(item):
     ret = {}
-    for ch in 'ABCD':
-        if not pd.isna(item[ch]):
+    for ch in string.ascii_uppercase:
+        if ch in item and (not pd.isna(item[ch])):
             ret[ch] = item[ch]
     return ret
 
@@ -124,14 +135,14 @@ def extract_answer_from_item(model, item):
             if ret:
                 return dict(opt=ret, log=ans)
             else:
-                logger.warning(f'GPT output includes 0 or more than 1 letter in "ABCD": {ans}')
+                logger.warning(f'Output includes 0 / > 1 letter among candidates {set(choices)} and Z: {ans}')
                 retry -= 1
 
         if retry == 0:
-            num_options = sum([ch in item for ch in 'ABCD'])
+            num_options = sum([ch in item for ch in string.ascii_uppercase])
             if num_options >= 2:
                 chars = string.ascii_uppercase[:num_options]
-                chars = chars + 'E'
+                chars = chars + 'Z'
                 num_options += 1
                 tmp = rd.randint(0, num_options - 1)
                 return dict(opt=chars[tmp], log='Failed to predict, thus randomly generate one. ')
@@ -230,8 +241,11 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
         model_name = 'gpt-3.5-turbo-0613'
         if INTERNAL:
             model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
-        else:
+        elif gpt_key_set():
             model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
+        else:
+            logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
     
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
@@ -243,7 +257,7 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     data = data.sort_values(by='index')
     data['prediction'] = [str(x) for x in data['prediction']]
     for k in data.keys():
-        data[k.lower() if k not in 'ABCD' else k] = data.pop(k)
+        data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
 
     meta = TSVDataset(dataset).data
 
@@ -251,6 +265,10 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
     l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])} if 'l2-category' in meta else None
     split_map = {i: c for i, c in zip(meta['index'], meta['split'])} if 'split' in meta else None
+
+    if listinstr(['MMMU'], dataset):
+        data = MMMU_preproc(data)
+        answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
 
     data = data[data['index'].isin(answer_map)]
     data_main = data[data['index'] < int(1e6)]
@@ -329,8 +347,7 @@ def parse_args():
         "--dataset", 
         type=str, 
         default='MMBench', 
-        help='The dataset to evaluate', 
-        choices=['MMBench', 'MMBench_CN', 'MMBench_DEV_EN', 'MMBench_DEV_CN', 'SEEDBench_IMG', 'CCBench', 'MMBench_TEST_CN', 'MMBench_TEST_EN'])
+        help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
     args = parser.parse_args()
