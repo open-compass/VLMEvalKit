@@ -15,8 +15,5 @@ from .mplug_owl2 import mPLUG_Owl2
 from .llava_xtuner import LLaVA_XTuner
 from .cogvlm import CogVlm
 from .sharedcaptioner import SharedCaptioner
-<<<<<<< HEAD
 from .emu import Emu
-=======
 from .monkey import Monkey
->>>>>>> 477da27a04ff8bc6849babfae43a446b7a977f29
