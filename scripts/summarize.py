@@ -83,7 +83,10 @@ def gen_table(models, datasets):
                 final[k].append(None)
     final = pd.DataFrame(final)
     dump(final, 'summ.csv')
-    print(tabulate(final, headers=['Model'] + keys))
+    if len(final) >= len(final.iloc[0].keys()):
+        print(tabulate(final))
+    else:
+        print(tabulate(final.T))
     
 if __name__ == '__main__':
     args = parse_args()
