@@ -189,7 +189,7 @@ def eval_sub_data(model, sub_data, answer_map):
     return dict(hit=1, log=log)
 
 def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=16):
-    prefetched = [prefetch_sub_data(g, answer_map) for g in data_groups]
+    prefetched = [prefetch_sub_data(g, answer_map, verbose=False) for g in data_groups]
     remain = []
     for dg, pf in zip(data_groups, prefetched):
         if pf:
@@ -201,6 +201,15 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
     keys = [x.iloc[0]['index'] % 1e6 for x in remain]
     if len(tups) == 0:
         return
+    
+    if model is None:
+        logger = get_logger('Evaluation')
+        logger.warning("Exact Matching mode, will not do GPT-based answer matching. ")
+        for k in keys:
+            result[k] = dict(hit=0, log="Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.")
+        dump(result, result_file)
+        return
+
     res = track_progress_rich(
         eval_sub_data,
         tups, 
@@ -295,20 +304,13 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
         data_groups.append(sub_data)
 
     if len(data_groups):
-        if model is not None:
-            eval_data_groups(
-                model=model, 
-                data_groups=data_groups, 
-                answer_map=answer_map,
-                nproc=nproc, 
-                result=result, 
-                result_file=result_file)
-        else:
-            logger.warning("Exact Matching mode, will not do GPT-based answer matching. ")
-            keys = [x.iloc[0]['index'] % 1e6 for x in data_groups]
-            for k in keys:
-                result[k] = dict(hit=0, log="Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.")
-            dump(result, result_file)
+        eval_data_groups(
+            model=model, 
+            data_groups=data_groups, 
+            answer_map=answer_map,
+            nproc=nproc, 
+            result=result, 
+            result_file=result_file)
         
     tmp_pth = f'/tmp/{timestr()}.xlsx'
     dump(data_main, tmp_pth)
