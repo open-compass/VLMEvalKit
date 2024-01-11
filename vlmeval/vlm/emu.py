@@ -53,7 +53,6 @@ class Emu:
             text=[query],
             tokenizer=self.tokenizer,
             image=images
-
         )
 
         with torch.no_grad():
