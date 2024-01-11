@@ -48,12 +48,9 @@ models = {
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'sharedcaptioner':partial(SharedCaptioner, model_path='Lin-Chen/ShareCaptioner'),
-<<<<<<< HEAD
     'emu2':partial(Emu, name='emu2', model_path_map=emu_model_path_map),
-    'emu_chat':partial(Emu, name='emu_chat', model_path_map=emu_model_path_map)
-=======
+    'emu_chat':partial(Emu, name='emu_chat', model_path_map=emu_model_path_map),
     'monkey':partial(Monkey, model_path='echo840/Monkey'),
->>>>>>> 477da27a04ff8bc6849babfae43a446b7a977f29
 }
 
 api_models = {
