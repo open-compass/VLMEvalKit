@@ -175,18 +175,21 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
 
         if INTERNAL:
             model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
-        else:
+        elif gpt_key_set():
             model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
+        else:
+            logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
 
-        lt = len(unknown)
-        lines = [unknown.iloc[i] for i in range(lt)]
-        tups = [(model, line) for line in lines]
-        indices = list(unknown['index'])
-
-        if len(tups):
-            res = track_progress_rich(YOrN_auxeval, tups, nproc=nproc, chunksize=nproc, keys=indices, save=tmp_file)
-            for k, v in zip(indices, res):
-                ans_map[k] = v
+        if model is not None:
+            lt = len(unknown)
+            lines = [unknown.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = list(unknown['index'])
+            if len(tups):
+                res = track_progress_rich(YOrN_auxeval, tups, nproc=nproc, chunksize=nproc, keys=indices, save=tmp_file)
+                for k, v in zip(indices, res):
+                    ans_map[k] = v
 
         data['extracted'] = [ans_map[x] for x in data['index']]
         dump(data, storage)
