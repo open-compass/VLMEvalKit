@@ -35,29 +35,10 @@ class Emu:
             low_cpu_mem_usage=True,
             trust_remote_code=True).to(device).eval()
         self.model = model
-        self.kwargs = {'max_length': 128}
-        
-        
-    def generate(self, image_path, prompt, dataset=None):
-        query = '[<IMG_PLH>]' + prompt
-        image = Image.open(image_path).convert('RGB')
-        
-        inputs = self.model.build_input_ids(
-            text=[query],
-            tokenizer=self.tokenizer,
-            image=[image]
-        )
-
-        with torch.no_grad():
-            outputs = self.model.generate(
-                input_ids=inputs["input_ids"],
-                attention_mask=inputs["attention_mask"],
-                image=inputs["image"].to(torch.bfloat16),
-                max_new_tokens=64,
-                length_penalty=-1)
-
-        output_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
-        return output_text[0]
+        kwargs_default = dict(max_new_tokens =64, length_penalty=-1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
     
     def interleave_generate(self, ti_list, dataset=None):
         query, images = '',[]
@@ -80,8 +61,12 @@ class Emu:
                 input_ids=inputs["input_ids"],
                 attention_mask=inputs["attention_mask"],
                 image=inputs["image"].to(torch.bfloat16),
-                max_new_tokens=64,
-                length_penalty=-1)
+                **self.kwargs)
 
         output_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
         return output_text[0]
+    
+    def generate(self, image_path, prompt, dataset=None):
+        tl_list = [image_path,prompt]
+        output = self.interleave_generate(tl_list, dataset)
+        return output
