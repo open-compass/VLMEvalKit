@@ -213,14 +213,11 @@ try:
 except ImportError:
     pass
 
-def build_options(option_list):
-    chars = string.ascii_uppercase
+def build_option_str(option_dict):
     s = 'There are several options: \n'
-    for c, opt in zip(chars, option_list):
-        if not pd.isna(opt):
-            s += f'{c}. {opt}\n'
-        else:
-            return s
+    for c, content in option_dict.items():
+        if not pd.isna(content):
+            s += f'{c}. {content}\n'
     return s
 
 def timestr(second=True, minute=False):
