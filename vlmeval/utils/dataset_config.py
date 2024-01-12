@@ -22,6 +22,7 @@ dataset_URLs = {
     'ScienceQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv",
     'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
     'HallusionBench': "https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv",
+    "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
 }
 
 dataset_md5_dict = {
@@ -45,7 +46,8 @@ dataset_md5_dict = {
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
-    'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c'
+    'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
+    "DocVQA_VAL": '3744f5df4aaf2781c85fe7677ae0a411'
 }
 
 img_root_map = {
@@ -69,7 +71,8 @@ img_root_map = {
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
     'ScienceQA_VAL': 'ScienceQA_VAL',
     'ScienceQA_TEST': 'ScienceQA_TEST',
-    'HallusionBench': 'Hallusion'
+    'HallusionBench': 'Hallusion',
+    'DocVQA_VAL': 'DocVQA'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
@@ -81,7 +84,7 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'COCO' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista'], dataset.lower()):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa'], dataset.lower()):
         return 'VQA'
     return None
 

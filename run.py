@@ -78,7 +78,7 @@ def main():
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
                     COCO_eval(result_file)
-                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA'], dataset_name):
+                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
                     VQAEval(result_file)
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
