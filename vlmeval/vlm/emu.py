@@ -5,6 +5,7 @@ import os.path as osp
 import os 
 from ..smp import *
 
+
 class Emu:
 
     def __init__(self, 
@@ -13,29 +14,49 @@ class Emu:
                      "emu2":"BAAI/Emu2",
                      "emu2_chat":"BAAI/Emu2_Chat"
                      }, 
+                 ckpt_path_map={
+                    "emu2":"BAAI/Emu2",
+                    "emu2_chat":"/mnt/petrelfs/qiaoyuxuan/.cache/huggingface/hub/models--BAAI--Emu2_Chat/snapshots/20ea30b04f8fee599cf97535e655c200df728501/"
+                     },
                  **kwargs):
         
         self.model_path_map = model_path_map
+        self.ckpt_path_map = ckpt_path_map
         assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
         if name in self.model_path_map:
             model_path = self.model_path_map[name]
         else:
             model_path = name
+            
+        assert name in self.ckpt_path_map
+        ckpt_path = self.ckpt_path_map[name]
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
+        assert osp.exists(ckpt_path)
         
         from transformers import AutoModelForCausalLM, AutoTokenizer
+        from accelerate import init_empty_weights, infer_auto_device_map, load_checkpoint_and_dispatch
+        
         tokenizer = AutoTokenizer.from_pretrained(model_path) # "BAAI/Emu2-Chat"
         self.tokenizer = tokenizer
-        self.device = torch.device("cuda") if torch.cuda.is_available() else "cpu"
-        device = self.device
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path, # "BAAI/Emu2-Chat"
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-            trust_remote_code=True).to(device).eval()
+        with init_empty_weights():
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path, # "BAAI/Emu2-Chat"
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True)  
+
+        device_map = infer_auto_device_map(model, max_memory={0:'38GiB',1:'38GiB',}, no_split_module_classes=['Block','LlamaDecoderLayer'])  
+        # input and output logits should be on same device
+        device_map["model.decoder.lm.lm_head"] = 0
+        
+        model = load_checkpoint_and_dispatch(
+                model, 
+                ckpt_path,
+                device_map=device_map).eval()
+        
         self.model = model
-        kwargs_default = dict(max_new_tokens =64, length_penalty=-1)
+        kwargs_default = dict(max_new_tokens= 64, length_penalty= -1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")

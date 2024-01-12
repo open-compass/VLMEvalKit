@@ -44,7 +44,7 @@ models = {
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'sharedcaptioner':partial(SharedCaptioner, model_path='Lin-Chen/ShareCaptioner'),
     'emu2':partial(Emu, name='emu2'),
-    'emu_chat':partial(Emu, name='emu2_chat'),
+    'emu2_chat':partial(Emu, name='emu2_chat'),
     'monkey':partial(Monkey, model_path='echo840/Monkey'),
 }
 
