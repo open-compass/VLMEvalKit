@@ -144,8 +144,9 @@ The evaluation results will be printed as logs, besides. **Result Files** will a
 To implement a custom benchmark or VLM in **VLMEvalKit**, please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
 
 Example PRs to follow:
+
 - [**New Model**] Support Monkey ([#45](https://github.com/open-compass/VLMEvalKit/pull/45/files))
-- [**New Benchmark**] Support AI2D ()
+- [**New Benchmark**] Support AI2D ([#51](https://github.com/open-compass/VLMEvalKit/pull/51/files))
 
 ## 🎯 The Goal of VLMEvalKit
 
