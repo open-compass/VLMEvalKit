@@ -23,6 +23,7 @@ dataset_URLs = {
     'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
     'HallusionBench': "https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv",
     "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
+    'AI2D': "https://opencompass.openxlab.space/utils/VLMEval/AI2D.tsv"
 }
 
 dataset_md5_dict = {
@@ -47,7 +48,8 @@ dataset_md5_dict = {
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
-    "DocVQA_VAL": '3744f5df4aaf2781c85fe7677ae0a411'
+    "DocVQA_VAL": '3744f5df4aaf2781c85fe7677ae0a411',
+    "AI2D": "53db8397adbe73e9cc0b4861227004d4"
 }
 
 img_root_map = {
@@ -72,13 +74,14 @@ img_root_map = {
     'ScienceQA_VAL': 'ScienceQA_VAL',
     'ScienceQA_TEST': 'ScienceQA_TEST',
     'HallusionBench': 'Hallusion',
-    'DocVQA_VAL': 'DocVQA'
+    'DocVQA_VAL': 'DocVQA',
+    'AI2D': 'AI2D'
 }
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa'], dataset.lower()):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset.lower()):
         return 'multi-choice'
     elif 'MME' in dataset:
         return 'Y/N'

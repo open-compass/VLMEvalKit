@@ -14,12 +14,12 @@
 
 ## 🆕 News
 
+- **[2024-01-14]** We have supported [**AI2D**](https://allenai.org/data/diagrams) and provided the [**script**](/scripts/AI2D_preproc.ipynb) for data pre-processing. 🔥🔥🔥
 - **[2024-01-13]** We have supported [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu) and [**DocVQA**](https://www.docvqa.org). 🔥🔥🔥
 - **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
 - **[2024-01-09]** The performance numbers on our official multi-modal leaderboards can be downloaded in json files: [**MMBench Leaderboard**](http://opencompass.openxlab.space/utils/MMBench.json), [**OpenCompass Multi-Modal Leaderboard**](http://opencompass.openxlab.space/utils/MMLB.json). We also add a [notebook](scripts/visualize.ipynb) to visualize these results.🔥🔥🔥
 - **[2024-01-03]** We support **ScienceQA (Img)** (Dataset Name: ScienceQA_[VAL/TEST], [**eval results**](results/ScienceQA.md)), **HallusionBench** (Dataset Name: HallusionBench, [**eval results**](/results/HallusionBench.md)), and **MathVista** (Dataset Name: MathVista_MINI, [**eval results**](/results/MathVista.md)).  🔥🔥🔥
 - **[2023-12-31]** We release the [**preliminary results**](/results/VQA.md) of three VQA datasets (**OCRVQA**, **TextVQA**, **ChatVQA**). The results are obtained by exact matching and may not faithfully reflect the real performance of VLMs on the corresponding task.
-- **[2023-12-29]** We release the evaluation results of [**COCO Caption**](results/Caption.md). 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -46,6 +46,7 @@
 | [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**DocVQA**](https://www.docvqa.org)                         | DocVQA_VAL                                             | ✅         | ✅          |                                                              |
+| [**AI2D**](https://allenai.org/data/diagrams)                | AI2D                                                   | ✅         | ✅          |                                                              |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
 
 **Supported API Models**
@@ -109,7 +110,6 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 **Arguments**
 
 - `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`). 
-  - including: `MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench, Core_MM, MMVet`
 - `--model (list[str])`: Set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`). 
 - `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
 - `--nproc (int, default to 4)`: The number of threads for OpenAI API calling.
@@ -141,7 +141,12 @@ The evaluation results will be printed as logs, besides. **Result Files** will a
 
 ## 🛠️ Custom Benchmark or VLM
 
-To implement a custom benchmark or VLM in VLMEvalKit, please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
+To implement a custom benchmark or VLM in **VLMEvalKit**, please refer to [Custom_Benchmark_and_Model](/Custom_Benchmark_and_Model.md).
+
+Example PRs to follow:
+
+- [**New Model**] Support Monkey ([#45](https://github.com/open-compass/VLMEvalKit/pull/45/files))
+- [**New Benchmark**] Support AI2D ([#51](https://github.com/open-compass/VLMEvalKit/pull/51/files))
 
 ## 🎯 The Goal of VLMEvalKit
 
