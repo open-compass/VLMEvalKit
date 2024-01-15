@@ -60,7 +60,7 @@ def main():
             if rank == 0:
                 time.sleep(3)
                 res = None
-                if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA'], dataset_name):
+                if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA', 'AI2D'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
@@ -70,7 +70,7 @@ def main():
                     dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
                 
             if rank == 0 and args.mode == 'all':
-                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA'], dataset_name):
+                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D'], dataset_name):
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['MME', 'Hallusion'], dataset_name):
                     YOrN_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose, dataset=dataset_name)
@@ -78,7 +78,7 @@ def main():
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
                     COCO_eval(result_file)
-                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA'], dataset_name):
+                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
                     VQAEval(result_file)
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)

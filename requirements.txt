@@ -17,7 +17,7 @@ google-generativeai
 einops
 sentencepiece
 xformers
-termcolor
+sty
 xtuner
 SwissArmyTransformer 
 huggingface_hub
