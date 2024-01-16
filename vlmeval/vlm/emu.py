@@ -30,6 +30,9 @@ class Emu:
         
         local_rank,world_size = get_rank_and_world_size()
         
+        device_num = torch.cuda.device_count()
+        assert world_size*2 == device_num, 'The number of devices does not match the world size'
+        
         device_1 = local_rank
         device_2 = local_rank+world_size
         torch.cuda.set_device(device_1)
