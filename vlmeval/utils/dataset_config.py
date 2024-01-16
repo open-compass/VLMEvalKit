@@ -23,7 +23,8 @@ dataset_URLs = {
     'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
     'HallusionBench': "https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv",
     "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
-    'AI2D': "https://opencompass.openxlab.space/utils/VLMEval/AI2D.tsv"
+    'AI2D': "https://opencompass.openxlab.space/utils/VLMEval/AI2D.tsv",
+    "LLaVABench": "https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv",
 }
 
 dataset_md5_dict = {
@@ -49,21 +50,17 @@ dataset_md5_dict = {
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
     "DocVQA_VAL": '3744f5df4aaf2781c85fe7677ae0a411',
-    "AI2D": "53db8397adbe73e9cc0b4861227004d4"
+    "AI2D": "53db8397adbe73e9cc0b4861227004d4",
+    "LLaVABench": "d382a093f749a697820d3dadd61c8428"
 }
 
-img_root_map = {
+img_root_map = {k: k for k in dataset_URLs}
+img_root_map.update({
     'MMBench_DEV_EN': "MMBench", 
     'MMBench_TEST_EN': "MMBench", 
     'MMBench_DEV_CN': "MMBench", 
     'MMBench_TEST_CN': "MMBench", 
-    "MMBench": "MMBench",  # Link Invalid, Internal Only
     "MMBench_CN": "MMBench",    # Link Invalid, Internal Only
-    'CCBench': "CCBench", 
-    'MME': "MME", 
-    "CORE_MM": "CORE_MM", 
-    'SEEDBench_IMG': "SEEDBench_IMG",
-    'MMVet':'MMVet',
     'COCO_VAL':'COCO',
     'OCRVQA_TEST': 'OCRVQA',
     'OCRVQA_TESTCORE': 'OCRVQA',
@@ -71,12 +68,9 @@ img_root_map = {
     'MMMU_DEV_VAL': 'MMMU',
     'MathVista_MINI': 'MathVista',
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
-    'ScienceQA_VAL': 'ScienceQA_VAL',
-    'ScienceQA_TEST': 'ScienceQA_TEST',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
-    'AI2D': 'AI2D'
-}
+})
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
@@ -89,7 +83,8 @@ def DATASET_TYPE(dataset):
         return 'Caption'
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa'], dataset.lower()):
         return 'VQA'
-    return None
+    else:
+        return 'QA'
 
 def abbr2full(s):
     datasets = [x for x in img_root_map]
