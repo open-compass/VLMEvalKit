@@ -83,18 +83,21 @@ class LLaVA_XTuner(CustomPrompt):
             adapter_path = osp.join(llava_path, 'llm_adapter')
             llm = PeftModel.from_pretrained(llm,
                                             adapter_path,
+                                            trust_remote_code=True,
                                             device_map='cpu')
             print(f'Load LLM adapter from {llava_path}')
         if 'visual_encoder_adapter' in os.listdir(llava_path):
             adapter_path = osp.join(llava_path, 'visual_encoder_adapter')
             visual_encoder = PeftModel.from_pretrained(visual_encoder,
                                                        adapter_path,
+                                                       trust_remote_code=True,
                                                        device_map='cpu')
             print(f'Load visual_encoder adapter from {llava_path}')
 
         # build projector
         projector_path = osp.join(llava_path, 'projector')
         projector = AutoModel.from_pretrained(projector_path,
+                                              trust_remote_code=True,
                                               torch_dtype=torch_dtype,
                                               device_map='cpu')
         print(f'Load projector from {llava_path}')
