@@ -46,6 +46,7 @@ models = {
     'emu2':partial(Emu, name='emu2'),
     'emu2_chat':partial(Emu, name='emu2_chat'),
     'monkey':partial(Monkey, model_path='echo840/Monkey'),
+    'monkey-chat':partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
 }
 
 api_models = {
