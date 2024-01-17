@@ -34,7 +34,13 @@ class LLaVA(CustomPrompt):
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
         
-        model_name = 'llava-v1.5-7b' if model_path == 'Lin-Chen/ShareGPT4V-7B' else get_model_name_from_path(model_path)
+        if model_path == 'Lin-Chen/ShareGPT4V-7B':
+            model_name = 'llava-v1.5-7b'
+        elif model_path == 'Lin-Chen/ShareGPT4V-13B':
+            model_name = 'llava-v1.5-13b'
+        else:
+            model_name = get_model_name_from_path(model_path)
+
         self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
             model_path=model_path, 
             model_base=None, 

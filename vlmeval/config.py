@@ -30,6 +30,7 @@ models = {
     'idefics_80b_instruct_fs': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map, with_context=True),
     'llava_v1.5_7b': partial(LLaVA, name='llava_v1.5_7b', model_path_map=llava_model_path_map),
     'sharegpt4v_7b': partial(LLaVA, name='Lin-Chen/ShareGPT4V-7B', model_path_map={}),
+    'sharegpt4v_13b': partial(LLaVA, name='Lin-Chen/ShareGPT4V-13B', model_path_map={}),
     'llava_v1.5_13b': partial(LLaVA, name='llava_v1.5_13b', model_path_map=llava_model_path_map),
     'llava_v1_7b': partial(LLaVA, name='llava_v1_7b', model_path_map=llava_model_path_map),
     'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
