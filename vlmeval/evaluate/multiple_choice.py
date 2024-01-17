@@ -230,7 +230,7 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     if model == 'exact_matching':
         model = None
     else:
-        model_name = 'gpt-3.5-turbo-0613'
+        model_name = 'chatgpt-0613'
         
         if INTERNAL or gpt_key_set():
             model = build_judge(model_name, verbose=verbose, retry=10)

@@ -170,8 +170,7 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
         data['extracted'] = [ans_map[x] for x in data['index']]
         unknown = data[data['extracted'] == 'Unknown']
     
-        assert model in 'chatgpt-0613'
-        model_name = 'gpt-3.5-turbo-0613'
+        model_name = 'chatgpt-0613'
 
         if INTERNAL or gpt_key_set():
             model = build_judge(model_name, verbose=verbose, retry=10)
