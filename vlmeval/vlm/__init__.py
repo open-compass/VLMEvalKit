@@ -16,4 +16,4 @@ from .llava_xtuner import LLaVA_XTuner
 from .cogvlm import CogVlm
 from .sharedcaptioner import SharedCaptioner
 from .emu import Emu
-from .monkey import Monkey
+from .monkey import Monkey, MonkeyChat

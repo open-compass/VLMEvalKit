@@ -1,7 +1,7 @@
 import os.path as osp
 import pandas as pd
 from tqdm import tqdm
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.evaluate.misc import build_judge
 from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
 from vlmeval.smp import *
 import numpy as np
@@ -231,10 +231,9 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
         model = None
     else:
         model_name = 'gpt-3.5-turbo-0613'
-        if INTERNAL:
-            model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
-        elif gpt_key_set():
-            model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
+        
+        if INTERNAL or gpt_key_set():
+            model = build_judge(model_name, verbose=verbose, retry=10)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
