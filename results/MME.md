@@ -18,13 +18,13 @@ VLMs are sorted by the descending order of Total score.
 | mPLUG-Owl2                    | 1781 / 1786 | 1435 / 1436  | 346 / 350   |
 | LLaVA-v1.5-7B                 | 1775        | 1490         | 285         |
 | GPT-4v (detail: low)          | 1737 / 1771 | 1300 / 1334  | 437         |
-| LLaVA-v1.5-13B (LoRA, XTuner) | 1766        | 1475         | 291         |
+| LLaVA-v1.5-13B (QLoRA, XTuner) | 1766        | 1475         | 291         |
 | CogVLM-17B-Chat               | 1727 / 1737 | 1437 / 1438  | 290 / 299   |
-| LLaVA-v1.5-7B (LoRA, XTuner)  | 1716        | 1434         | 282         |
+| LLaVA-v1.5-7B (QLoRA, XTuner)  | 1716        | 1434         | 282         |
 | TransCore-M                   | 1681 / 1701 | 1427 / 1429  | 254 / 272   |
 | instructblip_13b              | 1624 / 1646 | 1381 / 1383  | 243 / 263   |
 | SharedCaptioner               | 1592 / 1643 | 1247 / 1295  | 345 / 348   |
-| LLaVA-InternLM-7B (LoRA)      | 1637        | 1393         | 244         |
+| LLaVA-InternLM-7B (QLoRA)      | 1637        | 1393         | 244         |
 | IDEFICS-80B-Instruct          | 1507 / 1519 | 1276 / 1285  | 231 / 234   |
 | InstructBLIP-7B               | 1313 / 1391 | 1084 / 1137  | 229 / 254   |
 | IDEFICS-9B-Instruct           | 1177        | 942          | 235         |
