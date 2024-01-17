@@ -1,9 +1,8 @@
 import argparse
-import json
-import os
 import numpy as np
+import pandas as pd
 from vlmeval.evaluate.misc import build_judge
-from vlmeval.smp import get_logger, load, dump, d2df
+from vlmeval.smp import get_logger, load, dump, defaultdict
 from vlmeval.utils import track_progress_rich
 
 rule_dict = {
@@ -53,18 +52,16 @@ def LLaVABench_atomeval(model, prompt):
     
 def LLaVABench_score(data):
     cates = ['overall'] + list(set(data['category']))
-    ret = {}
-    for mode in ['score', 'gpt4', 'ratio']:
-        for c in cates:
-            sub = data[data['category'] == c] if c != 'overall' else data
-            if mode == 'score':
-                ret[f'{c}_{mode}'] = np.mean(sub['score']) * 10
-            elif mode == 'gpt4':
-                ret[f'{c}_{mode}'] = np.mean(sub['gpt4_score']) * 10
-            elif mode == 'ratio':
-                ret[f'{c}_{mode}'] = np.mean(sub['score']) / np.mean(sub['gpt4_score']) * 100
-    return ret
-
+    ret = defaultdict(list)
+    
+        
+    for c in cates:
+        ret['split'].append(c)
+        sub = data[data['category'] == c] if c != 'overall' else data
+        ret['Relative Score (main)'].append(np.mean(sub['score']) / np.mean(sub['gpt4_score']) * 100)
+        ret['VLM Score'].append(np.mean(sub['score']) * 10)
+        ret['GPT4 Score'].append(np.mean(sub['gpt4_score']) * 10)
+    return pd.DataFrame(ret)
 
 def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
     data = load(eval_file)
@@ -82,8 +79,8 @@ def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
     score_file = eval_file.replace(suffix, '_score.csv')
     dump(data, record_file)
     ret = LLaVABench_score(data)
-    ret = d2df(ret)
     ret = ret.round(1)
+    print(ret)
     dump(ret, score_file)
     return ret
     
