@@ -47,11 +47,11 @@
 | VisualGLM                     |   47.2 |   11.3 |   16.5 |
 | IDEFICS-9B-Instruct           |   50.1 |   16.2 |   15.6 |
 | ShareGPT4V-7B                 |   48.2 |   21.7 |   15.6 |
-| LLaVA-InternLM-7B (LoRA)      |   49.1 |   22.3 |   15.4 |
+| LLaVA-InternLM-7B (QLoRA)      |   49.1 |   22.3 |   15.4 |
 | InstructBLIP-13B              |   47.9 |   17.3 |   15.2 |
 | LLaVA-v1.5-7B                 |   48.3 |   19.9 |   14.1 |
-| LLaVA-v1.5-13B (LoRA, XTuner) |   46.9 |   17.6 |   14.1 |
-| LLaVA-v1.5-7B (LoRA, XTuner)  |   46.2 |   16.2 |   13.2 |
+| LLaVA-v1.5-13B (QLoRA, XTuner) |   46.9 |   17.6 |   14.1 |
+| LLaVA-v1.5-7B (QLoRA, XTuner)  |   46.2 |   16.2 |   13.2 |
 | LLaVA-v1.5-13B                |   46.7 |   17.3 |   13   |
 | IDEFICS-80B-Instruct          |   46.1 |   13.3 |   11   |
 | TransCore-M                   |   44.7 |   16.5 |   10.1 |

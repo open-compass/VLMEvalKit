@@ -15,13 +15,13 @@
 | GeminiProVision               |                  80.1 |                   81.4 |
 | TransCore-M                   |                  68.9 |                   72.1 |
 | LLaVA-v1.5-13B                |                  69.2 |                   72   |
-| LLaVA-v1.5-13B (LoRA, XTuner) |                  68.9 |                   70.3 |
+| LLaVA-v1.5-13B (QLoRA, XTuner) |                  68.9 |                   70.3 |
 | mPLUG-Owl2                    |                  69.5 |                   69.5 |
 | ShareGPT4V-7B                 |                  68.1 |                   69.4 |
 | LLaVA-v1.5-7B                 |                  66.6 |                   68.9 |
 | Qwen-VL-Chat                  |                  65.5 |                   68.8 |
-| LLaVA-v1.5-7B (LoRA, XTuner)  |                  68.8 |                   68.7 |
-| LLaVA-InternLM-7B (LoRA)      |                  65.3 |                   68.4 |
+| LLaVA-v1.5-7B (QLoRA, XTuner)  |                  68.8 |                   68.7 |
+| LLaVA-InternLM-7B (QLoRA)      |                  65.3 |                   68.4 |
 | CogVLM-17B-Chat               |                  65.6 |                   66.2 |
 | PandaGPT-13B                  |                  60.9 |                   63.2 |
 | IDEFICS-80B-Instruct          |                  59.9 |                   61.8 |

@@ -17,11 +17,11 @@
 | ShareGPT4V-7B                 |            100 |      69.25 |         69.25 |       69.25 | 69.7 (Gen)                                                   |
 | CogVLM-17B-Chat               |            99.93 |        68.76 |           68.71 |         68.76 |
 | LLaVA-v1.5-13B                |            100 |      68.11 |         68.11 |       68.11 | 68.2 (Gen)                                                   |
-| LLaVA-v1.5-13B (LoRA, XTuner) |            100 |      67.95 |         67.95 |       67.95 | N/A                                                          |
+| LLaVA-v1.5-13B (QLoRA, XTuner) |            100 |      67.95 |         67.95 |       67.95 | N/A                                                          |
 | TransCore-M                   |            100 |      66.77 |         66.77 |       66.77 | N/A                                                          |
-| LLaVA-v1.5-7B (LoRA, XTuner)  |            100 |      66.39 |         66.39 |       66.39 | N/A                                                          |
+| LLaVA-v1.5-7B (QLoRA, XTuner)  |            100 |      66.39 |         66.39 |       66.39 | N/A                                                          |
 | InternLM-XComposer-VL         |            100 |      66.07 |         66.07 |       66.07 | 66.9 (PPL)                                                   |
-| LLaVA-InternLM-7B (LoRA)      |            100 |      65.75 |         65.75 |       65.75 | N/A                                                          |
+| LLaVA-InternLM-7B (QLoRA)      |            100 |      65.75 |         65.75 |       65.75 | N/A                                                          |
 | LLaVA-v1.5-7B                 |            100 |      65.59 |         65.59 |       65.59 | N/A                                                          |
 | Qwen-VL-Chat                  |          96.21 |      66.61 |         64.08 |       64.83 | 65.4 (PPL)                                                   |
 | mPLUG-Owl2                    |            100 |      64.52 |         64.52 |       64.52 | 64.1 (Not Given)                                             |
