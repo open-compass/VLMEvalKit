@@ -1,4 +1,4 @@
-from vlmeval.evaluate import build_judge
+from vlmeval.evaluate.misc import build_judge
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 

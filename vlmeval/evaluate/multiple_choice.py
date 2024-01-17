@@ -1,7 +1,7 @@
 import os.path as osp
 import pandas as pd
 from tqdm import tqdm
-from vlmeval.evaluate import build_judge
+from vlmeval.evaluate.misc import build_judge
 from vlmeval.utils import can_infer, track_progress_rich, TSVDataset
 from vlmeval.smp import *
 import numpy as np

@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import numpy as np
-from vlmeval.evaluate import build_judge
+from vlmeval.evaluate.misc import build_judge
 from vlmeval.smp import get_logger, load, dump, d2df
 from vlmeval.utils import track_progress_rich
 
