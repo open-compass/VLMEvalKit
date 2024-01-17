@@ -49,7 +49,7 @@ dataset_md5_dict = {
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
-    "DocVQA_VAL": '3744f5df4aaf2781c85fe7677ae0a411',
+    "DocVQA_VAL": 'c911fdc5f4974513c112cc83a25c99d9',
     "AI2D": "53db8397adbe73e9cc0b4861227004d4",
     "LLaVABench": "d382a093f749a697820d3dadd61c8428"
 }
