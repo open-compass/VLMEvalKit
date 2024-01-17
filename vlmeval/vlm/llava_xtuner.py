@@ -1,6 +1,7 @@
-import os, sys
+import os
 import os.path as osp
 import string
+import sys
 import warnings
 
 import pandas as pd
@@ -9,7 +10,7 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           CLIPImageProcessor, CLIPVisionModel,
-                          GenerationConfig)
+                          GenerationConfig, StoppingCriteriaList)
 
 from ..smp import cn_string, get_cache_path
 from ..utils import DATASET_TYPE, CustomPrompt
@@ -25,11 +26,11 @@ class LLaVA_XTuner(CustomPrompt):
                  visual_encoder_path='openai/clip-vit-large-patch14-336',
                  visual_select_layer=-2,
                  prompt_template=None,
+                 stop_words=[],
                  torch_dtype=torch.float16):
         try:
             from peft import PeftModel
-            from xtuner.tools.utils import get_chat_utils
-            from xtuner.utils import PROMPT_TEMPLATE
+            from xtuner.utils import PROMPT_TEMPLATE, StopWordStoppingCriteria
         except Exception:
             warnings.warn(
                 'Please install xtuner with `pip install -U xtuner` before '
@@ -82,18 +83,21 @@ class LLaVA_XTuner(CustomPrompt):
             adapter_path = osp.join(llava_path, 'llm_adapter')
             llm = PeftModel.from_pretrained(llm,
                                             adapter_path,
+                                            trust_remote_code=True,
                                             device_map='cpu')
             print(f'Load LLM adapter from {llava_path}')
         if 'visual_encoder_adapter' in os.listdir(llava_path):
             adapter_path = osp.join(llava_path, 'visual_encoder_adapter')
             visual_encoder = PeftModel.from_pretrained(visual_encoder,
                                                        adapter_path,
+                                                       trust_remote_code=True,
                                                        device_map='cpu')
             print(f'Load visual_encoder adapter from {llava_path}')
 
         # build projector
         projector_path = osp.join(llava_path, 'projector')
         projector = AutoModel.from_pretrained(projector_path,
+                                              trust_remote_code=True,
                                               torch_dtype=torch_dtype,
                                               device_map='cpu')
         print(f'Load projector from {llava_path}')
@@ -110,10 +114,14 @@ class LLaVA_XTuner(CustomPrompt):
         self.visual_select_layer = visual_select_layer
         if prompt_template is not None:
             self.prompt_template = PROMPT_TEMPLATE[prompt_template]
+            stop_words += self.prompt_template.get('STOP_WORDS', [])
         else:
             self.prompt_template = None
 
-        _, self.stop_criteria = get_chat_utils(self.llm)
+        self.stop_criteria = StoppingCriteriaList()
+        for word in stop_words:
+            self.stop_criteria.append(
+                StopWordStoppingCriteria(self.tokenizer, word))
 
     def build_gen_config(self, dataset):
         gen_kwargs = dict(max_new_tokens=1024,
