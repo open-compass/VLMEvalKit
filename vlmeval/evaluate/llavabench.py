@@ -66,9 +66,9 @@ def LLaVABench_score(data):
     return ret
 
 
-def LLaVABench_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
+def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
     data = load(eval_file)
-    lines = [data.iloc[i] for i in range(len(lines))]
+    lines = [data.iloc[i] for i in range(len(data))]
     model = build_judge(
         model, temperature=0.2, retry=10, verbose=verbose, 
         system_prompt='You are a helpful and precise assistant for checking the quality of the answer.')
@@ -91,7 +91,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="LLaVABench Evaluation. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
     parser.add_argument(
-        "--model", type=str, help="The LLM (GPT) used for inference. ", default="gpt-4-turbo", 
+        "--model", type=str, help="The LLM (GPT) used for inference. ", default="gpt-4-0314", 
         choices=['gpt-4-0613', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0613', 'gpt-4-0314'])
     parser.add_argument("--nproc", type=int, default=4)
     parser.add_argument("--verbose", action='store_true')
