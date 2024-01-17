@@ -83,7 +83,7 @@ def main():
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['LLaVABench'], dataset_name):
-                    LLaVABench_eval(result_file, model='gpt-4-0314', nproc=args.nproc, verbose=args.verbose)
+                    LLaVABench_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             
