@@ -20,6 +20,18 @@ N = len(dataset)
 assert N == len(suffix)
 models = list(supported_VLM)
 
+def missing(m, d, suf):
+    score_file = f'{m}/{m}_{d}_{suf}'
+    if osp.exists(score_file):
+        return True
+    if d == 'MMBench':
+        s1, s2 = f'{m}/{m}_MMBench_DEV_EN_{suf}', f'{m}/{m}_MMBench_TEST_EN_{suf}'
+        return osp.exists(s1) and osp.exists(s2)
+    elif d == 'MMBench_CN':
+        s1, s2 = f'{m}/{m}_MMBench_DEV_CN_{suf}', f'{m}/{m}_MMBench_TEST_CN_{suf}'
+        return osp.exists(s1) and osp.exists(s2)
+    return False
+
 for f in models:
     if not osp.exists(f):
         logger.info(f'{f} not evaluated. ')
@@ -28,7 +40,5 @@ for f in models:
     for i in range(N):
         D = dataset[i]
         suff = suffix[i]
-        pred_file = f'{f}/{f}_{D}.xlsx'
-        score_file = f'{f}/{f}_{D}_{suff}'
-        if not osp.exists(score_file):
+        if missing(f, D, suff):
             logger.info(colored(f'Model {f} x Dataset {D}: Not Found. ', '#FF0000'))
