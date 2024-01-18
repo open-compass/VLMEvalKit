@@ -53,7 +53,7 @@ class LLaVA(CustomPrompt):
             if 'ShareGPT4V' in model_path:
                 import llava
                 warnings.warn(
-                    f'Please manually remove the encoder type check in {llava.__path__}/model/multimodal_encoder/builder.py '
+                    f'Please manually remove the encoder type check in {llava.__path__[0]}/model/multimodal_encoder/builder.py '
                     'Line 8 to use the ShareGPT4V model. ')
             else:
                 warnings.warn('Unknown error when loading LLaVA model.')
