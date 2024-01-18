@@ -65,6 +65,7 @@ def LLaVABench_score(data):
     return pd.DataFrame(ret)
 
 def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
+    suffix = '.' + eval_file.split('.')[-1]        
     record_file = eval_file.replace(suffix, '_openai_result' + suffix)
     score_file = eval_file.replace(suffix, '_score.csv')
 
@@ -79,7 +80,6 @@ def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
         scores = track_progress_rich(LLaVABench_atomeval, tups, nproc=nproc, chunksize=nproc)
         data['gpt4_score'] = [x[0] for x in scores]
         data['score'] = [x[1] for x in scores]
-        suffix = '.' + eval_file.split('.')[-1]        
         dump(data, record_file)
     
     ret = LLaVABench_score(data)
