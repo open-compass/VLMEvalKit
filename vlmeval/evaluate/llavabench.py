@@ -82,8 +82,8 @@ def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
         data['score'] = [x[1] for x in scores]
         dump(data, record_file)
     
-    ret = LLaVABench_score(data)
-    ret = ret.round(1)
+    data = load(record_file)
+    ret = LLaVABench_score(data).round(1)
     print(ret)
     dump(ret, score_file)
     return ret
