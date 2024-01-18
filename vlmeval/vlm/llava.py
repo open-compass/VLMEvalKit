@@ -41,13 +41,24 @@ class LLaVA(CustomPrompt):
         else:
             model_name = get_model_name_from_path(model_path)
 
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-            model_path=model_path, 
-            model_base=None, 
-            model_name=model_name, 
-            device='cpu', 
-            device_map='cpu'
-        )
+        try:
+            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+                model_path=model_path, 
+                model_base=None, 
+                model_name=model_name, 
+                device='cpu', 
+                device_map='cpu'
+            )
+        except:
+            if 'ShareGPT4V' in model_path:
+                import llava
+                warnings.warn(
+                    f'Please manually remove the encoder type check in {llava.__path__}/model/multimodal_encoder/builder.py '
+                    'Line 8 to use the ShareGPT4V model. ')
+            else:
+                warnings.warn('Unknown error when loading LLaVA model.')
+            exit(-1)
+        
         self.model = self.model.cuda()
         self.conv_mode =  'llava_v1'
 
