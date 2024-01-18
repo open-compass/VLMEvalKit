@@ -63,6 +63,8 @@ class QwenVLWrapper(BaseAPI):
         gen_config.update(self.kwargs)
         try:
             response = MultiModalConversation.call(model=model, messages=messages)
+            if self.verbose:
+                print(response.text)            
             answer = response.output.choices[0]['message']['content'][0]['text']
             return 0, answer, 'Succeeded! '
         except Exception as err:
