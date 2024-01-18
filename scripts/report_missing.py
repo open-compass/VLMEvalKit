@@ -41,4 +41,4 @@ for f in models:
         D = dataset[i]
         suff = suffix[i]
         if missing(f, D, suff):
-            logger.info(colored(f'Model {f} x Dataset {D}: Not Found. ', '#FF0000'))
+            logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', '#FF0000'))

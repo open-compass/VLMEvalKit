@@ -1,9 +1,7 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from dashscope import MultiModalConversation
 import dashscope
-
-headers = 'Content-Type: application/json'
+from dashscope import MultiModalConversation
 
 class QwenVLWrapper(BaseAPI):
 
