@@ -20,7 +20,7 @@ N = len(dataset)
 assert N == len(suffix)
 models = list(supported_VLM)
 
-def missing(m, d, suf):
+def completed(m, d, suf):
     score_file = f'{m}/{m}_{d}_{suf}'
     if osp.exists(score_file):
         return True
@@ -40,5 +40,5 @@ for f in models:
     for i in range(N):
         D = dataset[i]
         suff = suffix[i]
-        if missing(f, D, suff):
+        if not completed(f, D, suff):
             logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', '#FF0000'))
