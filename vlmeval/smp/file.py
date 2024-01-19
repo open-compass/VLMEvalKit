@@ -63,6 +63,7 @@ def load(f):
 
 def download_file(url, filename=None):
     import urllib.request
+    from tqdm import tqdm
 
     class DownloadProgressBar(tqdm):
         def update_to(self, b=1, bsize=1, tsize=None):
