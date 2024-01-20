@@ -29,31 +29,36 @@
 > Models are sorted by the **descending order of qAcc.** 
 
 
-| Model                         |   aAcc |   fAcc |   qAcc |
-|:------------------------------|-------:|-------:|-------:|
-| GPT-4v (detail: low)          |   65.8 |   38.4 |   35.2 |
-| GeminiProVision               |   63.9 |   37.3 |   34.3 |
-| Qwen-VL-Chat                  |   56.4 |   27.7 |   26.4 |
-| MiniGPT-4-v1-7B               |   52.4 |   17.3 |   25.9 |
-| CogVLM-17B-Chat               |   55.1 |   26.3 |   24.8 |
-| InternLM-XComposer-VL         |   57   |   26.3 |   24.6 |
-| MiniGPT-4-v1-13B              |   51.3 |   16.2 |   24.6 |
-| SharedCaptioner               |   55.6 |   22.8 |   24.2 |
-| MiniGPT-4-v2                  |   52.6 |   16.5 |   21.1 |
-| InstructBLIP-7B               |   53.6 |   20.2 |   19.8 |
-| Qwen-VL                       |   57.6 |   12.4 |   19.6 |
-| OpenFlamingo v2               |   52.7 |   17.6 |   18   |
-| mPLUG-Owl2                    |   48.9 |   22.5 |   16.7 |
-| VisualGLM                     |   47.2 |   11.3 |   16.5 |
-| IDEFICS-9B-Instruct           |   50.1 |   16.2 |   15.6 |
-| ShareGPT4V-7B                 |   48.2 |   21.7 |   15.6 |
-| LLaVA-InternLM-7B (QLoRA)      |   49.1 |   22.3 |   15.4 |
-| InstructBLIP-13B              |   47.9 |   17.3 |   15.2 |
-| LLaVA-v1.5-7B                 |   48.3 |   19.9 |   14.1 |
-| LLaVA-v1.5-13B (QLoRA, XTuner) |   46.9 |   17.6 |   14.1 |
-| LLaVA-v1.5-7B (QLoRA, XTuner)  |   46.2 |   16.2 |   13.2 |
-| LLaVA-v1.5-13B                |   46.7 |   17.3 |   13   |
-| IDEFICS-80B-Instruct          |   46.1 |   13.3 |   11   |
-| TransCore-M                   |   44.7 |   16.5 |   10.1 |
-| LLaVA-v1-7B                   |   44.1 |   13.6 |    9.5 |
-| PandaGPT-13B                  |   43.1 |    9.2 |    7.7 |
+| Model                       |   aAcc |   fAcc |   qAcc |
+|:----------------------------|-------:|-------:|-------:|
+| GPT-4v (detail: low)        |   65.8 |   38.4 |   35.2 |
+| GeminiProVision             |   63.9 |   37.3 |   34.3 |
+| Monkey-Chat                 |   58.4 |   30.6 |   29   |
+| Qwen-VL-Chat                |   56.4 |   27.7 |   26.4 |
+| MiniGPT-4-v1-7B             |   52.4 |   17.3 |   25.9 |
+| Monkey                      |   55.1 |   24   |   25.5 |
+| CogVLM-17B-Chat             |   55.1 |   26.3 |   24.8 |
+| MiniGPT-4-v1-13B            |   51.3 |   16.2 |   24.6 |
+| InternLM-XComposer-VL       |   57   |   26.3 |   24.6 |
+| SharedCaptioner             |   55.6 |   22.8 |   24.2 |
+| MiniGPT-4-v2                |   52.6 |   16.5 |   21.1 |
+| InstructBLIP-7B             |   53.6 |   20.2 |   19.8 |
+| Qwen-VL                     |   57.6 |   12.4 |   19.6 |
+| OpenFlamingo v2             |   52.7 |   17.6 |   18   |
+| EMU2-Chat                   |   49.4 |   22.3 |   16.9 |
+| mPLUG-Owl2                  |   48.9 |   22.5 |   16.7 |
+| ShareGPT4V-13B              |   49.8 |   21.7 |   16.7 |
+| VisualGLM                   |   47.2 |   11.3 |   16.5 |
+| TransCore-M                 |   49.7 |   21.4 |   15.8 |
+| IDEFICS-9B-Instruct         |   50.1 |   16.2 |   15.6 |
+| ShareGPT4V-7B               |   48.2 |   21.7 |   15.6 |
+| LLaVA-InternLM-7B (QLoRA)   |   49.1 |   22.3 |   15.4 |
+| InstructBLIP-13B            |   47.9 |   17.3 |   15.2 |
+| LLaVA-InternLM2-20B (QLoRA) |   47.7 |   17.1 |   14.3 |
+| LLaVA-v1.5-13B (QLoRA)      |   46.9 |   17.6 |   14.1 |
+| LLaVA-v1.5-7B               |   48.3 |   19.9 |   14.1 |
+| LLaVA-v1.5-7B (QLoRA)       |   46.2 |   16.2 |   13.2 |
+| LLaVA-v1.5-13B              |   46.7 |   17.3 |   13   |
+| IDEFICS-80B-Instruct        |   46.1 |   13.3 |   11   |
+| LLaVA-v1-7B                 |   44.1 |   13.6 |    9.5 |
+| PandaGPT-13B                |   43.1 |    9.2 |    7.7 |
