@@ -122,3 +122,10 @@ def circular_pred(df, extract_func=None):
     flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
     flags = list(flag_map.values())
     return np.mean(flags)
+
+def MMBenchOfficialServer():
+    root = LMUDataRoot()
+    for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
+        if osp.exists(f'{root}/{dataset}.tsv'):
+            return True
+    return False
