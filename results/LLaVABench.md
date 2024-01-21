@@ -26,6 +26,7 @@
 | LLaVA-v1-7B                 |      67.6 |     43.8 |   58.7 |      58.9 | N/A                    |
 | LLaVA-v1.5-7B (QLoRA)       |      64.4 |     45.2 |   56.2 |      57.2 | N/A                    |
 | IDEFICS-80B-Instruct        |      57.7 |     49.6 |   61.7 |      56.9 | N/A                    |
+| EMU2-Chat                   |      48.5 |     38.4 |   82.2 |      56.4 | N/A                    |
 | InternLM-XComposer-VL       |      61.7 |     52.5 |   44.3 |      53.8 | N/A                    |
 | InstructBLIP-13B            |      57.3 |     41.7 |   56.9 |      53.5 | 58.2                   |
 | SharedCaptioner             |      38.3 |     44.2 |   62.1 |      47.4 | N/A                    |
