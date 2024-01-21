@@ -12,7 +12,7 @@ class Emu:
                  name, 
                  model_path_map={
                      "emu2":"BAAI/Emu2",
-                     "emu2_chat":"BAAI/Emu2_Chat"
+                     "emu2_chat":"BAAI/Emu2-Chat"
                      }, 
                  **kwargs):
         
