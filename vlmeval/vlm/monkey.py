@@ -63,20 +63,26 @@ class MonkeyChat:
         torch.cuda.empty_cache()
     
     def generate(self, image_path, prompt, dataset=None):
-        if dataset == 'MMVet':
+        if dataset == 'MMVet' or dataset == "LLaVABench":
             cur_prompt = f'<img>{image_path}</img> {prompt} Answer: '
         else:
             cur_prompt = f'<img>{image_path}</img> \n {prompt} Answer: '
+        
         input_ids = self.tokenizer(cur_prompt, return_tensors='pt', padding='longest')
         attention_mask = input_ids.attention_mask
         input_ids = input_ids.input_ids
         
+        if dataset == "LLaVABench":
+            max_new_tokens = 512
+        else:
+            max_new_tokens = 10
+
         output_ids = self.model.generate(
                 input_ids=input_ids.cuda(),
                 attention_mask=attention_mask.cuda(),
                 do_sample=False,
                 num_beams=1,
-                max_new_tokens=10,
+                max_new_tokens=max_new_tokens,
                 min_new_tokens=1,
                 length_penalty=1,
                 num_return_sequences=1,
