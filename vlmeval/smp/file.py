@@ -6,6 +6,25 @@ import csv
 import hashlib
 import os.path as osp
 import time
+import numpy as np
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
+                            np.int16, np.int32, np.int64, np.uint8,
+                            np.uint16, np.uint32, np.uint64)):
+            return int(obj)
+        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, (np.complex_, np.complex64, np.complex128)):
+            return {'real': obj.real, 'imag': obj.imag}
+        elif isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        elif isinstance(obj, (np.bool_)):
+            return bool(obj)
+        elif isinstance(obj, (np.void)): 
+            return None
+        return json.JSONEncoder.default(self, obj)
 
 # LOAD & DUMP
 def dump(data, f, **kwargs):
@@ -13,10 +32,10 @@ def dump(data, f, **kwargs):
         pickle.dump(data, open(pth, 'wb'))
 
     def dump_json(data, pth, **kwargs):
-        json.dump(data, open(pth, 'w'), indent=4, ensure_ascii=False)
+        json.dump(data, open(pth, 'w'), indent=4, ensure_ascii=False, cls=NumpyEncoder)
 
     def dump_jsonl(data, f, **kwargs):
-        lines = [json.dumps(x, ensure_ascii=False) for x in data]
+        lines = [json.dumps(x, ensure_ascii=False, cls=NumpyEncoder) for x in data]
         with open(f, 'w', encoding='utf8') as fout:
             fout.write('\n'.join(lines))
 
