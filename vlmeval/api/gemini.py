@@ -1,6 +1,5 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-import google.generativeai as genai
 
 headers = 'Content-Type: application/json'
 
@@ -25,7 +24,7 @@ class GeminiWrapper(BaseAPI):
         if key is None:
             key = os.environ.get('GOOGLE_API_KEY', None)
         assert key is not None
-        genai.configure(api_key=key)
+        self.api_key = key
         if proxy is not None:
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
@@ -45,12 +44,14 @@ class GeminiWrapper(BaseAPI):
         return ret
 
     def generate_inner(self, inputs, **kwargs) -> str:
+        import google.generativeai as genai
         assert isinstance(inputs, str) or isinstance(inputs, list)
         pure_text = True
         if isinstance(inputs, list):
             for pth in inputs:
                 if osp.exists(pth) or pth.startswith('http'):
                     pure_text = False
+        genai.configure(api_key=self.api_key)
         model = genai.GenerativeModel('gemini-pro') if pure_text else genai.GenerativeModel('gemini-pro-vision')
         if isinstance(inputs, str):
             messages = [inputs] if self.system_prompt is None else [self.system_prompt, inputs]
