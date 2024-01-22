@@ -1,4 +1,4 @@
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.evaluate.misc import build_judge
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 
@@ -170,13 +170,10 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
         data['extracted'] = [ans_map[x] for x in data['index']]
         unknown = data[data['extracted'] == 'Unknown']
     
-        assert model in 'chatgpt-0613'
-        model_name = 'gpt-3.5-turbo-0613'
+        model_name = 'chatgpt-0613'
 
-        if INTERNAL:
-            model = OpenAIWrapperInternal(model_name, verbose=verbose, retry=10)
-        elif gpt_key_set():
-            model = OpenAIWrapper(model_name, verbose=verbose, retry=10)
+        if INTERNAL or gpt_key_set():
+            model = build_judge(model_name, verbose=verbose, retry=10)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None

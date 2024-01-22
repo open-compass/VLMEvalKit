@@ -1,8 +1,6 @@
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
+from vlmeval.evaluate.misc import build_judge
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
-
-INTERNAL = os.environ.get('INTERNAL', 0)
 
 def build_mmvet_gpt4_prompt(line):
     question = line['question']
@@ -96,20 +94,7 @@ def MMVet_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
     else:
         data = load(eval_file)
         gpt_version = model
-
-        model_map = {
-            'gpt-4-turbo': 'gpt-4-1106-preview', 
-            'gpt-4-0613': 'gpt-4-0613',
-            'chatgpt-1106': 'gpt-3.5-turbo-1106',
-            'chatgpt-0613': 'gpt-3.5-turbo-0613'
-        }
-        model_version = model_map[gpt_version]
-
-        if INTERNAL:
-            # We follow the original codebase to set max_tokens == 3
-            model = OpenAIWrapperInternal(model_version, verbose=verbose, max_tokens=3, retry=10)
-        else:
-            model = OpenAIWrapper(model_version, verbose=verbose, max_tokens=3, retry=10)
+        model = build_judge(gpt_version, verbose=verbose, max_tokens=3, retry=10)
         
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]

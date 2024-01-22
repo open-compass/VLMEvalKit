@@ -1,9 +1,7 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from dashscope import MultiModalConversation
 import dashscope
-
-headers = 'Content-Type: application/json'
+from dashscope import MultiModalConversation
 
 class QwenVLWrapper(BaseAPI):
 
@@ -39,7 +37,7 @@ class QwenVLWrapper(BaseAPI):
             content = list(dict(text=system_prompt))
             ret.append(dict(role='system', content=content))
         content = []
-        for i,msg in enumerate(msgs):
+        for i, msg in enumerate(msgs):
             if osp.exists(msg):
                 content.append(dict(image='file://' + msg))
             elif msg.startswith('http'):
@@ -63,6 +61,8 @@ class QwenVLWrapper(BaseAPI):
         gen_config.update(self.kwargs)
         try:
             response = MultiModalConversation.call(model=model, messages=messages)
+            if self.verbose:
+                print(response)            
             answer = response.output.choices[0]['message']['content'][0]['text']
             return 0, answer, 'Succeeded! '
         except Exception as err:

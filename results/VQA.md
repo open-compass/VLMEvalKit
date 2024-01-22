@@ -24,10 +24,10 @@
 | InstructBLIP-7B               |              52.9 |          32.1 |           6.1 |            6   |
 | GeminiProVision               |              12.3 |          36.9 |          13   |           14.5 |
 | TransCore-M                   |              58.1 |           3.3 |           0   |            0.2 |
-| LLaVA-v1.5-13B (LoRA, XTuner) |              51.5 |           3.1 |           0.1 |            0.2 |
+| LLaVA-v1.5-13B (QLoRA, XTuner) |              51.5 |           3.1 |           0.1 |            0.2 |
 | LLaVA-v1.5-13B                |              38.7 |           2.1 |           0.1 |            0.2 |
-| LLaVA-InternLM-7B (LoRA)      |              39   |           1.3 |           0.3 |            0.4 |
-| LLaVA-v1.5-7B (LoRA, XTuner)  |              36.7 |           2.5 |           0   |            0.2 |
+| LLaVA-InternLM-7B (QLoRA)      |              39   |           1.3 |           0.3 |            0.4 |
+| LLaVA-v1.5-7B (QLoRA, XTuner)  |              36.7 |           2.5 |           0   |            0.2 |
 | OpenFlamingo v2               |               8.9 |          17.8 |           5.9 |            4.9 |
 | ShareGPT4V-7B                 |              34.7 |           0.9 |           0   |            0.1 |
 | LLaVA-v1.5-7B                 |              32.7 |           1   |           0   |            0   |
