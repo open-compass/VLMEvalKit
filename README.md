@@ -1,4 +1,4 @@
-![LOGO](https://github-production-user-asset-6210df.s3.amazonaws.com/34324155/295443340-a300f073-4995-48a5-af94-495141606cf7.jpg)
+![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 <div align="center"><br>
 <a href="https://opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
