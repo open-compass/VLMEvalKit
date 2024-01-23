@@ -6,19 +6,19 @@
 
 | Original Figure                                              | Modified Figure                                              |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| ![](https://github-production-user-asset-6210df.s3.amazonaws.com/34324155/293858612-f7f378db-d8d7-47ec-a53a-37ec9649a321.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240103%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240103T075209Z&X-Amz-Expires=300&X-Amz-Signature=6410617bdaf21fc8bebf42382bd1ff73a1534b1a1d5da35cba8dd55f3878d172&X-Amz-SignedHeaders=host&actor_id=34324155&key_id=0&repo_id=477074140) | ![](https://github-production-user-asset-6210df.s3.amazonaws.com/34324155/293858628-f6b8a0d4-0cf0-4f8a-8a18-b6ad45dd792f.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20240103%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240103T075259Z&X-Amz-Expires=300&X-Amz-Signature=b53d8554054592d47994d485d20adb7f61888600be60c01786a25168e3a07fa2&X-Amz-SignedHeaders=host&actor_id=34324155&key_id=0&repo_id=477074140) |
+| ![](http://opencompass.openxlab.space/utils/Hallu0.png) | ![](http://opencompass.openxlab.space/utils/Hallu1.png) |
 | **Q1.** Is the right orange circle the same size as the left orange circle? **A1. Yes** | **Q1.** Is the right orange circle the same size as the left orange circle? **A1. No** |
 | **Q2.** Is the right orange circle larger than the left orange circle? **A2. No** | **Q2.** Is the right orange circle larger than the left orange circle? **A2. Yes** |
 | **Q3.** Is the right orange circle smaller than the left orange circle? **A3. No** | **Q3.** Is the right orange circle smaller than the left orange circle? **A3. No** |
 
-**Metrics: **
+**Metrics**:
 
 >-  aAcc: The overall accuracy of **all** atomic questions. 
 >
 >- qAcc: The mean accuracy of unique **questions**. One question can be asked multiple times with different figures, we consider VLM correctly solved a unique question only if it succeeds in all <question, figure> pairs for this unique question.
 >- fAcc: The mean accuracy of all **figures**. One figure is associated with multiple questions, we consider VLM correct on a figure only if it succeeds to solve all questions of this figure. 
 
-**Evaluation Setting: **
+**Evaluation Setting**:
 
 > 1. **No-visual** Questions (questions asked without the associated figure) in HallusionBench are **skipped** during evaluation.
 > 2. When we failed to extract Yes / No from the VLM prediction, we adopt **GPT-3.5-Turbo-0613** as the answer extractor.
