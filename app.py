@@ -64,7 +64,7 @@ with gr.Blocks() as demo:
                     datatype=[type_map[x] for x in headers],
                     interactive=False, 
                     visible=True)
-                return comp.value
+                return comp
 
             for cbox in [checkbox_group, model_size, model_type]:
                 cbox.change(fn=filter_df, inputs=[checkbox_group, model_size, model_type], outputs=data_component)
@@ -126,7 +126,7 @@ with gr.Blocks() as demo:
                         datatype=[s.type_map[x] for x in headers],
                         interactive=False, 
                         visible=True)
-                    return comp.value
+                    return comp
 
                 for cbox in [s.checkbox_group, s.model_size, s.model_type]:
                     cbox.change(fn=filter_df_l2, inputs=[s.dataset, s.checkbox_group, s.model_size, s.model_type], outputs=s.data_component)
@@ -137,8 +137,7 @@ with gr.Blocks() as demo:
             citation_button = gr.Textbox(
                 value=CITATION_BUTTON_TEXT, 
                 label=CITATION_BUTTON_LABEL,
-                elem_id='citation-button'
-            ).style(show_copy_button=True)
+                elem_id='citation-button')
 
 if __name__ == '__main__':
     demo.launch(server_name='0.0.0.0')

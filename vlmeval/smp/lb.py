@@ -19,7 +19,8 @@ CITATION_BUTTON_TEXT = r"""@misc{2023opencompass,
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 # CONSTANTS-TEXT
 LEADERBORAD_INTRODUCTION = """# OpenVLM Leaderboard
-### Welcome to the OpenVLM Leaderboard! On this leaderboard we share the evaluation results of VLMs obtained by the OpenSource Framework [**VLMEvalKit**](https://github.com/open-compass/VLMEvalKit) 🏆 <br> Currently, OpenVLM Leaderboard covers {} different VLMs (including GPT-4v, Gemini, QwenVLPlus, LLaVA, etc.) and {} different multi-modal benchmarks. 
+### Welcome to the OpenVLM Leaderboard! On this leaderboard we share the evaluation results of VLMs obtained by the OpenSource Framework [**VLMEvalKit**](https://github.com/open-compass/VLMEvalKit) 🏆 
+### Currently, OpenVLM Leaderboard covers {} different VLMs (including GPT-4v, Gemini, QwenVLPlus, LLaVA, etc.) and {} different multi-modal benchmarks. 
 
 This leaderboard was last updated: {}. 
 """
