@@ -61,7 +61,8 @@ class Yi_VL:
         sys.path.append(self.root)
 
         if splitlen(model_path, '/') == 2 and not osp.exists(model_path):
-            snapshot_download(repo_id=model_path)
+            if get_cache_path(model_path) is None:
+                snapshot_download(repo_id=model_path)
             edit_config(model_path)
         elif osp.exists(model_path):
             edit_config(model_path)
