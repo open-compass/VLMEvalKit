@@ -17,3 +17,4 @@ from .cogvlm import CogVlm
 from .sharedcaptioner import SharedCaptioner
 from .emu import Emu
 from .monkey import Monkey, MonkeyChat
+from .yi_vl import Yi_VL
