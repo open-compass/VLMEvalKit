@@ -5,7 +5,7 @@ from functools import partial
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
 TransCore_ROOT = None
-Yi_ROOT = '/mnt/petrelfs/qiaoyuxuan/opensource/Yi/'
+Yi_ROOT = None
 
 idefics_model_path_map = {
     'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
