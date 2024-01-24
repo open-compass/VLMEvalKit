@@ -6,7 +6,7 @@ import warnings
 from PIL import Image
 
 """
-You can perform inference of Yi-VL the through following steps:
+You can perform inference of Yi-VL through the following steps:
 1. clone the repo https://github.com/01-ai/Yi to path-to-Yi
 2. set up the environment and install the required packages in path-to-Yi/VL/requirements.txt
 3. set Yi_ROOT in vlmeval/config.py 
