@@ -9,11 +9,12 @@ from PIL import Image
 You can perform inference of Yi-VL the through following steps:
 1. clone the repo https://github.com/01-ai/Yi to path-to-Yi
 2. set up the environment and install the required packages in path-to-Yi/VL/requirements.txt
-3. set Yi_ROOT in vlmeval/config.py
+3. set Yi_ROOT in vlmeval/config.py 
     Yi_ROOT = path-to-Yi
 4. set the path to vision_tower, there are two ways for example:
     - set "mm_vision_tower": path-to-clip-vit-H-14-laion2B-s32B-b79K-yi-vl-6B-448 in model-path-to-Yi_VL/config.json
     - set vision_tower = path-to-clip-vit-H-14-laion2B-s32B-b79K-yi-vl-6B-448 in path-to-Yi/VL/llava/model/clip_encoder/builder.py
+5. use VLMEvalKit/run.py for evaluation and wait for results
 """
 
 def disable_torch_init():
