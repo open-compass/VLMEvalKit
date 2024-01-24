@@ -1,7 +1,5 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-import dashscope
-from dashscope import MultiModalConversation
 
 class QwenVLWrapper(BaseAPI):
 
@@ -18,6 +16,7 @@ class QwenVLWrapper(BaseAPI):
                  proxy: str = None,
                  **kwargs):
 
+        import dashscope
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
@@ -48,6 +47,7 @@ class QwenVLWrapper(BaseAPI):
         return ret
                 
     def generate_inner(self, inputs, **kwargs) -> str:
+        from dashscope import MultiModalConversation
         assert isinstance(inputs, str) or isinstance(inputs, list)
         pure_text = True
         if isinstance(inputs, list):
