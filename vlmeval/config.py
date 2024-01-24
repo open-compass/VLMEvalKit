@@ -5,6 +5,7 @@ from functools import partial
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
 TransCore_ROOT = None
+Yi_ROOT = None
 
 idefics_model_path_map = {
     'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
@@ -48,6 +49,8 @@ models = {
     'emu2_chat':partial(Emu, name='emu2_chat'),
     'monkey':partial(Monkey, model_path='echo840/Monkey'),
     'monkey-chat':partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
+    'Yi_VL_6B':partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
+    'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
 }
 
 api_models = {
