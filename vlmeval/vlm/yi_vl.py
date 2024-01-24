@@ -31,7 +31,7 @@ def edit_config(repo_id):
     cfg = osp.join(root, 'config.json')
     data = load(cfg)
     mm_vision_tower = data['mm_vision_tower']
-    if mm_vision_tower == './vit/clip-vit-H-14-laion2B-s32B-b79K-yi-vl-6B-448':
+    if mm_vision_tower.startswith('./vit/'):
         data['mm_vision_tower'] = osp.join(root, mm_vision_tower)
         assert osp.exists(data['mm_vision_tower'])
         dump(data, cfg)
