@@ -166,7 +166,7 @@ def prefetch_acc(result_file):
         if match[k] == 0:
             res['acc'].append(0)
         else:
-            res['acc'].append(hit[k] / match[k] * 100)
+            res['acc'].append(hit[k] / tot[k] * 100)
     res = pd.DataFrame(res)
     return res
 
