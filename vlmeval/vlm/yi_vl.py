@@ -1,9 +1,10 @@
 import torch
 import sys
-from abc import abstractproperty
 import os.path as osp
 import warnings
 from PIL import Image
+from vlmeval.smp import get_cache_path, load, dump, splitlen
+from huggingface_hub import snapshot_download
 
 """
 You can perform inference of Yi-VL through the following steps:
@@ -11,11 +12,29 @@ You can perform inference of Yi-VL through the following steps:
 2. set up the environment and install the required packages in path-to-Yi/VL/requirements.txt
 3. set Yi_ROOT in vlmeval/config.py 
     Yi_ROOT = path-to-Yi
-4. set the path to vision_tower, there are two ways for example:
-    - set "mm_vision_tower": path-to-clip-vit-H-14-laion2B-s32B-b79K-yi-vl-6B-448 in model-path-to-Yi_VL/config.json
-    - set vision_tower = path-to-clip-vit-H-14-laion2B-s32B-b79K-yi-vl-6B-448 in path-to-Yi/VL/llava/model/clip_encoder/builder.py
-5. use VLMEvalKit/run.py for evaluation and wait for results
+
+You are all set now! To run a demo for Yi-VL:
+```python
+from vlmeval import *
+model = supported_VLM['Yi_VL_6B']()
+model.generate('apple.jpg', 'What is in this image?')
+```
+To run evaluation for Yi-VL, use `python run.py --model Yi_VL_6B --data {dataset_list}`
 """
+
+def edit_config(repo_id):
+    if not osp.exists(repo_id):
+        root = get_cache_path(repo_id)
+    else:
+        root = repo_id
+    assert root is not None and osp.exists(root)
+    cfg = osp.join(root, 'config.json')
+    data = load(cfg)
+    mm_vision_tower = data['mm_vision_tower']
+    if mm_vision_tower == './vit/clip-vit-H-14-laion2B-s32B-b79K-yi-vl-6B-448':
+        data['mm_vision_tower'] = osp.join(root, mm_vision_tower)
+        assert osp.exists(data['mm_vision_tower'])
+        dump(data, cfg)
 
 def disable_torch_init():
     """
@@ -40,6 +59,12 @@ class Yi_VL:
         
         self.root = osp.join(root,'VL')
         sys.path.append(self.root)
+
+        if splitlen(model_path, '/') == 2 and not osp.exists(model_path):
+            snapshot_download(repo_id=model_path)
+            edit_config(model_path)
+        elif osp.exists(model_path):
+            edit_config(model_path)
 
         from llava.mm_utils import get_model_name_from_path, load_pretrained_model
         from llava.model.constants import key_info
