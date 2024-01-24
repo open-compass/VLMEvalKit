@@ -19,7 +19,8 @@
 
 ## 🆕 News
 
-- **[2024-01-21]** We have updated results for [**LLaVABench (in-the-wild)**](/results/LLaVABench.md) and [**AI2D**](/results/AI2D.md).
+- **[2024-01-24]** We have supported [**Yi-VL**](https://huggingface.co/01-ai/Yi-VL-6B). 🔥🔥🔥
+- **[2024-01-21]** We have updated results for [**LLaVABench (in-the-wild)**](/results/LLaVABench.md) and [**AI2D**](/results/AI2D.md). 🔥🔥🔥
 - **[2024-01-14]** We have supported [**AI2D**](https://allenai.org/data/diagrams) and provided the [**script**](/scripts/AI2D_preproc.ipynb) for data pre-processing. 🔥🔥🔥
 - **[2024-01-13]** We have supported [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu) and [**DocVQA**](https://www.docvqa.org). 🔥🔥🔥
 - **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
@@ -68,7 +69,7 @@
 | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️**🚅** |
 | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅🎞️ | [**ShareGPT4V-7B**](https://sharegpt4v.github.io)🚅           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
 | [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-17B-Chat**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**SharedCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
-| [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️  |                                                              |                                                              |
+| [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️  | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B) |                                                              |
 
 🎞️: Support multiple images as inputs, via the `multi_generate / interleave_generate` interface. 
 
