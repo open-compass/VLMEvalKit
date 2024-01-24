@@ -100,8 +100,7 @@ class Yi_VL:
                 )
         outputs = self.tokenizer.batch_decode(
             output_ids[:, input_token_len:], skip_special_tokens=True
-            )
-        outputs=outputs[0]
+            )[0]
         outputs = outputs.strip()
 
         if outputs.endswith(stop_str):
