@@ -1,9 +1,5 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from dashscope import MultiModalConversation
-import dashscope
-
-headers = 'Content-Type: application/json'
 
 class QwenVLWrapper(BaseAPI):
 
@@ -20,6 +16,7 @@ class QwenVLWrapper(BaseAPI):
                  proxy: str = None,
                  **kwargs):
 
+        import dashscope
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
@@ -39,7 +36,7 @@ class QwenVLWrapper(BaseAPI):
             content = list(dict(text=system_prompt))
             ret.append(dict(role='system', content=content))
         content = []
-        for i,msg in enumerate(msgs):
+        for i, msg in enumerate(msgs):
             if osp.exists(msg):
                 content.append(dict(image='file://' + msg))
             elif msg.startswith('http'):
@@ -50,6 +47,7 @@ class QwenVLWrapper(BaseAPI):
         return ret
                 
     def generate_inner(self, inputs, **kwargs) -> str:
+        from dashscope import MultiModalConversation
         assert isinstance(inputs, str) or isinstance(inputs, list)
         pure_text = True
         if isinstance(inputs, list):
@@ -63,6 +61,8 @@ class QwenVLWrapper(BaseAPI):
         gen_config.update(self.kwargs)
         try:
             response = MultiModalConversation.call(model=model, messages=messages)
+            if self.verbose:
+                print(response)            
             answer = response.output.choices[0]['message']['content'][0]['text']
             return 0, answer, 'Succeeded! '
         except Exception as err:

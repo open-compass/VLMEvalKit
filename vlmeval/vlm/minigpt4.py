@@ -4,7 +4,6 @@ from abc import abstractproperty
 import os.path as osp
 import warnings
 from transformers import StoppingCriteriaList
-from omegaconf import OmegaConf
 from PIL import Image
 
 class MiniGPT4:
@@ -37,6 +36,8 @@ class MiniGPT4:
 
         self.cfg = osp.join(this_dir, 'misc', cfg)
         sys.path.append(self.root)
+
+        from omegaconf import OmegaConf
         from minigpt4.common.registry import registry
         from minigpt4.conversation.conversation import StoppingCriteriaSub, CONV_VISION_Vicuna0, CONV_VISION_minigptv2
 

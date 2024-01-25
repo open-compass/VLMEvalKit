@@ -5,6 +5,7 @@ from functools import partial
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
 TransCore_ROOT = None
+Yi_ROOT = None
 
 idefics_model_path_map = {
     'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
@@ -30,6 +31,7 @@ models = {
     'idefics_80b_instruct_fs': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map, with_context=True),
     'llava_v1.5_7b': partial(LLaVA, name='llava_v1.5_7b', model_path_map=llava_model_path_map),
     'sharegpt4v_7b': partial(LLaVA, name='Lin-Chen/ShareGPT4V-7B', model_path_map={}),
+    'sharegpt4v_13b': partial(LLaVA, name='Lin-Chen/ShareGPT4V-13B', model_path_map={}),
     'llava_v1.5_13b': partial(LLaVA, name='llava_v1.5_13b', model_path_map=llava_model_path_map),
     'llava_v1_7b': partial(LLaVA, name='llava_v1_7b', model_path_map=llava_model_path_map),
     'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
@@ -43,7 +45,12 @@ models = {
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'sharedcaptioner':partial(SharedCaptioner, model_path='Lin-Chen/ShareCaptioner'),
+    'emu2':partial(Emu, name='emu2'),
+    'emu2_chat':partial(Emu, name='emu2_chat'),
     'monkey':partial(Monkey, model_path='echo840/Monkey'),
+    'monkey-chat':partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
+    'Yi_VL_6B':partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
+    'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
 }
 
 api_models = {
@@ -60,6 +67,8 @@ api_models = {
 }
 
 xtuner_models = {
+    'llava-internlm2-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm2-chat-7b', llava_path='xtuner/llava-internlm2-7b', visual_select_layer=-2, prompt_template='internlm2_chat'),
+    'llava-internlm2-20b': partial(LLaVA_XTuner, llm_path='internlm/internlm2-chat-20b', llava_path='xtuner/llava-internlm2-20b', visual_select_layer=-2, prompt_template='internlm2_chat'),
     'llava-internlm-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm-chat-7b', llava_path='xtuner/llava-internlm-7b', visual_select_layer=-2, prompt_template='internlm_chat'),
     'llava-v1.5-7b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5-7b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
     'llava-v1.5-13b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-13b-v1.5', llava_path='xtuner/llava-v1.5-13b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),

@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.evaluate import COCO_eval, YOrN_eval, MMVet_eval, multiple_choice_eval, VQAEval, MathVista_eval
+from vlmeval.evaluate import COCO_eval, YOrN_eval, MMVet_eval, multiple_choice_eval, VQAEval, MathVista_eval, LLaVABench_eval
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
 from vlmeval.utils import dataset_URLs, abbr2full
@@ -56,11 +56,17 @@ def main():
                 if args.mode == 'all':
                     logger.error(f'Dataset {dataset_name} does not support `evaluation` now, will skip the evaluation. ')
 
-            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)                     
+            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)
+
+            if dataset_name in ['MMBench_TEST_CN', 'MMBench_TEST_EN']:
+                if not MMBenchOfficialServer():
+                    logger.error(f'Can not evaluate {dataset_name} on non-official servers, will skip the evaluation. ')
+                    continue
+
             if rank == 0:
                 time.sleep(3)
                 res = None
-                if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA'], dataset_name):
+                if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA', 'AI2D'], dataset_name):
                     res = prefetch_acc(result_file)
                 else:
                     logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
@@ -70,7 +76,7 @@ def main():
                     dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
                 
             if rank == 0 and args.mode == 'all':
-                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA'], dataset_name):
+                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D'], dataset_name):
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['MME', 'Hallusion'], dataset_name):
                     YOrN_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose, dataset=dataset_name)
@@ -78,10 +84,12 @@ def main():
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['COCO'], dataset_name):
                     COCO_eval(result_file)
-                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA'], dataset_name):
+                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
                     VQAEval(result_file)
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
+                elif listinstr(['LLaVABench'], dataset_name):
+                    LLaVABench_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
             
