@@ -106,9 +106,11 @@ class Yi_VL:
         
         image = Image.open(image_path)
         if getattr(self.model.config, "image_aspect_ratio", None) == "pad":
-            image = expand2square(
-                image, tuple(int(x * 255) for x in self.image_processor.image_mean)
-                )
+            if image.mode == 'L':
+                background_color = int(sum([int(x * 255) for x in self.image_processor.image_mean]) / 3)
+            else:
+                background_color = tuple(int(x * 255) for x in self.image_processor.image_mean)
+            image = expand2square(image, background_color)
         image_tensor = self.image_processor.preprocess(image, return_tensors="pt")[
             "pixel_values"
             ][0]
