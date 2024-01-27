@@ -26,7 +26,6 @@
 - **[2024-01-13]** We have supported [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu) and [**DocVQA**](https://www.docvqa.org). 🔥🔥🔥
 - **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
 - **[2024-01-09]** The performance numbers on our official multi-modal leaderboards can be downloaded in json files: [**MMBench Leaderboard**](http://opencompass.openxlab.space/utils/MMBench.json), [**OpenCompass Multi-Modal Leaderboard**](http://opencompass.openxlab.space/utils/MMLB.json). We also added a [**notebook**](scripts/visualize.ipynb) to visualize these results.🔥🔥🔥
-- **[2024-01-03]** We support **ScienceQA (Img)** (Dataset Name: ScienceQA_[VAL/TEST], [**eval results**](results/ScienceQA.md)), **HallusionBench** (Dataset Name: HallusionBench, [**eval results**](/results/HallusionBench.md)), and **MathVista** (Dataset Name: MathVista_MINI, [**eval results**](/results/MathVista.md)).  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -52,7 +51,7 @@
 | [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
-| [**AI2D**](https://allenai.org/data/diagrams)                | AI2D                                                   | ✅         | ✅          | [**AI2D**](/results/AI2D.md)                                 |
+| [**AI2D**](https://allenai.org/data/diagrams)                | AI2D                                                   | ✅         | ✅          |                                  |
 | [**LLaVABench**](https://huggingface.co/datasets/liuhaotian/llava-bench-in-the-wild) | LLaVABench                                             | ✅         | ✅          | [**LLaVABench**](/results/LLaVABench.md)                     |
 | [**DocVQA**](https://www.docvqa.org)                         | DocVQA_VAL                                             | ✅         | ✅          |                                                              |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
