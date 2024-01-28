@@ -21,7 +21,7 @@
 
 - **[2024-01-27]** We have supported the evaluation of [**MMMU_TEST**](https://mmmu-benchmark.github.io). 🔥🔥🔥
 - **[2024-01-24]** We have supported [**Yi-VL**](https://huggingface.co/01-ai/Yi-VL-6B). 🔥🔥🔥
-- **[2024-01-21]** We have updated results for [**LLaVABench (in-the-wild)**](/results/LLaVABench.md) and [**AI2D**](/results/AI2D.md). 🔥🔥🔥
+- **[2024-01-21]** We have updated results for [**LLaVABench (in-the-wild)**](/results/LLaVABench.md). 🔥🔥🔥
 - **[2024-01-14]** We have supported [**AI2D**](https://allenai.org/data/diagrams) and provided the [**script**](/scripts/AI2D_preproc.ipynb) for data pre-processing. 🔥🔥🔥
 - **[2024-01-13]** We have supported [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu) and [**DocVQA**](https://www.docvqa.org). 🔥🔥🔥
 - **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
@@ -51,7 +51,7 @@
 | [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
 | [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA**](/results/VQA.md)                                   |
-| [**AI2D**](https://allenai.org/data/diagrams)                | AI2D                                                   | ✅         | ✅          |                                  |
+| [**AI2D**](https://allenai.org/data/diagrams)                | AI2D_TEST                                              | ✅         | ✅          |                                  |
 | [**LLaVABench**](https://huggingface.co/datasets/liuhaotian/llava-bench-in-the-wild) | LLaVABench                                             | ✅         | ✅          | [**LLaVABench**](/results/LLaVABench.md)                     |
 | [**DocVQA**](https://www.docvqa.org)                         | DocVQA_VAL                                             | ✅         | ✅          |                                                              |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            |                                                              |
