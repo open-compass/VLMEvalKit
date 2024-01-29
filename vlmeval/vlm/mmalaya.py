@@ -15,10 +15,11 @@ class MMAlaya:
         assert model_path is not None
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cuda', trust_remote_code=True).eval()
+        model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cpu', trust_remote_code=True).eval()
         # need initialize tokenizer
-        self.model.initialize_tokenizer(self.tokenizer)
-
+        model.initialize_tokenizer(self.tokenizer)
+        self.model = model.cuda()
+        
         self.kwargs = kwargs
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
         torch.cuda.empty_cache()
@@ -34,8 +35,8 @@ class MMAlaya:
             return_tensors='pt')
         with torch.inference_mode():
             output_ids = self.model.generate(
-                inputs=input_ids.to('cuda'),
-                images=image_tensor.to('cuda'),
+                inputs=input_ids.cuda(),
+                images=image_tensor.cuda(),
                 do_sample=False,
                 max_new_tokens=1024,
                 num_beams=1,
