@@ -33,7 +33,7 @@ class MMAlaya:
             image,
             return_tensors='pt')
         with torch.inference_mode():
-            output_ids = model.generate(
+            output_ids = self.model.generate(
                 inputs=input_ids.to('cuda'),
                 images=image_tensor.to('cuda'),
                 do_sample=False,
