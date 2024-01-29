@@ -29,11 +29,9 @@
 
 ## 📊 Datasets, Models, and Evaluation Results
 
-**The performance numbers on our official multi-modal leaderboards can be downloaded from here !**
+**The performance numbers on our official multi-modal leaderboards can be downloaded from here!**
 
-[**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard): http://opencompass.openxlab.space/utils/MMBench.json
-
-[**OpenCompass Multi-Modal Leaderboard**](https://opencompass.org.cn/leaderboard-multimodal): http://opencompass.openxlab.space/utils/MMLB.json
+[**OpenCompass Multi-Modal Leaderboard**](https://opencompass.org.cn/leaderboard-multimodal): [Download All DETAILED Results](http://opencompass.openxlab.space/utils/OpenVLM.json). 
 
 **Supported Dataset**
 
