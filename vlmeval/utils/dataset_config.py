@@ -17,13 +17,14 @@ dataset_URLs = {
     "OCRVQA_TESTCORE": "https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv",
     'TextVQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv",
     "MMMU_DEV_VAL": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv",
+    "MMMU_TEST": "https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST.tsv",
     "MathVista_MINI": "https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv",
     'ChartQA_VALTEST_HUMAN': "https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv",
     'ScienceQA_VAL': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv",
     'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
     'HallusionBench': "https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv",
     "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
-    'AI2D': "https://opencompass.openxlab.space/utils/VLMEval/AI2D.tsv",
+    'AI2D_TEST': "https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv",
     "LLaVABench": "https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv",
 }
 
@@ -44,13 +45,14 @@ dataset_md5_dict = {
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
     'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
     'MMMU_DEV_VAL': "501f84dc642a9b17e35363b78c0191e1",
+    'MMMU_TEST': "38e93b57d3037b19c3b98ad6144a2dd9",
     'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464',
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
     "DocVQA_VAL": 'c911fdc5f4974513c112cc83a25c99d9',
-    "AI2D": "53db8397adbe73e9cc0b4861227004d4",
+    "AI2D_TEST": "0f593e0d1c7df9a3d69bf1f947e71975",
     "LLaVABench": "d382a093f749a697820d3dadd61c8428"
 }
 
@@ -66,6 +68,7 @@ img_root_map.update({
     'OCRVQA_TESTCORE': 'OCRVQA',
     'TextVQA_VAL': 'TextVQA',
     'MMMU_DEV_VAL': 'MMMU',
+    "MMMU_TEST": "MMMU", 
     'MathVista_MINI': 'MathVista',
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
     'HallusionBench': 'Hallusion',
