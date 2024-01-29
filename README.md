@@ -31,7 +31,7 @@
 
 **The performance numbers on our official multi-modal leaderboards can be downloaded from here!**
 
-[**OpenCompass Multi-Modal Leaderboard**](https://opencompass.org.cn/leaderboard-multimodal): [Download All DETAILED Results](http://opencompass.openxlab.space/utils/OpenVLM.json). 
+[**OpenCompass Multi-Modal Leaderboard**](https://rank.opencompass.org.cn/leaderboard-multimodal): [Download All DETAILED Results](http://opencompass.openxlab.space/utils/OpenVLM.json). 
 
 **Supported Dataset**
 
