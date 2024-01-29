@@ -29,7 +29,7 @@ class MMAlaya:
         # tokenize prompt, and proprecess image
         input_ids, image_tensor, stopping_criteria = self.model.prepare_for_inference(
             prompt, 
-            tokenizer, 
+            self.tokenizer, 
             image,
             return_tensors='pt')
         with torch.inference_mode():
