@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
 import os.path as osp
-from vlmeval.smp import isimg
+from vlmeval.smp import isimg, listinstr
 import re
 
 class QwenVL:
@@ -21,7 +21,7 @@ class QwenVL:
     def generate(self, image_path, prompt, dataset=None):
         vl_pair = [{'image': image_path}, {'text': prompt}]
         query = self.tokenizer.from_list_format(vl_pair)
-        
+
         inputs = self.tokenizer(query, return_tensors='pt')
         inputs = inputs.to(self.model.device)
         pred = self.model.generate(**inputs, **self.kwargs)
@@ -32,7 +32,7 @@ class QwenVL:
     def multi_generate(self, image_paths, prompt, dataset=None):
         vl_list = [{'image': img} for img in image_paths] + [{'text': prompt}]
         query = self.tokenizer.from_list_format(vl_list)
-        
+
         inputs = self.tokenizer(query, return_tensors='pt')
         inputs = inputs.to(self.model.device)
         pred = self.model.generate(**inputs, **self.kwargs)
@@ -43,7 +43,7 @@ class QwenVL:
     def interleave_generate(self, ti_list, dataset=None):
         vl_list = [{'image': s} if isimg(s) else {'text': s} for s in ti_list]
         query = self.tokenizer.from_list_format(vl_list)
-        
+
         inputs = self.tokenizer(query, return_tensors='pt')
         inputs = inputs.to(self.model.device)
         pred = self.model.generate(**inputs, **self.kwargs)
@@ -67,20 +67,19 @@ class QwenVLChat:
     def generate(self, image_path, prompt, dataset=None):
         vl_pair = [{'image': image_path}, {'text': prompt}]
         query = self.tokenizer.from_list_format(vl_pair)
-        
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
     
     def multi_generate(self, image_paths, prompt, dataset=None):
         vl_list = [{'image': img} for img in image_paths] + [{'text': prompt}]
-        query = self.tokenizer.from_list_format(vl_list)    
-
+        query = self.tokenizer.from_list_format(vl_list)   
+         
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
     
     def interleave_generate(self, ti_list, dataset=None):
         vl_list = [{'image': s} if isimg(s) else {'text': s} for s in ti_list]
         query = self.tokenizer.from_list_format(vl_list)
-        
+
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
