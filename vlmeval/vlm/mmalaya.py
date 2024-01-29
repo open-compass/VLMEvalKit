@@ -15,7 +15,7 @@ class MMAlaya:
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cuda', trust_remote_code=True).eval()
         # need initialize tokenizer
-        self.model.initialize_tokenizer(tokenizer)
+        self.model.initialize_tokenizer(self.tokenizer)
 
         self.kwargs = kwargs
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
@@ -59,5 +59,6 @@ if __name__ == "__main__":
     print(response)
 
 """
-CUDA_VISIBLE_DEVICES=0 python ./vlmeval/vlm/mmalaya.py
+export PYTHONPATH=$PYTHONPATH:/tmp/VLMEvalKit
+CUDA_VISIBLE_DEVICES=0 python vlmeval/vlm/mmalaya.py
 """
