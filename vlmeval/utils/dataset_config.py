@@ -24,7 +24,7 @@ dataset_URLs = {
     'ScienceQA_TEST': "https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv",
     'HallusionBench': "https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv",
     "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
-    'AI2D': "https://opencompass.openxlab.space/utils/VLMEval/AI2D.tsv",
+    'AI2D_TEST': "https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv",
     "LLaVABench": "https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv",
 }
 
@@ -52,7 +52,7 @@ dataset_md5_dict = {
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
     "DocVQA_VAL": 'c911fdc5f4974513c112cc83a25c99d9',
-    "AI2D": "53db8397adbe73e9cc0b4861227004d4",
+    "AI2D_TEST": "0f593e0d1c7df9a3d69bf1f947e71975",
     "LLaVABench": "d382a093f749a697820d3dadd61c8428"
 }
 

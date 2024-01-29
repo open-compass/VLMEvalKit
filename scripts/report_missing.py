@@ -7,7 +7,7 @@ dataset = [
     'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN',
     'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL', 'COCO_VAL', 'MMMU_DEV_VAL',
     'ChartQA_VALTEST_HUMAN', 'ScienceQA_VAL', 'ScienceQA_TEST', 'MathVista_MINI', 'HallusionBench',
-    'AI2D', 'LLaVABench'
+    'AI2D_TEST', 'LLaVABench'
 ]
 suffix = [
     'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv',
