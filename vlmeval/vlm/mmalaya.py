@@ -4,6 +4,8 @@ import warnings
 import os.path as osp
 from vlmeval.smp import isimg
 import re
+from PIL import Image
+
 
 class MMAlaya:
 
