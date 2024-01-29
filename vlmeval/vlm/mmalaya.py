@@ -34,8 +34,8 @@ class MMAlaya:
             return_tensors='pt')
         with torch.inference_mode():
             output_ids = model.generate(
-                inputs=input_ids.to(device),
-                images=image_tensor.to(device),
+                inputs=input_ids.to('cuda'),
+                images=image_tensor.to('cuda'),
                 do_sample=False,
                 max_new_tokens=1024,
                 num_beams=1,
