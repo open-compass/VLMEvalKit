@@ -10,6 +10,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, nargs='+', required=True)
     parser.add_argument("--model", type=str, nargs='+', required=True)
+    parser.add_argument("--work-dir", type=str, default='.', help="select the output directory")
     parser.add_argument("--mode", type=str, default='all', choices=['all', 'infer'])
     parser.add_argument("--nproc", type=int, default=4, help="Parallel API calling")
     parser.add_argument("--ignore", action='store_true', help="Ignore failed indices. ")
@@ -31,8 +32,9 @@ def main():
 
     for _, model_name in enumerate(args.model):
         model = None
-        os.makedirs(model_name, exist_ok=True)
-        pred_root = model_name
+
+        pred_root = osp.join(args.work_dir, model_name)
+        os.makedirs(pred_root, exist_ok=True)
 
         for i, dataset_name in enumerate(args.data):
             if dataset_name not in dataset_URLs:

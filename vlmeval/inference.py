@@ -17,7 +17,7 @@ def parse_args():
     return args
 
 # Only API model is accepted
-def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
+def infer_data_api(work_dir, model_name, dataset_name, index_set, api_nproc=4):
     rank, world_size = get_rank_and_world_size()   
     assert rank == 0 and world_size == 1
     dataset = TSVDataset(dataset_name)
@@ -31,7 +31,7 @@ def infer_data_api(model_name, dataset_name, index_set, api_nproc=4):
     lt, indices = len(data), list(data['index'])
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
     
-    out_file = f'{model_name}/{model_name}_{dataset_name}_supp.pkl'
+    out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
@@ -170,11 +170,10 @@ def prefetch_acc(result_file):
     res = pd.DataFrame(res)
     return res
 
-def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
-
-    result_file = f'{model_name}/{model_name}_{dataset_name}.xlsx'
+def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
+    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
     rank, world_size = get_rank_and_world_size()   
-    tmpl = f'{model_name}/' + '{}' + f'{world_size}_{dataset_name}.pkl'
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)
 
     if not osp.exists(result_file):
@@ -208,46 +207,8 @@ def infer_data_job(model, model_name, dataset_name, verbose=False, api_nproc=4, 
             assert rank == 0 and world_size == 1
             failed_set = set(failed_set)
             answer_map = {x: y for x, y in zip(data['index'], data['prediction'])}
-            res = infer_data_api(model_name, dataset_name, failed_set, api_nproc=api_nproc)
+            res = infer_data_api(work_dir, model_name, dataset_name, failed_set, api_nproc=api_nproc)
             answer_map.update(res)
             data['prediction'] = [str(answer_map[x]) for x in data['index']]
             dump(data, result_file)
         return model_name
-
-def main():
-    logger = get_logger('Inference')
-
-    args = parse_args()
-    assert len(args.data), "--data should be a list of data files"
-
-    rank, world_size = get_rank_and_world_size()
-    if world_size > 1:
-        torch.cuda.set_device(rank)
-        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=5400))
-
-    for _, model_name in enumerate(args.model):
-        model = None
-        os.makedirs(model_name, exist_ok=True)
-        pred_root = model_name
-
-        for i, dataset_name in enumerate(args.data):
-            # CHECKER
-            if dataset_name == 'CORE_MM':
-                MULTI_IMG = getattr(supported_VLM[model_name].func, 'multi_generate', None)
-                if MULTI_IMG is not None:
-                    logger.error(f'Model {model_name} does not support the `multi_generate` interface, which is required for testing CORE_MM, skip it. ')
-                    continue
-
-            result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
-            if model is None:
-                model = model_name # which is only a name
-            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc)
-                         
-            if rank == 0 and listinstr(['MMBench', 'CCBench', 'SEEDBench', 'ScienceQA', 'MMMU'], dataset_name):
-                time.sleep(3)
-                res = prefetch_acc(result_file)
-                print(model_name, res)
-                dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
-                
-if __name__ == '__main__':
-    main()
