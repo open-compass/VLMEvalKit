@@ -6,6 +6,7 @@ class QwenVLWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self, 
+                 model: str = 'qwen-vl-plus',
                  retry: int = 5,
                  wait: int = 5, 
                  key: str = None,
@@ -16,6 +17,8 @@ class QwenVLWrapper(BaseAPI):
                  proxy: str = None,
                  **kwargs):
 
+        assert model in ['qwen-vl-plus', 'qwen-vl-max']
+        self.model = model
         import dashscope
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
@@ -55,12 +58,11 @@ class QwenVLWrapper(BaseAPI):
                 if osp.exists(pth) or pth.startswith('http'):
                     pure_text = False
         assert not pure_text
-        model = 'qwen-vl-plus' 
         messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)    
         gen_config.update(self.kwargs)
         try:
-            response = MultiModalConversation.call(model=model, messages=messages)
+            response = MultiModalConversation.call(model=self.model, messages=messages)
             if self.verbose:
                 print(response)            
             answer = response.output.choices[0]['message']['content'][0]['text']
@@ -72,14 +74,14 @@ class QwenVLWrapper(BaseAPI):
 
             return -1, '', ''
 
-class QwenVLPlus(QwenVLWrapper):
+class QwenVLAPI(QwenVLWrapper):
 
     def generate(self, image_path, prompt, dataset=None):
-        return super(QwenVLPlus, self).generate([image_path, prompt])
+        return super(QwenVLAPI, self).generate([image_path, prompt])
     
     def multi_generate(self, image_paths, prompt, dataset=None):
-        return super(QwenVLPlus, self).generate(image_paths + [prompt])
+        return super(QwenVLAPI, self).generate(image_paths + [prompt])
     
     def interleave_generate(self, ti_list, dataset=None):
-        return super(QwenVLPlus, self).generate(ti_list)
+        return super(QwenVLAPI, self).generate(ti_list)
             

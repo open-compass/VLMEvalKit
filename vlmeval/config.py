@@ -1,5 +1,5 @@
 from .vlm import *
-from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLPlus
+from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLAPI
 from functools import partial
 
 PandaGPT_ROOT = None
@@ -63,7 +63,8 @@ api_models = {
         GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
         system_prompt="Please responde to the following question / request in a short reply. "),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
-    'QwenVLPlus': partial(QwenVLPlus, temperature=0, retry=10),
+    'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
+    'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
 }
 
 xtuner_models = {
