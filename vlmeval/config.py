@@ -51,6 +51,7 @@ models = {
     'monkey-chat':partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
     'Yi_VL_6B':partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
     'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
+    'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
 }
 
 api_models = {
