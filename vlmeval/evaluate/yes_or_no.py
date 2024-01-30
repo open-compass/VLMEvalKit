@@ -136,9 +136,10 @@ def YOrN_match_prompt(line):
 
 def YOrN_Extraction(output):
     s = output.lower()
-    if 'yes' in s and 'no' not in s:
+    words = process_punctuation(s).split()
+    if 'yes' in words and 'no' not in words:
         return 'Yes'
-    if 'yes' not in s and 'no' in s:
+    if 'yes' not in words and 'no' in words:
         return 'No'
     return 'Unknown'
 

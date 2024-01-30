@@ -7,24 +7,6 @@ from vlmeval.smp import *
 from typing import Optional
 from functools import partial
 
-def _process_punctuation(inText):
-    outText = inText
-    punct = [
-        ';', r'/', '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-',
-        '>', '<', '@', '`', ',', '?', '!'
-    ]
-    commaStrip = re.compile('(\d)(,)(\d)')  # noqa: W605
-    periodStrip = re.compile('(?!<=\d)(\.)(?!\d)')  # noqa: W605
-    for p in punct:
-        if (p + ' ' in inText or ' ' + p in inText) or (re.search(
-                commaStrip, inText) is not None):
-            outText = outText.replace(p, '')
-        else:
-            outText = outText.replace(p, ' ')
-    outText = periodStrip.sub('', outText, re.UNICODE)
-    return outText
-
-
 def _process_digit_article(inText):
     outText = []
     tempText = inText.lower().split()
@@ -257,7 +239,7 @@ def process_answer(answer):
     answer = answer.replace('\n', ' ')
     answer = answer.replace('\t', ' ')
     answer = answer.strip()
-    answer = _process_punctuation(answer)
+    answer = process_punctuation(answer)
     answer = _process_digit_article(answer)
     return answer
 
