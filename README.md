@@ -19,13 +19,14 @@
 
 ## 🆕 News
 
+- **[2024-01-30]** We have supported three new models: [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max), [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b), [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya). 🔥🔥🔥
+- **[2024-01-30]** We have merged all performance numbers on our leaderboards into a single json file: [**OpenVLM.json**](http://opencompass.openxlab.space/utils/OpenVLM.json). 
 - **[2024-01-27]** We have supported the evaluation of [**MMMU_TEST**](https://mmmu-benchmark.github.io). 🔥🔥🔥
 - **[2024-01-24]** We have supported [**Yi-VL**](https://huggingface.co/01-ai/Yi-VL-6B). 🔥🔥🔥
 - **[2024-01-21]** We have updated results for [**LLaVABench (in-the-wild)**](/results/LLaVABench.md). 🔥🔥🔥
 - **[2024-01-14]** We have supported [**AI2D**](https://allenai.org/data/diagrams) and provided the [**script**](/scripts/AI2D_preproc.ipynb) for data pre-processing. 🔥🔥🔥
 - **[2024-01-13]** We have supported [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu) and [**DocVQA**](https://www.docvqa.org). 🔥🔥🔥
-- **[2024-01-11]** We have supported [**Monkey**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
-- **[2024-01-09]** The performance numbers on our official multi-modal leaderboards can be downloaded in json files: [**MMBench Leaderboard**](http://opencompass.openxlab.space/utils/MMBench.json), [**OpenCompass Multi-Modal Leaderboard**](http://opencompass.openxlab.space/utils/MMLB.json). We also added a [**notebook**](scripts/visualize.ipynb) to visualize these results.🔥🔥🔥
+- **[2024-01-11]** We have supported [**Monkey / Monkey-Chat**](https://github.com/Yuliang-Liu/Monkey). 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -66,7 +67,8 @@
 | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️**🚅** |
 | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅🎞️ | [**ShareGPT4V-7B**](https://sharegpt4v.github.io)🚅           | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
 | [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-17B-Chat**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**SharedCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
-| [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️  | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B) |  [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅  |
+| [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️  | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
+| [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ |                                                              |                                                              |                                                              |
 
 🎞️: Support multiple images as inputs, via the `multi_generate / interleave_generate` interface. 
 
