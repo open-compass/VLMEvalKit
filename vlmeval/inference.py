@@ -62,7 +62,7 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set, api_nproc=4):
         res[idx] = text
     return res
 
-def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_nproc=4):
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
@@ -95,7 +95,7 @@ def infer_data(model_name, dataset_name, out_file, verbose=False, api_nproc=4):
     if is_api:
         assert world_size == 1
         lt, indices = len(data), list(data['index'])
-        supp = infer_data_api(model_name=model_name, dataset_name=dataset_name, index_set=set(indices), api_nproc=api_nproc)
+        supp = infer_data_api(work_dir=work_dir, model_name=model_name, dataset_name=dataset_name, index_set=set(indices), api_nproc=api_nproc)
         for idx in indices:
             assert idx in supp
         res.update(supp)
@@ -177,7 +177,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
     out_file = tmpl.format(rank)
 
     if not osp.exists(result_file):
-        model = infer_data(model, dataset_name=dataset_name, out_file=out_file, verbose=verbose)
+        model = infer_data(model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose)
         if world_size > 1:
             dist.barrier()
 

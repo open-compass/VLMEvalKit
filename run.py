@@ -58,7 +58,7 @@ def main():
                 if args.mode == 'all':
                     logger.error(f'Dataset {dataset_name} does not support `evaluation` now, will skip the evaluation. ')
 
-            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)
+            model = infer_data_job(model, work_dir=pred_root, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)
 
             if dataset_name in ['MMBench_TEST_CN', 'MMBench_TEST_EN', "MMMU_TEST"]:
                 if not MMBenchOfficialServer():
