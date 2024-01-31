@@ -45,13 +45,13 @@ dataset_md5_dict = {
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
     'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
     'MMMU_DEV_VAL': "521afc0f3bf341e6654327792781644d",
-    'MMMU_TEST': "38e93b57d3037b19c3b98ad6144a2dd9",
+    'MMMU_TEST': "c19875d11a2d348d07e5eb4bdf33166d",
     'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464',
     'ChartQA_VALTEST_HUMAN':'2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
-    "DocVQA_VAL": '18b02b593e78039026d666f0e5a812dd',
+    "DocVQA_VAL": '6053a7facdb0fd35a8913b690182cc19',
     "AI2D_TEST": "0f593e0d1c7df9a3d69bf1f947e71975",
     "LLaVABench": "d382a093f749a697820d3dadd61c8428"
 }
