@@ -116,7 +116,7 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 
 **Arguments**
 
-- `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`). 
+- `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/dataset_config.py`). 
 - `--model (list[str])`: Set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`). 
 - `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
 - `--nproc (int, default to 4)`: The number of threads for OpenAI API calling.
