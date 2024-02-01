@@ -13,8 +13,9 @@ class CustomPrompt:
         raise NotImplementedError
     
     def dump_image(self, line, dataset):
+        ROOT = LMUDataRoot()
         assert isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
+        img_root = osp.join(ROOT, 'images', img_root_map[dataset])
         os.makedirs(img_root, exist_ok=True)
         if isinstance(line['image'], list):        
             tgt_path = []

@@ -1,5 +1,5 @@
 from .vlm import *
-from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLPlus
+from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLAPI
 from functools import partial
 
 PandaGPT_ROOT = None
@@ -41,6 +41,7 @@ models = {
     'MiniGPT-4-v1-7B': partial(MiniGPT4, mode='v1_7b', root=MiniGPT4_ROOT),
     'MiniGPT-4-v1-13B': partial(MiniGPT4, mode='v1_13b', root=MiniGPT4_ROOT),
     "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
+    "XComposer2": partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
     "mPLUG-Owl2": partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
@@ -51,6 +52,7 @@ models = {
     'monkey-chat':partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
     'Yi_VL_6B':partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
     'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
+    'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
 }
 
 api_models = {
@@ -63,7 +65,8 @@ api_models = {
         GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
         system_prompt="Please responde to the following question / request in a short reply. "),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
-    'QwenVLPlus': partial(QwenVLPlus, temperature=0, retry=10),
+    'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
+    'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
 }
 
 xtuner_models = {

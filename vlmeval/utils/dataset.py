@@ -1,7 +1,7 @@
 import pandas as pd
 import hashlib
 from ..smp import *
-from .dataset_config import dataset_URLs, dataset_md5_dict, img_root_map, DATASET_TYPE
+from .dataset_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE
 from .custom_prompt import CustomPrompt
 
 def isliststr(s):
@@ -37,7 +37,7 @@ def split_MMMU(struct):
 
 class TSVDataset(CustomPrompt):
     
-    def __init__(self, dataset='MMBench', img_root=None, skip_noimg=True):
+    def __init__(self, dataset='MMBench', skip_noimg=True):
 
         self.data_root = LMUDataRoot()
         assert osp.exists(self.data_root)
@@ -86,10 +86,6 @@ class TSVDataset(CustomPrompt):
             data['index'] = [int(x) for x in data['index']]
             
         self.data = data
-
-        img_root = img_root if img_root is not None else osp.join('images', img_root_map[dataset])
-        os.makedirs(img_root, exist_ok=True)
-        self.img_root = img_root
 
     def __len__(self):
         return len(self.data)

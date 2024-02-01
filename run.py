@@ -10,6 +10,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, nargs='+', required=True)
     parser.add_argument("--model", type=str, nargs='+', required=True)
+    parser.add_argument("--work-dir", type=str, default='.', help="select the output directory")
     parser.add_argument("--mode", type=str, default='all', choices=['all', 'infer'])
     parser.add_argument("--nproc", type=int, default=4, help="Parallel API calling")
     parser.add_argument("--ignore", action='store_true', help="Ignore failed indices. ")
@@ -31,8 +32,9 @@ def main():
 
     for _, model_name in enumerate(args.model):
         model = None
-        os.makedirs(model_name, exist_ok=True)
-        pred_root = model_name
+
+        pred_root = osp.join(args.work_dir, model_name)
+        os.makedirs(pred_root, exist_ok=True)
 
         for i, dataset_name in enumerate(args.data):
             if dataset_name not in dataset_URLs:
@@ -56,7 +58,7 @@ def main():
                 if args.mode == 'all':
                     logger.error(f'Dataset {dataset_name} does not support `evaluation` now, will skip the evaluation. ')
 
-            model = infer_data_job(model, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)
+            model = infer_data_job(model, work_dir=pred_root, model_name=model_name, dataset_name=dataset_name, verbose=args.verbose, api_nproc=args.nproc, ignore_failed=args.ignore)
 
             if dataset_name in ['MMBench_TEST_CN', 'MMBench_TEST_EN', "MMMU_TEST"]:
                 if not MMBenchOfficialServer():
@@ -85,7 +87,7 @@ def main():
                 elif listinstr(['COCO'], dataset_name):
                     COCO_eval(result_file)
                 elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
-                    VQAEval(result_file)
+                    VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif listinstr(['LLaVABench'], dataset_name):
