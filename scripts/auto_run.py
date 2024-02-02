@@ -8,8 +8,14 @@ def is_api(x):
 models = list(supported_VLM)
 models = [x for x in models if 'fs' not in x]
 models = [x for x in models if not is_api(x)]
-small_models = [x for x in models if '80b' not in x]
-large_models = [x for x in models if '80b' in x]
+exclude_list = ['cogvlm-grounding-generalist', 'emu2']
+models = [x for x in models if x not in exclude_list]
+
+def is_large(x):
+    return '80b' in x or 'emu2' in x or '34B' in x
+
+small_models = [x for x in models if not is_large(x)]
+large_models = [x for x in models if is_large(x)]
 models = small_models + large_models
 
 parser = argparse.ArgumentParser()
