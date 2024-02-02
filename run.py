@@ -4,7 +4,7 @@ from vlmeval.smp import *
 from vlmeval.evaluate import COCO_eval, YOrN_eval, MMVet_eval, multiple_choice_eval, VQAEval, MathVista_eval, LLaVABench_eval
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
-from vlmeval.utils import dataset_URLs, abbr2full
+from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -78,14 +78,14 @@ def main():
                     dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
                 
             if rank == 0 and args.mode == 'all':
-                if listinstr(['MMBench', 'CCBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D'], dataset_name):
+                if DATASET_TYPE(dataset_name) == 'multi-choice':
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
-                elif listinstr(['MME', 'Hallusion'], dataset_name):
+                elif DATASET_TYPE(dataset_name) == 'Y/N':
                     YOrN_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose, dataset=dataset_name)
+                elif DATASET_TYPE(dataset_name) == 'Caption':
+                    COCO_eval(result_file)
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
-                elif listinstr(['COCO'], dataset_name):
-                    COCO_eval(result_file)
                 elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
                     VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
