@@ -9,23 +9,13 @@ class IDEFICS:
     INSTALL_REQ = False
 
     def __init__(self, 
-                 name, 
+                 model_pth="HuggingFaceM4/idefics-9b-instruct",
                  with_context=False, 
-                 model_path_map = {
-                     'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
-                     'idefics_80b_instruct': "HuggingFaceM4/idefics-80b-instruct"
-                 },
                  **kwargs):
-        assert name in ['idefics_9b_instruct', 'idefics_80b_instruct'] or osp.exists(name)
-        self.model_path_map = model_path_map
-        if name in self.model_path_map:
-            pth = self.model_path_map[name]
-        else:
-            pth = name
-        assert osp.exists(pth) or splitlen(pth) == 2
+        assert osp.exists(model_pth) or splitlen(model_pth) == 2
         from transformers import IdeficsForVisionText2Text, AutoProcessor
-        self.model = IdeficsForVisionText2Text.from_pretrained(pth, torch_dtype=torch.bfloat16, device_map='auto')
-        self.processor = AutoProcessor.from_pretrained(pth)
+        self.model = IdeficsForVisionText2Text.from_pretrained(model_pth, torch_dtype=torch.bfloat16, device_map='auto')
+        self.processor = AutoProcessor.from_pretrained(model_pth)
         self.with_context = with_context
         kwargs_default = {'max_length': 128}
         kwargs_default.update(kwargs)

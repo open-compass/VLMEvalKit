@@ -6,17 +6,7 @@ PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
 TransCore_ROOT = None
 Yi_ROOT = None
-
-idefics_model_path_map = {
-    'idefics_9b_instruct': "HuggingFaceM4/idefics-9b-instruct",
-    'idefics_80b_instruct': "HuggingFaceM4/idefics-80b-instruct"
-}
-
-llava_model_path_map = {
-    'llava_v1.5_7b': 'liuhaotian/llava-v1.5-7b',
-    'llava_v1.5_13b': 'liuhaotian/llava-v1.5-13b',
-    'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
-}
+LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 models = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
@@ -25,15 +15,15 @@ models = {
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
     'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth='anas-awadalla/mpt-7b', ckpt_pth='openflamingo/OpenFlamingo-9B-vitl-mpt7b'),
     'flamingov2_fs': partial(OpenFlamingo, name='v2', with_context=True, mpt_pth='anas-awadalla/mpt-7b', ckpt_pth='openflamingo/OpenFlamingo-9B-vitl-mpt7b'),
-    'idefics_9b_instruct': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map),
-    'idefics_80b_instruct': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map),
-    'idefics_9b_instruct_fs': partial(IDEFICS, name='idefics_9b_instruct', model_path_map=idefics_model_path_map, with_context=True),
-    'idefics_80b_instruct_fs': partial(IDEFICS, name='idefics_80b_instruct', model_path_map=idefics_model_path_map, with_context=True),
-    'llava_v1.5_7b': partial(LLaVA, name='llava_v1.5_7b', model_path_map=llava_model_path_map),
-    'sharegpt4v_7b': partial(LLaVA, name='Lin-Chen/ShareGPT4V-7B', model_path_map={}),
-    'sharegpt4v_13b': partial(LLaVA, name='Lin-Chen/ShareGPT4V-13B', model_path_map={}),
-    'llava_v1.5_13b': partial(LLaVA, name='llava_v1.5_13b', model_path_map=llava_model_path_map),
-    'llava_v1_7b': partial(LLaVA, name='llava_v1_7b', model_path_map=llava_model_path_map),
+    'idefics_9b_instruct': partial(IDEFICS, model_pth="HuggingFaceM4/idefics-9b-instruct"),
+    'idefics_80b_instruct': partial(IDEFICS, model_pth="HuggingFaceM4/idefics-80b-instruct"),
+    'idefics_9b_instruct_fs': partial(IDEFICS, model_pth="HuggingFaceM4/idefics-9b-instruct", with_context=True),
+    'idefics_80b_instruct_fs': partial(IDEFICS, model_pth="HuggingFaceM4/idefics-80b-instruct", with_context=True),
+    'llava_v1.5_7b': partial(LLaVA, model_pth='liuhaotian/llava-v1.5-7b'),
+    'llava_v1.5_13b': partial(LLaVA, model_pth='liuhaotian/llava-v1.5-13b'),
+    'llava_v1_7b': partial(LLaVA, model_pth=LLAVA_V1_7B_MODEL_PTH),
+    'sharegpt4v_7b': partial(LLaVA, model_pth='Lin-Chen/ShareGPT4V-7B'),
+    'sharegpt4v_13b': partial(LLaVA, model_pth='Lin-Chen/ShareGPT4V-13B'),
     'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
     'instructblip_13b': partial(InstructBLIP, name='instructblip_13b'),
     'VisualGLM_6b': partial(VisualGLM, model_path="THUDM/visualglm-6b"),

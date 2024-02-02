@@ -11,12 +11,7 @@ class LLaVA(CustomPrompt):
     INSTALL_REQ = True
 
     def __init__(self, 
-                 name,
-                 model_path_map = {
-                     'llava_v1.5_7b': 'liuhaotian/llava_v1.5_7b',
-                     'llava_v1.5_13b': 'liuhaotian/llava_v1.5_13b',
-                     'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
-                 },
+                 model_pth='liuhaotian/llava_v1.5_7b',
                  **kwargs): 
         try:
             from llava.model.builder import load_pretrained_model
@@ -25,32 +20,25 @@ class LLaVA(CustomPrompt):
             warnings.warn("Please install llava before using LLaVA")
             sys.exit(-1)
             
-        self.model_path_map = model_path_map
-        assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
-        if name in self.model_path_map:
-            model_path = self.model_path_map[name]
-        else:
-            model_path = name
-
-        assert osp.exists(model_path) or splitlen(model_path) == 2
+        assert osp.exists(model_pth) or splitlen(model_pth) == 2
         
-        if model_path == 'Lin-Chen/ShareGPT4V-7B':
+        if model_pth == 'Lin-Chen/ShareGPT4V-7B':
             model_name = 'llava-v1.5-7b'
-        elif model_path == 'Lin-Chen/ShareGPT4V-13B':
+        elif model_pth == 'Lin-Chen/ShareGPT4V-13B':
             model_name = 'llava-v1.5-13b'
         else:
-            model_name = get_model_name_from_path(model_path)
+            model_name = get_model_name_from_path(model_pth)
 
         try:
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path=model_path, 
+                model_path=model_pth, 
                 model_base=None, 
                 model_name=model_name, 
                 device='cpu', 
                 device_map='cpu'
             )
         except:
-            if 'ShareGPT4V' in model_path:
+            if 'ShareGPT4V' in model_pth:
                 import llava
                 warnings.warn(
                     f'Please manually remove the encoder type check in {llava.__path__[0]}/model/multimodal_encoder/builder.py '
