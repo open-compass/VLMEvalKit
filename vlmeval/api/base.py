@@ -42,9 +42,11 @@ class BaseAPI:
         assert input_type is not None, input_type
 
         answer = None
+        # a very small random delay [0s - 0.5s]
+        T = rd.random() * 0.5
+        time.sleep(T)
+        
         for i in range(self.retry):
-            T = rd.random() * self.wait * 2
-            time.sleep(T)
             try:
                 ret_code, answer, log = self.generate_inner(inputs, **kwargs)
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
@@ -57,8 +59,8 @@ class BaseAPI:
                 if self.verbose:
                     self.logger.error(f'An error occured during try {i}:')
                     self.logger.error(err)
+            # delay before each retry
+            T = rd.random() * self.wait * 2
+            time.sleep(T)
         
         return self.fail_msg if answer in ['', None] else answer
-        
-
-        
