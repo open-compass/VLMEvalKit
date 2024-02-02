@@ -78,13 +78,14 @@ img_root_map.update({
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset.lower()):
+    dataset = dataset.lower()
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
         return 'multi-choice'
-    elif 'MME' in dataset:
+    elif listinstr(['mme', 'hallusion'], dataset):
         return 'Y/N'
-    elif 'COCO' in dataset:
+    elif 'coco' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet'], dataset.lower()):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet'], dataset):
         return 'VQA'
     else:
         return 'QA'
