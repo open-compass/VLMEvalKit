@@ -65,6 +65,6 @@ class QwenAPI(BaseAPI):
             return -1, 'Error: Bad Response Statuse Code. ', f'The response status code is {response.status_code}. '
         
         try:
-            return 0, response.json()['output']['choices'][0]['message']['content'].strip(), 'Succeeded! '
+            return 0, response['output']['choices'][0]['message']['content'].strip(), 'Succeeded! '
         except Exception as err:
             return -1, f'Error: Failed to parse the response. {err}', response
