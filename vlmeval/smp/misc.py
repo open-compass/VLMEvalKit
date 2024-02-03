@@ -51,6 +51,8 @@ def r2h(rgb):
 
 def colored(s, color):
     if isinstance(color, str):
+        if hasattr(fg, color):
+            return getattr(fg, color) + s + fg.rs
         color = h2r(color)
     return fg(*color) + s + fg.rs
 

@@ -3,21 +3,17 @@ from vlmeval.config import supported_VLM
 
 logger = get_logger('Report Missing')
 
-dataset = [
-    'MME', 'SEEDBench_IMG', 'MMBench', 'CCBench', 'MMBench_CN',
-    'MMVet', 'OCRVQA_TESTCORE', 'TextVQA_VAL', 'COCO_VAL', 'MMMU_DEV_VAL',
-    'ChartQA_VALTEST_HUMAN', 'ScienceQA_VAL', 'ScienceQA_TEST', 'MathVista_MINI', 'HallusionBench',
-    'AI2D_TEST', 'LLaVABench'
+ESSENTIAL = [
+    ('MME', 'score.csv'), ('SEEDBench_IMG', 'acc.csv'), ('MMBench', 'acc.csv'), 
+    ('CCBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('MMVet', 'gpt-4-turbo_score.csv'),
+    ('MMMU_DEV_VAL', 'acc.csv'), ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
+    ('AI2D_TEST', 'acc.csv'), ('LLaVABench', 'score.csv')
 ]
-suffix = [
-    'score.csv', 'acc.csv', 'acc.csv', 'acc.csv', 'acc.csv',
-    'gpt-4-turbo_score.csv', 'acc.csv', 'acc.csv', 'score.json', 'acc.csv',
-    'acc.csv', 'acc.csv', 'acc.csv', 'gpt-4-turbo_score.csv', 'score.csv',
-    'acc.csv', 'score.csv'
+OPTIONAL = [
+    ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'), ('COCO_VAL', 'score.json'), 
+    ('ChartQA_VALTEST_HUMAN', 'acc.csv'), ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'),
 ]
 
-N = len(dataset)
-assert N == len(suffix)
 models = list(supported_VLM)
 
 def completed(m, d, suf):
@@ -35,10 +31,21 @@ def completed(m, d, suf):
 for f in models:
     if not osp.exists(f):
         logger.info(f'{f} not evaluated. ')
-        continue
+models = [x for x in models if osp.exists(x)]
+
+logger.info(colored('Essential Datasets: ', 'red'))
+
+for f in models:
     files = ls(f, mode='file')
-    for i in range(N):
-        D = dataset[i]
-        suff = suffix[i]
+    for D, suff in ESSENTIAL:
         if not completed(f, D, suff):
-            logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', '#FF0000'))
+            logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'red'))
+
+logger.info(colored('Optional Datasets: ', 'magenta'))
+
+for f in models:
+    files = ls(f, mode='file')
+    for D, suff in OPTIONAL:
+        if not completed(f, D, suff):
+            logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'magenta'))
+        
