@@ -9,11 +9,13 @@ def can_infer_option(answer, choices):
     if 'Failed to obtain answer via API' in answer:
         return False
     
-    bard_err = [
+    reject_to_answer = [
         "Sorry, I can't help with images of people yet.",
-        "I can't process this file."
+        "I can't process this file.",
+        "I'm sorry, but without the image provided",
+        "Cannot determine the answer"
     ]
-    for err in bard_err:
+    for err in reject_to_answer:
         if err in answer:
             return 'Z'
     
