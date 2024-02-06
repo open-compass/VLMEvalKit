@@ -43,8 +43,8 @@ models = {
     'Yi_VL_6B':partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
     'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
-    'MiniCPM-V':partial(MiniCPM_V, model_path='/data/public/multimodal/multimodal_model_ckpts/MiniCPM-V'),
-    'OmniLMM_12B':partial(OmniLMM_12B, model_path='/data/public/multimodal/multimodal_model_ckpts/OmniLMM-12B'),
+    'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
+    'OmniLMM_12B':partial(OmniLMM_12B, model_path='openbmb/OmniLMM-12B'),
 }
 
 api_models = {

@@ -18,10 +18,11 @@ class MiniCPM_V:
     def __init__(self, model_path='openbmb/MiniCPM-V', **kwargs):
         assert model_path is not None
         self.model_path = model_path
-        self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
+        self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True, device_map='cpu')
         self.model = self.model.to(dtype=torch.bfloat16)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         self.model.eval().cuda()
+        self.kwargs = kwargs
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
     
     def generate(self, image_path, prompt, dataset=None):
@@ -31,14 +32,18 @@ class MiniCPM_V:
             max_new_tokens = 10
         else:
             max_new_tokens = 1024
+        default_kwargs = dict(
+            max_new_tokens=max_new_tokens,
+            sampling=False,
+            num_beams=1
+        )
+        default_kwargs.update(self.kwargs)
         res, _, _ = self.model.chat(
             image=image,
             msgs=msgs,
             context=None,
             tokenizer=self.tokenizer,
-            sampling=False,
-            num_beams=1,
-            max_new_tokens = max_new_tokens
+            **default_kwargs
         )
         return res
     
