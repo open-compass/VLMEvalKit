@@ -1,7 +1,6 @@
-from functools import partial
-
-from .api import GPT4V, GeminiProVision, GPT4V_Internal, QwenVLAPI
 from .vlm import *
+from .api import GPT4V, GeminiProVision, GPT4V_Internal, QwenVLAPI
+from functools import partial
 
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
