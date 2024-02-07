@@ -13,7 +13,7 @@ from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya
 from .monkey import Monkey, MonkeyChat
 from .mplug_owl2 import mPLUG_Owl2
-from .omnilmm import OmniLMM_12B
+from .omnilmm import OmniLMM12B
 from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
 from .qwen_vl import QwenVL, QwenVLChat
