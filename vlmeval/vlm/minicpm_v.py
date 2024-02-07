@@ -28,7 +28,7 @@ class MiniCPM_V:
     def generate(self, image_path, prompt, dataset=None):
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             max_new_tokens = 10
         else:
             max_new_tokens = 1024
