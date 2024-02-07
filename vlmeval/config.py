@@ -44,7 +44,7 @@ models = {
     'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
-    'OmniLMM_12B':partial(OmniLMM_12B, model_path='openbmb/OmniLMM-12B'),
+    'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B'),
 }
 
 api_models = {
