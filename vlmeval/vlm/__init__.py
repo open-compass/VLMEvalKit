@@ -1,22 +1,25 @@
 import torch
+
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
-from .qwen_vl import QwenVL, QwenVLChat
-from .transcore_m import TransCoreM
-from .pandagpt import PandaGPT
-from .open_flamingo import OpenFlamingo
+from .cogvlm import CogVlm
+from .emu import Emu
 from .idefics import IDEFICS
-from .llava import LLaVA
 from .instructblip import InstructBLIP
-from .visualglm import VisualGLM
+from .llava import LLaVA
+from .llava_xtuner import LLaVA_XTuner
+from .minicpm_v import MiniCPM_V
 from .minigpt4 import MiniGPT4
+from .mmalaya import MMAlaya
+from .monkey import Monkey, MonkeyChat
+from .mplug_owl2 import mPLUG_Owl2
+from .omnilmm import OmniLMM12B
+from .open_flamingo import OpenFlamingo
+from .pandagpt import PandaGPT
+from .qwen_vl import QwenVL, QwenVLChat
+from .sharedcaptioner import SharedCaptioner
+from .transcore_m import TransCoreM
+from .visualglm import VisualGLM
 from .xcomposer import XComposer
 from .xcomposer2 import XComposer2
-from .mplug_owl2 import mPLUG_Owl2
-from .llava_xtuner import LLaVA_XTuner
-from .cogvlm import CogVlm
-from .sharedcaptioner import SharedCaptioner
-from .emu import Emu
-from .monkey import Monkey, MonkeyChat
 from .yi_vl import Yi_VL
-from .mmalaya import MMAlaya

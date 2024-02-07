@@ -1,11 +1,12 @@
 from .vlm import *
-from .api import GPT4V, GPT4V_Internal, GeminiProVision, QwenVLAPI
+from .api import GPT4V, GeminiProVision, GPT4V_Internal, QwenVLAPI
 from functools import partial
 
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
 TransCore_ROOT = None
 Yi_ROOT = None
+OmniLMM_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 models = {
@@ -43,6 +44,8 @@ models = {
     'Yi_VL_6B':partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
     'Yi_VL_34B':partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
+    'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
+    'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
 }
 
 api_models = {
