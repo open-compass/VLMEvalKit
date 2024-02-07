@@ -1,14 +1,11 @@
-import base64
-import io
-import json
-import os
-
+import sys
 import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer
 
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
+
 
 DEFAULT_IMAGE_TOKEN = "<image>"
 DEFAULT_IMAGE_PATCH_TOKEN = "<im_patch>"
@@ -71,7 +68,8 @@ class OmniLMM12B(CustomPrompt):
 
     INSTALL_REQ = True
 
-    def __init__(self, model_path, **kwargs) -> None:
+    def __init__(self, model_path, root, **kwargs) -> None:
+        sys.path.append(root)
         model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
         self.model = model
         self.image_token_len = image_token_len
