@@ -162,7 +162,10 @@ def BUILD_L1_DF(results, fields):
         scores, ranks = [], []
         for d in fields:
             res[d].append(item[d]['Overall'])
-            scores.append(item[d]['Overall'])
+            if d == 'MME':
+                scores.append(item[d]['Overall'] / 28)
+            else:
+                scores.append(item[d]['Overall'])
             ranks.append(nth_large(item[d]['Overall'], [x[d]['Overall'] for x in results.values()]))
         res['Avg Score'].append(round(np.mean(scores), 1))
         res['Avg Rank'].append(round(np.mean(ranks), 2))
@@ -186,8 +189,8 @@ def BUILD_L2_DF(results, dataset):
     non_overall_fields = [x for x in fields if 'Overall' not in x]
     overall_fields = [x for x in fields if 'Overall' in x]
     if dataset == 'MME':
-        non_overall_fields = [x for x in non_overall_fields if not listinstr(['Perception', 'Cognition', 'Total'], x)]
-        overall_fields = ['Perception', 'Cognition', 'Total']
+        non_overall_fields = [x for x in non_overall_fields if not listinstr(['Perception', 'Cognition'], x)]
+        overall_fields = overall_fields + ['Perception', 'Cognition']
     
     for m in results:
         item = results[m]
@@ -209,7 +212,7 @@ def BUILD_L2_DF(results, dataset):
             res[d].append(item[dataset][d])
 
     df = pd.DataFrame(res)
-    df = df.sort_values('Overall' if dataset != 'MME' else 'Total')
+    df = df.sort_values('Overall')
     df = df.iloc[::-1]
     
     check_box = {}
