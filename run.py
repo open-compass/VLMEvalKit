@@ -41,8 +41,11 @@ def main():
                 dataset_name = abbr2full(dataset_name)
             
             if dataset_name not in dataset_URLs:
-                logger.error(f'Unknown dataset: {dataset_name}. ')
-                continue
+                logger.warning(f'Dataset {dataset_name} is not officially supported. ')
+                file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
+                if not osp.exists(file_path):
+                    logger.error(f'Cannot find the local dataset {dataset_name}. ')
+                    continue
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
             

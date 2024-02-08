@@ -75,11 +75,11 @@ img_root_map.update({
     'DocVQA_VAL': 'DocVQA',
 })
 
-assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
+assert set(dataset_URLs) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'places'], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion'], dataset):
         return 'Y/N'
@@ -98,4 +98,4 @@ def abbr2full(s):
             if s in d:
                 return d
     else:
-        return None
+        return s
