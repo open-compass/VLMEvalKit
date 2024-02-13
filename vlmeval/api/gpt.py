@@ -75,6 +75,10 @@ class OpenAIWrapper(BaseAPI):
             self.logger.error("Unknown API Base. ")
             sys.exit(-1)
 
+        if 'OPENAI_API_BASE' in os.environ:
+            self.logger.error("Environment variable OPENAI_API_BASE is set. Will override the api_base arg. ")
+            self.api_base = os.environ['OPENAI_API_BASE']
+
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
     def prepare_inputs(self, inputs):
