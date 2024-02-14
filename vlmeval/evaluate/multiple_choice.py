@@ -208,7 +208,7 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
             result[k] = v
     dump(result, result_file)
 
-def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4, verbose=False):
+def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', nproc=4, verbose=False):
     logger = get_logger('Evaluation')
 
     # assert dataset is not None
@@ -217,7 +217,7 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     elif dataset == 'MMBench_TEST_EN':
         dataset = 'MMBench'
 
-    if dataset is not None and listinstr(['mmbench', 'ccbench'], dataset.lower()):
+    if listinstr(['mmbench', 'ccbench'], dataset.lower()):
         data = load(eval_file)
         data['index'] = [int(x) for x in data['index']]
         dump(data, eval_file)
@@ -250,7 +250,7 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     for k in data.keys():
         data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
 
-    if dataset is not None:
+    if dataset != "default":
         meta = TSVDataset(dataset).data
     else:
         logger.warning('Dataset is not provided, try to use the original `eval_file` as meta data. ')
@@ -335,7 +335,7 @@ def parse_args():
     parser.add_argument(
         "--dataset", 
         type=str, 
-        default=None, 
+        default="default", 
         help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
