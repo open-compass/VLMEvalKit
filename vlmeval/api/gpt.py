@@ -52,7 +52,8 @@ class OpenAIWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
 
-        openai_key = os.environ.get('OPENAI_API_KEY', None) if key is None else key
+        env_key = os.environ.get('OPENAI_API_KEY', '')
+        openai_key = env_key if key is None else key
         self.openai_key = openai_key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
