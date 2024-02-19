@@ -1,4 +1,4 @@
-from ..smp import listinstr, get_logger
+from ..smp import listinstr
 
 dataset_URLs = {
     'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
@@ -90,8 +90,8 @@ def DATASET_TYPE(dataset):
         return 'VQA'
     else:
         if dataset not in dataset_URLs:
-            logger = get_logger('DATASET')
-            logger.warning(f"Dataset {dataset} not found in dataset_URLs, will use 'multi-choice' as the default TYPE.")
+            import warnings
+            warnings.warn(f"Dataset {dataset} not found in dataset_URLs, will use 'multi-choice' as the default TYPE.")
             return 'multi-choice'
         else:
             return 'QA'
