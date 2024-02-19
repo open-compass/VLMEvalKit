@@ -13,9 +13,9 @@ def parse_args():
     parser.add_argument("--work-dir", type=str, default='.', help="select the output directory")
     parser.add_argument("--mode", type=str, default='all', choices=['all', 'infer'])
     parser.add_argument("--nproc", type=int, default=4, help="Parallel API calling")
+    parser.add_argument("--retry", type=int, default=None, help="retry numbers for API VLMs")
     parser.add_argument("--ignore", action='store_true', help="Ignore failed indices. ")
     parser.add_argument("--verbose", action='store_true')
-    parser.add_argument("--prefetch", action='store_true')
     args = parser.parse_args()
     return args
 
@@ -25,6 +25,12 @@ def main():
     args = parse_args()
     assert len(args.data), "--data should be a list of data files"
     
+    if args.retry is not None:
+        for k, v in supported_VLM.items():
+            if hasattr(v, 'keywords') and 'retry' in v.keywords:
+                v.keywords['retry'] = args.retry
+                supported_VLM[k] = v
+
     rank, world_size = get_rank_and_world_size()
     if world_size > 1:
         torch.cuda.set_device(rank)
