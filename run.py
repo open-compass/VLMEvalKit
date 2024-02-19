@@ -36,7 +36,9 @@ def main():
         pred_root = osp.join(args.work_dir, model_name)
         os.makedirs(pred_root, exist_ok=True)
 
-        for i, dataset_name in enumerate(args.data):
+        for _, dataset_name in enumerate(args.data):
+            custom_flag = False
+            
             if dataset_name not in dataset_URLs:
                 dataset_name = abbr2full(dataset_name)
             
@@ -46,6 +48,8 @@ def main():
                 if not osp.exists(file_path):
                     logger.error(f'Cannot find the local dataset {dataset_name}. ')
                     continue
+                else:
+                    custom_flag = True
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
             
@@ -82,6 +86,7 @@ def main():
                 
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':
+                    dataset_name = "default" if custom_flag else dataset_name
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif DATASET_TYPE(dataset_name) == 'Y/N':
                     YOrN_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose, dataset=dataset_name)

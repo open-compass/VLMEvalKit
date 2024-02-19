@@ -1,4 +1,4 @@
-from ..smp import listinstr
+from ..smp import listinstr, get_logger
 
 dataset_URLs = {
     'MMBench_DEV_EN': "https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv", 
@@ -78,8 +78,9 @@ img_root_map.update({
 assert set(dataset_URLs) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
+    # Dealing with Custom Dataset 
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'places'], dataset):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion'], dataset):
         return 'Y/N'
@@ -88,7 +89,12 @@ def DATASET_TYPE(dataset):
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet'], dataset):
         return 'VQA'
     else:
-        return 'QA'
+        if dataset not in dataset_URLs:
+            logger = get_logger('DATASET')
+            logger.warning(f"Dataset {dataset} not found in dataset_URLs, will use 'multi-choice' as the default TYPE.")
+            return 'multi-choice'
+        else:
+            return 'QA'
 
 def abbr2full(s):
     datasets = [x for x in img_root_map]
