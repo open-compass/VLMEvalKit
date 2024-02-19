@@ -76,7 +76,7 @@ class OpenAIWrapper(BaseAPI):
             self.logger.error("Unknown API Base. ")
             sys.exit(-1)
 
-        if 'OPENAI_API_BASE' in os.environ:
+        if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
             self.logger.error("Environment variable OPENAI_API_BASE is set. Will override the api_base arg. ")
             self.api_base = os.environ['OPENAI_API_BASE']
 
