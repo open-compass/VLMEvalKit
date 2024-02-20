@@ -202,7 +202,12 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         results = {k: v for k, v in zip(data['index'], data['prediction'])}
         if not ignore_failed:
             results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
-        dump(results, tmp_file)
+        if osp.exists(tmp_file):
+            old_res = load(tmp_file)
+            old_res.update(results)
+            dump(old_res, tmp_file)
+        else:
+            dump(results, tmp_file)
         
         res = infer_data_api(work_dir, model_name, dataset_name, api_nproc=4)
         data = TSVDataset(dataset_name).data
