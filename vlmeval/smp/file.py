@@ -98,7 +98,7 @@ def download_file(url, filename=None):
         urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
     return filename
 
-def ls(dirname='.', match='', mode='all', level=1):
+def ls(dirname='.', match=[], mode='all', level=1):
     if dirname == '.':
         ans = os.listdir(dirname)
     else:
@@ -109,6 +109,7 @@ def ls(dirname='.', match='', mode='all', level=1):
         if isinstance(match, str):
             match = [match]
         for m in match:
+            if len(m) == 0: continue
             if m[0] != '!': 
                 ans = [x for x in ans if m in x]
             else:
