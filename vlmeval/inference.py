@@ -185,7 +185,8 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
                 data_all.update(load(tmpl.format(i)))
 
             data = TSVDataset(dataset_name).data
-            assert len(data_all) == len(data)
+            for x in data['index']:
+                assert x in data_all
             data['prediction'] = [str(data_all[x]) for x in data['index']]
             data.pop('image')
             
