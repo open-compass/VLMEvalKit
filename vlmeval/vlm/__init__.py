@@ -23,3 +23,5 @@ from .visualglm import VisualGLM
 from .xcomposer import XComposer
 from .xcomposer2 import XComposer2
 from .yi_vl import Yi_VL
+from .internVL import InternVL
+from .internVL_chat import InternVLChat
