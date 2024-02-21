@@ -54,13 +54,10 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
         gen_func = model.generate
         structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
 
-    inference_results = track_progress_rich(
-        gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
+    if len(structs):
+        track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
     
     res = load(out_file)
-    for idx, text in zip(indices, inference_results):
-        assert (res[idx] == text if idx in res else True)
-        res[idx] = text
     return res
 
 def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_nproc=4):
