@@ -207,7 +207,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         else:
             dump(results, tmp_file)
         
-        res = infer_data_api(work_dir, model_name, dataset_name, api_nproc=4)
+        res = infer_data_api(work_dir, model_name, dataset_name, api_nproc=api_nproc)
         data = TSVDataset(dataset_name).data
         data['prediction'] = [str(res[x]) for x in data['index']]
         dump(data, result_file)
