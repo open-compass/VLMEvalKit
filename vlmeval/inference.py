@@ -17,7 +17,7 @@ def parse_args():
     return args
 
 # Only API model is accepted
-def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc=4):
+def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()   
     assert rank == 0 and world_size == 1
     dataset = TSVDataset(dataset_name)
@@ -36,7 +36,8 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
-        res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+        if ignore_failed:
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
     
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
@@ -207,7 +208,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         else:
             dump(results, tmp_file)
         
-        res = infer_data_api(work_dir, model_name, dataset_name, api_nproc=api_nproc)
+        res = infer_data_api(work_dir, model_name, dataset_name, api_nproc=api_nproc, ignore_failed=ignore_failed)
         data = TSVDataset(dataset_name).data
         data['prediction'] = [str(res[x]) for x in data['index']]
         dump(data, result_file)
