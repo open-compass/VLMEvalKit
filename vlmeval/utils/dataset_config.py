@@ -26,6 +26,7 @@ dataset_URLs = {
     "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
     'AI2D_TEST': "https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv",
     "LLaVABench": "https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv",
+    "OCRBench": 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
 }
 
 dataset_md5_dict = {
@@ -53,7 +54,8 @@ dataset_md5_dict = {
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
     "DocVQA_VAL": 'ee0d8ae5527439438d08e154ef65d735',
     "AI2D_TEST": "0f593e0d1c7df9a3d69bf1f947e71975",
-    "LLaVABench": "d382a093f749a697820d3dadd61c8428"
+    "LLaVABench": "d382a093f749a697820d3dadd61c8428",
+    "OCRBench": 'e953d98a987cc6e26ef717b61260b778',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -73,6 +75,7 @@ img_root_map.update({
     'ChartQA_VALTEST_HUMAN': 'ChartQA',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
+    "OCRBench": 'OCRBench',
 })
 
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
@@ -85,7 +88,7 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet'], dataset):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet', 'OCRBench'], dataset):
         return 'VQA'
     else:
         return 'QA'

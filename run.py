@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.evaluate import COCO_eval, YOrN_eval, MMVet_eval, multiple_choice_eval, VQAEval, MathVista_eval, LLaVABench_eval
+from vlmeval.evaluate import COCO_eval, YOrN_eval, MMVet_eval, multiple_choice_eval, VQAEval, MathVista_eval, LLaVABench_eval, OCRBench_eval
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
 from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full
@@ -86,6 +86,8 @@ def main():
                     COCO_eval(result_file)
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
+                elif dataset_name == 'OCRBench':
+                    OCRBench_eval(result_file)
                 elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
                     VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
