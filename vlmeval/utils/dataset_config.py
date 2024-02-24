@@ -26,7 +26,7 @@ dataset_URLs = {
     "DocVQA_VAL": "https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv",
     'AI2D_TEST': "https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv",
     "LLaVABench": "https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv",
-    "OCRBench": 'OCRBench',
+    "OCRBench": 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
 }
 
 dataset_md5_dict = {
@@ -55,7 +55,7 @@ dataset_md5_dict = {
     "DocVQA_VAL": 'ee0d8ae5527439438d08e154ef65d735',
     "AI2D_TEST": "0f593e0d1c7df9a3d69bf1f947e71975",
     "LLaVABench": "d382a093f749a697820d3dadd61c8428",
-    "OCRBench": 'OCRBench',
+    "OCRBench": 'e953d98a987cc6e26ef717b61260b778',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
