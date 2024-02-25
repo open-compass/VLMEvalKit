@@ -1,10 +1,9 @@
 import torch
 import sys
-from abc import abstractproperty
 import os.path as osp
 import warnings
 from transformers import StoppingCriteriaList
-from PIL import Image
+from ..utils.dataset_config import DATASET_TYPE
 
 class MiniGPT4:
 
@@ -13,8 +12,7 @@ class MiniGPT4:
     def __init__(self, 
                  mode='v2', 
                  root='/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/', 
-                 temperature=1, 
-                 max_out_len=512):
+                 **kwargs):
         
         if root is None:
             warnings.warn('Please set root to the directory of MiniGPT-4, which is cloned from here: https://github.com/Vision-CAIR/MiniGPT-4. ')
@@ -62,8 +60,20 @@ class MiniGPT4:
         stop_words_ids = [[835], [2277, 29937]]
         stop_words_ids = [torch.tensor(ids).to(device) for ids in stop_words_ids]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
+
+        default_kwargs = dict(
+            max_new_tokens=256, num_beams=1, min_length=1, top_p=0.9, 
+            repetition_penalty=1.0, length_penalty=1.0, temperature=1.0, max_length=2000
+        )
+        default_kwargs.update(kwargs)
+        self.kwargs = kwargs
         
     def generate(self, image_path, prompt, dataset=None):
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+            self.kwargs['num_beams'] = 5
+            self.kwargs['do_sample'] = False
+            self.kwargs['max_new_tokens'] = 32
+
         from minigpt4.conversation.conversation import Chat
         if self.mode == 'v2':
             chat = Chat(self.model, self.vis_processor, device=self.device)
@@ -76,5 +86,13 @@ class MiniGPT4:
         chat.encode_img(img_list)
         chat.ask(prompt, chat_state)
         with torch.inference_mode():
-            msg = chat.answer(conv=chat_state, img_list=img_list)[0]
+            generation_dict = chat.answer_prepare(chat_state, img_list, **self.kwargs)
+            generation_dict['do_sample'] = False
+            output_token = chat.model_generate(**generation_dict)[0]
+            output_text = chat.model.llama_tokenizer.decode(output_token, skip_special_tokens=True)
+
+            output_text = output_text.split('###')[0] 
+            output_text = output_text.split('Assistant:')[-1].strip()
+            msg = output_text 
+            
         return msg
