@@ -6,10 +6,10 @@ import torch
 import torch.nn as nn
 from transformers import BertTokenizer, LlamaTokenizer, StoppingCriteriaList
 
-from minigpt4_utils.eva_vit import create_eva_vit_g
-from minigpt4_utils.modelling_llama import LlamaForCausalLM
-from minigpt4_utils.Qformer import BertConfig, BertLMHeadModel
-from utils import StoppingCriteriaSub, download_cached_file, is_url
+from .minigpt4_utils.eva_vit import create_eva_vit_g
+from .minigpt4_utils.modelling_llama import LlamaForCausalLM
+from .minigpt4_utils.Qformer import BertConfig, BertLMHeadModel
+from .minigpt4_utils.utils import StoppingCriteriaSub, download_cached_file, is_url
 from vlmeval.utils import DATASET_TYPE
 
 
