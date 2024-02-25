@@ -65,6 +65,11 @@ class MiniGPT4:
         )
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
+        from minigpt4.conversation.conversation import Chat
+        if self.mode == 'v2':
+            self.chat = Chat(self.model, self.vis_processor, device=self.device)
+        else:
+            self.chat = Chat(self.model, self.vis_processor, device=self.device, stopping_criteria=self.stopping_criteria)
         
     def generate(self, image_path, prompt, dataset=None):
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
@@ -72,22 +77,16 @@ class MiniGPT4:
             self.kwargs['max_new_tokens'] = 20
             self.kwargs['length_penalty'] = -1
 
-        from minigpt4.conversation.conversation import Chat
-        if self.mode == 'v2':
-            chat = Chat(self.model, self.vis_processor, device=self.device)
-        else:
-            chat = Chat(self.model, self.vis_processor, device=self.device, stopping_criteria=self.stopping_criteria)
-
         chat_state = self.CONV_VISION.copy()
         img_list = []
-        _ = chat.upload_img(image_path, chat_state, img_list)
-        chat.encode_img(img_list)
-        chat.ask(prompt, chat_state)
+        _ = self.chat.upload_img(image_path, chat_state, img_list)
+        self.chat.encode_img(img_list)
+        self.chat.ask(prompt, chat_state)
         with torch.inference_mode():
-            generation_dict = chat.answer_prepare(chat_state, img_list, **self.kwargs)
+            generation_dict = self.chat.answer_prepare(chat_state, img_list, **self.kwargs)
             generation_dict['do_sample'] = False
-            output_token = chat.model_generate(**generation_dict)[0]
-            output_text = chat.model.llama_tokenizer.decode(output_token, skip_special_tokens=True)
+            output_token = self.chat.model_generate(**generation_dict)[0]
+            output_text = self.chat.model.llama_tokenizer.decode(output_token, skip_special_tokens=True)
 
             output_text = output_text.split('###')[0] 
             output_text = output_text.split('Assistant:')[-1].strip()
