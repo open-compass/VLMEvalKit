@@ -69,7 +69,7 @@ class MiniGPT4:
     def generate(self, image_path, prompt, dataset=None):
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             self.kwargs['num_beams'] = 5
-            self.kwargs['max_new_tokens'] = 32
+            self.kwargs['max_new_tokens'] = 20
             self.kwargs['length_penalty'] = -1
 
         from minigpt4.conversation.conversation import Chat
