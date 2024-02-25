@@ -64,7 +64,7 @@ class MiniGPT4:
             repetition_penalty=1.0, length_penalty=1.0, temperature=1.0, max_length=2000
         )
         default_kwargs.update(kwargs)
-        self.kwargs = kwargs
+        self.kwargs = default_kwargs
         
     def generate(self, image_path, prompt, dataset=None):
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
