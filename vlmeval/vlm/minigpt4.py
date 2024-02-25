@@ -27,8 +27,6 @@ class MiniGPT4:
             raise NotImplementedError
         
         self.mode = mode
-        self.temperature = temperature 
-        self.max_out_len = max_out_len
         self.root = root 
         this_dir = osp.dirname(__file__)
 
@@ -94,5 +92,5 @@ class MiniGPT4:
             output_text = output_text.split('###')[0] 
             output_text = output_text.split('Assistant:')[-1].strip()
             msg = output_text 
-            
+
         return msg
