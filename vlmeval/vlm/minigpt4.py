@@ -70,6 +70,7 @@ class MiniGPT4:
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             self.kwargs['num_beams'] = 5
             self.kwargs['max_new_tokens'] = 32
+            self.kwargs['length_penalty'] = -1
 
         from minigpt4.conversation.conversation import Chat
         if self.mode == 'v2':
