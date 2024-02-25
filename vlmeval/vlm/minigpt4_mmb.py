@@ -101,12 +101,10 @@ class MiniGPT4_MMB(nn.Module):
         default_kwargs = dict(
             max_new_tokens=128,
             num_beams=1,
-            do_sample=True,
+            do_sample=False,
             min_length=1,
-            top_p=0.9,
             repetition_penalty=1,
             length_penalty=-1,
-            temperature=1.0,
             stopping_criteria=self.stopping_criteria,
             num_return_sequences=1)
         default_kwargs.update(kwargs)
@@ -208,7 +206,6 @@ class MiniGPT4_MMB(nn.Module):
             self.kwargs['num_beams'] = 5
             self.kwargs['max_new_tokens'] = 20
             self.kwargs['length_penalty'] = -1
-            self.kwargs['do_sample'] = False
 
         prompt = f'###Human: <Img><ImageHere></Img> {prompt} ###Assistant:'
         image_tensor = self.load_image(image_path)
