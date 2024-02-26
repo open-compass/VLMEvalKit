@@ -22,7 +22,7 @@ class InstructBLIP_MMB(Blip2Base):
         **kwargs
     ):
         super().__init__()
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.model_name = model_name
         assert model_name in ['7B', '13B'], 'Invalid model name'
         if model_name == '7B':
@@ -84,27 +84,7 @@ class InstructBLIP_MMB(Blip2Base):
             num_return_sequences=1)
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
-        self.to(self.device)
-
-    def load_from_pretrained(self, url_or_filename):
-        import os
-        from .minigpt4_utils.utils import is_url, download_cached_file
-        if is_url(url_or_filename):
-            cached_file = download_cached_file(url_or_filename,
-                                               check_hash=False,
-                                               progress=True)
-            checkpoint = torch.load(cached_file, map_location='cpu')
-        elif os.path.isfile(url_or_filename):
-            checkpoint = torch.load(url_or_filename, map_location='cpu')
-        else:
-            raise RuntimeError('checkpoint url or path is invalid')
-
-        state_dict = checkpoint['model']
-
-        msg = self.load_state_dict(state_dict, strict=False)
-
-        logging.info('load checkpoint from %s' % url_or_filename)
-        return msg
+        self.to(device)
 
     def load_image(self, image_path):
         from PIL import Image
