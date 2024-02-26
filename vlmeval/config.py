@@ -8,6 +8,8 @@ TransCore_ROOT = None
 Yi_ROOT = None
 OmniLMM_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
+VICUNA_7B_V0 = None
+VICUNA_13B_V0 = None
 
 models = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
@@ -25,12 +27,12 @@ models = {
     'llava_v1_7b': partial(LLaVA, model_pth=LLAVA_V1_7B_MODEL_PTH),
     'sharegpt4v_7b': partial(LLaVA, model_pth='Lin-Chen/ShareGPT4V-7B'),
     'sharegpt4v_13b': partial(LLaVA, model_pth='Lin-Chen/ShareGPT4V-13B'),
-    'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
-    'instructblip_13b': partial(InstructBLIP, name='instructblip_13b'),
+    'instructblip_7b': partial(InstructBLIP_MMB, model_name='7B', llama_model=VICUNA_7B_V0),
+    'instructblip_13b': partial(InstructBLIP_MMB, model_name='13B', llama_model=VICUNA_13B_V0),
     'VisualGLM_6b': partial(VisualGLM, model_path="THUDM/visualglm-6b"),
     'MiniGPT-4-v2': partial(MiniGPT4, mode='v2', root=MiniGPT4_ROOT),
-    'MiniGPT-4-v1-7B': partial(MiniGPT4_MMB, model_name='7B'),
-    'MiniGPT-4-v1-13B': partial(MiniGPT4_MMB, model_name='13B'),
+    'MiniGPT-4-v1-7B': partial(MiniGPT4_MMB, model_name='7B', llama_model=VICUNA_7B_V0),
+    'MiniGPT-4-v1-13B': partial(MiniGPT4_MMB, model_name='13B', llama_model=VICUNA_13B_V0),
     "XComposer": partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
     "XComposer2": partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
     "mPLUG-Owl2": partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),

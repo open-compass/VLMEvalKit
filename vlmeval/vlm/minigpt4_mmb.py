@@ -24,6 +24,7 @@ class MiniGPT4_MMB(nn.Module):
     def __init__(
             self,
             model_name='7B',
+            llama_model=None, 
             q_former_model='https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xxl.pth',  # noqa
             img_size=224,
             num_query_token=32,
@@ -34,12 +35,11 @@ class MiniGPT4_MMB(nn.Module):
         self.model_name = model_name
         assert model_name in ['7B', '13B'], 'Invalid model name'
         if model_name == '7B':
-            self.llama_path = '/cpfs01/shared/llmeval/dhd/vicuna-7b-v0'
             self.minigpt_path = 'http://opencompass.openxlab.space/utils/Weights/pretrained_minigpt4_7b.pth'
         elif model_name == '13B':
-            self.llama_path = '/cpfs01/shared/llmeval/dhd/vicuna-13b-v0'
             self.minigpt_path = 'http://opencompass.openxlab.space/utils/Weights/pretrained_minigpt4.pth'
 
+        self.llama_model = llama_model
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.tokenizer = self.init_tokenizer()
 
@@ -76,11 +76,11 @@ class MiniGPT4_MMB(nn.Module):
         print('Loading Q-Former Done')
 
         print('Loading LLAMA')
-        self.llama_tokenizer = LlamaTokenizer.from_pretrained(self.llama_path, use_fast=False)
+        self.llama_tokenizer = LlamaTokenizer.from_pretrained(self.llama_model, use_fast=False)
         self.llama_tokenizer.pad_token = self.llama_tokenizer.eos_token
 
         self.llama_model = LlamaForCausalLM.from_pretrained(
-            self.llama_path,
+            self.llama_model,
             torch_dtype=torch.float16,
         )
 
@@ -202,10 +202,11 @@ class MiniGPT4_MMB(nn.Module):
         return img.to(self.device)
     
     def generate(self, image_path, prompt, dataset=None):
+        kwargs = self.kwargs.copy()
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            self.kwargs['num_beams'] = 5
-            self.kwargs['max_new_tokens'] = 20
-            self.kwargs['length_penalty'] = -1
+            kwargs['num_beams'] = 5
+            kwargs['max_new_tokens'] = 20
+            kwargs['length_penalty'] = -1
 
         prompt = f'###Human: <Img><ImageHere></Img> {prompt} ###Assistant:'
         image_tensor = self.load_image(image_path)
@@ -223,7 +224,7 @@ class MiniGPT4_MMB(nn.Module):
         ]
         prompt_seg_embs = [prompt_seg_embs[0], image_embeds, prompt_seg_embs[1]]
         prompt_embs = torch.cat(prompt_seg_embs, dim=1)
-        outputs = self.llama_model.generate(inputs_embeds=prompt_embs, **self.kwargs)
+        outputs = self.llama_model.generate(inputs_embeds=prompt_embs, **kwargs)
         output_token = outputs[0]
         if output_token[0] == 0:
             output_token = output_token[1:]
