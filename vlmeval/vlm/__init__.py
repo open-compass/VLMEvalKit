@@ -25,3 +25,4 @@ from .xcomposer2 import XComposer2
 from .yi_vl import Yi_VL
 from .minigpt4_mmb import MiniGPT4_MMB
 from .instructblip_mmb import InstructBLIP_MMB
+from .internvl_chat import InternVLChat
