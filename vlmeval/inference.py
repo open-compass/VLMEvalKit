@@ -85,7 +85,10 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         idx = data.iloc[i]['index']
         if idx not in res:
             all_finished = False
-    if all_finished: return 
+    if all_finished:
+        res = {k: res[k] for k in data_indices}
+        dump(res, out_file)
+        return
 
     # Data need to be inferred
     data = data[~data['index'].isin(res)]
@@ -174,7 +177,6 @@ def prefetch_acc(result_file):
 
 def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
-    is_api = model_name in api_models
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     if osp.exists(result_file):
@@ -188,7 +190,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)
 
-    model = infer_data(model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose)
+    model = infer_data(model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
     if world_size > 1: dist.barrier()
 
     if rank == 0:
