@@ -176,17 +176,20 @@ def prefetch_acc(result_file):
     return res
 
 def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
+    rank, world_size = get_rank_and_world_size()   
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     if osp.exists(result_file):
-        data = load(result_file)
-        results = {k: v for k, v in zip(data['index'], data['prediction'])}
-        if not ignore_failed:
-            results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
-        dump(results, prev_file)
+        if rank == 0:
+            data = load(result_file)
+            results = {k: v for k, v in zip(data['index'], data['prediction'])}
+            if not ignore_failed:
+                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+            dump(results, prev_file)
+        if world_size > 1: dist.barrier()
 
-    rank, world_size = get_rank_and_world_size()   
+    
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)
 
