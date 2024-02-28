@@ -98,23 +98,5 @@ class OpenFlamingo:
         generated_text = self.tokenizer.decode(generated_text[0])
         text = generated_text[len(prompt): ].split('<|endofchunk|>')[0]
         return text            
-    
-    def multi_generate(self, image_paths, prompt, dataset=None):
-        vision_x = [self.image_proc(Image.open(x)).unsqueeze(0) for x in image_paths]
-        vision_x = torch.cat(vision_x, dim=0)
-        vision_x = vision_x.unsqueeze(1).unsqueeze(0)
-
-        prompt, question = '', prompt
-        for i in range(1, len(image_paths) + 1):
-            prompt += f'Image {i}: <image>;'
-        prompt += f'Question: {question}\nAnswer: '
-        lang_x = self.tokenizer([prompt], return_tensors='pt')
-        generated_text = self.model.generate(
-            vision_x=vision_x.cuda(), 
-            lang_x=lang_x['input_ids'].cuda(), 
-            attention_mask=lang_x['attention_mask'].cuda(), 
-            **self.kwargs)
-        generated_text = self.tokenizer.decode(generated_text[0])
-        text = generated_text[len(prompt): ].split('<|endofchunk|>')[0]
-        return text          
+        
       
