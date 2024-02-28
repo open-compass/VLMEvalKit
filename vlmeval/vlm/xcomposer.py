@@ -124,25 +124,6 @@ class XComposer(CustomPrompt):
         prompt_embs = torch.cat(all_embeddings, dim=1)
         return prompt_embs
     
-    def multi_generate(self, image_paths, prompt, dataset=None):
-        prompt_embs = self.list_to_prompt_embs(image_paths + [prompt])
-        
-        outputs = self.model.internlm_model.generate(
-            inputs_embeds=prompt_embs,
-            stopping_criteria=self.stopping_criteria,
-            **self.kwargs
-        )
-        output_token = outputs[0]
-        if output_token[0] == 0:
-            output_token = output_token[1:]
-        if output_token[0] == 1:
-            output_token = output_token[1:]
-        output_text = self.model.tokenizer.decode(output_token, add_special_tokens=False)
-
-        output_text = output_text.split(self.model.eoa)[0]
-        output_text = output_text.split('<|Bot|>')[-1].strip()
-        return output_text
-    
     # def interleave_generate(self, ti_list, dataset=None):
     #     prompt_embs = self.list_to_prompt_embs(ti_list)
     #     outputs = self.model.internlm_model.generate(

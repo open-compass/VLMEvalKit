@@ -173,10 +173,6 @@ class GPT4V(OpenAIWrapper):
         assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V, self).generate([image_path, prompt])
     
-    def multi_generate(self, image_paths, prompt, dataset=None):
-        assert self.model == 'gpt-4-vision-preview'
-        return super(GPT4V, self).generate(image_paths + [prompt])
-    
     def interleave_generate(self, ti_list, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V, self).generate(ti_list)
