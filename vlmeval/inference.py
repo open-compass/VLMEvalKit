@@ -41,14 +41,13 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set, api_nproc=4):
     indices = [i for i in indices if i not in res]
     
     gen_func = None
-    if listinstr(['MMMU'], dataset_name):
+    if listinstr(['MMMU', 'CORE_MM'], dataset_name):
         assert hasattr(model, 'interleave_generate')
         gen_func = model.interleave_generate
-        structs = [dict(ti_list=split_MMMU(struct), dataset=dataset_name) for struct in structs]
-    elif listinstr(['CORE_MM'], dataset_name):
-        assert hasattr(model, 'multi_generate')
-        gen_func = model.multi_generate
-        structs = [dict(image_paths=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+        if 'MMMU' in dataset_name:
+            structs = [dict(ti_list=split_MMMU(struct), dataset=dataset_name) for struct in structs]
+        else:
+            structs = [dict(ti_list=struct['image'] + [struct['text']], dataset=dataset_name) for struct in structs]
     else:
         gen_func = model.generate
         structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
@@ -113,8 +112,8 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
             struct = dataset.build_prompt(data.iloc[i])
 
         if dataset_name in ['CORE_MM']:
-            assert hasattr(model, 'multi_generate')
-            response = model.multi_generate(prompt=struct['text'], image_paths=struct['image'], dataset=dataset_name)
+            assert hasattr(model, 'interleave_generate')
+            response = model.interleave_generate(ti_list=struct['image'] + [struct['text']], dataset=dataset_name)
         elif listinstr(['MMMU'], dataset_name):
             if hasattr(model, 'interleave_generate'):
                 response = model.interleave_generate(ti_list=split_MMMU(struct), dataset=dataset_name)

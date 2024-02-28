@@ -76,7 +76,7 @@
 | [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️  | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
 | [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-V**](https://huggingface.co/openbmb/MiniCPM-V)🚅   | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) |  [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
 
-🎞️: Support multiple images as inputs, via the `multi_generate / interleave_generate` interface. 
+🎞️: Support multiple images as inputs, via the `interleave_generate` interface. 
 
 🚅: Model can be used without any additional configuration / operation. 
 
@@ -88,7 +88,7 @@ model = supported_VLM['idefics_9b_instruct']()
 ret = model.generate('assets/apple.jpg', 'What is in this image?')
 print(ret)  # The image features a red apple with a leaf on it.
 # Forward Multiple Images
-ret = model.multi_generate(['assets/apple.jpg', 'assets/apple.jpg'], 'How many apples are there in the provided images? ')
+ret = model.interleave_generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
 print(ret)  # There are two apples in the provided images.
 ```
 

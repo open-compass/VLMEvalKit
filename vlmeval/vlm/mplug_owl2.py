@@ -164,9 +164,6 @@ class mPLUG_Owl2(CustomPrompt):
                 return self.generate_vanilla(image_path, prompt, **gen_config)
             else:
                 return self.generate_vanilla(image_path, prompt)
-        
-    def multi_generate(self, image_paths, prompt, dataset=None):
-        return self.interleave_generate(image_paths + [prompt], dataset)
     
     def interleave_generate(self, ti_list, dataset=None):
         from mplug_owl2.constants import IMAGE_TOKEN_INDEX

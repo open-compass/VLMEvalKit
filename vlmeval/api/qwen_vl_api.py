@@ -79,9 +79,6 @@ class QwenVLAPI(QwenVLWrapper):
     def generate(self, image_path, prompt, dataset=None):
         return super(QwenVLAPI, self).generate([image_path, prompt])
     
-    def multi_generate(self, image_paths, prompt, dataset=None):
-        return super(QwenVLAPI, self).generate(image_paths + [prompt])
-    
     def interleave_generate(self, ti_list, dataset=None):
         return super(QwenVLAPI, self).generate(ti_list)
             
