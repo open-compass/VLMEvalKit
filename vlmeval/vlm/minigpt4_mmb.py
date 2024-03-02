@@ -205,7 +205,6 @@ class MiniGPT4_MMB(nn.Module):
         kwargs = self.kwargs.copy()
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             kwargs['num_beams'] = 5
-            kwargs['max_new_tokens'] = 20
             kwargs['length_penalty'] = -1
 
         prompt = f'###Human: <Img><ImageHere></Img> {prompt} ###Assistant:'
