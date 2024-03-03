@@ -134,7 +134,7 @@ class HFChatModel:
                 {"role": "user", "content": prompt}
             ]
             text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-            model_inputs = self.tokenizer([text], return_tensors="pt").cuda()
+            model_inputs = self.tokenizer([text], return_tensors="pt").to('cuda')
 
             generated_ids = self.model.generate(model_inputs.input_ids, **self.kwargs)
             generated_ids = [
