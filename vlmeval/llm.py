@@ -72,14 +72,6 @@ class HFChatModel:
 
         self.explicit_device = model_kwargs.pop('device', None)
 
-        if self.explicit_device is None:
-            # If CUDA_VISIBLE_DEVICES is not properly set
-            if 'CUDA_VISIBLE_DEVICES' not in os.environ or os.environ['CUDA_VISIBLE_DEVICES'] in ['', '0,1,2,3,4,5,6,7']:
-                num_gpu = get_gpu_num(model_path)
-                gpu_offset = model_kwargs.pop('gpu_offset', 0)
-                cuda_visible_devices = ','.join([str(i) for i in range(gpu_offset, gpu_offset+num_gpu)])
-                os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
-
         from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
         from transformers.generation import GenerationConfig
         
@@ -135,6 +127,20 @@ class HFChatModel:
             kwargs.update(self.kwargs)
             outputs = self.model.generate(**inputs, **kwargs)
             resp = self.tokenizer.decode(outputs[0][len(inputs["input_ids"][0]) :], skip_special_tokens=True, spaces_between_special_tokens=False)
+        elif 'qwen' in self.model_path.lower():
+            prompt = input
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+            text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            model_inputs = self.tokenizer([text], return_tensors="pt").cuda()
+
+            generated_ids = self.model.generate(model_inputs.input_ids, **self.kwargs)
+            generated_ids = [
+                output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+            ]
+            resp = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
         else:
             resp, _ = self.model.chat(self.tokenizer, input, history=[], **self.kwargs)
         torch.cuda.empty_cache()
