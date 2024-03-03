@@ -150,7 +150,7 @@ class HFChatModel:
             text = f'<s>[INST] {input} [/INST]'
             encoded = self.tokenizer(text, return_tensors='pt', add_special_tokens=False).to('cuda')
             generated_ids = self.model.generate(**encoded, **self.kwargs)
-            decoded = torch.batch_decode(generated_ids)
+            decoded = self.tokenizer.batch_decode(generated_ids)
             resp = decoded[0]
             resp = resp.strip().split('</s>')[0].strip()
         else:
