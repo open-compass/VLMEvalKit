@@ -141,6 +141,18 @@ class HFChatModel:
                 output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
             ]
             resp = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        elif '01-ai' in self.model_path.lower():
+            messages = [{'role': 'user', 'content': 'hi'}]
+            input_ids = self.tokenizer.apply_chat_template(conversation=messages, tokenize=True, add_generation_prompt=True, return_tensors='pt')
+            output_ids = self.model.generate(input_ids.to('cuda'))
+            resp = self.tokenizer.decode(output_ids[0][input_ids.shape[1]:], skip_special_tokens=True)
+        elif 'mistralai' in self.model_path.lower():
+            text = f'<s>[INST] {input} [/INST]'
+            encoded = self.tokenizer(text, return_tensors='pt', add_special_tokens=False).to('cuda')
+            generated_ids = self.model.generate(**encoded, **self.kwargs)
+            decoded = torch.batch_decode(generated_ids)
+            resp = decoded[0]
+            resp = resp.strip().split('</s>')[0].strip()
         else:
             resp, _ = self.model.chat(self.tokenizer, input, history=[], **self.kwargs)
         torch.cuda.empty_cache()
