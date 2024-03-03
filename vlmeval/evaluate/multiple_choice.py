@@ -226,10 +226,10 @@ def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', npr
 
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
-    assert model in ['chatgpt-0613', "exact_matching", "gpt4-0125"]
+    assert model in ['chatgpt-0613', "exact_matching", "gpt-4-0125"]
     name_str_map = {
         'chatgpt-0613': 'openai',
-        'gpt4-0125': 'gpt4'
+        'gpt-4-0125': 'gpt4'
     }
     name_str = name_str_map[model] if model in name_str_map else model
 
