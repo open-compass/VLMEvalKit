@@ -61,7 +61,8 @@ def build_prompt(question, options, prediction):
     tmpl = (
         "You are an AI assistant who will help me to match an answer with several options of a single-choice question. "
         "You are provided with a question, several options, and an answer, and you need to find which option is most similar to the answer. "
-        "If the meaning of all options are significantly different from the answer, output Z. "\
+        "If the meaning of all options are significantly different from the answer, output Z. "
+        "You should only do the matching based exactly on the literal meaning of the options and answer. You should not perform any external inference based on your knowledge during the matching. "
         "Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n"
         "Example 1: \n"
         "Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\nAnswer: a cute teddy bear\nYour output: A\n"
@@ -77,6 +78,7 @@ def build_prompt_cn(question, options, prediction):
         "你是一个帮助我匹配答案与单选题中多个选项的 AI 助手。"
         "你会被提供：一个问题，多个选项，一个答案。你的任务是找到与答案意义最相近的选项。"
         "如果所有选项的意义都与答案显著不同，则输出 Z。"
+        "你应该仅对选项和答案进行其本身语义上的匹配。你不应该在匹配过程中进行任何基于知识的外部推理。"
         "你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 Z。"
         "例 1:"
         "问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 一只可爱的泰迪熊\n输出: A\n"
@@ -224,16 +226,18 @@ def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', npr
 
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
-    assert model in ['chatgpt-0613', "exact_matching"]
-    name_str = 'openai' if model == 'chatgpt-0613' else model
+    assert model in ['chatgpt-0613', "exact_matching", "gpt4-0125"]
+    name_str_map = {
+        'chatgpt-0613': 'openai',
+        'gpt4-0125': 'gpt4'
+    }
+    name_str = name_str_map[model] if model in name_str_map else model
 
     if model == 'exact_matching':
         model = None
     else:
-        model_name = 'chatgpt-0613'
-        
         if INTERNAL or gpt_key_set():
-            model = build_judge(model_name, verbose=verbose, retry=10)
+            model = build_judge(model, verbose=verbose, retry=10)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
@@ -331,7 +335,7 @@ def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', npr
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='chatgpt-0613', choices=['chatgpt-0613', 'exact_matching'])
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='chatgpt-0613')
     parser.add_argument(
         "--dataset", 
         type=str, 
