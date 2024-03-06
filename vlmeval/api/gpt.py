@@ -153,7 +153,10 @@ class OpenAIWrapper(BaseAPI):
 
     def get_token_len(self, inputs) -> int:
         import tiktoken
-        enc = tiktoken.encoding_for_model(self.model)
+        try:
+            enc = tiktoken.encoding_for_model(self.model)   
+        except:
+            enc = tiktoken.encoding_for_model('gpt-4')   
         if isinstance(inputs, str):
             if inputs.startswith('http') or osp.exists(inputs):
                 return 65 if self.img_detail == 'low' else 130
