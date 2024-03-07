@@ -24,6 +24,12 @@ def main():
 
     args = parse_args()
     assert len(args.data), "--data should be a list of data files"
+
+    if args.retry is not None:
+        for k, v in supported_VLM.items():
+            if hasattr(v, 'keywords') and 'retry' in v.keywords:
+                v.keywords['retry'] = args.retry
+                supported_VLM[k] = v
     
     if args.retry is not None:
         for k, v in supported_VLM.items():
