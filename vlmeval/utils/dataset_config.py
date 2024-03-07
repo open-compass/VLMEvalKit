@@ -81,7 +81,7 @@ img_root_map.update({
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
-    # Dealing with Custom Dataset
+    # Dealing with Custom Dataset 
     dataset = dataset.lower()
     if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
         return 'multi-choice'

@@ -50,7 +50,7 @@ class TSVDataset(CustomPrompt):
             file_name = url.split('/')[-1]
             data_path = osp.join(self.data_root, file_name)
 
-            if osp.exists(data_path) and md5(data_path) == dataset_md5_dict[dataset]:
+            if osp.exists(data_path) and (md5(data_path) == dataset_md5_dict[dataset] if dataset in dataset_md5_dict else True):
                 pass
             else:
                 warnings.warn("The dataset tsv is not downloaded")
