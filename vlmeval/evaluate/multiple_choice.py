@@ -208,7 +208,7 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
             result[k] = v
     dump(result, result_file)
 
-def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4, verbose=False):
+def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', nproc=4, verbose=False):
     logger = get_logger('Evaluation')
 
     # assert dataset is not None
@@ -224,8 +224,12 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
 
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
-    assert model in ['chatgpt-0613', "exact_matching"]
-    name_str = 'openai' if model == 'chatgpt-0613' else model
+    assert model in ['chatgpt-0613', "exact_matching", "gpt-4-0125"]
+    name_str_map = {
+        'chatgpt-0613': 'openai',
+        'gpt-4-0125': 'gpt4'
+    }
+    name_str = name_str_map[model] if model in name_str_map else model
 
     if model == 'exact_matching':
         model = None
@@ -233,7 +237,7 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
         model_name = 'chatgpt-0613'
         
         if INTERNAL or gpt_key_set():
-            model = build_judge(model_name, verbose=verbose, retry=10)
+            model = build_judge(model, verbose=verbose, retry=10)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
@@ -250,7 +254,7 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
     for k in data.keys():
         data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
 
-    if dataset is not None:
+    if dataset != 'default':
         meta = TSVDataset(dataset).data
     else:
         logger.warning('Dataset is not provided, try to use the original `eval_file` as meta data. ')
@@ -331,11 +335,11 @@ def multiple_choice_eval(eval_file, dataset=None, model='chatgpt-0613', nproc=4,
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='chatgpt-0613', choices=['chatgpt-0613', 'exact_matching'])
+    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='chatgpt-0613', choices=['chatgpt-0613', 'exact_matching', 'gpt-4-0125'])
     parser.add_argument(
         "--dataset", 
         type=str, 
-        default='MMBench', 
+        default="default", 
         help='The dataset to evaluate')
     parser.add_argument("--nproc", type=int, default=6)
     parser.add_argument("--verbose", action='store_true')
