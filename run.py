@@ -13,9 +13,9 @@ def parse_args():
     parser.add_argument("--work-dir", type=str, default='.', help="select the output directory")
     parser.add_argument("--mode", type=str, default='all', choices=['all', 'infer'])
     parser.add_argument("--nproc", type=int, default=4, help="Parallel API calling")
+    parser.add_argument("--retry", type=int, default=None, help="retry numbers for API VLMs")
     parser.add_argument("--ignore", action='store_true', help="Ignore failed indices. ")
     parser.add_argument("--verbose", action='store_true')
-    parser.add_argument("--prefetch", action='store_true')
     args = parser.parse_args()
     return args
 
@@ -24,6 +24,12 @@ def main():
 
     args = parse_args()
     assert len(args.data), "--data should be a list of data files"
+
+    if args.retry is not None:
+        for k, v in supported_VLM.items():
+            if hasattr(v, 'keywords') and 'retry' in v.keywords:
+                v.keywords['retry'] = args.retry
+                supported_VLM[k] = v
     
     rank, world_size = get_rank_and_world_size()
     if world_size > 1:
@@ -36,13 +42,20 @@ def main():
         pred_root = osp.join(args.work_dir, model_name)
         os.makedirs(pred_root, exist_ok=True)
 
-        for i, dataset_name in enumerate(args.data):
+        for _, dataset_name in enumerate(args.data):
+            custom_flag = False
+
             if dataset_name not in dataset_URLs:
                 dataset_name = abbr2full(dataset_name)
             
             if dataset_name not in dataset_URLs:
-                logger.error(f'Unknown dataset: {dataset_name}. ')
-                continue
+                logger.warning(f'Dataset {dataset_name} is not officially supported. ')
+                file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
+                if not osp.exists(file_path):
+                    logger.error(f'Cannot find the local dataset {dataset_name}. ')
+                    continue
+                else:
+                    custom_flag = True
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
             
@@ -79,6 +92,7 @@ def main():
                 
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':
+                    dataset_name = "default" if custom_flag else dataset_name
                     multiple_choice_eval(result_file, dataset=dataset_name, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose)
                 elif DATASET_TYPE(dataset_name) == 'Y/N':
                     YOrN_eval(result_file, model='chatgpt-0613', nproc=args.nproc, verbose=args.verbose, dataset=dataset_name)

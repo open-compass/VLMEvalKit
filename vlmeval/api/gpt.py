@@ -52,7 +52,8 @@ class OpenAIWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
 
-        openai_key = os.environ.get('OPENAI_API_KEY', None) if key is None else key
+        env_key = os.environ.get('OPENAI_API_KEY', '')
+        openai_key = env_key if key is None else key
         self.openai_key = openai_key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
@@ -75,7 +76,7 @@ class OpenAIWrapper(BaseAPI):
             self.logger.error("Unknown API Base. ")
             sys.exit(-1)
 
-        if 'OPENAI_API_BASE' in os.environ:
+        if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
             self.logger.error("Environment variable OPENAI_API_BASE is set. Will override the api_base arg. ")
             self.api_base = os.environ['OPENAI_API_BASE']
 
@@ -152,7 +153,10 @@ class OpenAIWrapper(BaseAPI):
 
     def get_token_len(self, inputs) -> int:
         import tiktoken
-        enc = tiktoken.encoding_for_model(self.model)
+        try:
+            enc = tiktoken.encoding_for_model(self.model)
+        except:
+            enc = tiktoken.encoding_for_model('gpt-4')
         if isinstance(inputs, str):
             if inputs.startswith('http') or osp.exists(inputs):
                 return 65 if self.img_detail == 'low' else 130
