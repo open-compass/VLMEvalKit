@@ -45,15 +45,19 @@ class TSVDataset(CustomPrompt):
         self.dataset = dataset
         self.dataset_type = DATASET_TYPE(dataset)
 
-        url = dataset_URLs[dataset]
-        file_name = url.split('/')[-1]
-        data_path = osp.join(self.data_root, file_name)
+        if dataset in dataset_URLs:
+            url = dataset_URLs[dataset]
+            file_name = url.split('/')[-1]
+            data_path = osp.join(self.data_root, file_name)
 
-        if osp.exists(data_path) and md5(data_path) == dataset_md5_dict[dataset]:
-            pass
+            if osp.exists(data_path) and (md5(data_path) == dataset_md5_dict[dataset] if dataset in dataset_md5_dict else True):
+                pass
+            else:
+                warnings.warn("The dataset tsv is not downloaded")
+                download_file(url, data_path)
         else:
-            warnings.warn("The dataset tsv is not downloaded")
-            download_file(url, data_path)
+            data_path = osp.join(self.data_root, dataset + '.tsv')
+            assert osp.exists(data_path)
 
         data = load(data_path)
         self.skip_noimg = skip_noimg

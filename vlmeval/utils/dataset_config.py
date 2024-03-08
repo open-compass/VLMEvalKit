@@ -81,6 +81,7 @@ img_root_map.update({
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
+    # Dealing with Custom Dataset 
     dataset = dataset.lower()
     if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
         return 'multi-choice'
@@ -91,7 +92,12 @@ def DATASET_TYPE(dataset):
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet', 'OCRBench'], dataset):
         return 'VQA'
     else:
-        return 'QA'
+        if dataset not in dataset_URLs:
+            import warnings
+            warnings.warn(f"Dataset {dataset} not found in dataset_URLs, will use 'multi-choice' as the default TYPE.")
+            return 'multi-choice'
+        else:
+            return 'QA'
 
 def abbr2full(s):
     datasets = [x for x in img_root_map]
@@ -101,4 +107,4 @@ def abbr2full(s):
             if s in d:
                 return d
     else:
-        return None
+        return s

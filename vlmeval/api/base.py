@@ -54,6 +54,11 @@ class BaseAPI:
                         print(answer)
                     return answer
                 elif self.verbose:
+                    if not isinstance(log, str):
+                        try:
+                            log = log.text
+                        except:
+                            self.logger.warning(f"Failed to parse {log} as an http response. ")
                     self.logger.info(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
             except Exception as err:
                 if self.verbose:

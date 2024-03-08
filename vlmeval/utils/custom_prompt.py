@@ -15,7 +15,7 @@ class CustomPrompt:
     def dump_image(self, line, dataset):
         ROOT = LMUDataRoot()
         assert isinstance(dataset, str)
-        img_root = osp.join(ROOT, 'images', img_root_map[dataset])
+        img_root = osp.join(ROOT, 'images', img_root_map[dataset] if dataset in img_root_map else dataset)
         os.makedirs(img_root, exist_ok=True)
         if isinstance(line['image'], list):        
             tgt_path = []
