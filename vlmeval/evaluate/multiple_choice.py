@@ -266,6 +266,11 @@ def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', npr
     l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])} if 'l2-category' in meta else None
     split_map = {i: c for i, c in zip(meta['index'], meta['split'])} if 'split' in meta else None
 
+    if np.all([pd.isna(x) for x in l2_cate_map.values()]):
+        l2_cate_map = None
+    if np.all([pd.isna(x) for x in split_map.values()]):
+        split_map = None
+
     if listinstr(['MMMU'], dataset):
         data = MMMU_preproc(data)
         answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
