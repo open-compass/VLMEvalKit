@@ -193,13 +193,23 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
         dump(result, result_file)
         return
 
-    res = track_progress_rich(
-        eval_sub_data,
-        tups, 
-        nproc=nproc,
-        chunksize=nproc, 
-        save=result_file, 
-        keys=keys)
+    if model.is_api:
+        res = track_progress_rich(
+            eval_sub_data,
+            tups, 
+            nproc=nproc,
+            chunksize=nproc, 
+            save=result_file, 
+            keys=keys)
+    else:
+        lt = len(tups)
+        for i in tqdm(range(lt)):
+            ind, tup = keys[i], tups[i]
+            result[ind] = eval_sub_data(*tup)
+            if i % 10 == 0:
+                dump(result, result_file)
+        dump(result, result_file)
+        
     result = load(result_file)
     for k, v in zip(keys, res):
         if k in result:
