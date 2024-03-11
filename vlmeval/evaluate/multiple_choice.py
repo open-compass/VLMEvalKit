@@ -224,18 +224,17 @@ def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', npr
 
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
-    assert model in ['chatgpt-0613', "exact_matching", "gpt-4-0125"]
     name_str_map = {
         'chatgpt-0613': 'openai',
-        'gpt-4-0125': 'gpt4'
+        'gpt-4-0125': 'gpt4',
+        'chatgpt-0125': 'chatgpt0125', 
+        'internlm2': 'internlm2'
     }
     name_str = name_str_map[model] if model in name_str_map else model
 
     if model == 'exact_matching':
         model = None
     else:
-        model_name = 'chatgpt-0613'
-        
         if INTERNAL or gpt_key_set():
             model = build_judge(model, verbose=verbose, retry=10)
         else:
@@ -340,7 +339,12 @@ def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', npr
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
     parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default='chatgpt-0613', choices=['chatgpt-0613', 'exact_matching', 'gpt-4-0125'])
+    parser.add_argument(
+        "--model", 
+        type=str, 
+        help="The LLM (GPT) used for inference. ", 
+        default='chatgpt-0613', 
+        choices=['chatgpt-0613', 'exact_matching', 'gpt-4-0125', 'chatgpt-0125', 'internlm2-7b'])
     parser.add_argument(
         "--dataset", 
         type=str, 
