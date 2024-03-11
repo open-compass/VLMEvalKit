@@ -209,14 +209,7 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
             if i % 10 == 0:
                 dump(result, result_file)
         dump(result, result_file)
-        
-    result = load(result_file)
-    for k, v in zip(keys, res):
-        if k in result:
-            assert result[k]['hit'] == v['hit'] and result[k]['log'] == v['log']
-        else:
-            result[k] = v
-    dump(result, result_file)
+    return
 
 def multiple_choice_eval(eval_file, dataset="default", model='chatgpt-0613', nproc=4, verbose=False):
     logger = get_logger('Evaluation')
