@@ -52,7 +52,7 @@ dataset_md5_dict = {
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
-    "DocVQA_VAL": '3744f5df4aaf2781c85fe7677ae0a411',
+    "DocVQA_VAL": 'd5ee77e1926ff10690d469c56b73eabf',
     "AI2D_TEST": "0f593e0d1c7df9a3d69bf1f947e71975",
     "LLaVABench": "d382a093f749a697820d3dadd61c8428",
     "OCRBench": 'e953d98a987cc6e26ef717b61260b778',
@@ -81,6 +81,7 @@ img_root_map.update({
 assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
 
 def DATASET_TYPE(dataset):
+    # Dealing with Custom Dataset 
     dataset = dataset.lower()
     if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
         return 'multi-choice'
@@ -91,7 +92,12 @@ def DATASET_TYPE(dataset):
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet', 'OCRBench'], dataset):
         return 'VQA'
     else:
-        return 'QA'
+        if dataset not in dataset_URLs:
+            import warnings
+            warnings.warn(f"Dataset {dataset} not found in dataset_URLs, will use 'multi-choice' as the default TYPE.")
+            return 'multi-choice'
+        else:
+            return 'QA'
 
 def abbr2full(s):
     datasets = [x for x in img_root_map]
@@ -101,4 +107,4 @@ def abbr2full(s):
             if s in d:
                 return d
     else:
-        return None
+        return s

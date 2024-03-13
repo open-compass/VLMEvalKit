@@ -50,16 +50,16 @@
 | [**ScienceQA_IMG**](https://scienceqa.github.io)             | ScienceQA_[VAL/TEST]                                   | ✅         | ✅          | [**ScienceQA Results**](/results/ScienceQA.md)               |
 | [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption Results**](results/Caption.md)                    |
 | [**HallusionBench**](https://github.com/tianyi-lab/HallusionBench) | HallusionBench                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
-| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          | [**VQA Preliminary Results**](/results/VQA.md)              |
-| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | [**VQA Preliminary Results**](/results/VQA.md)              |
-| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | [**VQA Preliminary Results**](/results/VQA.md)              |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          |               |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          |               |
+| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          |               |
 | [**AI2D**](https://allenai.org/data/diagrams)                | AI2D_TEST                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**LLaVABench**](https://huggingface.co/datasets/liuhaotian/llava-bench-in-the-wild) | LLaVABench                                             | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**DocVQA**](https://www.docvqa.org)                         | DocVQA_VAL                                             | ✅         | ✅          | **TBD.**                                                     |
 | [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench                                               | ✅         | ✅          | **TBD.**                                                     |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            | **N/A**                                                      |
 
-*For VQA tasks like OCRVQA, TextVQA, ChartQA, *etc.*, **we only provide preliminary results for reference only**. The evaluation results may be significantly differ from the reported ones. 
+**There are some known issues with VQA tasks like OCRVQA, TextVQA, ChartQA, etc. We will fix them asap.** 
 
 **Supported API Models**
 

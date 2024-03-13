@@ -6,6 +6,7 @@ from uuid import uuid4
 import os.path as osp
 import base64
 from PIL import Image
+from .file import load, dump
 
 def mmqa_display(question):
     question = {k.lower(): v for k, v in question.items()}
@@ -127,5 +128,7 @@ def MMBenchOfficialServer():
     root = LMUDataRoot()
     for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
         if osp.exists(f'{root}/{dataset}.tsv'):
-            return True
+            data = load(f'{root}/{dataset}.tsv')
+            if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
+                return True
     return False

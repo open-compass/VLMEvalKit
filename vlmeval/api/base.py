@@ -30,6 +30,15 @@ class BaseAPI:
         ret_code, answer, log = None, None, None
         # if ret_code is 0, means succeed
         return ret_code, answer, log
+    
+    def working(self):
+        retry = 3
+        while retry > 0:
+            ret = self.generate('hello')
+            if ret is not None and ret != '' and self.fail_msg not in ret:
+                return True
+            retry -= 1
+        return False
 
     def generate(self, inputs, **kwargs):
         input_type = None
@@ -54,6 +63,11 @@ class BaseAPI:
                         print(answer)
                     return answer
                 elif self.verbose:
+                    if not isinstance(log, str):
+                        try:
+                            log = log.text
+                        except:
+                            self.logger.warning(f"Failed to parse {log} as an http response. ")
                     self.logger.info(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
             except Exception as err:
                 if self.verbose:
