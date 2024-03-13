@@ -40,8 +40,8 @@ def report_acc(df):
         splits = list(set(df['split']))
         res['split'] = splits
     else:
-        df['split'] = ['dev'] * len(df)
-        res['split'] = ['dev']
+        df['split'] = ['none'] * len(df)
+        res['split'] = ['none']
 
     for group in [None, 'l2-category', 'category']:
         if group is None:
