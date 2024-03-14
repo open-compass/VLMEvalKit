@@ -77,11 +77,13 @@ class Yi_VL:
             model_path,
             device_map='cpu')
         self.model = self.model.cuda()
+        self.conv_mode = 'mm_default'
         
-        kwargs_default = dict(temperature= 0.2,
-                              num_beams= 1,
-                              conv_mode= "mm_default",
-                              top_p= None)
+        kwargs_default = dict(temperature=0.2,
+                              num_beams=1,
+                              do_sample=False, 
+                              max_new_tokens=1024, 
+                              top_p=None)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
@@ -93,7 +95,7 @@ class Yi_VL:
         from llava.mm_utils import KeywordsStoppingCriteria, expand2square, tokenizer_image_token
         
         qs = DEFAULT_IMAGE_TOKEN + "\n" + prompt
-        conv = conv_templates[self.kwargs['conv_mode']].copy()
+        conv = conv_templates[self.conv_mode].copy()
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
@@ -123,14 +125,9 @@ class Yi_VL:
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor.unsqueeze(0).to(dtype=torch.bfloat16).cuda(),
-                do_sample=True,
-                temperature=self.kwargs['temperature'],
-                top_p=self.kwargs['top_p'],
-                num_beams=self.kwargs['num_beams'],
                 stopping_criteria=[stopping_criteria],
-                max_new_tokens=1024,
-                use_cache=True,
-                )
+                use_cache=True, 
+                **self.kwargs)
             
         input_token_len = input_ids.shape[1]
         n_diff_input_output = (input_ids != output_ids[:, :input_token_len]).sum().item()
