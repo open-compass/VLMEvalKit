@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument("--retry", type=int, default=None, help="retry numbers for API VLMs")
     parser.add_argument("--ignore", action='store_true', help="Ignore failed indices. ")
     parser.add_argument("--verbose", action='store_true')
+    parser.add_argument("--prefetch", action='store_true')
     args = parser.parse_args()
     return args
 
@@ -78,7 +79,7 @@ def main():
                     logger.error(f'Can not evaluate {dataset_name} on non-official servers, will skip the evaluation. ')
                     continue
 
-            if rank == 0:
+            if rank == 0 and args.prefetch:
                 time.sleep(3)
                 res = None
                 if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA', 'AI2D'], dataset_name):
