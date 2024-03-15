@@ -124,7 +124,7 @@ class TSVDataset(CustomPrompt):
                 if cn_string(prompt):
                     prompt += '请直接回答选项字母。'
                 else:
-                    prompt += 'Please select the correct answer from the options above. \n'
+                    prompt += 'Answer with the option\'s letter from the given choices directly.'
         
         return dict(image=tgt_path, text=prompt)
     
