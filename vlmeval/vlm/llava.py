@@ -20,6 +20,7 @@ class LLaVA(CustomPrompt):
             warnings.warn("Please install llava before using LLaVA")
             sys.exit(-1)
             
+        warnings.warn("Please install the latest version of llava from github before you evaluate the LLaVA model. ")
         assert osp.exists(model_pth) or splitlen(model_pth) == 2
         
         if model_pth == 'Lin-Chen/ShareGPT4V-7B':
@@ -50,7 +51,7 @@ class LLaVA(CustomPrompt):
         self.model = self.model.cuda()
         self.conv_mode =  'llava_v1'
 
-        kwargs_default = dict(do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
@@ -111,5 +112,6 @@ class LLaVA(CustomPrompt):
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
             output_ids = self.model.generate(input_ids, images=image_tensor, stopping_criteria=[stopping_criteria], **self.kwargs)
-        output = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip().split("</s>")[0]
+
+        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return output

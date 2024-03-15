@@ -1,7 +1,9 @@
 from vlmeval.smp import *
+
 OCRBench_score = {"Regular Text Recognition":0,"Irregular Text Recognition":0,"Artistic Text Recognition":0,"Handwriting Recognition":0,
 "Digit String Recognition":0,"Non-Semantic Text Recognition":0,"Scene Text-centric VQA":0,"Doc-oriented VQA":0,
 "Key Information Extraction":0,"Handwritten Mathematical Expression Recognition":0}
+
 def OCRBench_eval(eval_file):
     logger = get_logger('Evaluation')
 

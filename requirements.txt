@@ -9,7 +9,7 @@ rich
 portalocker
 torch>=2.0.1
 timeout-decorator
-transformers==4.33.0
+transformers
 opencv-python>=4.4.0.46
 typing_extensions==4.7.1
 pillow
