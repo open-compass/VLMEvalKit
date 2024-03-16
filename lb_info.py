@@ -4,7 +4,13 @@ from collections import defaultdict
 import gradio as gr
 import copy as cp
 import numpy as np
-from .misc import listinstr
+
+def listinstr(lst, s):
+    assert isinstance(lst, list)
+    for item in lst:
+        if item in s:
+            return True
+    return False
 
 # CONSTANTS-URL
 URL = "http://opencompass.openxlab.space/utils/OpenVLM.json"
