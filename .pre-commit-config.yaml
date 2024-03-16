@@ -9,7 +9,7 @@ repos:
     rev: 5.0.4
     hooks:
       - id: flake8
-        args: ["--max-line-length=120", "--ignore=F401,E402"]
+        args: ["--max-line-length=120", "--ignore=F401,F405,E402"]
         exclude: ^configs/
   - repo: https://github.com/pre-commit/mirrors-yapf
     rev: v0.30.0
