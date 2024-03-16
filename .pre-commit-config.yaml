@@ -1,8 +1,8 @@
-exclude: >
+exclude: |
   (?x)^(
-      ^results/
-      ^scripts/
-  )$
+      results/|
+      scripts/
+  )
 repos:
   - repo: https://github.com/PyCQA/flake8
     rev: 5.0.4
