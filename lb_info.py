@@ -225,13 +225,18 @@ def BUILD_L2_DF(results, dataset):
             res[d].append(item[dataset][d])
 
     df = pd.DataFrame(res)
-    df = df.sort_values('Overall')
-    df = df.iloc[::-1]
+    all_fields = overall_fields + non_overall_fields
+    # Use the first 5 non-overall fields as required fields 
+    required_fields = overall_fields if len(overall_fields) else non_overall_fields[:5]
+
+    if 'Overall' in overall_fields:
+        df = df.sort_values('Overall')
+        df = df.iloc[::-1]
     
     check_box = {}
     check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']
-    check_box['required'] = overall_fields
-    check_box['all'] = non_overall_fields + overall_fields
+    check_box['required'] = required_fields
+    check_box['all'] = all_fields
     type_map = defaultdict(lambda: 'number')
     type_map['Method'] = 'html'
     type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
