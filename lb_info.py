@@ -25,8 +25,9 @@ CITATION_BUTTON_TEXT = r"""@misc{2023opencompass,
 CITATION_BUTTON_LABEL = "Copy the following snippet to cite these results"
 # CONSTANTS-TEXT
 LEADERBORAD_INTRODUCTION = """# OpenVLM Leaderboard
-### Welcome to the OpenVLM Leaderboard! On this leaderboard we share the evaluation results of VLMs obtained by the OpenSource Framework [**VLMEvalKit**](https://github.com/open-compass/VLMEvalKit) 🏆 
-### Currently, OpenVLM Leaderboard covers {} different VLMs (including GPT-4v, Gemini, QwenVLPlus, LLaVA, etc.) and {} different multi-modal benchmarks. 
+## Welcome to the OpenVLM Leaderboard! On this leaderboard we share the evaluation results of VLMs obtained by the OpenSource Framework:
+## [*VLMEvalKit*: A Toolkit for Evaluating Large Vision-Language Models](https://github.com/open-compass/VLMEvalKit) 🏆
+## Currently, OpenVLM Leaderboard covers {} different VLMs (including GPT-4v, Gemini, QwenVLPlus, LLaVA, etc.) and {} different multi-modal benchmarks. 
 
 This leaderboard was last updated: {}. 
 """
@@ -131,7 +132,7 @@ LEADERBOARD_MD['COCO_VAL'] = """
 """
 
 LEADERBOARD_MD['ScienceQA_VAL'] = """
-# ScienceQA Evaluation Results
+## ScienceQA Evaluation Results
 
 - We benchmark the **image** subset of ScienceQA validation and test set, and report the Top-1 accuracy. 
 - During evaluation, we use `GPT-3.5-Turbo-0613` as the choice extractor for all VLMs if the choice can not be extracted via heuristic matching. **Zero-shot** inference is adopted. 
