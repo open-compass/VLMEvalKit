@@ -43,39 +43,33 @@ class StepAPI(BaseAPI):
         
     @staticmethod
     def build_msgs(msgs_raw):
-            messages = []
-            message = {"role": "user", "content": []}
-            
-            image_path = msgs_raw[0]
-            image_base64 = convert_image_to_base64(image_path)
-            message['content'].append({
-                "image_b64": {
-                    "b64_json": image_base64
-                },
-                "type": "image_b64"
-            })
-            
-            question_prompt = msgs_raw[1]
-            message['content'].append({
-                "text": question_prompt,
-                "type": "text"
-            })
-            
-            messages.append(message)
-            # print(message,'\n')
+        messages = []
+        message = {"role": "user", "content": []}
         
-            return messages
+        for msg in msgs_raw:
+            if isimg(msg):
+                image_b64 = convert_image_to_base64(msg)
+                message['content'].append({
+                    "image_b64": {'b64_json': image_b64},
+                    "type": "image_b64"
+                })
+            else:
+                message['content'].append({
+                    'text': msg,
+                    "type": 'text'
+                })
+
+        messages.append(message)
+        return messages
         
     def generate_inner(self, inputs, **kwargs) -> str:
         print(inputs, '\n')
         payload = dict(
-                model=self.model, 
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                messages= self.build_msgs(msgs_raw=inputs), #需要构建message
-                **kwargs)
-        data1=json.dumps(payload)
-        # print(data1)
+            model=self.model, 
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            messages= self.build_msgs(msgs_raw=inputs), #需要构建message
+            **kwargs)
         response = requests.post(url, headers=headers, data=json.dumps(payload))
         # print('response is here!!:',response.text,'\n')
         ret_code = response.status_code
