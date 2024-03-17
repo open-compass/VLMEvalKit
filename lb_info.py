@@ -32,7 +32,7 @@ This leaderboard was last updated: {}.
 """
 # CONSTANTS-FIELDS
 META_FIELDS = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
-MAIN_FIELDS = ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'CCBench', 'MME', 'SEEDBench_IMG', 'MMVet', 'MMMU_VAL', 'MathVista', 'HallusionBench', 'LLaVABench']
+MAIN_FIELDS = ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'CCBench', 'MME', 'SEEDBench_IMG', 'MMVet', 'MMMU_VAL', 'MathVista', 'HallusionBench', 'LLaVABench', 'AI2D_TEST']
 MMBENCH_FIELDS = ['MMBench_TEST_EN', 'MMBench_DEV_EN', 'MMBench_TEST_CN', 'MMBench_DEV_CN', 'CCBench']
 MODEL_SIZE = ['<10B', '10B-20B', '20B-40B', '>40B', 'Unknown']
 MODEL_TYPE = ['API', 'OpenSource', 'Proprietary']
@@ -121,6 +121,23 @@ LEADERBOARD_MD['LLaVABench'] = """
 - No specific prompt template adopted for **ALL VLMs**.
 - We also include the official results (obtained by gpt-4-0314) for applicable models. 
 """
+
+LEADERBOARD_MD['COCO_VAL'] = """
+## COCO Caption Results
+
+-  By default, we evaluate COCO Caption Validation set (5000 samples), and report the following metrics: `BLEU-1, BLEU-4, CIDEr, ROUGE-L
+-  We use the following prompt to evaluate all VLMs: `Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". `
+- **No specific prompt is adopted for all VLMs.**
+"""
+
+LEADERBOARD_MD['ScienceQA_VAL'] = """
+# ScienceQA Evaluation Results
+
+- We benchmark the **image** subset of ScienceQA validation and test set, and report the Top-1 accuracy. 
+- During evaluation, we use `GPT-3.5-Turbo-0613` as the choice extractor for all VLMs if the choice can not be extracted via heuristic matching. **Zero-shot** inference is adopted. 
+"""
+
+LEADERBOARD_MD['ScienceQA_TEST'] = LEADERBOARD_MD['ScienceQA_VAL']
 
 from urllib.request import urlopen
 
