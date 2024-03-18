@@ -1,6 +1,9 @@
 import abc
+
 import gradio as gr
-from lb_info import *
+
+from gen_table import *
+from meta_data import *
 
 with gr.Blocks() as demo:
     struct = load_results()
@@ -24,30 +27,30 @@ with gr.Blocks() as demo:
             checkbox_group = gr.CheckboxGroup(
                 choices=check_box['all'],
                 value=check_box['required'],
-                label="Evaluation Dimension",
+                label='Evaluation Dimension',
                 interactive=True,
             )
             headers = check_box['essential'] + checkbox_group.value
             with gr.Row():
                 model_size = gr.CheckboxGroup(
-                    choices=MODEL_SIZE, 
-                    value=MODEL_SIZE, 
+                    choices=MODEL_SIZE,
+                    value=MODEL_SIZE,
                     label='Model Size',
                     interactive=True
                 )
                 model_type = gr.CheckboxGroup(
-                    choices=MODEL_TYPE, 
-                    value=MODEL_TYPE, 
+                    choices=MODEL_TYPE,
+                    value=MODEL_TYPE,
                     label='Model Type',
                     interactive=True
                 )
             data_component = gr.components.DataFrame(
-                value=table[headers], 
-                type="pandas", 
+                value=table[headers],
+                type='pandas',
                 datatype=[type_map[x] for x in headers],
-                interactive=False, 
+                interactive=False,
                 visible=True)
-            
+
             def filter_df(fields, model_size, model_type):
                 headers = check_box['essential'] + fields
                 df = cp.deepcopy(table)
@@ -58,12 +61,12 @@ with gr.Blocks() as demo:
                     df['flag'] = [model_type_flag(df.iloc[i], model_type) for i in range(len(df))]
                     df = df[df['flag']]
                     df.pop('flag')
-                
+
                 comp = gr.components.DataFrame(
-                    value=df[headers], 
-                    type="pandas", 
+                    value=df[headers],
+                    type='pandas',
                     datatype=[type_map[x] for x in headers],
-                    interactive=False, 
+                    interactive=False,
                     visible=True)
                 return comp
 
@@ -84,31 +87,31 @@ with gr.Blocks() as demo:
                 s.checkbox_group = gr.CheckboxGroup(
                     choices=s.check_box['all'],
                     value=s.check_box['required'],
-                    label=f"{dataset} CheckBoxes",
+                    label=f'{dataset} CheckBoxes',
                     interactive=True,
                 )
                 s.headers = s.check_box['essential'] + s.checkbox_group.value
                 with gr.Row():
                     s.model_size = gr.CheckboxGroup(
-                        choices=MODEL_SIZE, 
-                        value=MODEL_SIZE, 
+                        choices=MODEL_SIZE,
+                        value=MODEL_SIZE,
                         label='Model Size',
                         interactive=True
                     )
                     s.model_type = gr.CheckboxGroup(
-                        choices=MODEL_TYPE, 
-                        value=MODEL_TYPE, 
+                        choices=MODEL_TYPE,
+                        value=MODEL_TYPE,
                         label='Model Type',
                         interactive=True
                     )
                 s.data_component = gr.components.DataFrame(
-                    value=s.table[s.headers], 
-                    type="pandas", 
+                    value=s.table[s.headers],
+                    type='pandas',
                     datatype=[s.type_map[x] for x in s.headers],
-                    interactive=False, 
+                    interactive=False,
                     visible=True)
                 s.dataset = gr.Textbox(value=dataset, label=dataset, visible=False)
-                
+
                 def filter_df_l2(dataset_name, fields, model_size, model_type):
                     s = structs[DATASETS.index(dataset_name)]
                     headers = s.check_box['essential'] + fields
@@ -120,23 +123,25 @@ with gr.Blocks() as demo:
                         df['flag'] = [model_type_flag(df.iloc[i], model_type) for i in range(len(df))]
                         df = df[df['flag']]
                         df.pop('flag')
-                    
+
                     comp = gr.components.DataFrame(
-                        value=df[headers], 
-                        type="pandas", 
+                        value=df[headers],
+                        type='pandas',
                         datatype=[s.type_map[x] for x in headers],
-                        interactive=False, 
+                        interactive=False,
                         visible=True)
                     return comp
 
                 for cbox in [s.checkbox_group, s.model_size, s.model_type]:
-                    cbox.change(fn=filter_df_l2, inputs=[s.dataset, s.checkbox_group, s.model_size, s.model_type], outputs=s.data_component)
-        
+                    cbox.change(
+                        fn=filter_df_l2,
+                        inputs=[s.dataset, s.checkbox_group, s.model_size, s.model_type],
+                        outputs=s.data_component)
 
     with gr.Row():
-        with gr.Accordion("Citation", open=False):
+        with gr.Accordion('Citation', open=False):
             citation_button = gr.Textbox(
-                value=CITATION_BUTTON_TEXT, 
+                value=CITATION_BUTTON_TEXT,
                 label=CITATION_BUTTON_LABEL,
                 elem_id='citation-button')
 
