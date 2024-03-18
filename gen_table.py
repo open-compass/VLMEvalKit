@@ -78,6 +78,8 @@ def BUILD_L1_DF(results, fields):
             res[d].append(item[d]['Overall'])
             if d == 'MME':
                 scores.append(item[d]['Overall'] / 28)
+            elif d == 'OCRBench':
+                scores.append(item[d]['Final Score'] / 10)
             else:
                 scores.append(item[d]['Overall'])
             ranks.append(nth_large(item[d]['Overall'], [x[d]['Overall'] for x in results.values()]))
@@ -106,6 +108,9 @@ def BUILD_L2_DF(results, dataset):
     if dataset == 'MME':
         non_overall_fields = [x for x in non_overall_fields if not listinstr(['Perception', 'Cognition'], x)]
         overall_fields = overall_fields + ['Perception', 'Cognition']
+    if dataset == 'OCRBench':
+        non_overall_fields = [x for x in non_overall_fields if not listinstr(['Final Score'], x)]
+        overall_fields = ['Final Score']
 
     for m in results:
         item = results[m]

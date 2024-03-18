@@ -125,3 +125,10 @@ LEADERBOARD_MD['ScienceQA_VAL'] = """
 """
 
 LEADERBOARD_MD['ScienceQA_TEST'] = LEADERBOARD_MD['ScienceQA_VAL']
+
+LEADERBOARD_MD['OCRBench'] = """
+## OCRBench Evaluation Results
+
+- The evaluation of OCRBench is implemented by the official team: https://github.com/Yuliang-Liu/MultimodalOCR. 
+- The performance of GPT4V might be underestimated: GPT4V rejects to answer 12 percent of the questions due to the policy of OpenAI. For those questions, the returned answer is "Your input image may contain content that is not allowed by our safety system."
+"""
