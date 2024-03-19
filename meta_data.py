@@ -19,7 +19,10 @@ This leaderboard was last updated: {}.
 """
 # CONSTANTS-FIELDS
 META_FIELDS = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
-MAIN_FIELDS = ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'CCBench', 'MME', 'SEEDBench_IMG', 'MMVet', 'MMMU_VAL', 'MathVista', 'HallusionBench', 'LLaVABench', 'AI2D']
+MAIN_FIELDS = [
+    'MMBench_TEST_EN', 'MMBench_TEST_CN', 'CCBench', 'MME', 'SEEDBench_IMG', 'MMVet', 
+    'MMMU_VAL', 'MathVista', 'HallusionBench', 'LLaVABench', 'AI2D', 'OCRBench'
+]
 MMBENCH_FIELDS = ['MMBench_TEST_EN', 'MMBench_DEV_EN', 'MMBench_TEST_CN', 'MMBench_DEV_CN', 'CCBench']
 MODEL_SIZE = ['<10B', '10B-20B', '20B-40B', '>40B', 'Unknown']
 MODEL_TYPE = ['API', 'OpenSource', 'Proprietary']
