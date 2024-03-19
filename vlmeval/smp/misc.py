@@ -154,7 +154,7 @@ def load_env():
     except ImportError:
         warnings.warn('VLMEval is not installed. Failed to import environment variables from .env file. ')
         return
-    pth = osp.realpath(vlmeval.__path__)
+    pth = osp.realpath(vlmeval.__path__[0])
     pth = osp.join('../.env')
     pth = osp.realpath(pth)
     if not osp.exists(pth):
