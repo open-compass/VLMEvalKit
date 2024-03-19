@@ -4,6 +4,7 @@ from vlmeval.utils import track_progress_rich
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 
+
 def MME_rating(data_file):
     data = load(data_file)
     stats = defaultdict(dict)
@@ -16,7 +17,7 @@ def MME_rating(data_file):
         if image_path not in stats[category]:
             stats[category][image_path] = []
         stats[category][image_path].append(score)
-    
+
     def acc(key, mode='normal'):
         res = stats[key]
         values = []
@@ -26,25 +27,29 @@ def MME_rating(data_file):
             elif mode == 'plus':
                 values.append(val[0] * val[1])
         return np.mean(values) * 100
-            
+
     scores = {}
     for k in stats:
         scores[k] = acc(k) + acc(k, 'plus')
 
     super_cates = dict(
-        perception=['OCR', 'artwork', 'celebrity', 'color', 'count', 'existence', 'landmark', 'position', 'posters', 'scene'],
+        perception=[
+            'OCR', 'artwork', 'celebrity', 'color', 'count', 'existence',
+            'landmark', 'position', 'posters', 'scene'
+        ],
         reasoning=['code_reasoning', 'commonsense_reasoning', 'numerical_calculation', 'text_translation']
     )
-    
+
     ret = {}
     for sc, cate_list in super_cates.items():
         base = 0
         for c in cate_list:
             base += scores[c]
-        ret[sc] = base 
+        ret[sc] = base
     ret.update(scores)
     ret = d2df(ret)
     return ret
+
 
 def Hallusion_rating(data_file):
     def calc_fAcc(data):
@@ -54,7 +59,7 @@ def Hallusion_rating(data_file):
             line = data.iloc[i]
             res[f"{line['l2-category']}_{line['set_id']}_{line['figure_id']}"].append(line['score'])
         return np.mean([np.all(x) for x in res.values()]) * 100
-    
+
     def calc_qAcc(data):
         res = defaultdict(list)
         lt = len(data)
@@ -62,10 +67,10 @@ def Hallusion_rating(data_file):
             line = data.iloc[i]
             res[f"{line['l2-category']}_{line['set_id']}_{line['question_id']}"].append(line['score'])
         return np.mean([np.all(x) for x in res.values()]) * 100
-    
+
     def calc_aAcc(data):
         return np.mean(data['score']) * 100
-        
+
     data = load(data_file)
     data['set_id'] = [x.split('_')[3] for x in data['index']]
     data['figure_id'] = [x.split('_')[4] for x in data['index']]
@@ -76,7 +81,7 @@ def Hallusion_rating(data_file):
     res['aAcc'].append(calc_aAcc(data))
     res['fAcc'].append(calc_fAcc(data))
     res['qAcc'].append(calc_qAcc(data))
-    
+
     if 'category' in data:
         cates = list(set(data['category']))
         for c in cates:
@@ -96,6 +101,7 @@ def Hallusion_rating(data_file):
             res['qAcc'].append(calc_qAcc(sub))
     ret = pd.DataFrame(res)
     return ret
+
 
 def default_rating(data_file):
     data = load(data_file)
@@ -117,22 +123,26 @@ def default_rating(data_file):
             res[c] = np.mean(sub['score']) * 100
     ret = d2df(res)
     return ret
-        
+
+
 def YOrN_match_prompt(line):
     tmpl = (
-        "You are an AI assistant who will help me to match an answer with two options of a question. "
-        "The options are only Yes / No. "
-        "You are provided with a question and an answer, and you need to find which option (Yes / No) is most similar to the answer. "
-        "If the meaning of all options are significantly different from the answer, output Unknown. "\
-        "Your should output a single word among the following 3 choices: Yes, No, Unknown.\n"
-        "Example 1: \n"
+        'You are an AI assistant who will help me to match an answer with two options of a question. '
+        'The options are only Yes / No. '
+        'You are provided with a question and an answer, '
+        'and you need to find which option (Yes / No) is most similar to the answer. '
+        'If the meaning of all options are significantly different from the answer, output Unknown. '
+        'Your should output a single word among the following 3 choices: Yes, No, Unknown.\n'
+        'Example 1: \n'
         "Question: Is the word in this image 'Hello'?\nAnswer: The word in this image is 'Hello'.\nYour output: Yes\n"
-        "Example 2: \n"
-        "Question: Is the word in this image 'Hello'?\nAnswer: The word in this image is not 'Hello'.\nYour output: No\n"
-        "Example 3: \n"
-        "Question: {}?\nAnswer: {}\nYour output: "
+        'Example 2: \n'
+        "Question: Is the word in this image 'Hello'?\n"
+        "Answer: The word in this image is not 'Hello'.\nYour output: No\n"
+        'Example 3: \n'
+        'Question: {}?\nAnswer: {}\nYour output: '
     )
     return tmpl.format(line['question'], line['prediction'])
+
 
 def YOrN_Extraction(output):
     s = output.lower()
@@ -143,6 +153,7 @@ def YOrN_Extraction(output):
         return 'No'
     return 'Unknown'
 
+
 def YOrN_auxeval(model, line):
     prompt = YOrN_match_prompt(line)
     retry = 5
@@ -152,6 +163,7 @@ def YOrN_auxeval(model, line):
         if ans != 'Unknown':
             return ans
     return 'Unknown'
+
 
 def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=None):
     logger = get_logger('Evaluation')
@@ -170,7 +182,7 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
 
         data['extracted'] = [ans_map[x] for x in data['index']]
         unknown = data[data['extracted'] == 'Unknown']
-    
+
         model_name = 'chatgpt-0613'
 
         if INTERNAL or gpt_key_set():
@@ -185,19 +197,20 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
             tups = [(model, line) for line in lines]
             indices = list(unknown['index'])
             if len(tups):
-                res = track_progress_rich(YOrN_auxeval, tups, nproc=nproc, chunksize=nproc, keys=indices, save=tmp_file)
+                res = track_progress_rich(
+                    YOrN_auxeval, tups, nproc=nproc, chunksize=nproc, keys=indices, save=tmp_file)
                 for k, v in zip(indices, res):
                     ans_map[k] = v
 
         data['extracted'] = [ans_map[x] for x in data['index']]
         dump(data, storage)
     else:
-        logger.warning(f"GPT matching file {storage} already exists, will reuse it in YOrN_eval. ")
-    
+        logger.warning(f'GPT matching file {storage} already exists, will reuse it in YOrN_eval. ')
+
     data = load(storage)
-    data["score"] = (data["answer"] == data["extracted"])
+    data['score'] = (data['answer'] == data['extracted'])
     dump(data, storage)
-    
+
     if dataset is not None and listinstr(['MME'], dataset):
         score = MME_rating(storage)
     elif dataset is not None and listinstr(['Hallusion'], dataset):
@@ -213,15 +226,22 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
     logger.info(score)
     return score
 
+
 def parse_args():
-    parser = argparse.ArgumentParser(description="Inference LLM Answers. ")
-    parser.add_argument("data", type=str, help="The question set for inference, in excel / tsv / json format. ")
-    parser.add_argument("--model", type=str, help="The LLM (GPT) used for inference. ", default="chatgpt-0613", choices=['chatgpt-0613'])
-    parser.add_argument("--nproc", type=int, default=4)
-    parser.add_argument("--dataset", type=str, default=None)
-    parser.add_argument("--verbose", action='store_true')
+    parser = argparse.ArgumentParser(description='Inference LLM Answers. ')
+    parser.add_argument('data', type=str, help='The question set for inference, in excel / tsv / json format. ')
+    parser.add_argument(
+        '--model',
+        type=str,
+        help='The LLM (GPT) used for inference. ',
+        default='chatgpt-0613',
+        choices=['chatgpt-0613'])
+    parser.add_argument('--nproc', type=int, default=4)
+    parser.add_argument('--dataset', type=str, default=None)
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
     return args
+
 
 if __name__ == '__main__':
     args = parse_args()

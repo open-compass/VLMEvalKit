@@ -1,4 +1,4 @@
-import torch 
+import torch
 import torch.distributed as dist
 import datetime
 from vlmeval.config import supported_VLM, api_models
@@ -7,18 +7,20 @@ from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, nargs='+', required=True)
-    parser.add_argument("--model", type=str, nargs='+', required=True)
-    parser.add_argument("--nproc", type=int, default=4, required=True)
-    parser.add_argument("--verbose", action='store_true')
+    parser.add_argument('--model', type=str, nargs='+', required=True)
+    parser.add_argument('--nproc', type=int, default=4, required=True)
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
     return args
 
+
 # Only API model is accepted
 def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc=4, ignore_failed=False):
-    rank, world_size = get_rank_and_world_size()   
+    rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset = TSVDataset(dataset_name)
     data = dataset.data
@@ -27,20 +29,20 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
 
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
-    
+
     lt, indices = len(data), list(data['index'])
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-    
+
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
         if ignore_failed:
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
-    
+
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
-    
+
     gen_func = None
     if listinstr(['MMMU', 'CORE_MM'], dataset_name):
         assert hasattr(model, 'interleave_generate')
@@ -55,12 +57,13 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
 
     if len(structs):
         track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
-    
+
     res = load(out_file)
     if index_set is not None:
         res = {k: v for k, v in res.items() if k in index_set}
     os.remove(out_file)
     return res
+
 
 def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_nproc=4):
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
@@ -68,8 +71,9 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
     if osp.exists(out_file):
         res.update(load(out_file))
 
-    rank, world_size = get_rank_and_world_size()   
-    if rank == 0:dataset = TSVDataset(dataset_name)
+    rank, world_size = get_rank_and_world_size()
+    if rank == 0:
+        dataset = TSVDataset(dataset_name)
     if world_size > 1:
         dist.barrier()
     dataset = TSVDataset(dataset_name)
@@ -89,7 +93,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         res = {k: res[k] for k in data_indices}
         dump(res, out_file)
         return
-    
+
     # Data need to be inferred
     data = data[~data['index'].isin(res)]
     lt = len(data)
@@ -99,7 +103,12 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
     is_api = getattr(model, 'is_api', False)
     if is_api:
         lt, indices = len(data), list(data['index'])
-        supp = infer_data_api(work_dir=work_dir, model_name=model_name, dataset_name=dataset_name, index_set=set(indices), api_nproc=api_nproc)
+        supp = infer_data_api(
+            work_dir=work_dir,
+            model_name=model_name,
+            dataset_name=dataset_name,
+            index_set=set(indices),
+            api_nproc=api_nproc)
         for idx in indices:
             assert idx in supp
         res.update(supp)
@@ -109,7 +118,8 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
 
     for i in tqdm(range(lt)):
         idx = data.iloc[i]['index']
-        if idx in res: continue
+        if idx in res:
+            continue
 
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
@@ -125,11 +135,13 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
             elif len(struct['image']) == 1:
                 response = model.generate(prompt=struct['text'], image_path=struct['image'][0], dataset=dataset_name)
             else:
-                response = '[MMMU] Failed, multiple images exist while the model only support single-image generate API. '
+                response = (
+                    '[MMMU] Failed, multiple images exist while the model only support single-image generate API. '
+                )
         else:
             response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
         torch.cuda.empty_cache()
-        
+
         if verbose:
             print(response, flush=True)
 
@@ -140,6 +152,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
     res = {k: res[k] for k in data_indices}
     dump(res, out_file)
     return model
+
 
 def prefetch_acc(result_file):
     data = load(result_file)
@@ -175,8 +188,9 @@ def prefetch_acc(result_file):
     res = pd.DataFrame(res)
     return res
 
+
 def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
-    rank, world_size = get_rank_and_world_size()   
+    rank, world_size = get_rank_and_world_size()
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
@@ -187,13 +201,16 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
             if not ignore_failed:
                 results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
             dump(results, prev_file)
-        if world_size > 1: dist.barrier()
+        if world_size > 1:
+            dist.barrier()
 
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)
 
-    model = infer_data(model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
-    if world_size > 1: dist.barrier()
+    model = infer_data(
+        model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
+    if world_size > 1:
+        dist.barrier()
 
     if rank == 0:
         data_all = {}
@@ -206,7 +223,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         data['prediction'] = [str(data_all[x]) for x in data['index']]
         data.pop('image')
 
-        dump(data, result_file)             
+        dump(data, result_file)
         for i in range(world_size):
             os.remove(tmpl.format(i))
     return model

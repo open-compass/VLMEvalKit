@@ -4,29 +4,29 @@ import requests
 from ..smp import *
 from .gpt import GPT_context_window, OpenAIWrapper
 
-
-url = "http://ecs.sv.us.alles-apin.openxlab.org.cn/v1/openai/v2/text/chat"
+url = 'http://ecs.sv.us.alles-apin.openxlab.org.cn/v1/openai/v2/text/chat'
 headers = {
-    "Content-Type": "application/json"
+    'Content-Type': 'application/json'
 }
+
 
 class OpenAIWrapperInternal(OpenAIWrapper):
 
     is_api: bool = True
 
-    def __init__(self, 
-                 model: str = 'gpt-3.5-turbo-0613', 
+    def __init__(self,
+                 model: str = 'gpt-3.5-turbo-0613',
                  retry: int = 5,
                  wait: int = 3,
                  verbose: bool = True,
-                 system_prompt: str = None, 
-                 temperature: float = 0, 
+                 system_prompt: str = None,
+                 temperature: float = 0,
                  timeout: int = 60,
                  max_tokens: int = 1024,
-                 img_size: int = 512, 
+                 img_size: int = 512,
                  img_detail: str = 'low',
                  **kwargs):
-        
+
         self.model = model
         if 'KEYS' in os.environ and osp.exists(os.environ['KEYS']):
             keys = load(os.environ['KEYS'])
@@ -52,7 +52,7 @@ class OpenAIWrapperInternal(OpenAIWrapper):
 
     def generate_inner(self, inputs, **kwargs) -> str:
         input_msgs = self.prepare_inputs(inputs)
-        
+
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
@@ -65,15 +65,15 @@ class OpenAIWrapperInternal(OpenAIWrapper):
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
         payload = dict(
-            model=self.model, 
-            messages=input_msgs, 
+            model=self.model,
+            messages=input_msgs,
             max_tokens=max_tokens,
             n=1,
             stop=None,
             timeout=self.timeout,
             temperature=temperature,
             **kwargs)
-        
+
         response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
@@ -86,14 +86,14 @@ class OpenAIWrapperInternal(OpenAIWrapper):
         except:
             pass
         return ret_code, answer, response
-    
+
 
 class GPT4V_Internal(OpenAIWrapperInternal):
 
     def generate(self, image_path, prompt, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V_Internal, self).generate([image_path, prompt])
-    
+
     def interleave_generate(self, ti_list, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V_Internal, self).generate(ti_list)

@@ -50,6 +50,7 @@ def _tasks_with_index(tasks):
     for idx, task in enumerate(tasks):
         yield task, idx
 
+
 def track_progress_rich(func: Callable,
                         tasks: Iterable = tuple(),
                         task_num: int = None,
@@ -156,7 +157,7 @@ def track_progress_rich(func: Callable,
                         dump(ans, save)
                         fh.flush()
                         os.fsync(fh.fileno())
-                
+
                 prog_bar.update(task_id, advance=1, refresh=True)
         else:
             with Pool(nproc) as pool:

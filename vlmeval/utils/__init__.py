@@ -6,7 +6,7 @@ from .dataset import TSVDataset, split_MMMU
 
 
 __all__ = [
-    'can_infer', 'can_infer_option', 'can_infer_text', 'track_progress_rich', 
+    'can_infer', 'can_infer_option', 'can_infer_text', 'track_progress_rich',
     'TSVDataset', 'dataset_URLs', 'img_root_map', 'DATASET_TYPE', 'CustomPrompt',
     'split_MMMU', 'abbr2full'
 ]

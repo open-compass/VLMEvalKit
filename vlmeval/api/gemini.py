@@ -3,16 +3,17 @@ from vlmeval.api.base import BaseAPI
 
 headers = 'Content-Type: application/json'
 
+
 class GeminiWrapper(BaseAPI):
 
     is_api: bool = True
 
-    def __init__(self, 
+    def __init__(self,
                  retry: int = 5,
-                 wait: int = 5, 
+                 wait: int = 5,
                  key: str = None,
-                 verbose: bool = True, 
-                 temperature: float = 0.0, 
+                 verbose: bool = True,
+                 temperature: float = 0.0,
                  system_prompt: str = None,
                  max_tokens: int = 1024,
                  proxy: str = None,
@@ -28,10 +29,10 @@ class GeminiWrapper(BaseAPI):
         if proxy is not None:
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
-    
+
     @staticmethod
     def build_msgs(msgs_raw, system_prompt=None):
-        msgs = cp.deepcopy(msgs_raw) 
+        msgs = cp.deepcopy(msgs_raw)
         assert len(msgs) % 2 == 1
 
         if system_prompt is not None:
@@ -68,7 +69,7 @@ class GeminiWrapper(BaseAPI):
                     shutil.remove(pth)
                 else:
                     messages.append(s)
-        gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)    
+        gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
         gen_config.update(self.kwargs)
         try:
             answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
@@ -76,16 +77,15 @@ class GeminiWrapper(BaseAPI):
         except Exception as err:
             if self.verbose:
                 self.logger.error(err)
-                self.logger.error(f"The input messages are {inputs}.")
+                self.logger.error(f'The input messages are {inputs}.')
 
             return -1, '', ''
-        
 
 
 class GeminiProVision(GeminiWrapper):
 
     def generate(self, image_path, prompt, dataset=None):
         return super(GeminiProVision, self).generate([image_path, prompt])
-    
+
     def interleave_generate(self, ti_list, dataset=None):
         return super(GeminiProVision, self).generate(ti_list)

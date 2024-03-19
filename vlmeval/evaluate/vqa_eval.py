@@ -7,6 +7,7 @@ from vlmeval.smp import *
 from typing import Optional
 from functools import partial
 
+
 def _process_digit_article(inText):
     outText = []
     tempText = inText.lower().split()
@@ -158,16 +159,17 @@ def _process_digit_article(inText):
     return outText
 
 
-def hit_calculate(result, dataset_name, vqa_score_threshold = 3, anls_threshold = 0.5):
+def hit_calculate(result, dataset_name, anls_threshold=0.5):
     if listinstr(['TextVQA'], dataset_name):
         return [np.mean(x['match']) for x in result]
-    elif listinstr(['DocVQA'], dataset_name): 
+    elif listinstr(['DocVQA'], dataset_name):
         # return [1 - np.min(x['match']) >= anls_threshold for x in result]
-        return [0.0 if 1 - np.min(x['match']) < anls_threshold else 1 - np.min(x['match']) for x in result ]
-    elif listinstr(['ChartQA','OCRVQA'], dataset_name):
+        return [0.0 if 1 - np.min(x['match']) < anls_threshold else 1 - np.min(x['match']) for x in result]
+    elif listinstr(['ChartQA', 'OCRVQA'], dataset_name):
         return [np.max(x['match']) for x in result]
-    else: #default using vqa_score to calculate score
+    else:  # default using vqa_score to calculate score
         return [np.mean(x['match']) for x in result]
+
 
 # https://github.com/google-research/pix2struct/blob/main/pix2struct/metrics.py#L81
 def relaxed_correctness(target: str,
@@ -205,11 +207,11 @@ def relaxed_correctness(target: str,
     prediction_float = _to_float(prediction)
     target_float = _to_float(target)
     if prediction_float is not None and target_float:
-        relative_change = abs(prediction_float -
-                              target_float) / abs(target_float)
+        relative_change = abs(prediction_float - target_float) / abs(target_float)
         return relative_change <= max_relative_change
     else:
         return prediction.lower() == target.lower()
+
 
 def levenshtein_distance(s1, s2):
     if len(s1) > len(s2):
@@ -217,7 +219,7 @@ def levenshtein_distance(s1, s2):
 
     distances = range(len(s1) + 1)
     for i2, c2 in enumerate(s2):
-        distances_ = [i2+1]
+        distances_ = [i2 + 1]
         for i1, c1 in enumerate(s1):
             if c1 == c2:
                 distances_.append(distances[i1])
@@ -226,12 +228,13 @@ def levenshtein_distance(s1, s2):
         distances = distances_
     return distances[-1]
 
+
 def anls_compute(groundtruth, prediction):
     gt_answer = ' '.join(groundtruth.strip().lower().split())
     det_answer = ' '.join(prediction.strip().lower().split())
-    dist = levenshtein_distance(gt_answer,det_answer)
-    length = max( len(groundtruth.upper()), len(prediction.upper()) )
-    values =  0.0 if length == 0 else float(dist) / float(length) 
+    dist = levenshtein_distance(gt_answer, det_answer)
+    length = max(len(groundtruth.upper()), len(prediction.upper()))
+    values = 0.0 if length == 0 else float(dist) / float(length)
     return values
 
 
@@ -244,7 +247,7 @@ def process_answer(answer):
     return answer
 
 
-def process_line(line, method = 'vqa_score'):
+def process_line(line, method='vqa_score'):
     ret = {}
     if istype(line['answer'], list):
         answers = eval(line['answer'])
@@ -271,19 +274,20 @@ def process_line(line, method = 'vqa_score'):
     elif method == 'relaxed_accuracy':
         ret['gt'] = answers
         ret['pred'] = line['prediction'].strip()
-        ret['match'] = [relaxed_correctness(ret['pred'],x) for x in ret['gt']]
+        ret['match'] = [relaxed_correctness(ret['pred'], x) for x in ret['gt']]
     elif method == 'accuracy':
         ret['gt'] = answers
         ret['pred'] = line['prediction'].strip()
         ret['match'] = [(1.0 if (x.strip().lower() == ret['pred'].strip().lower()) else 0.0) for x in ret['gt']]
-    else: #default using vqa_score to calculate score
+    else:  # default using vqa_score to calculate score
         ret['gt'] = [process_answer(x) for x in answers]
         ret['pred'] = process_answer(line['prediction'])
         ret['match'] = [x == ret['pred'] for x in ret['gt']]
-    
+
     return ret
-        
-def VQAEval(eval_file, dataset_name,  **kwargs):
+
+
+def VQAEval(eval_file, dataset_name, **kwargs):
     logger = get_logger('Evaluation')
     data = load(eval_file)
     assert 'answer' in data and 'prediction' in data
@@ -293,22 +297,24 @@ def VQAEval(eval_file, dataset_name,  **kwargs):
     pool = mp.Pool(16)
     lines = [data.iloc[i] for i in range(lt)]
     if listinstr(['TextVQA'], dataset_name):
-        res = pool.map(partial(process_line, method = 'vqa_score'), lines)
-    elif listinstr(['ChartQA'], dataset_name): 
-        res = pool.map(partial(process_line, method = 'relaxed_accuracy'), lines)
+        res = pool.map(partial(process_line, method='vqa_score'), lines)
+    elif listinstr(['ChartQA'], dataset_name):
+        res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
     elif listinstr(['OCRVQA'], dataset_name):
-        res = pool.map(partial(process_line, method = 'accuracy'), lines)
+        res = pool.map(partial(process_line, method='accuracy'), lines)
     elif listinstr(['DocVQA'], dataset_name):
-        res = pool.map(partial(process_line, method = 'anls'), lines)
-    else: #default using vqa_score to calculate score
+        res = pool.map(partial(process_line, method='anls'), lines)
+    else:  # default using vqa_score to calculate score
         res = pool.map(process_line, lines)
-    hit = hit_calculate(res, dataset_name)#[np.mean(x['match']) >= full_score_weight for x in res]
+    # [np.mean(x['match']) >= full_score_weight for x in res]
+    hit = hit_calculate(res, dataset_name)
     ret = dict()
     if 'split' in data:
         splits = set(data['split'])
         for sp in splits:
             sub = [r for l, r in zip(lines, res) if l['split'] == sp]
-            hit = hit_calculate(sub, dataset_name) #[np.mean(x['match']) >= full_score_weight for x in sub]
+            # [np.mean(x['match']) >= full_score_weight for x in sub]
+            hit = hit_calculate(sub, dataset_name)
             ret[sp] = np.mean(hit) * 100
     else:
         ret['Overall'] = np.mean(hit) * 100
@@ -317,7 +323,8 @@ def VQAEval(eval_file, dataset_name,  **kwargs):
             cates.sort()
             for c in cates:
                 sub = [r for l, r in zip(lines, res) if l['category'] == c]
-                hit = hit_calculate(sub, dataset_name) #[np.mean(x['match']) >= full_score_weight for x in sub]
+                # [np.mean(x['match']) >= full_score_weight for x in sub]
+                hit = hit_calculate(sub, dataset_name)
                 ret[c] = np.mean(hit) * 100
     ret = d2df(ret)
     ret.round(2)

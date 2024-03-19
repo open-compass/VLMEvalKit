@@ -5,16 +5,16 @@ import os.path as osp
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
 
+
 class SharedCaptioner(CustomPrompt):
 
     INSTALL_REQ = False
 
     def __init__(self, model_path='Lin-Chen/ShareCaptioner', **kwargs):
         assert model_path is not None
-        tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, device_map="cuda", trust_remote_code=True).eval()
+            model_path, device_map='cuda', trust_remote_code=True).eval()
         self.model.tokenizer = tokenizer
         self.model.cuda()
         self.model.half()
@@ -29,7 +29,7 @@ class SharedCaptioner(CustomPrompt):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
-        
+
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
@@ -47,22 +47,22 @@ class SharedCaptioner(CustomPrompt):
             prompt = question
 
             if not cn_string(prompt):
-                prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
+                prompt = prompt + '\n' + "Answer with the option's letter from the given choices directly."
             else:
-                prompt = prompt + "\n" + "请直接回答选项字母。"
+                prompt = prompt + '\n' + '请直接回答选项字母。'
         else:
             prompt = line['question']
         # prompt = 'Analyze the image in a comprehensive and detailed manner.'
 
         return {'image': tgt_path, 'text': prompt}
-    
+
     def generate(self, image_path, prompt, dataset=None):
         seg1 = '<|User|>:'
         seg2 = f'{prompt}{self.model.eoh}\n<|Bot|>:'
         self.seg_emb1 = self.model.encode_text(seg1, add_special_tokens=True)
         self.seg_emb2 = self.model.encode_text(seg2, add_special_tokens=False)
 
-        image = Image.open(image_path).convert("RGB")
+        image = Image.open(image_path).convert('RGB')
         image = self.model.vis_processor(image).unsqueeze(0)
         image = image.to(self.model.device)
         tmp_bs = image.shape[0]
@@ -84,9 +84,8 @@ class SharedCaptioner(CustomPrompt):
                     temperature=1.,
                     eos_token_id=self.model.tokenizer.eos_token_id,
                     num_return_sequences=1)
-                
+
         for j, out in enumerate(out_embeds):
             out[out == -1] = 2
             response = self.model.decode_text([out])
         return response
-    
