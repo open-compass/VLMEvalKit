@@ -75,13 +75,16 @@ def BUILD_L1_DF(results, fields):
                 res[k].append(meta[k])
         scores, ranks = [], []
         for d in fields:
-            res[d].append(item[d]['Overall'])
             if d == 'MME':
+                res[d].append(item[d]['Overall'])
                 scores.append(item[d]['Overall'] / 28)
             elif d == 'OCRBench':
+                res[d].append(item[d]['Final Score'])
                 scores.append(item[d]['Final Score'] / 10)
             else:
+                res[d].append(item[d]['Overall'])
                 scores.append(item[d]['Overall'])
+
             ranks.append(nth_large(item[d]['Overall'], [x[d]['Overall'] for x in results.values()]))
         res['Avg Score'].append(round(np.mean(scores), 1))
         res['Avg Rank'].append(round(np.mean(ranks), 2))
