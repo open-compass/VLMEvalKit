@@ -49,6 +49,7 @@ models = {
     'InternVL-Chat-V1-1':partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-Chinese-V1-1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-Chinese-V1-2'),
     'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-Chinese-V1-2-Plus'),
+    'Claude3V':partial(Claude3V,model='claude-3-opus-20240229',temperature=0,retry=10),
 }
 
 api_models = {
