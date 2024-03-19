@@ -4,13 +4,33 @@ Before running the evaluation script, you need to **configure** the VLMs and set
 
 After that, you can use a single script `run.py` to inference and evaluate multiple VLMs and benchmarks at a same time.
 
-## Step0. Installation
+## Step0. Installation & Setup essential keys
+
+**Installation. **
 
 ```bash
 git clone https://github.com/open-compass/VLMEvalKit.git
 cd VLMEvalKit
 pip install -e .
 ```
+
+**Setup Keys.**
+
+- To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **judge or choice extractor**, you need to first setup API keys. You can place the required keys in `$VLMEvalKit/.env` or directly set them as the environment variable. If you choose to create a `.env` file, its content will look like:
+
+  ```bash
+  # The .env file, place it under $VLMEvalKit
+  # Alles-apin-token, for intra-org use only
+  ALLES=
+  # API Keys of Proprietary VLMs
+  DASHSCOPE_API_KEY=
+  GOOGLE_API_KEY=
+  OPENAI_API_KEY=
+  OPENAI_API_BASE=
+  STEPAI_API_KEY=
+  ```
+
+- Fill the blanks with your API keys (if necessary). Those API keys will be automatically loaded when doing the inference and evaluation.
 
 ## Step1. Configuration
 
