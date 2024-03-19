@@ -2,11 +2,12 @@ import logging
 
 logger_initialized = {}
 
+
 def get_logger(name, log_file=None, log_level=logging.INFO, file_mode='w'):
     logger = logging.getLogger(name)
     if name in logger_initialized:
         return logger
-    
+
     for logger_name in logger_initialized:
         if name.startswith(logger_name):
             return logger

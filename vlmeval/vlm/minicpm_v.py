@@ -24,7 +24,7 @@ class MiniCPM_V:
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-    
+
     def generate(self, image_path, prompt, dataset=None):
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
@@ -46,4 +46,3 @@ class MiniCPM_V:
             **default_kwargs
         )
         return res
-    

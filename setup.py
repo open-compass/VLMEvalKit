@@ -3,6 +3,7 @@ import sys
 from os.path import exists
 from setuptools import find_packages, setup
 
+
 def parse_requirements(fname='requirements.txt', with_version=True):
     """Parse the package dependencies listed in a requirements file but strips
     specific versioning information.
@@ -88,7 +89,7 @@ def do_setup():
         name='vlmeval',
         version='0.1.0',
         description='OpenCompass VLM Evaluation Kit',
-        author="Haodong Duan",
+        author='Haodong Duan',
         author_email='dhd.efz@gmail.com',
         maintainer='Haodong Duan',
         maintainer_email='dhd.efz@gmail.com',
@@ -104,7 +105,7 @@ def do_setup():
         ]),
         keywords=['AI', 'NLP', 'in-context learning'],
         entry_points={
-            "console_scripts": []
+            'console_scripts': []
         },
         classifiers=[
             'Programming Language :: Python :: 3.7',

@@ -31,7 +31,7 @@ class InternVLChat(CustomPrompt):
             kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -43,12 +43,12 @@ class InternVLChat(CustomPrompt):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
-    
+
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         if hint is not None:
             question = hint + '\n' + question
-    
+
         options = {
             cand: line[cand]
             for cand in string.ascii_uppercase
@@ -57,13 +57,13 @@ class InternVLChat(CustomPrompt):
         for key, item in options.items():
             question += f'\n{key}. {item}'
         prompt = question
-    
+
         if len(options):
-            prompt += "\n请直接回答选项字母。" if cn_string(
+            prompt += '\n请直接回答选项字母。' if cn_string(
                 prompt) else "\nAnswer with the option's letter from the given choices directly."
         else:
-            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
-    
+            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+
         return {'image': tgt_path, 'text': prompt}
 
     def generate(self, image_path, prompt, dataset=None):

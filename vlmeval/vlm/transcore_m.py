@@ -6,6 +6,7 @@ import math
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
 
+
 class TransCoreM(CustomPrompt):
 
     INSTALL_REQ = True
@@ -28,15 +29,15 @@ class TransCoreM(CustomPrompt):
             device_map='cpu'
         )
         self.model = self.model.cuda()
-        print("==============conv_mode: default")
-        self.conv_mode = "default"
+        print('==============conv_mode: default')
+        self.conv_mode = 'default'
 
         kwargs_default = dict(do_sample=False, temperature=0.0, max_new_tokens=128, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def get_options(self,row, options):
+    def get_options(self, row, options):
         parsed_options = []
         for option in options:
             option_value = row[option]
@@ -45,7 +46,7 @@ class TransCoreM(CustomPrompt):
             parsed_options.append(option_value)
         return parsed_options
 
-    def is_none(self,value):
+    def is_none(self, value):
         if value is None:
             return True
         if type(value) is float and math.isnan(value):
@@ -55,7 +56,7 @@ class TransCoreM(CustomPrompt):
         if type(value) is str and value.lower() == 'none':
             return True
         return False
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if DATASET_TYPE(dataset) == 'multi-choice':
@@ -82,15 +83,19 @@ class TransCoreM(CustomPrompt):
         prompt = question
 
         if len(options):
-            prompt += "\n请直接回答选项字母。" if cn_string(prompt) else "\nAnswer with the option's letter from the given choices directly."
+            prompt += (
+                '\n请直接回答选项字母。' if cn_string(prompt)
+                else "\nAnswer with the option's letter from the given choices directly."
+            )
         else:
-            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
-            
+            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+
         return {'image': tgt_path, 'text': prompt}
 
     def generate(self, image_path, prompt, dataset=None):
         from transcorem.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from transcorem.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        from transcorem.constants import (
+            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
 
         image = Image.open(image_path).convert('RGB')
@@ -107,7 +112,8 @@ class TransCoreM(CustomPrompt):
         conv.append_message(conv.roles[1], None)
         prompt_conv = conv.get_prompt()
 
-        input_ids = tokenizer_image_token(prompt_conv, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
+        input_ids = tokenizer_image_token(
+            prompt_conv, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         with torch.inference_mode():
             output_ids = self.model.generate(

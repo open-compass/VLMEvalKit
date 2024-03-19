@@ -4,8 +4,10 @@ from ..smp import *
 from .dataset_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE
 from .custom_prompt import CustomPrompt
 
+
 def isliststr(s):
     return (s[0] == '[') and (s[-1] == ']')
+
 
 def check_md5(data_path, dataset):
     try:
@@ -20,7 +22,8 @@ def check_md5(data_path, dataset):
             return False
     except:
         return False
-    
+
+
 def split_MMMU(struct):
     assert 'image' in struct and 'text' in struct
     text, images = struct['text'], struct['image']
@@ -35,8 +38,9 @@ def split_MMMU(struct):
         segs.append(seg[2:])
     return segs
 
+
 class TSVDataset(CustomPrompt):
-    
+
     def __init__(self, dataset='MMBench', skip_noimg=True):
 
         self.data_root = LMUDataRoot()
@@ -50,10 +54,12 @@ class TSVDataset(CustomPrompt):
             file_name = url.split('/')[-1]
             data_path = osp.join(self.data_root, file_name)
 
-            if osp.exists(data_path) and (md5(data_path) == dataset_md5_dict[dataset] if dataset in dataset_md5_dict else True):
+            if osp.exists(data_path) and (
+                md5(data_path) == dataset_md5_dict[dataset] if dataset in dataset_md5_dict else True
+            ):
                 pass
             else:
-                warnings.warn("The dataset tsv is not downloaded")
+                warnings.warn('The dataset tsv is not downloaded')
                 download_file(url, data_path)
         else:
             data_path = osp.join(self.data_root, dataset + '.tsv')
@@ -66,20 +72,23 @@ class TSVDataset(CustomPrompt):
 
         # Prompt for Captioning
         if listinstr(['COCO'], dataset):
-            data['question'] = ['Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". '] * len(data)
+            data['question'] = [(
+                'Please describe this image in general. Directly provide the description, '
+                'do not include prefix like "This image depicts". '
+            )] * len(data)
 
         data['index'] = [str(x) for x in data['index']]
         data['image'] = [str(x) for x in data['image']]
-        
+
         image_map = {x: y for x, y in zip(data['index'], data['image'])}
         for k in image_map:
             if len(image_map[k]) <= 64:
                 idx = image_map[k]
                 assert idx in image_map and len(image_map[idx]) > 64
                 image_map[k] = image_map[idx]
-    
+
         data['image'] = [
-            eval(image_map[k]) if isliststr(image_map[k]) else image_map[k] 
+            eval(image_map[k]) if isliststr(image_map[k]) else image_map[k]
             for k in data['index']
         ]
         if 'image_path' in data:
@@ -88,7 +97,7 @@ class TSVDataset(CustomPrompt):
             ]
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
-            
+
         self.data = data
 
     def __len__(self):
@@ -122,11 +131,10 @@ class TSVDataset(CustomPrompt):
             if len(options):
                 prompt += options_prompt
                 prompt += 'Please select the correct answer from the options above. \n'
-        
+
         return dict(image=tgt_path, text=prompt)
-    
+
     def display(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
         mmqa_display(line)
-    

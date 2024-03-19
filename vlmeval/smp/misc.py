@@ -84,7 +84,7 @@ def get_cache_path(repo_id):
     rev2keep, last_modified = None, 0
     for rev in revs:
         if rev.last_modified > last_modified:
-            rev2keep, last_modified = rev, rev.last_modified 
+            rev2keep, last_modified = rev, rev.last_modified
     if rev2keep is None:
         return None
     return str(rev2keep.snapshot_path)
@@ -95,8 +95,8 @@ def proxy_set(s):
         os.environ[key] = s
 
 def get_rank_and_world_size():
-    local_rank = int(os.environ.get("LOCAL_RANK", 0))
-    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    local_rank = int(os.environ.get('LOCAL_RANK', 0))
+    world_size = int(os.environ.get('WORLD_SIZE', 1))
     return local_rank, world_size
 
 def splitlen(s, sym='/'):

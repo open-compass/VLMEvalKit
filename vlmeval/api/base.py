@@ -3,16 +3,17 @@ import random as rd
 from abc import abstractmethod
 from ..smp import get_logger
 
+
 class BaseAPI:
-    
-    def __init__(self, 
-                 retry=10, 
-                 wait=3, 
-                 system_prompt=None, 
+
+    def __init__(self,
+                 retry=10,
+                 wait=3,
+                 system_prompt=None,
                  verbose=True,
                  fail_msg='Failed to obtain answer via API.',
                  **kwargs):
-        self.wait = wait 
+        self.wait = wait
         self.retry = retry
         self.system_prompt = system_prompt
         self.kwargs = kwargs
@@ -21,16 +22,16 @@ class BaseAPI:
         self.logger = get_logger('ChatAPI')
         if len(kwargs):
             self.logger.info(f'BaseAPI received the following kwargs: {kwargs}')
-            self.logger.info(f'Will try to use them as kwargs for `generate`. ')
+            self.logger.info('Will try to use them as kwargs for `generate`. ')
 
     @abstractmethod
     def generate_inner(self, inputs, **kwargs):
-        self.logger.warning(f'For APIBase, generate_inner is an abstract method. ')
+        self.logger.warning('For APIBase, generate_inner is an abstract method. ')
         assert 0, 'generate_inner not defined'
         ret_code, answer, log = None, None, None
         # if ret_code is 0, means succeed
         return ret_code, answer, log
-    
+
     def working(self):
         retry = 3
         while retry > 0:
@@ -54,7 +55,7 @@ class BaseAPI:
         # a very small random delay [0s - 0.5s]
         T = rd.random() * 0.5
         time.sleep(T)
-        
+
         for i in range(self.retry):
             try:
                 ret_code, answer, log = self.generate_inner(inputs, **kwargs)
@@ -67,8 +68,8 @@ class BaseAPI:
                         try:
                             log = log.text
                         except:
-                            self.logger.warning(f"Failed to parse {log} as an http response. ")
-                    self.logger.info(f"RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}")
+                            self.logger.warning(f'Failed to parse {log} as an http response. ')
+                    self.logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'An error occured during try {i}:')
@@ -76,5 +77,5 @@ class BaseAPI:
             # delay before each retry
             T = rd.random() * self.wait * 2
             time.sleep(T)
-        
+
         return self.fail_msg if answer in ['', None] else answer
