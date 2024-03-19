@@ -1,5 +1,5 @@
 from .vlm import *
-from .api import GPT4V, GeminiProVision, GPT4V_Internal, QwenVLAPI
+from .api import *
 from functools import partial
 
 PandaGPT_ROOT = None
@@ -53,16 +53,24 @@ models = {
 
 api_models = {
     'GPT4V': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    # Internal Only
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_SHORT': partial(
         GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10, 
         system_prompt="Please responde to the following question / request in a short reply. "),
+    # Internal Only
     'GPT4V_SHORT_INT': partial(
         GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
         system_prompt="Please responde to the following question / request in a short reply. "),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
+    # Internal Only
+    'Step1V': partial(Step1V, temperature=0, retry=10),
+    # Internal Only
+    'Claude3V_Opus': partial(Claude3V, model='claude-3-opus-20240229', temperature=0, retry=10),
+    'Claude3V_Sonnet': partial(Claude3V, model='claude-3-sonnet-20240229', temperature=0, retry=10),
+    'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
 }
 
 xtuner_models = {
