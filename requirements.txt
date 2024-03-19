@@ -11,6 +11,7 @@ pandas>=1.5.3
 pillow
 portalocker
 pycocoevalcap
+python-dotenv
 requests
 rich
 seaborn
