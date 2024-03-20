@@ -25,7 +25,7 @@ class DeepSeekVL:
         self.vl_chat_processor = VLChatProcessor.from_pretrained(model_path)
         self.tokenizer = self.vl_chat_processor.tokenizer
 
-        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, device='cpu')
+        model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True)
         self.model = model.to(torch.bfloat16).cuda().eval()
 
         torch.cuda.empty_cache()

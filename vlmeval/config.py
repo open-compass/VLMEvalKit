@@ -101,6 +101,11 @@ instructblip_series = {
     'instructblip_13b': partial(InstructBLIP, name='instructblip_13b'),
 }
 
+deepseekvl_series = {
+    'deepseek_vl_7b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-7b-chat'),
+    'deepseek_vl_1.3b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-1.3b-chat'),
+}
+
 supported_VLM = {}
 
 model_groups = [
