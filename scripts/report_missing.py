@@ -7,11 +7,11 @@ ESSENTIAL = [
     ('MME', 'score.csv'), ('SEEDBench_IMG', 'acc.csv'), ('MMBench', 'acc.csv'), 
     ('CCBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('MMVet', 'gpt-4-turbo_score.csv'),
     ('MMMU_DEV_VAL', 'acc.csv'), ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
-    ('AI2D_TEST', 'acc.csv'), ('LLaVABench', 'score.csv')
+    ('AI2D_TEST', 'acc.csv'), ('LLaVABench', 'score.csv'), ('OCRBench', 'score.json')
 ]
 OPTIONAL = [
-    ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'), ('COCO_VAL', 'score.json'), 
-    ('ChartQA_VALTEST_HUMAN', 'acc.csv'), ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'),
+    ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'), ('ChartQA_VALTEST_HUMAN', 'acc.csv'), 
+    ('COCO_VAL', 'score.json'), ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'),
 ]
 
 models = list(supported_VLM)
@@ -35,17 +35,22 @@ models = [x for x in models if osp.exists(x)]
 
 logger.info(colored('Essential Datasets: ', 'red'))
 
+ESS_MISSING = []
 for f in models:
     files = ls(f, mode='file')
     for D, suff in ESSENTIAL:
         if not completed(f, D, suff):
             logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'red'))
+            ESS_MISSING.append(f'--model {f} --data {D}')
+mwlines(ESS_MISSING, 'missing_essential.txt')
 
 logger.info(colored('Optional Datasets: ', 'magenta'))
 
+OPT_MISSING = []
 for f in models:
     files = ls(f, mode='file')
     for D, suff in OPTIONAL:
         if not completed(f, D, suff):
             logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'magenta'))
-        
+            OPT_MISSING.append(f'--model {f} --data {D}')
+mwlines(OPT_MISSING, 'missing_optional.txt')
