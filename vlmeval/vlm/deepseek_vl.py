@@ -54,10 +54,10 @@ class DeepSeekVL:
         pil_images = load_pil_images(conversation)
         prepare_inputs = self.vl_chat_processor(conversations=conversation, images=pil_images, force_batchify=True)
         prepare_inputs = prepare_inputs.to(self.model.device)
-        input_embeds = self.model.prepare_inputs_embeds(**prepare_inputs)
+        inputs_embeds = self.model.prepare_inputs_embeds(**prepare_inputs)
 
         outputs = self.model.language_model.generate(
-            input_embeds=input_embeds,
+            inputs_embeds=inputs_embeds,
             attention_mask=prepare_inputs.attention_mask,
             pad_token_id=self.tokenizer.eos_token_id,
             bos_token_id=self.tokenizer.bos_token_id,
