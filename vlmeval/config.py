@@ -112,6 +112,7 @@ model_groups = [
     ungrouped, api_models, 
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
+    deepseekvl_series
 ]
 
 for grp in model_groups:
