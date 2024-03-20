@@ -10,17 +10,18 @@ def isliststr(s):
 
 
 def check_md5(data_path, dataset):
-    try:
-        with open(data_path, 'rb') as f:
-            hash = hashlib.new('md5')
-            for chunk in iter(lambda: f.read(2**20), b''):
-                hash.update(chunk)
-        if str(hash.hexdigest()) == dataset_md5_dict[dataset]:
-            return True
-        else:
-            warnings.warn('this data file is incomplete, so it needs to be downloaded again.')
-            return False
-    except:
+    if dataset not in dataset_md5_dict:
+        warnings.warn(f'We do not have an md5 record for dataset {dataset}, skip the md5 check. ')
+        return True
+    assert osp.exists(data_path)
+    with open(data_path, 'rb') as f:
+        hash = hashlib.new('md5')
+        for chunk in iter(lambda: f.read(2**20), b''):
+            hash.update(chunk)
+    if str(hash.hexdigest()) == dataset_md5_dict[dataset]:
+        return True
+    else:
+        warnings.warn('this data file is incomplete, so it needs to be downloaded again.')
         return False
 
 
@@ -54,9 +55,7 @@ class TSVDataset(CustomPrompt):
             file_name = url.split('/')[-1]
             data_path = osp.join(self.data_root, file_name)
 
-            if osp.exists(data_path) and (
-                md5(data_path) == dataset_md5_dict[dataset] if dataset in dataset_md5_dict else True
-            ):
+            if osp.exists(data_path) and check_md5(data_path, dataset):
                 pass
             else:
                 warnings.warn('The dataset tsv is not downloaded')

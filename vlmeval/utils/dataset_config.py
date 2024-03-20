@@ -78,7 +78,7 @@ img_root_map.update({
     'OCRBench': 'OCRBench',
 })
 
-assert set(dataset_URLs) == set(img_root_map) == set(dataset_md5_dict)
+assert set(dataset_URLs) == set(img_root_map)
 
 
 def DATASET_TYPE(dataset):
