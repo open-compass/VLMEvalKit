@@ -16,7 +16,7 @@ class DeepSeekVL:
                 'Please first install deepseek_vl from source codes in: https://github.com/deepseek-ai/DeepSeek-VL')
             sys.exit(-1)
 
-    def __init__(self, model_path='deepseek-ai/deepseek-vl-7b-chat', **kwargs):
+    def __init__(self, model_path='deepseek-ai/deepseek-vl-1.3b-chat', **kwargs):
         self.check_install()
         assert model_path is not None
         self.model_path = model_path
