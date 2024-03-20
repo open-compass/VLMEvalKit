@@ -20,16 +20,16 @@
 
 ## 🆕 News
 
+- **[2024-03-20]** We support users to use a `.env` file to manage all environment variables used in VLMEvalKit, see [**Quickstart**](\Quickstart.md) for more details
 - **[2024-03-17]** We have added an API wrapper for [**Step-1V**](https://www.stepfun.com/#step1v) 🔥🔥🔥
 - **[2024-03-15]** We have updated to be compatible with the latest version of LLaVA. All LLaVA series models have been re-evaluated with temperature=0, and the new results have been updated to the leaderboard 🔥🔥🔥
 - **[2024-02-27]** We have fixed the evaluation results of [**Yi-VL-34B**](https://huggingface.co/01-ai/Yi-VL-34B), check the updated results [**here**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard)  🔥🔥🔥
-- **[2024-02-25]** We have supported [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR). 🔥🔥🔥
-- **[2024-02-24]** We have supported [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL). The models achieve over 80% Top-1 accuracies on MMBench v1.0 [[**Blog**](https://github.com/OpenGVLab/InternVL/blob/main/BLOG.md)]. 🔥🔥🔥
+- **[2024-02-25]** We have supported [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR)🔥🔥🔥
+- **[2024-02-24]** We have supported [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL). The models achieve over 80% Top-1 accuracies on MMBench v1.0 [[**Blog**](https://github.com/OpenGVLab/InternVL/blob/main/BLOG.md)] 🔥🔥🔥
 - **[2024-02-07]** We have supported two new models: [**MiniCPM-V**](https://huggingface.co/openbmb/MiniCPM-V) and [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B). 🔥🔥🔥
-- **[2024-01-30]** We have supported three new models: [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max), [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b), [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya). 🔥🔥🔥
-- **[2024-01-30]** We have merged all performance numbers on our leaderboards into a single json file: [**OpenVLM.json**](http://opencompass.openxlab.space/utils/OpenVLM.json).
-- **[2024-01-27]** We have supported the evaluation of [**MMMU_TEST**](https://mmmu-benchmark.github.io). 🔥🔥🔥
-- **[2024-01-24]** We have supported [**Yi-VL**](https://huggingface.co/01-ai/Yi-VL-6B). 🔥🔥🔥
+- **[2024-01-30]** We have supported three new models: [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max), [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b), [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya) 🔥🔥🔥
+- **[2024-01-30]** We have merged all performance numbers on our leaderboards into a single json file: [**OpenVLM.json**](http://opencompass.openxlab.space/utils/OpenVLM.json)
+- **[2024-01-27]** We have supported the evaluation of [**MMMU_TEST**](https://mmmu-benchmark.github.io) 🔥🔥🔥
 
 
 ## 📊 Datasets, Models, and Evaluation Results
@@ -48,16 +48,16 @@
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet                                                  | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL/MMMU_TEST                                 | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**MathVista**](https://mathvista.github.io)                 | MathVista_MINI                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
-| [**ScienceQA_IMG**](https://scienceqa.github.io)             | ScienceQA_[VAL/TEST]                                   | ✅         | ✅          | [**ScienceQA Results**](/results/ScienceQA.md)               |
-| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Caption Results**](results/Caption.md)                    |
+| [**ScienceQA_IMG**](https://scienceqa.github.io)             | ScienceQA_[VAL/TEST]                                   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL                                               | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**HallusionBench**](https://github.com/tianyi-lab/HallusionBench) | HallusionBench                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
-| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          |               |
-| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          |               |
-| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          |               |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST]                                 | ✅         | ✅          | **TBD.**                                                     |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL                                            | ✅         | ✅          | **TBD.**                                                     |
+| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_VALTEST_HUMAN                                  | ✅         | ✅          | **TBD.**                                                     |
 | [**AI2D**](https://allenai.org/data/diagrams)                | AI2D_TEST                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**LLaVABench**](https://huggingface.co/datasets/liuhaotian/llava-bench-in-the-wild) | LLaVABench                                             | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**DocVQA**](https://www.docvqa.org)                         | DocVQA_VAL                                             | ✅         | ✅          | **TBD.**                                                     |
-| [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench                                               | ✅         | ✅          | **TBD.**                                                     |
+| [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench                                               | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM                                                | ✅         |            | **N/A**                                                      |
 
 **There are some known issues with VQA tasks like OCRVQA, TextVQA, ChartQA, etc. We will fix them asap.**
