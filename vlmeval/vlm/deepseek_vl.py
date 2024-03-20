@@ -2,7 +2,7 @@ import sys
 import torch
 from transformers import AutoModelForCausalLM
 import warnings
-from vlmeval.smp import isimg, pip_install
+from vlmeval.smp import isimg, pip_install_robust
 
 
 class DeepSeekVL:
@@ -10,7 +10,7 @@ class DeepSeekVL:
     INSTALL_REQ = True
 
     def check_install(self):
-        installed = pip_install('deepseek_vl')
+        installed = pip_install_robust('deepseek_vl')
         if not installed:
             warnings.warn(
                 'Please first install deepseek_vl from source codes in: https://github.com/deepseek-ai/DeepSeek-VL')
