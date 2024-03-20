@@ -42,6 +42,7 @@ for f in models:
         if not completed(f, D, suff):
             logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'red'))
             ESS_MISSING.append(f'--model {f} --data {D}')
+ESS_MISSING.append('')
 mwlines(ESS_MISSING, 'missing_essential.txt')
 
 logger.info(colored('Optional Datasets: ', 'magenta'))
@@ -53,4 +54,5 @@ for f in models:
         if not completed(f, D, suff):
             logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'magenta'))
             OPT_MISSING.append(f'--model {f} --data {D}')
+OPT_MISSING.append('')
 mwlines(OPT_MISSING, 'missing_optional.txt')
