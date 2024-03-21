@@ -168,3 +168,16 @@ def load_env():
             os.environ[k] = v
     print(f'API Keys successfully loaded from {pth}')
     return
+
+def pip_install_robust(package):
+    import sys
+    retry = 3
+    while retry > 0:
+        try:
+            package_base = package.split('=')[0]
+            module = __import__(package)
+            return True
+        except ImportError:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+            retry -= 1
+    return False
