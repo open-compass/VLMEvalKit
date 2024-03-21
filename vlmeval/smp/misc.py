@@ -181,3 +181,10 @@ def pip_install_robust(package):
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
             retry -= 1
     return False
+
+
+def version_cmp(v1, v2, op='eq'):
+    from packaging import version
+    import operator
+    op_func = getattr(operator, op)
+    return op_func(version.parse(v1), version.parse(v2))
