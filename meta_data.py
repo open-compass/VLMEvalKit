@@ -39,10 +39,9 @@ LEADERBOARD_MD['MAIN'] = """
 """
 
 LEADERBOARD_MD['SEEDBench_IMG'] = """
-## SEEDBench_IMG Scores (Prefetch / ChatGPT Answer Extraction / Official Leaderboard)
+## SEEDBench_IMG Scores (ChatGPT Answer Extraction / Official Leaderboard)
 
 - **Overall**: The overall accuracy across all questions with **ChatGPT answer matching**.
-- **Overall (prefetch)**: The accuracy when using exact matching for evaluation. 
 - **Overall (official)**: SEEDBench_IMG acc on the official leaderboard (if applicable). 
 """
 
