@@ -201,9 +201,16 @@ class LLaVA_Next(CustomPrompt):
         inputs = self.processor(prompt_wtmpl, image, return_tensors='pt').to('cuda')
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
+        if '<s>' in answer:
+            answer = answer.replace('<s>', '')
+            answer = answer.strip()
+
         lt = len(prompt_wtmpl)
         if prompt_wtmpl == answer[:lt]:
             answer = answer[lt:]
-        answer = answer.split('</s>')[0]
+
+        if '</s>' in answer:
+            answer = answer.split('</s>')[0]
+            answer = answer.strip()
 
         return answer
