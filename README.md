@@ -101,7 +101,7 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🏗️ QuickStart
 
-See [QuickStart](/QuickStart.md) for a quick start guide.
+See [QuickStart](/Quickstart.md) for a quick start guide.
 
 ## 🛠️ Development Guide
 
