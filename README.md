@@ -82,10 +82,13 @@
 
 🚅: Model can be used without any additional configuration / operation.
 
-**Transformers Version Recommendation: ** Note that some VLMs may not be able to run under certain transformer versions, we recommend the following settings to evaluate each VLM:
+**Transformers Version Recommendation: **
+
+Note that some VLMs may not be able to run under certain transformer versions, we recommend the following settings to evaluate each VLM:
 
 - **Please use** `transformers==4.33.0` **for**: `Qwen series`, `Monkey series`, `InternVL series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `SharedCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`,  `PandaGPT`.
 - **Please use** `transformers==4.37.0 ` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-V`, `OmniLMM-12B`, `DeepSeek-VL series`.
+- **Please use** `transformers==4.39.0 ` **for**: `LLaVA-Next series`.
 
 ```python
 # Demo
