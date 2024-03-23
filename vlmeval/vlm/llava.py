@@ -215,5 +215,7 @@ class LLaVA_Next(CustomPrompt):
 
         if '</s>' in answer:
             answer = answer.split('</s>')[0].strip()
+        if '<|im_end|>' in answer:
+            answer = answer.split('<|im_end|>')[0].strip()
 
         return answer
