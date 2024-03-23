@@ -29,7 +29,7 @@ class QwenVL:
             output_hidden_states=True,
             pad_token_id=tokenizer.eod_id,
             eos_token_id=tokenizer.eod_id)
-        default_kwargs.update(self.kwargs)
+        default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
