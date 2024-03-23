@@ -132,7 +132,10 @@ class LLaVA_Next(CustomPrompt):
         assert version_cmp(transformers.__version__, '4.39.0', 'ge')
         from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
         self.model_pth = model_pth
-        self.processor = LlavaNextProcessor.from_pretrained(self.model_pth)
+        if '34b' in model_pth.lower():
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth, use_fast=False)
+        else:
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth)
         model = LlavaNextForConditionalGeneration.from_pretrained(
             self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True)
         model = model.eval()
@@ -202,15 +205,15 @@ class LLaVA_Next(CustomPrompt):
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         if '<s>' in answer:
-            answer = answer.replace('<s>', '')
-            answer = answer.strip()
-
-        lt = len(prompt_wtmpl)
-        if prompt_wtmpl == answer[:lt]:
-            answer = answer[lt:]
+            answer = answer.replace('<s>', '').strip()
+        if '[/INST]' in answer:
+            answer = answer.split('[/INST]')[1].strip()
+        elif 'ASSISTANT:' in answer:
+            answer = answer.split('ASSISTANT:')[1].strip()
+        elif '<|im_start|>assistant\n' in answer:
+            answer = answer.split('<|im_start|>assistant\n')[1].strip()
 
         if '</s>' in answer:
-            answer = answer.split('</s>')[0]
-            answer = answer.strip()
+            answer = answer.split('</s>')[0].strip()
 
         return answer
