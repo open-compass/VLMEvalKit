@@ -210,7 +210,7 @@ class LLaVA_Next(CustomPrompt):
             answer = answer.split('[/INST]')[1].strip()
         elif 'ASSISTANT:' in answer:
             answer = answer.split('ASSISTANT:')[1].strip()
-        elif '<|im_start|>assistant\n' in answer:
+        elif 'assistant\n' in answer:
             answer = answer.split('assistant\n')[1].strip()
 
         if '</s>' in answer:
