@@ -50,6 +50,8 @@ class QwenVL:
     def interleave_generate(self, ti_list, dataset=None):
         if dataset is not None:
             kwargs = self.adjust_kwargs(dataset)
+        else:
+            kwargs = self.kwargs
         prompt = ''
         for s in ti_list:
             if isimg(s):
