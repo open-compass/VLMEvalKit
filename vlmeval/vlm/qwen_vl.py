@@ -48,14 +48,15 @@ class QwenVL:
         return kwargs
 
     def interleave_generate(self, ti_list, dataset=None):
-        kwargs = self.adjust_kwargs(dataset)
+        if dataset is not None:
+            kwargs = self.adjust_kwargs(dataset)
         prompt = ''
         for s in ti_list:
             if isimg(s):
                 prompt += f'<img>{s}</img>'
             else:
                 prompt += s
-        if DATASET_TYPE(dataset) == 'VQA':
+        if dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             prompt += ' Answer:'
         encoded = self.tokenizer([prompt], return_tensors='pt', padding='longest')
         input_ids = encoded.input_ids.to('cuda')
