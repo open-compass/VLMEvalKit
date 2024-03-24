@@ -56,7 +56,7 @@ xtuner_series = {
 
 qwen_series = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
-    'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
+    'qwen_chat': partial(QwenVL, model_path='Qwen/Qwen-VL-Chat'),
     'monkey':partial(Monkey, model_path='echo840/Monkey'),
     'monkey-chat':partial(MonkeyChat, model_path='echo840/Monkey-Chat')
 }
@@ -67,6 +67,10 @@ llava_series = {
     'llava_v1_7b': partial(LLaVA, model_pth=LLAVA_V1_7B_MODEL_PTH),
     'sharegpt4v_7b': partial(LLaVA, model_pth='Lin-Chen/ShareGPT4V-7B'),
     'sharegpt4v_13b': partial(LLaVA, model_pth='Lin-Chen/ShareGPT4V-13B'),
+    'llava_next_vicuna_7b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf'),
+    'llava_next_vicuna_13b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-vicuna-13b-hf'),
+    'llava_next_mistral_7b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-mistral-7b-hf'),
+    'llava_next_yi_34b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-34b-hf'),
 }
 
 internvl_series = {
