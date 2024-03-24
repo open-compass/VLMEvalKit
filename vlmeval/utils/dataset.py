@@ -130,6 +130,9 @@ class TSVDataset(CustomPrompt):
             if len(options):
                 prompt += options_prompt
                 prompt += 'Please select the correct answer from the options above. \n'
+        elif DATASET_TYPE(dataset) == 'VQA':
+            if listinstr(['ocrvqa', 'textvqa', 'chartqa', 'docvqa'], dataset.lower()):
+                prompt += '\nPlease try to answer the question with short words or phrases if possible\n.'
 
         return dict(image=tgt_path, text=prompt)
 
