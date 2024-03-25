@@ -136,8 +136,20 @@ class LLaVA_Next(CustomPrompt):
             self.processor = LlavaNextProcessor.from_pretrained(self.model_pth, use_fast=False)
         else:
             self.processor = LlavaNextProcessor.from_pretrained(self.model_pth)
-        model = LlavaNextForConditionalGeneration.from_pretrained(
-            self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+        flash_attn_flag = False
+        try:
+            import flash_attn
+            flash_attn_flag = True
+        except ImportError:
+            pass
+
+        if flash_attn_flag:
+            model = LlavaNextForConditionalGeneration.from_pretrained(
+                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+        else:
+            model = LlavaNextForConditionalGeneration.from_pretrained(
+                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+
         model = model.eval()
         self.model = model.cuda()
         kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1)
