@@ -115,6 +115,8 @@ def BUILD_L2_DF(results, dataset):
 
     for m in results:
         item = results[m]
+        if dataset not in item:
+            continue
         meta = item['META']
         for k in META_FIELDS:
             if k == 'Parameters (B)':
