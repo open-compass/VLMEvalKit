@@ -203,7 +203,8 @@ def relaxed_correctness(target: str,
                 return float(text)
         except ValueError:
             return None
-
+    prediction = str(prediction)
+    target = str(target)
     prediction_float = _to_float(prediction)
     target_float = _to_float(target)
     if prediction_float is not None and target_float:
@@ -316,6 +317,9 @@ def VQAEval(eval_file, dataset_name, **kwargs):
             # [np.mean(x['match']) >= full_score_weight for x in sub]
             hit = hit_calculate(sub, dataset_name)
             ret[sp] = np.mean(hit) * 100
+        sub = [r for l, r in zip(lines, res)]
+        hit = hit_calculate(sub, dataset_name)
+        ret['Overall'] = np.mean(hit) * 100
     else:
         ret['Overall'] = np.mean(hit) * 100
         if 'category' in data:

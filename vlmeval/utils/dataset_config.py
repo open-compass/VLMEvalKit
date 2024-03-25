@@ -27,6 +27,7 @@ dataset_URLs = {
     'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
     'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv',
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
+    'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv'
 }
 
 dataset_md5_dict = {
@@ -56,6 +57,7 @@ dataset_md5_dict = {
     'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
     'LLaVABench': 'd382a093f749a697820d3dadd61c8428',
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
+    'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -76,6 +78,7 @@ img_root_map.update({
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
     'OCRBench': 'OCRBench',
+    'ChartQA_TEST': 'ChartQA',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
