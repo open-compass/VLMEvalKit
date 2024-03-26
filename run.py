@@ -96,7 +96,7 @@ def main():
                         'will skip the evaluation. '
                     )
                     continue
-            # W293
+            # noqa W293
             if rank == 0:
                 if dataset_name in ['MMMU_TEST']:
                     result_json = MMMU_result_transfer(result_file)
