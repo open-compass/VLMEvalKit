@@ -3,6 +3,7 @@ import hashlib
 from ..smp import *
 from .dataset_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE
 from .custom_prompt import CustomPrompt
+from .matching_util import can_infer
 
 
 def isliststr(s):
@@ -38,6 +39,29 @@ def split_MMMU(struct):
         segs.append(images[image_idx])
         segs.append(seg[2:])
     return segs
+
+
+def MMMU_result_transfer(result_path):
+    res = {}
+    result_data = load(result_path)
+    mcq = result_data['A'].notna()
+    lt = len(result_data)
+    for i in range(lt):
+        line = result_data.iloc[i]
+        if mcq[i]:
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            prediction = line['prediction']
+            infer_prediction = can_infer(prediction, options)
+            res[line['id']] = infer_prediction
+        else:
+            res[line['id']] = line['prediction']
+    result_json = result_path.replace('.xlsx', '.json')
+    dump(res, result_json)
+    return result_json
 
 
 class TSVDataset(CustomPrompt):

@@ -4,7 +4,7 @@ from vlmeval.smp import *
 from vlmeval.evaluate import *
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
-from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full
+from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer
 
 
 def parse_args():
@@ -96,6 +96,11 @@ def main():
                         'will skip the evaluation. '
                     )
                     continue
+            # noqa W293
+            if rank == 0:
+                if dataset_name in ['MMMU_TEST']:
+                    result_json = MMMU_result_transfer(result_file)
+                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')    # noqa E501
 
             if rank == 0 and args.prefetch:
                 time.sleep(3)
