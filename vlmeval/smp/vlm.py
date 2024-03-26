@@ -1,4 +1,5 @@
-import os, io
+import os
+import io
 import pandas as pd
 import numpy as np
 import string
@@ -6,6 +7,8 @@ from uuid import uuid4
 import os.path as osp
 import base64
 from PIL import Image
+from .file import load, dump
+
 
 def mmqa_display(question):
     question = {k.lower(): v for k, v in question.items()}
@@ -21,21 +24,22 @@ def mmqa_display(question):
 
     for im in images:
         image = decode_base64_to_image(im, target_size=512)
-        display(image)
-        
+        display(image)  # noqa: F821
+
     for k in keys:
-        try: 
+        try:
             if not pd.isna(question[k]):
                 print(f'{k.upper()}. {question[k]}')
         except ValueError:
             if False in pd.isna(question[k]):
                 print(f'{k.upper()}. {question[k]}')
 
+
 def encode_image_to_base64(img, target_size=-1):
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
-    if img.mode in ("RGBA", "P"):
-        img = img.convert("RGB")
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
     tmp = osp.join('/tmp', str(uuid4()) + '.jpg')
     if target_size > 0:
         img.thumbnail((target_size, target_size))
@@ -46,10 +50,12 @@ def encode_image_to_base64(img, target_size=-1):
     os.remove(tmp)
     return ret
 
+
 def encode_image_file_to_base64(image_path, target_size=-1):
     image = Image.open(image_path)
     return encode_image_to_base64(image, target_size=target_size)
-    
+
+
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
@@ -59,9 +65,11 @@ def decode_base64_to_image(base64_string, target_size=-1):
         image.thumbnail((target_size, target_size))
     return image
 
+
 def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
     image = decode_base64_to_image(base64_string, target_size=target_size)
     image.save(image_path)
+
 
 def LMUDataRoot():
     if 'LMUData' in os.environ and osp.exists(os.environ['LMUData']):
@@ -71,6 +79,7 @@ def LMUDataRoot():
     os.makedirs(root, exist_ok=True)
     return root
 
+
 def build_option_str(option_dict):
     s = 'There are several options: \n'
     for c, content in option_dict.items():
@@ -78,8 +87,10 @@ def build_option_str(option_dict):
             s += f'{c}. {content}\n'
     return s
 
+
 def isimg(s):
     return osp.exists(s) or s.startswith('http')
+
 
 def read_ok(img_path):
     if not osp.exists(img_path):
@@ -91,17 +102,20 @@ def read_ok(img_path):
     except:
         return False
 
+
 def gpt_key_set():
     openai_key = os.environ.get('OPENAI_API_KEY', None)
     return isinstance(openai_key, str) and openai_key.startswith('sk-')
 
+
 def apiok(wrapper):
-    s = wrapper.generate("Hello!")
+    s = wrapper.generate('Hello!')
     return wrapper.fail_msg not in s
+
 
 def circular_pred(df, extract_func=None):
     if extract_func is None:
-        extract_func = lambda x: x
+        extract_func = lambda x: x  # noqa: E731
     df = df.sort_values('index')
     from vlmeval.utils import can_infer_option
     shift = int(1e6)
@@ -112,7 +126,11 @@ def circular_pred(df, extract_func=None):
     valid_map = {i: True for i in pred_map if i < 1e6}
     for i in df['index']:
         if i >= shift and pred_map[i] and pred_map[i - shift]:
-            if pred_map[i] not in list(string.ascii_uppercase) or pred_map[i - shift] not in list(string.ascii_uppercase):
+            if (
+                pred_map[i] not in list(string.ascii_uppercase) or  # noqa: W504
+                pred_map[i - shift] not in list(string.ascii_uppercase)
+            ):
+
                 valid_map[i % shift] = False
                 continue
             if (ord(pred_map[i]) - ord(pred_map[i - shift])) % 4 == 1:
@@ -123,9 +141,12 @@ def circular_pred(df, extract_func=None):
     flags = list(flag_map.values())
     return np.mean(flags)
 
+
 def MMBenchOfficialServer():
     root = LMUDataRoot()
     for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
         if osp.exists(f'{root}/{dataset}.tsv'):
-            return True
+            data = load(f'{root}/{dataset}.tsv')
+            if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
+                return True
     return False

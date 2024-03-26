@@ -1,48 +1,50 @@
 from ..smp import *
-import os, sys
+import os
+import sys
 from .base import BaseAPI
 
 APIBASES = {
-    'OFFICIAL': "https://api.openai.com/v1/chat/completions",
+    'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
 }
 
 
 def GPT_context_window(model):
     length_map = {
-        'gpt-4-1106-preview': 128000, 
-        'gpt-4-vision-preview': 128000, 
+        'gpt-4-1106-preview': 128000,
+        'gpt-4-vision-preview': 128000,
         'gpt-4': 8192,
         'gpt-4-32k': 32768,
-        'gpt-4-0613': 8192, 
+        'gpt-4-0613': 8192,
         'gpt-4-32k-0613': 32768,
-        'gpt-3.5-turbo-1106': 16385, 
-        'gpt-3.5-turbo': 4096, 
-        'gpt-3.5-turbo-16k': 16385, 
-        'gpt-3.5-turbo-instruct': 4096, 
-        'gpt-3.5-turbo-0613': 4096, 
-        'gpt-3.5-turbo-16k-0613': 16385, 
+        'gpt-3.5-turbo-1106': 16385,
+        'gpt-3.5-turbo': 4096,
+        'gpt-3.5-turbo-16k': 16385,
+        'gpt-3.5-turbo-instruct': 4096,
+        'gpt-3.5-turbo-0613': 4096,
+        'gpt-3.5-turbo-16k-0613': 16385,
     }
     if model in length_map:
         return length_map[model]
     else:
         return 4096
 
+
 class OpenAIWrapper(BaseAPI):
 
     is_api: bool = True
 
-    def __init__(self, 
-                 model: str = 'gpt-3.5-turbo-0613', 
+    def __init__(self,
+                 model: str = 'gpt-3.5-turbo-0613',
                  retry: int = 5,
-                 wait: int = 5, 
+                 wait: int = 5,
                  key: str = None,
-                 verbose: bool = True, 
+                 verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0,
                  timeout: int = 60,
                  api_base: str = 'OFFICIAL',
                  max_tokens: int = 1024,
-                 img_size: int = 512, 
+                 img_size: int = 512,
                  img_detail: str = 'low',
                  **kwargs):
 
@@ -64,8 +66,11 @@ class OpenAIWrapper(BaseAPI):
         if model == 'gpt-4-vision-preview':
             self.vision = True
         self.timeout = timeout
-        
-        assert isinstance(openai_key, str) and openai_key.startswith('sk-'), f'Illegal openai_key {openai_key}. Please set the environment variable OPENAI_API_KEY to your openai key. '
+
+        assert isinstance(openai_key, str) and openai_key.startswith('sk-'), (
+            f'Illegal openai_key {openai_key}. '
+            'Please set the environment variable OPENAI_API_KEY to your openai key. '
+        )
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if api_base in APIBASES:
@@ -73,11 +78,11 @@ class OpenAIWrapper(BaseAPI):
         elif api_base.startswith('http'):
             self.api_base = api_base
         else:
-            self.logger.error("Unknown API Base. ")
+            self.logger.error('Unknown API Base. ')
             sys.exit(-1)
 
         if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
-            self.logger.error("Environment variable OPENAI_API_BASE is set. Will override the api_base arg. ")
+            self.logger.error('Environment variable OPENAI_API_BASE is set. Will override the api_base arg. ')
             self.api_base = os.environ['OPENAI_API_BASE']
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
@@ -118,7 +123,7 @@ class OpenAIWrapper(BaseAPI):
                 for role, msg in zip(roles, inputs):
                     input_msgs.append(dict(role=role, content=msg))
                 return input_msgs
-        raise NotImplemented("list of list prompt not implemented now. ")
+        raise NotImplementedError('list of list prompt not implemented now. ')
 
     def generate_inner(self, inputs, **kwargs) -> str:
         input_msgs = self.prepare_inputs(inputs)
@@ -128,16 +133,19 @@ class OpenAIWrapper(BaseAPI):
         context_window = GPT_context_window(self.model)
         max_tokens = min(max_tokens, context_window - self.get_token_len(inputs))
         if 0 < max_tokens <= 100:
-            self.logger.warning('Less than 100 tokens left, may exceed the context window with some additional meta symbols. ')
+            self.logger.warning(
+                'Less than 100 tokens left, '
+                'may exceed the context window with some additional meta symbols. '
+            )
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
-        
+
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.openai_key}'}
         payload = dict(
-            model=self.model, 
+            model=self.model,
             messages=input_msgs,
             max_tokens=max_tokens,
-            n=1, 
+            n=1,
             temperature=temperature,
             **kwargs)
         response = requests.post(self.api_base, headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
@@ -170,14 +178,14 @@ class OpenAIWrapper(BaseAPI):
         for item in inputs:
             res += self.get_token_len(item)
         return res
-    
+
+
 class GPT4V(OpenAIWrapper):
 
     def generate(self, image_path, prompt, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V, self).generate([image_path, prompt])
-    
+
     def interleave_generate(self, ti_list, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V, self).generate(ti_list)
-    

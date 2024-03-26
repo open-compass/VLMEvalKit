@@ -8,6 +8,7 @@ import os.path as osp
 import time
 import numpy as np
 
+
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
@@ -22,9 +23,10 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         elif isinstance(obj, (np.bool_)):
             return bool(obj)
-        elif isinstance(obj, (np.void)): 
+        elif isinstance(obj, (np.void)):
             return None
         return json.JSONEncoder.default(self, obj)
+
 
 # LOAD & DUMP
 def dump(data, f, **kwargs):
@@ -52,6 +54,7 @@ def dump(data, f, **kwargs):
     suffix = f.split('.')[-1]
     return handlers[suffix](data, f, **kwargs)
 
+
 def load(f):
     def load_pkl(pth):
         return pickle.load(open(pth, 'rb'))
@@ -78,7 +81,8 @@ def load(f):
 
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
     suffix = f.split('.')[-1]
-    return handlers[suffix](f) 
+    return handlers[suffix](f)
+
 
 def download_file(url, filename=None):
     import urllib.request
@@ -89,7 +93,7 @@ def download_file(url, filename=None):
             if tsize is not None:
                 self.total = tsize
             self.update(b * bsize - self.n)
-        
+
     if filename is None:
         filename = url.split('/')[-1]
 
@@ -97,6 +101,7 @@ def download_file(url, filename=None):
                              miniters=1, desc=url.split('/')[-1]) as t:
         urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
     return filename
+
 
 def ls(dirname='.', match=[], mode='all', level=1):
     if dirname == '.':
@@ -109,11 +114,12 @@ def ls(dirname='.', match=[], mode='all', level=1):
         if isinstance(match, str):
             match = [match]
         for m in match:
-            if len(m) == 0: continue
-            if m[0] != '!': 
+            if len(m) == 0:
+                continue
+            if m[0] != '!':
                 ans = [x for x in ans if m in x]
             else:
-                ans = [x for x in ans if m[1:] not in x]    
+                ans = [x for x in ans if m[1:] not in x]
         if mode == 'dir':
             ans = [x for x in ans if osp.isdir(x)]
         elif mode == 'file':
@@ -122,9 +128,10 @@ def ls(dirname='.', match=[], mode='all', level=1):
         ans = [x for x in ans if osp.isdir(x)]
         res = []
         for d in ans:
-            res.extend(ls(d, match=match, mode=mode, level=level-1))
+            res.extend(ls(d, match=match, mode=mode, level=level - 1))
         ans = res
     return ans
+
 
 def mrlines(fname, sp='\n'):
     f = open(fname).read().split(sp)
@@ -132,9 +139,11 @@ def mrlines(fname, sp='\n'):
         f = f[:-1]
     return f
 
+
 def mwlines(lines, fname):
     with open(fname, 'w') as fout:
         fout.write('\n'.join(lines))
+
 
 def md5(file_pth):
     with open(file_pth, 'rb') as f:
@@ -142,6 +151,7 @@ def md5(file_pth):
         for chunk in iter(lambda: f.read(2**20), b''):
             hash.update(chunk)
     return str(hash.hexdigest())
+
 
 def last_modified(pth):
     stamp = osp.getmtime(pth)

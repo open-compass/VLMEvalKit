@@ -84,7 +84,7 @@ def get_cache_path(repo_id):
     rev2keep, last_modified = None, 0
     for rev in revs:
         if rev.last_modified > last_modified:
-            rev2keep, last_modified = rev, rev.last_modified 
+            rev2keep, last_modified = rev, rev.last_modified
     if rev2keep is None:
         return None
     return str(rev2keep.snapshot_path)
@@ -95,8 +95,8 @@ def proxy_set(s):
         os.environ[key] = s
 
 def get_rank_and_world_size():
-    local_rank = int(os.environ.get("LOCAL_RANK", 0))
-    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    local_rank = int(os.environ.get('LOCAL_RANK', 0))
+    world_size = int(os.environ.get('WORLD_SIZE', 1))
     return local_rank, world_size
 
 def splitlen(s, sym='/'):
@@ -147,3 +147,44 @@ def run_command(cmd):
     if isinstance(cmd, str):
         cmd = cmd.split()
     return subprocess.check_output(cmd)
+
+def load_env():
+    try:
+        import vlmeval
+    except ImportError:
+        warnings.warn('VLMEval is not installed. Failed to import environment variables from .env file. ')
+        return
+    pth = osp.realpath(vlmeval.__path__[0])
+    pth = osp.join(pth, '../.env')
+    pth = osp.realpath(pth)
+    if not osp.exists(pth):
+        warnings.warn(f'Did not detect the .env file at {pth}, failed to load. ')
+        return
+
+    from dotenv import dotenv_values
+    values = dotenv_values(pth)
+    for k, v in values.items():
+        if v is not None and len(v):
+            os.environ[k] = v
+    print(f'API Keys successfully loaded from {pth}')
+    return
+
+def pip_install_robust(package):
+    import sys
+    retry = 3
+    while retry > 0:
+        try:
+            package_base = package.split('=')[0]
+            module = __import__(package)
+            return True
+        except ImportError:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+            retry -= 1
+    return False
+
+
+def version_cmp(v1, v2, op='eq'):
+    from packaging import version
+    import operator
+    op_func = getattr(operator, op)
+    return op_func(version.parse(v1), version.parse(v2))
