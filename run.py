@@ -96,10 +96,11 @@ def main():
                         'will skip the evaluation. '
                     )
                     continue
-            
-            if dataset_name in ['MMMU_TEST']:
-                result_json = MMMU_result_transfer(result_file)
-                logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')
+                
+            if rank == 0:
+                if dataset_name in ['MMMU_TEST']:
+                    result_json = MMMU_result_transfer(result_file)
+                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')
 
             if rank == 0 and args.prefetch:
                 time.sleep(3)
