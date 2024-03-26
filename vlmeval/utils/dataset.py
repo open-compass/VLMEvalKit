@@ -59,7 +59,7 @@ def MMMU_result_transfer(result_path):
             res[line['id']] = infer_prediction
         else:
             res[line['id']] = line['prediction']
-    result_json = result_path.replace('.xlsx','.json')
+    result_json = result_path.replace('.xlsx', '.json')
     dump(res, result_json)
     return result_json
 
