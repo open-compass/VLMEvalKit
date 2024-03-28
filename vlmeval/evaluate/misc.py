@@ -5,6 +5,7 @@ from vlmeval.smp import load_env
 INTERNAL = os.environ.get('INTERNAL', 0)
 LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
 
+
 def build_judge(version, **kwargs):
     load_env()
     if LOCAL_LLM is None:
