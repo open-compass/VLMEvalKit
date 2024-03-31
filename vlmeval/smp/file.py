@@ -104,12 +104,13 @@ def download_file(url, filename=None):
 
 
 def ls(dirname='.', match=[], mode='all', level=1):
-    include = False
     if isinstance(level, str):
-        if level[-1] == '+':
-            include = True
-            level = level[:-1]
-        level = int(level)
+        assert '+' in level
+        level = int(level[:-1])
+        res = []
+        for i in range(1, level + 1):
+            res.extend(ls(dirname, match=match, mode='file', level=i))
+        return res
 
     if dirname == '.':
         ans = os.listdir(dirname)
@@ -133,13 +134,10 @@ def ls(dirname='.', match=[], mode='all', level=1):
             ans = [x for x in ans if not osp.isdir(x)]
         return ans
     else:
-        files = [x for x in ans if osp.isfile(x)]
         dirs = [x for x in ans if osp.isdir(x)]
         res = []
         for d in dirs:
             res.extend(ls(d, match=match, mode=mode, level=level - 1))
-        if include:
-            res.extend(files)
         return res
 
 
