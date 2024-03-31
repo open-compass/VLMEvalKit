@@ -131,6 +131,7 @@ def ls(dirname='.', match=[], mode='all', level=1):
             ans = [x for x in ans if osp.isdir(x)]
         elif mode == 'file':
             ans = [x for x in ans if not osp.isdir(x)]
+        return ans
     else:
         files = [x for x in ans if osp.isfile(x)]
         dirs = [x for x in ans if osp.isdir(x)]
@@ -139,8 +140,7 @@ def ls(dirname='.', match=[], mode='all', level=1):
             res.extend(ls(d, match=match, mode=mode, level=level - 1))
         if include:
             res.extend(files)
-        ans = res
-    return ans
+        return res
 
 
 def mrlines(fname, sp='\n'):
