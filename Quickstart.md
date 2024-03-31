@@ -16,7 +16,7 @@ pip install -e .
 
 **Setup Keys.**
 
-To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **judge or choice extractor**, you need to first setup API keys. VLMEvalKit will first try the "exact matching" policy to extract choices from the output answers. If this step is not successful, VLMEvalKit uses an LLM to extract choices from answers.
+To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **judge or choice extractor**, you need to first setup API keys. VLMEvalKit will use an judge **LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**
 - You can place the required keys in `$VLMEvalKit/.env` or directly set them as the environment variable. If you choose to create a `.env` file, its content will look like:
 
   ```bash
@@ -90,7 +90,7 @@ And then deploy a local judge LLM with the single line of code. LMDeploy will au
 lmdeploy serve api_server internlm/internlm2-chat-1_8b --server-port 23333
 ```
 
-You need to get the model name registered by LMDeploy with the following code:
+You need to get the model name registered by LMDeploy with the following python code:
 ```
 from openai import OpenAI
 client = OpenAI(
@@ -100,11 +100,11 @@ client = OpenAI(
 model_name = client.models.list().data[0].id
 ```
 
-Now set some environment variables to tell VLMEvalKit how to use the local judge LLM. In fact, the local judge LLM mimics an online OpenAI model.
+Now set some environment variables to tell VLMEvalKit how to use the local judge LLM. As mentioned above, you can also set them in `$VLMEvalKit/.env` file:
 ```
-export OPENAI_API_KEY=sk-123456
-export OPENAI_API_BASE=http://0.0.0.0:23333/v1/chat/completions
-export LOCAL_LLM=<model_name you get>
+OPENAI_API_KEY=sk-123456
+OPENAI_API_BASE=http://0.0.0.0:23333/v1/chat/completions
+LOCAL_LLM=<model_name you get>
 ```
 
 Finally, you can run the commands in step 2 to evaluate your VLM with the local judge LLM.

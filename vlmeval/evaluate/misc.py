@@ -3,11 +3,11 @@ from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
 from vlmeval.smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
-LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
 
 
 def build_judge(version, **kwargs):
     load_env()
+    LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
     if LOCAL_LLM is None:
         model_map = {
             'gpt-4-turbo': 'gpt-4-1106-preview',
