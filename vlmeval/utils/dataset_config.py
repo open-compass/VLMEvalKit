@@ -75,7 +75,7 @@ img_root_map.update({
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
     'OCRBench': 'OCRBench',
-    'ChartQA_TEST': 'ChartQA',
+    'ChartQA_TEST': 'ChartQA_TEST',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
