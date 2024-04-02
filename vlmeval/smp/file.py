@@ -9,7 +9,25 @@ import time
 import numpy as np
 import validators
 import mimetypes
-from .vlm import LMUDataRoot
+
+
+def LMUDataRoot():
+    if 'LMUData' in os.environ and osp.exists(os.environ['LMUData']):
+        return os.environ['LMUData']
+    home = osp.expanduser('~')
+    root = osp.join(home, 'LMUData')
+    os.makedirs(root, exist_ok=True)
+    return root
+
+
+def MMBenchOfficialServer():
+    root = LMUDataRoot()
+    for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
+        if osp.exists(f'{root}/{dataset}.tsv'):
+            data = load(f'{root}/{dataset}.tsv')
+            if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
+                return True
+    return False
 
 
 class NumpyEncoder(json.JSONEncoder):
