@@ -4,6 +4,7 @@ from vlmeval.api.base import BaseAPI
 from vlmeval.smp import *
 
 
+# Note: This is a pure language model API.
 class QwenAPI(BaseAPI):
 
     is_api: bool = True

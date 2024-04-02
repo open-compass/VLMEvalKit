@@ -24,6 +24,7 @@ torch>=2.0.1
 tqdm
 transformers
 typing_extensions==4.7.1
+validators
 visual_genome
 xlsxwriter
 xtuner

@@ -26,7 +26,7 @@ def GPT_context_window(model):
     if model in length_map:
         return length_map[model]
     else:
-        return 4096
+        return 128000
 
 
 class OpenAIWrapper(BaseAPI):
@@ -91,39 +91,24 @@ class OpenAIWrapper(BaseAPI):
         input_msgs = []
         if self.system_prompt is not None:
             input_msgs.append(dict(role='system', content=self.system_prompt))
-        if isinstance(inputs, str):
-            input_msgs.append(dict(role='user', content=inputs))
-            return input_msgs
-        assert isinstance(inputs, list)
-        dict_flag = [isinstance(x, dict) for x in inputs]
-        if np.all(dict_flag):
-            input_msgs.extend(inputs)
-            return input_msgs
-        str_flag = [isinstance(x, str) for x in inputs]
-        if np.all(str_flag):
-            img_flag = [x.startswith('http') or osp.exists(x) for x in inputs]
-            if np.any(img_flag):
-                content_list = []
-                for fl, msg in zip(img_flag, inputs):
-                    if not fl:
-                        content_list.append(dict(type='text', text=msg))
-                    elif msg.startswith('http'):
-                        content_list.append(dict(type='image_url', image_url={'url': msg, 'detail': self.img_detail}))
-                    elif osp.exists(msg):
-                        from PIL import Image
-                        img = Image.open(msg)
-                        b64 = encode_image_to_base64(img, target_size=self.img_size)
-                        img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
-                        content_list.append(dict(type='image_url', image_url=img_struct))
-                input_msgs.append(dict(role='user', content=content_list))
-                return input_msgs
-            else:
-                roles = ['user', 'assistant'] if len(inputs) % 2 == 1 else ['assistant', 'user']
-                roles = roles * len(inputs)
-                for role, msg in zip(roles, inputs):
-                    input_msgs.append(dict(role=role, content=msg))
-                return input_msgs
-        raise NotImplementedError('list of list prompt not implemented now. ')
+        has_images = np.sum([x['type'] == 'image' for x in inputs])
+        if has_images:
+            content_list = []
+            for msg in inputs:
+                if msg['type'] == 'text':
+                    content_list.append(dict(type='text', text=msg['value']))
+                elif msg['type'] == 'image':
+                    from PIL import Image
+                    img = Image.open(msg['value'])
+                    b64 = encode_image_to_base64(img, target_size=self.img_size)
+                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
+                    content_list.append(dict(type='image_url', image_url=img_struct))
+            input_msgs.append(dict(role='user', content=content_list))
+        else:
+            assert all([x['type'] == 'text' for x in inputs])
+            text = '\n'.join([x['value'] for x in inputs])
+            input_msgs.append(dict(role='user', content=text))
+        return input_msgs
 
     def generate_inner(self, inputs, **kwargs) -> str:
         input_msgs = self.prepare_inputs(inputs)
@@ -182,10 +167,6 @@ class OpenAIWrapper(BaseAPI):
 
 class GPT4V(OpenAIWrapper):
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate(self, msgs, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
-        return super(GPT4V, self).generate([image_path, prompt])
-
-    def interleave_generate(self, ti_list, dataset=None):
-        assert self.model == 'gpt-4-vision-preview'
-        return super(GPT4V, self).generate(ti_list)
+        return super(GPT4V, self).generate(msgs)

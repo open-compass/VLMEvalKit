@@ -1,10 +1,13 @@
 import time
 import random as rd
 from abc import abstractmethod
-from ..smp import get_logger
+import os.path as osp
+from ..smp import get_logger, parse_file
 
 
 class BaseAPI:
+
+    allowed_types = ['text', 'image']
 
     def __init__(self,
                  retry=10,
@@ -41,15 +44,47 @@ class BaseAPI:
             retry -= 1
         return False
 
+    def check_content(self, msgs):
+        if isinstance(msgs, str):
+            return 'str'
+        if isinstance(msgs, dict):
+            return 'dict'
+        if isinstance(msgs, list):
+            types = [self.check_msgs(m) for m in msgs]
+            if all(t == 'str' for t in types):
+                return 'liststr'
+            if all(t == 'dict' for t in types):
+                return 'listdict'
+        return 'unknown'
+
+    def preproc_content(self, inputs):
+        if self.check_content(inputs) == 'str':
+            return [dict(type='text', value=inputs)]
+        elif self.check_content(inputs) == 'dict':
+            assert 'type' in inputs and 'value' in inputs
+            return [inputs]
+        elif self.check_content(inputs) == 'liststr':
+            res = []
+            for s in inputs:
+                mime, pth = parse_file(s)
+                if mime is None or mime == 'unknown':
+                    res.append(dict(type='text', value=s))
+                else:
+                    res.append(dict(type=mime.split('/')[0], value=pth))
+            return res
+        elif self.check_content(inputs) == 'listdict':
+            for item in inputs:
+                assert 'type' in item and 'value' in item
+            return inputs
+        else:
+            return None
+
     def generate(self, inputs, **kwargs):
-        input_type = None
-        if isinstance(inputs, str):
-            input_type = 'str'
-        elif isinstance(inputs, list) and isinstance(inputs[0], str):
-            input_type = 'strlist'
-        elif isinstance(inputs, list) and isinstance(inputs[0], dict):
-            input_type = 'dictlist'
-        assert input_type is not None, input_type
+        assert self.check_content(inputs) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {inputs}'
+        inputs = self.preproc_content(inputs)
+        assert inputs is not None and self.check_content(inputs) == 'listdict'
+        for item in inputs:
+            assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
 
         answer = None
         # a very small random delay [0s - 0.5s]

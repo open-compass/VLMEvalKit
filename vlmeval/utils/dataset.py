@@ -131,7 +131,13 @@ class TSVDataset(CustomPrompt):
                 prompt += options_prompt
                 prompt += 'Please select the correct answer from the options above. \n'
 
-        return dict(image=tgt_path, text=prompt)
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
 
     def display(self, line):
         if isinstance(line, int):
