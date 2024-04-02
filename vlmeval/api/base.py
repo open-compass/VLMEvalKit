@@ -50,7 +50,7 @@ class BaseAPI:
         if isinstance(msgs, dict):
             return 'dict'
         if isinstance(msgs, list):
-            types = [self.check_msgs(m) for m in msgs]
+            types = [self.check_content(m) for m in msgs]
             if all(t == 'str' for t in types):
                 return 'liststr'
             if all(t == 'dict' for t in types):
