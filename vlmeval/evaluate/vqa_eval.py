@@ -162,7 +162,7 @@ def _process_digit_article(inText):
 def hit_calculate(result, dataset_name, anls_threshold=0.5):
     if listinstr(['TextVQA'], dataset_name):
         return [np.mean(x['match']) for x in result]
-    elif listinstr(['DocVQA'], dataset_name):
+    elif listinstr(['DocVQA', 'InfoVQA'], dataset_name):
         # return [1 - np.min(x['match']) >= anls_threshold for x in result]
         return [0.0 if 1 - np.min(x['match']) < anls_threshold else 1 - np.min(x['match']) for x in result]
     elif listinstr(['ChartQA', 'OCRVQA'], dataset_name):
@@ -303,7 +303,7 @@ def VQAEval(eval_file, dataset_name, **kwargs):
         res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
     elif listinstr(['OCRVQA'], dataset_name):
         res = pool.map(partial(process_line, method='accuracy'), lines)
-    elif listinstr(['DocVQA'], dataset_name):
+    elif listinstr(['DocVQA', 'InfoVQA'], dataset_name):
         res = pool.map(partial(process_line, method='anls'), lines)
     else:  # default using vqa_score to calculate score
         res = pool.map(process_line, lines)

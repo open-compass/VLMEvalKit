@@ -23,6 +23,9 @@ dataset_URLs = {
     'ScienceQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv',
     'HallusionBench': 'https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv',
     'DocVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv',
+    'DocVQA_TEST': '~/LMUData/DocVQA_Test.tsv',
+    'InfoVQA_VAL': '~/LMUData/InfoVQA_Val.tsv',
+    'InfoVQA_TEST': '~/LMUData/InfoVQA_Test.tsv',
     'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
     'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv',
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
@@ -74,8 +77,11 @@ img_root_map.update({
     'MathVista_MINI': 'MathVista',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
+    'DocVQA_TEST': 'DocVQA_TEST',
     'OCRBench': 'OCRBench',
-    'ChartQA_TEST': 'ChartQA',
+    'ChartQA_TEST': 'ChartQA_TEST',
+    'InfoVQA_VAL': 'InfoVQA_VAL',
+    'InfoVQA_TEST': 'InfoVQA_TEST',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -90,7 +96,7 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet', 'ocrbench'], dataset):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench', 'mmvet', 'ocrbench'], dataset):
         return 'VQA'
     else:
         if dataset not in dataset_URLs:
