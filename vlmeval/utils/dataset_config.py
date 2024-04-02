@@ -19,7 +19,6 @@ dataset_URLs = {
     'MMMU_DEV_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv',
     'MMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST.tsv',
     'MathVista_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv',
-    'ChartQA_VALTEST_HUMAN': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_VALTEST_HUMAN.tsv',
     'ScienceQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv',
     'ScienceQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv',
     'HallusionBench': 'https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv',
@@ -27,6 +26,7 @@ dataset_URLs = {
     'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
     'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv',
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
+    'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv'
 }
 
 dataset_md5_dict = {
@@ -48,7 +48,6 @@ dataset_md5_dict = {
     'MMMU_DEV_VAL': '521afc0f3bf341e6654327792781644d',
     'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
     'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464',
-    'ChartQA_VALTEST_HUMAN': '2c90a4133408a21d57fb2ea26f77bbfc',
     'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
@@ -56,6 +55,7 @@ dataset_md5_dict = {
     'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
     'LLaVABench': 'd382a093f749a697820d3dadd61c8428',
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
+    'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -72,10 +72,10 @@ img_root_map.update({
     'MMMU_DEV_VAL': 'MMMU',
     'MMMU_TEST': 'MMMU',
     'MathVista_MINI': 'MathVista',
-    'ChartQA_VALTEST_HUMAN': 'ChartQA',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
     'OCRBench': 'OCRBench',
+    'ChartQA_TEST': 'ChartQA_TEST',
 })
 
 assert set(dataset_URLs) == set(img_root_map)

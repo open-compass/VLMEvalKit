@@ -4,7 +4,7 @@ from vlmeval.smp import *
 from vlmeval.evaluate import *
 from vlmeval.inference import infer_data_job, prefetch_acc
 from vlmeval.config import supported_VLM
-from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full
+from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer
 
 
 def parse_args():
@@ -37,7 +37,7 @@ def main():
     rank, world_size = get_rank_and_world_size()
     if world_size > 1:
         torch.cuda.set_device(rank)
-        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=5400))
+        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=10800))
 
     for _, model_name in enumerate(args.model):
         model = None
@@ -88,6 +88,11 @@ def main():
                 verbose=args.verbose,
                 api_nproc=args.nproc,
                 ignore_failed=args.ignore)
+
+            if rank == 0:
+                if dataset_name in ['MMMU_TEST']:
+                    result_json = MMMU_result_transfer(result_file)
+                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')  # noqa: E501
 
             if dataset_name in ['MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMMU_TEST']:
                 if not MMBenchOfficialServer():

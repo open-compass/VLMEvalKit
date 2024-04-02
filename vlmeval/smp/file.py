@@ -107,6 +107,14 @@ def download_file(url, filename=None):
 
 
 def ls(dirname='.', match=[], mode='all', level=1):
+    if isinstance(level, str):
+        assert '+' in level
+        level = int(level[:-1])
+        res = []
+        for i in range(1, level + 1):
+            res.extend(ls(dirname, match=match, mode='file', level=i))
+        return res
+
     if dirname == '.':
         ans = os.listdir(dirname)
     else:
@@ -127,13 +135,13 @@ def ls(dirname='.', match=[], mode='all', level=1):
             ans = [x for x in ans if osp.isdir(x)]
         elif mode == 'file':
             ans = [x for x in ans if not osp.isdir(x)]
+        return ans
     else:
-        ans = [x for x in ans if osp.isdir(x)]
+        dirs = [x for x in ans if osp.isdir(x)]
         res = []
-        for d in ans:
+        for d in dirs:
             res.extend(ls(d, match=match, mode=mode, level=level - 1))
-        ans = res
-    return ans
+        return res
 
 
 def mrlines(fname, sp='\n'):
