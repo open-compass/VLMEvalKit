@@ -76,8 +76,11 @@ class BaseAPI:
             for item in inputs:
                 assert 'type' in item and 'value' in item
                 mime, s = parse_file(item['value'])
-                assert mime.split('/')[0] == item['type']
-                item['value'] = s
+                if mime is None:
+                    assert item['type'] == 'text'
+                else:
+                    assert mime.split('/')[0] == item['type']
+                    item['value'] = s
             return inputs
         else:
             return None
