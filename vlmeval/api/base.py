@@ -75,6 +75,9 @@ class BaseAPI:
         elif self.check_content(inputs) == 'listdict':
             for item in inputs:
                 assert 'type' in item and 'value' in item
+                mime, s = parse_file(item['value'])
+                assert mime.split('/')[0] == item['type']
+                item['value'] = s
             return inputs
         else:
             return None
