@@ -33,6 +33,9 @@ def main():
             if hasattr(v, 'keywords') and 'retry' in v.keywords:
                 v.keywords['retry'] = args.retry
                 supported_VLM[k] = v
+            if hasattr(v, 'keywords') and 'verbose' in v.keywords:
+                v.keywords['verbose'] = args.verbose
+                supported_VLM[k] = v
 
     rank, world_size = get_rank_and_world_size()
     if world_size > 1:
