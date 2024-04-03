@@ -150,19 +150,18 @@ class OpenAIWrapper(BaseAPI):
             enc = tiktoken.encoding_for_model(self.model)
         except:
             enc = tiktoken.encoding_for_model('gpt-4')
-        if isinstance(inputs, str):
-            if inputs.startswith('http') or osp.exists(inputs):
-                return 65 if self.img_detail == 'low' else 130
-            else:
-                return len(enc.encode(inputs))
-        elif isinstance(inputs, dict):
-            assert 'content' in inputs
-            return self.get_token_len(inputs['content'])
         assert isinstance(inputs, list)
-        res = 0
+        tot = 0
         for item in inputs:
-            res += self.get_token_len(item)
-        return res
+            if item['type'] == 'text':
+                tot += len(enc.encode(item['value']))
+            elif item['type'] == 'image':
+                tot += 85
+                if self.img_detail == 'high':
+                    img = Image.open(item['value'])
+                    npatch = np.ceil(img.size[0] / 512) * np.ceil(img.size[1] / 512)
+                    tot += npatch * 170
+        return tot
 
 
 class GPT4V(OpenAIWrapper):
