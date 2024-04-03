@@ -41,12 +41,8 @@ class GeminiWrapper(BaseAPI):
 
     def generate_inner(self, inputs, **kwargs) -> str:
         import google.generativeai as genai
-        assert isinstance(inputs, str) or isinstance(inputs, list)
-        pure_text = True
-        if isinstance(inputs, list):
-            for pth in inputs:
-                if osp.exists(pth) or pth.startswith('http'):
-                    pure_text = False
+        assert isinstance(inputs, list)
+        pure_text = np.all([x['type'] == 'text' for x in inputs])
         genai.configure(api_key=self.api_key)
         model = genai.GenerativeModel('gemini-pro') if pure_text else genai.GenerativeModel('gemini-pro-vision')
         messages = self.build_msgs(inputs)
