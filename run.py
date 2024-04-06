@@ -105,18 +105,6 @@ def main():
                     )
                     continue
 
-            if rank == 0 and args.prefetch:
-                time.sleep(3)
-                res = None
-                if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA', 'AI2D'], dataset_name):
-                    res = prefetch_acc(result_file)
-                else:
-                    logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
-                if res is not None:
-                    logger.info(f'{model_name} prefetching: ')
-                    logger.info(res)
-                    dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
-
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':
                     dataset_name = 'default' if custom_flag else dataset_name
