@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 from vlmeval.smp import *
 from vlmeval.evaluate import *
-from vlmeval.inference import infer_data_job, prefetch_acc
+from vlmeval.inference import infer_data_job
 from vlmeval.config import supported_VLM
 from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer
 
