@@ -5,6 +5,8 @@ from abc import abstractmethod
 
 class BaseModel:
 
+    interleave_input = False
+
     def use_custom_prompt(self, dataset):
         """Whether to use custom prompt for the given dataset.
 
@@ -38,7 +40,7 @@ class BaseModel:
             dataset (str): The name of the dataset.
 
         Returns:
-            str | list[str]: The path(s) of the dumped image(s).
+            str | list[str]: The paths of the dumped images.
         """
         ROOT = LMUDataRoot()
         assert isinstance(dataset, str)
@@ -56,6 +58,7 @@ class BaseModel:
             tgt_path = osp.join(img_root, f"{line['index']}.jpg")
             if not read_ok(tgt_path):
                 decode_base64_to_image_file(line['image'], tgt_path)
+            tgt_path = [tgt_path]
         return tgt_path
 
     @abstractmethod
@@ -70,3 +73,18 @@ class BaseModel:
             str: The generated message.
         """
         raise NotImplementedError
+
+    def message_to_promptimg(self, message):
+        assert not self.interleave_input
+        model_name = self.__class__.__name__
+        warnings.warn(
+            f'Model {model_name} does not support interleaved input. '
+            'Will use the first image and aggregated texts as prompt. ')
+        num_images = len([x for x in message if x['type'] == 'image'])
+        if num_images == 1:
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+            image = [x['value'] for x in message if x['type'] == 'image'][0]
+        else:
+            prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
+            image = [x['value'] for x in message if x['type'] == 'image'][0]
+        return prompt, image
