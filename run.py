@@ -17,7 +17,6 @@ def parse_args():
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--prefetch', action='store_true')
     args = parser.parse_args()
     return args
 
