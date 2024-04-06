@@ -58,7 +58,7 @@ class QwenVLWrapper(BaseAPI):
         assert not pure_text
         messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
-        gen_config.update(self.kwargs)
+        gen_config.update(kwargs)
         try:
             response = MultiModalConversation.call(model=self.model, messages=messages)
             if self.verbose:

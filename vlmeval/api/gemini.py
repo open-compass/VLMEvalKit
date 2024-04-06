@@ -47,7 +47,7 @@ class GeminiWrapper(BaseAPI):
         model = genai.GenerativeModel('gemini-pro') if pure_text else genai.GenerativeModel('gemini-pro-vision')
         messages = self.build_msgs(inputs)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
-        gen_config.update(self.kwargs)
+        gen_config.update(kwargs)
         try:
             answer = model.generate_content(messages, generation_config=genai.types.GenerationConfig(**gen_config)).text
             return 0, answer, 'Succeeded! '

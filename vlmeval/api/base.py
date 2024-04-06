@@ -2,6 +2,7 @@ import time
 import random as rd
 from abc import abstractmethod
 import os.path as osp
+import copy as cp
 from ..smp import get_logger, parse_file
 
 
@@ -16,19 +17,37 @@ class BaseAPI:
                  verbose=True,
                  fail_msg='Failed to obtain answer via API.',
                  **kwargs):
+        """Base Class for all APIs.
+
+        Args:
+            retry (int, optional): The retry times for `generate_inner`. Defaults to 10.
+            wait (int, optional): The wait time after each failed retry of `generate_inner`. Defaults to 3.
+            system_prompt (str, optional): Defaults to None.
+            verbose (bool, optional): Defaults to True.
+            fail_msg (str, optional): The message to return when failed to obtain answer.
+                Defaults to 'Failed to obtain answer via API.'.
+            **kwargs: Other kwargs for `generate_inner`.
+        """
+
         self.wait = wait
         self.retry = retry
         self.system_prompt = system_prompt
-        self.kwargs = kwargs
         self.verbose = verbose
         self.fail_msg = fail_msg
         self.logger = get_logger('ChatAPI')
+
         if len(kwargs):
             self.logger.info(f'BaseAPI received the following kwargs: {kwargs}')
             self.logger.info('Will try to use them as kwargs for `generate`. ')
+        self.default_kwargs = kwargs
 
     @abstractmethod
     def generate_inner(self, inputs, **kwargs):
+        """The inner function to generate the answer.
+
+        Returns:
+            tuple(int, str, str): ret_code, response, log
+        """
         self.logger.warning('For APIBase, generate_inner is an abstract method. ')
         assert 0, 'generate_inner not defined'
         ret_code, answer, log = None, None, None
@@ -36,6 +55,11 @@ class BaseAPI:
         return ret_code, answer, log
 
     def working(self):
+        """If the API model is working, return True, else return False.
+
+        Returns:
+            bool: If the API model is working, return True, else return False.
+        """
         retry = 3
         while retry > 0:
             ret = self.generate('hello')
@@ -45,6 +69,14 @@ class BaseAPI:
         return False
 
     def check_content(self, msgs):
+        """Check the content type of the input. Four types are allowed: str, dict, liststr, listdict.
+
+        Args:
+            msgs: Raw input messages.
+
+        Returns:
+            str: The message type.
+        """
         if isinstance(msgs, str):
             return 'str'
         if isinstance(msgs, dict):
@@ -58,6 +90,14 @@ class BaseAPI:
         return 'unknown'
 
     def preproc_content(self, inputs):
+        """Convert the raw input messages to a list of dicts.
+
+        Args:
+            inputs: raw input messages.
+
+        Returns:
+            list(dict): The preprocessed input messages. Will return None if failed to preprocess the input.
+        """
         if self.check_content(inputs) == 'str':
             return [dict(type='text', value=inputs)]
         elif self.check_content(inputs) == 'dict':
@@ -85,12 +125,24 @@ class BaseAPI:
         else:
             return None
 
-    def generate(self, inputs, **kwargs):
+    def generate(self, inputs, **kwargs1):
+        """The main function to generate the answer. Will call `generate_inner` with the preprocessed input messages.
+
+        Args:
+            inputs: raw input messages.
+
+        Returns:
+            str: The generated answer of the Failed Message if failed to obtain answer.
+        """
         assert self.check_content(inputs) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {inputs}'
         inputs = self.preproc_content(inputs)
         assert inputs is not None and self.check_content(inputs) == 'listdict'
         for item in inputs:
             assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
+
+        # merge kwargs
+        kwargs = cp.deepcopy(self.default_kwargs)
+        kwargs.update(kwargs1)
 
         answer = None
         # a very small random delay [0s - 0.5s]
