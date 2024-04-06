@@ -125,19 +125,19 @@ class BaseAPI:
         else:
             return None
 
-    def generate(self, inputs, **kwargs1):
+    def generate(self, message, **kwargs1):
         """The main function to generate the answer. Will call `generate_inner` with the preprocessed input messages.
 
         Args:
-            inputs: raw input messages.
+            message: raw input messages.
 
         Returns:
             str: The generated answer of the Failed Message if failed to obtain answer.
         """
-        assert self.check_content(inputs) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {inputs}'
-        inputs = self.preproc_content(inputs)
-        assert inputs is not None and self.check_content(inputs) == 'listdict'
-        for item in inputs:
+        assert self.check_content(message) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {message}'
+        message = self.preproc_content(message)
+        assert message is not None and self.check_content(message) == 'listdict'
+        for item in message:
             assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
 
         # merge kwargs
@@ -151,7 +151,7 @@ class BaseAPI:
 
         for i in range(self.retry):
             try:
-                ret_code, answer, log = self.generate_inner(inputs, **kwargs)
+                ret_code, answer, log = self.generate_inner(message, **kwargs)
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
                     if self.verbose:
                         print(answer)

@@ -81,5 +81,5 @@ class StepAPI(BaseAPI):
 
 class Step1V(StepAPI):
 
-    def generate(self, msgs, dataset=None):
-        return super(StepAPI, self).generate(msgs)
+    def generate(self, message, dataset=None):
+        return super(StepAPI, self).generate(message)

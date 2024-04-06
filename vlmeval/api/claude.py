@@ -95,5 +95,5 @@ class Claude_Wrapper(BaseAPI):
 
 class Claude3V(Claude_Wrapper):
 
-    def generate(self, msgs, dataset=None):
-        return super(Claude_Wrapper, self).generate(msgs)
+    def generate(self, message, dataset=None):
+        return super(Claude_Wrapper, self).generate(message)

@@ -75,5 +75,5 @@ class QwenVLWrapper(BaseAPI):
 
 class QwenVLAPI(QwenVLWrapper):
 
-    def generate(self, msgs, dataset=None):
-        return super(QwenVLAPI, self).generate(msgs)
+    def generate(self, message, dataset=None):
+        return super(QwenVLAPI, self).generate(message)

@@ -90,6 +90,6 @@ class OpenAIWrapperInternal(OpenAIWrapper):
 
 class GPT4V_Internal(OpenAIWrapperInternal):
 
-    def generate(self, msgs, dataset=None):
+    def generate(self, message, dataset=None):
         assert self.model == 'gpt-4-vision-preview'
-        return super(GPT4V_Internal, self).generate(msgs)
+        return super(GPT4V_Internal, self).generate(message)

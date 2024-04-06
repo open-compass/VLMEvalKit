@@ -43,17 +43,9 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
 
-    gen_func = None
-    if listinstr(['MMMU', 'CORE_MM'], dataset_name):
-        assert hasattr(model, 'interleave_generate')
-        gen_func = model.interleave_generate
-        if 'MMMU' in dataset_name:
-            structs = [dict(ti_list=split_MMMU(struct), dataset=dataset_name) for struct in structs]
-        else:
-            structs = [dict(ti_list=struct['image'] + [struct['text']], dataset=dataset_name) for struct in structs]
-    else:
-        gen_func = model.generate
-        structs = [dict(image_path=struct['image'], prompt=struct['text'], dataset=dataset_name) for struct in structs]
+    gen_func = model.generate
+    # For now, we do not use split_MMMU for MMMU dataset
+    structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
         track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
@@ -126,20 +118,8 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        if dataset_name in ['CORE_MM']:
-            assert hasattr(model, 'interleave_generate')
-            response = model.interleave_generate(ti_list=struct['image'] + [struct['text']], dataset=dataset_name)
-        elif listinstr(['MMMU'], dataset_name):
-            if hasattr(model, 'interleave_generate'):
-                response = model.interleave_generate(ti_list=split_MMMU(struct), dataset=dataset_name)
-            elif len(struct['image']) == 1:
-                response = model.generate(prompt=struct['text'], image_path=struct['image'][0], dataset=dataset_name)
-            else:
-                response = (
-                    '[MMMU] Failed, multiple images exist while the model only support single-image generate API. '
-                )
-        else:
-            response = model.generate(prompt=struct['text'], image_path=struct['image'], dataset=dataset_name)
+        # For now, we do not use split_MMMU for MMMU dataset
+        response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:
@@ -152,41 +132,6 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
     res = {k: res[k] for k in data_indices}
     dump(res, out_file)
     return model
-
-
-def prefetch_acc(result_file):
-    data = load(result_file)
-    from vlmeval.evaluate.multiple_choice import build_choices, can_infer
-    tot = defaultdict(lambda: 0)
-    match = defaultdict(lambda: 0)
-    hit = defaultdict(lambda: 0)
-    lt = len(data)
-    for i in range(lt):
-        item = data.iloc[i]
-        cate = item['category']
-        tot['Overall'] += 1
-        tot[cate] += 1
-        choices = build_choices(item)
-        matched = can_infer(item['prediction'], choices)
-        if matched:
-            match['Overall'] += 1
-            match[cate] += 1
-            if matched == item['answer']:
-                hit['Overall'] += 1
-                hit[cate] += 1
-    res = defaultdict(list)
-    for k in tot.keys():
-        res['Category'].append(k)
-        res['tot'].append(tot[k])
-        res['match'].append(match[k])
-        res['hit'].append(hit[k])
-        res['match_rate'].append(match[k] / tot[k] * 100)
-        if match[k] == 0:
-            res['acc'].append(0)
-        else:
-            res['acc'].append(hit[k] / tot[k] * 100)
-    res = pd.DataFrame(res)
-    return res
 
 
 def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
