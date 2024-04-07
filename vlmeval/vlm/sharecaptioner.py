@@ -5,7 +5,7 @@ from ..smp import *
 from ..utils import DATASET_TYPE
 
 
-class SharedCaptioner(BaseModel):
+class ShareCaptioner(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = False
