@@ -135,7 +135,7 @@ class XComposer2(BaseModel):
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=500)
         return out
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
         with torch.cuda.amp.autocast():
             if dataset is None:
