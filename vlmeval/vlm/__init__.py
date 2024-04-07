@@ -18,6 +18,7 @@ from .omnilmm import OmniLMM12B
 from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
 from .qwen_vl import QwenVL, QwenVLChat
+from .sharecaptioner import SharedCaptioner
 from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import XComposer

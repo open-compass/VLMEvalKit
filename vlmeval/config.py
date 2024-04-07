@@ -85,7 +85,7 @@ yivl_series = {
 
 xcomposer_series = {
     'XComposer': partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
-    'sharecaptioner': partial(XComposer, model_path='Lin-Chen/ShareCaptioner'),
+    'sharecaptioner': partial(ShareCaptioner, model_path='Lin-Chen/ShareCaptioner'),
     'XComposer2': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
 }
 
