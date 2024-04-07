@@ -56,7 +56,7 @@ class ShareCaptioner(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
         seg1 = '<|User|>:'
         seg2 = f'{prompt}{self.model.eoh}\n<|Bot|>:'
