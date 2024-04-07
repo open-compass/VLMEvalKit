@@ -121,3 +121,18 @@ model_groups = [
 
 for grp in model_groups:
     supported_VLM.update(grp)
+
+transformer_ver = {}
+transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
+    'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
+] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
+transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
+    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2', 'emu2_chat', 'MiniCPM-V', 'OmniLMM_12B'
+] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
+transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
+
+if __name__ == '__main__':
+    import sys
+    ver = sys.argv[1]
+    if ver in transformer_ver:
+        print(' '.join(transformer_ver[ver]))
