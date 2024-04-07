@@ -25,7 +25,11 @@ msg4 = [
 
 def check_VLM():
     val = sys.argv[1]
-    if val in supported_VLM:
+    if len(sys.argv) > 2:
+        for m in sys.argv[1:]:
+            res = run_command(f'python {PTH} {m}')
+            print(res)
+    elif val in supported_VLM:
         model = supported_VLM[val]()
         print(f'Model: {val}')
         for i, msg in enumerate([msg1, msg2, msg3, msg4]):
