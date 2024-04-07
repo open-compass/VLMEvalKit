@@ -68,11 +68,13 @@ class XComposer(BaseModel):
                 kwargs['max_new_tokens'] = 5
                 kwargs['num_beams'] = 5
 
-        outputs = self.model.internlm_model.generate(
-            inputs_embeds=prompt_embs,
-            stopping_criteria=self.stopping_criteria,
-            **kwargs
-        )
+        with torch.cuda.amp.autocast():
+            with torch.no_grad():
+                outputs = self.model.internlm_model.generate(
+                    inputs_embeds=prompt_embs,
+                    stopping_criteria=self.stopping_criteria,
+                    **kwargs
+                )
 
         output_token = outputs[0]
         if output_token[0] == 0:
