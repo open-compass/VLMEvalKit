@@ -61,5 +61,5 @@ class GeminiWrapper(BaseAPI):
 
 class GeminiProVision(GeminiWrapper):
 
-    def interleave_generate(self, message, dataset=None):
+    def generate(self, message, dataset=None):
         return super(GeminiProVision, self).generate(message)
