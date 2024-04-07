@@ -61,7 +61,6 @@ class XComposer(BaseModel):
         if len(message) == 2:
             if message[0]['type'] == 'text' and message[1]['type'] == 'image':
                 message = [message[1], message[0]]
-        prompt_embs = self.message_to_prompt_embs(message, dataset)
         kwargs = cp.deepcopy(self.kwargs)
         if dataset is not None:
             if DATASET_TYPE(dataset) == 'multi-choice':
@@ -70,6 +69,7 @@ class XComposer(BaseModel):
 
         with torch.cuda.amp.autocast():
             with torch.no_grad():
+                prompt_embs = self.message_to_prompt_embs(message, dataset)
                 outputs = self.model.internlm_model.generate(
                     inputs_embeds=prompt_embs,
                     stopping_criteria=self.stopping_criteria,
