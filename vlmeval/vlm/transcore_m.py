@@ -1,15 +1,15 @@
-import os
 import sys
 import torch
 from abc import abstractproperty
-import math
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 
 
-class TransCoreM(CustomPrompt):
+class TransCoreM(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self,
                  root=None,
@@ -36,26 +36,6 @@ class TransCoreM(CustomPrompt):
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
-
-    def get_options(self, row, options):
-        parsed_options = []
-        for option in options:
-            option_value = row[option]
-            if self.is_none(option_value):
-                break
-            parsed_options.append(option_value)
-        return parsed_options
-
-    def is_none(self, value):
-        if value is None:
-            return True
-        if type(value) is float and math.isnan(value):
-            return True
-        if type(value) is str and value.lower() == 'nan':
-            return True
-        if type(value) is str and value.lower() == 'none':
-            return True
-        return False
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -89,15 +69,17 @@ class TransCoreM(CustomPrompt):
             )
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=f) for f in tgt_path])
+        return message
 
-        return {'image': tgt_path, 'text': prompt}
-
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
         from transcorem.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from transcorem.constants import (
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
 
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'

@@ -1,14 +1,14 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
-import os.path as osp
-from vlmeval.smp import isimg
-from ..utils import DATASET_TYPE, CustomPrompt
+from .base import BaseModel
+from ..utils import DATASET_TYPE
 
 
-class Monkey:
+class Monkey(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='echo840/Monkey', **kwargs):
         assert model_path is not None
@@ -72,7 +72,8 @@ class Monkey:
         ).strip()
         return response
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         if dataset is None:
             return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)
@@ -82,9 +83,10 @@ class Monkey:
             return self.generate_vanilla(image_path, prompt)
 
 
-class MonkeyChat:
+class MonkeyChat(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='echo840/Monkey-Chat', **kwargs):
         assert model_path is not None
@@ -152,7 +154,8 @@ class MonkeyChat:
         ).strip()
         return response
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         if dataset is None:
             return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)

@@ -5,7 +5,8 @@ from abc import abstractmethod
 
 class BaseModel:
 
-    interleave_input = False
+    INTERLEAVE = False
+    allowed_types = ['text', 'image']
 
     def use_custom_prompt(self, dataset):
         """Whether to use custom prompt for the given dataset.
@@ -62,6 +63,60 @@ class BaseModel:
         return tgt_path
 
     @abstractmethod
+    def generate_inner(self, message, dataset=None):
+        raise NotImplementedError
+
+    def check_content(self, msgs):
+        """Check the content type of the input. Four types are allowed: str, dict, liststr, listdict.
+        """
+        if isinstance(msgs, str):
+            return 'str'
+        if isinstance(msgs, dict):
+            return 'dict'
+        if isinstance(msgs, list):
+            types = [self.check_content(m) for m in msgs]
+            if all(t == 'str' for t in types):
+                return 'liststr'
+            if all(t == 'dict' for t in types):
+                return 'listdict'
+        return 'unknown'
+
+    def preproc_content(self, inputs):
+        """Convert the raw input messages to a list of dicts.
+
+        Args:
+            inputs: raw input messages.
+
+        Returns:
+            list(dict): The preprocessed input messages. Will return None if failed to preprocess the input.
+        """
+        if self.check_content(inputs) == 'str':
+            return [dict(type='text', value=inputs)]
+        elif self.check_content(inputs) == 'dict':
+            assert 'type' in inputs and 'value' in inputs
+            return [inputs]
+        elif self.check_content(inputs) == 'liststr':
+            res = []
+            for s in inputs:
+                mime, pth = parse_file(s)
+                if mime is None or mime == 'unknown':
+                    res.append(dict(type='text', value=s))
+                else:
+                    res.append(dict(type=mime.split('/')[0], value=pth))
+            return res
+        elif self.check_content(inputs) == 'listdict':
+            for item in inputs:
+                assert 'type' in item and 'value' in item
+                mime, s = parse_file(item['value'])
+                if mime is None:
+                    assert item['type'] == 'text'
+                else:
+                    assert mime.split('/')[0] == item['type']
+                    item['value'] = s
+            return inputs
+        else:
+            return None
+
     def generate(self, message, dataset=None):
         """Generate the output message.
 
@@ -72,16 +127,24 @@ class BaseModel:
         Returns:
             str: The generated message.
         """
-        raise NotImplementedError
+        assert self.check_content(message) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {message}'
+        message = self.preproc_content(message)
+        assert message is not None and self.check_content(message) == 'listdict'
+        for item in message:
+            assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
+        return self.generate_inner(message, dataset)
 
     def message_to_promptimg(self, message):
-        assert not self.interleave_input
+        assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         warnings.warn(
             f'Model {model_name} does not support interleaved input. '
             'Will use the first image and aggregated texts as prompt. ')
         num_images = len([x for x in message if x['type'] == 'image'])
-        if num_images == 1:
+        if num_images == 0:
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+            image = None
+        elif num_images == 1:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = [x['value'] for x in message if x['type'] == 'image'][0]
         else:

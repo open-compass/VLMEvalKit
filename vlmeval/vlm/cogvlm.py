@@ -9,7 +9,7 @@ from transformers import AutoModelForCausalLM, LlamaTokenizer
 class CogVlm(BaseModel):
 
     INSTALL_REQ = False
-    interleave_input = False
+    INTERLEAVE = False
 
     def __init__(self,
                  name='cogvlm-chat',
@@ -61,7 +61,7 @@ class CogVlm(BaseModel):
 
         return message
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
 
         image = Image.open(image_path).convert('RGB')
@@ -73,7 +73,7 @@ class CogVlm(BaseModel):
             'attention_mask': inputs['attention_mask'].unsqueeze(0).to('cuda'),
             'images': [[inputs['images'][0].to('cuda').to(torch.bfloat16)]],
         }
-        gen_kwargs = {'max_length': 2048, 'do_sample': False}
+        gen_kwargs = {'max_length': 512, 'do_sample': False}
         gen_kwargs.update(self.kwargs)
 
         with torch.no_grad():

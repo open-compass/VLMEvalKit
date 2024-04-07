@@ -2,12 +2,13 @@ import sys
 import torch
 from transformers import AutoModelForCausalLM
 import warnings
-from vlmeval.smp import isimg
+from .base import BaseModel
 
 
-class DeepSeekVL:
+class DeepSeekVL(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = True
 
     def check_install(self):
         try:
@@ -35,22 +36,22 @@ class DeepSeekVL:
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def prepare_inputs(self, msgs):
+    def prepare_inputs(self, message):
         content, images = '', []
-        for s in msgs:
-            if isimg(s):
-                images.append(s)
+        for s in message:
+            if s['type'] == 'image':
+                images.append(s['value'])
                 content += '<image_placeholder>'
-            else:
-                content += s
+            elif s['type'] == 'text':
+                content += s['value']
         conversation = [
             dict(role='User', content=content, images=images),
             dict(role='Assistant', content='')
         ]
         return conversation
 
-    def interleave_generate(self, ti_list, dataset=None):
-        conversation = self.prepare_inputs(ti_list)
+    def generate_inner(self, message, dataset=None):
+        conversation = self.prepare_inputs(message)
         from deepseek_vl.utils.io import load_pil_images
         pil_images = load_pil_images(conversation)
         prepare_inputs = self.vl_chat_processor(conversations=conversation, images=pil_images, force_batchify=True)
@@ -66,6 +67,3 @@ class DeepSeekVL:
             **self.kwargs)
         answer = self.tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
         return answer
-
-    def generate(self, image_path, prompt, dataset=None):
-        return self.interleave_generate([image_path, prompt], dataset=dataset)

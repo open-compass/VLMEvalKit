@@ -2,11 +2,13 @@ import sys
 import torch
 import os.path as osp
 import warnings
+from .base import BaseModel
 
 
-class PandaGPT:
+class PandaGPT(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self, name, root=None, **kwargs):
         if root is None:
@@ -29,7 +31,7 @@ class PandaGPT:
             'vicuna_ckpt_path': osp.join(root, 'pretrained_ckpt/vicuna_ckpt/13b_v0'),
             'delta_ckpt_path': osp.join(root, 'pretrained_ckpt/pandagpt_ckpt/13b/pytorch_model.pt'),
             'stage': 2,
-            'max_tgt_len': 256,
+            'max_tgt_len': 512,
             'lora_r': 32,
             'lora_alpha': 32,
             'lora_dropout': 0.1,
@@ -44,7 +46,8 @@ class PandaGPT:
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         struct = {
             'prompt': prompt,
             'image_paths': [image_path],

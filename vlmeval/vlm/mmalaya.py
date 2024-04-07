@@ -1,15 +1,14 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
-import os.path as osp
-from vlmeval.smp import isimg
-import re
 from PIL import Image
+from .base import BaseModel
 
 
-class MMAlaya:
+class MMAlaya(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='DataCanvas/MMAlaya', **kwargs):
         assert model_path is not None
@@ -24,8 +23,9 @@ class MMAlaya:
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
         # read image
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         # tokenize prompt, and proprecess image
         input_ids, image_tensor, stopping_criteria = self.model.prepare_for_inference(
@@ -38,7 +38,7 @@ class MMAlaya:
                 inputs=input_ids.cuda(),
                 images=image_tensor.cuda(),
                 do_sample=False,
-                max_new_tokens=1024,
+                max_new_tokens=512,
                 num_beams=1,
                 use_cache=True,
                 stopping_criteria=[stopping_criteria],
@@ -55,10 +55,7 @@ class MMAlaya:
 
 if __name__ == '__main__':
     model = MMAlaya()
-    response = model.generate(
-        image_path='./assets/apple.jpg',
-        prompt='请详细描述一下这张图片。',
-    )
+    response = model.generate(['./assets/apple.jpg', '请详细描述一下这张图片。'])
     print(response)
 
 """
