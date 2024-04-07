@@ -2,7 +2,7 @@ import sys
 from vlmeval.smp import *
 from vlmeval.config import transformer_ver, supported_VLM
 PTH = osp.realpath(__file__)
-IMAGE_PTH = osp.join(PTH, '../assets/apple.jpg')
+IMAGE_PTH = osp.join(osp.dirname(PTH), '../assets/apple.jpg')
 
 msg1 = [
     IMAGE_PTH, 
@@ -37,6 +37,7 @@ def check_VLM():
         models = transformer_ver[val]
         for m in models:
             res = run_command(f'python {PTH} {m}')
+            print(res)
 
 if __name__ == '__main__':
     check_VLM()

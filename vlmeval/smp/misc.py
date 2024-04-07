@@ -147,7 +147,7 @@ def youtube_dl(idx):
 def run_command(cmd):
     if isinstance(cmd, str):
         cmd = cmd.split()
-    return subprocess.check_output(cmd)
+    return subprocess.check_output(cmd).decode()
 
 def load_env():
     logger = logging.getLogger('LOAD_ENV')
