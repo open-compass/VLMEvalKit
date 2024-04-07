@@ -97,7 +97,7 @@ class LLaVA(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from llava.constants import (
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
