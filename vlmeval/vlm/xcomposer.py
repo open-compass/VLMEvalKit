@@ -52,6 +52,7 @@ class XComposer(BaseModel):
                 'max_new_tokens': 500, 'num_beams': 3, 'do_sample': False,
                 'min_length': 1, 'repetition_penalty': 1.5, 'length_penalty': 1.0
             }
+            self.model.half()
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
