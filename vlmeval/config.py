@@ -1,5 +1,5 @@
-from .vlm import *
-from .api import *
+from vlmeval.vlm import *
+from vlmeval.api import *
 from functools import partial
 
 PandaGPT_ROOT = None
