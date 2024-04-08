@@ -86,7 +86,7 @@ class OpenFlamingo(BaseModel):
             elif msg['type'] == 'text':
                 prompt += msg['value']
         prompt += 'Answer: '
-        vision_x = torch.cat(vision_x, dim=0) if len(vision_x) > 1 else vision_x[0].unsqueeze(0)
+        vision_x = torch.cat(vision_x, dim=0) if len(vision_x) > 1 else vision_x[0]
         vision_x = vision_x.unsqueeze(1).unsqueeze(0)
         lang_x = self.tokenizer([prompt], return_tensors='pt')
         generated_text = self.model.generate(
