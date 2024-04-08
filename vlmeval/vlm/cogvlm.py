@@ -73,7 +73,7 @@ class CogVlm(BaseModel):
             'attention_mask': inputs['attention_mask'].unsqueeze(0).to('cuda'),
             'images': [[inputs['images'][0].to('cuda').to(torch.bfloat16)]],
         }
-        gen_kwargs = {'max_length': 512, 'do_sample': False}
+        gen_kwargs = {'max_length': 2048, 'do_sample': False}
         gen_kwargs.update(self.kwargs)
 
         with torch.no_grad():
