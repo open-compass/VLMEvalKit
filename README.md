@@ -20,6 +20,7 @@
 
 ## 🆕 News
 
+- **[2024-04-08]** We have supported [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) and the test split of DocVQA. Great thanks to [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-03-28]** Now you can use local OpenSource LLMs as the answer extractor or judge (see [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) for details). Great thanks to [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
 - **[2024-03-22]** We have supported [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
 - **[2024-03-21]** We have supported [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main) 🔥🔥🔥
@@ -29,7 +30,6 @@
 - **[2024-02-27]** We have fixed the evaluation results of [**Yi-VL-34B**](https://huggingface.co/01-ai/Yi-VL-34B), check the updated results [**here**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard)  🔥🔥🔥
 - **[2024-02-25]** We have supported [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR)🔥🔥🔥
 - **[2024-02-24]** We have supported [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL). The models achieve over 80% Top-1 accuracies on MMBench v1.0 [[**Blog**](https://github.com/OpenGVLab/InternVL/blob/main/BLOG.md)] 🔥🔥🔥
-- **[2024-02-07]** We have supported two new models: [**MiniCPM-V**](https://huggingface.co/openbmb/MiniCPM-V) and [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) 🔥🔥🔥
 
 
 ## 📊 Datasets, Models, and Evaluation Results
@@ -56,7 +56,8 @@
 | [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_TEST | VQA                                          | ✅         | ✅          | **TBD.**                                                     |
 | [**AI2D**](https://allenai.org/data/diagrams)                | AI2D_TEST | Multi-choice                                             | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**LLaVABench**](https://huggingface.co/datasets/liuhaotian/llava-bench-in-the-wild) | LLaVABench | VQA                                            | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
-| [**DocVQA**](https://www.docvqa.org)                         | DocVQA_VAL | VQA                                            | ✅         | ✅          | **TBD.**                                                     |
+| [**DocVQA**](https://www.docvqa.org)                         | DocVQA_[VAL/TEST] | VQA                                            | ✅         | ✅          | **TBD.**                                                     |
+| [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) | InfoVQA_[VAL/TEST] | VQA | ✅ | ✅ | **TBD.** |
 | [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench | VQA                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM | VQA                                               | ✅         |            | **N/A**                                                      |
 

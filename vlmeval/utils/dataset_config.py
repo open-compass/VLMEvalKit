@@ -23,6 +23,9 @@ dataset_URLs = {
     'ScienceQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv',
     'HallusionBench': 'https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv',
     'DocVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv',
+    'DocVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_TEST.tsv',
+    'InfoVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL.tsv',
+    'InfoVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_TEST.tsv',
     'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
     'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv',
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
@@ -52,6 +55,9 @@ dataset_md5_dict = {
     'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
     'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
     'DocVQA_VAL': 'd5ee77e1926ff10690d469c56b73eabf',
+    'DocVQA_TEST': '6a2f28cac26ef2d3447374e8c6f6c8e9',
+    'InfoVQA_VAL': '2342e9c225222f0ef4dec545ebb126fe',
+    'InfoVQA_TEST': 'df535bf51b88dc9718252c34131a6227',
     'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
     'LLaVABench': 'd382a093f749a697820d3dadd61c8428',
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
@@ -74,8 +80,11 @@ img_root_map.update({
     'MathVista_MINI': 'MathVista',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
+    'DocVQA_TEST': 'DocVQA_TEST',
     'OCRBench': 'OCRBench',
     'ChartQA_TEST': 'ChartQA_TEST',
+    'InfoVQA_VAL': 'InfoVQA_VAL',
+    'InfoVQA_TEST': 'InfoVQA_TEST',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -90,7 +99,8 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'llavabench', 'mmvet', 'ocrbench'], dataset):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
+                    'mmvet', 'ocrbench'], dataset):
         return 'VQA'
     else:
         if dataset not in dataset_URLs:

@@ -141,7 +141,7 @@ def main():
                     MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
                 elif dataset_name == 'OCRBench':
                     OCRBench_eval(result_file)
-                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA'], dataset_name):
+                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA'], dataset_name):
                     VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
