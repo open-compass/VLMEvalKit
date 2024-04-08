@@ -44,15 +44,9 @@ class XComposer(BaseModel):
             torch.tensor([103028]).to(self.device),  # end of bot
         ]
         default_kwargs = {
-            'max_new_tokens': 128, 'num_beams': 5, 'do_sample': False,
+            'max_new_tokens': 512, 'num_beams': 5, 'do_sample': False,
             'min_length': 1, 'repetition_penalty': 1.5, 'length_penalty': 1.0
         }
-        if 'sharecaptioner' in model_path.lower():
-            default_kwargs = {
-                'max_new_tokens': 500, 'num_beams': 3, 'do_sample': False,
-                'min_length': 1, 'repetition_penalty': 1.5, 'length_penalty': 1.0
-            }
-            self.model.half()
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
@@ -101,11 +95,12 @@ class XComposer(BaseModel):
                 prompt_full += '<ImageHere>'
 
         prompt_full += self.model.eoh + ' <|Bot|>: '
-        if dataset is not None:
-            if DATASET_TYPE(dataset) == 'multi-choice':
-                prompt_full += 'Answer: The answer is '
-            if DATASET_TYPE(dataset) in ['VQA', 'QA', 'Y/N']:
-                prompt_full += 'Answer: '
+        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+            prompt_full += 'Answer: The answer is '
+        elif dataset is not None and DATASET_TYPE(dataset) in ['VQA', 'QA', 'Y/N']:
+            prompt_full += 'Answer: '
+        else:
+            prompt_full = self.model.meta_instruction + prompt_full
 
         prompt_segs = prompt_full.split('<ImageHere>')
         assert len(prompt_segs) == len(img_embeds) + 1
