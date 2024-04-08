@@ -1,14 +1,14 @@
 import sys
 import torch
-import requests
 from PIL import Image
 import os.path as osp
 import warnings
+from .base import BaseModel
 from ..smp import splitlen, get_cache_path
 from huggingface_hub import snapshot_download
 
 
-class OpenFlamingo:
+class OpenFlamingo(BaseModel):
 
     INSTALL_REQ = True
     INTERLEAVE = True
