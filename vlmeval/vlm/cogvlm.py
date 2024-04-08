@@ -80,4 +80,5 @@ class CogVlm(BaseModel):
             outputs = self.model.generate(**inputs, **gen_kwargs)
             outputs = outputs[:, inputs['input_ids'].shape[1]:]
             response = self.tokenizer.decode(outputs[0])
+        response = response.split('</s>')[0].strip()
         return response
