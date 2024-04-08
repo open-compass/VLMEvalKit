@@ -31,8 +31,10 @@ class TransCoreM(BaseModel):
             kwargs['torch_dtype'] = torch.float16
 
         config_param.model_path = model_path
-        tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
-        model = TransCoreMLlamaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=False, revision=revision, trust_remote_code=True)
+        model = TransCoreMLlamaForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, trust_remote_code=True, **kwargs)
 
         image_processor = None
         mm_use_im_start_end = getattr(model.config, 'mm_use_im_start_end', False)
