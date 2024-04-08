@@ -4,7 +4,6 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import CustomPrompt
 
 
 class StoppingCriteriaSub(StoppingCriteria):

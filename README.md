@@ -80,7 +80,7 @@ VLMEvalKit will use an **judge LLM** to extract answer from the output if you se
 | [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-V**](https://huggingface.co/openbmb/MiniCPM-V)🚅   | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 |                                                              |                                                              |
 
-🎞️: Support multiple images as inputs, via the `interleave_generate` interface.
+🎞️: Support multiple images as inputs.
 
 🚅: Model can be used without any additional configuration / operation.
 
@@ -97,10 +97,10 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 from vlmeval.config import supported_VLM
 model = supported_VLM['idefics_9b_instruct']()
 # Forward Single Image
-ret = model.generate('assets/apple.jpg', 'What is in this image?')
+ret = model.generate(['assets/apple.jpg', 'What is in this image?'])
 print(ret)  # The image features a red apple with a leaf on it.
 # Forward Multiple Images
-ret = model.interleave_generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
+ret = model.generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
 print(ret)  # There are two apples in the provided images.
 ```
 

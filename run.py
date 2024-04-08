@@ -67,21 +67,6 @@ def main():
             if model is None:
                 model = model_name  # which is only a name
 
-            # CHECKER
-            if dataset_name == 'CORE_MM':
-                MULTI_IMG = getattr(supported_VLM[model_name].func, 'interleave_generate', None)
-                if MULTI_IMG is not None:
-                    logger.error(
-                        f'Model {model_name} does not support the `interleave_generate` interface, '
-                        'which is required for testing CORE_MM, skip it. '
-                    )
-                    continue
-                if args.mode == 'all':
-                    logger.error(
-                        f'Dataset {dataset_name} does not support `evaluation` now, '
-                        'will skip the evaluation. '
-                    )
-
             model = infer_data_job(
                 model,
                 work_dir=pred_root,
