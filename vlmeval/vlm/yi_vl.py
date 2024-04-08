@@ -97,7 +97,7 @@ class Yi_VL(BaseModel):
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
 
         from llava.conversation import conv_templates
