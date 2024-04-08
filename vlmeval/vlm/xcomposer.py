@@ -99,8 +99,6 @@ class XComposer(BaseModel):
             prompt_full += 'Answer: The answer is '
         elif dataset is not None and DATASET_TYPE(dataset) in ['VQA', 'QA', 'Y/N']:
             prompt_full += 'Answer: '
-        else:
-            prompt_full = self.model.meta_instruction + prompt_full
 
         prompt_segs = prompt_full.split('<ImageHere>')
         assert len(prompt_segs) == len(img_embeds) + 1
