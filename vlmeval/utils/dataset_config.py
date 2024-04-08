@@ -96,7 +96,8 @@ def DATASET_TYPE(dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'
-    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench', 'mmvet', 'ocrbench'], dataset):
+    elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
+                    'mmvet', 'ocrbench'], dataset):
         return 'VQA'
     else:
         if dataset not in dataset_URLs:
