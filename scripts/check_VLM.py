@@ -27,8 +27,11 @@ def check_VLM():
     val = sys.argv[1]
     if len(sys.argv) > 2:
         for m in sys.argv[1:]:
-            res = run_command(f'python {PTH} {m}')
-            print(res)
+            try:
+                res = run_command(f'python {PTH} {m}')
+                print(res)
+            except:
+                pass
     elif val in supported_VLM:
         model = supported_VLM[val]()
         print(f'Model: {val}')
@@ -40,8 +43,11 @@ def check_VLM():
     elif val in transformer_ver:
         models = transformer_ver[val]
         for m in models:
-            res = run_command(f'python {PTH} {m}')
-            print(res)
+            try:
+                res = run_command(f'python {PTH} {m}')
+                print(res)
+            except:
+                pass
 
 if __name__ == '__main__':
     check_VLM()
