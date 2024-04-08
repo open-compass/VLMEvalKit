@@ -83,9 +83,9 @@ class mPLUG_Owl2(BaseModel):
         kwargs = cp.deepcopy(self.kwargs)
         if dataset in ['MMVet', 'LLaVABench']:
             kwargs['length_penalty'] = 0
-        elif DATASET_TYPE(dataset) == 'VQA':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             kwargs['length_penalty'] = 0
-        elif DATASET_TYPE(dataset) == 'multi-choice':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             kwargs['max_new_tokens'] = 10
         num_images = len([x for x in message if x['type'] == 'image'])
         assert num_images >= 0
