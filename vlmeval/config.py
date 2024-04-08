@@ -17,7 +17,6 @@ ungrouped = {
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
-    'emu2':partial(Emu, name='emu2'),
     'emu2_chat':partial(Emu, name='emu2_chat'),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
@@ -127,7 +126,7 @@ transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xco
     'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
 ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
 transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
-    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2', 'emu2_chat', 'MiniCPM-V', 'OmniLMM_12B'
+    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'OmniLMM_12B'
 ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
 transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
 

@@ -11,17 +11,10 @@ class Emu(BaseModel):
     INTERLEAVE = True
 
     def __init__(self,
-                 name,
-                 model_path_map={'emu2': 'BAAI/Emu2', 'emu2_chat': 'BAAI/Emu2-Chat'},
+                 model_path='BAAI/Emu2-Chat',
                  **kwargs):
 
-        self.model_path_map = model_path_map
-        assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
-        if name in self.model_path_map:
-            model_path = self.model_path_map[name]
-        else:
-            model_path = name
-
+        self.model_path = model_path
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         from transformers import AutoModelForCausalLM, AutoTokenizer
