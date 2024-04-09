@@ -7,7 +7,8 @@ ESSENTIAL = [
     ('MME', 'score.csv'), ('SEEDBench_IMG', 'acc.csv'), ('MMBench', 'acc.csv'), 
     ('CCBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('MMVet', 'gpt-4-turbo_score.csv'),
     ('MMMU_DEV_VAL', 'acc.csv'), ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
-    ('AI2D_TEST', 'acc.csv'), ('LLaVABench', 'score.csv'), ('OCRBench', 'score.json')
+    ('AI2D_TEST', 'acc.csv'), ('LLaVABench', 'score.csv'), ('OCRBench', 'score.json'),
+    ('MMStar', 'acc.csv')
 ]
 OPTIONAL = [
     ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'), ('ChartQA_VALTEST_HUMAN', 'acc.csv'), 
