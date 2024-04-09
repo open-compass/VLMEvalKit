@@ -65,7 +65,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     im_mask = []
     images = [images]
     images_loc = [0]
-    print (text, model.hd_num)
+    #print (text, model.hd_num)
     for i, pts in enumerate(images_loc + [len(text)]):
         subtext = text[pt1:pts]
         if need_bos or len(subtext) > 0:
@@ -97,7 +97,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
         output_token = output_token[1:]
     output_text = model.tokenizer.decode(output_token, add_special_tokens=False)
     output_text = output_text.split('[UNUSED_TOKEN_145]')[0].strip()
-    print (output_text)
+    #print (output_text)
     return output_text
 
 
@@ -161,7 +161,7 @@ class XComposer2_4KHD(CustomPrompt):
         else:
             self.model.hd_num = 25
 
-        print (f'{dataset}: {self.model.hd_num}')
+        #print (f'{dataset}: {self.model.hd_num}')
         with torch.cuda.amp.autocast():
             if dataset is None:
                 return self.generate_vanilla(image_path, prompt)
