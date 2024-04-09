@@ -16,10 +16,11 @@
 </div>
 
 
-**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
+**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
 
+- **[2024-04-09]** We have supported [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), a challenging vision-indispensable multimodal benchmark. The full evaluation results will be released soon 🔥🔥🔥
 - **[2024-04-08]** We have supported [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) and the test split of DocVQA. Great thanks to [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-03-28]** Now you can use local OpenSource LLMs as the answer extractor or judge (see [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) for details). Great thanks to [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
 - **[2024-03-22]** We have supported [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
@@ -29,7 +30,6 @@
 - **[2024-03-15]** We have updated the LLaVA class be compatible with the latest version of LLaVA. All LLaVA series models have been re-evaluated with temperature=0, and the new results have been updated to the leaderboard 🔥🔥🔥
 - **[2024-02-27]** We have fixed the evaluation results of [**Yi-VL-34B**](https://huggingface.co/01-ai/Yi-VL-34B), check the updated results [**here**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard)  🔥🔥🔥
 - **[2024-02-25]** We have supported [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR)🔥🔥🔥
-- **[2024-02-24]** We have supported [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL). The models achieve over 80% Top-1 accuracies on MMBench v1.0 [[**Blog**](https://github.com/OpenGVLab/InternVL/blob/main/BLOG.md)] 🔥🔥🔥
 
 
 ## 📊 Datasets, Models, and Evaluation Results
@@ -43,6 +43,7 @@
 | Dataset                                                      | Dataset Names (for run.py)                             | Task | Inference | Evaluation | Results                                                     |
 | ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |-----|
 | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench-DEV-[EN/CN]<br>MMBench-TEST-[EN/CN]<br>CCBench | Multi-choice | ✅         | ✅          | [**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MMStar**](https://github.com/MMStar-Benchmark/MMStar) | MMStar | Multi-choice   | ✅         | ✅          | TBD. |
 | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | MME | Yes or No                                                   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG | Multi-choice                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet  | VQA                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
