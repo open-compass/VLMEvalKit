@@ -1,11 +1,12 @@
-import os.path as osp
 import warnings
+from .base import BaseModel
 from ..smp import *
 
 
-class VisualGLM:
+class VisualGLM(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='THUDM/visualglm-6b', **kwargs):
         try:
@@ -23,8 +24,8 @@ class VisualGLM:
         self.kwargs = kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def generate(self, image_path, prompt, dataset=None):
-
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         output, _ = self.model.chat(
             image_path=image_path,
             tokenizer=self.tokenizer,

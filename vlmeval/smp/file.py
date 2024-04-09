@@ -7,6 +7,27 @@ import hashlib
 import os.path as osp
 import time
 import numpy as np
+import validators
+import mimetypes
+
+
+def LMUDataRoot():
+    if 'LMUData' in os.environ and osp.exists(os.environ['LMUData']):
+        return os.environ['LMUData']
+    home = osp.expanduser('~')
+    root = osp.join(home, 'LMUData')
+    os.makedirs(root, exist_ok=True)
+    return root
+
+
+def MMBenchOfficialServer():
+    root = LMUDataRoot()
+    for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
+        if osp.exists(f'{root}/{dataset}.tsv'):
+            data = load(f'{root}/{dataset}.tsv')
+            if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
+                return True
+    return False
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -153,11 +174,14 @@ def mwlines(lines, fname):
         fout.write('\n'.join(lines))
 
 
-def md5(file_pth):
-    with open(file_pth, 'rb') as f:
-        hash = hashlib.new('md5')
-        for chunk in iter(lambda: f.read(2**20), b''):
-            hash.update(chunk)
+def md5(s):
+    hash = hashlib.new('md5')
+    if osp.exists(s):
+        with open(s, 'rb') as f:
+            for chunk in iter(lambda: f.read(2**20), b''):
+                hash.update(chunk)
+    else:
+        hash.update(s.encode('utf-8'))
     return str(hash.hexdigest())
 
 
@@ -167,3 +191,24 @@ def last_modified(pth):
     t_obj = time.strptime(m_ti)
     t = time.strftime('%Y%m%d%H%M%S', t_obj)[2:]
     return t
+
+
+def parse_file(s):
+    if osp.exists(s):
+        assert osp.isfile(s)
+        suffix = osp.splitext(s)[1].lower()
+        mime = mimetypes.types_map.get(suffix, 'unknown')
+        return (mime, s)
+    elif validators.url(s):
+        suffix = osp.splitext(s)[1].lower()
+        if suffix in mimetypes.types_map:
+            mime = mimetypes.types_map[suffix]
+            dname = osp.join(LMUDataRoot(), 'files')
+            os.makedirs(dname, exist_ok=True)
+            tgt = osp.join(dname, md5(s) + suffix)
+            download_file(s, tgt)
+            return (mime, tgt)
+        else:
+            return ('url', s)
+    else:
+        return (None, s)

@@ -1,19 +1,16 @@
-import os
-import os.path as osp
-import sys
-from abc import abstractproperty
-
 import torch
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer
 
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 
 
-class MiniCPM_V:
+class MiniCPM_V(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='openbmb/MiniCPM-V', **kwargs):
         assert model_path is not None
@@ -25,13 +22,15 @@ class MiniCPM_V:
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
         if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             max_new_tokens = 10
         else:
-            max_new_tokens = 1024
+            max_new_tokens = 512
+
         default_kwargs = dict(
             max_new_tokens=max_new_tokens,
             sampling=False,

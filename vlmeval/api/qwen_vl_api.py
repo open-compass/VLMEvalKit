@@ -43,28 +43,22 @@ class QwenVLWrapper(BaseAPI):
             content = list(dict(text=system_prompt))
             ret.append(dict(role='system', content=content))
         content = []
-        for i, msg in enumerate(msgs):
-            if osp.exists(msg):
-                content.append(dict(image='file://' + msg))
-            elif msg.startswith('http'):
-                content.append(dict(image=msg))
-            else:
-                content.append(dict(text=msg))
+        for msg in msgs:
+            if msg['type'] == 'text':
+                content.append(dict(text=msg['value']))
+            elif msg['type'] == 'image':
+                content.append(dict(image='file://' + msg['value']))
         ret.append(dict(role='user', content=content))
         return ret
 
     def generate_inner(self, inputs, **kwargs) -> str:
         from dashscope import MultiModalConversation
         assert isinstance(inputs, str) or isinstance(inputs, list)
-        pure_text = True
-        if isinstance(inputs, list):
-            for pth in inputs:
-                if osp.exists(pth) or pth.startswith('http'):
-                    pure_text = False
+        pure_text = np.all([x['type'] == 'text' for x in inputs])
         assert not pure_text
         messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
-        gen_config.update(self.kwargs)
+        gen_config.update(kwargs)
         try:
             response = MultiModalConversation.call(model=self.model, messages=messages)
             if self.verbose:
@@ -81,8 +75,5 @@ class QwenVLWrapper(BaseAPI):
 
 class QwenVLAPI(QwenVLWrapper):
 
-    def generate(self, image_path, prompt, dataset=None):
-        return super(QwenVLAPI, self).generate([image_path, prompt])
-
-    def interleave_generate(self, ti_list, dataset=None):
-        return super(QwenVLAPI, self).generate(ti_list)
+    def generate(self, message, dataset=None):
+        return super(QwenVLAPI, self).generate(message)

@@ -2,6 +2,7 @@ import torch
 
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
+from .base import BaseModel
 from .cogvlm import CogVlm
 from .emu import Emu
 from .idefics import IDEFICS
@@ -17,7 +18,7 @@ from .omnilmm import OmniLMM12B
 from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
 from .qwen_vl import QwenVL, QwenVLChat
-from .sharedcaptioner import SharedCaptioner
+from .sharecaptioner import ShareCaptioner
 from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import XComposer

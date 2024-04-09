@@ -10,6 +10,7 @@ openpyxl
 pandas>=1.5.3
 pillow
 portalocker
+protobuf
 pycocoevalcap
 python-dotenv
 requests
@@ -24,6 +25,7 @@ torch>=2.0.1
 tqdm
 transformers
 typing_extensions==4.7.1
+validators
 visual_genome
 xlsxwriter
 xtuner

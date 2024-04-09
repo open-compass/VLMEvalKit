@@ -1,14 +1,15 @@
 import torch
 from PIL import Image
-from abc import abstractproperty
 import os.path as osp
 import sys
+from .base import BaseModel
 from ..smp import *
 
 
-class InstructBLIP:
+class InstructBLIP(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self, name):
         self.config_map = {
@@ -41,13 +42,14 @@ class InstructBLIP:
         device = self.device
         model.to(device)
         self.model = model
-        self.kwargs = {'max_length': 128}
+        self.kwargs = {'max_length': 512}
 
         preprocess_cfg = cfg.preprocess
         vis_processors, _ = load_preprocess(preprocess_cfg)
         self.vis_processors = vis_processors
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         vis_processors = self.vis_processors
         raw_image = Image.open(image_path).convert('RGB')
         image_tensor = vis_processors['eval'](raw_image).unsqueeze(0).to(self.device)

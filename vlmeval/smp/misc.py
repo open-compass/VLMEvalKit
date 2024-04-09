@@ -11,6 +11,7 @@ import requests
 import shutil
 import subprocess
 import warnings
+import logging
 import pandas as pd
 from collections import OrderedDict, defaultdict
 from multiprocessing import Pool, current_process
@@ -146,19 +147,20 @@ def youtube_dl(idx):
 def run_command(cmd):
     if isinstance(cmd, str):
         cmd = cmd.split()
-    return subprocess.check_output(cmd)
+    return subprocess.check_output(cmd).decode()
 
 def load_env():
+    logger = logging.getLogger('LOAD_ENV')
     try:
         import vlmeval
     except ImportError:
-        warnings.warn('VLMEval is not installed. Failed to import environment variables from .env file. ')
+        logger.error('VLMEval is not installed. Failed to import environment variables from .env file. ')
         return
     pth = osp.realpath(vlmeval.__path__[0])
     pth = osp.join(pth, '../.env')
     pth = osp.realpath(pth)
     if not osp.exists(pth):
-        warnings.warn(f'Did not detect the .env file at {pth}, failed to load. ')
+        logger.error(f'Did not detect the .env file at {pth}, failed to load. ')
         return
 
     from dotenv import dotenv_values
@@ -166,8 +168,7 @@ def load_env():
     for k, v in values.items():
         if v is not None and len(v):
             os.environ[k] = v
-    print(f'API Keys successfully loaded from {pth}')
-    return
+    logger.info(f'API Keys successfully loaded from {pth}')
 
 def pip_install_robust(package):
     import sys

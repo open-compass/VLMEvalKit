@@ -1,14 +1,14 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import warnings
-import os.path as osp
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 
 
-class SharedCaptioner(CustomPrompt):
+class ShareCaptioner(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='Lin-Chen/ShareCaptioner', **kwargs):
         assert model_path is not None
@@ -52,11 +52,12 @@ class SharedCaptioner(CustomPrompt):
                 prompt = prompt + '\n' + '请直接回答选项字母。'
         else:
             prompt = line['question']
-        # prompt = 'Analyze the image in a comprehensive and detailed manner.'
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message
 
-        return {'image': tgt_path, 'text': prompt}
-
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         seg1 = '<|User|>:'
         seg2 = f'{prompt}{self.model.eoh}\n<|Bot|>:'
         self.seg_emb1 = self.model.encode_text(seg1, add_special_tokens=True)

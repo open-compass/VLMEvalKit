@@ -1,33 +1,76 @@
-import os
 import sys
 import torch
 from abc import abstractproperty
-import math
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
+from transformers import AutoTokenizer, BitsAndBytesConfig
 
 
-class TransCoreM(CustomPrompt):
+class TransCoreM(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
+
+    def load_pretrained_model(self, model_path, load_8bit=False, load_4bit=False, revision='main'):
+        from transcorem.model import TransCoreMLlamaForCausalLM
+        from transcorem.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        import transcorem.config_param as config_param
+        kwargs = {'revision': revision}
+        if load_8bit:
+            kwargs['load_in_8bit'] = True
+        elif load_4bit:
+            kwargs['load_in_4bit'] = True
+            kwargs['quantization_config'] = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type='nf4'
+            )
+        else:
+            kwargs['torch_dtype'] = torch.float16
+
+        config_param.model_path = model_path
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=False, revision=revision, trust_remote_code=True)
+        model = TransCoreMLlamaForCausalLM.from_pretrained(
+            model_path, low_cpu_mem_usage=True, trust_remote_code=True, **kwargs)
+
+        image_processor = None
+        mm_use_im_start_end = getattr(model.config, 'mm_use_im_start_end', False)
+        mm_use_im_patch_token = getattr(model.config, 'mm_use_im_patch_token', True)
+        if mm_use_im_patch_token:
+            tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
+        if mm_use_im_start_end:
+            tokenizer.add_tokens([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True)
+        model.resize_token_embeddings(len(tokenizer))
+
+        vision_tower = model.get_vision_tower()
+        if not vision_tower.is_loaded:
+            vision_tower.load_model()
+        vision_tower.to(device='cpu', dtype=torch.float16)
+        image_processor = vision_tower.image_processor
+
+        if hasattr(model.config, 'max_sequence_length'):
+            context_len = model.config.max_sequence_length
+        else:
+            context_len = 2048
+
+        return tokenizer, model, image_processor, context_len
 
     def __init__(self,
                  root=None,
+                 revision='20f20dbfda0aaca09c7bc502cbe4e1aec81ed33a',
                  **kwargs):
 
         self.root = root
+        self.revision = revision
         sys.path.append(root)
-        from transcorem.model.builder import load_pretrained_model
 
         model_path = 'PCIResearch/TransCore-M'
         assert osp.exists(model_path) or splitlen(model_path) == 2
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-            model_path=model_path,
-            model_base=None,
-            model_name=None,
-            device='cpu',
-            device_map='cpu'
-        )
+        self.tokenizer, self.model, self.image_processor, self.context_len = self.load_pretrained_model(
+            model_path=model_path, revision=revision)
         self.model = self.model.cuda()
         print('==============conv_mode: default')
         self.conv_mode = 'default'
@@ -36,26 +79,6 @@ class TransCoreM(CustomPrompt):
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
-
-    def get_options(self, row, options):
-        parsed_options = []
-        for option in options:
-            option_value = row[option]
-            if self.is_none(option_value):
-                break
-            parsed_options.append(option_value)
-        return parsed_options
-
-    def is_none(self, value):
-        if value is None:
-            return True
-        if type(value) is float and math.isnan(value):
-            return True
-        if type(value) is str and value.lower() == 'nan':
-            return True
-        if type(value) is str and value.lower() == 'none':
-            return True
-        return False
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -89,15 +112,17 @@ class TransCoreM(CustomPrompt):
             )
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=f) for f in tgt_path])
+        return message
 
-        return {'image': tgt_path, 'text': prompt}
-
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
         from transcorem.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from transcorem.constants import (
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
 
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'

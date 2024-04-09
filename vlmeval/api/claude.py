@@ -2,6 +2,7 @@ from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from time import sleep
 import base64
+import mimetypes
 
 url = 'https://openxlab.org.cn/gw/alles-apin-hub/v1/claude/v1/text/chat'
 headers = {
@@ -37,29 +38,27 @@ class Claude_Wrapper(BaseAPI):
 
         super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
-    @staticmethod
-    def build_msgs(msgs_raw):
+    def build_msgs(self, msgs_raw):
+
         messages = []
         message = {'role': 'user', 'content': []}
         for msg in msgs_raw:
-            if isimg(msg):
-                media_type_map = {
-                    'jpg': 'image/jpeg',
-                    'jpeg': 'image/jpeg',
-                    'png': 'image/png',
-                    'gif': 'image/gif',
-                    'webp': 'iamge/webp'
-                }
-                media_type = media_type_map[msg.split('.')[-1].lower()]
-                with open(msg, 'rb') as file:
-                    image_data = base64.b64encode(file.read()).decode('utf-8')
+            if msg['type'] == 'image':
+                pth = msg['value']
+                suffix = osp.splitext(pth)[-1].lower()
+                media_type = mimetypes.types_map.get(suffix, None)
+                assert media_type is not None
+
                 item = {
                     'type': 'image',
-                    'source': {'type': 'base64', 'media_type': media_type, 'data': image_data}
+                    'source': {'type': 'base64', 'media_type': media_type, 'data': encode_image_file_to_base64(pth)}
                 }
 
+            elif msg['type'] == 'text':
+                item = {'type': 'text', 'text': msg['value']}
             else:
-                item = {'type': 'text', 'text': msg}
+                raise NotImplementedError(f'Unsupported message type: {msg["type"]}')
+
             message['content'].append(item)
         messages.append(message)
         return messages
@@ -96,8 +95,5 @@ class Claude_Wrapper(BaseAPI):
 
 class Claude3V(Claude_Wrapper):
 
-    def generate(self, image_path, prompt, dataset=None):
-        return super(Claude_Wrapper, self).generate([image_path, prompt])
-
-    def interleave_generate(self, ti_list, dataset=None):
-        return super(Claude_Wrapper, self).generate(ti_list)
+    def generate(self, message, dataset=None):
+        return super(Claude_Wrapper, self).generate(message)

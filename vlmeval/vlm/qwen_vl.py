@@ -1,15 +1,16 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
-import os.path as osp
 import copy as cp
-from vlmeval.smp import isimg, listinstr
-from vlmeval.utils import DATASET_TYPE
+from .base import BaseModel
+from ..smp import isimg, listinstr
+from ..utils import DATASET_TYPE
 
 
-class QwenVL:
+class QwenVL(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='Qwen/Qwen-VL', **kwargs):
         assert model_path is not None
@@ -47,17 +48,17 @@ class QwenVL:
                 kwargs['max_new_tokens'] = 10
         return kwargs
 
-    def interleave_generate(self, ti_list, dataset=None):
+    def generate_inner(self, message, dataset=None):
         if dataset is not None:
             kwargs = self.adjust_kwargs(dataset)
         else:
             kwargs = self.kwargs
         prompt = ''
-        for s in ti_list:
-            if isimg(s):
-                prompt += f'<img>{s}</img>'
-            else:
-                prompt += s
+        for s in message:
+            if s['type'] == 'image':
+                prompt += f'<img>{s["value"]}</img>'
+            elif s['type'] == 'text':
+                prompt += s['value']
         if dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             prompt += ' Answer:'
         encoded = self.tokenizer([prompt], return_tensors='pt', padding='longest')
@@ -71,13 +72,11 @@ class QwenVL:
         answer = self.tokenizer.decode(pred[0][input_ids.size(1):].cpu(), skip_special_tokens=True).strip()
         return answer
 
-    def generate(self, image_path, prompt, dataset=None):
-        return self.interleave_generate([image_path, prompt], dataset)
 
-
-class QwenVLChat:
+class QwenVLChat(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='Qwen/Qwen-VL-Chat', **kwargs):
         assert model_path is not None
@@ -88,15 +87,8 @@ class QwenVLChat:
         self.kwargs = kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def generate(self, image_path, prompt, dataset=None):
-        vl_pair = [{'image': image_path}, {'text': prompt}]
-        query = self.tokenizer.from_list_format(vl_pair)
-        response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
-        return response
-
-    def interleave_generate(self, ti_list, dataset=None):
-        vl_list = [{'image': s} if isimg(s) else {'text': s} for s in ti_list]
+    def generate_inner(self, message, dataset=None):
+        vl_list = [{'image': s['value']} if s['type'] == 'image' else {'text': s['value']} for s in message]
         query = self.tokenizer.from_list_format(vl_list)
-
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
         return response
