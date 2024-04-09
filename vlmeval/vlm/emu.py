@@ -1,25 +1,20 @@
 import torch
 from PIL import Image
-from abc import abstractproperty
 import os.path as osp
-import os
+from .base import BaseModel
 from ..smp import *
 
 
-class Emu:
+class Emu(BaseModel):
+
+    INSTALL_REQ = False
+    INTERLEAVE = True
 
     def __init__(self,
-                 name,
-                 model_path_map={'emu2': 'BAAI/Emu2', 'emu2_chat': 'BAAI/Emu2-Chat'},
+                 model_path='BAAI/Emu2-Chat',
                  **kwargs):
 
-        self.model_path_map = model_path_map
-        assert name in self.model_path_map or osp.exists(name) or splitlen(name) == 2
-        if name in self.model_path_map:
-            model_path = self.model_path_map[name]
-        else:
-            model_path = name
-
+        self.model_path = model_path
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -60,19 +55,19 @@ class Emu:
             device_map=device_map).eval()
 
         self.model = model
-        kwargs_default = dict(max_new_tokens=64, length_penalty=-1)
+        kwargs_default = dict(max_new_tokens=512, length_penalty=-1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def interleave_generate(self, ti_list, dataset=None):
+    def generate_inner(self, message, dataset=None):
         query, images = '', []
-        for item in ti_list:
-            if isimg(item):
-                images.append(Image.open(item).convert('RGB'))
+        for item in message:
+            if item['type'] == 'image':
+                images.append(Image.open(item['value']).convert('RGB'))
                 query += '[<IMG_PLH>]'
-            else:
-                query += item
+            elif item['type'] == 'text':
+                query += item['value']
 
         inputs = self.model.build_input_ids(
             text=[query],
@@ -89,8 +84,3 @@ class Emu:
 
         output_text = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
         return output_text[0]
-
-    def generate(self, image_path, prompt, dataset=None):
-        tl_list = [image_path, prompt]
-        output = self.interleave_generate(tl_list, dataset)
-        return output

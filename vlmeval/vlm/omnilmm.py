@@ -1,10 +1,11 @@
 import sys
 import torch
 from PIL import Image
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoTokenizer
 
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 
 
 DEFAULT_IMAGE_TOKEN = '<image>'
@@ -65,9 +66,10 @@ def wrap_question_for_omni_lmm(question, image_token_len, tokenizer):
     return data_dict
 
 
-class OmniLMM12B(CustomPrompt):
+class OmniLMM12B(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self, model_path, root, **kwargs) -> None:
         sys.path.append(root)
@@ -87,7 +89,8 @@ class OmniLMM12B(CustomPrompt):
         self.kwargs = default_kwargs
         torch.cuda.empty_cache()
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         try:
             image = Image.open(image_path).convert('RGB')
         except:
@@ -144,4 +147,6 @@ Study the image carefully and pick the option associated with the correct answer
 Focus solely on selecting the option and avoid including any other content.\n
 """ + prompt
 
-        return {'image': tgt_path, 'text': prompt}
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message

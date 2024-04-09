@@ -1,10 +1,9 @@
 import torch
 import torchvision
-import os.path as osp
 from transformers import AutoModel, AutoTokenizer
 from PIL import Image
+from .base import BaseModel
 from ..smp import *
-from ..utils import CustomPrompt
 from ..utils import DATASET_TYPE
 import re
 pattern = re.compile(r'[A-Z]')
@@ -78,9 +77,10 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     return output_text
 
 
-class XComposer2(CustomPrompt):
+class XComposer2(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='internlm/internlm-xcomposer2-vl-7b', **kwargs):
         assert model_path is not None
@@ -135,7 +135,8 @@ class XComposer2(CustomPrompt):
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=500)
         return out
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         with torch.cuda.amp.autocast():
             if dataset is None:
                 return self.generate_vanilla(image_path, prompt)
@@ -207,4 +208,6 @@ class XComposer2(CustomPrompt):
                     f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{q}'
                     '[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
                 )
-        return {'image': tgt_path, 'text': prompt}
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message

@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 from vlmeval.smp import *
 from vlmeval.evaluate import *
-from vlmeval.inference import infer_data_job, prefetch_acc
+from vlmeval.inference import infer_data_job
 from vlmeval.config import supported_VLM
 from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer
 
@@ -17,7 +17,6 @@ def parse_args():
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--prefetch', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -68,21 +67,6 @@ def main():
             if model is None:
                 model = model_name  # which is only a name
 
-            # CHECKER
-            if dataset_name == 'CORE_MM':
-                MULTI_IMG = getattr(supported_VLM[model_name].func, 'interleave_generate', None)
-                if MULTI_IMG is not None:
-                    logger.error(
-                        f'Model {model_name} does not support the `interleave_generate` interface, '
-                        'which is required for testing CORE_MM, skip it. '
-                    )
-                    continue
-                if args.mode == 'all':
-                    logger.error(
-                        f'Dataset {dataset_name} does not support `evaluation` now, '
-                        'will skip the evaluation. '
-                    )
-
             model = infer_data_job(
                 model,
                 work_dir=pred_root,
@@ -104,18 +88,6 @@ def main():
                         'will skip the evaluation. '
                     )
                     continue
-
-            if rank == 0 and args.prefetch:
-                time.sleep(3)
-                res = None
-                if listinstr(['SEEDBench_IMG', 'MMBench', 'CCBench', 'ScienceQA', 'AI2D'], dataset_name):
-                    res = prefetch_acc(result_file)
-                else:
-                    logger.warning(f'{dataset_name} is not handled by prefetch score calculator')
-                if res is not None:
-                    logger.info(f'{model_name} prefetching: ')
-                    logger.info(res)
-                    dump(res, result_file.replace('.xlsx', '_prefetch.xlsx'))
 
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':

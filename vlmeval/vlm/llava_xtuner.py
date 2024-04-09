@@ -12,13 +12,15 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           CLIPImageProcessor, CLIPVisionModel,
                           GenerationConfig, StoppingCriteriaList)
 
+from .base import BaseModel
 from ..smp import cn_string, get_cache_path
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 
 
-class LLaVA_XTuner(CustomPrompt):
+class LLaVA_XTuner(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self,
                  llava_path,
@@ -124,7 +126,7 @@ class LLaVA_XTuner(CustomPrompt):
                 StopWordStoppingCriteria(self.tokenizer, word))
 
     def build_gen_config(self, dataset):
-        gen_kwargs = dict(max_new_tokens=1024,
+        gen_kwargs = dict(max_new_tokens=512,
                           do_sample=True,
                           temperature=1,
                           num_beams=5,
@@ -170,12 +172,15 @@ class LLaVA_XTuner(CustomPrompt):
         else:
             prompt = question + '\n' + '请直接回答选项字母。'
 
-        return {'image': tgt_path, 'text': prompt}
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
         from xtuner.dataset.utils import expand2square
         from xtuner.model.utils import prepare_inputs_labels_for_multimodal
         from xtuner.utils import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         image = expand2square(
             image,

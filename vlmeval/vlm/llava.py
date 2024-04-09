@@ -3,13 +3,15 @@ from PIL import Image
 from abc import abstractproperty
 import sys
 import os.path as osp
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 
 
-class LLaVA(CustomPrompt):
+class LLaVA(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self,
                  model_pth='liuhaotian/llava_v1.5_7b',
@@ -91,13 +93,16 @@ class LLaVA(CustomPrompt):
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
-        return {'image': tgt_path, 'text': prompt}
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
         from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from llava.constants import (
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from llava.conversation import conv_templates, SeparatorStyle
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
@@ -125,7 +130,10 @@ class LLaVA(CustomPrompt):
         return output
 
 
-class LLaVA_Next(CustomPrompt):
+class LLaVA_Next(BaseModel):
+
+    INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
@@ -208,9 +216,12 @@ class LLaVA_Next(CustomPrompt):
             )
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
-        return {'image': tgt_path, 'text': prompt}
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path)
         prompt_wtmpl = self.apply_prompt_template(prompt)
         inputs = self.processor(prompt_wtmpl, image, return_tensors='pt').to('cuda')

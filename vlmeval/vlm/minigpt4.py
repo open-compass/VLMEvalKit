@@ -1,15 +1,15 @@
 import torch
 import sys
-from abc import abstractproperty
 import os.path as osp
 import warnings
 from transformers import StoppingCriteriaList
-from PIL import Image
+from .base import BaseModel
 
 
-class MiniGPT4:
+class MiniGPT4(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self,
                  mode='v2',
@@ -67,8 +67,9 @@ class MiniGPT4:
         stop_words_ids = [torch.tensor(ids).to(device) for ids in stop_words_ids]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
         from minigpt4.conversation.conversation import Chat
+        prompt, image_path = self.message_to_promptimg(message)
         if self.mode == 'v2':
             chat = Chat(self.model, self.vis_processor, device=self.device)
         else:

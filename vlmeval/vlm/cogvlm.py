@@ -1,22 +1,22 @@
 import torch
 from PIL import Image
-from abc import abstractproperty
-import os
-import os.path as osp
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 from transformers import AutoModelForCausalLM, LlamaTokenizer
 
 
-class CogVlm(CustomPrompt):
+class CogVlm(BaseModel):
 
-    INSTALL_REQ = True
+    INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self,
                  name='cogvlm-chat',
                  tokenizer_name='lmsys/vicuna-7b-v1.5',
                  **kwargs):
         self.tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name)
+        self.kwargs = kwargs
         self.model = AutoModelForCausalLM.from_pretrained(
             f'THUDM/{name}-hf',
             torch_dtype=torch.bfloat16,
@@ -56,10 +56,14 @@ class CogVlm(CustomPrompt):
                 prompt = prompt + '\n' + '请直接回答选项字母。'
         else:
             prompt = line['question']
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=p) for p in tgt_path])
 
-        return {'image': tgt_path, 'text': prompt}
+        return message
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
+
         image = Image.open(image_path).convert('RGB')
         inputs = self.model.build_conversation_input_ids(
             self.tokenizer, query=prompt, history=[], images=[image])  # chat mode
@@ -70,11 +74,11 @@ class CogVlm(CustomPrompt):
             'images': [[inputs['images'][0].to('cuda').to(torch.bfloat16)]],
         }
         gen_kwargs = {'max_length': 2048, 'do_sample': False}
+        gen_kwargs.update(self.kwargs)
 
         with torch.no_grad():
             outputs = self.model.generate(**inputs, **gen_kwargs)
             outputs = outputs[:, inputs['input_ids'].shape[1]:]
-            # print(tokenizer.decode(outputs[0]))
             response = self.tokenizer.decode(outputs[0])
-        # output = response[len(prompt):]
+        response = response.split('</s>')[0].strip()
         return response
