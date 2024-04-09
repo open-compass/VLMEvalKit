@@ -1,13 +1,10 @@
 import torch
-import torchvision
-import os.path as osp
 from transformers import AutoModel, AutoTokenizer
 from PIL import Image
+from .base import BaseModel
 from ..smp import *
-from ..utils import CustomPrompt
 from ..utils import DATASET_TYPE
 import numpy as np
-from torchvision.transforms.functional import InterpolationMode
 import torchvision.transforms as transforms
 
 import re
@@ -100,9 +97,10 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     return output_text
 
 
-class XComposer2_4KHD(CustomPrompt):
+class XComposer2_4KHD(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='internlm/internlm-xcomposer2-4khd-7b', **kwargs):
         assert model_path is not None
@@ -147,12 +145,8 @@ class XComposer2_4KHD(CustomPrompt):
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=10)
         return out
 
-    def generate_driectly(self, image_path, text):
-        text = '[UNUSED_TOKEN_146]user\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'.format(text)
-        out = model_gen(self.model, text, image_path, need_bos=True, max_token=500)
-        return out
-
-    def generate(self, image_path, prompt, dataset=None):
+    def generate(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         if listinstr(['docvqa_test', 'infovqa_test'], dataset.lower()):
             self.model.hd_num = 65
         elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):
@@ -240,4 +234,6 @@ class XComposer2_4KHD(CustomPrompt):
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\
                           {q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
-        return {'image': tgt_path, 'text': prompt}
+        ret = [dict(type='text', value=prompt)]
+        ret.extend([dict(type='image', value=s) for s in tgt_path])
+        return ret
