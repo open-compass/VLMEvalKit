@@ -2,9 +2,9 @@ import torch
 import torchvision
 from transformers import AutoModel, AutoTokenizer
 from PIL import Image
-from .base import BaseModel
-from ..smp import *
-from ..utils import DATASET_TYPE
+from ..base import BaseModel
+from ...smp import *
+from ...utils import DATASET_TYPE
 import re
 pattern = re.compile(r'[A-Z]')
 
