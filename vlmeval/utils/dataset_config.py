@@ -29,7 +29,8 @@ dataset_URLs = {
     'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
     'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv',
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
-    'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv'
+    'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
+    'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
 }
 
 dataset_md5_dict = {
@@ -62,6 +63,7 @@ dataset_md5_dict = {
     'LLaVABench': 'd382a093f749a697820d3dadd61c8428',
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
+    'MMStar': '2f3da1ab455b65ac89e57b01706207b7',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -85,6 +87,7 @@ img_root_map.update({
     'ChartQA_TEST': 'ChartQA_TEST',
     'InfoVQA_VAL': 'InfoVQA_VAL',
     'InfoVQA_TEST': 'InfoVQA_TEST',
+    'MMStar': 'MMStar'
 })
 
 assert set(dataset_URLs) == set(img_root_map)

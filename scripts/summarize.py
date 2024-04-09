@@ -4,7 +4,7 @@ from vlmeval.utils.dataset_config import dataset_URLs
 def get_score(model, dataset):
 
     file_name = f'{model}/{model}_{dataset}'
-    if listinstr(['CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D_TEST'], dataset):
+    if listinstr(['CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D_TEST', 'MMStar'], dataset):
         file_name += '_acc.csv'
     elif listinstr(['MME', 'Hallusion', 'LLaVABench'], dataset):
         file_name += '_score.csv'
