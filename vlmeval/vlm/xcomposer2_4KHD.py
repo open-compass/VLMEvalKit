@@ -7,24 +7,24 @@ from ..smp import *
 from ..utils import CustomPrompt
 from ..utils import DATASET_TYPE
 import numpy as np
-import torchvision
-from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
 import torchvision.transforms as transforms
 
 import re
 pattern = re.compile(r'[A-Z]')
 
+
 def padding_336(b):
     width, height = b.size
     tar = int(np.ceil(height / 336) * 336)
-    top_padding = int((tar - height)/2)
+    top_padding = int((tar - height) / 2)
     bottom_padding = tar - height - top_padding
     left_padding = 0
-    right_padding = 0 
-    b = transforms.functional.pad(b, [left_padding, top_padding, right_padding, bottom_padding], fill=[255,255,255])
+    right_padding = 0
+    b = transforms.functional.pad(b, [left_padding, top_padding, right_padding, bottom_padding], fill=[255, 255, 255])
 
     return b
+
 
 def HD_transform(img, im_num=16):
     width, height = img.size
@@ -33,9 +33,9 @@ def HD_transform(img, im_num=16):
         img = img.transpose(Image.TRANSPOSE)
         trans = True
         width, height = img.size
-    ratio = (width/ height)
+    ratio = (width / height)
     scale = 1
-    while scale*np.ceil(scale/ratio) <= im_num:
+    while scale * np.ceil(scale / ratio) <= im_num:
         scale += 1
     scale -= 1
     new_w = int(scale * 336)
@@ -51,21 +51,21 @@ def HD_transform(img, im_num=16):
     return img
 
 
-
-
 meta_instruction = """You are an AI assistant whose name is InternLM-XComposer (浦语·灵笔).
-- InternLM-XComposer (浦语·灵笔) is a multi-modality conversational language model that is developed by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
-- InternLM-XComposer (浦语·灵笔) can understand and communicate fluently in the language chosen by the user such as English and 中文.
-- InternLM-XComposer (浦语·灵笔) is capable of comprehending and articulating responses effectively based on the provided image."""
+- InternLM-XComposer (浦语·灵笔) is a multi-modality conversational language model that is developed\
+ by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
+- InternLM-XComposer (浦语·灵笔) can understand and communicate fluently in the language chosen by\
+ the user such as English and 中文.
+- InternLM-XComposer (浦语·灵笔) is capable of comprehending and articulating responses\
+ effectively based on the provided image."""
+
 
 def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_token=500):
     pt1 = 0
-    #print (text)
     embeds = []
     im_mask = []
     images = [images]
     images_loc = [0]
-    #print (text, model.hd_num)
     for i, pts in enumerate(images_loc + [len(text)]):
         subtext = text[pt1:pts]
         if need_bos or len(subtext) > 0:
@@ -90,25 +90,24 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     im_mask = im_mask.bool()
 
     outputs = model.generate(inputs_embeds=embeds, im_mask=im_mask,
-                        temperature=1.0, max_new_tokens=max_token, num_beams=beams,
-                        do_sample=False, repetition_penalty=1.0)
+                             temperature=1.0, max_new_tokens=max_token, num_beams=beams,
+                             do_sample=False, repetition_penalty=1.0)
     output_token = outputs[0]
     if output_token[0] == 0 or output_token[0] == 1:
         output_token = output_token[1:]
     output_text = model.tokenizer.decode(output_token, add_special_tokens=False)
     output_text = output_text.split('[UNUSED_TOKEN_145]')[0].strip()
-    #print (output_text)
     return output_text
 
 
 class XComposer2_4KHD(CustomPrompt):
 
     INSTALL_REQ = False
-    
+
     def __init__(self, model_path='internlm/internlm-xcomposer2-4khd-7b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
-            
+
         model = AutoModel.from_pretrained(self.model_path, device_map='cpu', trust_remote_code=True).cuda().eval()
         model.half()
         tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
@@ -125,12 +124,13 @@ class XComposer2_4KHD(CustomPrompt):
         return model_gen(self.model, text, image_path, need_bos=True, padding=True, beams=5)
 
     def generate_multichoice(self, image_path, text, dataset):
-        out = model_gen(self.model, text, image_path, need_bos=True, padding=False, beams=5,  max_token=5)
+        out = model_gen(self.model, text, image_path, need_bos=True, padding=False, beams=5, max_token=5)
         if 'mmmu' in dataset.lower():
             return out
         res = pattern.findall(out)
         if len(res) == 0:
-            print('Error:', out); res = 'Z'
+            print('Error:', out)
+            res = 'Z'
         return res[0]
 
     def generate_vqa(self, image_path, text):
@@ -142,12 +142,13 @@ class XComposer2_4KHD(CustomPrompt):
         return out
 
     def generate_brief(self, image_path, text):
-        text = "[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n".format(text)
+        text = '[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{}\
+               [UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'.format(text)
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=10)
         return out
-    
+
     def generate_driectly(self, image_path, text):
-        text = "[UNUSED_TOKEN_146]user\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n".format(text)
+        text = '[UNUSED_TOKEN_146]user\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'.format(text)
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=500)
         return out
 
@@ -161,7 +162,6 @@ class XComposer2_4KHD(CustomPrompt):
         else:
             self.model.hd_num = 25
 
-        #print (f'{dataset}: {self.model.hd_num}')
         with torch.cuda.amp.autocast():
             if dataset is None:
                 return self.generate_vanilla(image_path, prompt)
@@ -183,13 +183,13 @@ class XComposer2_4KHD(CustomPrompt):
 
             else:
                 return self.generate_vanilla(image_path, prompt)
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA':
             return True
         return False
-    
+
     def build_mcqa(self, line):
         question = line['question']
         options = {
@@ -216,27 +216,28 @@ class XComposer2_4KHD(CustomPrompt):
 
         return prompt
 
-
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
-        
+
         if DATASET_TYPE(dataset) == 'multi-choice':
             if 'mmstar' in dataset.lower():
                 q = line['question']
-                prompt = f"[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\nThe answer is"
+                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\nThe answer is'
             else:
                 prompt = self.build_mcqa(line)
         elif DATASET_TYPE(dataset) == 'VQA':
             if 'mathvista' in dataset.lower():
                 q = line['question']
-                prompt = f"[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n" 
+                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
             elif listinstr(['llava', 'mmvet'], dataset.lower()):
                 q = line['question']
-                prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'.format(meta_instruction, q)
-            else: 
+                prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}\
+                         Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]\
+                         assistant\n'.format(meta_instruction, q)
+            else:
                 q = line['question']
-                prompt = f"[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n" 
+                prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\
+                          {q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
         return {'image': tgt_path, 'text': prompt}
-
