@@ -96,7 +96,7 @@ assert set(dataset_URLs) == set(img_root_map)
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d'], dataset):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar'], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion'], dataset):
         return 'Y/N'
