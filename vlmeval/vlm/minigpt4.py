@@ -4,21 +4,24 @@ from abc import abstractproperty
 import os.path as osp
 import warnings
 from transformers import StoppingCriteriaList
-from omegaconf import OmegaConf
 from PIL import Image
+
 
 class MiniGPT4:
 
     INSTALL_REQ = True
-    
-    def __init__(self, 
-                 mode='v2', 
-                 root='/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/', 
-                 temperature=1, 
+
+    def __init__(self,
+                 mode='v2',
+                 root='/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/',
+                 temperature=1,
                  max_out_len=512):
-        
+
         if root is None:
-            warnings.warn('Please set root to the directory of MiniGPT-4, which is cloned from here: https://github.com/Vision-CAIR/MiniGPT-4. ')
+            warnings.warn(
+                'Please set root to the directory of MiniGPT-4, which is cloned from here: '
+                'https://github.com/Vision-CAIR/MiniGPT-4. '
+            )
 
         if mode == 'v2':
             cfg = 'minigptv2_eval.yaml'
@@ -28,26 +31,28 @@ class MiniGPT4:
             cfg = 'minigpt4_13b_eval.yaml'
         else:
             raise NotImplementedError
-        
+
         self.mode = mode
-        self.temperature = temperature 
+        self.temperature = temperature
         self.max_out_len = max_out_len
-        self.root = root 
+        self.root = root
         this_dir = osp.dirname(__file__)
 
         self.cfg = osp.join(this_dir, 'misc', cfg)
         sys.path.append(self.root)
+
+        from omegaconf import OmegaConf
         from minigpt4.common.registry import registry
         from minigpt4.conversation.conversation import StoppingCriteriaSub, CONV_VISION_Vicuna0, CONV_VISION_minigptv2
 
         device = torch.cuda.current_device()
         self.device = device
-        
+
         cfg_path = self.cfg
         cfg = OmegaConf.load(cfg_path)
-            
+
         model_cfg = cfg.model
-        model_cfg.device_8bit = device 
+        model_cfg.device_8bit = device
         model_cls = registry.get_model_class(model_cfg.arch)
         model = model_cls.from_config(model_cfg)
         model = model.to(device)
@@ -61,7 +66,7 @@ class MiniGPT4:
         stop_words_ids = [[835], [2277, 29937]]
         stop_words_ids = [torch.tensor(ids).to(device) for ids in stop_words_ids]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
-        
+
     def generate(self, image_path, prompt, dataset=None):
         from minigpt4.conversation.conversation import Chat
         if self.mode == 'v2':

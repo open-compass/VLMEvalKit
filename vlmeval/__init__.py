@@ -3,8 +3,11 @@ try:
 except ImportError:
     pass
 
-from .chat_api import *
-from .eval import *
+from .smp import *
+from .api import *
+from .evaluate import *
 from .utils import *
 from .vlm import *
-from .smp import *
+from .config import *
+
+load_env()

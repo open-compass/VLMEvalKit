@@ -1,97 +1,102 @@
 import torch
 from PIL import Image
 from abc import abstractproperty
-import os
+import sys
 import os.path as osp
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..utils import DATASET_TYPE, CustomPrompt
 
-class LLaVA:
+
+class LLaVA(CustomPrompt):
 
     INSTALL_REQ = True
 
-    def __init__(self, 
-                 name,
-                 model_path_map = {
-                     'llava_v1.5_7b': 'liuhaotian/llava_v1.5_7b',
-                     'llava_v1.5_13b': 'liuhaotian/llava_v1.5_13b',
-                     'llava_v1_7b': 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
-                 },
-                 **kwargs): 
+    def __init__(self,
+                 model_pth='liuhaotian/llava_v1.5_7b',
+                 **kwargs):
         try:
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
         except:
-            warnings.warn("Please install llava before using LLaVA")
+            warnings.warn('Please install llava before using LLaVA')
+            sys.exit(-1)
+
+        warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
+        assert osp.exists(model_pth) or splitlen(model_pth) == 2
+
+        if model_pth == 'Lin-Chen/ShareGPT4V-7B':
+            model_name = 'llava-v1.5-7b'
+        elif model_pth == 'Lin-Chen/ShareGPT4V-13B':
+            model_name = 'llava-v1.5-13b'
+        else:
+            model_name = get_model_name_from_path(model_pth)
+
+        try:
+            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+                model_path=model_pth,
+                model_base=None,
+                model_name=model_name,
+                device='cpu',
+                device_map='cpu'
+            )
+        except:
+            if 'ShareGPT4V' in model_pth:
+                import llava
+                warnings.warn(
+                    'Please manually remove the encoder type check in '
+                    f'{llava.__path__[0]}/model/multimodal_encoder/builder.py '
+                    'Line 8 to use the ShareGPT4V model. ')
+            else:
+                warnings.warn('Unknown error when loading LLaVA model.')
             exit(-1)
-            
-        self.model_path_map = model_path_map
-        assert name in self.model_path_map or osp.exists(name)
-        if name in self.model_path_map:
-            model_path = self.model_path_map[name]
-        else:
-            model_path = name
 
-        assert osp.exists(model_path) or splitlen(model_path) == 2
-        
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-            model_path=model_path, 
-            model_base=None, 
-            model_name=get_model_name_from_path(model_path), 
-            device='cpu', 
-            device_map='cpu'
-        )
         self.model = self.model.cuda()
-        if 'v1' in model_path.lower():
-            self.conv_mode =  'llava_v1'
-        else:
-            self.conv_mode = 'vicuna_v1'
+        self.conv_mode = 'llava_v1'
 
-        kwargs_default = dict(do_sample=True, temperature=0.2, max_new_tokens=512, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
+
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
 
     def build_prompt(self, line, dataset=None):
-        from ..utils import img_root_map
+        assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        img_root = osp.join('images', img_root_map[dataset])
+        tgt_path = self.dump_image(line, dataset)
 
-        os.makedirs(img_root, exist_ok=True)
-        idx = line['index']
-        img = line['image']
+        question = line['question']
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        if hint is not None:
+            question = hint + '\n' + question
 
-        tgt_path = osp.join(img_root, f'{idx}.jpg')
-        decode_base64_to_image_file(img, tgt_path)
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        for key, item in options.items():
+            question += f'\n{key}. {item}'
+        prompt = question
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            question = line['question']
-            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
-            if hint is not None:
-                question + hint + '\n' + question
-
-            option_candidate = ['A', 'B', 'C', 'D', 'E']
-            options = {
-                cand: line[cand]
-                for cand in option_candidate
-                if cand in line and not pd.isna(line[cand])
-            }
-            for key, item in options.items():
-                question += f'\n{key}. {item}'
-            prompt = question
-
-            if not cn_string(prompt):
-                prompt = prompt + "\n" + "Answer with the option's letter from the given choices directly."
-            else:
-                prompt = prompt + "\n" + "请直接回答选项字母。"
+        if len(options):
+            prompt += (
+                '\n请直接回答选项字母。' if cn_string(prompt) else
+                "\nAnswer with the option's letter from the given choices directly."
+            )
         else:
-            prompt = line['question']
+            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
         return {'image': tgt_path, 'text': prompt}
 
     def generate(self, image_path, prompt, dataset=None):
         from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        from llava.constants import (
+            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from llava.conversation import conv_templates, SeparatorStyle
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
@@ -107,11 +112,122 @@ class LLaVA:
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
 
-        input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
+        input_ids = tokenizer_image_token(
+            prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
-            output_ids = self.model.generate(input_ids, images=image_tensor, stopping_criteria=[stopping_criteria], **self.kwargs)
-        output = self.tokenizer.decode(output_ids[0, input_ids.shape[1]: ]).strip().split("</s>")[0]
+            output_ids = self.model.generate(
+                input_ids, images=image_tensor, stopping_criteria=[stopping_criteria], **self.kwargs)
+
+        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return output
+
+
+class LLaVA_Next(CustomPrompt):
+
+    def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
+        import transformers
+        assert version_cmp(transformers.__version__, '4.39.0', 'ge')
+        from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+        self.model_pth = model_pth
+        if '34b' in model_pth.lower():
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth, use_fast=False)
+        else:
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth)
+        flash_attn_flag = False
+        try:
+            import flash_attn
+            flash_attn_flag = True
+        except ImportError:
+            pass
+
+        if flash_attn_flag:
+            model = LlavaNextForConditionalGeneration.from_pretrained(
+                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+        else:
+            model = LlavaNextForConditionalGeneration.from_pretrained(
+                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+
+        model = model.eval()
+        self.model = model.cuda()
+        kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
+
+    def apply_prompt_template(self, prompt):
+        model_pth = self.model_pth.lower()
+        if 'mistral' in model_pth:
+            s = f'[INST] <image>\n {prompt} [/INST]'
+        elif 'vicuna' in model_pth:
+            s = (
+                'A chat between a curious human and an artificial intelligence assistant. '
+                "The assistant gives helpful, detailed, and polite answers to the human's questions. "
+                f'USER: <image>\n{prompt} ASSISTANT:'
+            )
+        elif '34b' in model_pth:
+            s = (
+                f'<|im_start|>system\nAnswer the questions.<|im_end|><|im_start|>user\n<image>\n{prompt}<|im_end|>'
+                '<|im_start|>assistant\n'
+            )
+        else:
+            raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
+        return s
+
+    def use_custom_prompt(self, dataset):
+        assert dataset is not None
+        if DATASET_TYPE(dataset) == 'multi-choice':
+            return True
+        return False
+
+    def build_prompt(self, line, dataset=None):
+        assert self.use_custom_prompt(dataset)
+        assert dataset is None or isinstance(dataset, str)
+        tgt_path = self.dump_image(line, dataset)
+
+        question = line['question']
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        if hint is not None:
+            question = hint + '\n' + question
+
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        for key, item in options.items():
+            question += f'\n{key}. {item}'
+        prompt = question
+
+        if len(options):
+            prompt += (
+                '\n请直接回答选项字母。' if cn_string(prompt) else
+                "\nAnswer with the option's letter from the given choices directly."
+            )
+        else:
+            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+        return {'image': tgt_path, 'text': prompt}
+
+    def generate(self, image_path, prompt, dataset=None):
+        image = Image.open(image_path)
+        prompt_wtmpl = self.apply_prompt_template(prompt)
+        inputs = self.processor(prompt_wtmpl, image, return_tensors='pt').to('cuda')
+        output = self.model.generate(**inputs, **self.kwargs)
+        answer = self.processor.decode(output[0], skip_special_token=True)
+        if '<s>' in answer:
+            answer = answer.replace('<s>', '').strip()
+        if '[/INST]' in answer:
+            answer = answer.split('[/INST]')[1].strip()
+        elif 'ASSISTANT:' in answer:
+            answer = answer.split('ASSISTANT:')[1].strip()
+        elif 'assistant\n' in answer:
+            answer = answer.split('assistant\n')[1].strip()
+
+        if '</s>' in answer:
+            answer = answer.split('</s>')[0].strip()
+        if '<|im_end|>' in answer:
+            answer = answer.split('<|im_end|>')[0].strip()
+
+        return answer

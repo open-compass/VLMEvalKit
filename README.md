@@ -1,157 +1,137 @@
-# VLMEvalKit
+![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
+<div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 
-![LOGO](assets/LOGO.svg)
+<div align="center">
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
+<a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
+<a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
+<a href="#%EF%B8%8F-development-guide">🛠️Development </a> •
+<a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
+<a href="#%EF%B8%8F-citation">🖊️Citation </a>
+</div>
 
-**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs (obtain the answer via `generate` / `chat`  interface), and provide the evaluation results obtained with both **exact matching** and **LLM(ChatGPT)-based answer extraction**. 
+<div align="center">
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard on HuggingFace</a>
+<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">🤖 Leaderboard on OpenXlab</a>
+</div>
 
-**The codebase can:**
 
-1. Provide an **easy-to-use**, **opensource evaluation toolkit** to make it convenient for researchers & developers to evaluate existing LVLMs and make evaluation results **easy to reproduce**.
-2. Make it easy for VLM developers to evaluate their own models. To evaluate the VLM on multiple supported benchmarks, one just need to **implement a single `generate` function**, all other workloads (data downloading, data preprocessing, prediction inference, metric calculation) are handled by the codebase. 
+**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
-**The codebase can not:**
+## 🆕 News
 
-1. Reproduce the exact accuracy number reported in the original papers of all **3rd party benchmarks**. The reason can be two-fold:
-   1. VLMEvalKit **mainly** uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different metrics (SEEDBench uses PPL-based evaluation, *eg.*). For these benchmarks, we will compare both scores in the corresponding README file. We encourage developers to support other different evaluation paradigms in the codebase. 
-   2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility. 
+- **[2024-04-09]** We have supported [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), a challenging vision-indispensable multimodal benchmark. The full evaluation results will be released soon 🔥🔥🔥
+- **[2024-04-08]** We have supported [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) and the test split of DocVQA. Great thanks to [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
+- **[2024-03-28]** Now you can use local OpenSource LLMs as the answer extractor or judge (see [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) for details). Great thanks to [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
+- **[2024-03-22]** We have supported [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
+- **[2024-03-21]** We have supported [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main) 🔥🔥🔥
+- **[2024-03-20]** We have supported users to use a `.env` file to manage all environment variables used in VLMEvalKit, see [**Quickstart**](\Quickstart.md) for more details
+- **[2024-03-17]** We have added an API wrapper for [**Step-1V**](https://www.stepfun.com/#step1v) 🔥🔥🔥
+- **[2024-03-15]** We have updated the LLaVA class be compatible with the latest version of LLaVA. All LLaVA series models have been re-evaluated with temperature=0, and the new results have been updated to the leaderboard 🔥🔥🔥
+- **[2024-02-27]** We have fixed the evaluation results of [**Yi-VL-34B**](https://huggingface.co/01-ai/Yi-VL-34B), check the updated results [**here**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard)  🔥🔥🔥
+- **[2024-02-25]** We have supported [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR)🔥🔥🔥
+
 
 ## 📊 Datasets, Models, and Evaluation Results
 
+**The performance numbers on our official multi-modal leaderboards can be downloaded from here!**
+
+[**OpenCompass Multi-Modal Leaderboard**](https://rank.opencompass.org.cn/leaderboard-multimodal): [Download All DETAILED Results](http://opencompass.openxlab.space/utils/OpenVLM.json).
+
 **Supported Dataset**
 
-- [x] [MMBench Series](https://github.com/open-compass/mmbench/): MMBench, MMBench-CN, CCBench
-- [x] [MME](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation)
-- [x] [SEEDBench_IMG](https://github.com/AILab-CVC/SEED-Bench)
-- [ ] [MM-VET]()
-- [ ] ......
+| Dataset                                                      | Dataset Names (for run.py)                             | Task | Inference | Evaluation | Results                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |-----|
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench-DEV-[EN/CN]<br>MMBench-TEST-[EN/CN]<br>CCBench | Multi-choice | ✅         | ✅          | [**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MMStar**](https://github.com/MMStar-Benchmark/MMStar) | MMStar | Multi-choice   | ✅         | ✅          | TBD. |
+| [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | MME | Yes or No                                                   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG | Multi-choice                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**MM-Vet**](https://github.com/yuweihao/MM-Vet)             | MMVet  | VQA                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**MMMU**](https://mmmu-benchmark.github.io)                 | MMMU_DEV_VAL/MMMU_TEST | Multi-choice                                | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**MathVista**](https://mathvista.github.io)                 | MathVista_MINI | VQA                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**ScienceQA_IMG**](https://scienceqa.github.io)             | ScienceQA_[VAL/TEST] | Multi-choice                                   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**COCO Caption**](https://cocodataset.org)                  | COCO_VAL | Caption                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**HallusionBench**](https://github.com/tianyi-lab/HallusionBench) | HallusionBench | Yes or No                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**OCRVQA**](https://ocr-vqa.github.io)                      | OCRVQA_[TESTCORE/TEST] | VQA                                 | ✅         | ✅          | **TBD.**                                                     |
+| [**TextVQA**](https://textvqa.org)                           | TextVQA_VAL | VQA                                           | ✅         | ✅          | **TBD.**                                                     |
+| [**ChartQA**](https://github.com/vis-nlp/ChartQA)            | ChartQA_TEST | VQA                                          | ✅         | ✅          | **TBD.**                                                     |
+| [**AI2D**](https://allenai.org/data/diagrams)                | AI2D_TEST | Multi-choice                                             | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**LLaVABench**](https://huggingface.co/datasets/liuhaotian/llava-bench-in-the-wild) | LLaVABench | VQA                                            | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**DocVQA**](https://www.docvqa.org)                         | DocVQA_[VAL/TEST] | VQA                                            | ✅         | ✅          | **TBD.**                                                     |
+| [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) | InfoVQA_[VAL/TEST] | VQA | ✅ | ✅ | **TBD.** |
+| [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench | VQA                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
+| [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM | VQA                                               | ✅         |            | **N/A**                                                      |
 
-**Supported Models**
+VLMEvalKit will use an **judge LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**
 
-- [x] [IDEFICS-9B-Instruct](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct), [IDEFICS-80B-Instruct](https://huggingface.co/HuggingFaceM4/idefics-80b-instruct)
-- [x] [InstructBLIP-[7B/13B]](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md)
-- [x] [LLaVA-[v1-7B/v1.5-7B/v1.5-13B]](https://github.com/haotian-liu/LLaVA)
-- [x] [MiniGPT-4-[v1-7B/v1-13B/v2-7B]](https://github.com/Vision-CAIR/MiniGPT-4)
-- [x] [mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)
-- [x] [OpenFlamingo-v2](https://github.com/mlfoundations/open_flamingo)
-- [x] [PandaGPT-13B](https://github.com/yxuansu/PandaGPT)
-- [x] [Qwen-VL](https://huggingface.co/Qwen/Qwen-VL), [Qwen-VL-Chat](https://huggingface.co/Qwen/Qwen-VL-Chat)
-- [x] [VisualGLM-6B](https://huggingface.co/THUDM/visualglm-6b)
-- [x] [InternLM-XComposer-7B](https://huggingface.co/internlm/internlm-xcomposer-7b)
-- [ ] ......
+**There are some known issues with VQA tasks like OCRVQA, TextVQA, ChartQA, etc. We will fix them asap.**
 
-**Evaluation Results**
+**Supported API Models**
 
-- [x] [MMBench Series](https://mmbench.opencompass.org.cn/leaderboard)
-- [x] [MME](results/MME.md)
-- [x] [SEEDBench_IMG](results/SEEDBench_IMG.md)
+| [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**QwenVLPlus**](https://huggingface.co/spaces/Qwen/Qwen-VL-Plus)🎞️🚅 | [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max)🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v)🎞️🚅 |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ |
 
-## 🏗️ How to run the evaluation?
+**Supported PyTorch / HF Models**
 
-Basically, there are two stages for evaluating an VLM on a benchmark, namely **prediction inference** and **metric calculation**. 
+| [**IDEFICS-[9B/80B]-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️**🚅** |
+| [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-7B**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅🎞️ | [**ShareGPT4V-[7B/13B]**](https://sharegpt4v.github.io)🚅     | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
+| [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-17B-Chat**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**SharedCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
+| [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2 / EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️  | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
+| [**InternLM-XComposer2-7B**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-V**](https://huggingface.co/openbmb/MiniCPM-V)🚅   | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
+| [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 |                                                              |                                                              |
 
-Besides, before running the evaluation script, you need to **configure** the VLMs and set the model_paths properly. 
+🎞️: Support multiple images as inputs, via the `interleave_generate` interface.
 
-### Step1. Configuration
+🚅: Model can be used without any additional configuration / operation.
 
-**VLM Configuration**: All VLMs are configured in `vlmeval/config.py`, for some VLMs, you need to configure the code root (MiniGPT-4, PandaGPT, etc.) or the model_weight root (LLaVA-v1-7B, etc.) before conducting the evaluation. During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. For MiniGPT-4 and InstructBLIP, you also need to modify the config files in `vlmeval/vlm/misc` to configure LLM path and ckpt path.
+**Transformers Version Recommendation: **
 
-### Step2. Prediction Inference
+Note that some VLMs may not be able to run under certain transformer versions, we recommend the following settings to evaluate each VLM:
 
-We use the script `vlmeval/infer/inference.py` for prediction inference. To use the script, you can go into the directory `vlmeval/infer/` or create a soft-link of the script (so that you can use the script anywhere):
+- **Please use** `transformers==4.33.0` **for**: `Qwen series`, `Monkey series`, `InternVL series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `SharedCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`,  `PandaGPT`.
+- **Please use** `transformers==4.37.0 ` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-V`, `OmniLMM-12B`, `DeepSeek-VL series`.
+- **Please use** `transformers==4.39.0 ` **for**: `LLaVA-Next series`.
 
-**Arguments**
+```python
+# Demo
+from vlmeval.config import supported_VLM
+model = supported_VLM['idefics_9b_instruct']()
+# Forward Single Image
+ret = model.generate('assets/apple.jpg', 'What is in this image?')
+print(ret)  # The image features a red apple with a leaf on it.
+# Forward Multiple Images
+ret = model.interleave_generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
+print(ret)  # There are two apples in the provided images.
+```
 
-- For `--data`, you can only set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/data_util.py`), including: MME, SEEDBench_IMG, MMBench_DEV_EN, MMBench_TEST_EN, MMBench_DEV_CN, MMBench_TEST_CN, CCBench
-- For `--model`, you can only set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`). 
-- `--data` and `--model` receive list as arguments, you can select multiple benchmarks and VLMs for prediction inference at a time. 
+## 🏗️ QuickStart
 
-**Command**
+See [QuickStart](/Quickstart.md) for a quick start guide.
 
-- You can run the script with `python` or `torchrun`:
-  - When running with `python`, only one VLM instance is instantiated, and it might use multiple GPUs (depending on its default behavior). That is recommended for evaluating very large VLMs (like IDEFICS-80B-Instruct):
+## 🛠️ Development Guide
 
-    ```bash
-    # Inference IDEFICS-80B-Instruct on MMBench_DEV_EN, MME, and SEEDBench_IMG
-    python inference.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct --verbose
-    ```
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [Development_Guide](/Development.md).
 
-  - When running with `torchrun`, one VLM instance is instantiated on each GPU. It can speed up the inference. However, that is only suitable for VLMs that consume small amounts of GPU memory. 
+## 🎯 The Goal of VLMEvalKit
 
-    ```bash
-    # Inference IDEFICS-9B-Instruct, Qwen-VL-Chat, mPLUG-Owl2 on MMBench_DEV_EN, MME, and SEEDBench_IMG. On a node with 8 GPU. 
-    torchrun --nproc-per-node=8 inference.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct qwen_chat mPLUG-Owl2 --verbose
-    # Inference Qwen-VL-Chat on MME. On a node with 2 GPU. 
-    torchrun --nproc-per-node=2 inference.py --data MME --model qwen_chat --verbose
-    ```
+**The codebase is designed to:**
 
-**Generated Files**
+1. Provide an **easy-to-use**, **opensource evaluation toolkit** to make it convenient for researchers & developers to evaluate existing LVLMs and make evaluation results **easy to reproduce**.
+2. Make it easy for VLM developers to evaluate their own models. To evaluate the VLM on multiple supported benchmarks, one just need to **implement a single `generate` function**, all other workloads (data downloading, data preprocessing, prediction inference, metric calculation) are handled by the codebase.
 
-- Two files will be generated with `inference.py`:
-  - `{model_name}/{model_name}_{dataset_name}.xlsx`: The file that contain the VLM predictions. 
-  - `{model_name}/{model_name}_{dataset_name}_prefetch.xlsx`: The file that contain the basic statistics of the VLM predictions. For example, the score / accuracy based on exact matching. 
+**The codebase is not designed to:**
 
-### Step3. Metric Calculation
-
- **Multiple Choice Problems (MMBench Series, SEEDBench_IMG)** 
-
-The following script use ChatGPT / Exact Matching for answer matching and calculate the accuracy (**CircularEval** for MMBench, **VanillaEval** for SEEDBench_IMG).
-
-- **Script**: `vlmeval/eval/multiple_choice.py` 
-- **Usage**: `python multiple_choice.py {MMBench_or_SEEDBench_prediction_file.xlsx} --model {llm_for_choice_matching} --dataset {dataset_name} --nproc {num_process_for_API_calling}`
-  - `--model`: supported choices are `gpt-3.5-turbo-0613` and `exact_matching`. 
-
-
-**Yes / No Problems (MME)**
-
-The following script use ChatGPT for answer matching and calculate the MME score (The score of Exact matching is already calculated in `*_prefetch.xlsx`).
-
-- **Script:** `vlmeval/eval/mme_eval.py`
-- **Usage:** `python mme_eval.py {MME_prediction_file.xlsx} --nproc {num_process_for_API_calling}`
-
-## 🛠️ How to implement a new Benchmark / VLM in VLMEvalKit? 
-
-### Implement a new benchmark
-
-Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded to `$LMUData` (default path is `$HOME/LMUData`, if not set explicitly). All existing benchmark TSV files are handled by `TSVDataset` implemented in `vlmeval/utils/data_util.py`. 
-
-| Dataset Name \ Fields | index | image | question | hint | A    | B    | C    | D    | answer | category | l2-category | split |
-| --------------------- | ----- | ----- | -------- | ---- | ---- | ---- | ---- | ---- | ------ | -------- | ----------- | ----- |
-| MMBench_DEV_CN/EN     | √     | √     | √        | √    | √    | √    | √    | √    | √      | √        | √           | √     |
-| MMBench_TEST_CN/EN    | √     | √     | √        | √    | √    | √    | √    | √    |        | √        | √           | √     |
-| CCBench               | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| SEEDBench_IMG         | √     | √     | √        |      | √    | √    | √    | √    | √      | √        |             |       |
-| MME                   | √     | √     | √        |      |      |      |      |      | √      | √        |             |       |
-
-<div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
-
-**Intro to some fields:**
-
-- **index:** Integer, Unique for each line in `tsv`
-- **image:** the base64 of the image, you can use APIs implemented in `vlmeval/smp.py` for encoding and decoding: 
-  - Encoding: `encode_image_to_base64 `(for PIL Image) / `encode_image_file_to_base64` (for image file path)
-  - Decoding: `decode_base64_to_image`(for PIL Image) / `decode_base64_to_image_file` (for image file path)
-
-Besides, your dataset class **should implement the method `build_prompt(self, line, dataset=None)`**. Given line as a line number or one line in the TSV file, the function yields a dictionary `dict(image=image_path, text=prompt)`, including the image path and the prompt that will be fed to the VLMs.
-
-### Implement a new model
-
-All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **should implement the method** `generate(image_path, prompt, dataset=None)`. In this function, you feed the image and prompt to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies. 
-
-Besides, your model can support custom prompt building by implementing an optional method `build_prompt(line, dataset=None)`. In this function, the line is a dictionary that includes the necessary information of a data sample, while `dataset` can be used as the flag for the model to switch among various prompt building strategies. 
-
+1. Reproduce the exact accuracy number reported in the original papers of all **3rd party benchmarks**. The reason can be two-fold:
+   1. VLMEvalKit uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different approaches (SEEDBench uses PPL-based evaluation, *eg.*). For those benchmarks, we compare both scores in the corresponding result. We encourage developers to support other evaluation paradigms in the codebase.
+   2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility.
 
 ## 🖊️ Citation
 
 If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@article{MMBench,
-    author  = {Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, Kai Chen, Dahua Lin},
-    journal = {arXiv:2307.06281},
-    title   = {MMBench: Is Your Multi-modal Model an All-around Player?},
-    year    = {2023},
-}
-
 @misc{2023opencompass,
     title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
     author={OpenCompass Contributors},
@@ -165,4 +145,4 @@ If you use VLMEvalKit in your research or wish to refer to the published OpenSou
 - [opencompass](https://github.com/open-compass/opencompass/): An LLM evaluation platform, supporting a wide range of models (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude, etc) over 50+ datasets.
 - [MMBench](https://github.com/open-compass/MMBench/): Official Repo of "MMBench: Is Your Multi-modal Model an All-around Player?"
 - [BotChat](https://github.com/open-compass/BotChat/): Evaluating LLMs' multi-round chatting capability.
-- [LawBench](https://github.com/open-compass/LawBench): Benchmarking Legal Knowledge of Large Language Models. 
+- [LawBench](https://github.com/open-compass/LawBench): Benchmarking Legal Knowledge of Large Language Models.

@@ -6,6 +6,7 @@ import math
 from ..smp import *
 from ..utils import DATASET_TYPE, CustomPrompt
 
+
 class TransCoreM(CustomPrompt):
 
     INSTALL_REQ = True
@@ -45,7 +46,7 @@ class TransCoreM(CustomPrompt):
             parsed_options.append(option_value)
         return parsed_options
 
-    def is_none(self,value):
+    def is_none(self, value):
         if value is None:
             return True
         if type(value) is float and math.isnan(value):
