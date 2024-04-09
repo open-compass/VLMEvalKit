@@ -29,15 +29,15 @@ class TransCoreM(CustomPrompt):
             device_map='cpu'
         )
         self.model = self.model.cuda()
-        print("==============conv_mode: transcorem_v1")
-        self.conv_mode = "transcorem_v1"
+        print('==============conv_mode: transcorem_v1')
+        self.conv_mode = 'transcorem_v1'
 
         kwargs_default = dict(do_sample=False, temperature=0.0, max_new_tokens=512, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def get_options(self,row, options):
+    def get_options(self, row, options):
         parsed_options = []
         for option in options:
             option_value = row[option]
@@ -83,22 +83,26 @@ class TransCoreM(CustomPrompt):
         prompt = question
 
         if len(options):
-            prompt += "\n请直接回答选项字母。" if cn_string(prompt) else "\nAnswer with the option's letter from the given choices directly."
+            prompt += (
+                '\n请直接回答选项字母。' if cn_string(prompt) else
+                "\nAnswer with the option's letter from the given choices directly."
+            )
         else:
-            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
+            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
         return {'image': tgt_path, 'text': prompt}
 
     def generate(self, image_path, prompt, dataset=None):
         from transcorem.mm_utils import highres_process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from transcorem.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        from transcorem.constants import (
+            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
 
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
         image_patches = highres_process_images(image, self.image_processor, args, base_reso=336)
-        image_patches = [patch.unsqueeze(0).to("cuda", dtype=torch.float16) for patch in image_patches]
+        image_patches = [patch.unsqueeze(0).to('cuda', dtype=torch.float16) for patch in image_patches]
         if self.model.config.mm_use_im_start_end:
             inp = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + prompt
         else:
