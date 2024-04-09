@@ -1,60 +1,34 @@
 import torch
+import torchvision
 from transformers import AutoModel, AutoTokenizer
 from PIL import Image
-from .base import BaseModel
-from ..smp import *
-from ..utils import DATASET_TYPE
-import numpy as np
-import torchvision.transforms as transforms
-
+from ..base import BaseModel
+from ...smp import *
+from ...utils import DATASET_TYPE
 import re
 pattern = re.compile(r'[A-Z]')
 
 
-def padding_336(b):
-    width, height = b.size
-    tar = int(np.ceil(height / 336) * 336)
+def __padding__(image):
+    width, height = image.size
+    tar = max(width, height)
     top_padding = int((tar - height) / 2)
     bottom_padding = tar - height - top_padding
-    left_padding = 0
-    right_padding = 0
-    b = transforms.functional.pad(b, [left_padding, top_padding, right_padding, bottom_padding], fill=[255, 255, 255])
-
-    return b
-
-
-def HD_transform(img, im_num=16):
-    width, height = img.size
-    trans = False
-    if width < height:
-        img = img.transpose(Image.TRANSPOSE)
-        trans = True
-        width, height = img.size
-    ratio = (width / height)
-    scale = 1
-    while scale * np.ceil(scale / ratio) <= im_num:
-        scale += 1
-    scale -= 1
-    new_w = int(scale * 336)
-    new_h = int(new_w / ratio)
-
-    img = transforms.functional.resize(img, [new_h, new_w],)
-    img = padding_336(img)
-    width, height = img.size
-    assert width * height <= im_num * 336 * 336
-    if trans:
-        img = img.transpose(Image.TRANSPOSE)
-
-    return img
+    left_padding = int((tar - width) / 2)
+    right_padding = tar - width - left_padding
+    image = torchvision.transforms.functional.pad(image, [left_padding, top_padding, right_padding, bottom_padding])
+    return image
 
 
-meta_instruction = """You are an AI assistant whose name is InternLM-XComposer (浦语·灵笔).
-- InternLM-XComposer (浦语·灵笔) is a multi-modality conversational language model that is developed\
- by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
-- InternLM-XComposer (浦语·灵笔) can understand and communicate fluently in the language chosen by\
- the user such as English and 中文.
-- InternLM-XComposer (浦语·灵笔) is capable of comprehending and articulating responses\
- effectively based on the provided image."""
+meta_instruction = """
+You are an AI assistant whose name is InternLM-XComposer (浦语·灵笔).
+- InternLM-XComposer (浦语·灵笔) is a multi-modality conversational language model that is developed by
+Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
+- InternLM-XComposer (浦语·灵笔) can understand and communicate fluently in the language
+chosen by the user such as English and 中文.
+- InternLM-XComposer (浦语·灵笔) is capable of comprehending and articulating responses effectively
+based on the provided image.
+"""
 
 
 def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_token=500):
@@ -75,8 +49,8 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
                 image = Image.open(images[i]).convert('RGB')
             except:
                 image = images[i].convert('RGB')
-
-            image = HD_transform(image, im_num=model.hd_num)
+            if padding:
+                image = __padding__(image)
             image = model.vis_processor(image).unsqueeze(0).cuda()
             image_embeds = model.encode_img(image)
             embeds.append(image_embeds)
@@ -86,9 +60,15 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     im_mask = torch.cat(im_mask, dim=1)
     im_mask = im_mask.bool()
 
-    outputs = model.generate(inputs_embeds=embeds, im_mask=im_mask,
-                             temperature=1.0, max_new_tokens=max_token, num_beams=beams,
-                             do_sample=False, repetition_penalty=1.0)
+    outputs = model.generate(
+        inputs_embeds=embeds,
+        im_mask=im_mask,
+        temperature=1.0,
+        max_new_tokens=max_token,
+        num_beams=beams,
+        do_sample=False,
+        repetition_penalty=1.0)
+
     output_token = outputs[0]
     if output_token[0] == 0 or output_token[0] == 1:
         output_token = output_token[1:]
@@ -97,12 +77,12 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     return output_text
 
 
-class XComposer2_4KHD(BaseModel):
+class XComposer2(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self, model_path='internlm/internlm-xcomposer2-4khd-7b', **kwargs):
+    def __init__(self, model_path='internlm/internlm-xcomposer2-vl-7b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
 
@@ -112,7 +92,6 @@ class XComposer2_4KHD(BaseModel):
         model.tokenizer = tokenizer
         self.model = model
         self.device = self.model.model.tok_embeddings.weight.device
-        self.model.hd_num = 25
 
     def generate_mme(self, image_path, text):
         text = text.split('Please answer')[0].strip()
@@ -132,30 +111,32 @@ class XComposer2_4KHD(BaseModel):
         return res[0]
 
     def generate_vqa(self, image_path, text):
-        out = model_gen(self.model, text, image_path, need_bos=True, max_token=100)
+        out = model_gen(self.model, text, image_path, need_bos=True)
         return out
 
     def generate_vanilla(self, image_path, text):
+        text = (
+            '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}'
+            'Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
+        ).format(meta_instruction, text)
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=500)
         return out
 
     def generate_brief(self, image_path, text):
-        text = '[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{}\
-               [UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'.format(text)
+        text = (
+            '[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{}'
+            '[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
+        ).format(text)
         out = model_gen(self.model, text, image_path, need_bos=True, max_token=10)
         return out
 
-    def generate(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
-        if listinstr(['docvqa_test', 'infovqa_test'], dataset.lower()):
-            self.model.hd_num = 65
-        elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):
-            self.model.hd_num = 55
-        elif listinstr(['mmmu', 'mmbench', 'mmvet'], dataset.lower()):
-            self.model.hd_num = 16
-        else:
-            self.model.hd_num = 25
+    def generate_driectly(self, image_path, text):
+        text = '[UNUSED_TOKEN_146]user\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'.format(text)
+        out = model_gen(self.model, text, image_path, need_bos=True, max_token=500)
+        return out
 
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         with torch.cuda.amp.autocast():
             if dataset is None:
                 return self.generate_vanilla(image_path, prompt)
@@ -166,7 +147,7 @@ class XComposer2_4KHD(BaseModel):
             elif listinstr(['hallu'], dataset.lower()):
                 return self.generate_brief(image_path, prompt)
 
-            elif listinstr(['llava', 'mmvet'], dataset.lower()):
+            elif listinstr(['llava'], dataset.lower()):
                 return self.generate_vanilla(image_path, prompt)
 
             elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
@@ -216,24 +197,17 @@ class XComposer2_4KHD(BaseModel):
         tgt_path = self.dump_image(line, dataset)
 
         if DATASET_TYPE(dataset) == 'multi-choice':
-            if 'mmstar' in dataset.lower():
-                q = line['question']
-                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\nThe answer is'
-            else:
-                prompt = self.build_mcqa(line)
+            prompt = self.build_mcqa(line)
         elif DATASET_TYPE(dataset) == 'VQA':
             if 'mathvista' in dataset.lower():
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
-            elif listinstr(['llava', 'mmvet'], dataset.lower()):
-                q = line['question']
-                prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}\
-                         Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]\
-                         assistant\n'.format(meta_instruction, q)
             else:
                 q = line['question']
-                prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\
-                          {q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
-        ret = [dict(type='text', value=prompt)]
-        ret.extend([dict(type='image', value=s) for s in tgt_path])
-        return ret
+                prompt = (
+                    f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.{q}'
+                    '[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
+                )
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
+        return message

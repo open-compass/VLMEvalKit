@@ -1,8 +1,8 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from .base import BaseModel
-from ..smp import *
-from ..utils import DATASET_TYPE
+from ..base import BaseModel
+from ...smp import *
+from ...utils import DATASET_TYPE
 
 
 class ShareCaptioner(BaseModel):

@@ -2,8 +2,8 @@ import torch
 from transformers import AutoModel, AutoTokenizer
 from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
-from .base import BaseModel
-from ..smp import *
+from ..base import BaseModel
+from ...smp import *
 
 
 class StoppingCriteriaSub(StoppingCriteria):

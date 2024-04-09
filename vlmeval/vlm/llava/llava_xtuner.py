@@ -12,9 +12,9 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           CLIPImageProcessor, CLIPVisionModel,
                           GenerationConfig, StoppingCriteriaList)
 
-from .base import BaseModel
-from ..smp import cn_string, get_cache_path
-from ..utils import DATASET_TYPE
+from ..base import BaseModel
+from ...smp import cn_string, get_cache_path
+from ...utils import DATASET_TYPE
 
 
 class LLaVA_XTuner(BaseModel):
