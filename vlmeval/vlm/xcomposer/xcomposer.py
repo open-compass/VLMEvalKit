@@ -19,7 +19,7 @@ class StoppingCriteriaSub(StoppingCriteria):
         return False
 
 
-from ..utils import DATASET_TYPE
+from ...utils import DATASET_TYPE
 
 
 class XComposer(BaseModel):
