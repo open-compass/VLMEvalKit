@@ -17,7 +17,7 @@ ungrouped = {
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
-    'emu2_chat':partial(Emu, name='emu2_chat'),
+    'emu2_chat':partial(Emu, model_path='BAAI/Emu2-Chat',),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
