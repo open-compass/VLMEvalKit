@@ -20,6 +20,7 @@ ungrouped = {
     'emu2_chat':partial(Emu, model_path='BAAI/Emu2-Chat',),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
+    'MiniCPM-V2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
 }
 
@@ -121,7 +122,7 @@ transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xco
     'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
 ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
 transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
-    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'OmniLMM_12B'
+    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V2', 'OmniLMM_12B'
 ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
 transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
 
