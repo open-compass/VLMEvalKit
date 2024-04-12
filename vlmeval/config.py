@@ -25,15 +25,9 @@ ungrouped = {
 
 api_models = {
     'GPT4V': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GPT4V_HIGH': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Internal Only
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
-    'GPT4V_SHORT': partial(
-        GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
-        system_prompt='Please responde to the following question / request in a short reply. '),
-    # Internal Only
-    'GPT4V_SHORT_INT': partial(
-        GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
-        system_prompt='Please responde to the following question / request in a short reply. '),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),

@@ -9,6 +9,8 @@ from ..smp import get_logger, parse_file
 class BaseAPI:
 
     allowed_types = ['text', 'image']
+    INTERLEAVE = True
+    INSTALL_REQ = False
 
     def __init__(self,
                  retry=10,
