@@ -15,7 +15,7 @@ class MiniCPM_V(BaseModel):
     def __init__(self, model_path='openbmb/MiniCPM-V', **kwargs):
         assert model_path is not None
         self.model_path = model_path
-        print(f"load from {self.model_path}")
+        print(f'load from {self.model_path}')
         self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
         self.model = self.model.to(dtype=torch.bfloat16)
         self.model.eval().cuda()
@@ -23,13 +23,13 @@ class MiniCPM_V(BaseModel):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
         self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V' else 3
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if listinstr(['MMMU'], dataset):
             return True
         return False
-    
+
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
@@ -51,12 +51,13 @@ class MiniCPM_V(BaseModel):
         prompt += f'{question}\n'
         if len(options):
             prompt += options_prompt
-            prompt = 'Study the image carefully and pick the option associated with the correct answer. Focus solely on selecting the option and avoid including any other content.\n' + prompt
+            prompt = 'Study the image carefully and pick the option associated with the correct answer. \
+                Focus solely on selecting the option and avoid including any other content.\n' + prompt
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=p) for p in tgt_path])
-        
+
         return message
-    
+
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
