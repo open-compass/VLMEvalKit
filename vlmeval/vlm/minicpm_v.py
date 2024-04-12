@@ -15,46 +15,6 @@ class MiniCPM_V(BaseModel):
     def __init__(self, model_path='openbmb/MiniCPM-V', **kwargs):
         assert model_path is not None
         self.model_path = model_path
-        self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True, device_map='cpu')
-        self.model = self.model.to(dtype=torch.bfloat16)
-        self.model.eval().cuda()
-        self.kwargs = kwargs
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
-        torch.cuda.empty_cache()
-
-    def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
-        image = Image.open(image_path).convert('RGB')
-        msgs = [{'role': 'user', 'content': prompt}]
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
-            max_new_tokens = 10
-        else:
-            max_new_tokens = 1024
-
-        default_kwargs = dict(
-            max_new_tokens=max_new_tokens,
-            sampling=False,
-            num_beams=1
-        )
-        default_kwargs.update(self.kwargs)
-        res, _, _ = self.model.chat(
-            image=image,
-            msgs=msgs,
-            context=None,
-            tokenizer=self.tokenizer,
-            **default_kwargs
-        )
-        return res
-
-
-class MiniCPM_V2(BaseModel):
-
-    INSTALL_REQ = False
-    INTERLEAVE = False
-
-    def __init__(self, model_path='openbmb/MiniCPM-V-2', **kwargs):
-        assert model_path is not None
-        self.model_path = model_path
         print(f"load from {self.model_path}")
         self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
         self.model = self.model.to(dtype=torch.bfloat16)
@@ -62,6 +22,7 @@ class MiniCPM_V2(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
+        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V' else 3
     
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -110,7 +71,7 @@ class MiniCPM_V2(BaseModel):
         default_kwargs = dict(
             max_new_tokens=max_new_tokens,
             sampling=False,
-            num_beams=3
+            num_beams=self.num_beams
         )
         default_kwargs.update(self.kwargs)
         res, _, _ = self.model.chat(

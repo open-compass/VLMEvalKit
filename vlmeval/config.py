@@ -20,7 +20,7 @@ ungrouped = {
     'emu2_chat':partial(Emu, model_path='BAAI/Emu2-Chat',),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
-    'MiniCPM-V2':partial(MiniCPM_V2, model_path='openbmb/MiniCPM-V-2'),
+    'MiniCPM-V2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
 }
 
