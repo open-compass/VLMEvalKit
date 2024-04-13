@@ -9,6 +9,8 @@ from ..smp import get_logger, parse_file
 class BaseAPI:
 
     allowed_types = ['text', 'image']
+    INTERLEAVE = True
+    INSTALL_REQ = False
 
     def __init__(self,
                  retry=10,
@@ -117,7 +119,7 @@ class BaseAPI:
                 assert 'type' in item and 'value' in item
                 mime, s = parse_file(item['value'])
                 if mime is None:
-                    assert item['type'] == 'text'
+                    assert item['type'] == 'text', item['value']
                 else:
                     assert mime.split('/')[0] == item['type']
                     item['value'] = s
