@@ -60,7 +60,7 @@ class TransCoreM(BaseModel):
 
     def __init__(self,
                  root=None,
-                 revision='20f20dbfda0aaca09c7bc502cbe4e1aec81ed33a',
+                 revision='main',
                  **kwargs):
 
         self.root = root
