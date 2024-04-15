@@ -117,7 +117,7 @@ class TransCoreM(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        from transcorem.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
+        from transcorem.mm_utils import highres_process_images, tokenizer_image_token, KeywordsStoppingCriteria
         from transcorem.constants import (
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
