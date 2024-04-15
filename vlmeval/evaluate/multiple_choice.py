@@ -282,14 +282,15 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
     else:
         logger.warning('Dataset is not provided, try to use the original `eval_file` as meta data. ')
         meta = load(eval_file)
-        assert 'category' in meta and 'index' in meta and 'answer' in meta, (
-            'Essentail columns missing in the eval_file.')
+        assert 'index' in meta and 'answer' in meta, 'Essentail columns missing in the eval_file.'
 
-    cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
+    cate_map = {i: c for i, c in zip(meta['index'], meta['category'])} if 'category' in meta else None
     l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])} if 'l2-category' in meta else None
     split_map = {i: c for i, c in zip(meta['index'], meta['split'])} if 'split' in meta else None
 
+    if cate_map is not None and np.all([pd.isna(x) for x in cate_map.values()]):
+        cate_map = None
     if l2_cate_map is not None and np.all([pd.isna(x) for x in l2_cate_map.values()]):
         l2_cate_map = None
     if split_map is not None and np.all([pd.isna(x) for x in split_map.values()]):
@@ -343,7 +344,8 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
     data_main['log'] = [res[i]['log'] for i in indices]
 
     main_idx = data_main['index']
-    data_main['category'] = [cate_map[i] for i in main_idx]
+    if cate_map is not None:
+        data_main['category'] = [cate_map[i] for i in main_idx]
     if l2_cate_map is not None:
         data_main['l2-category'] = [l2_cate_map[i] for i in main_idx]
     if split_map is not None:
