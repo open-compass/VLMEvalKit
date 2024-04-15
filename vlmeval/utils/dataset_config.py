@@ -44,7 +44,7 @@ dataset_md5_dict = {
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
     'CORE_MM': '8a8da2f2232e79caf98415bfdf0a202d',
-    'MMVet': 'f400d7f513a585a0f218cbd6882e0671',
+    'MMVet': '748aa6d4aa9d4de798306a63718455e3',
     'COCO_VAL': '72a5079dead060269ac222c5aa5128af',
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
