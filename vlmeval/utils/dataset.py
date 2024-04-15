@@ -158,7 +158,13 @@ class TSVDataset(CustomPrompt):
             if listinstr(['ocrvqa', 'textvqa', 'chartqa', 'docvqa'], dataset.lower()):
                 prompt += '\nPlease try to answer the question with short words or phrases if possible\n.'
 
-        return dict(image=tgt_path, text=prompt)
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
 
     def display(self, line):
         if isinstance(line, int):

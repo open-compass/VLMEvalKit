@@ -9,12 +9,6 @@ headers = {
 }
 
 
-def convert_image_to_base64(image_path):
-    with open(image_path, 'rb') as image_file:
-        encoded_string = base64.b64encode(image_file.read()).decode()
-    return encoded_string
-
-
 class StepAPI(BaseAPI):
 
     is_api: bool = True
@@ -49,15 +43,15 @@ class StepAPI(BaseAPI):
         message = {'role': 'user', 'content': []}
 
         for msg in msgs_raw:
-            if isimg(msg):
-                image_b64 = convert_image_to_base64(msg)
+            if msg['type'] == 'image':
+                image_b64 = encode_image_file_to_base64(msg['value'])
                 message['content'].append({
                     'image_b64': {'b64_json': image_b64},
                     'type': 'image_b64'
                 })
-            else:
+            elif msg['type'] == 'text':
                 message['content'].append({
-                    'text': msg,
+                    'text': msg['value'],
                     'type': 'text'
                 })
 
@@ -73,28 +67,19 @@ class StepAPI(BaseAPI):
             messages=self.build_msgs(msgs_raw=inputs),
             **kwargs)
         response = requests.post(url, headers=headers, data=json.dumps(payload))
-        # print('response is here!!:',response.text,'\n')
         ret_code = response.status_code
-        # print('ret_code is:',ret_code)
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
 
         answer = self.fail_msg
-        # print('initial answer is',answer)
         try:
             resp_struct = json.loads(response.text)
-            # print('resp_struct is',resp_struct)
             answer = resp_struct['choices'][0]['message']['content'].strip()
-            # print('answer!!!!!!=========',answer,'\n')
         except:
             pass
-        # print('finial answer is',answer)
         return ret_code, answer, response
 
 
 class Step1V(StepAPI):
 
-    def generate(self, image_path, prompt, dataset=None):
-        return super(StepAPI, self).generate([image_path, prompt])
-
-    def interleave_generate(self, ti_list, dataset=None):
-        return super(StepAPI, self).generate(ti_list)
+    def generate(self, message, dataset=None):
+        return super(StepAPI, self).generate(message)

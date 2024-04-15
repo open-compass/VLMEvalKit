@@ -1,5 +1,5 @@
-from .vlm import *
-from .api import *
+from vlmeval.vlm import *
+from vlmeval.api import *
 from functools import partial
 
 PandaGPT_ROOT = None
@@ -17,25 +17,18 @@ ungrouped = {
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'cogvlm-grounding-generalist':partial(CogVlm, name='cogvlm-grounding-generalist',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
-    'sharedcaptioner':partial(SharedCaptioner, model_path='Lin-Chen/ShareCaptioner'),
-    'emu2':partial(Emu, name='emu2'),
-    'emu2_chat':partial(Emu, name='emu2_chat'),
+    'emu2_chat':partial(Emu, model_path='BAAI/Emu2-Chat',),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
+    'MiniCPM-V2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
 }
 
 api_models = {
     'GPT4V': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GPT4V_HIGH': partial(GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Internal Only
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
-    'GPT4V_SHORT': partial(
-        GPT4V, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
-        system_prompt='Please responde to the following question / request in a short reply. '),
-    # Internal Only
-    'GPT4V_SHORT_INT': partial(
-        GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10,
-        system_prompt='Please responde to the following question / request in a short reply. '),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
@@ -86,7 +79,9 @@ yivl_series = {
 
 xcomposer_series = {
     'XComposer': partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
+    'sharecaptioner': partial(ShareCaptioner, model_path='Lin-Chen/ShareCaptioner'),
     'XComposer2': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
+    'XComposer2_4KHD': partial(XComposer2_4KHD, model_path='internlm/internlm-xcomposer2-4khd-7b'),
 }
 
 minigpt4_series = {
@@ -121,3 +116,18 @@ model_groups = [
 
 for grp in model_groups:
     supported_VLM.update(grp)
+
+transformer_ver = {}
+transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
+    'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
+] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
+transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
+    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V2', 'OmniLMM_12B'
+] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
+transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
+
+if __name__ == '__main__':
+    import sys
+    ver = sys.argv[1]
+    if ver in transformer_ver:
+        print(' '.join(transformer_ver[ver]))

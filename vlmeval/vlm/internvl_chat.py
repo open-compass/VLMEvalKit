@@ -1,19 +1,18 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, CLIPImageProcessor
 import warnings
-import os.path as osp
-from vlmeval.smp import isimg
-import re
 from PIL import Image
+from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE, CustomPrompt
+from ..utils import DATASET_TYPE
 import pandas as pd
 import string
 
 
-class InternVLChat(CustomPrompt):
+class InternVLChat(BaseModel):
 
     INSTALL_REQ = False
+    INTERLEAVE = False
 
     def __init__(self, model_path='OpenGVLab/InternVL-Chat-Chinese-V1-1', **kwargs):
         assert model_path is not None
@@ -64,9 +63,13 @@ class InternVLChat(CustomPrompt):
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
-        return {'image': tgt_path, 'text': prompt}
+        message = [dict(type='text', value=prompt)]
+        message.extend([dict(type='image', value=s) for s in tgt_path])
 
-    def generate(self, image_path, prompt, dataset=None):
+        return message
+
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         image = image.resize((self.image_size, self.image_size))
         image_processor = CLIPImageProcessor.from_pretrained(self.model_path)

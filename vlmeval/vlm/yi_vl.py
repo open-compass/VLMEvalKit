@@ -5,6 +5,8 @@ import warnings
 from PIL import Image
 from vlmeval.smp import get_cache_path, load, dump, splitlen
 from huggingface_hub import snapshot_download
+from .base import BaseModel
+
 
 """
 You can perform inference of Yi-VL through the following steps:
@@ -48,9 +50,10 @@ def disable_torch_init():
     setattr(torch.nn.LayerNorm, 'reset_parameters', lambda self: None)
 
 
-class Yi_VL:
+class Yi_VL(BaseModel):
 
     INSTALL_REQ = True
+    INTERLEAVE = False
 
     def __init__(self,
                  model_path='01-ai/Yi-VL-6B',
@@ -94,7 +97,8 @@ class Yi_VL:
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def generate(self, image_path, prompt, dataset=None):
+    def generate_inner(self, message, dataset=None):
+        prompt, image_path = self.message_to_promptimg(message)
 
         from llava.conversation import conv_templates
         from llava.model.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
