@@ -5,7 +5,8 @@ from vlmeval.smp import load_env
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 
-def build_judge(model, **kwargs):
+def build_judge(**kwargs):
+    model = kwargs.pop('model', None)
     load_env()
     LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
     if LOCAL_LLM is None:
