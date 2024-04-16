@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
     parser.add_argument('--nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
+    parser.add_argument('--judge', type=str, default=None)
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
@@ -89,36 +90,50 @@ def main():
                     )
                     continue
 
+            judge_kwargs = {
+                'nproc': args.nproc,
+                'verbose': args.verbose,
+            }
+            if args.retry is not None:
+                judge_kwargs['retry'] = args.retry
+            if args.judge is not None:
+                judge_kwargs['model'] = args.judge
+            else:
+                if DATASET_TYPE(dataset_name) in ['multi-choice', 'Y/N']:
+                    judge_kwargs['model'] = 'chatgpt-0613'
+                elif listinstr(['MMVet', 'MathVista', 'LLaVABench'], dataset_name):
+                    judge_kwargs['model'] = 'gpt-4-turbo'
+            if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
+                judge_kwargs['api_key'] = os.environ['OPENAI_API_KEY_JUDGE']
+            if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
+                judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
+
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':
                     dataset_name = 'default' if custom_flag else dataset_name
                     multiple_choice_eval(
                         result_file,
                         dataset=dataset_name,
-                        model='chatgpt-0613',
-                        nproc=args.nproc,
-                        verbose=args.verbose
-                    )
+                        judge_kwargs=judge_kwargs)
+
                 elif DATASET_TYPE(dataset_name) == 'Y/N':
                     YOrN_eval(
                         result_file,
-                        model='chatgpt-0613',
-                        nproc=args.nproc,
-                        verbose=args.verbose,
-                        dataset=dataset_name
-                    )
+                        dataset=dataset_name,
+                        judge_kwargs=judge_kwargs)
+
                 elif DATASET_TYPE(dataset_name) == 'Caption':
                     COCO_eval(result_file)
                 elif dataset_name == 'MMVet':
-                    MMVet_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
+                    MMVet_eval(result_file, judge_kwargs=judge_kwargs)
                 elif dataset_name == 'OCRBench':
                     OCRBench_eval(result_file)
                 elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA'], dataset_name):
                     VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
-                    MathVista_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
+                    MathVista_eval(result_file, judge_kwargs=judge_kwargs)
                 elif listinstr(['LLaVABench'], dataset_name):
-                    LLaVABench_eval(result_file, model='gpt-4-turbo', nproc=args.nproc, verbose=args.verbose)
+                    LLaVABench_eval(result_file, judge_kwargs=judge_kwargs)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
 

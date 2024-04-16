@@ -42,7 +42,7 @@ class OpenAIWrapper(BaseAPI):
                  system_prompt: str = None,
                  temperature: float = 0,
                  timeout: int = 60,
-                 api_base: str = 'OFFICIAL',
+                 api_base: str = None,
                  max_tokens: int = 1024,
                  img_size: int = 512,
                  img_detail: str = 'low',
@@ -73,6 +73,15 @@ class OpenAIWrapper(BaseAPI):
         )
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
+        if api_base is None:
+            if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
+                self.logger.error('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
+                api_base = os.environ['OPENAI_API_BASE']
+            else:
+                api_base = 'OFFICIAL'
+
+        assert api_base is not None
+
         if api_base in APIBASES:
             self.api_base = APIBASES[api_base]
         elif api_base.startswith('http'):
@@ -80,10 +89,6 @@ class OpenAIWrapper(BaseAPI):
         else:
             self.logger.error('Unknown API Base. ')
             sys.exit(-1)
-
-        if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
-            self.logger.error('Environment variable OPENAI_API_BASE is set. Will override the api_base arg. ')
-            self.api_base = os.environ['OPENAI_API_BASE']
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
