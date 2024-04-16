@@ -162,19 +162,19 @@ def MathVista_acc(result_file):
     return res
 
 
-def MathVista_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
+def MathVista_eval(eval_file, **judge_kwargs):
     logger = get_logger('Evaluation')
 
     suffix = eval_file.split('.')[-1]
     storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
     tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+    nproc = judge_kwargs.pop('nproc', 4)
+
     if osp.exists(storage):
         logger.warning(f'GPT scoring file {storage} already exists, will reuse it in MathVista_eval. ')
     else:
         data = load(eval_file)
-        gpt_version = model
-        model = build_judge(gpt_version, verbose=verbose, max_tokens=128, retry=10)
-
+        model = build_judge(max_tokens=128, **judge_kwargs)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
         tups = [(model, line) for line in lines]
