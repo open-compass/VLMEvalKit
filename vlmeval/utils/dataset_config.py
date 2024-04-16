@@ -31,6 +31,7 @@ dataset_URLs = {
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
     'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
+    'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
 }
 
 dataset_md5_dict = {
@@ -64,6 +65,7 @@ dataset_md5_dict = {
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
     'MMStar': '2f3da1ab455b65ac89e57b01706207b7',
+    'RealWorldQA': 'b7fc0bee84d301627cf37581ef139035',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -87,7 +89,8 @@ img_root_map.update({
     'ChartQA_TEST': 'ChartQA_TEST',
     'InfoVQA_VAL': 'InfoVQA_VAL',
     'InfoVQA_TEST': 'InfoVQA_TEST',
-    'MMStar': 'MMStar'
+    'MMStar': 'MMStar',
+    'RealWorldQA': 'RealWorldQA',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -96,7 +99,7 @@ assert set(dataset_URLs) == set(img_root_map)
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar'], dataset):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion'], dataset):
         return 'Y/N'
