@@ -20,7 +20,7 @@ This leaderboard was last updated: {}.
 # CONSTANTS-FIELDS
 META_FIELDS = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
 MAIN_FIELDS = [
-    'MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME'
+    'MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME',
     'MMMU_VAL', 'MathVista', 'HallusionBench', 'AI2D', 'OCRBench',
     'CCBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench'
 ]
