@@ -114,26 +114,26 @@ def main():
                     multiple_choice_eval(
                         result_file,
                         dataset=dataset_name,
-                        judge_kwargs=judge_kwargs)
+                        **judge_kwargs)
 
                 elif DATASET_TYPE(dataset_name) == 'Y/N':
                     YOrN_eval(
                         result_file,
                         dataset=dataset_name,
-                        judge_kwargs=judge_kwargs)
+                        **judge_kwargs)
 
                 elif DATASET_TYPE(dataset_name) == 'Caption':
                     COCO_eval(result_file)
                 elif dataset_name == 'MMVet':
-                    MMVet_eval(result_file, judge_kwargs=judge_kwargs)
+                    MMVet_eval(result_file, **judge_kwargs)
                 elif dataset_name == 'OCRBench':
                     OCRBench_eval(result_file)
                 elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA'], dataset_name):
                     VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
-                    MathVista_eval(result_file, judge_kwargs=judge_kwargs)
+                    MathVista_eval(result_file, **judge_kwargs)
                 elif listinstr(['LLaVABench'], dataset_name):
-                    LLaVABench_eval(result_file, judge_kwargs=judge_kwargs)
+                    LLaVABench_eval(result_file, **judge_kwargs)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
 
