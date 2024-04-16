@@ -167,5 +167,4 @@ class OpenAIWrapper(BaseAPI):
 class GPT4V(OpenAIWrapper):
 
     def generate(self, message, dataset=None):
-        assert self.model == 'gpt-4-vision-preview'
         return super(GPT4V, self).generate(message)
