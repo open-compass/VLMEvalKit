@@ -108,18 +108,18 @@ def MMVet_acc(result_file):
     return res, res2
 
 
-def MMVet_eval(eval_file, model='gpt-4-turbo', nproc=4, verbose=False):
+def MMVet_eval(eval_file, **judge_kwargs):
     logger = get_logger('Evaluation')
 
     suffix = eval_file.split('.')[-1]
     storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
     tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+    nproc = judge_kwargs.pop('nproc', 4)
     if osp.exists(storage):
         logger.warning(f'GPT scoring file {storage} already exists, will reuse it in MMVet_eval. ')
     else:
         data = load(eval_file)
-        gpt_version = model
-        model = build_judge(gpt_version, verbose=verbose, max_tokens=3, retry=10)
+        model = build_judge(max_tokens=3, **judge_kwargs)
 
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
