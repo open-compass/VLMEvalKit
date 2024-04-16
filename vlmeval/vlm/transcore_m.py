@@ -13,7 +13,7 @@ class TransCoreM(BaseModel):
     INTERLEAVE = False
 
     def load_pretrained_model(self, model_path, load_8bit=False, load_4bit=False, revision='main'):
-        from transcorem.model import TransCoreMLlamaForCausalLM
+        from transcorem.model import TransCoreMQWenForCausalLM
         from transcorem.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
         import transcorem.config_param as config_param
         kwargs = {'revision': revision}
@@ -33,7 +33,7 @@ class TransCoreM(BaseModel):
         config_param.model_path = model_path
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, use_fast=False, revision=revision, trust_remote_code=True)
-        model = TransCoreMLlamaForCausalLM.from_pretrained(
+        model = TransCoreMQWenForCausalLM.from_pretrained(
             model_path, low_cpu_mem_usage=True, trust_remote_code=True, **kwargs)
 
         image_processor = None
