@@ -38,7 +38,8 @@ LEADERBOARD_MD['MAIN'] = f"""
   - Avg Score: The average score on all VLM Benchmarks (normalized to 0 - 100, the higher the better). 
   - Avg Rank: The average rank on all VLM Benchmarks (the lower the better). 
 - The overall evaluation results on {len(MAIN_FIELDS)} VLM benchmarks, sorted by the ascending order of Avg Rank. 
-- The following datasets are included in the main results: {' '.join(MAIN_FIELDS)}. The detailed evaluation results for each dataset are provided in the consequent tabs. 
+  - The following datasets are included in the main results: {', '.join(MAIN_FIELDS)}. 
+  - Detailed evaluation results for each dataset (included or not included in main) are provided in the consequent tabs. 
 """
 
 for dataset in ['MMBench_DEV_CN', 'MMBench_TEST_CN', 'MMBench_DEV_EN', 'MMBench_TEST_EN', 'CCBench']:
