@@ -7,10 +7,7 @@ from ..smp import *
 from ..utils import DATASET_TYPE
 import pandas as pd
 import string
-from transformers import AutoTokenizer
-import torch
 import torchvision.transforms as T
-from PIL import Image
 
 from torchvision.transforms.functional import InterpolationMode
 
@@ -153,17 +150,17 @@ class InternVLChat(BaseModel):
         else:
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
-        if listinstr(['MME'], dataset):
+        if dataset is not None and listinstr(['MME'], dataset):
             question = line['question']
             prompt = question + ' Answer the question using a single word or phrase.'
-            if "V1-2" not in self.model_path:
+            if 'V1-2' not in self.model_path:
                 self.kwargs = dict(do_sample=True, max_new_tokens=5, top_k=50, num_beams=5, top_p=0.9)
-        elif listinstr(['HallusionBench'], dataset):
+        elif dataset is not None and listinstr(['HallusionBench'], dataset):
             question = line['question']
             prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
-        elif DATASET_TYPE(dataset) == 'multi-choice':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
             prompt = self.build_multi_choice_prompt(line, dataset)
-        elif DATASET_TYPE(dataset) == 'VQA':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             if 'MathVista' in dataset:
                 prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
@@ -173,7 +170,9 @@ class InternVLChat(BaseModel):
                 prompt = line['question']
             else:
                 question = line['question']
-                prompt = question + f'\nAnswer the question using a single word or phrase.'
+                prompt = question + '\nAnswer the question using a single word or phrase.'
+        else:
+            prompt = line['question']
 
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
@@ -182,9 +181,9 @@ class InternVLChat(BaseModel):
 
     def generate_v1_5(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
-        if listinstr(['DocVQA_TEST', 'DocVQA_VAL', 'ChartQA_TEST'], dataset):
+        if dataset is not None and listinstr(['DocVQA_TEST', 'DocVQA_VAL', 'ChartQA_TEST'], dataset):
             self.max_num = 12
-        elif listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
+        elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
             self.max_num = 24
         else:
             self.max_num = 6
@@ -206,8 +205,8 @@ class InternVLChat(BaseModel):
                                        question=prompt, generation_config=self.kwargs)
         return response
 
-    def generate(self, message, dataset=None):
-        if "V1-5" in self.model_path:
+    def generate_inner(self, message, dataset=None):
+        if 'V1-5' in self.model_path:
             return self.generate_v1_5(message, dataset)
         else:
             return self.generate_v1_2(message, dataset)
