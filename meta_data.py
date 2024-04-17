@@ -21,8 +21,8 @@ This leaderboard was last updated: {}.
 META_FIELDS = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
 MAIN_FIELDS = [
     'MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME',
-    'MMMU_VAL', 'MathVista', 'HallusionBench', 'AI2D', 'OCRBench',
-    'CCBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench'
+    'MMMU_VAL', 'MathVista', 'HallusionBench', 'AI2D', 
+    'OCRBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench'
 ]
 MMBENCH_FIELDS = ['MMBench_TEST_EN', 'MMBench_DEV_EN', 'MMBench_TEST_CN', 'MMBench_DEV_CN', 'CCBench']
 MODEL_SIZE = ['<10B', '10B-20B', '20B-40B', '>40B', 'Unknown']
@@ -31,12 +31,21 @@ MODEL_TYPE = ['API', 'OpenSource', 'Proprietary']
 # The README file for each benchmark
 LEADERBOARD_MD = {}
 
-LEADERBOARD_MD['MAIN'] = """
+LEADERBOARD_MD['MAIN'] = f"""
 ## Main Evaluation Results
 
-- Avg Score: The average score on all VLM Benchmarks (normalized to 0 - 100, the higher the better). 
-- Avg Rank: The average rank on all VLM Benchmarks (the lower the better). 
-- The overall evaluation results on 10 VLM benchmarks, sorted by the ascending order of Avg Rank. 
+- Metrics:
+  - Avg Score: The average score on all VLM Benchmarks (normalized to 0 - 100, the higher the better). 
+  - Avg Rank: The average rank on all VLM Benchmarks (the lower the better). 
+- The overall evaluation results on {len(MAIN_FIELDS)} VLM benchmarks, sorted by the ascending order of Avg Rank. 
+- The following datasets are included in the main results: {' '.join(MAIN_FIELDS)}. The detailed evaluation results for each dataset are provided in the consequent tabs. 
+"""
+
+for dataset in ['MMBench_DEV_CN', 'MMBench_TEST_CN', 'MMBench_DEV_EN', 'MMBench_TEST_EN', 'CCBench']:
+    LEADERBOARD_MD[dataset] = f"""
+## {dataset.replace('_', ' ')} Evaluation Results  
+
+- We adopt Circular Eval for benchmarks in MMBench series, you can check https://arxiv.org/pdf/2307.06281.pdf for the detailed definition of Circular Eval. 
 """
 
 LEADERBOARD_MD['SEEDBench_IMG'] = """
@@ -134,4 +143,11 @@ LEADERBOARD_MD['OCRBench'] = """
 
 - The evaluation of OCRBench is implemented by the official team: https://github.com/Yuliang-Liu/MultimodalOCR. 
 - The performance of GPT4V might be underestimated: GPT4V rejects to answer 12 percent of the questions due to the policy of OpenAI. For those questions, the returned answer is "Your input image may contain content that is not allowed by our safety system."
+"""
+
+LEADERBOARD_MD['MMStar'] = """
+## MMStar Evaluation Results
+
+- MMStar is an elite vision-indispensable multi-modal benchmark, including 1,500 challenging samples meticulously selected by humans.
+- During the evaluation of MMStar, we find that some API models may reject to answer some of the questions. Currently, we treat such cases as wrong answers when reporting the results. 
 """
