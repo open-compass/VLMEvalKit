@@ -31,6 +31,7 @@ dataset_URLs = {
     'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
     'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
+    'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
 }
 
 dataset_md5_dict = {
@@ -44,7 +45,7 @@ dataset_md5_dict = {
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
     'CORE_MM': '8a8da2f2232e79caf98415bfdf0a202d',
-    'MMVet': 'f400d7f513a585a0f218cbd6882e0671',
+    'MMVet': '748aa6d4aa9d4de798306a63718455e3',
     'COCO_VAL': '72a5079dead060269ac222c5aa5128af',
     'OCRVQA_TEST': 'ca46a6d74b403e9d6c0b670f6fc00db9',
     'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
@@ -64,6 +65,7 @@ dataset_md5_dict = {
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
     'MMStar': '2f3da1ab455b65ac89e57b01706207b7',
+    'RealWorldQA': 'b7fc0bee84d301627cf37581ef139035',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -87,7 +89,8 @@ img_root_map.update({
     'ChartQA_TEST': 'ChartQA_TEST',
     'InfoVQA_VAL': 'InfoVQA_VAL',
     'InfoVQA_TEST': 'InfoVQA_TEST',
-    'MMStar': 'MMStar'
+    'MMStar': 'MMStar',
+    'RealWorldQA': 'RealWorldQA',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -96,7 +99,7 @@ assert set(dataset_URLs) == set(img_root_map)
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar'], dataset):
+    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion'], dataset):
         return 'Y/N'

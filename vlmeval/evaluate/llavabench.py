@@ -69,17 +69,19 @@ def LLaVABench_score(data):
     return pd.DataFrame(ret)
 
 
-def LLaVABench_eval(eval_file, model='gpt-4-0314', nproc=4, verbose=False):
+def LLaVABench_eval(eval_file, **judge_kwargs):
     suffix = '.' + eval_file.split('.')[-1]
     record_file = eval_file.replace(suffix, '_openai_result' + suffix)
     score_file = eval_file.replace(suffix, '_score.csv')
+    nproc = judge_kwargs.pop('nproc', 4)
 
     if not osp.exists(record_file):
         data = load(eval_file)
         lines = [data.iloc[i] for i in range(len(data))]
         model = build_judge(
-            model, temperature=0.2, retry=10, verbose=verbose,
-            system_prompt='You are a helpful and precise assistant for checking the quality of the answer.')
+            temperature=0.2,
+            system_prompt='You are a helpful and precise assistant for checking the quality of the answer.',
+            **judge_kwargs)
         prompts = [build_prompt(line) for line in lines]
         tups = [(model, prompt) for prompt in prompts]
         scores = track_progress_rich(LLaVABench_atomeval, tups, nproc=nproc, chunksize=nproc)

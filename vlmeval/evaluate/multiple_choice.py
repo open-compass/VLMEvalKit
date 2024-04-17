@@ -233,7 +233,7 @@ def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=
     dump(result, result_file)
 
 
-def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', nproc=4, verbose=False):
+def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
     logger = get_logger('Evaluation')
 
     # assert dataset is not None
@@ -241,6 +241,7 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
         dataset = 'MMBench_CN'
     elif dataset == 'MMBench_TEST_EN':
         dataset = 'MMBench'
+    nproc = judge_kwargs.pop('nproc', 4)
 
     if listinstr(['mmbench', 'ccbench'], dataset.lower()):
         data = load(eval_file)
@@ -249,6 +250,7 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
 
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
+    model = judge_kwargs['model']
     assert model in ['chatgpt-0613', 'exact_matching', 'gpt-4-0125']
     name_str_map = {
         'chatgpt-0613': 'openai',
@@ -260,7 +262,7 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
         model = None
     else:
         if INTERNAL or gpt_key_set():
-            model = build_judge(model, verbose=verbose, retry=10)
+            model = build_judge(**judge_kwargs)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
@@ -282,14 +284,15 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
     else:
         logger.warning('Dataset is not provided, try to use the original `eval_file` as meta data. ')
         meta = load(eval_file)
-        assert 'category' in meta and 'index' in meta and 'answer' in meta, (
-            'Essentail columns missing in the eval_file.')
+        assert 'index' in meta and 'answer' in meta, 'Essentail columns missing in the eval_file.'
 
-    cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
+    cate_map = {i: c for i, c in zip(meta['index'], meta['category'])} if 'category' in meta else None
     l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])} if 'l2-category' in meta else None
     split_map = {i: c for i, c in zip(meta['index'], meta['split'])} if 'split' in meta else None
 
+    if cate_map is not None and np.all([pd.isna(x) for x in cate_map.values()]):
+        cate_map = None
     if l2_cate_map is not None and np.all([pd.isna(x) for x in l2_cate_map.values()]):
         l2_cate_map = None
     if split_map is not None and np.all([pd.isna(x) for x in split_map.values()]):
@@ -343,7 +346,8 @@ def multiple_choice_eval(eval_file, dataset='default', model='chatgpt-0613', npr
     data_main['log'] = [res[i]['log'] for i in indices]
 
     main_idx = data_main['index']
-    data_main['category'] = [cate_map[i] for i in main_idx]
+    if cate_map is not None:
+        data_main['category'] = [cate_map[i] for i in main_idx]
     if l2_cate_map is not None:
         data_main['l2-category'] = [l2_cate_map[i] for i in main_idx]
     if split_map is not None:

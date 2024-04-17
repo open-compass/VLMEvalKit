@@ -165,12 +165,13 @@ def YOrN_auxeval(model, line):
     return 'Unknown'
 
 
-def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=None):
+def YOrN_eval(eval_file, dataset=None, **judge_kwargs):
     logger = get_logger('Evaluation')
     data = load(eval_file)
     data['prediction'] = [str(x) for x in data['prediction']]
     storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')
     tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+    nproc = judge_kwargs.pop('nproc', 4)
 
     if not osp.exists(storage):
         ans_map = {k: YOrN_Extraction(v) for k, v in zip(data['index'], data['prediction'])}
@@ -183,10 +184,8 @@ def YOrN_eval(eval_file, model='chatgpt-0613', nproc=4, verbose=False, dataset=N
         data['extracted'] = [ans_map[x] for x in data['index']]
         unknown = data[data['extracted'] == 'Unknown']
 
-        model_name = 'chatgpt-0613'
-
         if INTERNAL or gpt_key_set():
-            model = build_judge(model_name, verbose=verbose, retry=10)
+            model = build_judge(**judge_kwargs)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
