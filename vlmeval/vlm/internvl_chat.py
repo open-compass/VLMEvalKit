@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, CLIPImageProcessor
+from transformers import AutoTokenizer, AutoModel, CLIPImageProcessor
 import warnings
 from PIL import Image
 from .base import BaseModel
