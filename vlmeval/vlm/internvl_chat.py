@@ -191,6 +191,7 @@ class InternVLChat(BaseModel):
         with torch.no_grad():
             response = self.model.chat(self.tokenizer, pixel_values=pixel_values,
                                        question=prompt, generation_config=self.kwargs)
+        response = response.split('[UNUSED_TOKEN_145]')[0]
         return response
 
     def generate_v1_2(self, message, dataset=None):
