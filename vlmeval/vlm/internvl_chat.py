@@ -148,10 +148,16 @@ class InternVLChat(BaseModel):
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
 
+        if 'V1-1' in self.model_path:
+            kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=5)
+        else:
+            kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+        self.kwargs = kwargs_default
         if listinstr(['MME'], dataset):
             question = line['question']
             prompt = question + ' Answer the question using a single word or phrase.'
-            self.kwargs = dict(do_sample=True, max_new_tokens=5, top_k=50, num_beams=5, top_p=0.9)
+            if "V1-2" not in self.model_path:
+                self.kwargs = dict(do_sample=True, max_new_tokens=5, top_k=50, num_beams=5, top_p=0.9)
         elif listinstr(['HallusionBench'], dataset):
             question = line['question']
             prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
