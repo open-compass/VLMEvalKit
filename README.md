@@ -87,7 +87,7 @@ VLMEvalKit will use an **judge LLM** to extract answer from the output if you se
 
 🚅: Model can be used without any additional configuration / operation.
 
-**Transformers Version Recommendation: **
+**Transformers Version Recommendation:**
 
 Note that some VLMs may not be able to run under certain transformer versions, we recommend the following settings to evaluate each VLM:
 
