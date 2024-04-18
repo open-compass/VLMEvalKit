@@ -30,6 +30,7 @@ api_models = {
     'GPT4V_20240409': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_20240409_HIGH': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
+    'DifyVision': partial(DifyVision, temperature=0, retry=10),
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
     # Internal Only
@@ -110,7 +111,7 @@ deepseekvl_series = {
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, api_models, 
+    ungrouped, api_models,
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series
