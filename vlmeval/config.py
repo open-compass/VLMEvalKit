@@ -83,6 +83,7 @@ xcomposer_series = {
     'XComposer': partial(XComposer, model_path='internlm/internlm-xcomposer-vl-7b'),
     'sharecaptioner': partial(ShareCaptioner, model_path='Lin-Chen/ShareCaptioner'),
     'XComposer2': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
+    'XComposer2_1.8b': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-1_8b'),
     'XComposer2_4KHD': partial(XComposer2_4KHD, model_path='internlm/internlm-xcomposer2-4khd-7b'),
 }
 
