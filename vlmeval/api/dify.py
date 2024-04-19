@@ -42,13 +42,10 @@ class DifyWrapper(BaseAPI):
                 image = self.upload(inp['value'])
         return text, image
 
-    def upload(self, file_path):
+    def upload(self, value):
         file_name = f"{int(time.time() * 1000)}.jpeg"
         mime_type = "image/jpeg"
-        if '.' in file_path:
-            file = open(file_path, "rb")
-        else:
-            file = BytesIO(base64.b64decode(file_path))
+        file = open(value, "rb")
         files = {
             "file": (file_name, file, mime_type)
         }
