@@ -64,7 +64,7 @@ dataset_md5_dict = {
     'LLaVABench': 'd382a093f749a697820d3dadd61c8428',
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
-    'MMStar': '2f3da1ab455b65ac89e57b01706207b7',
+    'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
     'RealWorldQA': 'b7fc0bee84d301627cf37581ef139035',
 }
 
