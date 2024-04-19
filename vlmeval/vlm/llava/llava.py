@@ -93,8 +93,8 @@ class LLaVA(BaseModel):
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
-        message = [dict(type='text', value=prompt)]
-        message.extend([dict(type='image', value=s) for s in tgt_path])
+        message = [dict(type='image', value=s) for s in tgt_path]
+        message.append(dict(type='text', value=prompt))
         return message
 
     def generate_inner(self, message, dataset=None):
@@ -191,13 +191,8 @@ class LLaVA_Next(BaseModel):
             )
         else:
             raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
-        content = ''
-        for s in message:
-            if s['type'] == 'text':
-                content += s['value']
-            elif s['type'] == 'image':
-                content += '<image>\n'
-        prompt = template.replace('PLACEHOLDER', content)
+
+        prompt = template.replace('PLACEHOLDER', f'<image>\n{prompt}')
         return prompt
 
     def use_custom_prompt(self, dataset):
@@ -232,19 +227,20 @@ class LLaVA_Next(BaseModel):
             )
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
-        message = [dict(type='text', value=prompt)]
-        message.extend([dict(type='image', value=s) for s in tgt_path])
+        message = [dict(type='image', value=s) for s in tgt_path]
+        message.append(dict(type='text', value=prompt))
         return message
 
     def generate_inner(self, message, dataset=None):
-        images = [Image.open(s['value']) for s in message if s['type'] == 'image']
-        if len(images) > 1:
-            # may need to unify the image size
-            images = [image.resize((512, 512)) for image in images]
+        prompt, image_path = self.message_to_promptimg(message)
+        prompt = prompt.replace('<image>', '[ImageHere]')
+        if prompt.find('[ImageHere]') != prompt.rfind('[ImageHere]'):
+            prompt += '\nThere exists multiple images in the conversation, but only the first one is displayed.'
 
-        prompt = self.apply_prompt_template(message)
+        image = Image.open(image_path).convert('RGB')
+        prompt = self.apply_prompt_template(prompt)
 
-        inputs = self.processor(prompt, images, return_tensors='pt').to('cuda')
+        inputs = self.processor(prompt, image, return_tensors='pt').to('cuda')
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         if '<s>' in answer:
