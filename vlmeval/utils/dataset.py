@@ -26,18 +26,23 @@ def check_md5(data_path, dataset):
         return False
 
 
-def split_MMMU(struct):
-    assert 'image' in struct and 'text' in struct
-    text, images = struct['text'], struct['image']
+def split_MMMU(msgs):
+    text, images = None, []
+    for s in msgs:
+        if s['type'] == 'image':
+            images.append(s['value'])
+        elif s['type'] == 'text':
+            assert text is None
+            text = s['value']
     text_segs = text.split('<image ')
-    segs = [text_segs[0]]
+    segs = [dict(type='text', value=text_segs[0])]
     for i, seg in enumerate(text_segs):
         if i == 0:
             continue
         assert istype(seg[0], int) and seg[1] == '>'
         image_idx = int(seg[0]) - 1
-        segs.append(images[image_idx])
-        segs.append(seg[2:])
+        segs.append(dict(type='image', value=images[image_idx]))
+        segs.append(dict(type='text', value=seg[2:]))
     return segs
 
 
@@ -164,6 +169,9 @@ class TSVDataset(CustomPrompt):
         else:
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=prompt))
+
+        if listinstr(['MMMU'], dataset):
+            msgs = split_MMMU(msgs)
         return msgs
 
     def display(self, line):
