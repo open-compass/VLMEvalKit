@@ -238,6 +238,10 @@ class LLaVA_Next(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         images = [Image.open(s['value']) for s in message if s['type'] == 'image']
+        if len(images) > 1:
+            # may need to unify the image size
+            images = [image.resize((512, 512)) for image in images]
+
         prompt = self.apply_prompt_template(message)
 
         inputs = self.processor(prompt, images, return_tensors='pt').to('cuda')
