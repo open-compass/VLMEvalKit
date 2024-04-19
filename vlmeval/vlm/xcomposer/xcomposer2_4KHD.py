@@ -216,11 +216,7 @@ class XComposer2_4KHD(BaseModel):
         tgt_path = self.dump_image(line, dataset)
 
         if DATASET_TYPE(dataset) == 'multi-choice':
-            if 'mmstar' in dataset.lower():
-                q = line['question']
-                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\nThe answer is'
-            else:
-                prompt = self.build_mcqa(line)
+            prompt = self.build_mcqa(line)
         elif DATASET_TYPE(dataset) == 'VQA':
             if 'mathvista' in dataset.lower():
                 q = line['question']
