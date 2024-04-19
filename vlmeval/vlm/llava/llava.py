@@ -93,8 +93,8 @@ class LLaVA(BaseModel):
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
-        message = [dict(type='text', value=prompt)]
-        message.extend([dict(type='image', value=s) for s in tgt_path])
+        message = [dict(type='image', value=s) for s in tgt_path]
+        message.append([dict(type='text', value=prompt)])
         return message
 
     def generate_inner(self, message, dataset=None):
@@ -232,8 +232,8 @@ class LLaVA_Next(BaseModel):
             )
         else:
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
-        message = [dict(type='text', value=prompt)]
-        message.extend([dict(type='image', value=s) for s in tgt_path])
+        message = [dict(type='image', value=s) for s in tgt_path]
+        message.append([dict(type='text', value=prompt)])
         return message
 
     def generate_inner(self, message, dataset=None):
