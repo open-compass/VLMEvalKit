@@ -11,7 +11,7 @@ from ...utils import DATASET_TYPE
 class LLaVA(BaseModel):
 
     INSTALL_REQ = True
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self,
                  model_pth='liuhaotian/llava_v1.5_7b',
@@ -102,20 +102,29 @@ class LLaVA(BaseModel):
         from llava.constants import (
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from llava.conversation import conv_templates, SeparatorStyle
-        prompt, image_path = self.message_to_promptimg(message)
-        image = Image.open(image_path).convert('RGB')
-        args = abstractproperty()
-        args.image_aspect_ratio = 'pad'
-        image_tensor = process_images([image], self.image_processor, args).to('cuda', dtype=torch.float16)
-        if self.model.config.mm_use_im_start_end:
-            inp = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + prompt
-        else:
-            inp = DEFAULT_IMAGE_TOKEN + '\n' + prompt
 
+        # Support interleave text and image
         conv = conv_templates[self.conv_mode].copy()
-        conv.append_message(conv.roles[0], inp)
+        conv.append_message(conv.roles[0], 'PLACEHOLDER')
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
+
+        content, images = '', []
+        for msg in message:
+            if msg['type'] == 'text':
+                content += msg['value']
+            elif msg['type'] == 'image':
+                if self.model.config.mm_use_im_start_end:
+                    content += DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n'
+                else:
+                    content += DEFAULT_IMAGE_TOKEN + '\n'
+                images.append(msg['value'])
+
+        images = [Image.open(s).convert('RGB') for s in images]
+        args = abstractproperty()
+        args.image_aspect_ratio = 'pad'
+        image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
+        prompt = prompt.replace('PLACEHOLDER', content)
 
         input_ids = tokenizer_image_token(
             prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
@@ -133,7 +142,7 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
@@ -165,24 +174,31 @@ class LLaVA_Next(BaseModel):
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def apply_prompt_template(self, prompt):
+    def apply_prompt_template(self, message):
         model_pth = self.model_pth.lower()
         if 'mistral' in model_pth:
-            s = f'[INST] <image>\n {prompt} [/INST]'
+            template = '[INST] PLACEHOLDER [/INST]'
         elif 'vicuna' in model_pth:
-            s = (
+            template = (
                 'A chat between a curious human and an artificial intelligence assistant. '
                 "The assistant gives helpful, detailed, and polite answers to the human's questions. "
-                f'USER: <image>\n{prompt} ASSISTANT:'
+                'USER: PLACEHOLDER ASSISTANT:'
             )
         elif '34b' in model_pth:
-            s = (
-                f'<|im_start|>system\nAnswer the questions.<|im_end|><|im_start|>user\n<image>\n{prompt}<|im_end|>'
+            template = (
+                '<|im_start|>system\nAnswer the questions.<|im_end|><|im_start|>user\nPLACEHOLDER<|im_end|>'
                 '<|im_start|>assistant\n'
             )
         else:
             raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
-        return s
+        content = ''
+        for s in message:
+            if s['type'] == 'text':
+                content += s['value']
+            elif s['type'] == 'image':
+                content += '<image>\n'
+        prompt = template.replace('PLACEHOLDER', content)
+        return prompt
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -221,10 +237,14 @@ class LLaVA_Next(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
-        image = Image.open(image_path)
-        prompt_wtmpl = self.apply_prompt_template(prompt)
-        inputs = self.processor(prompt_wtmpl, image, return_tensors='pt').to('cuda')
+        images = [Image.open(s['value']) for s in message if s['type'] == 'image']
+        if len(images) > 1:
+            # may need to unify the image size
+            images = [image.resize((512, 512)) for image in images]
+
+        prompt = self.apply_prompt_template(message)
+
+        inputs = self.processor(prompt, images, return_tensors='pt').to('cuda')
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         if '<s>' in answer:
