@@ -142,7 +142,7 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = True
+    INTERLEAVE = False
 
     def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
@@ -174,7 +174,7 @@ class LLaVA_Next(BaseModel):
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def apply_prompt_template(self, message):
+    def apply_prompt_template(self, prompt):
         model_pth = self.model_pth.lower()
         if 'mistral' in model_pth:
             template = '[INST] PLACEHOLDER [/INST]'
@@ -191,13 +191,8 @@ class LLaVA_Next(BaseModel):
             )
         else:
             raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
-        content = ''
-        for s in message:
-            if s['type'] == 'text':
-                content += s['value']
-            elif s['type'] == 'image':
-                content += '<image>\n'
-        prompt = template.replace('PLACEHOLDER', content)
+
+        prompt = template.replace('PLACEHOLDER', f'<image>\n{prompt}')
         return prompt
 
     def use_custom_prompt(self, dataset):
@@ -237,14 +232,11 @@ class LLaVA_Next(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        images = [Image.open(s['value']) for s in message if s['type'] == 'image']
-        if len(images) > 1:
-            # may need to unify the image size
-            images = [image.resize((512, 512)) for image in images]
+        prompt, image_path = self.message_to_promptimg(message)
+        image = Image.open(image_path).convert('RGB')
+        prompt = self.apply_prompt_template(prompt)
 
-        prompt = self.apply_prompt_template(message)
-
-        inputs = self.processor(prompt, images, return_tensors='pt').to('cuda')
+        inputs = self.processor(prompt, image, return_tensors='pt').to('cuda')
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         if '<s>' in answer:
