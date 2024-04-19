@@ -164,6 +164,7 @@ def MathVista_acc(result_file):
 
 def MathVista_eval(eval_file, **judge_kwargs):
     logger = get_logger('Evaluation')
+    model = judge_kwargs['model']
 
     suffix = eval_file.split('.')[-1]
     storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')

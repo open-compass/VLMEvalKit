@@ -104,7 +104,7 @@ def main():
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
-                judge_kwargs['api_key'] = os.environ['OPENAI_API_KEY_JUDGE']
+                judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
             if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
                 judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
 

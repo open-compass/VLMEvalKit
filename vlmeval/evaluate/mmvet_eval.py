@@ -112,6 +112,7 @@ def MMVet_eval(eval_file, **judge_kwargs):
     logger = get_logger('Evaluation')
 
     suffix = eval_file.split('.')[-1]
+    model = judge_kwargs['model']
     storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
     tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
     nproc = judge_kwargs.pop('nproc', 4)
