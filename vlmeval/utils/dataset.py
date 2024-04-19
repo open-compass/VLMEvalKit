@@ -170,8 +170,6 @@ class TSVDataset(CustomPrompt):
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=prompt))
 
-        if listinstr(['MMMU'], dataset):
-            msgs = split_MMMU(msgs)
         return msgs
 
     def display(self, line):
