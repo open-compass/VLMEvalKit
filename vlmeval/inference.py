@@ -33,6 +33,10 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     lt, indices = len(data), list(data['index'])
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
 
+    # Corner Case
+    if listinstr(['MMMU'], dataset_name):
+        structs = [split_MMMU(s) for s in structs]
+
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
     if osp.exists(out_file):
@@ -118,6 +122,10 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
+        # Corner Case
+        if listinstr(['MMMU'], dataset_name):
+            struct = split_MMMU(struct)
+
         # For now, we do not use split_MMMU for MMMU dataset
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
@@ -134,6 +142,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
     return model
 
 
+# A wrapper for infer_data, do the pre & post processing
 def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
