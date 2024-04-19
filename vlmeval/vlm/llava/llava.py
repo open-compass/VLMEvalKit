@@ -142,7 +142,7 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
@@ -174,7 +174,7 @@ class LLaVA_Next(BaseModel):
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def apply_prompt_template(self, prompt):
+    def apply_prompt_template(self, message):
         model_pth = self.model_pth.lower()
         if 'mistral' in model_pth:
             template = '[INST] PLACEHOLDER [/INST]'
