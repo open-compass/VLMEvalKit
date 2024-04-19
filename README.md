@@ -20,7 +20,7 @@
 
 ## 🆕 News
 
-- **[2024-03-22]** We have supported [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
+- **[2024-04-17]** We have supported [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
 - **[2024-04-15]** We have supported [**RealWorldQA**](https://x.ai/blog/grok-1.5v), a multimodal benchmark for real-world spatial understanding 🔥🔥🔥
 - **[2024-04-09]** We have refactored the inference interface of VLMs to a more unified version, check [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) for more details
 - **[2024-04-09]** We have supported [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), a challenging vision-indispensable multimodal benchmark. The full evaluation results will be released soon 🔥🔥🔥
