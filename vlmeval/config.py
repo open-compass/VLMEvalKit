@@ -96,6 +96,7 @@ minigpt4_series = {
 idefics_series = {
     'idefics_9b_instruct': partial(IDEFICS, model_pth='HuggingFaceM4/idefics-9b-instruct'),
     'idefics_80b_instruct': partial(IDEFICS, model_pth='HuggingFaceM4/idefics-80b-instruct'),
+    'idefics2_8b': partial(IDEFICS2, model_path='HuggingFaceM4/idefics2-8b'),
 }
 
 instructblip_series = {
