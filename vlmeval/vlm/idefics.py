@@ -70,14 +70,11 @@ class IDEFICS2(BaseModel):
                 prompt += '<image>'
             elif msg['type'] == 'text':
                 prompt += msg['value']
-        prompt = f'User: {prompt}<end_of_utterance> \nAssistant:'
-        print(prompt)
-        inputs = self.processor(text=prompt, images=[images], return_tensors='pt')
+        prompt = f'User:{prompt}<end_of_utterance>\nAssistant:'
+        inputs = self.processor(text=prompt, images=images, return_tensors='pt')
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
 
         generated_ids = self.model.generate(**inputs, **self.kwargs)
-        generated_text = (
-            self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
-            .split('\nAssistant: ')[-1]
-        )
-        return generated_text
+        generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+        response = generated_text.split('\nAssistant:')[-1].strip()
+        return response
