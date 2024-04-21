@@ -1,3 +1,4 @@
+import os
 import torch
 from PIL import Image
 import os.path as osp
@@ -20,13 +21,15 @@ class Emu(BaseModel):
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
-        local_rank, world_size = get_rank_and_world_size()
+        local_rank = os.environ.get('LOCAL_RANK', 0)
 
         device_num = torch.cuda.device_count()
-        assert world_size * 2 <= device_num, 'The number of devices does not match the world size'
+        assert local_rank * 2 <= device_num, 'The number of devices does not match the world size'
+        assert device_num >= 2, 'You need at least 2 GPUs to use EMU'
 
         device_1 = local_rank
-        device_2 = local_rank + world_size
+        device_2 = local_rank + device_num // 2
+
         torch.cuda.set_device(device_1)
         torch.cuda.set_device(device_2)
 

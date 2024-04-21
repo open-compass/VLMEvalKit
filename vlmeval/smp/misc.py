@@ -96,9 +96,9 @@ def proxy_set(s):
         os.environ[key] = s
 
 def get_rank_and_world_size():
-    local_rank = int(os.environ.get('LOCAL_RANK', 0))
+    rank = int(os.environ.get('RANK', 0))
     world_size = int(os.environ.get('WORLD_SIZE', 1))
-    return local_rank, world_size
+    return rank, world_size
 
 def splitlen(s, sym='/'):
     return len(s.split(sym))
