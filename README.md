@@ -20,6 +20,7 @@
 
 ## 🆕 News
 
+- **[2024-04-21]** We have notices a minor issue of the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly 
 - **[2024-04-17]** We have supported [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
 - **[2024-04-15]** We have supported [**RealWorldQA**](https://x.ai/blog/grok-1.5v), a multimodal benchmark for real-world spatial understanding 🔥🔥🔥
 - **[2024-04-09]** We have refactored the inference interface of VLMs to a more unified version, check [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) for more details
@@ -29,7 +30,6 @@
 - **[2024-03-22]** We have supported [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
 - **[2024-03-21]** We have supported [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main) 🔥🔥🔥
 - **[2024-03-20]** We have supported users to use a `.env` file to manage all environment variables used in VLMEvalKit, see [**Quickstart**](\Quickstart.md) for more details
-- **[2024-03-17]** We have added an API wrapper for [**Step-1V**](https://www.stepfun.com/#step1v) 🔥🔥🔥
 
 
 ## 📊 Datasets, Models, and Evaluation Results
