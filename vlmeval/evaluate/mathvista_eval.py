@@ -95,7 +95,7 @@ def post_check(line, prefetch=False):
         pass
 
     if res == ans:
-        return res
+        return res if prefetch else True
     else:
         return False
 
