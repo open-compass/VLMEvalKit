@@ -142,7 +142,7 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = True
+    INTERLEAVE = False
 
     def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
