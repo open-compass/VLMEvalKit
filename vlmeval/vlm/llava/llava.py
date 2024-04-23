@@ -174,7 +174,7 @@ class LLaVA_Next(BaseModel):
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def apply_prompt_template(self, message):
+    def apply_prompt_template(self, prompt):
         model_pth = self.model_pth.lower()
         if 'mistral' in model_pth:
             template = '[INST] PLACEHOLDER [/INST]'
