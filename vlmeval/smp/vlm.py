@@ -10,7 +10,7 @@ from PIL import Image
 from .file import load, dump
 
 
-def mmqa_display(question):
+def mmqa_display(question, target_size=512):
     question = {k.lower(): v for k, v in question.items()}
     keys = list(question.keys())
     keys = [k for k in keys if k not in ['index', 'image']]
@@ -23,7 +23,7 @@ def mmqa_display(question):
     print(f'INDEX: {idx}')
 
     for im in images:
-        image = decode_base64_to_image(im, target_size=512)
+        image = decode_base64_to_image(im, target_size=target_size)
         display(image)  # noqa: F821
 
     for k in keys:
