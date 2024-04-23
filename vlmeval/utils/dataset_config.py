@@ -65,7 +65,7 @@ dataset_md5_dict = {
     'OCRBench': 'e953d98a987cc6e26ef717b61260b778',
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
     'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
-    'RealWorldQA': '878cdd2999abd521ff17881a06d85730',
+    'RealWorldQA': '92321028d2bc29040284b6674721e48f',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
