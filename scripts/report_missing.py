@@ -2,6 +2,10 @@ from vlmeval.smp import *
 from vlmeval.config import supported_VLM
 
 logger = get_logger('Report Missing')
+SKIP_MODELS = [
+    'InternVL-Chat-V1-1', 'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 
+    'MiniGPT-4-v1-13B', 'instructblip_13b'
+]
 
 ESSENTIAL = [
     ('MME', 'score.csv'), ('SEEDBench_IMG', 'acc.csv'), ('MMBench', 'acc.csv'), 
@@ -32,7 +36,7 @@ def completed(m, d, suf):
 for f in models:
     if not osp.exists(f):
         logger.info(f'{f} not evaluated. ')
-models = [x for x in models if osp.exists(x)]
+models = [x for x in models if osp.exists(x) and x not in SKIP_MODELS]
 
 logger.info(colored('Essential Datasets: ', 'red'))
 
