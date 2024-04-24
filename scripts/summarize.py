@@ -35,7 +35,7 @@ def get_score(model, dataset):
                 ret['MMBench_DEV_CN'] = a * 100
             elif n == 'test':
                 ret['MMBench_TEST_CN'] = a * 100
-    elif listinstr(['SEEDBench', 'ScienceQA', 'MMBench', 'AI2D_TEST'], dataset):
+    elif listinstr(['SEEDBench', 'ScienceQA', 'MMBench', 'AI2D_TEST', 'MMStar', 'RealWorldQA'], dataset):
         ret[dataset] = data['Overall'][0] * 100
     elif 'MME' == dataset:
         ret[dataset] = data['perception'][0] + data['reasoning'][0]
