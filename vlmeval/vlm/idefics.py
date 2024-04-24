@@ -70,7 +70,7 @@ class IDEFICS2(BaseModel):
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
         return inputs
 
-    def build_prompt_default(self, message, add_brief=False):
+    def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False):
         prompt, images = "User:", []
         for msg in message:
             if msg['type'] == 'image':
@@ -81,10 +81,17 @@ class IDEFICS2(BaseModel):
                 prompt += msg['value'].strip()
         if add_brief:
             prompt += "\nGive a very brief answer."
+        if add_yes_or_no:
+            prompt += "\nAnswer yes or no."
         prompt += "<end_of_utterance>\nAssistant:"
         return prompt, images
 
     def build_prompt_puremcq(self, message):
+        replace_mapping = {
+            "\nOptions:": "\nChoices:",
+            "Please select the correct answer from the options above.": "Answer with the letter."
+        }
+
         prompt, images = "User:", []
         for msg in message:
             if msg['type'] == 'image':
@@ -93,15 +100,44 @@ class IDEFICS2(BaseModel):
                 prompt += '<image>'
             elif msg['type'] == 'text':
                 instruction = msg['value'].strip()
-                instruction = instruction.replace(
-                    "Please select the correct answer from the options above.",
-                    "Answer with the letter."
-                )
+                for k, v in replace_mapping.items():
+                    instruction = instruction.replace(k, v)
+                prompt += instruction
+        prompt += "<end_of_utterance>\nAssistant: Answer:"
+        return prompt, images
+
+    def build_prompt_mmbench(self, message):
+        replace_mapping = {
+            "\nOptions:": "\nChoices:",
+            "Please select the correct answer from the options above.": "Answer with a letter."
+        }
+
+        prompt, images = "User:", []
+        for msg in message:
+            if msg['type'] == 'image':
+                img = load_image(msg['value'])
+                images.append(img)
+                prompt += '<image>'
+            elif msg['type'] == 'text':
+                instruction = msg['value'].strip()
+                for k, v in replace_mapping.items():
+                    instruction = instruction.replace(k, v)
+                # Swap hint and question
+                if "Hint:" in instruction:
+                    hint, question = instruction.split("\nQuestion:")
+                    question, choices = question.split("\nChoices:")
+                    instruction = "Question:" + question + "\n" + hint + "\nChoices:" + choices
                 prompt += instruction
         prompt += "<end_of_utterance>\nAssistant: Answer:"
         return prompt, images
 
     def build_prompt_mmmu(self, message):
+        replace_mapping = {
+            "Question:": "",
+            "Please select the correct answer from the options above.": "Answer with the letter.",
+            "\nOptions:": "\nChoices:",
+        }
+
         prompt, images, img_counter = "User: Question: ", [], 1
         for msg in message:
             if msg['type'] == 'image':
@@ -113,23 +149,32 @@ class IDEFICS2(BaseModel):
             if msg['type'] == 'image':
                 img = load_image(msg['value'])
                 images.append(img)
-                prompt += f'<image {img_counter}> '
+                prompt += f' <image {img_counter}> '
                 img_counter += 1
             elif msg['type'] == 'text':
                 instruction = msg['value'].strip()
-                instruction = instruction.replace(
-                    "Question:",
-                    ""
-                )
-                instruction = instruction.replace(
-                    "Please select the correct answer from the options above.",
-                    "Answer with the letter."
-                )
+                for k, v in replace_mapping.items():
+                    instruction = instruction.replace(k, v)
                 prompt += instruction.strip()
         prompt += "<end_of_utterance>\nAssistant:"
+        if "A." in prompt and "B." in prompt:
+            prompt += " Answer:"
         return prompt, images
 
     def build_prompt_mathvista(self, message):
+        replace_mapping = {
+            "(A) ": "A. ",
+            "(B) ": "B. ",
+            "(C) ": "C. ",
+            "(D) ": "D. ",
+            "(E) ": "E. ",
+            "(F) ": "F. ",
+            "(G) ": "G. ",
+            "(H) ": "H. ",
+            "\nOptions:": "\nChoices:",
+            "Hint: ": "",
+        }
+
         prompt, images = "User:", []
         for msg in message:
             if msg['type'] == 'image':
@@ -138,46 +183,34 @@ class IDEFICS2(BaseModel):
                 prompt += '<image>'
             elif msg['type'] == 'text':
                 instruction = msg['value'].strip()
-                instruction = instruction.replace(
-                    "Hint: ",
-                    ""
-                )
-                prompt += instruction
+                for k, v in replace_mapping.items():
+                    instruction = instruction.replace(k, v)
+                prompt += instruction.strip()
         prompt += "<end_of_utterance>\nAssistant:"
+        if "A." in prompt and "B." in prompt:
+            prompt += " Answer:"
         return prompt, images
 
     def generate_inner(self, message, dataset=None):
-        if dataset == "MMBench_TEST_EN":
-            formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset == "MMBench_TEST_CN":
-            formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset == "MME":
-            formatted_messages, formatted_images = self.build_prompt_default(message, add_brief=True)
-        elif dataset == "MMStar":
-            formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset == "MMMU_DEV_VAL":
+        if dataset in ["MMBench_DEV_EN", "MMBench_TEST_EN", "MMBench_DEV_CN", "MMBench_TEST_CN", "MMBench", "MMBench_CN"]:
+            formatted_messages, formatted_images = self.build_prompt_mmbench(message)
+        elif dataset in ["MMMU_DEV_VAL", "MMMU_TEST"]:
             formatted_messages, formatted_images = self.build_prompt_mmmu(message)
-        elif dataset == "MathVista_MINI":
+        elif dataset in ["MathVista_MINI"]:
             formatted_messages, formatted_images = self.build_prompt_mathvista(message)
-        elif dataset == "HallusionBench":
-            formatted_messages, formatted_images = self.build_prompt_default(message)
-        elif dataset == "AI2D_TEST":
-            formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset == "OCRBench":
-            formatted_messages, formatted_images = self.build_prompt_default(message)
-        elif dataset == "SEEDBench_IMG":
-            formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif dataset == "MMVet":
+        elif dataset in ["MME", "MMVet", "OCRVQA_TEST", "OCRVQA_TESTCORE", "TextVQA_VAL", "ChartQA_TEST", "DocVQA_VAL", "DocVQA_TEST", "InfoVQA_VAL", "InfoVQA_TEST"]:
             formatted_messages, formatted_images = self.build_prompt_default(message, add_brief=True)
-        elif dataset == "LLaVABench":
-            formatted_messages, formatted_images = self.build_prompt_default(message)
+        elif dataset == "HallusionBench":
+            formatted_messages, formatted_images = self.build_prompt_default(message, add_yes_or_no=True)
+        elif dataset in ["MMStar", "SEEDBench_IMG", "AI2D_TEST", "ScienceQA_VAL", "ScienceQA_TEST"]:
+            formatted_messages, formatted_images = self.build_prompt_puremcq(message)
         else:
-            raise ValueError("Unknown dataset.")
+            formatted_messages, formatted_images = self.build_prompt_default(message)
 
         inputs = self._process(formatted_messages, formatted_images)
 
         generated_ids = self.model.generate(**inputs, **self.kwargs)
         generated_text = self.processor.batch_decode(generated_ids[:, inputs["input_ids"].size(1):], skip_special_tokens=True)[0]
         response = generated_text.strip()
-        print(dataset, " | ", formatted_messages.replace("\n", "\\n"), " | ", response)
+        # print(dataset, " | ", formatted_messages.replace("\n", "\\n"), " | ", response.replace("\n", "\\n"))
         return response
