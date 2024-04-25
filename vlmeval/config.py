@@ -25,13 +25,20 @@ ungrouped = {
 }
 
 api_models = {
+    # GPT-4V series
     'GPT4V': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_HIGH': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GPT4V_20240409': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_20240409_HIGH': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=-1, img_detail='high', retry=10),
+    # Gemini-V
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
+    # Qwen-VL Series
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
+    # Reka Series
+    'RekaEdge': partial(Reka, model='reka-edge-20240208'), 
+    'RekaFlash': partial(Reka, model='reka-flash-20240226'), 
+    'RekaCore': partial(Reka, model='reka-core-20240415'), 
     # Internal Only
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'Step1V': partial(Step1V, temperature=0, retry=10),
