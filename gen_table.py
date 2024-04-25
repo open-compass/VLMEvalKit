@@ -88,7 +88,8 @@ def BUILD_L1_DF(results, fields):
         res['Avg Rank'].append(round(np.mean(ranks), 2))
 
     df = pd.DataFrame(res)
-    df = df.sort_values('Avg Rank')
+    df = df.sort_values('Avg Score')
+    df = df.iloc[::-1]
 
     check_box = {}
     check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']

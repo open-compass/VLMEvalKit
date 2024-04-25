@@ -37,7 +37,7 @@ LEADERBOARD_MD['MAIN'] = f"""
 - Metrics:
   - Avg Score: The average score on all VLM Benchmarks (normalized to 0 - 100, the higher the better). 
   - Avg Rank: The average rank on all VLM Benchmarks (the lower the better). 
-- The overall evaluation results on {len(MAIN_FIELDS)} VLM benchmarks, sorted by the ascending order of Avg Rank. 
+- The overall evaluation results on {len(MAIN_FIELDS)} VLM benchmarks, sorted by the descending order of Avg Score. 
   - The following datasets are included in the main results: {', '.join(MAIN_FIELDS)}. 
   - Detailed evaluation results for each dataset (included or not included in main) are provided in the consequent tabs. 
 """
@@ -151,4 +151,10 @@ LEADERBOARD_MD['MMStar'] = """
 
 - MMStar is an elite vision-indispensable multi-modal benchmark, including 1,500 challenging samples meticulously selected by humans.
 - During the evaluation of MMStar, we find that some API models may reject to answer some of the questions. Currently, we treat such cases as wrong answers when reporting the results. 
+"""
+
+LEADERBOARD_MD['RealWorldQA'] = """
+## RealWorldQA Evaluation Results
+
+- RealWorldQA is a benchmark designed to evaluate the real-world spatial understanding capabilities of multimodal AI models, contributed by XAI. It assesses how well these models comprehend physical environments. The benchmark consists of 700+ images, each accompanied by a question and a verifiable answer. These images are drawn from real-world scenarios, including those captured from vehicles. The goal is to advance AI models' understanding of our physical world.
 """
