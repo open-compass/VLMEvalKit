@@ -6,18 +6,17 @@ import warnings
 from .base import BaseModel
 from PIL import Image
 
-
 class Mini_Gemini(BaseModel):
 
     INSTALL_REQ = True
     INTERLEAVE = False
 
-    def __init__(self, name, root='/mnt/petrelfs/wangguoan/git_repo/MGM', conv_mode='llava_v1', temperature= 0, **kwargs):
+    def __init__(self, name, root='/mnt/petrelfs/wangguoan/git_repo/MGM', conv_mode='llava_v1', **kwargs):
         if root is None:
             warnings.warn('Please set `root` to Mini_Gemini code directory, which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" ')
             sys.exit(-1)
 
-        assert name == 'MGM_7B'
+        assert name == 'Mini_Gemini_7B', 'We only support Mini_Gemini_7B'
         self.name = name
         sys.path.append(root)
         try:
@@ -45,17 +44,12 @@ class Mini_Gemini(BaseModel):
         self.tokenizer = tokenizer
         self.image_processor = image_processor
         self.conv_mode = conv_mode
-        self.temperature = temperature
-
-
-    def get_prompt_from_message(self, message):
-        for s in message:
-            if s['type'] == 'image':
-                image = s['value']
-            elif s['type'] == 'text':
-                prompt = s['value']
-        image = Image.open(image)
-        return image, prompt
+                    
+        kwargs_default = dict(temperature=0.1, num_beams=1, top_p=None, max_new_tokens=1024, use_cache=True)
+        kwargs_default.update(kwargs)
+        do_sample=True if kwargs_default['temperature'] > 0 else False,
+        kwargs_default.update({'do_sample': do_sample})
+        self.kwargs = kwargs_default
 
 
     def generate_inner(self, message, dataset=None):
@@ -69,7 +63,9 @@ class Mini_Gemini(BaseModel):
                 'which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" '
             )
         
-        image, prompt = self.get_prompt_from_message(message)
+        prompt, image = self.message_to_promptimg(message)
+
+        image = Image.open(image)
         prompt = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + prompt
 
         conv = conv_templates[self.conv_mode].copy()
@@ -132,16 +128,12 @@ class Mini_Gemini(BaseModel):
                     input_ids,
                     images=images,
                     images_aux=images_aux,
-                    do_sample=True if self.temperature > 0 else False,
-                    temperature=self.temperature,
-                    top_p=None,
-                    num_beams=1,
                     # no_repeat_ngram_size=3,
-                    max_new_tokens=1024,
                     bos_token_id=self.tokenizer.bos_token_id,  # Begin of sequence token
                     eos_token_id=self.tokenizer.eos_token_id,  # End of sequence token
                     pad_token_id=self.tokenizer.pad_token_id,  # Pad token
-                    use_cache=True)
+                    **self.kwargs
+                    )
 
         outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return outputs

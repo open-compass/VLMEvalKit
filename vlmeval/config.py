@@ -23,7 +23,7 @@ ungrouped = {
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
-    'MGM_7B':partial(Mini_Gemini, name='MGM_7B', root=Mini_Gemini_ROOT)
+    'Mini_Gemini_7B':partial(Mini_Gemini, name='Mini_Gemini_7B', root=Mini_Gemini_ROOT)
 }
 
 api_models = {
