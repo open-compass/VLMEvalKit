@@ -32,7 +32,7 @@ class Reka_Wrapper(BaseAPI):
         if key is not None:
             self.key = key
         else:
-            self.key = os.environ.get('REKA', '')
+            self.key = os.environ.get('REKA_API_KEY', '')
         super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
     def generate_inner(self, inputs, **kwargs) -> str:
