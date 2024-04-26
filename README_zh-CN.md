@@ -1,50 +1,47 @@
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
-<div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
+<div align="center"><b> VLMEvalKit—多模态大模型评测工具 </b></div>
 
 <div align="center">
-English | [<a href="README_zh-CN.md">简体中文</a>]
+[<a href="README.md">English</a>] | 简体中文
 </div>
 
 <div align="center">
-<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
-<a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
-<a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
-<a href="#%EF%B8%8F-development-guide">🛠️Development </a> •
-<a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
-<a href="#%EF%B8%8F-citation">🖊️Citation </a>
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 性能榜单 </a> •
+<a href="#data-model-results">📊 数据集和模型 </a> •
+<a href="#quickstart">🏗️ 快速开始 </a> •
+<a href="#development">🛠️ 开发 </a> •
+<a href="#goal-of-vlmevalkit">🎯 我们的目标 </a> •
+<a href="#citation">🖊️ 引用 </a>
 </div>
 
 <div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard on HuggingFace</a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">🤖 Leaderboard on OpenXlab</a>
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HuggingFace排行榜 </a>
+<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">🤖 OpenXlab排行榜 </a>
 </div>
 
+**VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
-**VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
+## 🆕 更新
 
-## 🆕 News
+- **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜
+- **[2024-04-17]** 支持 [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
+- **[2024-04-15]** 支持 [**RealWorldQA**](https://x.ai/blog/grok-1.5v), 这是一个用于真实世界空间理解的多模态基准测试  🔥🔥🔥
+- **[2024-04-09]** 将 VLMs 推理接口重构为更统一的版本，请查看 [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) 获取更多详细信息。
+- **[2024-04-09]** 支持 [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), 这是一个具有挑战性的视觉不可或缺的多模态基准测试。完整的评估结果将很快发布 🔥🔥🔥
+- **[2024-04-08]** 支持 [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) 和 [**DocVQA**](https://www.docvqa.org) 的测试集。特别感谢 [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
+- **[2024-03-28]** 现在您可以使用本地的开源LLMs作为答案提取器或判断器 (请参阅 [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) 获取详细信息)。 特别感谢 [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
+- **[2024-03-22]** 支持 [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
+- **[2024-03-21]** 支持 [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main) 🔥🔥🔥
+- **[2024-03-20]** 支持用户使用 `.env` 文件管理 VLMEvalKit 中使用的所有环境变量，请查看 [**Quickstart**](\Quickstart.md) 获取更多详细信息
 
-- **[2024-04-21]** We have notices a minor issue of the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly
-- **[2024-04-17]** We have supported [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
-- **[2024-04-15]** We have supported [**RealWorldQA**](https://x.ai/blog/grok-1.5v), a multimodal benchmark for real-world spatial understanding 🔥🔥🔥
-- **[2024-04-09]** We have refactored the inference interface of VLMs to a more unified version, check [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) for more details
-- **[2024-04-09]** We have supported [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), a challenging vision-indispensable multimodal benchmark. The full evaluation results will be released soon 🔥🔥🔥
-- **[2024-04-08]** We have supported [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) and the test split of DocVQA. Great thanks to [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
-- **[2024-03-28]** Now you can use local OpenSource LLMs as the answer extractor or judge (see [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) for details). Great thanks to [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
-- **[2024-03-22]** We have supported [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
-- **[2024-03-21]** We have supported [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main) 🔥🔥🔥
-- **[2024-03-20]** We have supported users to use a `.env` file to manage all environment variables used in VLMEvalKit, see [**Quickstart**](\Quickstart.md) for more details
+## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
+### 评测结果
 
+**OpenCompass 多模态排行榜**: [榜单](https://rank.opencompass.org.cn/leaderboard-multimodal): [下载全部细粒度测试结果](http://opencompass.openxlab.space/utils/OpenVLM.json)。
 
-## 📊 Datasets, Models, and Evaluation Results
+### 支持的数据集
 
-**The performance numbers on our official multi-modal leaderboards can be downloaded from here!**
-
-[**OpenCompass Multi-Modal Leaderboard**](https://rank.opencompass.org.cn/leaderboard-multimodal): [Download All DETAILED Results](http://opencompass.openxlab.space/utils/OpenVLM.json).
-
-**Supported Dataset**
-
-| Dataset                                                      | Dataset Names (for run.py)                             | Task | Inference | Evaluation | Results                                                     |
+| 数据集                                                      | 数据集名称 (对应run.py文件)                             | 任务类型 | 推理 | 评测 | 结果                                                     |
 | ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |-----|
 | [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench_DEV_[EN/CN]<br>MMBench_TEST_[EN/CN]<br>CCBench | Multi-choice | ✅         | ✅          | [**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard) |
 | [**MMStar**](https://github.com/MMStar-Benchmark/MMStar) | MMStar | Multi-choice   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
@@ -67,14 +64,17 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM | VQA                                               | ✅         |            | **N/A**                                                      |
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | VQA                                               | ✅         | ✅           | **TBD.**                                                      |
 
-VLMEvalKit will use an **judge LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**
+如果您设置了 API KEY，VLMEvalKit 将使用一个 **LLM** 从输出中提取答案进行匹配判断，否则它将使用**精确匹配**模式 (直接在输出字符串中查找“yes”，“no”，“A”，“B”，“C”等)。**精确匹配只能应用于是或否任务和多选择任务**
 
-**Supported API Models**
+**OCRVQA, TextVQA, ChartQA 等 VQA 任务存在一些已知的问题，我们将尽快修正。**
+
+### 支持的模型
+**API 模型**
 
 | [**GPT-4-Vision-Preview**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**QwenVLPlus**](https://huggingface.co/spaces/Qwen/Qwen-VL-Plus)🎞️🚅 | [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max)🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v)🎞️🚅 |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ |
 
-**Supported PyTorch / HF Models**
+**基于 PyTorch / HF 的开源模型**
 
 | [**IDEFICS-[9B/80B/v2-8B]-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
@@ -85,55 +85,58 @@ VLMEvalKit will use an **judge LLM** to extract answer from the output if you se
 | [**InternLM-XComposer2-[1.8B/7B]**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-[V1/V2]**](https://huggingface.co/openbmb/MiniCPM-V)🚅   | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 |   |                                                              |
 
-🎞️: Support multiple images as inputs.
+🎞️ 表示支持多图片输入。
 
-🚅: Model can be used without any additional configuration / operation.
+🚅 表示模型可以被直接使用，不需任何额外的配置。
 
-**Transformers Version Recommendation:**
+### 其他
 
-Note that some VLMs may not be able to run under certain transformer versions, we recommend the following settings to evaluate each VLM:
+**Transformers 的版本推荐:**
 
-- **Please use** `transformers==4.33.0` **for**: `Qwen series`, `Monkey series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `SharedCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`, `PandaGPT`.
-- **Please use** `transformers==4.37.0` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-V series`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`.
-- **Please use** `transformers==4.39.0` **for**: `LLaVA-Next series`.
-- **Please use** `transformers==4.40.0` **for**: `IDEFICS2`.
+**请注意**，某些 VLM 可能无法在某些特定的 transformers 版本下运行，我们建议使用以下设置来评估对应的VLM:
+
+- **请用** `transformers==4.33.0` **来运行**: `Qwen series`, `Monkey series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `SharedCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`, `PandaGPT`.
+- **请用** `transformers==4.37.0 ` **来运行**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-V series`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`.
+- **请用** `transformers==4.39.0 ` **来运行**: `LLaVA-Next series`.
+- **请用** `transformers==4.40.0 ` **来运行**: `IDEFICS2`.
+
+**如何测试一个 VLM 是否可以正常运行**
 
 ```python
-# Demo
 from vlmeval.config import supported_VLM
 model = supported_VLM['idefics_9b_instruct']()
-# Forward Single Image
+# 前向单张图片
 ret = model.generate(['assets/apple.jpg', 'What is in this image?'])
-print(ret)  # The image features a red apple with a leaf on it.
-# Forward Multiple Images
+print(ret)  # 这张图片上有一个带叶子的红苹果
+# 前向多张图片
 ret = model.generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
-print(ret)  # There are two apples in the provided images.
+print(ret)  # 提供的图片中有两个苹果
 ```
 
-## 🏗️ QuickStart
+## 🏗️ 快速开始 <a id="quickstart"></a>
 
-See [QuickStart](/Quickstart.md) for a quick start guide.
+请参阅[**快速开始**](/Quickstart.md)获取入门指南。
 
-## 🛠️ Development Guide
+## 🛠️ 开发指南 <a id="development"></a>
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [Development_Guide](/Development.md).
+要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/Development.md)。
 
-## 🎯 The Goal of VLMEvalKit
+## 🎯 VLMEvalKit 的目标 <a id="goal-of-vlmevalkit"></a>
 
-**The codebase is designed to:**
+**该代码库的设计目标是：**
 
-1. Provide an **easy-to-use**, **opensource evaluation toolkit** to make it convenient for researchers & developers to evaluate existing LVLMs and make evaluation results **easy to reproduce**.
-2. Make it easy for VLM developers to evaluate their own models. To evaluate the VLM on multiple supported benchmarks, one just need to **implement a single `generate_inner()` function**, all other workloads (data downloading, data preprocessing, prediction inference, metric calculation) are handled by the codebase.
+1. 提供一个**易于使用**的**开源评估工具包**，方便研究人员和开发人员评测现有的多模态大模型，并使评测结果**易于复现**。
+2. 使 VLM 开发人员能够轻松地评测自己的模型。在多个支持的基准测试上评估 VLM，只需实现一个 `generate_inner()` 函数，所有其他工作负载（数据下载、数据预处理、预测推理、度量计算）都由代码库处理。
 
-**The codebase is not designed to:**
+**该代码库的设计目标不是:**
 
-1. Reproduce the exact accuracy number reported in the original papers of all **3rd party benchmarks**. The reason can be two-fold:
-   1. VLMEvalKit uses **generation-based evaluation** for all VLMs (and optionally with **LLM-based answer extraction**). Meanwhile, some benchmarks may use different approaches (SEEDBench uses PPL-based evaluation, *eg.*). For those benchmarks, we compare both scores in the corresponding result. We encourage developers to support other evaluation paradigms in the codebase.
-   2. By default, we use the same prompt template for all VLMs to evaluate on a benchmark. Meanwhile, **some VLMs may have their specific prompt templates** (some may not covered by the codebase at this time). We encourage VLM developers to implement their own prompt template in VLMEvalKit, if that is not covered currently. That will help to improve the reproducibility.
+复现所有**第三方基准测试**原始论文中报告的准确数字。有两个相关的原因:
+1. VLMEvalKit 对所有 VLMs 使用基于生成的评估（可选使用基于 LLM 的答案提取）。同时，一些基准测试可能官方使用不同的方法（*例如，SEEDBench 使用基于 PPL 的评估*）。对于这些基准测试，我们在相应的结果中比较两个得分。我们鼓励开发人员在代码库中支持其他评估范式。
+2. 默认情况下，我们对所有多模态模型使用相同的提示模板来评估基准测试。同时，**一些多模态模型可能有他们特定的提示模板**（目前可能未在代码库中涵盖）。我们鼓励 VLM 的开发人员在 VLMEvalKit 中实现自己的提示模板，如果目前未覆盖。这将有助于提高可复现性。
 
-## 🖊️ Citation
+## 🖊️ 引用 <a id="citation"></a>
 
-If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
+如果您在研究中使用了 VLMEvalKit，或希望参考已发布的开源评估结果，请使用以下 BibTeX 条目以及与您使用的特定 VLM / 基准测试相对应的 BibTex 条目。
 
 ```bib
 @misc{2023opencompass,
@@ -144,9 +147,10 @@ If you use VLMEvalKit in your research or wish to refer to the published OpenSou
 }
 ```
 
-## 💻 Other Projects in OpenCompass
+## 💻 OpenCompass 的其他项目
 
-- [opencompass](https://github.com/open-compass/opencompass/): An LLM evaluation platform, supporting a wide range of models (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude, etc) over 50+ datasets.
-- [MMBench](https://github.com/open-compass/MMBench/): Official Repo of "MMBench: Is Your Multi-modal Model an All-around Player?"
-- [BotChat](https://github.com/open-compass/BotChat/): Evaluating LLMs' multi-round chatting capability.
-- [LawBench](https://github.com/open-compass/LawBench): Benchmarking Legal Knowledge of Large Language Models.
+- [opencompass](https://github.com/open-compass/opencompass/): 一个大模型评测平台，支持广泛的模型 (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude等) 覆盖 50 多个数据集。
+- [MMBench](https://github.com/open-compass/MMBench/): 官方代码库 "MMBench: Is Your Multi-modal Model an All-around Player?"
+- [BotChat](https://github.com/open-compass/BotChat/): 评测大模型多轮对话能力。
+- [LawBench](https://github.com/open-compass/LawBench): 对大语言模型的法律知识进行测试。
+- [Ada-LEval](https://github.com/open-compass/ada-leval): 对大语言模型的长文本建模能力进行测试。
