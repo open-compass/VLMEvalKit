@@ -150,3 +150,4 @@ If you use VLMEvalKit in your research or wish to refer to the published OpenSou
 - [MMBench](https://github.com/open-compass/MMBench/): Official Repo of "MMBench: Is Your Multi-modal Model an All-around Player?"
 - [BotChat](https://github.com/open-compass/BotChat/): Evaluating LLMs' multi-round chatting capability.
 - [LawBench](https://github.com/open-compass/LawBench): Benchmarking Legal Knowledge of Large Language Models.
+- [Ada-LEval](https://github.com/open-compass/Ada-LEval): Length Adaptive Evaluation, measures the long-context modeling capability of language models.
