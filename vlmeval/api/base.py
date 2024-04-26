@@ -174,3 +174,22 @@ class BaseAPI:
             time.sleep(T)
 
         return self.fail_msg if answer in ['', None] else answer
+
+    def message_to_promptimg(self, message):
+        assert not self.INTERLEAVE
+        model_name = self.__class__.__name__
+        import warnings
+        warnings.warn(
+            f'Model {model_name} does not support interleaved input. '
+            'Will use the first image and aggregated texts as prompt. ')
+        num_images = len([x for x in message if x['type'] == 'image'])
+        if num_images == 0:
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+            image = None
+        elif num_images == 1:
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+            image = [x['value'] for x in message if x['type'] == 'image'][0]
+        else:
+            prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
+            image = [x['value'] for x in message if x['type'] == 'image'][0]
+        return prompt, image
