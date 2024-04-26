@@ -29,3 +29,4 @@ validators
 visual_genome
 xlsxwriter
 xtuner
+dify-client
