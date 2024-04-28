@@ -6,18 +6,22 @@ import warnings
 from .base import BaseModel
 from PIL import Image
 
+'''
+    Please follow the instructions to download ckpt. https://github.com/dvlab-research/MGM?tab=readme-ov-file#pretrained-weights
+'''
 class Mini_Gemini(BaseModel):
 
     INSTALL_REQ = True
     INTERLEAVE = False
 
-    def __init__(self, name, root='/mnt/petrelfs/wangguoan/git_repo/MGM', conv_mode='llava_v1', **kwargs):
+    def __init__(self, model_path, root='/mnt/petrelfs/wangguoan/git_repo/MGM', conv_mode='llava_v1', **kwargs):
         if root is None:
             warnings.warn('Please set `root` to Mini_Gemini code directory, which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" ')
             sys.exit(-1)
 
-        assert name == 'Mini_Gemini_7B', 'We only support Mini_Gemini_7B'
-        self.name = name
+        warnings.warn( 'Please follow the instructions of Mini_Gemini to put the ckpt file in the right place, which can be found at https://github.com/dvlab-research/MGM?tab=readme-ov-file#structure')
+        assert model_path == 'YanweiLi/MGM-7B-HD', 'We only support MGM-7B-HD for now'
+        self.model_path = model_path
         sys.path.append(root)
         try:
             from mgm.model.builder import load_pretrained_model
@@ -27,6 +31,7 @@ class Mini_Gemini(BaseModel):
                 'Please first install Mini_Gemini and set the root path to use Mini_Gemini, '
                 'which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" '
             )
+        VLMEvalKit_path = os.getcwd()
         os.chdir(root)
         warnings.warn('Please set `root` to Mini_Gemini code directory, which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" ')
         model_path = osp.join(root, 'work_dirs', 'MGM', 'MGM-7B-HD')
@@ -40,14 +45,15 @@ class Mini_Gemini(BaseModel):
             )
         tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, None, model_name)
 
+        os.chdir(VLMEvalKit_path)
         self.model = model
         self.tokenizer = tokenizer
         self.image_processor = image_processor
         self.conv_mode = conv_mode
                     
-        kwargs_default = dict(temperature=0.1, num_beams=1, top_p=None, max_new_tokens=1024, use_cache=True)
+        kwargs_default = dict(temperature=float(0), num_beams=1, top_p=None, max_new_tokens=1024, use_cache=True)
         kwargs_default.update(kwargs)
-        do_sample=True if kwargs_default['temperature'] > 0 else False,
+        do_sample = kwargs_default['temperature'] > 0
         kwargs_default.update({'do_sample': do_sample})
         self.kwargs = kwargs_default
 
