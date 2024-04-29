@@ -1,12 +1,21 @@
 from ..smp import listinstr
 
 dataset_URLs = {
+    # MMBench v1.0
     'MMBench_DEV_EN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv',
     'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv',
     'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv',
     'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv',
-    'MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv',  # Link Invalid, Internal Only
-    'MMBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv',    # Link Invalid, Internal Only
+    'MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv',  # Internal Only
+    'MMBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv',    # Internal Only
+    # MMBench v1.1
+    'MMBench_DEV_EN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN_V11.tsv',
+    'MMBench_TEST_EN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN_V11.tsv',
+    'MMBench_DEV_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN_V11.tsv',
+    'MMBench_TEST_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN_V11.tsv',
+    'MMBench_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_V11.tsv',  # Internal Only
+    'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN_V11.tsv',    # Internal Only
+    # CCBench
     'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
     'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
     'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
@@ -36,12 +45,21 @@ dataset_URLs = {
 }
 
 dataset_md5_dict = {
+    # MMBench v1.0
     'MMBench_DEV_EN': 'b6caf1133a01c6bb705cf753bb527ed8',
     'MMBench_TEST_EN': '6939fadb0ce626fefc0bdc9c64efc528',
     'MMBench_DEV_CN': '08b8fc3324a5ed74155350f57be69fbd',
     'MMBench_TEST_CN': '7e1239baf0ee4c8b513e19705a0f317e',
-    'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Link Invalid, Internal Only
-    'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Link Invalid, Internal Only
+    'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
+    'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
+    # MMBench v1.1
+    'MMBench_DEV_EN_V11': '600b322a68346af4d67c02286b98a02d',
+    'MMBench_TEST_EN_V11': '05aa481395bdc1febfe8b3680250fc28',
+    'MMBench_DEV_CN_V11': 'ac50697af3d049f243edaa41ab3f5a28',
+    'MMBench_TEST_CN_V11': 'ad7f27e73686188244742d187e1254df',
+    'MMBench_V11': '838ff8dab24202067c844ead82e998fd',  # Internal Only
+    'MMBench_CN_V11': 'b48ece11132963356685dc82d848fdce',    # Internal Only
+    # CCBench
     'CCBench': '1de88b4257e7eee3f60b18d45eda6f07',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
@@ -72,11 +90,20 @@ dataset_md5_dict = {
 
 img_root_map = {k: k for k in dataset_URLs}
 img_root_map.update({
+    # MMBench v1.0
     'MMBench_DEV_EN': 'MMBench',
     'MMBench_TEST_EN': 'MMBench',
     'MMBench_DEV_CN': 'MMBench',
     'MMBench_TEST_CN': 'MMBench',
-    'MMBench_CN': 'MMBench',    # Link Invalid, Internal Only
+    'MMBench': 'MMBench',   # Internal Only
+    'MMBench_CN': 'MMBench',    # Internal Only
+    # MMBench v1.1
+    'MMBench_DEV_EN_V11': 'MMBench_V11',
+    'MMBench_TEST_EN_V11': 'MMBench_V11',
+    'MMBench_DEV_CN_V11': 'MMBench_V11',
+    'MMBench_TEST_CN_V11': 'MMBench_V11',
+    'MMBench_V11': 'MMBench_V11',   # Internal Only
+    'MMBench_CN_V11': 'MMBench_V11',    # Internal Only
     'COCO_VAL': 'COCO',
     'OCRVQA_TEST': 'OCRVQA',
     'OCRVQA_TESTCORE': 'OCRVQA',

@@ -18,33 +18,31 @@
 <a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HuggingFace排行榜 </a>
 <a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">🤖 OpenXlab排行榜 </a>
 </div>
-
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
 
+- **[2024-04-28]** 支持了 [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281)，在这个新版本中，我们提升了评测题目的质量与视觉的不可或缺性 🔥🔥🔥
 - **[2024-04-28]** 支持 [**POPE**](https://github.com/AoiDragon/POPE), 这是一个目标幻觉问题检测的数据集 🔥🔥🔥
-- **[2024-04-25]** 我们支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
+- **[2024-04-25]** 支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
 - **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜
 - **[2024-04-17]** 支持 [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
-- **[2024-04-15]** 支持 [**RealWorldQA**](https://x.ai/blog/grok-1.5v), 这是一个用于真实世界空间理解的多模态基准测试  🔥🔥🔥
+- **[2024-04-15]** 支持 [**RealWorldQA**](https://x.ai/blog/grok-1.5v)， 这是一个用于真实世界空间理解的多模态基准测试  🔥🔥🔥
 - **[2024-04-09]** 将 VLMs 推理接口重构为更统一的版本，请查看 [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) 获取更多详细信息。
-- **[2024-04-09]** 支持 [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), 这是一个具有挑战性的视觉不可或缺的多模态基准测试。完整的评估结果将很快发布 🔥🔥🔥
-- **[2024-04-08]** 支持 [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) 和 [**DocVQA**](https://www.docvqa.org) 的测试集。特别感谢 [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
-- **[2024-03-28]** 现在您可以使用本地的开源LLMs作为答案提取器或判断器 (请参阅 [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) 获取详细信息)。 特别感谢 [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
-- **[2024-03-22]** 支持 [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
-- **[2024-03-21]** 支持 [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main) 🔥🔥🔥
+- **[2024-04-09]** 支持 [**MMStar**](https://github.com/MMStar-Benchmark/MMStar)，这是一个具有挑战性的视觉不可或缺的多模态基准测试 🔥🔥🔥
+- **[2024-04-08]** 支持 [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) 和 [**DocVQA**](https://www.docvqa.org) 的测试集，特别感谢 [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
+- **[2024-03-28]** 现在您可以使用本地的开源LLMs作为答案提取器或判断器 (请参阅 [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) 获取详细信息)，特别感谢 [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
 
-**OpenCompass 多模态排行榜**: [榜单](https://rank.opencompass.org.cn/leaderboard-multimodal): [下载全部细粒度测试结果](http://opencompass.openxlab.space/utils/OpenVLM.json)。
+[**OpenCompass 多模态排行榜**](https://rank.opencompass.org.cn/leaderboard-multimodal): [下载全部细粒度测试结果](http://opencompass.openxlab.space/utils/OpenVLM.json)。
 
 ### 支持的数据集
 
 | 数据集                                                      | 数据集名称 (对应run.py文件)                             | 任务类型 | 推理 | 评测 | 结果                                                     |
 | ------------------------------------------------------------ | ------------------------------------------------------ | --------- | ---------- | ------------------------------------------------------------ |-----|
-| [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench_DEV_[EN/CN]<br>MMBench_TEST_[EN/CN]<br>CCBench | Multi-choice | ✅         | ✅          | [**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard) |
+| [**MMBench Series**](https://github.com/open-compass/mmbench/): <br>MMBench, MMBench-CN, CCBench | MMBench_DEV_[EN/CN]<br/>MMBench_TEST_[EN/CN]<br/>MMBench_DEV_[EN/CN]_V11<br/>MMBench_TEST_[EN/CN]_V11<br/>CCBench | Multi-choice | ✅         | ✅          | [**MMBench Leaderboard**](https://mmbench.opencompass.org.cn/leaderboard) |
 | [**MMStar**](https://github.com/MMStar-Benchmark/MMStar) | MMStar | Multi-choice   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**MME**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models/tree/Evaluation) | MME | Yes or No                                                   | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**SEEDBench_IMG**](https://github.com/AILab-CVC/SEED-Bench) | SEEDBench_IMG | Multi-choice                                         | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
