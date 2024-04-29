@@ -103,6 +103,48 @@ def Hallusion_rating(data_file):
     return ret
 
 
+def POPE_rating(data_file):
+    def cal_f1_score(y_true, y_pred):
+        tp = sum((y_true == 1) & (y_pred == 1))
+        fp = sum((y_true == 0) & (y_pred == 1))
+        fn = sum((y_true == 1) & (y_pred == 0))
+
+        precision = tp / (tp + fp) if (tp + fp) != 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) != 0 else 0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
+        return f1_score, precision, recall
+
+    data = load(data_file)
+    data = data.assign(category=data['category'].str.split(',')).explode('category')
+    data['index'] = range(len(data))
+    res = dict(split=[], Overall=[], acc=[], precision=[], recall=[])
+    y_true = np.array([1 if i == 'Yes' else 0 for i in data['answer']])
+    y_pred = np.array([1 if i == 'Yes' else 0 for i in data['extracted']])
+    f1_score, precision, recall = cal_f1_score(y_true, y_pred)
+    res['split'].append('Overall')
+    res['Overall'].append(f1_score * 100)
+    res['acc'].append(np.mean(data['score']) * 100)
+    res['precision'].append(precision * 100)
+    res['recall'].append(recall * 100)
+
+    if 'category' in data:
+        cates = list(set(data['category']))
+        cates = [c for c in cates if not pd.isna(c)]
+        for c in cates:
+            sub = data[data['category'] == c]
+            y_true = np.array([1 if i == 'Yes' else 0 for i in sub['answer']])
+            y_pred = np.array([1 if i == 'Yes' else 0 for i in sub['extracted']])
+            f1_score, precision, recall = cal_f1_score(y_true, y_pred)
+            res['split'].append(c)
+            res['Overall'].append(f1_score * 100)
+            res['acc'].append(np.mean(sub['score']) * 100)
+            res['precision'].append(precision * 100)
+            res['recall'].append(recall * 100)
+
+    ret = pd.DataFrame(res)
+    return ret
+
+
 def default_rating(data_file):
     data = load(data_file)
     res = {}
@@ -214,6 +256,8 @@ def YOrN_eval(eval_file, dataset=None, **judge_kwargs):
         score = MME_rating(storage)
     elif dataset is not None and listinstr(['Hallusion'], dataset):
         score = Hallusion_rating(storage)
+    elif dataset is not None and listinstr(['POPE'], dataset):
+        score = POPE_rating(storage)
     else:
         score = default_rating(storage)
 
