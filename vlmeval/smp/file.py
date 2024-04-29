@@ -20,13 +20,28 @@ def LMUDataRoot():
     return root
 
 
-def MMBenchOfficialServer():
+def MMBenchOfficialServer(dataset_name):
     root = LMUDataRoot()
-    for dataset in ['MMBench', 'MMBench_CN', 'MMBench_TEST_EN', 'MMBench_TEST_CN']:
-        if osp.exists(f'{root}/{dataset}.tsv'):
-            data = load(f'{root}/{dataset}.tsv')
+
+    if dataset_name in ['MMBench', 'MMBench_V11', 'MMBench_CN', 'MMBench_CN_V11']:
+        ans_file = f'{root}/{dataset_name}.tsv'
+        if osp.exists(ans_file):
+            data = load(ans_file)
             if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
                 return True
+
+    if dataset_name in ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMBench_TEST_EN_V11', 'MMBench_TEST_CN_V11']:
+        ans_file1 = f'{root}/{dataset_name}.tsv'
+        mapp = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_CN': 'MMBench_CN',
+            'MMBench_TEST_EN_V11': 'MMBench_V11', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11',
+        }
+        ans_file2 = f'{root}/{mapp[dataset_name]}.tsv'
+        for f in [ans_file1, ans_file2]:
+            if osp.exists(f):
+                data = load(f)
+                if 'answer' in data and sum([pd.isna(x) for x in data['answer']]) == 0:
+                    return True
     return False
 
 

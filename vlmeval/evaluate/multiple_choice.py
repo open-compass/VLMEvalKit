@@ -237,10 +237,12 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
     logger = get_logger('Evaluation')
 
     # assert dataset is not None
-    if dataset == 'MMBench_TEST_CN':
-        dataset = 'MMBench_CN'
-    elif dataset == 'MMBench_TEST_EN':
-        dataset = 'MMBench'
+    dataset_map = {
+        'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+        'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+    }
+    if dataset in dataset_map:
+        dataset = dataset_map[dataset]
     nproc = judge_kwargs.pop('nproc', 4)
 
     if listinstr(['mmbench', 'ccbench'], dataset.lower()):
