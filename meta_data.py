@@ -158,3 +158,24 @@ LEADERBOARD_MD['RealWorldQA'] = """
 
 - RealWorldQA is a benchmark designed to evaluate the real-world spatial understanding capabilities of multimodal AI models, contributed by XAI. It assesses how well these models comprehend physical environments. The benchmark consists of 700+ images, each accompanied by a question and a verifiable answer. These images are drawn from real-world scenarios, including those captured from vehicles. The goal is to advance AI models' understanding of our physical world.
 """
+
+LEADERBOARD_MD['TextVQA_VAL'] = """
+## TextVQA Evaluation Results
+
+- TextVQA is a dataset to benchmark visual reasoning based on text in images. TextVQA requires models to read and reason about text in images to answer questions about them. Specifically, models need to incorporate a new modality of text present in the images and reason over it to answer TextVQA questions.
+- Note that some models may not be able to generate standardized responses based on the prompt. We currently do not have reports for these models.
+"""
+
+LEADERBOARD_MD['ChartQA_TEST'] = """
+## ChartQA Evaluation Results
+
+- ChartQA is a benchmark for question answering about charts with visual and logical reasoning. 
+- Note that some models may not be able to generate standardized responses based on the prompt. We currently do not have reports for these models.
+"""
+
+LEADERBOARD_MD['OCRVQA_TESTCORE'] = """
+## OCRVQA Evaluation Results
+
+- OCRVQA is a benchmark for visual question answering by reading text in images. It presents a large-scale dataset, OCR-VQA-200K, comprising over 200,000 images of book covers. The study combines techniques from the Optical Character Recognition (OCR) and Visual Question Answering (VQA) domains to address the challenges associated with this new task and dataset. 
+- Note that some models may not be able to generate standardized responses based on the prompt. We currently do not have reports for these models.
+"""
