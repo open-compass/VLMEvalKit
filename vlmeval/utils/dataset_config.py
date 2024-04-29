@@ -32,6 +32,7 @@ dataset_URLs = {
     'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
+    'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
 }
 
 dataset_md5_dict = {
@@ -66,6 +67,7 @@ dataset_md5_dict = {
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
     'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
     'RealWorldQA': '92321028d2bc29040284b6674721e48f',
+    'POPE': 'c12f5acb142f2ef1f85a26ba2fbe41d5',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -91,6 +93,7 @@ img_root_map.update({
     'InfoVQA_TEST': 'InfoVQA_TEST',
     'MMStar': 'MMStar',
     'RealWorldQA': 'RealWorldQA',
+    'POPE': 'POPE',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -101,7 +104,7 @@ def DATASET_TYPE(dataset):
     dataset = dataset.lower()
     if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
         return 'multi-choice'
-    elif listinstr(['mme', 'hallusion'], dataset):
+    elif listinstr(['mme', 'hallusion', 'pope'], dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'
