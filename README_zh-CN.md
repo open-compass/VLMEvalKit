@@ -23,6 +23,7 @@
 ## 🆕 更新
 
 - **[2024-04-28]** 支持了 [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281)，在这个新版本中，我们提升了评测题目的质量与视觉的不可或缺性 🔥🔥🔥
+- **[2024-04-28]** 支持 [**POPE**](https://github.com/AoiDragon/POPE), 这是一个目标幻觉问题检测的数据集 🔥🔥🔥
 - **[2024-04-25]** 支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
 - **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜
 - **[2024-04-17]** 支持 [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
@@ -31,7 +32,6 @@
 - **[2024-04-09]** 支持 [**MMStar**](https://github.com/MMStar-Benchmark/MMStar)，这是一个具有挑战性的视觉不可或缺的多模态基准测试 🔥🔥🔥
 - **[2024-04-08]** 支持 [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) 和 [**DocVQA**](https://www.docvqa.org) 的测试集，特别感谢 [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-03-28]** 现在您可以使用本地的开源LLMs作为答案提取器或判断器 (请参阅 [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) 获取详细信息)，特别感谢 [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
-- **[2024-03-22]** 支持 [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/) 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -62,6 +62,7 @@
 | [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench | VQA                                              | ✅         | ✅          | [**Open_VLM_Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) |
 | [**Core-MM**](https://github.com/core-mm/core-mm)            | CORE_MM | VQA                                               | ✅         |            | **N/A**                                                      |
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | VQA                                               | ✅         | ✅           | **TBD.**                                                      |
+| [**POPE**](https://github.com/AoiDragon/POPE)            | POPE | Yes or No                                               | ✅         | ✅           | **TBD.**                                                      |
 
 如果您设置了 API KEY，VLMEvalKit 将使用一个 **LLM** 从输出中提取答案进行匹配判断，否则它将使用**精确匹配**模式 (直接在输出字符串中查找“yes”，“no”，“A”，“B”，“C”等)。**精确匹配只能应用于是或否任务和多选择任务**
 
