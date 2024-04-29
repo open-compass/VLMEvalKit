@@ -53,12 +53,12 @@ dataset_md5_dict = {
     'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
     'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
     # MMBench v1.1
-    'MMBench_DEV_EN_V11': '600b322a68346af4d67c02286b98a02d',
-    'MMBench_TEST_EN_V11': '05aa481395bdc1febfe8b3680250fc28',
-    'MMBench_DEV_CN_V11': 'ac50697af3d049f243edaa41ab3f5a28',
-    'MMBench_TEST_CN_V11': 'ad7f27e73686188244742d187e1254df',
-    'MMBench_V11': '838ff8dab24202067c844ead82e998fd',  # Internal Only
-    'MMBench_CN_V11': 'b48ece11132963356685dc82d848fdce',    # Internal Only
+    'MMBench_DEV_EN_V11': '30c05be8f2f347a50be25aa067248184',
+    'MMBench_TEST_EN_V11': '26f0f15381a21720255091d3e0316ce6',
+    'MMBench_DEV_CN_V11': '593f9b5f6bea453d870a798b34ae4f37',
+    'MMBench_TEST_CN_V11': '74bbe4556dac745613c7cbe5ad787050',
+    'MMBench_V11': 'b9276414f57af1308dcc4d0cd9b42e7c',  # Internal Only
+    'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
     # CCBench
     'CCBench': '1de88b4257e7eee3f60b18d45eda6f07',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
