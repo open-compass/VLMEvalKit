@@ -22,7 +22,7 @@
 
 ## 🆕 更新
 
-- **[2024-04-28]** 支持了 [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281)，在这个新版本中，我们提升了评测题目的质量与视觉的不可或缺性 🔥🔥🔥
+- **[2024-04-28]** 支持了 [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281)，在这个新版本中，我们提升了评测题目的质量与视觉的不可或缺性。我们将在短期内提供这一版本的测试集的评测服务 🔥🔥🔥
 - **[2024-04-28]** 支持 [**POPE**](https://github.com/AoiDragon/POPE), 这是一个目标幻觉问题检测的数据集 🔥🔥🔥
 - **[2024-04-25]** 支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
 - **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜

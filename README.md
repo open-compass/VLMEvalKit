@@ -24,7 +24,7 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 
 ## 🆕 News
 
-- **[2024-04-28]** We have supported [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281), the new version has better data quality and improved vision indispensability 🔥🔥🔥
+- **[2024-04-28]** We have supported [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281), the new version has better data quality and improved vision indispensability. The evaluation service for the test split will be available soon 🔥🔥🔥
 - **[2024-04-28]** We have supported [**POPE**](https://github.com/AoiDragon/POPE), a benchmark for object hallucination evaluation 🔥🔥🔥
 - **[2024-04-25]** We have supported [**Reka API**](https://www.reka.ai), the API model ranked first in [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 🔥🔥🔥
 - **[2024-04-21]** We have notices a minor issue of the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly
