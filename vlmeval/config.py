@@ -22,6 +22,7 @@ ungrouped = {
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
+    'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
 }
 
 api_models = {
@@ -133,9 +134,10 @@ transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xco
     'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
 ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
 transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
-    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B'
+    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
 ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
 transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
+transformer_ver['4.40.0'] = ['idefics2_8b', 'Bunny-llama3-8B']
 
 if __name__ == '__main__':
     import sys
