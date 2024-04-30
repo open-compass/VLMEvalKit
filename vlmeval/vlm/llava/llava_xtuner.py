@@ -117,15 +117,15 @@ class LLaVA_XTuner(BaseModel):
         if prompt_template is not None:
             # modified prompt template
             if prompt_template == 'llama3_chat':
-                self.prompt_template = llama3_chat=dict(
-                        SYSTEM=('<|start_header_id|>system<|end_header_id|>\n\n'
-                                '{system}<|eot_id|>'),
-                        INSTRUCTION=(
-                            '<|start_header_id|>user<|end_header_id|>\n\n{input}<|eot_id|>'
-                            '<|start_header_id|>assistant<|end_header_id|>\n\n'),
-                        SUFFIX='<|eot_id|>',
-                        SUFFIX_AS_EOS=True,
-                        STOP_WORDS=['<|eot_id|>'])
+                self.prompt_template = dict(
+                    SYSTEM=('<|start_header_id|>system<|end_header_id|>\n\n'
+                            '{system}<|eot_id|>'),
+                    INSTRUCTION=(
+                        '<|start_header_id|>user<|end_header_id|>\n\n{input}<|eot_id|>'
+                        '<|start_header_id|>assistant<|end_header_id|>\n\n'),
+                    SUFFIX='<|eot_id|>',
+                    SUFFIX_AS_EOS=True,
+                    STOP_WORDS=['<|eot_id|>'])
             else:
                 self.prompt_template = PROMPT_TEMPLATE[prompt_template]
             stop_words += self.prompt_template.get('STOP_WORDS', [])
