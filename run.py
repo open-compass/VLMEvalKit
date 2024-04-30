@@ -65,6 +65,8 @@ def main():
                     custom_flag = True
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+            if osp.exists(result_file):
+                os.system(f'rm {pred_root}/{model_name}_{dataset_name}_*')
 
             if model is None:
                 model = model_name  # which is only a name
