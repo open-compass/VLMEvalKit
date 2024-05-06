@@ -115,7 +115,19 @@ class LLaVA_XTuner(BaseModel):
         self.projector = projector.cuda()
         self.visual_select_layer = visual_select_layer
         if prompt_template is not None:
-            self.prompt_template = PROMPT_TEMPLATE[prompt_template]
+            # modified prompt template
+            if prompt_template == 'llama3_chat':
+                self.prompt_template = dict(
+                    SYSTEM=('<|start_header_id|>system<|end_header_id|>\n\n'
+                            '{system}<|eot_id|>'),
+                    INSTRUCTION=(
+                        '<|start_header_id|>user<|end_header_id|>\n\n{input}<|eot_id|>'
+                        '<|start_header_id|>assistant<|end_header_id|>\n\n'),
+                    SUFFIX='<|eot_id|>',
+                    SUFFIX_AS_EOS=True,
+                    STOP_WORDS=['<|eot_id|>'])
+            else:
+                self.prompt_template = PROMPT_TEMPLATE[prompt_template]
             stop_words += self.prompt_template.get('STOP_WORDS', [])
         else:
             self.prompt_template = None
@@ -181,6 +193,7 @@ class LLaVA_XTuner(BaseModel):
         from xtuner.model.utils import prepare_inputs_labels_for_multimodal
         from xtuner.utils import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
         prompt, image_path = self.message_to_promptimg(message)
+        prompt = prompt.replace('<image>', '')
         image = Image.open(image_path).convert('RGB')
         image = expand2square(
             image,

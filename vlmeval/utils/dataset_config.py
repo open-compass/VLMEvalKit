@@ -1,12 +1,21 @@
 from ..smp import listinstr
 
 dataset_URLs = {
+    # MMBench v1.0
     'MMBench_DEV_EN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv',
     'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv',
     'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv',
     'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv',
-    'MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv',  # Link Invalid, Internal Only
-    'MMBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv',    # Link Invalid, Internal Only
+    'MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv',  # Internal Only
+    'MMBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv',    # Internal Only
+    # MMBench v1.1
+    'MMBench_DEV_EN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN_V11.tsv',
+    'MMBench_TEST_EN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN_V11.tsv',
+    'MMBench_DEV_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN_V11.tsv',
+    'MMBench_TEST_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN_V11.tsv',
+    'MMBench_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_V11.tsv',  # Internal Only
+    'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN_V11.tsv',    # Internal Only
+    # CCBench
     'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
     'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
     'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
@@ -32,15 +41,25 @@ dataset_URLs = {
     'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
+    'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
 }
 
 dataset_md5_dict = {
+    # MMBench v1.0
     'MMBench_DEV_EN': 'b6caf1133a01c6bb705cf753bb527ed8',
     'MMBench_TEST_EN': '6939fadb0ce626fefc0bdc9c64efc528',
     'MMBench_DEV_CN': '08b8fc3324a5ed74155350f57be69fbd',
     'MMBench_TEST_CN': '7e1239baf0ee4c8b513e19705a0f317e',
-    'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Link Invalid, Internal Only
-    'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Link Invalid, Internal Only
+    'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
+    'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
+    # MMBench v1.1
+    'MMBench_DEV_EN_V11': '30c05be8f2f347a50be25aa067248184',
+    'MMBench_TEST_EN_V11': '26f0f15381a21720255091d3e0316ce6',
+    'MMBench_DEV_CN_V11': '593f9b5f6bea453d870a798b34ae4f37',
+    'MMBench_TEST_CN_V11': '74bbe4556dac745613c7cbe5ad787050',
+    'MMBench_V11': 'b9276414f57af1308dcc4d0cd9b42e7c',  # Internal Only
+    'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
+    # CCBench
     'CCBench': '1de88b4257e7eee3f60b18d45eda6f07',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
@@ -66,15 +85,25 @@ dataset_md5_dict = {
     'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
     'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
     'RealWorldQA': '92321028d2bc29040284b6674721e48f',
+    'POPE': 'c12f5acb142f2ef1f85a26ba2fbe41d5',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
 img_root_map.update({
+    # MMBench v1.0
     'MMBench_DEV_EN': 'MMBench',
     'MMBench_TEST_EN': 'MMBench',
     'MMBench_DEV_CN': 'MMBench',
     'MMBench_TEST_CN': 'MMBench',
-    'MMBench_CN': 'MMBench',    # Link Invalid, Internal Only
+    'MMBench': 'MMBench',   # Internal Only
+    'MMBench_CN': 'MMBench',    # Internal Only
+    # MMBench v1.1
+    'MMBench_DEV_EN_V11': 'MMBench_V11',
+    'MMBench_TEST_EN_V11': 'MMBench_V11',
+    'MMBench_DEV_CN_V11': 'MMBench_V11',
+    'MMBench_TEST_CN_V11': 'MMBench_V11',
+    'MMBench_V11': 'MMBench_V11',   # Internal Only
+    'MMBench_CN_V11': 'MMBench_V11',    # Internal Only
     'COCO_VAL': 'COCO',
     'OCRVQA_TEST': 'OCRVQA',
     'OCRVQA_TESTCORE': 'OCRVQA',
@@ -91,6 +120,7 @@ img_root_map.update({
     'InfoVQA_TEST': 'InfoVQA_TEST',
     'MMStar': 'MMStar',
     'RealWorldQA': 'RealWorldQA',
+    'POPE': 'POPE',
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -101,7 +131,7 @@ def DATASET_TYPE(dataset):
     dataset = dataset.lower()
     if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
         return 'multi-choice'
-    elif listinstr(['mme', 'hallusion'], dataset):
+    elif listinstr(['mme', 'hallusion', 'pope'], dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'

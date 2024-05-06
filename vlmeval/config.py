@@ -23,17 +23,25 @@ ungrouped = {
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
-    'MGM_7B':partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT)
+    'MGM_7B':partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
+    'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
 }
 
 api_models = {
+    # GPT-4V series
     'GPT4V': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_HIGH': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GPT4V_20240409': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4V_20240409_HIGH': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=-1, img_detail='high', retry=10),
+    # Gemini-V
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
+    # Qwen-VL Series
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
+    # Reka Series
+    'RekaEdge': partial(Reka, model='reka-edge-20240208'), 
+    'RekaFlash': partial(Reka, model='reka-flash-20240226'), 
+    'RekaCore': partial(Reka, model='reka-core-20240415'), 
     # Internal Only
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'Step1V': partial(Step1V, temperature=0, retry=10),
@@ -48,6 +56,7 @@ xtuner_series = {
     'llava-internlm-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm-chat-7b', llava_path='xtuner/llava-internlm-7b', visual_select_layer=-2, prompt_template='internlm_chat'),
     'llava-v1.5-7b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5-7b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
     'llava-v1.5-13b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-13b-v1.5', llava_path='xtuner/llava-v1.5-13b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
+    'llava-llama-3-8b': partial(LLaVA_XTuner, llm_path='xtuner/llava-llama-3-8b-v1_1', llava_path='xtuner/llava-llama-3-8b-v1_1', visual_select_layer=-2, prompt_template='llama3_chat'),
 }
 
 qwen_series = {
@@ -128,9 +137,10 @@ transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xco
     'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
 ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
 transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
-    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B'
+    'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
 ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
 transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
+transformer_ver['4.40.0'] = ['idefics2_8b', 'Bunny-llama3-8B']
 
 if __name__ == '__main__':
     import sys

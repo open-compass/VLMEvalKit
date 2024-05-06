@@ -6,9 +6,10 @@ from .qwen_vl_api import QwenVLWrapper, QwenVLAPI
 from .qwen_api import QwenAPI
 from .stepai import Step1V
 from .claude import Claude_Wrapper, Claude3V
+from .reka import Reka
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'OpenAIWrapperInternal', 'GeminiWrapper',
     'GPT4V', 'GPT4V_Internal', 'GeminiProVision', 'QwenVLWrapper', 'QwenVLAPI',
-    'QwenAPI', 'Step1V', 'Claude3V', 'Claude_Wrapper'
+    'QwenAPI', 'Step1V', 'Claude3V', 'Claude_Wrapper', 'Reka'
 ]

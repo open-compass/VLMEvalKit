@@ -65,6 +65,8 @@ def main():
                     custom_flag = True
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+            if osp.exists(result_file):
+                os.system(f'rm {pred_root}/{model_name}_{dataset_name}_*')
 
             if model is None:
                 model = model_name  # which is only a name
@@ -82,9 +84,13 @@ def main():
                 if dataset_name in ['MMMU_TEST']:
                     result_json = MMMU_result_transfer(result_file)
                     logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')  # noqa: E501
+                    continue
 
-            if dataset_name in ['MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMMU_TEST']:
-                if not MMBenchOfficialServer():
+            if dataset_name in [
+                'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN'
+                'MMBench_TEST_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_V11', 'MMBench_CN_V11'
+            ]:
+                if not MMBenchOfficialServer(dataset_name):
                     logger.error(
                         f'Can not evaluate {dataset_name} on non-official servers, '
                         'will skip the evaluation. '
