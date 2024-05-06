@@ -24,7 +24,8 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 
 ## 🆕 News
 
-- **[2024-04-28]** We have supported [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281), the new version has better data quality and improved vision indispensability. To obtain the test-set performance, please submit the inference result to the [**evaluation service**](https://mmbench.opencompass.org.cn/mmbench-submission) 🔥🔥🔥
+- **[2024-05-06]** We have supported 2 VLMs based on Llama3 🔥🔥🔥: Bunny-llama3-8B (SigLIP, image size 384) and llava-llama-3-8b (CLIP-L, image size 336), you can now evaluate both models on dozens of datasets we supported
+- **[2024-04-28]** We have supported [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281), the new version  has better data quality and improved vision indispensability. To obtain the test-set performance, please submit the inference result to the [**evaluation service**](https://mmbench.opencompass.org.cn/mmbench-submission) 🔥🔥🔥
 - **[2024-04-28]** We have supported [**POPE**](https://github.com/AoiDragon/POPE), a benchmark for object hallucination evaluation 🔥🔥🔥
 - **[2024-04-25]** We have supported [**Reka API**](https://www.reka.ai), the API model ranked first in [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 🔥🔥🔥
 - **[2024-04-21]** We have notices a minor issue of the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly
@@ -33,7 +34,6 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 - **[2024-04-09]** We have refactored the inference interface of VLMs to a more unified version, check [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) for more details
 - **[2024-04-09]** We have supported [**MMStar**](https://github.com/MMStar-Benchmark/MMStar), a challenging vision-indispensable multimodal benchmark. The full evaluation results will be released soon 🔥🔥🔥
 - **[2024-04-08]** We have supported [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) and the test split of DocVQA. Great thanks to [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
-- **[2024-03-28]** Now you can use local OpenSource LLMs as the answer extractor or judge (see [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) for details). Great thanks to [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
 
 
 ## 📊 Datasets, Models, and Evaluation Results

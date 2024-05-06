@@ -22,6 +22,7 @@
 
 ## 🆕 更新
 
+- **[2024-05-06]** 支持了两个基于 Llama3 的 VLM 🔥🔥🔥: Bunny-llama3-8B (SigLIP, 输入图像大小 384) 和 llava-llama-3-8b (CLIP-L, 输入图像大小 336), 用户可在我们支持的数十个测试基准上测试这两个模型
 - **[2024-04-28]** 支持了 [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281)，在这个新版本中，我们提升了评测题目的质量与视觉的不可或缺性。如需获取测试集上的性能，请提交推理结果至 [**官方评测服务**](https://mmbench.opencompass.org.cn/mmbench-submission) 🔥🔥🔥
 - **[2024-04-28]** 支持 [**POPE**](https://github.com/AoiDragon/POPE), 这是一个目标幻觉问题检测的数据集 🔥🔥🔥
 - **[2024-04-25]** 支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
@@ -31,7 +32,6 @@
 - **[2024-04-09]** 将 VLMs 推理接口重构为更统一的版本，请查看 [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) 获取更多详细信息。
 - **[2024-04-09]** 支持 [**MMStar**](https://github.com/MMStar-Benchmark/MMStar)，这是一个具有挑战性的视觉不可或缺的多模态基准测试 🔥🔥🔥
 - **[2024-04-08]** 支持 [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa) 和 [**DocVQA**](https://www.docvqa.org) 的测试集，特别感谢 [**DLight**](https://github.com/LightDXY) 🔥🔥🔥
-- **[2024-03-28]** 现在您可以使用本地的开源LLMs作为答案提取器或判断器 (请参阅 [**#132**](https://github.com/open-compass/VLMEvalKit/pull/132) 获取详细信息)，特别感谢 [**StarCycle**](https://github.com/StarCycle) 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
