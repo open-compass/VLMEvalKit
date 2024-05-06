@@ -54,6 +54,7 @@ xtuner_series = {
     'llava-internlm-7b': partial(LLaVA_XTuner, llm_path='internlm/internlm-chat-7b', llava_path='xtuner/llava-internlm-7b', visual_select_layer=-2, prompt_template='internlm_chat'),
     'llava-v1.5-7b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-7b-v1.5', llava_path='xtuner/llava-v1.5-7b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
     'llava-v1.5-13b-xtuner': partial(LLaVA_XTuner, llm_path='lmsys/vicuna-13b-v1.5', llava_path='xtuner/llava-v1.5-13b-xtuner', visual_select_layer=-2, prompt_template='vicuna'),
+    'llava-llama-3-8b': partial(LLaVA_XTuner, llm_path='xtuner/llava-llama-3-8b-v1_1', llava_path='xtuner/llava-llama-3-8b-v1_1', visual_select_layer=-2, prompt_template='llama3_chat'),
 }
 
 qwen_series = {
