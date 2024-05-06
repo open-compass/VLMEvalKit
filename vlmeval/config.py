@@ -7,6 +7,7 @@ MiniGPT4_ROOT = None
 TransCore_ROOT = None
 Yi_ROOT = None
 OmniLMM_ROOT = None
+Mini_Gemini_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 ungrouped = {
@@ -22,6 +23,7 @@ ungrouped = {
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
+    'MGM_7B':partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
 }
 
