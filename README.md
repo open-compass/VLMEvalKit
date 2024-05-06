@@ -27,10 +27,10 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 
 - **[2024-05-06]** We have launched a discord channel for VLMEvalKit users: https://discord.gg/evDT4GZmxN. Latest updates and discussion will be posted here
 - **[2024-05-06]** We have supported 2 VLMs based on Llama3 🔥🔥🔥: Bunny-llama3-8B (SigLIP, image size 384) and llava-llama-3-8b (CLIP-L, image size 336), you can now evaluate both models on dozens of datasets we supported
-- **[2024-04-28]** We have supported [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281), the new version  has better data quality and improved vision indispensability. To obtain the test-set performance, please submit the inference result to the [**evaluation service**](https://mmbench.opencompass.org.cn/mmbench-submission) 🔥🔥🔥
+- **[2024-04-28]** We have supported [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281), the new version has better data quality and improved vision indispensability. To obtain the test-set performance, please submit the inference result to the [**evaluation service**](https://mmbench.opencompass.org.cn/mmbench-submission) 🔥🔥🔥
 - **[2024-04-28]** We have supported [**POPE**](https://github.com/AoiDragon/POPE), a benchmark for object hallucination evaluation 🔥🔥🔥
 - **[2024-04-25]** We have supported [**Reka API**](https://www.reka.ai), the API model ranked first in [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 🔥🔥🔥
-- **[2024-04-21]** We have notices a minor issue of the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly
+- **[2024-04-21]** We have noticed a minor issue with the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly
 - **[2024-04-17]** We have supported [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
 - **[2024-04-15]** We have supported [**RealWorldQA**](https://x.ai/blog/grok-1.5v), a multimodal benchmark for real-world spatial understanding 🔥🔥🔥
 - **[2024-04-09]** We have refactored the inference interface of VLMs to a more unified version, check [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) for more details
