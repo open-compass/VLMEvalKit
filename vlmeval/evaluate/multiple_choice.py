@@ -389,6 +389,12 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    load_env()
+    import os
+    if 'OPENAI_API_KEY_JUDGE' in os.environ and os.environ['OPENAI_API_KEY_JUDGE']:
+        os.environ['OPENAI_API_KEY'] = os.environ['OPENAI_API_KEY_JUDGE']
+    if 'OPENAI_API_BASE_JUDGE' in os.environ and os.environ['OPENAI_API_BASE_JUDGE']:
+        os.environ['OPENAI_API_BASE'] = os.environ['OPENAI_API_BASE_JUDGE']
     args = parse_args()
     acc = multiple_choice_eval(
         eval_file=args.data, model=args.model, dataset=args.dataset, nproc=args.nproc, verbose=args.verbose)
