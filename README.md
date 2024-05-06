@@ -15,8 +15,8 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 </div>
 
 <div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard on HuggingFace</a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">🤖 Leaderboard on OpenXlab</a>
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard</a>
+<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab Mirror)</a>
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a>
 </div>
 

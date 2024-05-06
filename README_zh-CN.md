@@ -15,8 +15,8 @@
 </div>
 
 <div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HuggingFace 排行榜 </a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">🤖 OpenXlab 排行榜 </a>
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 排行榜 </a>
+<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab 镜像)</a>
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord 频道</a>
 </div>
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
