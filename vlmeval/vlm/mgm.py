@@ -14,7 +14,7 @@ class Mini_Gemini(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
 
-    def __init__(self, model_path, root='/mnt/petrelfs/wangguoan/git_repo/MGM', conv_mode='llava_v1', **kwargs):
+    def __init__(self, model_path, root=None, conv_mode='llava_v1', **kwargs):
         if root is None:
             warnings.warn('Please set `root` to Mini_Gemini code directory, which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" ')
             sys.exit(-1)
