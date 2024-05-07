@@ -89,6 +89,7 @@ class OpenAIWrapper(BaseAPI):
         else:
             self.logger.error('Unknown API Base. ')
             sys.exit(-1)
+        self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.openai_key}')
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
