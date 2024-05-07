@@ -126,6 +126,9 @@ class TSVDataset(CustomPrompt):
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
 
+        if os.environ.get('TSV_DATASET_LIMIT'):
+            data = data[int(os.environ.get('TSV_DATASET_LIMIT'))]
+
         self.data = data
 
     def __len__(self):
