@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os.path as osp
 from vlmeval.evaluate.misc import build_judge
-from vlmeval.smp import get_logger, load, dump, defaultdict
+from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 
 rule_dict = {
@@ -109,5 +109,12 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    load_env()
     args = parse_args()
-    LLaVABench_eval(eval_file=args.data, model=args.model, nproc=args.nproc, verbose=args.verbose)
+    judge_kwargs = dict(model=args.model, nproc=args.nproc, verbose=args.verbose)
+    if 'OPENAI_API_KEY_JUDGE' in os.environ and os.environ['OPENAI_API_KEY_JUDGE']:
+        judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
+    if 'OPENAI_API_BASE_JUDGE' in os.environ and os.environ['OPENAI_API_BASE_JUDGE']:
+        judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
+
+    LLaVABench_eval(eval_file=args.data, **judge_kwargs)

@@ -287,5 +287,11 @@ def parse_args():
 
 
 if __name__ == '__main__':
+    load_env()
     args = parse_args()
-    acc = YOrN_eval(eval_file=args.data, model=args.model, nproc=args.nproc, verbose=args.verbose, dataset=args.dataset)
+    judge_kwargs = dict(model=args.model, nproc=args.nproc, verbose=args.verbose)
+    if 'OPENAI_API_KEY_JUDGE' in os.environ and os.environ['OPENAI_API_KEY_JUDGE']:
+        judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
+    if 'OPENAI_API_BASE_JUDGE' in os.environ and os.environ['OPENAI_API_BASE_JUDGE']:
+        judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
+    acc = YOrN_eval(eval_file=args.data, dataset=args.dataset, **judge_kwargs)

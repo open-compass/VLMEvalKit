@@ -10,6 +10,7 @@ TransCore_ROOT = None
 Yi_ROOT = None
 OmniLMM_ROOT = None
 Mini_Gemini_ROOT = None
+VXVERSE_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 LOCAL_MODEL_ROOT = os.environ.get("LOCAL_MODEL_ROOT", "")
@@ -22,20 +23,19 @@ def join_local(model_name):
 ungrouped = {
     'TransCore_M': partial(TransCoreM, root=TransCore_ROOT),
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
-    'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth=join_local('anas-awadalla/mpt-7b'),
-                          ckpt_pth=join_local('openflamingo/OpenFlamingo-9B-vitl-mpt7b')),
+    'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth=join_local('anas-awadalla/mpt-7b'), ckpt_pth=join_local('openflamingo/OpenFlamingo-9B-vitl-mpt7b')),
     'VisualGLM_6b': partial(VisualGLM, model_path=join_local('THUDM/visualglm-6b')),
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path=join_local('MAGAer13/mplug-owl2-llama2-7b')),
-    'cogvlm-grounding-generalist': partial(CogVlm, name=join_local('cogvlm-grounding-generalist'),
-                                           tokenizer_name=join_local('lmsys/vicuna-7b-v1.5')),
-    'cogvlm-chat': partial(CogVlm, name='cogvlm-chat', tokenizer_name=join_local('lmsys/vicuna-7b-v1.5')),
-    'emu2_chat': partial(Emu, model_path=join_local('BAAI/Emu2-Chat')),
-    'MMAlaya': partial(MMAlaya, model_path=join_local('DataCanvas/MMAlaya')),
-    'MiniCPM-V': partial(MiniCPM_V, model_path=join_local('openbmb/MiniCPM-V')),
-    'MiniCPM-V-2': partial(MiniCPM_V, model_path=join_local('openbmb/MiniCPM-V-2')),
-    'OmniLMM_12B': partial(OmniLMM12B, model_path=join_local('openbmb/OmniLMM-12B'), root=OmniLMM_ROOT),
-    'MGM_7B': partial(Mini_Gemini, model_path=join_local('YanweiLi/MGM-7B-HD'), root=Mini_Gemini_ROOT),
+    'cogvlm-grounding-generalist':partial(CogVlm, name=join_local('cogvlm-grounding-generalist'),tokenizer_name =join_local('lmsys/vicuna-7b-v1.5')),
+    'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name=join_local('lmsys/vicuna-7b-v1.5')),
+    'emu2_chat':partial(Emu, model_path=join_local('BAAI/Emu2-Chat')),
+    'MMAlaya':partial(MMAlaya, model_path=join_local('DataCanvas/MMAlaya')),
+    'MiniCPM-V':partial(MiniCPM_V, model_path=join_local('openbmb/MiniCPM-V')),
+    'MiniCPM-V-2':partial(MiniCPM_V, model_path=join_local('openbmb/MiniCPM-V-2')),
+    'OmniLMM_12B':partial(OmniLMM12B, model_path=join_local('openbmb/OmniLMM-12B'), root=OmniLMM_ROOT),
+    'MGM_7B':partial(Mini_Gemini, model_path=join_local('YanweiLi/MGM-7B-HD'), root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path=join_local('BAAI/Bunny-Llama-3-8B-V')),
+    'VXVERSE':partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
 }
 
 api_models = {
@@ -161,7 +161,7 @@ for grp in model_groups:
 
 transformer_ver = {}
 transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
-    'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B'
+    'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B', 'vxverse'
 ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
 transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
     'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
