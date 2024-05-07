@@ -7,52 +7,66 @@ from transformers import StoppingCriteriaList
 from omegaconf import OmegaConf
 from PIL import Image
 
+model_cfgs = {
+    'XVERSE-V-13B': {
+        'arch': 'vxverse',
+        'model_type': 'pretrain_xverse13b-chat',
+        'max_txt_len': 512,
+        'end_sym': '<|endoftext|>',
+        'low_resource': False,
+        'prompt_template': 'Human: {}\nAssistant: ',
+        'ckpt': 'xverse/XVERSE-V-13B',
+        'lora_r': 128,
+        'lora_alpha': 256,
+        'lora_dropout': 0.05,
+        'lora_target_modules': 'all_linear',
+        'has_qformer': False,
+        'n_proj_layers': 2,
+        'vit_model': 'openai/clip-vit-large-patch14-224',
+        'vit_path': 'openai/clip-vit-large-patch14-224',
+        'image_size': 224,
+        'drop_path_rate': 0,
+        'vit_precision': 'fp16',
+        'llama_model': 'xverse/XVERSE-13B-Chat',
+    }
+}
 
-class Vxverse(BaseModel):
 
-    INSTALL_REQ = False
+class VXVERSE(BaseModel):
+
+    INSTALL_REQ = True
     INTERLEAVE = False
 
-    def __init__(self, mode='', root=None, temperature=1, max_out_len=512):
+    def __init__(self, model_name='XVERSE-V-13B', root=None, **kwargs):
 
         if root is None:
             warnings.warn('Please set root to the directory of vxverse.')
 
-        if mode == 'vxverse':
-            cfg = 'vxverse_13b_eval.yaml'
+        if model_name == 'XVERSE-V-13B':
+            model_cfg = OmegaConf.create(model_cfgs['XVERSE-V-13B'])
         else:
             raise NotImplementedError
 
-        self.mode = mode
-        self.temperature = temperature
-        self.max_out_len = max_out_len
-        self.root = root
-        this_dir = osp.dirname(__file__)
+        self.model_name = model_name
 
-        self.cfg = osp.join(this_dir, 'misc', cfg)
+        self.root = root
         sys.path.append(self.root)
 
         from vxverse.common.registry import registry
-        from vxverse.conversation.conversation import (
-            StoppingCriteriaSub,
-            CONV_VISION_XVERSE,
-        )
+        from vxverse.conversation.conversation import StoppingCriteriaSub, CONV_VISION_XVERSE
 
         device = torch.cuda.current_device()
         self.device = device
 
-        cfg_path = self.cfg
-        cfg = OmegaConf.load(cfg_path)
-
-        model_cfg = cfg.model
         model_cls = registry.get_model_class(model_cfg.arch)
         model = model_cls.from_config(model_cfg)
         model = model.to(device)
         model.eval()
-        vis_processor_cfg = cfg.datasets.cc_sbu_align.vis_processor.train
+        vis_processor_cfg = OmegaConf.create(dict(name='hd_image_train', image_size=224))
         vis_processor = registry.get_processor_class(
             vis_processor_cfg.name
         ).from_config(vis_processor_cfg)
+
         self.model = model
         self.vis_processor = vis_processor
         self.vis_processor_cfg = vis_processor_cfg
@@ -60,9 +74,10 @@ class Vxverse(BaseModel):
         self.CONV_VISION = CONV_VISION_XVERSE
         self.CONV_VISION.system = ''
         stop_words_ids = [[835], [2277, 29937]]
-        self.stopping_criteria = StoppingCriteriaList(
-            [StoppingCriteriaSub(stops=stop_words_ids)]
-        )
+        self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
+        default_kwargs = dict(max_new_tokens=512)
+        default_kwargs.update(kwargs)
+        self.kwargs = default_kwargs
 
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
@@ -83,10 +98,10 @@ class Vxverse(BaseModel):
         answers = self.model.generate(
             image,
             texts,
-            max_new_tokens=self.max_out_len,
             patches_per_images=patches_per_image,
             do_sample=False,
             stop_words_ids=self.stop_words_ids,
+            **self.kwargs
         )
         return answers[0]
 
