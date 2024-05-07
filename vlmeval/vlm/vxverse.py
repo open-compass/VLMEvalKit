@@ -6,6 +6,8 @@ from .base import BaseModel
 from transformers import StoppingCriteriaList
 from omegaconf import OmegaConf
 from PIL import Image
+from huggingface_hub import snapshot_download
+from vlmeval.smp import *
 
 model_cfgs = {
     'XVERSE-V-13B': {
@@ -43,9 +45,21 @@ class VXVERSE(BaseModel):
             warnings.warn('Please set root to the directory of vxverse.')
 
         if model_name == 'XVERSE-V-13B':
-            model_cfg = OmegaConf.create(model_cfgs['XVERSE-V-13B'])
+            cfg = model_cfgs['XVERSE-V-13B']
         else:
             raise NotImplementedError
+
+        ckpt_dir = cfg['ckpt']
+        if not osp.isdir(ckpt_dir):
+            cache_path = get_cache_path(ckpt_dir)
+            if cache_path is not None:
+                ckpt_dir = cache_path
+            else:
+                ckpt_dir = snapshot_download(repo_id=ckpt_dir)
+        assert osp.exists(ckpt_dir) and osp.isdir(ckpt_dir)
+        ckpt = osp.join(ckpt_dir, 'adapter_and_lora.bin')
+        cfg['ckpt'] = ckpt
+        model_cfg = OmegaConf.create(cfg)
 
         self.model_name = model_name
 
@@ -53,7 +67,7 @@ class VXVERSE(BaseModel):
         sys.path.append(self.root)
 
         from vxverse.common.registry import registry
-        from vxverse.conversation.conversation import StoppingCriteriaSub, CONV_VISION_XVERSE
+        from vxverse.conversation.conversation import CONV_VISION_XVERSE
 
         device = torch.cuda.current_device()
         self.device = device
@@ -74,7 +88,7 @@ class VXVERSE(BaseModel):
         self.CONV_VISION = CONV_VISION_XVERSE
         self.CONV_VISION.system = ''
         stop_words_ids = [[835], [2277, 29937]]
-        self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
+        self.stop_words_ids = stop_words_ids
         default_kwargs = dict(max_new_tokens=512)
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
