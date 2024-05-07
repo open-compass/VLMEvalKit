@@ -21,4 +21,25 @@ for d in datasets:
             nfail = sum(fail)
             ntot = len(fail)
             print(f'Model {model_name} x Dataset {d}: {nfail} out of {ntot} failed. {nfail / ntot * 100: .2f}%. ')
-    
+
+        eval_files = ls(root, match=f'{model_name}_{d}_')
+        eval_files = [x for x in eval_files if listinstr(['openai', 'gpt'], x) and x.endswith('.xlsx')]
+        
+        assert len(eval_files) == 1
+        eval_file = eval_files[0]
+        data = load(eval_file)
+        
+        if listinstr(['MathVista', 'MMVet'], d):
+            bad = [x for x in data['log'] if 'All 5 retries failed.' in x]
+            if len(bad):
+                print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
+        elif d == 'LLaVABench':
+            sub = data[data['gpt4_score'] == -1]
+            sub = sub[sub['gpt4_score'] == -1]
+            if len(sub):
+                print(f'Model {model_name} x Dataset {d} Evaluation: {len(sub)} out of {len(data)} failed.')
+        else:
+            bad = [x for x in data['log'] if FAIL_MSG in x]
+            if len(bad):
+                print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
+                
