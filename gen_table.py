@@ -60,45 +60,22 @@ def model_type_flag(line, FIELDS):
 
 
 def BUILD_L1_DF(results, fields):
-    res = defaultdict(list)
-    for i, m in enumerate(results):
-        item = results[m]
-        meta = item['META']
-        for k in META_FIELDS:
-            if k == 'Parameters (B)':
-                param = meta['Parameters']
-                res[k].append(float(param.replace('B', '')) if param != '' else None)
-            elif k == 'Method':
-                name, url = meta['Method']
-                res[k].append(f'<a href="{url}">{name}</a>')
-            else:
-                res[k].append(meta[k])
-        scores, ranks = [], []
-        for d in fields:
-            key_name = 'Overall' if d != 'OCRBench' else 'Final Score'
-            res[d].append(item[d][key_name])
-            if d == 'MME':
-                scores.append(item[d][key_name] / 28)
-            elif d == 'OCRBench':
-                scores.append(item[d][key_name] / 10)
-            else:
-                scores.append(item[d][key_name])
-            ranks.append(nth_large(item[d][key_name], [x[d][key_name] for x in results.values()]))
-        res['Avg Score'].append(round(np.mean(scores), 1))
-        res['Avg Rank'].append(round(np.mean(ranks), 2))
-
-    df = pd.DataFrame(res)
-    df = df.sort_values('Avg Score')
-    df = df.iloc[::-1]
-
     check_box = {}
     check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']
-    check_box['required'] = ['Avg Score', 'Avg Rank']
-    check_box['all'] = check_box['required'] + ['OpenSource', 'Verified'] + fields
+    # revise there to set defualt dataset
+    defualt_dataset = ['MMBench_TEST_EN', 'MMStar', 'MME', 'MMMU_VAL', 'MathVista', 'OCRBench', 'MMVet']
+    check_box['required'] = ['Avg Score', 'Avg Rank'] + defualt_dataset
+    check_box['avg'] = ['Avg Score', 'Avg Rank']
+    check_box['all'] = check_box['avg'] + fields
     type_map = defaultdict(lambda: 'number')
     type_map['Method'] = 'html'
     type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
     check_box['type_map'] = type_map
+    
+    res = generate_table(results, fields)
+    df = pd.DataFrame(res)
+    df = df.sort_values('Avg Score')
+    df = df.iloc[::-1]
     return df, check_box
 
 
@@ -153,3 +130,43 @@ def BUILD_L2_DF(results, dataset):
     type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
     check_box['type_map'] = type_map
     return df, check_box
+
+
+def generate_table(results, fields, df=None):
+    res = defaultdict(list)
+    for i, m in enumerate(results):
+        item = results[m]
+        meta = item['META']
+        for k in META_FIELDS:
+            if k == 'Parameters (B)':
+                param = meta['Parameters']
+                res[k].append(float(param.replace('B', '')) if param != '' else None)
+            elif k == 'Method':
+                name, url = meta['Method']
+                res[k].append(f'<a href="{url}">{name}</a>')
+                res['name'].append(name)
+            else:
+                res[k].append(meta[k])
+        scores, ranks = [], []
+        for d in fields:
+            key_name = 'Overall' if d != 'OCRBench' else 'Final Score'
+            res[d].append(item[d][key_name])
+            if d == 'MME':
+                scores.append(item[d][key_name] / 28)
+            elif d == 'OCRBench':
+                scores.append(item[d][key_name] / 10)
+            else:
+                scores.append(item[d][key_name])
+            ranks.append(nth_large(item[d][key_name], [x[d][key_name] for x in results.values()]))
+        res['Avg Score'].append(round(np.mean(scores), 1))
+        res['Avg Rank'].append(round(np.mean(ranks), 2))
+    if df is None:
+        return res
+    else:
+        res = pd.DataFrame(res)
+        df.set_index('name', inplace=True)
+        res.set_index('name', inplace=True)
+        df.update(res)
+        df = df.sort_values('Avg Score')
+        df = df.iloc[::-1]
+    return df
