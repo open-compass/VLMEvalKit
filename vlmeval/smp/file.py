@@ -117,10 +117,8 @@ def load(f):
 
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
     suffix = f.split('.')[-1]
-    data = handlers[suffix](f)
-    if os.environ.get('TSV_DATASET_LIMIT'):
-        data = data[:int(os.environ.get('TSV_DATASET_LIMIT'))]
-    return data
+    return handlers[suffix](f)
+
 
 def download_file(url, filename=None):
     import urllib.request
