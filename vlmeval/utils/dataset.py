@@ -73,7 +73,7 @@ class TSVDataset(CustomPrompt):
 
     def __init__(self, dataset='MMBench', skip_noimg=True):
 
-        self.data_root = LMUDataRoot()
+        self.data_root = LMUTSVDataRoot()
         assert osp.exists(self.data_root)
 
         self.dataset = dataset
