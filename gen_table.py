@@ -63,7 +63,7 @@ def BUILD_L1_DF(results, fields):
     check_box = {}
     check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']
     # revise there to set defualt dataset
-    defualt_dataset = ['MMBench_TEST_EN', 'MMStar', 'MME', 'MMMU_VAL', 'MathVista', 'OCRBench', 'MMVet']
+    defualt_dataset = ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME', 'MMMU_VAL', 'MathVista', 'OCRBench', 'MMVet', 'AI2D', 'HallusionBench', 'LLaVABench', 'SEEDBench_IMG']
     check_box['required'] = ['Avg Score', 'Avg Rank'] + defualt_dataset
     check_box['avg'] = ['Avg Score', 'Avg Rank']
     check_box['all'] = check_box['avg'] + fields

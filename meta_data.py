@@ -22,7 +22,7 @@ META_FIELDS = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model', 'Op
 MAIN_FIELDS = [
     'MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME',
     'MMMU_VAL', 'MathVista', 'OCRBench', 'AI2D', 
-    'HallusionBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench'
+    'HallusionBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench', 'CCBench', 'RealWorldQA'
 ]
 MMBENCH_FIELDS = ['MMBench_TEST_EN', 'MMBench_DEV_EN', 'MMBench_TEST_CN', 'MMBench_DEV_CN', 'CCBench']
 MODEL_SIZE = ['<10B', '10B-20B', '20B-40B', '>40B', 'Unknown']
