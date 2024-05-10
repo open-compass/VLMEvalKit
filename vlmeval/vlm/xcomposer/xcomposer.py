@@ -103,10 +103,11 @@ class XComposer(BaseModel):
         assert len(prompt_segs) == len(img_embeds) + 1
 
         prompt_seg_tokens = [
-            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=(i == 0)).to(self.device).input_ids
+            self.model.tokenizer(seg, return_tensors='pt', add_special_tokens=(i == 0)).to(self.device).input_ids.long()
             for i, seg in enumerate(prompt_segs)
         ]
         prompt_seg_embs = [self.model.internlm_model.model.embed_tokens(seg) for seg in prompt_seg_tokens]
+        # prompt_seg_embs = [self.model.internlm_model.model.embed_tokens(torch.tensor(seg).long()) for seg in prompt_seg_tokens]
         all_embeddings = []
         for i in range(len(img_embeds)):
             all_embeddings.extend([prompt_seg_embs[i], img_embeds[i]])
