@@ -45,7 +45,7 @@ api_models = {
     'RekaFlash': partial(Reka, model='reka-flash-20240226'), 
     'RekaCore': partial(Reka, model='reka-core-20240415'), 
     # Step1V Series
-    'Step1V': partial(GPT4V, model='step-1v-8k', base_url="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
+    'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
     # Internal Only
     'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     'Step1V_INT': partial(Step1V_INT, temperature=0, retry=10),
