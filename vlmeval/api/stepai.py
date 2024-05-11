@@ -9,7 +9,7 @@ headers = {
 }
 
 
-class StepAPI(BaseAPI):
+class StepAPI_INT(BaseAPI):
 
     is_api: bool = True
 
@@ -79,7 +79,7 @@ class StepAPI(BaseAPI):
         return ret_code, answer, response
 
 
-class Step1V(StepAPI):
+class Step1V_INT(StepAPI_INT):
 
     def generate(self, message, dataset=None):
-        return super(StepAPI, self).generate(message)
+        return super(StepAPI_INT, self).generate(message)
