@@ -22,7 +22,7 @@ class MiniCPM_V(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V' else 3
+        self.num_beams = 1 if self.model_path.endswith('openbmb/MiniCPM-V') else 3
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -71,7 +71,7 @@ class MiniCPM_V(BaseModel):
 
         default_kwargs = dict(
             max_new_tokens=max_new_tokens,
-            sampling=False,
+            do_sample=False,
             num_beams=self.num_beams
         )
         default_kwargs.update(self.kwargs)
