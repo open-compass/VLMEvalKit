@@ -4,6 +4,9 @@ inp = sys.argv[1]
 assert inp.endswith('.tsv')
 
 data = load(inp)
+OFFSET = 1e6
+while max(data['index']) >= OFFSET:
+    OFFSET *= 10
 
 data_2c = data[pd.isna(data['C'])]
 data_3c = data[~pd.isna(data['C']) & pd.isna(data['D'])]
@@ -59,6 +62,8 @@ def remap(data_in, tup, off):
         options[char_map[c]] = data.pop(c)
     for c in options:
         data[c] = options[c]
+    data.pop('image')
+    data['image'] = idx
     idx = [x + off for x in idx]
     data['index'] = idx
     return data
@@ -67,12 +72,12 @@ data_all = pd.concat([
     data_2c, 
     data_3c_y, 
     data_4c_y, 
-    remap(data_2c, map_2c[0], 1e6),
-    remap(data_3c_y, map_3c[0], 1e6),
-    remap(data_4c_y, map_4c[0], 1e6),
-    remap(data_3c_y, map_3c[1], 2e6),
-    remap(data_4c_y, map_4c[1], 2e6),
-    remap(data_4c_y, map_4c[2], 3e6),
+    remap(data_2c, map_2c[0], OFFSET),
+    remap(data_3c_y, map_3c[0], OFFSET),
+    remap(data_4c_y, map_4c[0], OFFSET),
+    remap(data_3c_y, map_3c[1], OFFSET * 2),
+    remap(data_4c_y, map_4c[1], OFFSET * 2),
+    remap(data_4c_y, map_4c[2], OFFSET * 3),
 ])
 
 tgt_file = inp.replace('.tsv', '_CIRC.tsv')
