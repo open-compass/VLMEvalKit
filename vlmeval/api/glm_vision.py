@@ -22,14 +22,14 @@ class GLMVisionWrapper(BaseAPI):
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
         self.default_params = {
-            "top_p": 0.6,
-            "top_k": 2,
-            "temperature": 0.8,
-            "repetition_penalty": 1.1,
-            "best_of": 1,
-            "do_sample": True,
-            "stream": False,
-            "max_tokens": max_tokens
+            'top_p': 0.6,
+            'top_k': 2,
+            'temperature': 0.8,
+            'repetition_penalty': 1.1,
+            'best_of': 1,
+            'do_sample': True,
+            'stream': False,
+            'max_tokens': max_tokens
         }
         if key is None:
             key = os.environ.get('GLMV_API_KEY', None)
@@ -42,39 +42,39 @@ class GLMVisionWrapper(BaseAPI):
 
     def image_to_base64(self, image_path):
         import base64
-        with open(image_path, "rb") as image_file:
+        with open(image_path, 'rb') as image_file:
             encoded_string = base64.b64encode(image_file.read())
             return encoded_string.decode('utf-8')
 
     def build_msgs(self, msgs_raw, system_prompt=None, dataset=None):
         msgs = cp.deepcopy(msgs_raw)
         content = []
-        text = ""
+        text = ''
         for i, msg in enumerate(msgs):
             if msg['type'] == 'text':
-                text += msg["value"]
+                text += msg['value']
             elif msg['type'] == 'image':
-                content.append(dict(type="image_url", image_url=dict(url=encode_image_file_to_base64(msg['value']))))
-        if DATASET_TYPE(dataset) in ["multi-choice", "Y/N"]:
-            text += "\nShort Answer."
-        content.append(dict(type="text", text=text))
+                content.append(dict(type='image_url', image_url=dict(url=encode_image_file_to_base64(msg['value']))))
+        if DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+            text += '\nShort Answer.'
+        content.append(dict(type='text', text=text))
         ret = [dict(role='user', content=content)]
         return ret
 
     def generate_inner(self, inputs, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
-        messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs["dataset"])
-        
-        url = "https://api.chatglm.cn/v1/chat/completions"
+        messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs['dataset'])
+
+        url = 'https://api.chatglm.cn/v1/chat/completions'
         headers = {
             'Content-Type': 'application/json',
             'Request-Id': 'remote-test',
             'Authorization': f'Bearer {self.key}'
         }
         payload = {
-            "model": self.model,
-            "messages": messages,
+            'model': self.model,
+            'messages': messages,
             **self.default_params
         }
         response = requests.post(url, headers=headers, data=json.dumps(payload), verify=False)
@@ -82,11 +82,11 @@ class GLMVisionWrapper(BaseAPI):
         try:
             assert response.status_code == 200
             for line in response.iter_lines():
-                data = json.loads(line.decode('utf-8').lstrip("data: "))
-                output.append(data["choices"][0]["message"]["content"])
-            answer = "".join(output).replace("</s>", "")
+                data = json.loads(line.decode('utf-8').lstrip('data: '))
+                output.append(data['choices'][0]['message']['content'])
+            answer = ''.join(output).replace('</s>', '')
             if self.verbose:
-                self.logger.info(f"inputs: {inputs}\nanswer: {answer}")
+                self.logger.info(f'inputs: {inputs}\nanswer: {answer}')
             return 0, answer, 'Succeeded! '
         except Exception as err:
             if self.verbose:
