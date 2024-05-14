@@ -23,6 +23,7 @@
 
 ## 🆕 更新
 
+- **[2024-05-07]** 支持了 [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🔥🔥🔥
 - **[2024-05-07]** 支持了 [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py), 感谢 [**YJY123**](https://github.com/YJY123) 🔥🔥🔥
 - **[2024-05-06]** 成立了 VLMEvalKit 用户群组的 Discord 频道: https://discord.gg/evDT4GZmxN，将在这里分享关于 VLMEvalKit 的更新并进行讨论
 - **[2024-05-06]** 支持了两个基于 Llama3 的 VLM 🔥🔥🔥: Bunny-llama3-8B (SigLIP, 输入图像大小 384) 和 llava-llama-3-8b (CLIP-L, 输入图像大小 336), 用户可在我们支持的数十个测试基准上测试这两个模型
@@ -32,7 +33,6 @@
 - **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜
 - **[2024-04-17]** 支持 [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
 - **[2024-04-15]** 支持 [**RealWorldQA**](https://x.ai/blog/grok-1.5v)， 这是一个用于真实世界空间理解的多模态基准测试  🔥🔥🔥
-- **[2024-04-09]** 将 VLMs 推理接口重构为更统一的版本，请查看 [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) 获取更多详细信息
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
