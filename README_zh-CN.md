@@ -23,7 +23,8 @@
 
 ## 🆕 更新
 
-- **[2024-05-07]** 支持了 [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🔥🔥🔥
+- **[2024-05-15]** 支持了 [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), 一个谷歌开源的 3B 多模态模型。 🔥🔥🔥
+- **[2024-05-14]** 支持了 [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🔥🔥🔥
 - **[2024-05-07]** 支持了 [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py), 感谢 [**YJY123**](https://github.com/YJY123) 🔥🔥🔥
 - **[2024-05-06]** 成立了 VLMEvalKit 用户群组的 Discord 频道: https://discord.gg/evDT4GZmxN，将在这里分享关于 VLMEvalKit 的更新并进行讨论
 - **[2024-05-06]** 支持了两个基于 Llama3 的 VLM 🔥🔥🔥: Bunny-llama3-8B (SigLIP, 输入图像大小 384) 和 llava-llama-3-8b (CLIP-L, 输入图像大小 336), 用户可在我们支持的数十个测试基准上测试这两个模型
@@ -32,7 +33,6 @@
 - **[2024-04-25]** 支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
 - **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜
 - **[2024-04-17]** 支持 [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
-- **[2024-04-15]** 支持 [**RealWorldQA**](https://x.ai/blog/grok-1.5v)， 这是一个用于真实世界空间理解的多模态基准测试  🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -82,6 +82,7 @@
 | [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️         | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
 | [**InternLM-XComposer2-[1.8B/7B]**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-[V1/V2]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
+| [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | | |
 
 🎞️ 表示支持多图片输入。
 
