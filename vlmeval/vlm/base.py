@@ -144,10 +144,7 @@ class BaseModel:
         if num_images == 0:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = None
-        elif num_images == 1:
-            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-            image = [x['value'] for x in message if x['type'] == 'image'][0]
         else:
-            prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
