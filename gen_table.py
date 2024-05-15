@@ -7,7 +7,7 @@ import gradio as gr
 import numpy as np
 import pandas as pd
 
-from meta_data import META_FIELDS, URL
+from meta_data import DEFAULT_BENCH, META_FIELDS, URL
 
 
 def listinstr(lst, s):
@@ -62,16 +62,15 @@ def model_type_flag(line, FIELDS):
 def BUILD_L1_DF(results, fields):
     check_box = {}
     check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']
-    # revise there to set defualt dataset
-    defualt_dataset = ['MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME', 'MMMU_VAL', 'MathVista', 'OCRBench', 'MMVet', 'AI2D', 'HallusionBench', 'LLaVABench', 'SEEDBench_IMG']
-    check_box['required'] = ['Avg Score', 'Avg Rank'] + defualt_dataset
+    # revise there to set default dataset
+    check_box['required'] = ['Avg Score', 'Avg Rank'] + DEFAULT_BENCH
     check_box['avg'] = ['Avg Score', 'Avg Rank']
     check_box['all'] = check_box['avg'] + fields
     type_map = defaultdict(lambda: 'number')
     type_map['Method'] = 'html'
     type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
     check_box['type_map'] = type_map
-    
+
     res = generate_table(results, fields)
     df = pd.DataFrame(res)
     df = df.sort_values('Avg Score')

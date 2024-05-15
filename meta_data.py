@@ -24,6 +24,11 @@ MAIN_FIELDS = [
     'MMMU_VAL', 'MathVista', 'OCRBench', 'AI2D', 
     'HallusionBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench', 'CCBench', 'RealWorldQA'
 ]
+DEFAULT_BENCH = [
+    'MMBench_TEST_EN', 'MMBench_TEST_CN', 'MMStar', 'MME',
+    'MMMU_VAL', 'MathVista', 'OCRBench', 'AI2D', 
+    'HallusionBench', 'SEEDBench_IMG', 'MMVet', 'LLaVABench'
+]
 MMBENCH_FIELDS = ['MMBench_TEST_EN', 'MMBench_DEV_EN', 'MMBench_TEST_CN', 'MMBench_DEV_CN', 'CCBench']
 MODEL_SIZE = ['<10B', '10B-20B', '20B-40B', '>40B', 'Unknown']
 MODEL_TYPE = ['API', 'OpenSource', 'Proprietary']
@@ -37,8 +42,9 @@ LEADERBOARD_MD['MAIN'] = f"""
 - Metrics:
   - Avg Score: The average score on all VLM Benchmarks (normalized to 0 - 100, the higher the better). 
   - Avg Rank: The average rank on all VLM Benchmarks (the lower the better). 
-- The overall evaluation results on {len(MAIN_FIELDS)} VLM benchmarks, sorted by the descending order of Avg Score. 
-  - The following datasets are included in the main results: {', '.join(MAIN_FIELDS)}. 
+  - Avg Score & Rank are calculated based on selected benchmark. 
+- By default, we present the overall evaluation results based on {len(DEFAULT_BENCH)} VLM benchmarks, sorted by the descending order of Avg Score. 
+  - The following datasets are included in the main results: {', '.join(DEFAULT_BENCH)}. 
   - Detailed evaluation results for each dataset (included or not included in main) are provided in the consequent tabs. 
 """
 
