@@ -95,7 +95,7 @@ class TSVDataset(CustomPrompt):
 
         data = load(data_path)
         self.skip_noimg = skip_noimg
-        if skip_noimg:
+        if skip_noimg and 'image' in data:
             data = data[~pd.isna(data['image'])]
 
         # Prompt for Captioning
