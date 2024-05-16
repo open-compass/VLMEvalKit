@@ -106,23 +106,29 @@ class TSVDataset(CustomPrompt):
             )] * len(data)
 
         data['index'] = [str(x) for x in data['index']]
-        data['image'] = [str(x) for x in data['image']]
 
-        image_map = {x: y for x, y in zip(data['index'], data['image'])}
-        for k in image_map:
-            if len(image_map[k]) <= 64:
-                idx = image_map[k]
-                assert idx in image_map and len(image_map[idx]) > 64
-                image_map[k] = image_map[idx]
+        self.meta_only = True
+        if 'image' in data:
+            data['image'] = [str(x) for x in data['image']]
 
-        data['image'] = [
-            eval(image_map[k]) if isliststr(image_map[k]) else image_map[k]
-            for k in data['index']
-        ]
+            image_map = {x: y for x, y in zip(data['index'], data['image'])}
+            for k in image_map:
+                if len(image_map[k]) <= 64:
+                    idx = image_map[k]
+                    assert idx in image_map and len(image_map[idx]) > 64
+                    image_map[k] = image_map[idx]
+
+            data['image'] = [
+                eval(image_map[k]) if isliststr(image_map[k]) else image_map[k]
+                for k in data['index']
+            ]
+            self.meta_only = False
+
         if 'image_path' in data:
             data['image_path'] = [
                 eval(pths) if isliststr(pths) else pths for pths in data['image_path']
             ]
+
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
 
@@ -138,7 +144,10 @@ class TSVDataset(CustomPrompt):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        tgt_path = self.dump_image(line, dataset)
+        if self.meta_only:
+            tgt_path = line['image_path']
+        else:
+            tgt_path = self.dump_image(line, dataset)
 
         prompt = line['question']
         if DATASET_TYPE(dataset) == 'multi-choice':
