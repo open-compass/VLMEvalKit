@@ -43,7 +43,7 @@ def LIST(lvl):
         'l2': L1 + L2,
         'l3': L1 + L2 + L3,
     }[lvl]
-    data = ' '.join([x[1] for x in data_list])
+    data = ' '.join([x[0] for x in data_list])
     print(data)
 
 def REPORT(lvl):
