@@ -27,6 +27,7 @@ ungrouped = {
     'MGM_7B':partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
     'VXVERSE':partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
+    'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
 }
 
 api_models = {
@@ -54,6 +55,8 @@ api_models = {
     'Claude3V_Opus': partial(Claude3V, model='claude-3-opus-20240229', temperature=0, retry=10),
     'Claude3V_Sonnet': partial(Claude3V, model='claude-3-sonnet-20240229', temperature=0, retry=10),
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
+    # GLM4V
+    'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
 }
 
 xtuner_series = {

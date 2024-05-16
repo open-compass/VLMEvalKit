@@ -3,6 +3,7 @@ import os.path as osp
 import warnings
 from .base import BaseModel
 from ..smp import splitlen
+from PIL import Image
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from transformers.image_utils import load_image
 
@@ -30,7 +31,7 @@ class IDEFICS(BaseModel):
     def generate_inner(self, message, dataset=None):
         prompts = (
             ['Users:']
-            + [x['value'] for x in message]
+            + [x['value'] if x['type'] == 'text' else Image.open(x['value']) for x in message]
             + ['<end_of_utterance>', '\nAssistant: ']
         )
         inputs = self.processor(
