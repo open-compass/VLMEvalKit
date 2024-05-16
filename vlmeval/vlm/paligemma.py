@@ -1,4 +1,3 @@
-from transformers import AutoProcessor, PaliGemmaForConditionalGeneration
 from PIL import Image
 import torch
 
@@ -11,6 +10,11 @@ class PaliGemma(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path='google/paligemma-3b-mix-448', **kwargs):
+        try:
+            from transformers import AutoProcessor, PaliGemmaForConditionalGeneration
+        except:
+            warnings.warn('Please install the latest version transformers.')
+            sys.exit(-1)
         self.model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
