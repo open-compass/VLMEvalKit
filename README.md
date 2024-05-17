@@ -134,7 +134,11 @@ To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEva
 
 ## 🖊️ Citation
 
-If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
+If you find this work helpful, please consider to **star🌟** this repo. Thanks for your support!
+
+[![Stargazers repo roster for @open-compass/VLMEvalKit](https://reporoster.com/stars/open-compass/VLMEvalKit)](https://github.com/open-compass/VLMEvalKit/stargazers)
+
+If you use VLMEvalKit in your research or wish to refer to published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
 @misc{2023opencompass,
