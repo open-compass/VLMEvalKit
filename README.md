@@ -25,6 +25,8 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 
 ## 🆕 News
 
+- **[2024-05-15]** We have supported [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), a versatile and lightweight vision-language model released by Google 🔥🔥🔥
+- **[2024-05-14]** We have supported [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🔥🔥🔥
 - **[2024-05-07]** We have supported [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py), thanks to [**YJY123**](https://github.com/YJY123) 🔥🔥🔥
 - **[2024-05-06]** We have launched a discord channel for VLMEvalKit users: https://discord.gg/evDT4GZmxN. Latest updates and discussion will be posted here
 - **[2024-05-06]** We have supported 2 VLMs based on Llama3 🔥🔥🔥: Bunny-llama3-8B (SigLIP, image size 384) and llava-llama-3-8b (CLIP-L, image size 336), you can now evaluate both models on dozens of datasets we supported
@@ -33,9 +35,6 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 - **[2024-04-25]** We have supported [**Reka API**](https://www.reka.ai), the API model ranked first in [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 🔥🔥🔥
 - **[2024-04-21]** We have noticed a minor issue with the MathVista evaluation script (which may negatively affect the performance). We have fixed it and updated the leaderboard accordingly
 - **[2024-04-17]** We have supported [**InternVL-Chat-V1.5**](https://github.com/OpenGVLab/InternVL/) 🔥🔥🔥
-- **[2024-04-15]** We have supported [**RealWorldQA**](https://x.ai/blog/grok-1.5v), a multimodal benchmark for real-world spatial understanding 🔥🔥🔥
-- **[2024-04-09]** We have refactored the inference interface of VLMs to a more unified version, check [**#140**](https://github.com/open-compass/VLMEvalKit/pull/140) for more details
-
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -85,6 +84,7 @@ VLMEvalKit will use an **judge LLM** to extract answer from the output if you se
 | [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️         | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
 | [**InternLM-XComposer2-[1.8B/7B]**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-[V1/V2]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
+| [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | | |
 
 🎞️: Support multiple images as inputs.
 
@@ -134,7 +134,11 @@ To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEva
 
 ## 🖊️ Citation
 
-If you use VLMEvalKit in your research or wish to refer to the published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
+If you find this work helpful, please consider to **star🌟** this repo. Thanks for your support!
+
+[![Stargazers repo roster for @open-compass/VLMEvalKit](https://reporoster.com/stars/open-compass/VLMEvalKit)](https://github.com/open-compass/VLMEvalKit/stargazers)
+
+If you use VLMEvalKit in your research or wish to refer to published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
 @misc{2023opencompass,

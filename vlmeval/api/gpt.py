@@ -54,23 +54,25 @@ class OpenAIWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
 
-        env_key = os.environ.get('OPENAI_API_KEY', '')
-        openai_key = env_key if key is None else key
-        self.openai_key = openai_key
+        if 'step-1v' in model:
+            env_key = os.environ.get('STEPAI_API_KEY', '')
+            if key is None:
+                key = env_key
+        else:
+            env_key = os.environ.get('OPENAI_API_KEY', '')
+            if key is None:
+                key = env_key
+            assert isinstance(key, str) and key.startswith('sk-'), (
+                f'Illegal openai_key {key}. '
+                'Please set the environment variable OPENAI_API_KEY to your openai key. '
+            )
+        self.key = key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
-
-        self.vision = False
-        if model == 'gpt-4-vision-preview':
-            self.vision = True
         self.timeout = timeout
 
-        assert isinstance(openai_key, str) and openai_key.startswith('sk-'), (
-            f'Illegal openai_key {openai_key}. '
-            'Please set the environment variable OPENAI_API_KEY to your openai key. '
-        )
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if api_base is None:
@@ -89,7 +91,7 @@ class OpenAIWrapper(BaseAPI):
         else:
             self.logger.error('Unknown API Base. ')
             sys.exit(-1)
-        self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.openai_key}')
+        self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
@@ -131,7 +133,7 @@ class OpenAIWrapper(BaseAPI):
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
-        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.openai_key}'}
+        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
             model=self.model,
             messages=input_msgs,

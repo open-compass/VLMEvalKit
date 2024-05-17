@@ -1,20 +1,19 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 
-url = 'https://b-openapi.basemind.com/openapi/v1/chat/completions'
+url = 'https://api.stepfun.com/v1/chat/completions'
 headers = {
-    'X-Request-Orgcode': 'companyA',
+    'Content-Type': 'application/json',
     'Authorization': 'Bearer {}',
-    'Content-Type': 'application/json'
 }
 
 
-class StepAPI(BaseAPI):
+class StepAPI_INT(BaseAPI):
 
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'stepapi-rankboard',
+                 model: str = 'step-1v-8k',
                  retry: int = 10,
                  wait: int = 3,
                  key: str = None,
@@ -46,8 +45,8 @@ class StepAPI(BaseAPI):
             if msg['type'] == 'image':
                 image_b64 = encode_image_file_to_base64(msg['value'])
                 message['content'].append({
-                    'image_b64': {'b64_json': image_b64},
-                    'type': 'image_b64'
+                    'image_url': {'url': 'data:image/webp;base64,%s' % (image_b64)},
+                    'type': 'image_url'
                 })
             elif msg['type'] == 'text':
                 message['content'].append({
@@ -79,7 +78,7 @@ class StepAPI(BaseAPI):
         return ret_code, answer, response
 
 
-class Step1V(StepAPI):
+class Step1V_INT(StepAPI_INT):
 
     def generate(self, message, dataset=None):
-        return super(StepAPI, self).generate(message)
+        return super(StepAPI_INT, self).generate(message)

@@ -36,17 +36,17 @@ ungrouped = {
     'MGM_7B':partial(Mini_Gemini, model_path=join_local('YanweiLi/MGM-7B-HD'), root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path=join_local('BAAI/Bunny-Llama-3-8B-V')),
     'VXVERSE':partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
+    'paligemma-3b-mix-448': partial(PaliGemma, model_path=join_local('google/paligemma-3b-mix-448')),
 }
 
 api_models = {
     # GPT-4V series
     'GPT4V': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
-    'GPT4V_HIGH': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=-1, img_detail='high',
-                          retry=10),
-    'GPT4V_20240409': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=512, img_detail='low',
-                              retry=10),
-    'GPT4V_20240409_HIGH': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=-1, img_detail='high',
-                                   retry=10),
+    'GPT4V_HIGH': partial(GPT4V, model='gpt-4-1106-vision-preview', temperature=0, img_size=-1, img_detail='high', retry=10),
+    'GPT4V_20240409': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GPT4V_20240409_HIGH': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=-1, img_detail='high', retry=10),
+    'GPT4o': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GPT4o_HIGH': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Gemini-V
     'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
     # Qwen-VL Series
@@ -56,13 +56,16 @@ api_models = {
     'RekaEdge': partial(Reka, model='reka-edge-20240208'),
     'RekaFlash': partial(Reka, model='reka-flash-20240226'),
     'RekaCore': partial(Reka, model='reka-core-20240415'),
+    # Step1V Series
+    'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
     # Internal Only
-    'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low',
-                         retry=10),
-    'Step1V': partial(Step1V, temperature=0, retry=10),
+    'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    'Step1V_INT': partial(Step1V_INT, temperature=0, retry=10),
     'Claude3V_Opus': partial(Claude3V, model='claude-3-opus-20240229', temperature=0, retry=10),
     'Claude3V_Sonnet': partial(Claude3V, model='claude-3-sonnet-20240229', temperature=0, retry=10),
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
+    # GLM4V
+    'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
 }
 
 xtuner_series = {

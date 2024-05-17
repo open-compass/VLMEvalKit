@@ -43,10 +43,6 @@ class OpenAIWrapperInternal(OpenAIWrapper):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
 
-        self.vision = False
-        if model == 'gpt-4-vision-preview':
-            self.vision = True
-
         super(OpenAIWrapper, self).__init__(
             wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
