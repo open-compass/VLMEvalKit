@@ -17,8 +17,7 @@ class MiniCPM_V(BaseModel):
         self.model_path = model_path
         print(f'load from {self.model_path}')
         self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
-        self.model = self.model.to(# dtype=torch.bfloat16
-                                   dtype=torch.float32)
+        self.model = self.model.to(dtype=torch.bfloat16)
         self.model.eval().cuda()
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
@@ -83,5 +82,4 @@ class MiniCPM_V(BaseModel):
             tokenizer=self.tokenizer,
             **default_kwargs
         )
-        print(f"message: {message} res: {res}")
         return res
