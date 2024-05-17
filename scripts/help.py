@@ -42,6 +42,8 @@ def LIST(lvl):
         'l1': L1, 
         'l2': L1 + L2,
         'l3': L1 + L2 + L3,
+        'l2p': L2, 
+        'l3p': L3
     }[lvl]
     data = ' '.join([x[0] for x in data_list])
     print(data)
