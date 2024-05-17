@@ -185,3 +185,11 @@ LEADERBOARD_MD['OCRVQA_TESTCORE'] = """
 - OCRVQA is a benchmark for visual question answering by reading text in images. It presents a large-scale dataset, OCR-VQA-200K, comprising over 200,000 images of book covers. The study combines techniques from the Optical Character Recognition (OCR) and Visual Question Answering (VQA) domains to address the challenges associated with this new task and dataset. 
 - Note that some models may not be able to generate standardized responses based on the prompt. We currently do not have reports for these models.
 """
+
+LEADERBOARD_MD['POPE'] = """
+## POPE Evaluation Results
+
+- POPE is a benchmark for object hallucination evaluation. It includes three tracks of object hallucination: random, popular, and adversarial.
+- Note that the official POPE dataset contains approximately 8910 cases. POPE includes three tracks, and there are some overlapping samples among the three tracks. To reduce the data file size, we have kept only a single copy of the overlapping samples (about 5127 examples). However, the final accuracy will be calculated on the ~9k samples.
+- We report the average F1 score across the three types of data as the overall score. Accuracy, precision, and recall are also shown in the table. F1 score = 2 * (precision * recall) / (precision + recall). 
+"""
