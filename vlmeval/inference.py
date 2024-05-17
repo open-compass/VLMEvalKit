@@ -175,7 +175,8 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         for x in data['index']:
             assert x in data_all
         data['prediction'] = [str(data_all[x]) for x in data['index']]
-        data.pop('image')
+        if 'image' in data:
+            data.pop('image')
 
         dump(data, result_file)
         for i in range(world_size):
