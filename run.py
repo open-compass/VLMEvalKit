@@ -18,6 +18,7 @@ def parse_args():
     parser.add_argument('--judge', type=str, default=None)
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--rerun', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -65,7 +66,7 @@ def main():
                     custom_flag = True
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
-            if osp.exists(result_file):
+            if osp.exists(result_file) and args.rerun:
                 os.system(f'rm {pred_root}/{model_name}_{dataset_name}_*')
 
             if model is None:
