@@ -191,5 +191,6 @@ LEADERBOARD_MD['POPE'] = """
 
 - POPE is a benchmark for object hallucination evaluation. It includes three tracks of object hallucination: random, popular, and adversarial.
 - Note that the official POPE dataset contains approximately 8910 cases. POPE includes three tracks, and there are some overlapping samples among the three tracks. To reduce the data file size, we have kept only a single copy of the overlapping samples (about 5127 examples). However, the final accuracy will be calculated on the ~9k samples.
+- Some API models, due to safety policies, refuse to answer certain questions, so their actual capabilities may be higher than the reported scores.
 - We report the average F1 score across the three types of data as the overall score. Accuracy, precision, and recall are also shown in the table. F1 score = 2 * (precision * recall) / (precision + recall). 
 """
