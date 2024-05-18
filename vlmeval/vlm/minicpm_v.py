@@ -59,7 +59,18 @@ class MiniCPM_V(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        message_one_image = []
+        image_added = False
+        for msg in message:
+            if not msg['value']:
+                continue
+            if image_added and msg['type'] == 'image':
+                continue
+            if msg['type'] == 'image':
+                image_added = True
+            message_one_image.append(msg)
+
+        prompt, image_path = self.message_to_promptimg(message_one_image)
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
         if DATASET_TYPE(dataset) == 'multi-choice':
