@@ -183,32 +183,6 @@ mme_texttranslation_gen"""
         cmp_question(line)
 
 
-def eq_vocab():
-    from transformers import AutoConfig, AutoTokenizer
-
-    path = '/mnt/data/user/tc_agi/yh/ckpts/qwen1.5_32b/qwen1.5_32b_sft.job_669184_step2000'
-    config = AutoConfig.from_pretrained(path)
-    tokenizer = AutoTokenizer.from_pretrained(path)
-    for i in range(len(tokenizer), config.vocab_size):
-        tokenizer.add_tokens([f"PAD_TO_MODEL_LEN_{i}"])
-    print(config.vocab_size)  # >> 32032
-    print(len(tokenizer))  # >> 32002
-    assert config.vocab_size == len(tokenizer)
-
-    tokenizer.save_pretrained("qwen1.5_32b_sft.job_669184_step2000")
-    # hdfs dfs -get /user/tc_agi/yh/ckpts/qwen1.5_32b/qwen1.5_32b_sft.job_669184_step2000 qwen1.5_32b_sft.job_669184_step2000_fix_vocab
-    # mv qwen1.5_32b_sft.job_669184_step2000/* qwen1.5_32b_sft.job_669184_step2000_fix_vocab/
-    # hdfs dfs -put /home/jeeves/VLMEvalKit/qwen1.5_32b_sft.job_669184_step2000_fix_vocab /user/tc_agi/UltraEval/open_models/modelscope/hub/openbmb/qwen1.5_32b_sft.job_669184_step2000_fix_vocab
-    # /mnt/data/user/tc_agi/UltraEval/open_models/modelscope/hub/openbmb/qwen1.5_32b_sft.job_669184_step2000_fix_vocab
-
-    # check
-    path = "/home/jeeves/VLMEvalKit/qwen1.5_32b_sft.job_669184_step2000_fix_vocab"
-    config = AutoConfig.from_pretrained(path)
-    tokenizer = AutoTokenizer.from_pretrained(path)
-    print(config.vocab_size)  # >> 32032
-    print(len(tokenizer))  # >> 32002
-
-
 def load_save_pil():
     # img_pil = Image.open("image_hardco.jpg")
     # img_pil.save("image_hardco_load_save.jpg")
