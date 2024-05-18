@@ -22,7 +22,7 @@ class MiniCPM_V(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V' else 3
+        self.num_beams = 1 if self.model_path.endswith('openbmb/MiniCPM-V') else 3
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -59,7 +59,18 @@ class MiniCPM_V(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        message_one_image = []
+        image_added = False
+        for msg in message:
+            if not msg['value']:
+                continue
+            if image_added and msg['type'] == 'image':
+                continue
+            if msg['type'] == 'image':
+                image_added = True
+            message_one_image.append(msg)
+
+        prompt, image_path = self.message_to_promptimg(message_one_image)
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
         if DATASET_TYPE(dataset) == 'multi-choice':
@@ -71,7 +82,7 @@ class MiniCPM_V(BaseModel):
 
         default_kwargs = dict(
             max_new_tokens=max_new_tokens,
-            sampling=False,
+            do_sample=False,
             num_beams=self.num_beams
         )
         default_kwargs.update(self.kwargs)

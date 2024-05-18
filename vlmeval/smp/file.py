@@ -10,6 +10,14 @@ import numpy as np
 import validators
 import mimetypes
 
+def LMUTSVDataRoot():
+    if 'LMUTSVData' in os.environ and osp.exists(os.environ['LMUTSVData']):
+        return os.environ['LMUTSVData']
+    home = osp.expanduser('~')
+    root = osp.join(home, 'LMUTSVData')
+    os.makedirs(root, exist_ok=True)
+    return root
+
 
 def LMUDataRoot():
     if 'LMUData' in os.environ and osp.exists(os.environ['LMUData']):

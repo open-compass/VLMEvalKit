@@ -69,7 +69,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
 
     rank, world_size = get_rank_and_world_size()
     if rank == 0:
-        dataset = TSVDataset(dataset_name)
+        TSVDataset(dataset_name)
     if world_size > 1:
         dist.barrier()
     dataset = TSVDataset(dataset_name)

@@ -1,5 +1,5 @@
 import pandas as pd
-import hashlib
+import numpy as np
 from ..smp import *
 from .dataset_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE
 from .custom_prompt import CustomPrompt
@@ -73,7 +73,7 @@ class TSVDataset(CustomPrompt):
 
     def __init__(self, dataset='MMBench', skip_noimg=True):
 
-        self.data_root = LMUDataRoot()
+        self.data_root = LMUTSVDataRoot()
         assert osp.exists(self.data_root)
 
         self.dataset = dataset
@@ -132,6 +132,8 @@ class TSVDataset(CustomPrompt):
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
 
+        if os.environ.get('TSV_DATASET_LIMIT'):
+            data = data[:int(os.environ.get('TSV_DATASET_LIMIT'))]
         self.data = data
 
     def __len__(self):
