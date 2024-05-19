@@ -135,6 +135,10 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🖊️ 引用 <a id="citation"></a>
 
+如果我们的工作对您有所帮助，请考虑 **star🌟** VLMEvalKit。感谢支持！
+
+[![Stargazers repo roster for @open-compass/VLMEvalKit](https://reporoster.com/stars/open-compass/VLMEvalKit)](https://github.com/open-compass/VLMEvalKit/stargazers)
+
 如果您在研究中使用了 VLMEvalKit，或希望参考已发布的开源评估结果，请使用以下 BibTeX 条目以及与您使用的特定 VLM / 基准测试相对应的 BibTex 条目。
 
 ```bib
