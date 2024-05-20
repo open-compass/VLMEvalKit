@@ -8,6 +8,7 @@ import os.path as osp
 import base64
 from PIL import Image
 from .file import load, dump
+Image.MAX_IMAGE_PIXELS = 1e9
 
 
 def mmqa_display(question, target_size=512):

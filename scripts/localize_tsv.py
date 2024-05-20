@@ -1,8 +1,6 @@
 import os
 import sys
 import os.path as osp
-import PIL
-PIL.Image.MAX_IMAGE_PIXELS = 1e9
 
 from vlmeval import *
 

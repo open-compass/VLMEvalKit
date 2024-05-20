@@ -5,9 +5,6 @@ from .dataset_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE
 from .custom_prompt import CustomPrompt
 from .matching_util import can_infer
 
-import PIL
-PIL.Image.MAX_IMAGE_PIXELS = 1e9
-
 
 def isliststr(s):
     return (s[0] == '[') and (s[-1] == ']')
