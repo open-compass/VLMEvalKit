@@ -27,3 +27,4 @@ from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
 from .vxverse import VXVERSE
 from .paligemma import PaliGemma
+from .minicpm_llama3_v_2_5 import MiniCPM_Llama3_V

@@ -23,6 +23,7 @@ ungrouped = {
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
+    'MiniCPM-Llama3-V-2_5':partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B':partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
