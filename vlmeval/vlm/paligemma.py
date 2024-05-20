@@ -15,12 +15,13 @@ class PaliGemma(BaseModel):
         except:
             warnings.warn('Please install the latest version transformers.')
             sys.exit(-1)
-        self.model = PaliGemmaForConditionalGeneration.from_pretrained(
+        model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            device_map='auto',
+            device_map='cpu',
             revision='bfloat16',
         ).eval()
+        self.model = model.cuda()
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.kwargs = kwargs
 
@@ -28,7 +29,7 @@ class PaliGemma(BaseModel):
         prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
 
-        model_inputs = self.processor(text=prompt, images=image, return_tensors='pt').to(self.model.device)
+        model_inputs = self.processor(text=prompt, images=image, return_tensors='pt').to('cuda')
         input_len = model_inputs['input_ids'].shape[-1]
 
         with torch.inference_mode():
