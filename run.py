@@ -54,7 +54,11 @@ def main():
             custom_flag = False
 
             if dataset_name not in dataset_URLs:
-                dataset_name = abbr2full(dataset_name)
+                file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
+                if not osp.exists(file_path):
+                    dataset_name = abbr2full(dataset_name)
+                else:
+                    dataset_name = dataset_name
 
             if dataset_name not in dataset_URLs:
                 logger.warning(f'Dataset {dataset_name} is not officially supported. ')
