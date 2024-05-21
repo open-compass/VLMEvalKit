@@ -21,9 +21,6 @@ ungrouped = {
     'cogvlm-chat':partial(CogVlm, name='cogvlm-chat',tokenizer_name ='lmsys/vicuna-7b-v1.5'),
     'emu2_chat':partial(Emu, model_path='BAAI/Emu2-Chat',),
     'MMAlaya':partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
-    'MiniCPM-V':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
-    'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
-    'MiniCPM-Llama3-V-2_5':partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
     'OmniLMM_12B':partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B':partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
@@ -58,6 +55,12 @@ api_models = {
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
+}
+
+minicpm_series = {
+    'MiniCPM-V': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
+    'MiniCPM-V-2':partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
+    'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
 }
 
 xtuner_series = {
@@ -136,7 +139,7 @@ model_groups = [
     ungrouped, api_models, 
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
-    deepseekvl_series
+    deepseekvl_series, minicpm_series
 ]
 
 for grp in model_groups:
@@ -149,8 +152,7 @@ transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xco
 transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
     'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
 ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series)
-transformer_ver['4.39.0'] = [x for x in llava_series if 'next' in x]
-transformer_ver['4.40.0'] = ['idefics2_8b', 'Bunny-llama3-8B']
+transformer_ver['4.40.0'] = ['idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5'] + [x for x in llava_series if 'next' in x]
 
 if __name__ == '__main__':
     import sys
