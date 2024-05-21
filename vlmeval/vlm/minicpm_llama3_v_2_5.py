@@ -29,7 +29,6 @@ class MiniCPM_Llama3_V(BaseModel):
         self.wo_options_system_prompt = 'Carefully read the following question Answer the question directly.'
         self.detail_system_prompt = 'Answer this question in detail.'
         self.vqa_prompt = 'Answer the question using a single word or phrase.'
-        
 
     def use_custom_prompt(self, dataset):
         if listinstr(['multi-choice', 'VQA'], DATASET_TYPE(dataset)):
@@ -65,28 +64,28 @@ class MiniCPM_Llama3_V(BaseModel):
             prompt += f'Question: {question}\n'
             if len(options):
                 prompt += options_prompt
-                system_prompt = self.options_system_prompt +  "\nPlease just indicate your choice."
+                system_prompt = self.options_system_prompt + '\nPlease just indicate your choice.'
             else:
                 system_prompt = self.wo_options_system_prompt
 
-            if 'MMMU' in dataset: # Corner Case
+            if 'MMMU' in dataset:  # Corner Case
                 prompt = system_prompt + '\n' + prompt
                 system_prompt = ''
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
-            question = line['question'] + " Yes or No?"
+            question = line['question'] + ' Yes or No?'
             prompt = question
         elif dataset is not None and listinstr(['MME'], dataset):
-            question = line['question'] + " Yes or No?"
+            question = line['question'] + ' Yes or No?'
             prompt = question
         # ocrbench
-        
+
         elif dataset is not None and listinstr(['OCRBench'], dataset):
             system_prompt = self.vqa_prompt
             question = line['question']
             prompt = question
         elif DATASET_TYPE(dataset) == 'VQA':
             if listinstr(['LLaVABench'], dataset):
-                system_prompt = ""
+                system_prompt = ''
                 prompt = question
             elif listinstr(['MMVet'], dataset):
                 system_prompt = self.detail_system_prompt
@@ -143,7 +142,7 @@ class MiniCPM_Llama3_V(BaseModel):
             msgs=msgs,
             context=None,
             tokenizer=self.tokenizer,
-            
+
             **default_kwargs
         )
 
