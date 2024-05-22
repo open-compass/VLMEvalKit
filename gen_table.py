@@ -182,7 +182,8 @@ def generate_table(results, fields):
     valid, missing = df[~pd.isna(df['Avg Score'])], df[pd.isna(df['Avg Score'])]
     valid = valid.sort_values('Avg Score')
     valid = valid.iloc[::-1]
-    missing = missing.sort_values('MMBench_V11')
-    missing = missing.iloc[::-1]
+    if len(fields):
+        missing = missing.sort_values('MMBench_V11' if 'MMBench_V11' in fields else fields[0])
+        missing = missing.iloc[::-1]
     df = pd.concat([valid, missing])
     return df
