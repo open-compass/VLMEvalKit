@@ -134,7 +134,7 @@ def generate_table(results, fields):
 
     def get_mmbench_v11(item):
         assert 'MMBench_TEST_CN_V11' in item and 'MMBench_TEST_EN_V11' in item
-        val = (item['MMBench_TEST_CN_V11'] + item['MMBench_TEST_EN_V11']) / 2
+        val = (item['MMBench_TEST_CN_V11']['Overall'] + item['MMBench_TEST_EN_V11']['Overall']) / 2
         val = float(f'{val:.1f}')
         return val
 
