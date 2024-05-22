@@ -57,7 +57,7 @@ with gr.Blocks() as demo:
                 new_fields = [field for field in fields if field not in filter_list]
                 df = generate_table(results, new_fields)
 
-                df['flag'] = [model_size_flag(x, model_size) for x in df['Parameters (B)']]
+                df['flag'] = [model_size_flag(x, model_size) for x in df['Param (B)']]
                 df = df[df['flag']]
                 df.pop('flag')
                 if len(df):
@@ -119,7 +119,7 @@ with gr.Blocks() as demo:
                     s = structs[DATASETS.index(dataset_name)]
                     headers = s.check_box['essential'] + fields
                     df = cp.deepcopy(s.table)
-                    df['flag'] = [model_size_flag(x, model_size) for x in df['Parameters (B)']]
+                    df['flag'] = [model_size_flag(x, model_size) for x in df['Param (B)']]
                     df = df[df['flag']]
                     df.pop('flag')
                     if len(df):

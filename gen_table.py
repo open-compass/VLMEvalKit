@@ -63,7 +63,7 @@ def model_type_flag(line, FIELDS):
 
 def BUILD_L1_DF(results, fields):
     check_box = {}
-    check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']
+    check_box['essential'] = ['Method', 'Param (B)', 'Language Model', 'Vision Model']
     # revise there to set default dataset
     check_box['required'] = ['Avg Score', 'Avg Rank'] + DEFAULT_BENCH
     check_box['avg'] = ['Avg Score', 'Avg Rank']
@@ -95,7 +95,7 @@ def BUILD_L2_DF(results, dataset):
             continue
         meta = item['META']
         for k in META_FIELDS:
-            if k == 'Parameters (B)':
+            if k == 'Param (B)':
                 param = meta['Parameters']
                 res[k].append(float(param.replace('B', '')) if param != '' else None)
             elif k == 'Method':
@@ -120,7 +120,7 @@ def BUILD_L2_DF(results, dataset):
         df = df.iloc[::-1]
 
     check_box = {}
-    check_box['essential'] = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model']
+    check_box['essential'] = ['Method', 'Param (B)', 'Language Model', 'Vision Model']
     check_box['required'] = required_fields
     check_box['all'] = all_fields
     type_map = defaultdict(lambda: 'number')
@@ -143,7 +143,7 @@ def generate_table(results, fields):
         item = results[m]
         meta = item['META']
         for k in META_FIELDS:
-            if k == 'Parameters (B)':
+            if k == 'Param (B)':
                 param = meta['Parameters']
                 res[k].append(float(param.replace('B', '')) if param != '' else None)
             elif k == 'Method':

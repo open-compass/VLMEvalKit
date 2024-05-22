@@ -20,7 +20,7 @@ This leaderboard was last updated: {}.
 OpenVLM Leaderboard only includes open-source VLMs or API models that are publicly available. To add your own model to the leaderboard, please create a PR in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) to support your VLM and then we will help with the evaluation and updating the leaderboard. For any questions or concerns, please feel free to contact us at [opencompass,duanhaodong]@pjlab.org.cn.
 """
 # CONSTANTS-FIELDS
-META_FIELDS = ['Method', 'Parameters (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
+META_FIELDS = ['Method', 'Param (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
 MAIN_FIELDS = [
     'MMBench_V11', 'MMStar', 'MME',
     'MMMU_VAL', 'MathVista', 'OCRBench', 'AI2D', 
