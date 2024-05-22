@@ -38,7 +38,9 @@ def model_size_flag(sz, FIELDS):
         return True
     if pd.isna(sz):
         return False
-    if '<10B' in FIELDS and sz < 10:
+    if '<4B' in FIELDS and sz < 4:
+        return True
+    if '4B-10B' in FIELDS and sz >= 4 and sz < 10:
         return True
     if '10B-20B' in FIELDS and sz >= 10 and sz < 20:
         return True
@@ -71,10 +73,7 @@ def BUILD_L1_DF(results, fields):
     type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
     check_box['type_map'] = type_map
 
-    res = generate_table(results, fields)
-    df = pd.DataFrame(res)
-    df = df.sort_values('Avg Score')
-    df = df.iloc[::-1]
+    df = generate_table(results, fields)
     return df, check_box
 
 
@@ -131,7 +130,14 @@ def BUILD_L2_DF(results, dataset):
     return df, check_box
 
 
-def generate_table(results, fields, df=None):
+def generate_table(results, fields):
+
+    def get_mmbench_v11(item):
+        assert 'MMBench_TEST_CN_V11' in item and 'MMBench_TEST_EN_V11' in item
+        val = (item['MMBench_TEST_CN_V11'] + item['MMBench_TEST_EN_V11']) / 2
+        val = float(f'{val:.1f}')
+        return val
+
     res = defaultdict(list)
     for i, m in enumerate(results):
         item = results[m]
@@ -149,23 +155,34 @@ def generate_table(results, fields, df=None):
         scores, ranks = [], []
         for d in fields:
             key_name = 'Overall' if d != 'OCRBench' else 'Final Score'
-            res[d].append(item[d][key_name])
-            if d == 'MME':
-                scores.append(item[d][key_name] / 28)
-            elif d == 'OCRBench':
-                scores.append(item[d][key_name] / 10)
+            # Every Model should have MMBench_V11 results
+            if d == 'MMBench_V11':
+                val = get_mmbench_v11(item)
+                res[d].append(val)
+                scores.append(val)
+                ranks.append(nth_large(val, [get_mmbench_v11(x) for x in results.values()]))
+            elif d in item:
+                res[d].append(item[d][key_name])
+                if d == 'MME':
+                    scores.append(item[d][key_name] / 28)
+                elif d == 'OCRBench':
+                    scores.append(item[d][key_name] / 10)
+                else:
+                    scores.append(item[d][key_name])
+                ranks.append(nth_large(item[d][key_name], [x[d][key_name] for x in results.values() if d in x]))
             else:
-                scores.append(item[d][key_name])
-            ranks.append(nth_large(item[d][key_name], [x[d][key_name] for x in results.values()]))
-        res['Avg Score'].append(round(np.mean(scores), 1))
-        res['Avg Rank'].append(round(np.mean(ranks), 2))
-    if df is None:
-        return res
-    else:
-        res = pd.DataFrame(res)
-        df.set_index('name', inplace=True)
-        res.set_index('name', inplace=True)
-        df.update(res)
-        df = df.sort_values('Avg Score')
-        df = df.iloc[::-1]
+                res[d].append(None)
+                scores.append(None)
+                ranks.append(None)
+
+        res['Avg Score'].append(round(np.mean(scores), 1) if None not in scores else None)
+        res['Avg Rank'].append(round(np.mean(ranks), 2) if None not in ranks else None)
+
+    df = pd.DataFrame(res)
+    valid, missing = df[~pd.isna(df['Avg Score'])], df[pd.isna(df['Avg Score'])]
+    valid = valid.sort_values('Avg Score')
+    valid = valid.iloc[::-1]
+    missing = missing.sort_values('MMBench_V11')
+    missing = missing.iloc[::-1]
+    df = pd.concat([valid, missing])
     return df

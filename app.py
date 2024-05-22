@@ -55,7 +55,8 @@ with gr.Blocks() as demo:
                 filter_list = ['Avg Score', 'Avg Rank', 'OpenSource', 'Verified']
                 headers = check_box['essential'] + fields
                 new_fields = [field for field in fields if field not in filter_list]
-                df = cp.deepcopy(table)
+                df = generate_table(results, new_fields)
+
                 df['flag'] = [model_size_flag(x, model_size) for x in df['Parameters (B)']]
                 df = df[df['flag']]
                 df.pop('flag')
@@ -64,7 +65,6 @@ with gr.Blocks() as demo:
                     df = df[df['flag']]
                     df.pop('flag')
 
-                df = generate_table(results, new_fields, df)
                 comp = gr.components.DataFrame(
                     value=df[headers],
                     type='pandas',
