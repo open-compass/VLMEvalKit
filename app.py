@@ -22,7 +22,8 @@ with gr.Blocks() as demo:
     with gr.Tabs(elem_classes='tab-buttons') as tabs:
         with gr.TabItem('🏅 OpenVLM Main Leaderboard', elem_id='main', id=0):
             gr.Markdown(LEADERBOARD_MD['MAIN'])
-            table, check_box = BUILD_L1_DF(results, DEFAULT_BENCH)
+            _, check_box = BUILD_L1_DF(results, MAIN_FIELDS)
+            table = generate_table(results, DEFAULT_BENCH)
             type_map = check_box['type_map']
             checkbox_group = gr.CheckboxGroup(
                 choices=check_box['all'],
