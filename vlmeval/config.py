@@ -26,7 +26,7 @@ ungrouped = {
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
     'VXVERSE':partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
     'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
-    '360VL': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
+    '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
 }
 
 api_models = {
