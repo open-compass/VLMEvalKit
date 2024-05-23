@@ -23,6 +23,7 @@
 
 ## 🆕 更新
 
+- **[2024-05-23]** 用户 [**binwang777**](https://github.com/binwang777/) 在 VLMEvalKit 中支持了 [**360VL**](https://huggingface.co/qihoo360/360VL-70B)
 - **[2024-05-21]** 支持了 [**MiniCPM-Llama3-V2.5**](https://huggingface.co/openbmb/MiniCPM-Llama3-V-2_5), MiniCPM-V 系列最新的模型，拥有较大的性能提升。🔥🔥🔥
 - **[2024-05-15]** 支持了 [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), 一个谷歌开源的 3B 多模态模型。 🔥🔥🔥
 - **[2024-05-14]** 支持了 [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🔥🔥🔥
@@ -32,7 +33,6 @@
 - **[2024-04-28]** 支持了 [**MMBench V1.1**](https://arxiv.org/pdf/2307.06281)，在这个新版本中，我们提升了评测题目的质量与视觉的不可或缺性。如需获取测试集上的性能，请提交推理结果至 [**官方评测服务**](https://mmbench.opencompass.org.cn/mmbench-submission) 🔥🔥🔥
 - **[2024-04-28]** 支持 [**POPE**](https://github.com/AoiDragon/POPE), 这是一个目标幻觉问题检测的数据集 🔥🔥🔥
 - **[2024-04-25]** 支持了 [**Reka**](https://www.reka.ai), 这个 API 模型在 [**Vision-Arena**](https://huggingface.co/spaces/WildVision/vision-arena) 排名第一 🔥🔥🔥
-- **[2024-04-21]** 修复了 MathVista 评估脚本的一个小问题（可能会对性能产生较小的负面影响），并相应更新了排行榜
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -82,7 +82,7 @@
 | [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅         | [**EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️         | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
 | [**InternLM-XComposer2-[1.8B/7B]**](https://huggingface.co/internlm/internlm-xcomposer2-vl-7b)🚅🎞️ | [**MiniCPM-[V1/V2/V2.5]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat Series**](https://github.com/OpenGVLab/InternVL)🚅 |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
-| [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | | |
+| [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL**](https://huggingface.co/qihoo360/360VL-70B)  | | |
 
 🎞️ 表示支持多图片输入。
 
@@ -96,7 +96,7 @@
 
 - **请用** `transformers==4.33.0` **来运行**: `Qwen series`, `Monkey series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `SharedCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`, `PandaGPT`, `VXVERSE`.
 - **请用** `transformers==4.37.0 ` **来运行**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-V (v1, v2)`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`.
-- **请用** `transformers==4.40.0 ` **来运行**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `LLaVA-Next series`.
+- **请用** `transformers==4.40.0 ` **来运行**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `LLaVA-Next series`, `360VL`.
 
 **如何测试一个 VLM 是否可以正常运行:**
 
