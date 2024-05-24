@@ -99,7 +99,7 @@ def MLIST(lvl, size='all'):
         model_list = [m for m in model_list if m not in LARGE_MODELS]
     elif size == 'large':
         model_list = [m for m in model_list if m in LARGE_MODELS]
-    return model_list
+    return [x[0] for x in model_list]
 
 
 def REPORT(lvl):
