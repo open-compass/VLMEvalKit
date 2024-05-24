@@ -26,6 +26,8 @@ CLI_HELP_MSG = \
             vlmutil circular input.tsv
         5. Create a localized version of the dataset (for very large tsv files):
             vlmutil localize input.tsv
+        6. Check the validity of a model:
+            vlmutil check [model_name/model_series]
 
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
@@ -211,6 +213,44 @@ def CIRCULAR(inp):
     print(f'The MD5 for the circularized data is {md5(tgt_file)}')
 
 
+PTH = osp.realpath(__file__)
+IMAGE_PTH = osp.join(osp.dirname(PTH), '../assets/apple.jpg')
+
+msg1 = [
+    IMAGE_PTH,
+    'What is in this image?'
+]
+msg2 = [
+    dict(type='image', value=IMAGE_PTH),
+    dict(type='text', value='What is in this image?')
+]
+msg3 = [
+    IMAGE_PTH,
+    IMAGE_PTH,
+    'How many apples are there in these images?'
+]
+msg4 = [
+    dict(type='image', value=IMAGE_PTH),
+    dict(type='image', value=IMAGE_PTH),
+    dict(type='text', value='How many apples are there in these images?')
+]
+
+
+def CHECK(val):
+    if val in supported_VLM:
+        model = supported_VLM[val]()
+        print(f'Model: {val}')
+        for i, msg in enumerate([msg1, msg2, msg3, msg4]):
+            if i > 1 and not model.INTERLEAVE:
+                continue
+            res = model.generate(msg)
+            print(f'Test {i + 1}: {res}')
+    elif val in models:
+        model_list = models[val]
+        for m in model_list:
+            CHECK(m)
+
+
 def decode_img(tup):
     im, p = tup
     if osp.exists(p):
@@ -269,6 +309,11 @@ def cli():
         elif args[0].lower() == 'localize':
             assert len(args) >= 2
             LOCALIZE(args[1])
+        elif args[0].lower() == 'check':
+            assert len(args) >= 2
+            model_list = args[1:]
+            for m in model_list:
+                CHECK(m)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
