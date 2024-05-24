@@ -3,7 +3,7 @@ from vlmeval.config import *
 from vlmeval.smp import *
 
 # Define valid modes
-MODES = ('dlist', 'mlist', 'missing')
+MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check')
 
 CLI_HELP_MSG = \
     f"""
