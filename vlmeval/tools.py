@@ -89,7 +89,7 @@ def completed(m, d, suf):
 
 
 def DLIST(lvl):
-    lst = dataset_levels[lvl]
+    lst = [x[0] for x in dataset_levels[lvl]]
     return lst
 
 
