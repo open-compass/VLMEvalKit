@@ -21,7 +21,7 @@ CLI_HELP_MSG = \
         2. List all the models by categories: 4.33.0, 4.37.0, api, etc.:
             vlmutil mlist 4.33.0 [all/small/large]
         3. Report missing results:
-            vlmutil report l1
+            vlmutil missing l1
 
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
@@ -102,9 +102,9 @@ def MLIST(lvl, size='all'):
     return [x[0] for x in model_list]
 
 
-def REPORT(lvl):
+def MISSING(lvl):
     from vlmeval.config import supported_VLM
-    logger = get_logger('REPORT')
+    logger = get_logger('Find Missing')
     logger.info(colored('Essential Datasets: ', 'red'))
     models = list(supported_VLM)
     models = [m for m in models if m not in SKIP_MODELS and osp.exists(m)]
@@ -138,9 +138,9 @@ def cli():
                 size = args[2].lower()
             lst = MLIST(args[1], size)
             print(' '.join(lst))
-        elif args[0].lower() == 'report':
+        elif args[0].lower() == 'missing':
             assert len(args) >= 2
-            REPORT(args[1])
+            MISSING(args[1])
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
