@@ -48,8 +48,8 @@ api_models = {
     # Step1V Series
     'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
     # Internal Only
-    'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
-    'Step1V_INT': partial(Step1V_INT, temperature=0, retry=10),
+    # 'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
+    # 'Step1V_INT': partial(Step1V_INT, temperature=0, retry=10),
     'Claude3V_Opus': partial(Claude3V, model='claude-3-opus-20240229', temperature=0, retry=10),
     'Claude3V_Sonnet': partial(Claude3V, model='claude-3-sonnet-20240229', temperature=0, retry=10),
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
@@ -150,19 +150,3 @@ model_groups = [
 
 for grp in model_groups:
     supported_VLM.update(grp)
-
-transformer_ver = {}
-transformer_ver['4.33.0'] = list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
-    'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B', 'vxverse'
-] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series)
-transformer_ver['4.37.0'] = [x for x in llava_series if 'next' not in x] + [
-    'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
-] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series)
-transformer_ver['4.40.0'] = [x for x in llava_series if 'next' in x] + [
-    'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', 'Phi-3-Vision']
-
-if __name__ == '__main__':
-    import sys
-    ver = sys.argv[1]
-    if ver in transformer_ver:
-        print(' '.join(transformer_ver[ver]))
