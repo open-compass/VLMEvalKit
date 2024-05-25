@@ -3,7 +3,7 @@ from vlmeval.config import *
 from vlmeval.smp import *
 
 # Define valid modes
-MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check')
+MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run')
 
 CLI_HELP_MSG = \
     f"""
@@ -28,6 +28,8 @@ CLI_HELP_MSG = \
             vlmutil localize input.tsv
         6. Check the validity of a model:
             vlmutil check [model_name/model_series]
+        7. Run evaluation for missing results:
+            vlmutil run l2 hf
 
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
@@ -64,7 +66,7 @@ models = {
         'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat',
         'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series),
-    '4.40.0': [
+    'latest': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
     ] + [x for x in llava_series if 'next' in x],
     'api': list(api_models)
@@ -110,20 +112,15 @@ def MLIST(lvl, size='all'):
 
 def MISSING(lvl):
     from vlmeval.config import supported_VLM
-    logger = get_logger('Find Missing')
-    logger.info(colored('Essential Datasets: ', 'red'))
     models = list(supported_VLM)
     models = [m for m in models if m not in SKIP_MODELS and osp.exists(m)]
-
     data_list = dataset_levels[lvl]
-    MISSING = []
+    missing_list = []
     for f in models:
         for D, suff in data_list:
             if not completed(f, D, suff):
-                logger.info(colored(f'Model {f} x Dataset {D} Not Found. ', 'red'))
-                MISSING.append(f'--model {f} --data {D}')
-    MISSING.append('')
-    mwlines(MISSING, f'missing_{lvl}.txt')
+                missing_list.append((f, D))
+    return missing_list
 
 
 def CIRCULAR(inp):
@@ -282,6 +279,52 @@ def LOCALIZE(fname):
     print(f'The localized version of data file is {new_fname}')
 
 
+def RUN(lvl, model):
+    import torch
+    NGPU = torch.cuda.device_count()
+    SCRIPT = osp.join(osp.dirname(__file__), '../run.py')
+    logger = get_logger('Run Missing')
+
+    def get_env(name):
+        assert name in ['433', '437', 'latest']
+        load_env()
+        env_key = f'ENV_{name}'
+        return os.environ.get(env_key, None)
+
+    missing = MISSING(lvl)
+    if model == 'all':
+        pass
+    elif model == 'hf':
+        missing = [x for x in missing if x[0] not in models['api']]
+    elif model in models:
+        missing = [x for x in missing if x[0] in models[missing]]
+    elif model in supported_VLM:
+        missing = [x for x in missing if x[0] == model]
+
+    missing.sort(key=lambda x: x[0])
+    groups = defaultdict(list)
+    for m, D in missing:
+        groups[m].append(D)
+    for m in groups:
+        datasets = ' '.join(groups[m])
+        logger.info(f'Running {m} on {datasets}')
+        exe = 'python' if m in LARGE_MODELS or models['api'] else 'torchrun'
+        if m not in models['api']:
+            env = '433'
+            env = '437' if m in models['4.37.0'] else env
+            env = 'latest' if m in models['latest'] else env
+            pth = get_env(env)
+            if pth is not None:
+                exe = osp.join(pth, 'bin', exe)
+            else:
+                logger.warning(f'Cannot find the env path {env} for model {m}')
+        if exe.endswith('torchrun'):
+            cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {datasets}'
+        elif exe.endswith('python'):
+            cmd = f'{exe} {SCRIPT} --model {m} --data {datasets}'
+        os.system(cmd)
+
+
 def cli():
     logger = get_logger('VLMEvalKit Tools')
     args = sys.argv[1:]
@@ -302,7 +345,11 @@ def cli():
             print(' '.join(lst))
         elif args[0].lower() == 'missing':
             assert len(args) >= 2
-            MISSING(args[1])
+            missing_list = MISSING(args[1])
+            logger = get_logger('Find Missing')
+            logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
+            for m, D in missing_list:
+                logger.info(colored(f'Model {m}, Dataset {D}', 'red'))
         elif args[0].lower() == 'circular':
             assert len(args) >= 2
             CIRCULAR(args[1])
@@ -314,6 +361,11 @@ def cli():
             model_list = args[1:]
             for m in model_list:
                 CHECK(m)
+        elif args[0].lower() == 'run':
+            assert len(args) >= 2
+            lvl = args[1]
+            model = args[2] if len(args) > 2 else 'all'
+            RUN(lvl, model)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
