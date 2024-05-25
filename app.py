@@ -53,6 +53,7 @@ with gr.Blocks() as demo:
                 visible=True)
 
             def filter_df(fields, model_size, model_type):
+                results = load_results()
                 filter_list = ['Avg Score', 'Avg Rank', 'OpenSource', 'Verified']
                 headers = check_box['essential'] + fields
                 new_fields = [field for field in fields if field not in filter_list]
