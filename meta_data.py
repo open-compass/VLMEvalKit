@@ -1,5 +1,5 @@
 # CONSTANTS-URL
-URL = "http://opencompass.openxlab.space/utils/OpenVLM.json"
+URL = "http://opencompass.openxlab.space/assets/OpenVLM.json"
 VLMEVALKIT_README = 'https://raw.githubusercontent.com/open-compass/VLMEvalKit/main/README.md'
 # CONSTANTS-CITATION
 CITATION_BUTTON_TEXT = r"""@misc{2023opencompass,
