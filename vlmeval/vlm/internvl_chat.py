@@ -8,6 +8,7 @@ from ..utils import DATASET_TYPE
 import pandas as pd
 import string
 import torchvision.transforms as T
+import transformers
 
 from torchvision.transforms.functional import InterpolationMode
 
@@ -96,14 +97,18 @@ class InternVLChat(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self, model_path='OpenGVLab/InternVL-Chat-Chinese-V1-1', **kwargs):
+    def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, **kwargs):
         assert model_path is not None
+        assert version_cmp(transformers.__version__, '4.36.2', 'ge')
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
         device = torch.cuda.current_device()
         self.device = device
         self.model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
-                                               trust_remote_code=True).eval().to(device)
+                                               trust_remote_code=True,
+                                               load_in_8bit=load_in_8bit).eval()
+        if not load_in_8bit:
+            self.model = self.model.to(device)
         self.image_size = self.model.config.vision_config.image_size
 
         if 'V1-1' in model_path:
@@ -181,8 +186,10 @@ class InternVLChat(BaseModel):
 
     def generate_v1_5(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
-        if dataset is not None and listinstr(['DocVQA_TEST', 'DocVQA_VAL', 'ChartQA_TEST'], dataset):
+        if dataset is not None and listinstr(['ChartQA_TEST'], dataset):
             self.max_num = 12
+        elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
+            self.max_num = 18
         elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
             self.max_num = 24
         else:
