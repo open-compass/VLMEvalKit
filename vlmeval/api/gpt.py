@@ -62,7 +62,9 @@ class OpenAIWrapper(BaseAPI):
                 key = env_key
         else:
             if use_azure:
-                env_key = os.environ.get('AZURE_OPENAI_API_KEY', '')
+                env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
+                assert env_key is not None, 'Please set the environment variable AZURE_OPENAI_API_KEY. '
+
                 if key is None:
                     key = env_key
                 assert isinstance(key, str), (
@@ -89,6 +91,13 @@ class OpenAIWrapper(BaseAPI):
             api_base_template = (
                 '{endpoint}openai/deployments/{deployment_name}/chat/completions?api-version={api_version}'
             )
+            endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', None)
+            assert endpoint is not None, 'Please set the environment variable AZURE_OPENAI_ENDPOINT. '
+            deployment_name = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME', None)
+            assert deployment_name is not None, 'Please set the environment variable AZURE_OPENAI_DEPLOYMENT_NAME. '
+            api_version = os.getenv('OPENAI_API_VERSION', None)
+            assert api_version is not None, 'Please set the environment variable OPENAI_API_VERSION. '
+
             self.api_base = api_base_template.format(
                 endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
                 deployment_name=os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME'),
