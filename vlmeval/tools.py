@@ -51,6 +51,7 @@ dataset_levels = {
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
+        ('SEEDBench2_Plus', 'acc.csv')
     ]
 }
 
@@ -114,14 +115,16 @@ def MISSING(lvl):
     from vlmeval.config import supported_VLM
     models = list(supported_VLM)
     models = [m for m in models if m not in SKIP_MODELS and osp.exists(m)]
-    data_list = dataset_levels[lvl]
+    if lvl in dataset_levels.keys():
+        data_list = dataset_levels[lvl]
+    else:
+        data_list = [(D, suff) for (D, suff) in dataset_levels['l123'] if D == lvl]
     missing_list = []
     for f in models:
         for D, suff in data_list:
             if not completed(f, D, suff):
                 missing_list.append((f, D))
     return missing_list
-
 
 def CIRCULAR(inp):
     assert inp.endswith('.tsv')
@@ -308,7 +311,7 @@ def RUN(lvl, model):
     for m in groups:
         datasets = ' '.join(groups[m])
         logger.info(f'Running {m} on {datasets}')
-        exe = 'python' if m in LARGE_MODELS or models['api'] else 'torchrun'
+        exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
         if m not in models['api']:
             env = '433'
             env = '437' if m in models['4.37.0'] else env
