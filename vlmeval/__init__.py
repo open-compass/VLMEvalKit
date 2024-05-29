@@ -9,5 +9,6 @@ from .evaluate import *
 from .utils import *
 from .vlm import *
 from .config import *
+from .tools import cli
 
 load_env()

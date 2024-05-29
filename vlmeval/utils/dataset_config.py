@@ -18,7 +18,9 @@ dataset_URLs = {
     # CCBench
     'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
     'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
+    # SEEDBench Series
     'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
+    'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench2_Plus.tsv',
     'CORE_MM': 'https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv',
     'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
     'COCO_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/COCO_VAL.tsv',
@@ -63,6 +65,7 @@ dataset_md5_dict = {
     'CCBench': '1de88b4257e7eee3f60b18d45eda6f07',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+    'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
     'CORE_MM': '8a8da2f2232e79caf98415bfdf0a202d',
     'MMVet': '748aa6d4aa9d4de798306a63718455e3',
     'COCO_VAL': '72a5079dead060269ac222c5aa5128af',
@@ -113,14 +116,6 @@ img_root_map.update({
     'MathVista_MINI': 'MathVista',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
-    'DocVQA_TEST': 'DocVQA_TEST',
-    'OCRBench': 'OCRBench',
-    'ChartQA_TEST': 'ChartQA_TEST',
-    'InfoVQA_VAL': 'InfoVQA_VAL',
-    'InfoVQA_TEST': 'InfoVQA_TEST',
-    'MMStar': 'MMStar',
-    'RealWorldQA': 'RealWorldQA',
-    'POPE': 'POPE',
 })
 
 assert set(dataset_URLs) == set(img_root_map)

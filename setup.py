@@ -105,7 +105,7 @@ def do_setup():
         ]),
         keywords=['AI', 'NLP', 'in-context learning'],
         entry_points={
-            'console_scripts': []
+            'console_scripts': ['vlmutil = vlmeval:cli']
         },
         classifiers=[
             'Programming Language :: Python :: 3.7',
