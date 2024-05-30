@@ -46,6 +46,7 @@ class OpenAIWrapper(BaseAPI):
                  max_tokens: int = 1024,
                  img_size: int = 512,
                  img_detail: str = 'low',
+                 use_azure: bool = False,
                  **kwargs):
 
         self.model = model
@@ -53,20 +54,31 @@ class OpenAIWrapper(BaseAPI):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.use_azure = use_azure
 
         if 'step-1v' in model:
             env_key = os.environ.get('STEPAI_API_KEY', '')
             if key is None:
                 key = env_key
         else:
-            env_key = os.environ.get('OPENAI_API_KEY', '')
-            if key is None:
-                key = env_key
-            assert isinstance(key, str) and key.startswith('sk-'), (
-                f'Illegal openai_key {key}. '
-                'Please set the environment variable OPENAI_API_KEY to your openai key. '
-            )
-        self.key = key
+            if use_azure:
+                env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
+                assert env_key is not None, 'Please set the environment variable AZURE_OPENAI_API_KEY. '
+
+                if key is None:
+                    key = env_key
+                assert isinstance(key, str), (
+                    'Please set the environment variable AZURE_OPENAI_API_KEY to your openai key. '
+                )
+            else:
+                env_key = os.environ.get('OPENAI_API_KEY', '')
+                if key is None:
+                    key = env_key
+                assert isinstance(key, str) and key.startswith('sk-'), (
+                    f'Illegal openai_key {key}. '
+                    'Please set the environment variable OPENAI_API_KEY to your openai key. '
+                )
+            self.key = key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
         assert img_detail in ['high', 'low']
@@ -75,22 +87,40 @@ class OpenAIWrapper(BaseAPI):
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
-        if api_base is None:
-            if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
-                self.logger.error('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
-                api_base = os.environ['OPENAI_API_BASE']
-            else:
-                api_base = 'OFFICIAL'
+        if use_azure:
+            api_base_template = (
+                '{endpoint}openai/deployments/{deployment_name}/chat/completions?api-version={api_version}'
+            )
+            endpoint = os.getenv('AZURE_OPENAI_ENDPOINT', None)
+            assert endpoint is not None, 'Please set the environment variable AZURE_OPENAI_ENDPOINT. '
+            deployment_name = os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME', None)
+            assert deployment_name is not None, 'Please set the environment variable AZURE_OPENAI_DEPLOYMENT_NAME. '
+            api_version = os.getenv('OPENAI_API_VERSION', None)
+            assert api_version is not None, 'Please set the environment variable OPENAI_API_VERSION. '
 
-        assert api_base is not None
-
-        if api_base in APIBASES:
-            self.api_base = APIBASES[api_base]
-        elif api_base.startswith('http'):
-            self.api_base = api_base
+            self.api_base = api_base_template.format(
+                endpoint=os.getenv('AZURE_OPENAI_ENDPOINT'),
+                deployment_name=os.getenv('AZURE_OPENAI_DEPLOYMENT_NAME'),
+                api_version=os.getenv('OPENAI_API_VERSION')
+            )
         else:
-            self.logger.error('Unknown API Base. ')
-            sys.exit(-1)
+            if api_base is None:
+                if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
+                    self.logger.error('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
+                    api_base = os.environ['OPENAI_API_BASE']
+                else:
+                    api_base = 'OFFICIAL'
+
+            assert api_base is not None
+
+            if api_base in APIBASES:
+                self.api_base = APIBASES[api_base]
+            elif api_base.startswith('http'):
+                self.api_base = api_base
+            else:
+                self.logger.error('Unknown API Base. ')
+                sys.exit(-1)
+
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
@@ -133,7 +163,10 @@ class OpenAIWrapper(BaseAPI):
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
-        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
+        if self.use_azure:
+            headers = {'Content-Type': 'application/json', 'api-key': os.getenv('AZURE_OPENAI_API_KEY')}
+        else:
+            headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
             model=self.model,
             messages=input_msgs,
