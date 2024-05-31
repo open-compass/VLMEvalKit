@@ -55,7 +55,7 @@ class GLMVisionWrapper(BaseAPI):
                 text += msg['value']
             elif msg['type'] == 'image':
                 content.append(dict(type='image_url', image_url=dict(url=encode_image_file_to_base64(msg['value']))))
-        if DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
             text += '\nShort Answer.'
         content.append(dict(type='text', text=text))
         ret = [dict(role='user', content=content)]
@@ -64,7 +64,8 @@ class GLMVisionWrapper(BaseAPI):
     def generate_inner(self, inputs, **kwargs) -> str:
         assert isinstance(inputs, str) or isinstance(inputs, list)
         inputs = [inputs] if isinstance(inputs, str) else inputs
-        messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs['dataset'])
+
+        messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs.get('dataset', None))
 
         url = 'https://api.chatglm.cn/v1/chat/completions'
         headers = {
