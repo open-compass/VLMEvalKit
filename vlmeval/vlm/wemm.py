@@ -4,7 +4,7 @@ import sys
 from ..smp import *
 from .base import BaseModel
 from ..utils import DATASET_TYPE
-from transformers import AutoModel
+from transformers import AutoModel, GenerationConfig
 
 
 class WeMM(BaseModel):
@@ -55,6 +55,17 @@ class WeMM(BaseModel):
         if dataset == 'HallusionBench':
             prompt = prompt + ' Please answer yes or no. Answer the question using a single word or phrase.'
 
-        pred = self.wemm.mm_generate(image_path, prompt)
+        gen_config = None
+        if dataset == 'MMVet':
+            gen_config = GenerationConfig(
+                max_new_tokens=512,
+                do_sample=True,
+                temperatures=0.7,
+                num_beams=3,
+                eos_token_id=self.wemm.tokenizer.eos_token_id,
+                pad_token_id=self.wemm.tokenizer.pad_token_id
+                if self.wemm.tokenizer.pad_token_id is not None else self.wemm.tokenizer.eos_token_id,
+            )
+        pred = self.wemm.mm_generate(image_path, prompt, gen_config)
 
         return pred
