@@ -142,13 +142,17 @@ cogvlm_series = {
     'cogvlm2-llama3-chat-19B':partial(CogVlm, model_path='THUDM/cogvlm2-llama3-chat-19B'),
 }
 
+wemm_series = {
+    'WeMM': partial(WeMM, model_path='feipengma/WeMM'),
+}
+
 supported_VLM = {}
 
 model_groups = [
     ungrouped, api_models, 
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
-    deepseekvl_series, minicpm_series, cogvlm_series
+    deepseekvl_series, minicpm_series, cogvlm_series, wemm_series
 ]
 
 for grp in model_groups:
