@@ -170,7 +170,7 @@ class TSVDataset(CustomPrompt):
                 prompt += 'Please select the correct answer from the options above. \n'
         elif DATASET_TYPE(dataset) == 'VQA':
             if listinstr(['ocrvqa', 'textvqa', 'chartqa', 'docvqa'], dataset.lower()):
-                prompt += '\nPlease try to answer the question with short words or phrases if possible\n.'
+                prompt += '\nAnswer the question using a single word or phrase.\n'
 
         msgs = []
         if isinstance(tgt_path, list):
