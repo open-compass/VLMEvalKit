@@ -24,6 +24,7 @@ with gr.Blocks() as demo:
             gr.Markdown(LEADERBOARD_MD['MAIN'])
             _, check_box = BUILD_L1_DF(results, MAIN_FIELDS)
             table = generate_table(results, DEFAULT_BENCH)
+            table['Rank'] = list(range(1, len(table) + 1))
             type_map = check_box['type_map']
             checkbox_group = gr.CheckboxGroup(
                 choices=check_box['all'],
@@ -65,6 +66,7 @@ with gr.Blocks() as demo:
                     df['flag'] = [model_type_flag(df.iloc[i], model_type) for i in range(len(df))]
                     df = df[df['flag']]
                     df.pop('flag')
+                df['Rank'] = list(range(1, len(df) + 1))
 
                 comp = gr.components.DataFrame(
                     value=df[headers],
