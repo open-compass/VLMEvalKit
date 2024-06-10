@@ -25,14 +25,18 @@ with gr.Blocks() as demo:
             _, check_box = BUILD_L1_DF(results, MAIN_FIELDS)
             table = generate_table(results, DEFAULT_BENCH)
             table['Rank'] = list(range(1, len(table) + 1))
+
             type_map = check_box['type_map']
+            type_map['Rank'] = 'number'
+
             checkbox_group = gr.CheckboxGroup(
                 choices=check_box['all'],
                 value=check_box['required'],
                 label='Evaluation Dimension',
                 interactive=True,
             )
-            headers = check_box['essential'] + checkbox_group.value
+
+            headers = ['Rank'] + check_box['essential'] + checkbox_group.value
             with gr.Row():
                 model_size = gr.CheckboxGroup(
                     choices=MODEL_SIZE,
@@ -55,7 +59,8 @@ with gr.Blocks() as demo:
 
             def filter_df(fields, model_size, model_type):
                 filter_list = ['Avg Score', 'Avg Rank', 'OpenSource', 'Verified']
-                headers = check_box['essential'] + fields
+                headers = ['Rank'] + check_box['essential'] + fields
+
                 new_fields = [field for field in fields if field not in filter_list]
                 df = generate_table(results, new_fields)
 
@@ -90,13 +95,17 @@ with gr.Blocks() as demo:
                 s = structs[i]
                 s.table, s.check_box = BUILD_L2_DF(results, dataset)
                 s.type_map = s.check_box['type_map']
+                s.type_map['Rank'] = 'number'
+
                 s.checkbox_group = gr.CheckboxGroup(
                     choices=s.check_box['all'],
                     value=s.check_box['required'],
                     label=f'{dataset} CheckBoxes',
                     interactive=True,
                 )
-                s.headers = s.check_box['essential'] + s.checkbox_group.value
+                s.headers = ['Rank'] + s.check_box['essential'] + s.checkbox_group.values
+                s.table['Rank'] = list(range(1, len(s.table) + 1))
+
                 with gr.Row():
                     s.model_size = gr.CheckboxGroup(
                         choices=MODEL_SIZE,
@@ -120,7 +129,7 @@ with gr.Blocks() as demo:
 
                 def filter_df_l2(dataset_name, fields, model_size, model_type):
                     s = structs[DATASETS.index(dataset_name)]
-                    headers = s.check_box['essential'] + fields
+                    headers = ['Rank'] + s.check_box['essential'] + fields
                     df = cp.deepcopy(s.table)
                     df['flag'] = [model_size_flag(x, model_size) for x in df['Param (B)']]
                     df = df[df['flag']]
@@ -129,6 +138,7 @@ with gr.Blocks() as demo:
                         df['flag'] = [model_type_flag(df.iloc[i], model_type) for i in range(len(df))]
                         df = df[df['flag']]
                         df.pop('flag')
+                    df['Rank'] = list(range(1, len(df) + 1))
 
                     comp = gr.components.DataFrame(
                         value=df[headers],
