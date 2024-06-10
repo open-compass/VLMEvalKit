@@ -103,7 +103,7 @@ with gr.Blocks() as demo:
                     label=f'{dataset} CheckBoxes',
                     interactive=True,
                 )
-                s.headers = ['Rank'] + s.check_box['essential'] + s.checkbox_group.values
+                s.headers = ['Rank'] + s.check_box['essential'] + s.checkbox_group.value
                 s.table['Rank'] = list(range(1, len(s.table) + 1))
 
                 with gr.Row():
