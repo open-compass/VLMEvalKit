@@ -60,12 +60,12 @@ dataset_levels['l23'] = dataset_levels['l2'] + dataset_levels['l3']
 dataset_levels['l123'] = dataset_levels['l12'] + dataset_levels['l3']
 
 models = {
-    '4.33.0': list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
+    '4.33.0': list(qwen_series) + list(xcomposer_series) + [
         'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B', 'VXVERSE'
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
-    '4.37.0': [x for x in llava_series if 'next' not in x] + [
+    '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat',
-        'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
+        'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series),
     'latest': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
@@ -74,7 +74,6 @@ models = {
 }
 
 SKIP_MODELS = [
-    'InternVL-Chat-V1-1', 'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus',
     'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH',
 ]
 
