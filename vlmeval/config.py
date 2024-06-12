@@ -137,9 +137,10 @@ deepseekvl_series = {
 }
 
 cogvlm_series = {
-    'cogvlm-grounding-generalist':partial(CogVlm, model_path='THUDM/cogvlm-grounding-generalist-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
-    'cogvlm-chat':partial(CogVlm, model_path='THUDM/cogvlm-chat-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
-    'cogvlm2-llama3-chat-19B':partial(CogVlm, model_path='THUDM/cogvlm2-llama3-chat-19B'),
+    'cogvlm-grounding-generalist': partial(CogVlm, model_path='THUDM/cogvlm-grounding-generalist-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
+    'cogvlm-chat': partial(CogVlm, model_path='THUDM/cogvlm-chat-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
+    'cogvlm2-llama3-chat-19B': partial(CogVlm, model_path='THUDM/cogvlm2-llama3-chat-19B'),
+    'glm-4v-9b': partial(GLM4v, model_path='THUDM/glm-4v-9b')
 }
 
 wemm_series = {

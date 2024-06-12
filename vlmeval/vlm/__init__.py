@@ -3,7 +3,7 @@ import torch
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
 from .base import BaseModel
-from .cogvlm import CogVlm
+from .cogvlm import CogVlm, GLM4v
 from .emu import Emu
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
