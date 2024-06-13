@@ -24,6 +24,7 @@ class GLM4v(BaseModel):
         gen_kwargs = {'max_length': 2048, 'do_sample': False}
         gen_kwargs.update(kwargs)
         self.kwargs = gen_kwargs
+        self.end_text_token = '<|endoftext|>'
 
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
@@ -38,7 +39,7 @@ class GLM4v(BaseModel):
             outputs = self.model.generate(**inputs, **self.kwargs)
             outputs = outputs[:, inputs['input_ids'].shape[1]:]
             response = self.tokenizer.decode(outputs[0])
-        return response
+        return response.split(self.end_text_token)[0]
 
 
 class CogVlm(BaseModel):
