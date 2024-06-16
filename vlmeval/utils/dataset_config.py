@@ -62,7 +62,7 @@ dataset_md5_dict = {
     'MMBench_V11': 'b9276414f57af1308dcc4d0cd9b42e7c',  # Internal Only
     'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
     # CCBench
-    'CCBench': '1de88b4257e7eee3f60b18d45eda6f07',
+    'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
     'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
