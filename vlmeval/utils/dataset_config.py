@@ -45,10 +45,10 @@ dataset_URLs = {
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
     'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
     # MMT-Bench
-    'MMT-Bench_ALL_MI': 'xxxxxxxxxxxxxxxxxx',
-    'MMT-Bench_ALL': 'xxxxxxxxxxxxxxxxxxxxx',
-    'MMT-Bench_VAL_MI': 'xxxxxxxxxxxxxxxxxx',
-    'MMT-Bench_VAL': 'xxxxxxxxxxxxxxxxxxxxxx'
+    'MMT-Bench_ALL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL_MI.tsv',
+    'MMT-Bench_ALL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL.tsv',
+    'MMT-Bench_VAL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL_MI.tsv',
+    'MMT-Bench_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL.tsv',
 }
 
 dataset_md5_dict = {
@@ -139,9 +139,10 @@ assert set(dataset_URLs) == set(img_root_map)
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
-        return 'multi-choice'
-    elif 'mmt-bench' in dataset:
+    if listinstr([
+        'mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d',
+        'mmstar', 'realworldqa', 'mmt-bench'
+    ], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion', 'pope'], dataset):
         return 'Y/N'
