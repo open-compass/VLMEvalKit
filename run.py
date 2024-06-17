@@ -119,6 +119,12 @@ def main():
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
             if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
                 judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
+            
+            if rank == 0:
+                if 'MMT-Bench_ALL' in dataset_name:
+                    submission_file = MMTBench_result_transfer(result_file, dataset=dataset_name, **judge_kwargs)
+                    logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation (https://eval.ai/web/challenges/challenge-page/2328/overview), submission file saved in {submission_file}')  # noqa: E501
+                    continue
 
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':

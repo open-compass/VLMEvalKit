@@ -44,6 +44,11 @@ dataset_URLs = {
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
     'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
+    # MMT-Bench
+    'MMT-Bench_ALL_MI': 'xxxxxxxxxxxxxxxxxx', # FULL Split, evaluated on server. Multi-image samples are inputted as separate images.
+    'MMT-Bench_ALL': 'xxxxxxxxxxxxxxxxxxxxx', # FULL Split, evaluated on server. ulti-image samples are merged into a single large image for processing.
+    'MMT-Bench_VAL_MI': 'xxxxxxxxxxxxxxxxxx', # VAL Split (10%), evaluated on local. Multi-image samples are inputted as separate images.
+    'MMT-Bench_VAL': 'xxxxxxxxxxxxxxxxxxxxxx' # VAL Split (10%), evaluated on local. ulti-image samples are merged into a single large image for processing.
 }
 
 dataset_md5_dict = {
@@ -89,6 +94,11 @@ dataset_md5_dict = {
     'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
     'RealWorldQA': '92321028d2bc29040284b6674721e48f',
     'POPE': 'c12f5acb142f2ef1f85a26ba2fbe41d5',
+    # MMT-Bench
+    'MMT-Bench_ALL_MI': '5272157097e19cdd7cb41e412ab3b7c7',
+    'MMT-Bench_ALL': 'b273a2f4c596fe4f2605de0494cd632f',
+    'MMT-Bench_VAL_MI': 'c7d7b998eb5cd9aa36c7d4f721472462',
+    'MMT-Bench_VAL': '8dd4b730f53dbf9c3aed90ca31c928e0'
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -116,6 +126,11 @@ img_root_map.update({
     'MathVista_MINI': 'MathVista',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
+    # MMT-Bench
+    'MMT-Bench_ALL_MI': 'MMT-Bench',
+    'MMT-Bench_ALL': 'MMT-Bench',
+    'MMT-Bench_VAL_MI': 'MMT-Bench',
+    'MMT-Bench_VAL': 'MMT-Bench'
 })
 
 assert set(dataset_URLs) == set(img_root_map)
@@ -125,6 +140,8 @@ def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
     if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
+        return 'multi-choice'
+    elif 'mmt-bench' in dataset:
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion', 'pope'], dataset):
         return 'Y/N'
