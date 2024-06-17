@@ -45,10 +45,10 @@ dataset_URLs = {
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
     'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
     # MMT-Bench
-    'MMT-Bench_ALL_MI': 'xxxxxxxxxxxxxxxxxx', # FULL Split, evaluated on server. Multi-image samples are inputted as separate images.
-    'MMT-Bench_ALL': 'xxxxxxxxxxxxxxxxxxxxx', # FULL Split, evaluated on server. ulti-image samples are merged into a single large image for processing.
-    'MMT-Bench_VAL_MI': 'xxxxxxxxxxxxxxxxxx', # VAL Split (10%), evaluated on local. Multi-image samples are inputted as separate images.
-    'MMT-Bench_VAL': 'xxxxxxxxxxxxxxxxxxxxxx' # VAL Split (10%), evaluated on local. ulti-image samples are merged into a single large image for processing.
+    'MMT-Bench_ALL_MI': 'xxxxxxxxxxxxxxxxxx',
+    'MMT-Bench_ALL': 'xxxxxxxxxxxxxxxxxxxxx',
+    'MMT-Bench_VAL_MI': 'xxxxxxxxxxxxxxxxxx',
+    'MMT-Bench_VAL': 'xxxxxxxxxxxxxxxxxxxxxx'
 }
 
 dataset_md5_dict = {
