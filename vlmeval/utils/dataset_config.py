@@ -20,7 +20,7 @@ dataset_URLs = {
     'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
     # SEEDBench Series
     'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
-    'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/raw/main/SEEDBench2.tsv',
+    'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
     'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench2_Plus.tsv',
     'CORE_MM': 'https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv',
     'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
