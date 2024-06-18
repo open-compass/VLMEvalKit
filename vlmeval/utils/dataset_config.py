@@ -20,6 +20,7 @@ dataset_URLs = {
     'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
     # SEEDBench Series
     'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
+    'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/raw/main/SEEDBench2.tsv',
     'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench2_Plus.tsv',
     'CORE_MM': 'https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv',
     'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
@@ -69,7 +70,9 @@ dataset_md5_dict = {
     # CCBench
     'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
+    # SEEDBench
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+    'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
     'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
     'CORE_MM': '8a8da2f2232e79caf98415bfdf0a202d',
     'MMVet': '748aa6d4aa9d4de798306a63718455e3',
