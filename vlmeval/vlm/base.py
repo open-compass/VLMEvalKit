@@ -64,8 +64,7 @@ class BaseModel:
         else:
             assert 'image_path' in line
             tgt_path = line['image_path']
-            if isliststr(tgt_path):
-                tgt_path = eval(tgt_path)
+            tgt_path = eval(tgt_path) if isliststr(tgt_path) else [tgt_path]
 
         return tgt_path
 

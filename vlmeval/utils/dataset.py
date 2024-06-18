@@ -133,6 +133,8 @@ class TSVDataset(CustomPrompt):
 
         if self.meta_only:
             tgt_path = line['image_path']
+            if isliststr(tgt_path):
+                tgt_path = eval(tgt_path)
         else:
             tgt_path = self.dump_image(line, dataset)
 

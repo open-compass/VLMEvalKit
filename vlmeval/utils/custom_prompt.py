@@ -32,10 +32,10 @@ class CustomPrompt:
                 tgt_path = osp.join(img_root, f"{line['index']}.jpg")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'], tgt_path)
+                tgt_path = [tgt_path]
         else:
             assert 'image_path' in line
             tgt_path = line['image_path']
-            if isliststr(tgt_path):
-                tgt_path = eval(tgt_path)
+            tgt_path = eval(tgt_path) if isliststr(tgt_path) else [tgt_path]
 
         return tgt_path
