@@ -189,3 +189,7 @@ def version_cmp(v1, v2, op='eq'):
     import operator
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
+
+
+def isliststr(s):
+    return (s[0] == '[') and (s[-1] == ']')
