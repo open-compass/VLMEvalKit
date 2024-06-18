@@ -85,6 +85,25 @@ def main():
                 api_nproc=args.nproc,
                 ignore_failed=args.ignore)
 
+            # Set the judge kwargs first before evaluation or dumping
+            judge_kwargs = {
+                'nproc': args.nproc,
+                'verbose': args.verbose,
+            }
+            if args.retry is not None:
+                judge_kwargs['retry'] = args.retry
+            if args.judge is not None:
+                judge_kwargs['model'] = args.judge
+            else:
+                if DATASET_TYPE(dataset_name) in ['multi-choice', 'Y/N']:
+                    judge_kwargs['model'] = 'chatgpt-0613'
+                elif listinstr(['MMVet', 'MathVista', 'LLaVABench'], dataset_name):
+                    judge_kwargs['model'] = 'gpt-4-turbo'
+            if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
+                judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
+            if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
+                judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
+
             if rank == 0:
                 if dataset_name in ['MMMU_TEST']:
                     result_json = MMMU_result_transfer(result_file)
@@ -105,24 +124,6 @@ def main():
                         'will skip the evaluation. '
                     )
                     continue
-
-            judge_kwargs = {
-                'nproc': args.nproc,
-                'verbose': args.verbose,
-            }
-            if args.retry is not None:
-                judge_kwargs['retry'] = args.retry
-            if args.judge is not None:
-                judge_kwargs['model'] = args.judge
-            else:
-                if DATASET_TYPE(dataset_name) in ['multi-choice', 'Y/N']:
-                    judge_kwargs['model'] = 'chatgpt-0613'
-                elif listinstr(['MMVet', 'MathVista', 'LLaVABench'], dataset_name):
-                    judge_kwargs['model'] = 'gpt-4-turbo'
-            if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
-                judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
-            if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
-                judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
 
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':
