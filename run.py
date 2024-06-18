@@ -4,7 +4,7 @@ from vlmeval.smp import *
 from vlmeval.evaluate import *
 from vlmeval.inference import infer_data_job
 from vlmeval.config import supported_VLM
-from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer
+from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer, MMTBench_result_transfer
 
 
 def parse_args():
@@ -85,23 +85,7 @@ def main():
                 api_nproc=args.nproc,
                 ignore_failed=args.ignore)
 
-            if rank == 0:
-                if dataset_name in ['MMMU_TEST']:
-                    result_json = MMMU_result_transfer(result_file)
-                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')  # noqa: E501
-                    continue
-
-            if dataset_name in [
-                'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN'
-                'MMBench_TEST_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_V11', 'MMBench_CN_V11'
-            ]:
-                if not MMBenchOfficialServer(dataset_name):
-                    logger.error(
-                        f'Can not evaluate {dataset_name} on non-official servers, '
-                        'will skip the evaluation. '
-                    )
-                    continue
-
+            # Set the judge kwargs first before evaluation or dumping
             judge_kwargs = {
                 'nproc': args.nproc,
                 'verbose': args.verbose,
@@ -119,6 +103,27 @@ def main():
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
             if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
                 judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
+
+            if rank == 0:
+                if dataset_name in ['MMMU_TEST']:
+                    result_json = MMMU_result_transfer(result_file)
+                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')  # noqa: E501
+                    continue
+                elif 'MMT-Bench_ALL' in dataset_name:
+                    submission_file = MMTBench_result_transfer(result_file, **judge_kwargs)
+                    logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation (https://eval.ai/web/challenges/challenge-page/2328/overview), submission file saved in {submission_file}')  # noqa: E501
+                    continue
+
+            if dataset_name in [
+                'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN'
+                'MMBench_TEST_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_V11', 'MMBench_CN_V11'
+            ]:
+                if not MMBenchOfficialServer(dataset_name):
+                    logger.error(
+                        f'Can not evaluate {dataset_name} on non-official servers, '
+                        'will skip the evaluation. '
+                    )
+                    continue
 
             if rank == 0 and args.mode == 'all':
                 if DATASET_TYPE(dataset_name) == 'multi-choice':

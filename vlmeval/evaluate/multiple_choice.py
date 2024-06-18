@@ -8,13 +8,48 @@ import numpy as np
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 
-abbrs = {
+MMB_abbrs = {
     'coarse_perception': 'CP',
     'finegrained_perception (instance-level)': 'FP-S',
     'finegrained_perception (cross-instance)': 'FP-C',
     'logic_reasoning': 'LR',
     'relation_reasoning': 'RR',
     'attribute_reasoning': 'AR'
+}
+
+MMT_abbrs = {
+    'visual_recognition': 'VR',
+    'localization': 'Loc',
+    'ocr': 'OCR',
+    'counting': 'Count',
+    'hallucination': 'HLN',
+    'image_retrieval': 'IR',
+    'threed': '3D',
+    'visual_captioning': 'VC',
+    'visual_grounding': 'VG',
+    'doc_understanding': 'DU',
+    'action_recognition': 'AR',
+    'pixel_level_perception': 'PLP',
+    'image-to-image_translation': 'I2IT',
+    'relation_reasoning': 'RR',
+    'intelligence_quotient_test': 'IQT',
+    'emotion': 'Emo',
+    'visual_illusion': 'VI',
+    'meme_understanding': 'MemU',
+    'visual_prompt_understanding': 'VPU',
+    'anomaly_detection': 'AND',
+    'keypoint_detection': 'KD',
+    'visual_commonsense_reasoning': 'VCR',
+    'image_evaluation_judgement': 'IEJ',
+    'multiple_image_analysis': 'MIA',
+    'cross_image_matching': 'CIM',
+    'temporal_understanding': 'TU',
+    'visual_code': 'VP',
+    'medical_understanding': 'MedU',
+    'autonomous_driving': 'AUD',
+    'discipline_knowledge_reasoning': 'DKR',
+    'embodied_ai': 'EA',
+    'gui_navigation': 'GN'
 }
 
 
@@ -54,9 +89,69 @@ def report_acc(df):
             abilities = list(set(df[group]))
             abilities.sort()
             for ab in abilities:
-                ab_name = abbrs[ab] if ab in abbrs else ab
+                ab_name = MMB_abbrs[ab] if ab in MMB_abbrs else ab
                 sub_df = df[df[group] == ab]
                 res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
+    return pd.DataFrame(res)
+
+
+def report_acc_MMT(df):
+    # assert group in [None, 'category', 'l2-category']
+    res = defaultdict(list)
+    res['split'] = list()
+    res['Overall'] = list()
+    for _, name in MMT_abbrs.items():
+        res[name] = list()
+
+    if 'split' in df:
+        splits = list(set(df['split']))
+        res['split'] = splits
+
+    else:
+        df['split'] = ['none'] * len(df)
+        res['split'] = ['none']
+
+    for group in [None, 'category', 'l2-category']:
+        if group is None:
+            res['Overall'] = [np.mean(df[df['split'] == sp]['hit']) for sp in res['split']]
+            res['Overall'].extend([np.mean(df['hit'])])
+        elif group not in df:
+            continue
+        elif group == 'category':
+            abilities = list(set(df[group]))
+            abilities.sort()
+            for ab in abilities:
+                ab_name = ab
+                sub_df = df[df[group] == ab]
+                res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
+                res[ab_name].extend([np.mean(sub_df['hit'])])
+        else:
+            abilities = list(set(df[group]))
+            abilities.sort()
+            for ab in abilities:
+                sub_task_name_list = df[df['l2-category'] == ab]['category'].unique()
+                sub_task_acc = []
+                for sub_task_name in sub_task_name_list:
+                    sub_df = df[df['category'] == sub_task_name]
+                    sub_task_acc.append([np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']])
+
+                new_acc = []
+                for i in range(len(sub_task_acc[0])):
+                    new_acc.append(sum([_[i] for _ in sub_task_acc]) / len([_ for _ in sub_task_acc]))
+                ab_name = MMT_abbrs[ab] if ab in MMT_abbrs else ab
+                res[ab_name] = new_acc
+
+                sub_task_acc = []
+                for sub_task_name in sub_task_name_list:
+                    sub_df = df[df['category'] == sub_task_name]
+                    sub_task_acc.append([np.mean(sub_df['hit'])])
+                new_acc = []
+                for i in range(len(sub_task_acc[0])):
+                    new_acc.append(sum([_[i] for _ in sub_task_acc]) / len([_ for _ in sub_task_acc]))
+
+                res[ab_name].extend(new_acc)
+
+    res['split'].append('ALL')
     return pd.DataFrame(res)
 
 
@@ -142,6 +237,7 @@ def extract_answer_from_item(model, item):
             return dict(opt=rd.choice(options), log='Failed to predict, thus randomly generate one. ')
 
 
+# For Circular Evaluation
 def prefetch_sub_data(sub_data, answer_map, verbose=False):
     lt = len(sub_data)
     GT, PRED = [], []
@@ -165,6 +261,7 @@ def prefetch_sub_data(sub_data, answer_map, verbose=False):
     return ret if len(ret) > 1 else ret[0]
 
 
+# For Circular Evaluation
 def eval_sub_data(model, sub_data, answer_map):
     res, GT, PRED = prefetch_sub_data(sub_data, answer_map, verbose=True)
     if res is not None:
@@ -194,6 +291,7 @@ def eval_sub_data(model, sub_data, answer_map):
     return dict(hit=1, log=log)
 
 
+# For Circular Evaluation
 def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=16):
     prefetched = [prefetch_sub_data(g, answer_map, verbose=False) for g in data_groups]
     remain = []
@@ -269,6 +367,7 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
+    # Load finished evaluation results
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
     result = {}
@@ -278,9 +377,11 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
     data = load(eval_file)
     data = data.sort_values(by='index')
     data['prediction'] = [str(x) for x in data['prediction']]
+    # If not choice label, then use lower case
     for k in data.keys():
         data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
 
+    # Load meta data: when dataset is `default`, will use eval_file as meta data
     if dataset != 'default':
         meta = TSVDataset(dataset).data
     else:
@@ -288,6 +389,7 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
         meta = load(eval_file)
         assert 'index' in meta and 'answer' in meta, 'Essentail columns missing in the eval_file.'
 
+    # Build Answer / Category / L2-Category / Split Map
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
     cate_map = {i: c for i, c in zip(meta['index'], meta['category'])} if 'category' in meta else None
     l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])} if 'l2-category' in meta else None
@@ -300,10 +402,12 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
     if split_map is not None and np.all([pd.isna(x) for x in split_map.values()]):
         split_map = None
 
+    # Change MMMU open-ended questions to multiple-choice ones for evaluation
     if listinstr(['MMMU'], dataset):
         data = MMMU_preproc(data)
         answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
 
+    # Only keep those lines in the meta data
     data = data[data['index'].isin(answer_map)]
     data_main = data[data['index'] < int(1e6)]
     meta_idx_set = set(meta['index'])
@@ -359,7 +463,12 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
     dump(data_main, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
     data_main = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
 
-    acc = report_acc(data_main)
+    # May have different report acc functions for different datasets
+    if 'MMT' in dataset:
+        acc = report_acc_MMT(data_main)
+    else:
+        acc = report_acc(data_main)
+
     score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
     dump(acc, score_file)
     logger.info(f'multiple_choice_eval successfully finished evaluating {eval_file}, results saved in {score_file}')
