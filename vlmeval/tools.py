@@ -258,7 +258,7 @@ def decode_img_omni(tup):
             paths = eval(p)
             assert len(images) == len(paths)
         else:
-            paths = [osp.splitext(p)[0] + f'_{i}.' + osp.splitext(p)[1] for i in range(len(images))]
+            paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
     else:
         assert not isliststr(p)
         images, paths = [im], [p]
