@@ -252,16 +252,12 @@ def CHECK(val):
 
 def decode_img_omni(tup):
     root, im, p = tup
-    if isliststr(im):
-        images = eval(im)
-        if isliststr(p):
-            paths = eval(p)
-            assert len(images) == len(paths)
-        else:
-            paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
-    else:
-        assert not isliststr(p)
-        images, paths = [im], [p]
+    images = toliststr(im)
+    paths = toliststr(p)
+    if len(images) > 1 and len(paths) == 1:
+        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+
+    assert len(images) == len(paths)
     paths = [osp.join(root, p) for p in paths]
     for p, im in zip(paths, images):
         if osp.exists(p):

@@ -35,7 +35,6 @@ class CustomPrompt:
                 tgt_path = [tgt_path]
         else:
             assert 'image_path' in line
-            tgt_path = line['image_path']
-            tgt_path = eval(tgt_path) if isliststr(tgt_path) else [tgt_path]
+            tgt_path = toliststr(line['image_path'])
 
         return tgt_path

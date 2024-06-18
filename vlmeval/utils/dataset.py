@@ -105,16 +105,13 @@ class TSVDataset(CustomPrompt):
                     assert idx in image_map and len(image_map[idx]) > 64
                     image_map[k] = image_map[idx]
 
-            data['image'] = [
-                eval(image_map[k]) if isliststr(image_map[k]) else image_map[k]
-                for k in data['index']
-            ]
+            images = [toliststr(image_map[k]) for k in data['index']]
+            data['image'] = [x[0] if len(x) == 1 else x for x in images]
             self.meta_only = False
 
         if 'image_path' in data:
-            data['image_path'] = [
-                eval(pths) if isliststr(pths) else pths for pths in data['image_path']
-            ]
+            paths = [toliststr(x) for x in data['image_path']]
+            data['image_path'] = [x[0] if len(x) == 1 else x for x in paths]
 
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
@@ -132,9 +129,7 @@ class TSVDataset(CustomPrompt):
             line = self.data.iloc[line]
 
         if self.meta_only:
-            tgt_path = line['image_path']
-            if isliststr(tgt_path):
-                tgt_path = eval(tgt_path)
+            tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line, dataset)
 
