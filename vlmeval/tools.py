@@ -250,18 +250,32 @@ def CHECK(val):
             CHECK(m)
 
 
-def decode_img(tup):
-    im, p = tup
-    if osp.exists(p):
-        return
-    decode_base64_to_image_file(im, p)
+def decode_img_omni(tup):
+    root, im, p = tup
+    if isliststr(im):
+        images = eval(im)
+        if isliststr(p):
+            paths = eval(p)
+            assert len(images) == len(paths)
+        else:
+            paths = [osp.splitext(p)[0] + f'_{i}.' + osp.splitext(p)[1] for i in range(len(images))]
+    else:
+        assert not isliststr(p)
+        images, paths = [im], [p]
+    paths = [osp.join(root, p) for p in paths]
+    for p, im in zip(paths, images):
+        if osp.exists(p):
+            continue
+        decode_base64_to_image_file(im, p)
+    return paths
 
 
-def LOCALIZE(fname):
+def LOCALIZE(fname, new_fname=None):
     base_name = osp.basename(fname)
     dname = osp.splitext(base_name)[0]
     data = load(fname)
-    new_fname = fname.replace('.tsv', '_local.tsv')
+    if new_fname is None:
+        new_fname = fname.replace('.tsv', '_local.tsv')
 
     indices = list(data['index'])
     images = list(data['image'])
@@ -269,16 +283,22 @@ def LOCALIZE(fname):
     root = osp.join(root, 'images', dname)
     os.makedirs(root, exist_ok=True)
 
-    img_paths = [osp.join(root, f'{idx}.jpg') for idx in indices]
-    tups = [(im, p) for p, im in zip(img_paths, images)]
+    if 'image_path' in data:
+        img_paths = list(data['image_path'])
+    else:
+        img_paths = [f'{idx}.jpg' for idx in indices]
+
+    tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
     pool = mp.Pool(32)
-    pool.map(decode_img, tups)
+    ret = pool.map(decode_img_omni, tups)
     pool.close()
     data.pop('image')
-    data['image_path'] = img_paths
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     dump(data, new_fname)
     print(f'The localized version of data file is {new_fname}')
+    return new_fname
 
 
 def RUN(lvl, model):

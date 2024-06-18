@@ -5,10 +5,6 @@ from .dataset_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE
 from .custom_prompt import CustomPrompt
 
 
-def isliststr(s):
-    return (s[0] == '[') and (s[-1] == ']')
-
-
 def check_md5(data_path, dataset):
     if dataset not in dataset_md5_dict:
         warnings.warn(f'We do not have an md5 record for dataset {dataset}, skip the md5 check. ')
@@ -45,31 +41,46 @@ def split_MMMU(msgs):
     return segs
 
 
+def prep_tsv(dataset):
+    data_root = LMUDataRoot()
+    assert osp.exists(data_root)
+    update_flag = False
+
+    if dataset in dataset_URLs:
+        url = dataset_URLs[dataset]
+        file_name = url.split('/')[-1]
+        data_path = osp.join(data_root, file_name)
+
+        if osp.exists(data_path) and check_md5(data_path, dataset):
+            pass
+        else:
+            warnings.warn('The dataset tsv is not downloaded')
+            download_file(url, data_path)
+            update_flag = True
+    else:
+        data_path = osp.join(data_root, dataset + '.tsv')
+        assert osp.exists(data_path)
+
+    if file_size(data_path, 'GB') > 1:
+        local_path = data_path.replace('.tsv', '_local.tsv')
+        if not osp.exists(local_path) or update_flag or os.environ.get('FORCE_LOCAL', None):
+            from ..tools import LOCALIZE
+            LOCALIZE(data_path, local_path)
+        return local_path
+    else:
+        return data_path
+
+
 class TSVDataset(CustomPrompt):
 
     def __init__(self, dataset='MMBench', skip_noimg=True):
 
         self.data_root = LMUDataRoot()
-        assert osp.exists(self.data_root)
-
         self.dataset = dataset
         self.dataset_type = DATASET_TYPE(dataset)
+        self.data_path = prep_tsv(dataset)
+        data = load(self.data_path)
 
-        if dataset in dataset_URLs:
-            url = dataset_URLs[dataset]
-            file_name = url.split('/')[-1]
-            data_path = osp.join(self.data_root, file_name)
-
-            if osp.exists(data_path) and check_md5(data_path, dataset):
-                pass
-            else:
-                warnings.warn('The dataset tsv is not downloaded')
-                download_file(url, data_path)
-        else:
-            data_path = osp.join(self.data_root, dataset + '.tsv')
-            assert osp.exists(data_path)
-
-        data = load(data_path)
         self.skip_noimg = skip_noimg
         if skip_noimg and 'image' in data:
             data = data[~pd.isna(data['image'])]
@@ -122,6 +133,8 @@ class TSVDataset(CustomPrompt):
 
         if self.meta_only:
             tgt_path = line['image_path']
+            if isliststr(tgt_path):
+                tgt_path = eval(tgt_path)
         else:
             tgt_path = self.dump_image(line, dataset)
 

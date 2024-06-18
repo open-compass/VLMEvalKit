@@ -227,3 +227,13 @@ def parse_file(s):
             return ('url', s)
     else:
         return (None, s)
+
+
+def file_size(f, unit='GB'):
+    stats = os.stat(f)
+    div_map = {
+        'GB': 2 ** 30,
+        'MB': 2 ** 20,
+        'KB': 2 ** 10,
+    }
+    return stats.st_size / div_map[unit]
