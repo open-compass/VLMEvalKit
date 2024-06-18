@@ -63,7 +63,7 @@ def prep_tsv(dataset):
 
     if file_size(data_path, 'GB') > 1:
         local_path = data_path.replace('.tsv', '_local.tsv')
-        if not osp.exists(local_path) or update_flag:
+        if not osp.exists(local_path) or update_flag or os.environ.get('FORCE_LOCAL', None):
             from ..tools import LOCALIZE
             LOCALIZE(data_path, local_path)
         return local_path
