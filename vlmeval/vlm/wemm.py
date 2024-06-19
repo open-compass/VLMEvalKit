@@ -3,7 +3,7 @@ from PIL import Image
 import sys
 from ..smp import *
 from .base import BaseModel
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 from transformers import AutoModel, GenerationConfig
 
 

@@ -1,7 +1,7 @@
 import torch
 import torch.distributed as dist
 import datetime
-from vlmeval.config import supported_VLM, api_models
+from vlmeval.config import supported_VLM
 from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
 from vlmeval.smp import *
 

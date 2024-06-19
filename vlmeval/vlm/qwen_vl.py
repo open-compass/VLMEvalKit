@@ -4,7 +4,7 @@ import warnings
 import copy as cp
 from .base import BaseModel
 from ..smp import isimg, listinstr
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class QwenVL(BaseModel):

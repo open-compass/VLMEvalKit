@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 DEFAULT_IMAGE_TOKEN = '<image>'

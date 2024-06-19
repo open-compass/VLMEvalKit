@@ -4,7 +4,7 @@ import warnings
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 import pandas as pd
 import string
 import torchvision.transforms as T
