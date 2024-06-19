@@ -1,8 +1,8 @@
 import torch
 import torch.distributed as dist
-import datetime
 from vlmeval.config import supported_VLM
-from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
+from vlmeval.dataset import TSVDataset, split_MMMU
+from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
