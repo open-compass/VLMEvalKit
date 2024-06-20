@@ -111,6 +111,7 @@ class TSVDatasetVideo:
         images = [Image.fromarray(arr) for arr in images]
         for im, pth in zip(images, frame_paths):
             im.save(pth)
+        return frame_paths
 
     @abstractmethod
     def build_prompt(self, idx, num_frames=8):
@@ -167,7 +168,7 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
             assert line < len(self)
             line = self.data.iloc[line]
 
-        frames = self.frame_paths(line['video'], num_frames)
+        frames = self.save_video_frames(line['video'], num_frames)
         sys_prompt = self.SYS + self.FRAMES_TMPL.format(num_frames)
         message = [dict(type='text', value=sys_prompt)]
         for im in frames:

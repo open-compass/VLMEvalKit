@@ -12,5 +12,5 @@ def build_dataset(dataset_name):
 
 __all__ = [
     'dataset_URLs', 'dataset_md5_dict', 'img_root_map', 'DATASET_TYPE', 'abbr2full',
-    'TSVDataset', 'TSVDatasetVideo', 'split_MMMU'
+    'TSVDataset', 'TSVDatasetVideo', 'MMBenchVideo', 'split_MMMU'
 ]
