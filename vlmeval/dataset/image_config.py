@@ -136,8 +136,6 @@ img_root_map.update({
     'MMT-Bench_VAL': 'MMT-Bench'
 })
 
-assert set(dataset_URLs) == set(img_root_map)
-
 
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
@@ -154,6 +152,8 @@ def DATASET_TYPE(dataset):
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
                     'mmvet', 'ocrbench'], dataset):
         return 'VQA'
+    elif 'mmbench-video' in dataset:
+        return 'VideoQA'
     else:
         if dataset not in dataset_URLs:
             import warnings

@@ -72,6 +72,8 @@ def prep_tsv(dataset):
 
 class TSVDataset:
 
+    TYPE = 'IMAGE'
+
     def __init__(self, dataset='MMBench', skip_noimg=True):
 
         self.data_root = LMUDataRoot()
@@ -119,6 +121,9 @@ class TSVDataset:
 
     def __len__(self):
         return len(self.data)
+
+    def __getitem__(self, idx):
+        return dict(self.data.iloc[idx])
 
     def dump_image(self, line, dataset):
         ROOT = LMUDataRoot()
