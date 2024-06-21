@@ -1,7 +1,7 @@
 import pandas as pd
 import hashlib
 from ..smp import *
-from .image_config import dataset_URLs, dataset_md5_dict, DATASET_TYPE, img_root_map
+from .config import dataset_URLs, dataset_md5_dict, DATASET_TYPE, img_root_map
 
 
 def check_md5(data_path, dataset):
