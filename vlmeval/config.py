@@ -56,6 +56,8 @@ api_models = {
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
+    # CloudWalk
+    'CloudWalk': partial(CWWrapper, model='cw', temperature=0, retry=10)
 }
 
 minicpm_series = {
