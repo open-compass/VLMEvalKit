@@ -119,7 +119,7 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
-要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/Development.md)。
+要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/Development_zh-CN.md)。
 
 ## 🎯 VLMEvalKit 的目标 <a id="goal-of-vlmevalkit"></a>
 

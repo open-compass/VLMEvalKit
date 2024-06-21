@@ -118,7 +118,7 @@ See [QuickStart](/Quickstart.md) for a quick start guide.
 
 ## 🛠️ Development Guide
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [Development_Guide](/Development.md).
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/Development.md) | [开发指南](/Development_zh-CN.md)].
 
 ## 🎯 The Goal of VLMEvalKit
 
