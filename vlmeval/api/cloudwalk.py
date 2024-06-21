@@ -84,7 +84,7 @@ class CWWrapper(BaseAPI):
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
-        headers = {'Content-Type': 'application/json', 'Authorization': f'{self.cw_key}'}
+        headers = {'Content-Type': 'application/json', 'Authorization': f'{self.key}'}
         payload = dict(
             model=self.model,
             messages=input_msgs,
