@@ -51,7 +51,7 @@ dataset_levels = {
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
-        ('SEEDBench2_Plus', 'acc.csv')
+        ('SEEDBench2_Plus', 'acc.csv'), ('SEEDBench2', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv')
     ]
 }
 
