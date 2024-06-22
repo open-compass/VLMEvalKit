@@ -23,6 +23,7 @@
 
 ## 🆕 更新
 
+- **[2024-06-22]** 由于 GPT-3.5-Turbo-0613 已被 OpenAI 废弃，我们改为使用 GPT-3.5-Turbo-0125 辅助答案提取
 - **[2024-06-18]** 支持了 [**SEEDBench2**](https://arxiv.org/abs/2311.17092)，感谢 [**Bohao-Lee**](https://github.com/Bohao-Lee)🔥🔥🔥
 - **[2024-06-18]** 支持了 [**MMT-Bench**](https://mmt-bench.github.io)，感谢 [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 - **[2024-06-12]** 支持了 [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)🔥🔥🔥
@@ -32,7 +33,6 @@
 - **[2024-05-24]** 支持了 [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct) 和 [**CogVLM2-Llama3-chat**](https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B) 🔥🔥🔥
 - **[2024-05-23]** 用户 [**binwang777**](https://github.com/binwang777/) 在 VLMEvalKit 中支持了 [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B)
 - **[2024-05-21]** 支持了 [**MiniCPM-Llama3-V2.5**](https://huggingface.co/openbmb/MiniCPM-Llama3-V-2_5), MiniCPM-V 系列最新的模型，拥有较大的性能提升。🔥🔥🔥
-- **[2024-05-15]** 支持了 [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), 一个谷歌开源的 3B 多模态模型。 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果

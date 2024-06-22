@@ -25,6 +25,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 
 ## 🆕 News
 
+- **[2024-06-22]** Since GPT-3.5-Turbo-0613 is no longer supported yet, we switch to GPT-3.5-Turbo-0125 for choice extraction
 - **[2024-06-18]** We have supported [**SEEDBench2**](https://arxiv.org/abs/2311.17092),  thanks to [**Bohao-Lee**](https://github.com/Bohao-Lee)🔥🔥🔥
 - **[2024-06-18]** We have supported [**MMT-Bench**](https://mmt-bench.github.io), thanks to [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 - **[2024-06-12]** We have supported [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)🔥🔥🔥
@@ -34,7 +35,6 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 - **[2024-05-24]** We have supported [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct) and [**CogVLM2-Llama3-chat**](https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B) 🔥🔥🔥
 - **[2024-05-23]** [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) is now supported by [**binwang777**](https://github.com/binwang777/)
 - **[2024-05-21]** We have supported [**MiniCPM-Llama3-V2.5**](https://huggingface.co/openbmb/MiniCPM-Llama3-V-2_5), the latest model in the MiniCPM-V series with a significant performance improvement 🔥🔥🔥
-- **[2024-05-15]** We have supported [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), a versatile and lightweight vision-language model released by Google 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
