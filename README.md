@@ -114,7 +114,7 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🏗️ QuickStart
 
-See [QuickStart](/Quickstart.md) for a quick start guide.
+See [[QuickStart](/Quickstart.md) | [快速开始](/Quickstart_zh-CN.md)] for a quick start guide.
 
 ## 🛠️ Development Guide
 
