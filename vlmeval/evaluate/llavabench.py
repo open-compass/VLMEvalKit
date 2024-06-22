@@ -101,7 +101,7 @@ def parse_args():
     parser.add_argument('data', type=str, help='The question set for inference, in excel / tsv / json format. ')
     parser.add_argument(
         '--model', type=str, help='The LLM (GPT) used for inference. ', default='gpt-4-turbo',
-        choices=['gpt-4-0613', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0613', 'gpt-4-0314'])
+        choices=['gpt-4-0613', 'gpt-4-0125', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0125'])
     parser.add_argument('--nproc', type=int, default=4)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()

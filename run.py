@@ -96,7 +96,7 @@ def main():
                 judge_kwargs['model'] = args.judge
             else:
                 if DATASET_TYPE(dataset_name) in ['multi-choice', 'Y/N']:
-                    judge_kwargs['model'] = 'chatgpt-0613'
+                    judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):

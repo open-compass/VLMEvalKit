@@ -15,7 +15,7 @@ class OpenAIWrapperInternal(OpenAIWrapper):
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'gpt-3.5-turbo-0613',
+                 model: str = 'gpt-3.5-turbo-0125',
                  retry: int = 5,
                  wait: int = 3,
                  verbose: bool = True,
