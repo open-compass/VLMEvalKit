@@ -2,7 +2,7 @@
 <div align="center"><b>大規模視覚言語モデルの評価ツールキット</b></div>
 
 <div align="center">
-英語 | [<a href="README_zh-CN.md">簡体字中国語</a>]
+[<a href="README.md">英語</a>] | [<a href="README_zh-CN.md">中国語</a>] | 日本語
 </div>
 
 <div align="center">
@@ -21,19 +21,6 @@
 </div>
 
 **VLMEvalKit**（pythonパッケージ名は**vlmeval**）は、**大規模視覚言語モデル（LVLMs）**の**オープンソース評価ツールキット**です。このツールキットは、複数のリポジトリでのデータ準備という重労働なしに、さまざまなベンチマークでLVLMsの**ワンコマンド評価**を可能にします。VLMEvalKitでは、すべてのLVLMsに対して**生成ベースの評価**を採用し、**正確なマッチング**と**LLMベースの回答抽出**の両方で得られた評価結果を提供します。
-
-## 🆕 ニュース
-
-- **[2024-06-18]** [**SEEDBench2**](https://arxiv.org/abs/2311.17092)をサポートしました。[**Bohao-Lee**](https://github.com/Bohao-Lee)に感謝します🔥🔥🔥
-- **[2024-06-18]** [**MMT-Bench**](https://mmt-bench.github.io)をサポートしました。[**KainingYing**](https://github.com/KainingYing)に感謝します🔥🔥🔥
-- **[2024-06-12]** [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)をサポートしました🔥🔥🔥
-- **[2024-06-05]** [**WeMM**](https://github.com/scenarios/WeMM)をサポートしました。[**scenarios**](https://github.com/scenarios)に感謝します🔥🔥🔥
-- **[2024-05-27]** [**Mini InternVL**](https://huggingface.co/OpenGVLab/Mini-InternVL-Chat-2B-V1-5)をサポートしました。[**czczup**](https://github.com/czczup)に感謝します🔥🔥🔥
-- **[2024-05-25]** [**SEEDBench2_Plus**](https://arxiv.org/abs/2404.16790)をサポートしました。[**Bohao-Lee**](https://github.com/Bohao-Lee)に感謝します🔥🔥🔥
-- **[2024-05-24]** [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)と[**CogVLM2-Llama3-chat**](https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B)をサポートしました🔥🔥🔥
-- **[2024-05-23]** [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B)が[**binwang777**](https://github.com/binwang777/)によってサポートされました
-- **[2024-05-21]** [**MiniCPM-Llama3-V2.5**](https://huggingface.co/openbmb/MiniCPM-Llama3-V-2_5)をサポートしました。MiniCPM-Vシリーズの最新モデルで、大幅な性能向上があります🔥🔥🔥
-- **[2024-05-15]** [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448)をサポートしました。Googleがリリースした多目的で軽量な視覚言語モデルです🔥🔥🔥
 
 ## 📊 データセット、モデル、および評価結果
 
