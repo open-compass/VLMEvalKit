@@ -37,9 +37,9 @@ def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
     rd.seed(2680)
     suffix = eval_file.split('.')[-1]
     model = judge_kwargs['model']
-    assert model in ['chatgpt-0613', 'exact_matching', 'gpt-4-0125']
+    assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
     name_str_map = {
-        'chatgpt-0613': 'openai',
+        'chatgpt-0125': 'openai',
         'gpt-4-0125': 'gpt4'
     }
     name_str = name_str_map[model] if model in name_str_map else model
