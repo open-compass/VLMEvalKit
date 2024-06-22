@@ -2,7 +2,7 @@
 <div align="center"><b>大規模視覚言語モデルの評価ツールキット</b></div>
 
 <div align="center">
-[<a href="README.md">英語</a>] | [<a href="doc/zh-CN/README_zh-CN.md">中国語</a>] | 日本語
+[<a href="README.md">英語</a>] | [<a href="/doc/zh-CN/README_zh-CN.md">中国語</a>] | 日本語
 </div>
 
 <div align="center">

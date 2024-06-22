@@ -2,7 +2,7 @@
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 
 <div align="center">
-English | [<a href="docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="docs/ja/README_ja.md">日本語</a>]
+English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/docs/ja/README_ja.md">日本語</a>]
 </div>
 
 <div align="center">
