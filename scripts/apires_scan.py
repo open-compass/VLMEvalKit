@@ -34,11 +34,11 @@ for d in datasets:
         data = load(eval_file)
         
         if 'MMVet' in d:
-            bad = [x for x in data['log'] if 'All 5 retries failed.' in x]
+            bad = [x for x in data['log'] if 'All 5 retries failed.' in str(x)]
             if len(bad):
                 print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
         elif 'MathVista' in d:
-            bad = [x for x in data['res'] if FAIL_MSG in x]
+            bad = [x for x in data['res'] if FAIL_MSG in str(x)]
             if len(bad):
                 print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
             
