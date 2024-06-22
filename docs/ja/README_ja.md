@@ -2,7 +2,7 @@
 <div align="center"><b>大規模視覚言語モデルの評価ツールキット</b></div>
 
 <div align="center">
-[<a href="README.md">英語</a>] | [<a href="README_zh-CN.md">中国語</a>] | 日本語
+[<a href="README.md">英語</a>] | [<a href="doc/zh-CN/README_zh-CN.md">中国語</a>] | 日本語
 </div>
 
 <div align="center">
@@ -106,7 +106,7 @@ print(ret)  # 提供された画像にはリンゴが2個あります。
 
 ## 🛠️ 開発ガイド
 
-カスタムベンチマーク、VLMsを開発するか、単に**VLMEvalKit**に他のコードを貢献する場合は、[[開発ガイド](/Development.md) | [Development Guide](/Development_zh-CN.md)]を参照してください。
+カスタムベンチマーク、VLMsを開発するか、単に**VLMEvalKit**に他のコードを貢献する場合は、[開発ガイド](/Development.md)を参照してください。
 
 ## 🎯 VLMEvalKitの目標
 

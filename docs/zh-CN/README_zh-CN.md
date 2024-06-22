@@ -2,7 +2,7 @@
 <div align="center"><b> VLMEvalKit—多模态大模型评测工具 </b></div>
 
 <div align="center">
-[<a href="README.md">English</a>] | 简体中文 | [<a href="README_ja.md">日本語</a>]
+[<a href="README.md">English</a>] | 简体中文 | [<a href="docs/ja/README_ja.md">日本語</a>]
 </div>
 
 <div align="center">
@@ -115,11 +115,11 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🏗️ 快速开始 <a id="quickstart"></a>
 
-请参阅[**快速开始**](/Quickstart_zh-CN.md)获取入门指南。
+请参阅[**快速开始**](/docs/zh-CN/Quickstart_zh-CN.md)获取入门指南。
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
-要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/Development_zh-CN.md)。
+要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/docs/zh-CN/Development_zh-CN.md)。
 
 ## 🎯 VLMEvalKit 的目标 <a id="goal-of-vlmevalkit"></a>
 

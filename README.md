@@ -2,7 +2,7 @@
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 
 <div align="center">
-English | [<a href="README_zh-CN.md">简体中文</a>] | [<a href="README_ja.md">日本語</a>]
+English | [<a href="docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="docs/ja/README_ja.md">日本語</a>]
 </div>
 
 <div align="center">
@@ -114,11 +114,11 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🏗️ QuickStart
 
-See [[QuickStart](/Quickstart.md) | [快速开始](/Quickstart_zh-CN.md)] for a quick start guide.
+See [[QuickStart](/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstart_zh-CN.md)] for a quick start guide.
 
 ## 🛠️ Development Guide
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/Development.md) | [开发指南](/Development_zh-CN.md)].
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/Development.md) | [开发指南](/docs/zh-CN/Development_zh-CN.md)].
 
 ## 🎯 The Goal of VLMEvalKit
 
