@@ -115,7 +115,7 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🏗️ 快速开始 <a id="quickstart"></a>
 
-请参阅[**快速开始**](/Quickstart.md)获取入门指南。
+请参阅[**快速开始**](/Quickstart_zh-CN.md)获取入门指南。
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
