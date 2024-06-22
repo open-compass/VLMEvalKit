@@ -16,6 +16,7 @@ for d in datasets:
         data = load(pth)
         # Detect Failure
         assert 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
         fail = [FAIL_MSG in x for x in data['prediction']]
         if sum(fail):
             nfail = sum(fail)
@@ -48,7 +49,7 @@ for d in datasets:
             if len(sub):
                 print(f'Model {model_name} x Dataset {d} Evaluation: {len(sub)} out of {len(data)} failed.')
         else:
-            bad = [x for x in data['log'] if FAIL_MSG in x]
+            bad = [x for x in data['log'] if FAIL_MSG in str(x)]
             if len(bad):
                 print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
                 
