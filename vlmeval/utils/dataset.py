@@ -30,6 +30,9 @@ def split_MMMU(msgs):
             assert text is None
             text = s['value']
     text_segs = text.split('<image ')
+    if len(text_segs) == 1:
+        return msgs
+
     segs = [dict(type='text', value=text_segs[0])]
     for i, seg in enumerate(text_segs):
         if i == 0:
