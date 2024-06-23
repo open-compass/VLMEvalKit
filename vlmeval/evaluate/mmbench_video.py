@@ -1,5 +1,9 @@
-from vlmeval import *
-from .misc import build_judge
+import os.path as osp
+import pandas as pd
+from vlmeval.evaluate.misc import build_judge
+from vlmeval.utils import track_progress_rich
+from vlmeval.smp import *
+import numpy as np
 
 system_prompt = """
 As an AI assistant, your task is to evaluate a candidate answer in comparison to a given correct answer.
