@@ -92,7 +92,7 @@ def MMBenchVideo_eval(data_file, **judge_kwargs):
 
     model = build_judge(system_prompt=system_prompt, **judge_kwargs)
 
-    if not osp.exists(tgt_file):
+    if not osp.exists(score_file):
         res = {} if not osp.exists(tmp_file) else load(tmp_file)
         res = {k: v for k, v in res.items() if model.fail_msg not in v}
 
@@ -115,6 +115,8 @@ def MMBenchVideo_eval(data_file, **judge_kwargs):
         score_map = load(tmp_file)
         data['score'] = [score_map[idx] if idx in score_map else -1 for idx in data['index']]
         dump(data, score_file)
+
+    if not osp.exists(tgt_file):
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
 
