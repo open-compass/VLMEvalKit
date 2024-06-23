@@ -59,9 +59,11 @@ def get_dimension_rating(data_path):
             if np.any([x in MMV_DIMENSIONS[d] for x in cates]):
                 coarse_rating[d].append(data.iloc[i]['score'])
 
-    coarse_rating = {k: f'{np.mean(v):.2f}' for k, v in coarse_rating.items()}
-    fine_rating = {k: f'{np.mean(v):.2f}' for k, v in fine_rating.items()}
-    return coarse_rating, fine_rating
+    coarse_all = {k: f'{np.mean([max(x, 0) for x in v]):.2f}' for k, v in coarse_rating.items()}
+    coarse_valid = {k: f'{np.mean([x for x in v if x >= 0]):.2f}' for k, v in coarse_rating.items()}
+    fine_all = {k: f'{np.mean([max(x, 0) for x in v]):.2f}' for k, v in fine_rating.items()}
+    fine_valid = {k: f'{np.mean([x for x in v if x >= 0]):.2f}' for k, v in fine_rating.items()}
+    return dict(coarse_all=coarse_all, coarse_valid=coarse_valid, fine_all=fine_all, fine_valid=fine_valid)
 
 
 def build_prompt(item):
@@ -85,13 +87,12 @@ def MMBenchVideo_eval(data_file, **judge_kwargs):
     nproc = judge_kwargs.pop('nproc', 4)
 
     tmp_file = data_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-    tgt_file_coarse = data_file.replace('.xlsx', f'_{judge}_rating_coarse.json')
-    tgt_file_fine = data_file.replace('.xlsx', f'_{judge}_rating_fine.json')
+    tgt_file = data_file.replace('.xlsx', f'_{judge}_rating.json')
     score_file = data_file.replace('.xlsx', f'_{judge}_score.xlsx')
 
     model = build_judge(system_prompt=system_prompt, **judge_kwargs)
 
-    if not (osp.exists(tgt_file_coarse) and osp.exists(tgt_file_fine)):
+    if not osp.exists(tgt_file):
         res = {} if not osp.exists(tmp_file) else load(tmp_file)
         res = {k: v for k, v in res.items() if model.fail_msg not in v}
 
@@ -114,9 +115,8 @@ def MMBenchVideo_eval(data_file, **judge_kwargs):
         score_map = load(tmp_file)
         data['score'] = [score_map[idx] if idx in score_map else -1 for idx in data['index']]
         dump(data, score_file)
-        coarse_rating, fine_rating = get_dimension_rating(score_file)
-        dump(coarse_rating, tgt_file_coarse)
-        dump(fine_rating, tgt_file_fine)
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
 
 
 def main():
