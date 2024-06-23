@@ -30,9 +30,7 @@ def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, sam
     structs = [dataset.build_prompt(samples_dict[idx], nframe=nframe) for idx in indices]
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
-    res = {}
-    if osp.exists(out_file):
-        res = load(out_file)
+    res = load(out_file) if osp.exists(out_file) else {}
 
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
@@ -49,7 +47,7 @@ def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, sam
 
 
 def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
-    res = load(out_file)
+    res = load(out_file) if osp.exists(out_file) else {}
     rank, world_size = get_rank_and_world_size()
     if rank == 0:
         dataset = build_dataset(dataset_name, pack=pack)
