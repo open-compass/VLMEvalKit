@@ -53,7 +53,7 @@ def main():
         for _, dataset_name in enumerate(args.data):
             custom_flag = False
 
-            if dataset_name not in dataset_URLs:
+            if dataset_name in dataset_URLs:
                 file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
                 if not osp.exists(file_path):
                     dataset_name = abbr2full(dataset_name)
