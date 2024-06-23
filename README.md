@@ -2,7 +2,7 @@
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 
 <div align="center">
-English | [<a href="README_zh-CN.md">简体中文</a>]
+English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/docs/ja/README_ja.md">日本語</a>]
 </div>
 
 <div align="center">
@@ -25,6 +25,7 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 
 ## 🆕 News
 
+- **[2024-06-22]** Since GPT-3.5-Turbo-0613 is no longer supported yet, we switch to GPT-3.5-Turbo-0125 for choice extraction
 - **[2024-06-18]** We have supported [**SEEDBench2**](https://arxiv.org/abs/2311.17092),  thanks to [**Bohao-Lee**](https://github.com/Bohao-Lee)🔥🔥🔥
 - **[2024-06-18]** We have supported [**MMT-Bench**](https://mmt-bench.github.io), thanks to [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 - **[2024-06-12]** We have supported [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)🔥🔥🔥
@@ -34,7 +35,6 @@ English | [<a href="README_zh-CN.md">简体中文</a>]
 - **[2024-05-24]** We have supported [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct) and [**CogVLM2-Llama3-chat**](https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B) 🔥🔥🔥
 - **[2024-05-23]** [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) is now supported by [**binwang777**](https://github.com/binwang777/)
 - **[2024-05-21]** We have supported [**MiniCPM-Llama3-V2.5**](https://huggingface.co/openbmb/MiniCPM-Llama3-V-2_5), the latest model in the MiniCPM-V series with a significant performance improvement 🔥🔥🔥
-- **[2024-05-15]** We have supported [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), a versatile and lightweight vision-language model released by Google 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -70,9 +70,9 @@ VLMEvalKit will use an **judge LLM** to extract answer from the output if you se
 
 **Supported API Models**
 
-| [**GPT-4V (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**QwenVLPlus**](https://huggingface.co/spaces/Qwen/Qwen-VL-Plus)🎞️🚅 | [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max)🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v)🎞️🚅 |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ |
-| [**Reka**](https://www.reka.ai)🚅                             |                                                              |                                                              |                                                              |                                                  |
+| [**GPT-4v (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🎞️🚅      | [**Gemini-1.0-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Gemini-1.5-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v) 🎞️🚅          |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| [**Reka-[Edge / Flash / Core]**](https://www.reka.ai)🚅       | [**Qwen-VL-[Plus / Max]**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅 | [**Claude-3v-[Haiku / Sonnet / Opus]**](https://www.anthropic.com/news/claude-3-family) 🎞️🚅 | [**GLM-4v**](https://open.bigmodel.cn/dev/howuse/glm4v) 🚅    | [**CloudWalk**](https://maas.cloudwalk.com/web/#/login) 🎞️🚅 |
 
 **Supported PyTorch / HF Models**
 
@@ -114,11 +114,11 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🏗️ QuickStart
 
-See [QuickStart](/Quickstart.md) for a quick start guide.
+See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstart_zh-CN.md)] for a quick start guide.
 
 ## 🛠️ Development Guide
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [Development_Guide](/Development.md).
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/Development.md) | [开发指南](/docs/zh-CN/Development_zh-CN.md)].
 
 ## 🎯 The Goal of VLMEvalKit
 

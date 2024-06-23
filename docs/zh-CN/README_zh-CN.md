@@ -2,7 +2,7 @@
 <div align="center"><b> VLMEvalKit—多模态大模型评测工具 </b></div>
 
 <div align="center">
-[<a href="README.md">English</a>] | 简体中文
+[<a href="README.md">English</a>] | 简体中文 | [<a href="/docs/ja/README_ja.md">日本語</a>]
 </div>
 
 <div align="center">
@@ -23,6 +23,7 @@
 
 ## 🆕 更新
 
+- **[2024-06-22]** 由于 GPT-3.5-Turbo-0613 已被 OpenAI 废弃，我们改为使用 GPT-3.5-Turbo-0125 辅助答案提取
 - **[2024-06-18]** 支持了 [**SEEDBench2**](https://arxiv.org/abs/2311.17092)，感谢 [**Bohao-Lee**](https://github.com/Bohao-Lee)🔥🔥🔥
 - **[2024-06-18]** 支持了 [**MMT-Bench**](https://mmt-bench.github.io)，感谢 [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 - **[2024-06-12]** 支持了 [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)🔥🔥🔥
@@ -32,7 +33,6 @@
 - **[2024-05-24]** 支持了 [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct) 和 [**CogVLM2-Llama3-chat**](https://huggingface.co/THUDM/cogvlm2-llama3-chat-19B) 🔥🔥🔥
 - **[2024-05-23]** 用户 [**binwang777**](https://github.com/binwang777/) 在 VLMEvalKit 中支持了 [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B)
 - **[2024-05-21]** 支持了 [**MiniCPM-Llama3-V2.5**](https://huggingface.co/openbmb/MiniCPM-Llama3-V-2_5), MiniCPM-V 系列最新的模型，拥有较大的性能提升。🔥🔥🔥
-- **[2024-05-15]** 支持了 [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448), 一个谷歌开源的 3B 多模态模型。 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -68,9 +68,9 @@
 ### 支持的模型
 **API 模型**
 
-| [**GPT-4V (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**GeminiProVision**](https://platform.openai.com/docs/guides/vision)🎞️🚅 | [**QwenVLPlus**](https://huggingface.co/spaces/Qwen/Qwen-VL-Plus)🎞️🚅 | [**QwenVLMax**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max)🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v)🎞️🚅 |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------ |
-| [**Reka**](https://www.reka.ai)🚅                             |                                                              |                                                              |                                                              |                                                  |
+| [**GPT-4v (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🎞️🚅      | [**Gemini-1.0-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Gemini-1.5-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v) 🎞️🚅          |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| [**Reka-[Edge / Flash / Core]**](https://www.reka.ai)🚅       | [**Qwen-VL-[Plus / Max]**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅 | [**Claude-3v-[Haiku / Sonnet / Opus]**](https://www.anthropic.com/news/claude-3-family) 🎞️🚅 | [**GLM-4v**](https://open.bigmodel.cn/dev/howuse/glm4v) 🚅    | [**CloudWalk**](https://maas.cloudwalk.com/web/#/login) 🎞️🚅 |
 
 **基于 PyTorch / HF 的开源模型**
 
@@ -115,11 +115,11 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🏗️ 快速开始 <a id="quickstart"></a>
 
-请参阅[**快速开始**](/Quickstart.md)获取入门指南。
+请参阅[**快速开始**](/docs/zh-CN/Quickstart_zh-CN.md)获取入门指南。
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
-要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/Development.md)。
+要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/docs/zh-CN/Development_zh-CN.md)。
 
 ## 🎯 VLMEvalKit 的目标 <a id="goal-of-vlmevalkit"></a>
 
