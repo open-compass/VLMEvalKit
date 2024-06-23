@@ -27,7 +27,7 @@ def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, sam
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
-    structs = [dataset.build_prompt(samples_dict[idx], nframe=nframe) for idx in indices]
+    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe) for idx in indices]
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
@@ -86,7 +86,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=Fals
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
-        struct = dataset.build_prompt(sample_map[idx], nframe=nframe)
+        struct = dataset.build_prompt(sample_map[idx], num_frames=nframe)
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
