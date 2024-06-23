@@ -107,7 +107,7 @@ class TSVDatasetVideo:
         frame_paths = self.frame_paths(video, num_frames)
         flag = np.all([osp.exists(p) for p in frame_paths])
         if flag:
-            return
+            return frame_paths
         vid_path = osp.join(self.data_root, video + '.mp4')
         vid = decord.VideoReader(vid_path)
         step_size = len(vid) / (num_frames + 1)
