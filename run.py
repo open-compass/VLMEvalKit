@@ -2,7 +2,8 @@ import torch
 import torch.distributed as dist
 from vlmeval.smp import *
 from vlmeval.evaluate import *
-from vlmeval.inference import infer_data_job, infer_data_job_video
+from vlmeval.inference import infer_data_job
+from vlmeval.inference_video import infer_data_job_video
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import dataset_URLs, DATASET_TYPE, abbr2full
 from vlmeval.utils import MMMU_result_transfer, MMTBench_result_transfer
@@ -99,8 +100,7 @@ def main():
                     nframe=args.nframe,
                     pack=args.pack,
                     verbose=args.verbose,
-                    api_nproc=args.nproc,
-                    ignore_failed=args.ignore)
+                    api_nproc=args.nproc)
             else:
                 model = infer_data_job(
                     model,

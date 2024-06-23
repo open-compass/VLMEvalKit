@@ -61,7 +61,7 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     return res
 
 
-def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_nproc=4):
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
     if osp.exists(out_file):

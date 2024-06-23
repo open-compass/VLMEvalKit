@@ -3,11 +3,11 @@ from .image_dataset import TSVDataset, split_MMMU
 from .video_dataset import TSVDatasetVideo, MMBenchVideo
 
 
-def build_dataset(dataset_name):
+def build_dataset(dataset_name, **kwargs):
     if dataset_name == 'MMBench-Video':
-        return MMBenchVideo(dataset_name)
+        return MMBenchVideo(dataset_name, **kwargs)
     else:
-        return TSVDataset(dataset_name)
+        return TSVDataset(dataset_name, **kwargs)
 
 
 __all__ = [
