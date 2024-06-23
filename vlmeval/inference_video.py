@@ -29,7 +29,8 @@ def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, sam
     indices = list(samples_dict.keys())
     structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe) for idx in indices]
 
-    out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
+    packstr = 'pack' if pack else 'nopack'
+    out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
 
     structs = [s for i, s in zip(indices, structs) if i not in res]
