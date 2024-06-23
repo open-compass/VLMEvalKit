@@ -146,7 +146,9 @@ img_root_map.update({
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
-    if listinstr([
+    if 'mmbench-video' in dataset:
+        return 'VideoQA'
+    elif listinstr([
         'mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d',
         'mmstar', 'realworldqa', 'mmt-bench'
     ], dataset):
@@ -158,8 +160,6 @@ def DATASET_TYPE(dataset):
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
                     'mmvet', 'ocrbench'], dataset):
         return 'VQA'
-    elif 'mmbench-video' in dataset:
-        return 'VideoQA'
     else:
         if dataset not in dataset_URLs:
             import warnings
