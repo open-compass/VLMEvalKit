@@ -2,7 +2,7 @@ import torch
 import torch.distributed as dist
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset, split_MMMU, MMBenchVideo
-from vlmeval.utils import track_progress_rich, load_pack_answers
+from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
