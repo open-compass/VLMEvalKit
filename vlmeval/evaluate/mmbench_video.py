@@ -73,7 +73,7 @@ def build_prompt(item):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, nargs='+', required=True)
+    parser.add_argument('--data', type=str, required=True)
     parser.add_argument('--judge', type=str, default='gpt-4-1106')
     parser.add_argument('--nproc', type=int, default=6)
     parser.add_argument('--verbose', action='store_true')
@@ -123,15 +123,17 @@ def MMBenchVideo_eval(data_file, **judge_kwargs):
 
 def main():
     args = parse_args()
-    assert len(args.data), '--data should be a list of data files'
     judge_kwargs = dict(model=args.judge, nproc=args.nproc)
     if 'OPENAI_API_KEY_JUDGE' in os.environ and os.environ['OPENAI_API_KEY_JUDGE']:
         judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
     if 'OPENAI_API_BASE_JUDGE' in os.environ and os.environ['OPENAI_API_BASE_JUDGE']:
         judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
 
-    for _, data_file in enumerate(args.data):
-        MMBenchVideo_eval(data_file, **judge_kwargs)
+    res = MMBenchVideo_eval(args.data, **judge_kwargs)
+    for k, v in res.items():
+        print(k + ': ')
+        print(v)
+        print('')
 
 
 if __name__ == '__main__':
