@@ -8,7 +8,7 @@ class CWWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'cw',
+                 model: str = 'cw-congrong-v1.5',
                  retry: int = 10,
                  wait: int = 5,
                  key: str = None,

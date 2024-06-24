@@ -58,7 +58,7 @@ api_models = {
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     # CloudWalk
-    'CloudWalk': partial(CWWrapper, model='cw', temperature=0, retry=10)
+    'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10)
 }
 
 minicpm_series = {
