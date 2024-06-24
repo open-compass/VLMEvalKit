@@ -63,7 +63,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=Fals
     sample_indices_sub = sample_indices[rank::world_size]
     if np.all([idx in res for idx in sample_indices_sub]):
         return model_name
-    sample_indices_subrem = [x for x in sample_indices if x not in res]
+    sample_indices_subrem = [x for x in sample_indices_sub if x not in res]
 
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
 
