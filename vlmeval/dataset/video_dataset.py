@@ -129,7 +129,8 @@ class MMBenchVideo(TSVDatasetVideo):
     FRAMES_TMPL_PACK = """
 You will be provided with {} separate frames uniformly sampled from a video, \
 the frames are provided in chronological order of the video.
-Please analyze these images and provide the answers to the following questions about the video content.
+Please analyze these images and provide the answer / answers to the \
+following question / questions about the video content.
 If multiple questions are provided (with indices I1, I2, I3, ...), \
 you should organize your answers in the following json format:
 {{
@@ -137,6 +138,7 @@ you should organize your answers in the following json format:
     'I2': 'Answer to Question I2',
     ...
 }}
+Otherwise, please directly reply with your response to the only question.
 Even if the information in these separate frames is not enough to give an answer,
 PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
