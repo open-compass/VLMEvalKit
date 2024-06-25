@@ -137,10 +137,8 @@ you should organize your answers in the following json format:
     'I2': 'Answer to Question I2',
     ...
 }}
-Even if the information in these separate frames is not enough to give an answer, \
-PLEASE TRY YOUR BEST TO GUESS A CLEAR OR VAGUE ANSWER WHICH YOU THINK WOULD BE THE \
-MOST POSSIBLE ONE BASED ON THE QUESTION.
-Minimize negative responses such as ‘not possible to determine’. STIMULATE YOUR POTENTIAL AND IMAGINATION!
+Even if the information in these separate frames is not enough to give an answer,
+PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
     FRAMES_TMPL_NOPACK = """
@@ -149,9 +147,7 @@ the frames are provided in chronological order of the video.
 Please analyze these images and provide the answer to the question about the video content.
 Please directly reply with your response to the only question.
 Even if the information in these separate frames is not enough to give an answer, \
-PLEASE TRY YOUR BEST TO GUESS A CLEAR OR VAGUE ANSWER WHICH YOU THINK WOULD BE THE \
-MOST POSSIBLE ONE BASED ON THE QUESTION.
-Minimize negative responses such as ‘not possible to determine’. STIMULATE YOUR POTENTIAL AND IMAGINATION!
+PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
     def __init__(self, dataset='MMBench-Video', pack=False):

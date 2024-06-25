@@ -5,6 +5,8 @@ from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 import numpy as np
 
+FAIL_MSG = 'Failed to obtain answer via API.'
+
 system_prompt = """
 As an AI assistant, your task is to evaluate a candidate answer in comparison to a given correct answer.
 The question itself, the correct 'groundtruth' answer, and the candidate answer will be provided to you.
@@ -48,7 +50,7 @@ def get_dimension_rating(data_path):
     data = load(data_path)
     coarse_rating = {k: [] for k in MMV_DIMENSIONS}
     fine_rating = {k: [] for k in L3_DIMS}
-    data['score'] = [int(x) for x in data['score']]
+
     for i in range(len(data)):
         cate = data.iloc[i]['dimensions']
         cates = eval(cate)
@@ -115,11 +117,22 @@ def MMBenchVideo_eval(data_file, **judge_kwargs):
             )
         score_map = load(tmp_file)
         data['score'] = [score_map[idx] if idx in score_map else -1 for idx in data['index']]
+        rejected = [x for x in score_map.values() if FAIL_MSG in x]
+        data['score'] = [int(x) if istype(x, int) else -1 for x in data['score']]
+        print(
+            f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} questions, '
+            f'failed to obtain the score for another {len(rejected)} questions. '
+            f'Those questions will be counted as 0 score in ALL rating, and will not be counted in VALID rating.'
+        )
+
         dump(data, score_file)
 
-    if not osp.exists(tgt_file):
-        rating = get_dimension_rating(score_file)
-        dump(rating, tgt_file)
+    rating = get_dimension_rating(score_file)
+    for k, v in rating.items():
+        print(k + ': ')
+        print(v)
+        print('')
+    dump(rating, tgt_file)
 
 
 def main():
@@ -130,11 +143,7 @@ def main():
     if 'OPENAI_API_BASE_JUDGE' in os.environ and os.environ['OPENAI_API_BASE_JUDGE']:
         judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
 
-    res = MMBenchVideo_eval(args.data, **judge_kwargs)
-    for k, v in res.items():
-        print(k + ': ')
-        print(v)
-        print('')
+    _ = MMBenchVideo_eval(args.data, **judge_kwargs)
 
 
 if __name__ == '__main__':
