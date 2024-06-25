@@ -48,6 +48,7 @@ def get_dimension_rating(data_path):
     data = load(data_path)
     coarse_rating = {k: [] for k in MMV_DIMENSIONS}
     fine_rating = {k: [] for k in L3_DIMS}
+    data['score'] = [int(x) for x in data['score']]
     for i in range(len(data)):
         cate = data.iloc[i]['dimensions']
         cates = eval(cate)
