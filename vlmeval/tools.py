@@ -276,8 +276,9 @@ def LOCALIZE(fname, new_fname=None):
         new_fname = fname.replace('.tsv', '_local.tsv')
 
     indices = list(data['index'])
+    indices_str = [str(x) for x in indices]
     images = list(data['image'])
-    image_map = {x: y for x, y in zip(indices, images)}
+    image_map = {x: y for x, y in zip(indices_str, images)}
 
     root = LMUDataRoot()
     root = osp.join(root, 'images', dname)
@@ -287,8 +288,8 @@ def LOCALIZE(fname, new_fname=None):
         img_paths = list(data['image_path'])
     else:
         img_paths = []
-        for i in indices:
-            if (not isinstance(image_map[i], str)) or len(image_map[i]) <= 64:
+        for i in indices_str:
+            if len(image_map[i]) <= 64:
                 idx = image_map[i]
                 assert idx in image_map and len(image_map[idx]) > 64
                 img_paths.append(f'{idx}.jpg')
