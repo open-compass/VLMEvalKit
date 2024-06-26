@@ -263,7 +263,8 @@ def decode_img_omni(tup):
     for p, im in zip(paths, images):
         if osp.exists(p):
             continue
-        decode_base64_to_image_file(im, p)
+        if isinstance(im, str) and len(im) > 64:
+            decode_base64_to_image_file(im, p)
     return paths
 
 
@@ -276,6 +277,8 @@ def LOCALIZE(fname, new_fname=None):
 
     indices = list(data['index'])
     images = list(data['image'])
+    image_map = {x: y for x, y in zip(indices, images)}
+
     root = LMUDataRoot()
     root = osp.join(root, 'images', dname)
     os.makedirs(root, exist_ok=True)
@@ -283,7 +286,14 @@ def LOCALIZE(fname, new_fname=None):
     if 'image_path' in data:
         img_paths = list(data['image_path'])
     else:
-        img_paths = [f'{idx}.jpg' for idx in indices]
+        img_paths = []
+        for i in indices:
+            if (not isinstance(image_map[i], str)) or len(image_map[i]) <= 64:
+                idx = image_map[i]
+                assert idx in image_map and len(image_map[idx]) > 64
+                img_paths.append(f'{idx}.jpg')
+            else:
+                img_paths.append(f'{i}.jpg')
 
     tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
