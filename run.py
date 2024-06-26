@@ -3,21 +3,35 @@ import torch.distributed as dist
 from vlmeval.smp import *
 from vlmeval.evaluate import *
 from vlmeval.inference import infer_data_job
+from vlmeval.inference_video import infer_data_job_video
 from vlmeval.config import supported_VLM
-from vlmeval.utils import dataset_URLs, DATASET_TYPE, abbr2full, MMMU_result_transfer, MMTBench_result_transfer
+from vlmeval.dataset import dataset_URLs, DATASET_TYPE, abbr2full
+from vlmeval.utils import MMMU_result_transfer, MMTBench_result_transfer
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    # Essential Args
     parser.add_argument('--data', type=str, nargs='+', required=True)
     parser.add_argument('--model', type=str, nargs='+', required=True)
+    # Args that only apply to Video Dataset
+    parser.add_argument('--nframe', type=int, default=8)
+    parser.add_argument('--pack', action='store_true')
+    # Work Dir
     parser.add_argument('--work-dir', type=str, default='.', help='select the output directory')
+    # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
+    # API Kwargs, Apply to API VLMs and Judge API LLMs
     parser.add_argument('--nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
+    # Explicitly Set the Judge Model
     parser.add_argument('--judge', type=str, default=None)
-    parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
+    # Logging Utils
     parser.add_argument('--verbose', action='store_true')
+    # Configuration for Resume
+    # Ignore: will not rerun failed VLM inference
+    parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
+    # Rerun: will remove all evaluation temp files
     parser.add_argument('--rerun', action='store_true')
     args = parser.parse_args()
     return args
@@ -69,21 +83,37 @@ def main():
                 else:
                     custom_flag = True
 
-            result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+            if dataset_name in ['MMBench-Video']:
+                packstr = 'pack' if args.pack else 'nopack'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+            else:
+                result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
             if osp.exists(result_file) and args.rerun:
                 os.system(f'rm {pred_root}/{model_name}_{dataset_name}_*')
 
             if model is None:
                 model = model_name  # which is only a name
 
-            model = infer_data_job(
-                model,
-                work_dir=pred_root,
-                model_name=model_name,
-                dataset_name=dataset_name,
-                verbose=args.verbose,
-                api_nproc=args.nproc,
-                ignore_failed=args.ignore)
+            # Perform the Inference
+            if dataset_name == 'MMBench-Video':
+                model = infer_data_job_video(
+                    model,
+                    work_dir=pred_root,
+                    model_name=model_name,
+                    dataset_name=dataset_name,
+                    nframe=args.nframe,
+                    pack=args.pack,
+                    verbose=args.verbose,
+                    api_nproc=args.nproc)
+            else:
+                model = infer_data_job(
+                    model,
+                    work_dir=pred_root,
+                    model_name=model_name,
+                    dataset_name=dataset_name,
+                    verbose=args.verbose,
+                    api_nproc=args.nproc,
+                    ignore_failed=args.ignore)
 
             # Set the judge kwargs first before evaluation or dumping
             judge_kwargs = {
@@ -97,7 +127,7 @@ def main():
             else:
                 if DATASET_TYPE(dataset_name) in ['multi-choice', 'Y/N']:
                     judge_kwargs['model'] = 'chatgpt-0125'
-                elif listinstr(['MMVet', 'MathVista', 'LLaVABench'], dataset_name):
+                elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
@@ -151,6 +181,8 @@ def main():
                     MathVista_eval(result_file, **judge_kwargs)
                 elif listinstr(['LLaVABench'], dataset_name):
                     LLaVABench_eval(result_file, **judge_kwargs)
+                elif listinstr(['MMBench-Video'], dataset_name):
+                    MMBenchVideo_eval(result_file, **judge_kwargs)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
 

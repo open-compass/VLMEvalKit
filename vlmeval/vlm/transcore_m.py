@@ -3,7 +3,7 @@ import torch
 from abc import abstractproperty
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 from transformers import AutoTokenizer, BitsAndBytesConfig
 
 

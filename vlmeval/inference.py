@@ -1,8 +1,8 @@
 import torch
 import torch.distributed as dist
-import datetime
-from vlmeval.config import supported_VLM, api_models
-from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
+from vlmeval.config import supported_VLM
+from vlmeval.dataset import build_dataset, split_MMMU, MMBenchVideo
+from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -22,7 +22,7 @@ def parse_args():
 def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
-    dataset = TSVDataset(dataset_name)
+    dataset = build_dataset(dataset_name)
     data = dataset.data
     if index_set is not None:
         data = data[data['index'].isin(index_set)]
@@ -69,10 +69,10 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
 
     rank, world_size = get_rank_and_world_size()
     if rank == 0:
-        dataset = TSVDataset(dataset_name)
+        dataset = build_dataset(dataset_name)
     if world_size > 1:
         dist.barrier()
-    dataset = TSVDataset(dataset_name)
+    dataset = build_dataset(dataset_name)
 
     sheet_indices = list(range(rank, len(dataset), world_size))
     lt = len(sheet_indices)
@@ -171,7 +171,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         for i in range(world_size):
             data_all.update(load(tmpl.format(i)))
 
-        data = TSVDataset(dataset_name).data
+        data = build_dataset(dataset_name).data
         for x in data['index']:
             assert x in data_all
         data['prediction'] = [str(data_all[x]) for x in data['index']]
@@ -179,6 +179,73 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
             data.pop('image')
 
         dump(data, result_file)
+        for i in range(world_size):
+            os.remove(tmpl.format(i))
+    return model
+
+
+# A wrapper for infer_data, do the pre & post processing
+def infer_data_job_video(
+        model,
+        work_dir,
+        model_name,
+        dataset_name,
+        nframe=8,
+        pack=False,
+        verbose=False,
+        api_nproc=4,
+        ignore_failed=False):
+
+    rank, world_size = get_rank_and_world_size()
+    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
+
+    prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
+
+    # Dump Predictions to Prev File if result file exists
+    if osp.exists(result_file):
+        if rank == 0:
+            data = load(result_file)
+            results = {k: v for k, v in zip(data['index'], data['prediction'])}
+            if not ignore_failed:
+                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+            dump(results, prev_file)
+        if world_size > 1:
+            dist.barrier()
+
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
+    out_file = tmpl.format(rank)
+
+    model = infer_data(
+        model,
+        work_dir=work_dir,
+        dataset_name=dataset_name,
+        nframe=nframe,
+        pack=pack,
+        out_file=out_file,
+        verbose=verbose,
+        api_nproc=api_nproc)
+
+    if world_size > 1:
+        dist.barrier()
+
+    if rank == 0:
+        data_all = {}
+        for i in range(world_size):
+            data_all.update(load(tmpl.format(i)))
+
+        dataset = build_dataset(dataset_name)
+        meta = dataset.data
+        if dataset_name == 'MMBench-Video' and pack:
+            meta, vstats = MMBenchVideo('MMBench-Video').load_pack_answers(data_all)
+            print(f'Statitics of Pack Video Inference: {vstats}')
+        else:
+            for x in meta['index']:
+                assert x in data_all
+            meta['prediction'] = [str(data_all[x]) for x in meta['index']]
+            if 'image' in meta:
+                meta.pop('image')
+
+        dump(meta, result_file)
         for i in range(world_size):
             os.remove(tmpl.format(i))
     return model

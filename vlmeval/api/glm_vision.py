@@ -1,6 +1,6 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from vlmeval.utils.dataset import DATASET_TYPE
+from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp.vlm import encode_image_file_to_base64
 
 

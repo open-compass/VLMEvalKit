@@ -4,7 +4,7 @@ from transformers import AutoModel, AutoTokenizer
 
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class MiniCPM_V(BaseModel):

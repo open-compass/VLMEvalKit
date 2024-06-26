@@ -2,7 +2,7 @@ import torch
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
 
 

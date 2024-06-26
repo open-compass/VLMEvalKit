@@ -4,7 +4,7 @@ import warnings
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 import pandas as pd
 import string
 import torchvision.transforms as T
@@ -95,7 +95,7 @@ def load_image(image_file, input_size=448, max_num=6):
 class InternVLChat(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, **kwargs):
         assert model_path is not None
@@ -185,7 +185,8 @@ class InternVLChat(BaseModel):
         return message
 
     def generate_v1_5(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        image_num = len([x for x in message if x['type'] == 'image'])
+        prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
         if dataset is not None and listinstr(['ChartQA_TEST'], dataset):
             self.max_num = 12
         elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
@@ -194,7 +195,17 @@ class InternVLChat(BaseModel):
             self.max_num = 24
         else:
             self.max_num = 6
-        pixel_values = load_image(image_path, max_num=self.max_num).cuda().to(torch.bfloat16)
+        if image_num > 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image']
+            pixel_values_list = []
+            for file_name in image_path:
+                pixel_values_list.append(load_image(file_name, max_num=self.max_num).cuda().to(torch.bfloat16))
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_num == 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image'][0]
+            pixel_values = load_image(image_path, max_num=self.max_num).cuda().to(torch.bfloat16)
+        else:
+            pixel_values = None
         with torch.no_grad():
             response = self.model.chat(self.tokenizer, pixel_values=pixel_values,
                                        question=prompt, generation_config=self.kwargs)
