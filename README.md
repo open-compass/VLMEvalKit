@@ -26,6 +26,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 ## 🆕 News
 
 - **[2024-06-27]** We have supported [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
+- **[2024-06-27]** We have supported [**AesBench**](https://github.com/yipoh/AesBench), thanks to [**Yipo Huang**](https://github.com/yipoh) and [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
 - **[2024-06-26]** We have supported the evaluation of [**CongRong**](https://mllm.cloudwalk.com/web), it ranked **3rd** on the [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 🔥🔥🔥
 - **[2024-06-26]** We firstly support a video understanding benchmark: [**MMBench-Video**](https://mmbench-video.github.io), Image LVLMs that accept multiple images as inputs can be evaluated on the video understanding benchmarks. Check [**QuickStart**](/docs/en/Quickstart.md) to learn how to perform the evaluation 🔥🔥🔥
 - **[2024-06-24]** We have supported the evaluation of [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet), it ranked the **2nd** on the [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 🔥🔥🔥
@@ -34,7 +35,6 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 - **[2024-06-18]** We have supported [**MMT-Bench**](https://mmt-bench.github.io), thanks to [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 - **[2024-06-12]** We have supported [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)🔥🔥🔥
 - **[2024-06-05]** We have supported [**WeMM**](https://github.com/scenarios/WeMM), thanks to [**scenarios**](https://github.com/scenarios)🔥🔥🔥
-- **[2024-05-27]** We have supported [**Mini InternVL**](https://huggingface.co/OpenGVLab/Mini-InternVL-Chat-2B-V1-5), thanks to [**czczup**](https://github.com/czczup)🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -59,7 +59,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 | [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa)+ | InfoVQA_[VAL/TEST] | VQA | [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench | VQA |
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | MCQ                                          | [**POPE**](https://github.com/AoiDragon/POPE) | POPE                                           | Y/N                                            |
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ  |
-| [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA |  |  |  |
+| [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_VAL | MCQ |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 

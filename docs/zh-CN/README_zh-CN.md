@@ -24,6 +24,7 @@
 ## 🆕 更新
 
 - **[2024-06-27]** 支持了 [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
+- **[2024-06-27]** 支持了 [**AesBench**](https://github.com/yipoh/AesBench)，感谢 [**Yipo Huang**](https://github.com/yipoh) 与 [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
 - **[2024-06-26]** 支持了 [**CongRong**](https://mllm.cloudwalk.com/web) 的评测，该模型在 [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 上**排名第三** 🔥🔥🔥
 - **[2024-06-26]** 首次支持了视频理解评测基准 [**MMBench-Video**](https://mmbench-video.github.io)，可以用于测试支持多图输入的图文多模态大模型的。[**快速开始**](/docs/zh-CN/Quickstart.md) 中提供了启动 MMBench-Video 测试的方式 🔥🔥🔥
 - **[2024-06-24]** 支持了 [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 的评测，该模型在 [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 上**排名第二** 🔥🔥🔥
@@ -32,7 +33,6 @@
 - **[2024-06-18]** 支持了 [**MMT-Bench**](https://mmt-bench.github.io)，感谢 [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 - **[2024-06-12]** 支持了 [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b)🔥🔥🔥
 - **[2024-06-05]** 支持了 [**WeMM**](https://github.com/scenarios/WeMM)，感谢 [**scenarios**](https://github.com/scenarios)🔥🔥🔥
-- **[2024-05-27]** 支持了 [**Mini InternVL**](https://huggingface.co/OpenGVLab/Mini-InternVL-Chat-2B-V1-5), 感谢 [**czczup**](https://github.com/czczup)🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -56,7 +56,7 @@
 | [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa)+ | InfoVQA_[VAL/TEST] | VQA | [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench | VQA |
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | MCQ                                          | [**POPE**](https://github.com/AoiDragon/POPE) | POPE                                           | Y/N                                            |
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ      |
-| [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA |  |  |  |
+| [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_VAL | MCQ |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
