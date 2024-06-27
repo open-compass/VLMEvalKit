@@ -108,7 +108,7 @@ dataset_md5_dict = {
     'MMT-Bench_VAL_MI': 'c7d7b998eb5cd9aa36c7d4f721472462',
     'MMT-Bench_VAL': '8dd4b730f53dbf9c3aed90ca31c928e0',
     'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
-    'AesBench_VAL': '7c8abf6bd6e41f09f2a5bf77abff0aea',
+    'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
 
     # Video Benchmarks
     'MMBench-Video': '98f7df3eb1007fc375ea6fe88a98e2ff',
