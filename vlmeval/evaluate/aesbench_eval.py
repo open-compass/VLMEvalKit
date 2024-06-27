@@ -1,7 +1,7 @@
 from vlmeval.smp import *
 
 
-def AesBench_val_eval(eval_file):
+def AesBench_eval(eval_file):
     AesBench_score = {
         'AesP': 0,
         'AesA': 0,
@@ -19,9 +19,8 @@ def AesBench_val_eval(eval_file):
         # GT
         predict = str(line['prediction'])
 
-        # MLLM answer        
+        # MLLM answer
         answers = eval(line['answer'])
-        
 
         category = line['category']
         if category == 'AesP':
@@ -30,14 +29,14 @@ def AesBench_val_eval(eval_file):
                 predict = predict[j]
                 if answer in predict:
                     AesBench_score[category] += 1
-                    
+
         elif category == 'AesA':
             for j in range(len(answers)):
                 answer = answers[j]
                 predict = predict[j]
                 if answer in predict:
                     AesBench_score[category] += 1
-        elif category == "AesE":
+        elif category == 'AesE':
             for j in range(len(answers)):
                 answer = answers[j]
                 predict = predict[j]
@@ -45,10 +44,9 @@ def AesBench_val_eval(eval_file):
                     AesBench_score[category] += 1
 
     final_score_dict = {}
-    final_score_dict['AesP'] = final_score_dict['AesP'] /40.0
-    final_score_dict['AesA'] = final_score_dict['AesA'] /40.0
-    final_score_dict['AesE'] = final_score_dict['AesE'] /40.0
-
+    final_score_dict['AesP'] = final_score_dict['AesP'] / 40.0
+    final_score_dict['AesA'] = final_score_dict['AesA'] / 40.0
+    final_score_dict['AesE'] = final_score_dict['AesE'] / 40.0
 
     score_pth = eval_file.replace('.xlsx', '_score.json')
     dump(final_score_dict, score_pth)
