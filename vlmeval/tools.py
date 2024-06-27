@@ -66,10 +66,10 @@ models = {
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
-    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series),
+    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
     'latest': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
-    ] + [x for x in llava_series if 'next' in x],
+    ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
     'api': list(api_models)
 }
 
