@@ -1,4 +1,3 @@
-import decord
 from huggingface_hub import snapshot_download
 from abc import abstractmethod
 from json import JSONDecoder
@@ -69,6 +68,10 @@ class TSVDatasetVideo:
                  pack=False):
 
         assert dataset in ['MMBench-Video']
+        try:
+            import decord
+        except:
+            warnings.warn('Please install decord via `pip install decord`.')
         ret = prepare_dataset(dataset)
         assert ret is not None
         lmu_root = LMUDataRoot()

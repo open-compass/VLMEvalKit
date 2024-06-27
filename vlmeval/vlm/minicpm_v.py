@@ -86,6 +86,7 @@ class MiniCPM_V(BaseModel):
 
 
 class MiniCPM_Llama3_V(BaseModel):
+
     INSTALL_REQ = False
     INTERLEAVE = True
 
