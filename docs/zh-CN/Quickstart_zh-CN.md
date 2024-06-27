@@ -47,12 +47,15 @@ pip install -e .
 
 **参数**
 
-- `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（在 `vlmeval/utils/dataset_config.py` 中定义）。
+- `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（在 `vlmeval/utils/dataset_config.py` 中定义）
 - `--model (list[str])`: 设置在 VLMEvalKit 中支持的 VLM 名称（在 `vlmeval/config.py` 中的 `supported_VLM` 中定义）
-- `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理。
-- `--nproc (int, 默认值为 4)`: 调用 API 的线程数。
+- `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
+- `--nproc (int, 默认值为 4)`: 调用 API 的线程数
+- `--work-dir (str, default to '.')`: 存放测试结果的目录
+- `--nframe (int, default to 8)`: 从视频中采样的帧数，仅对视频多模态评测集适用
+- `--pack (bool, store_true)`: 一个视频可能关联多个问题，如 `pack==True`，将会在一次询问中提问所有问题
 
-**命令**
+**用于评测图像多模态评测集的命令**
 
 你可以使用 `python` 或 `torchrun` 来运行脚本:
 
@@ -72,6 +75,18 @@ python run.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instru
 torchrun --nproc-per-node=8 run.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct qwen_chat mPLUG-Owl2 --verbose
 # 在 MME 上使用 Qwen-VL-Chat。在具有 2 个 GPU 的节点上进行推理和评估。
 torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
+```
+
+**用于评测视频多模态评测集的命令**
+
+```bash
+# 使用 `python` 运行时，只实例化一个 VLM，并且它可能使用多个 GPU。
+# 这推荐用于评估参数量非常大的 VLMs（如 IDEFICS-80B-Instruct）。
+
+# 在 MMBench-Video 上评测 IDEFCIS2-8B, 视频采样 8 帧作为输入，不采用 pack 模式评测
+torchrun --nproc-per-node=8 run.py --data MMBench-Video --model idefics2_8b --nframe 8
+# 在 MMBench-Video 上评测 GPT-4o (API 模型), 视频采样 16 帧作为输入，采用 pack 模式评测
+python run.py --data MMBench-Video --model GPT4o --nframe 16 --pack
 ```
 
 评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。

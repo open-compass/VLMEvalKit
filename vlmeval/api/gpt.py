@@ -185,6 +185,26 @@ class OpenAIWrapper(BaseAPI):
             pass
         return ret_code, answer, response
 
+    def get_image_token_len(self, img_path, detail='low'):
+        import math
+        if detail == 'low':
+            return 85
+
+        im = Image.open(img_path)
+        height, width = im.size
+        if width > 1024 or height > 1024:
+            if width > height:
+                height = int(height * 1024 / width)
+                width = 1024
+            else:
+                width = int(width * 1024 / height)
+                height = 1024
+
+        h = math.ceil(height / 512)
+        w = math.ceil(width / 512)
+        total = 85 + 170 * h * w
+        return total
+
     def get_token_len(self, inputs) -> int:
         import tiktoken
         try:
@@ -197,11 +217,7 @@ class OpenAIWrapper(BaseAPI):
             if item['type'] == 'text':
                 tot += len(enc.encode(item['value']))
             elif item['type'] == 'image':
-                tot += 85
-                if self.img_detail == 'high':
-                    img = Image.open(item['value'])
-                    npatch = np.ceil(img.size[0] / 512) * np.ceil(img.size[1] / 512)
-                    tot += npatch * 170
+                tot += self.get_image_token_len(item['value'], detail=self.img_detail)
         return tot
 
 

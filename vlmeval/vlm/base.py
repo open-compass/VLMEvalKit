@@ -1,5 +1,5 @@
 from ..smp import *
-from ..utils.dataset_config import img_root_map
+from ..dataset import img_root_map
 from abc import abstractmethod
 
 

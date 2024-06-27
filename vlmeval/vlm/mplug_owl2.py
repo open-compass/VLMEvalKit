@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class mPLUG_Owl2(BaseModel):
