@@ -143,6 +143,9 @@ def main():
                     submission_file = MMTBench_result_transfer(result_file, **judge_kwargs)
                     logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation (https://eval.ai/web/challenges/challenge-page/2328/overview), submission file saved in {submission_file}')  # noqa: E501
                     continue
+                elif 'MLLMGuard_DS' in dataset_name:
+                    logger.info('The evaluation of MLLMGuard_DS is not supported yet. ')  # noqa: E501
+                    continue
 
             if dataset_name in [
                 'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN'
