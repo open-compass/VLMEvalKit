@@ -129,7 +129,7 @@ class TSVDatasetVideo:
 class MMBenchVideo(TSVDatasetVideo):
 
     SYS = 'You are an AI assistant responsible for answering questions about videos.'
-    FRAMES_TMPL_PACK = """
+    FRAMES_TMPL_PACK_API = """
 You will be provided with {} separate frames uniformly sampled from a video, \
 the frames are provided in chronological order of the video.
 Please analyze these images and provide the answer / answers to the \
@@ -146,7 +146,22 @@ Even if the information in these separate frames is not enough to give an answer
 PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
-    FRAMES_TMPL_NOPACK = """
+    FRAMES_TMPL_PACK = """
+You will be provided with {} separate frames uniformly sampled from a video, \
+the frames are provided in chronological order of the video.
+Please analyze these images and provide the answer / answers to the \
+following question / questions about the video content.
+If multiple questions are provided (with indices I1, I2, I3, ...), \
+you should organize your answers in the following json format:
+{{
+    'I1': 'Answer to Question I1',
+    'I2': 'Answer to Question I2',
+    ...
+}}
+Otherwise, please directly reply with your response to the only question.
+"""
+
+    FRAMES_TMPL_NOPACK_API = """
 You will be provided with {} separate frames uniformly sampled from a video, \
 the frames are provided in chronological order of the video.
 Please analyze these images and provide the answer to the question about the video content.
@@ -155,8 +170,39 @@ Even if the information in these separate frames is not enough to give an answer
 PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
-    def __init__(self, dataset='MMBench-Video', pack=False):
+    FRAMES_TMPL_NOPACK = """
+You will be provided with {} separate frames uniformly sampled from a video, \
+the frames are provided in chronological order of the video.
+Please analyze these images and provide the answer to the question about the video content.
+Please directly reply with your response to the only question.
+"""
+
+    def __init__(self, dataset='MMBench-Video', pack=False, is_api=False):
         super().__init__(dataset=dataset, pack=pack)
+        self.is_api = is_api
+        lmu_root = LMUDataRoot()
+        if is_api:
+            self.frame_root = osp.join(lmu_root, 'images_api', dataset)
+        else:
+            self.frame_root = osp.join(lmu_root, 'images', dataset)
+
+    def save_video_frames(self, video, num_frames=8):
+        frame_paths = self.frame_paths(video, num_frames)
+        flag = np.all([osp.exists(p) for p in frame_paths])
+        if flag:
+            return frame_paths
+        vid_path = osp.join(self.data_root, video + '.mp4')
+        vid = decord.VideoReader(vid_path)
+        step_size = len(vid) / (num_frames + 1)
+        if self.is_api:
+            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
+        else:
+            indices = list(np.linspace(0, len(vid)-1, num_frames, dtype=int))
+        images = [vid[i].asnumpy() for i in indices]
+        images = [Image.fromarray(arr) for arr in images]
+        for im, pth in zip(images, frame_paths):
+            im.save(pth)
+        return frame_paths
 
     def build_prompt_pack(self, line, num_frames):
         if isinstance(line, int):
@@ -169,7 +215,10 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 
         frames = self.save_video_frames(video, num_frames)
         sub = self.data[self.data['video'] == video]
-        sys_prompt = self.SYS + self.FRAMES_TMPL_PACK.format(num_frames)
+        if self.is_api:
+            sys_prompt = self.SYS + self.FRAMES_TMPL_PACK_API.format(num_frames)
+        else:
+            sys_prompt = self.FRAMES_TMPL_PACK.format(num_frames)
         message = [dict(type='text', value=sys_prompt)]
         for im in frames:
             message.append(dict(type='image', value=im))
@@ -186,7 +235,10 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
             line = self.data.iloc[line]
 
         frames = self.save_video_frames(line['video'], num_frames)
-        sys_prompt = self.SYS + self.FRAMES_TMPL_NOPACK.format(num_frames)
+        if self.is_api:
+            sys_prompt = self.SYS + self.FRAMES_TMPL_NOPACK_API.format(num_frames)
+        else:
+            sys_prompt = self.FRAMES_TMPL_NOPACK.format(num_frames)
         message = [dict(type='text', value=sys_prompt)]
         for im in frames:
             message.append(dict(type='image', value=im))
