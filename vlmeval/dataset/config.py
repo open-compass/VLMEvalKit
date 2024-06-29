@@ -154,7 +154,7 @@ def DATASET_TYPE(dataset):
         return 'VideoQA'
     elif listinstr([
         'mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d',
-        'mmstar', 'realworldqa', 'mmt-bench', 'aesbench'
+        'mmstar', 'realworldqa', 'mmt-bench', 'aesbench_val', 'aesbench_test'
     ], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion', 'pope'], dataset):
