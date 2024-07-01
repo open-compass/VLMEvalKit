@@ -6,7 +6,7 @@ from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import dataset_URLs, DATASET_TYPE, abbr2full
-from vlmeval.utils import MMMU_result_transfer, MMTBench_result_transfer, AESBENCH_result_transfer
+from vlmeval.utils import MMMU_result_transfer, MMTBench_result_transfer
 
 
 def parse_args():
@@ -42,10 +42,6 @@ def main():
 
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
-
-    if 'AesBench_TEST' in args.data and args.mode == 'all':
-        logger.error("AesBench_TEST only supports 'infer' mode.")
-        return
 
     if args.retry is not None:
         for k, v in supported_VLM.items():
@@ -150,8 +146,8 @@ def main():
                 elif 'MLLMGuard_DS' in dataset_name:
                     logger.info('The evaluation of MLLMGuard_DS is not supported yet. ')  # noqa: E501
                     continue
-                elif dataset_name in ['AESBENCH_TEST']:
-                    logger.info(f'Transfer AesBench_TEST result to json for official evaluation. The json file saved in {result_json}. Please send it to the AesBench Team via huangyipo@hotmail.com.')  # noqa: E501
+                elif 'AesBench_TEST' == dataset_name:
+                    logger.info(f'The results are saved in {result_file}. Please send it to the AesBench Team via huangyipo@hotmail.com.')  # noqa: E501
                     continue
 
             if dataset_name in [
