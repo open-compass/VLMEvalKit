@@ -31,3 +31,12 @@ from .qh_360vl import QH_360VL
 from .phi3_vision import Phi3Vision
 from .wemm import WeMM
 from .cambrian import Cambrian
+
+### multi image multi turn
+from .idefics_mimt import IDEFICS2_mimt
+from .llava_mimt import LLaVA_mimt, LLaVA_Next_mimt
+from .minicpm_v_mimt import MiniCPM_Llama3_V_mimt
+from .qwen_vl_mimt import QwenVLChat_mimt
+from .xcomposer2_mimt import XComposer2_mimt
+from .internvl_chat_mimt import InternVLChat_mimt
+from .deepseek_vl_mimt import DeepSeekVL_mimt

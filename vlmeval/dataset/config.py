@@ -55,6 +55,9 @@ dataset_URLs = {
 
     # Video Benchmarks
     'MMBench-Video': 'https://huggingface.co/datasets/nebulae09/MMBench-Video/raw/main/MMBench-Video.tsv',
+
+    # MMDU
+    'MMDU': 'https://github.com/Liuziyu77/MMDU/blob/main/MMDU.tsv',
 }
 
 dataset_md5_dict = {
@@ -112,6 +115,9 @@ dataset_md5_dict = {
 
     # Video Benchmarks
     'MMBench-Video': '98f7df3eb1007fc375ea6fe88a98e2ff',
+
+    # MMDU  5d3c9a0be287c8ca5fe145017fe69218   848b635a88a078f49aebcc6e39792061
+    'MMDU': '848b635a88a078f49aebcc6e39792061',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -143,7 +149,9 @@ img_root_map.update({
     'MMT-Bench_ALL_MI': 'MMT-Bench',
     'MMT-Bench_ALL': 'MMT-Bench',
     'MMT-Bench_VAL_MI': 'MMT-Bench',
-    'MMT-Bench_VAL': 'MMT-Bench'
+    'MMT-Bench_VAL': 'MMT-Bench',
+    # MMDU
+    'MMDU':'MMDU',
 })
 
 
@@ -162,7 +170,7 @@ def DATASET_TYPE(dataset):
     elif 'coco' in dataset:
         return 'Caption'
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
-                    'mmvet', 'ocrbench', 'mllmguard'], dataset):
+                    'mmvet', 'ocrbench', 'mllmguard', 'mmdu'], dataset):
         return 'VQA'
     else:
         if dataset not in dataset_URLs:

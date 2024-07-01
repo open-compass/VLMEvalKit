@@ -1,6 +1,16 @@
 from vlmeval.vlm import *
 from vlmeval.api import *
 from functools import partial
+from vlmeval.api.gpt_mimt import GPT4V_mimt
+from vlmeval.api.claude_mimt import Claude3V_mimt
+from vlmeval.api.qwen_vl_api_mimt import QwenVLAPI_mimt
+from vlmeval.vlm.deepseek_vl_mimt import DeepSeekVL_mimt
+from vlmeval.vlm.idefics_mimt import IDEFICS2_mimt
+from vlmeval.vlm.internvl_chat_mimt import InternVLChat_mimt
+from vlmeval.vlm.qwen_vl_mimt import QwenVLChat_mimt
+from vlmeval.vlm.llava_mimt import LLaVA_mimt, LLaVA_Next_mimt
+from vlmeval.vlm.xcomposer2_mimt import XComposer2_mimt
+from vlmeval.vlm.minicpm_v_mimt import MiniCPM_Llama3_V_mimt
 
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
@@ -58,13 +68,21 @@ api_models = {
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     # CloudWalk
-    'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10)
+    'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10),
+    ### Multi-image multi-turn
+    'GPT4V_mimt': partial(GPT4V_mimt, model='gpt-4-turbo', temperature=0, img_size=512, img_detail='low', retry=10),
+    'GPT4o_mimt': partial(GPT4V_mimt, model='gpt-4o', temperature=0, img_size=512, img_detail='low', retry=10),
+    'Claude3V_Opus_mimt': partial(Claude3V_mimt, model='claude-3-opus-20240229', temperature=0, retry=10),
+    'QwenVLPlus_mimt': partial(QwenVLAPI_mimt, model='qwen-vl-plus', temperature=0, retry=10),
+    'QwenVLMax_mimt': partial(QwenVLAPI_mimt, model='qwen-vl-max', temperature=0, retry=10),
 }
 
 minicpm_series = {
     'MiniCPM-V': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
+    ### Multi-image multi-turn
+    'MiniCPM-Llama3-V-2_5_mimt': partial(MiniCPM_Llama3_V_mimt, model_path='/mnt/hwfile/mllm/liuziyu/public_models/MiniCPM-Llama3-V-2_5'),
 }
 
 xtuner_series = {
@@ -80,7 +98,9 @@ qwen_series = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
     'qwen_chat': partial(QwenVL, model_path='Qwen/Qwen-VL-Chat'),
     'monkey': partial(Monkey, model_path='echo840/Monkey'),
-    'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat')
+    'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
+    ### multi-image multi-turn
+    'qwen_chat_mimt': partial(QwenVLChat_mimt, model_path='/mnt/hwfile/mllm/liuziyu/finetune_Qwen/pretrain_checkpoint/'),
 }
 
 llava_series = {
@@ -93,6 +113,10 @@ llava_series = {
     'llava_next_vicuna_13b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-vicuna-13b-hf'),
     'llava_next_mistral_7b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-mistral-7b-hf'),
     'llava_next_yi_34b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-34b-hf'),
+    ### multi-image multi-turn
+    'llava_v1.5_7b_mimt': partial(LLaVA_mimt, model_pth='/mnt/hwfile/mllm/chutao/weight/llava-v1.5-7b'),
+    'llava_next_mistral_7b_mimt': partial(LLaVA_Next_mimt, model_pth='/mnt/hwfile/mllm/liuziyu/finetune_LLaVa/llava-v1.6-mistral-7b-hf'),
+    'llava_v1.5_13b_mimt': partial(LLaVA_mimt, model_pth='/mnt/hwfile/mllm/liuziyu/finetune_LLaVa/llava-v1.5-13b/'),
 }
 
 internvl_series = {
@@ -102,6 +126,8 @@ internvl_series = {
     'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5'),
     'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5'),
     'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5'),
+    ### multi-image multi-turn
+    'InternVL-Chat-V1-5_mimt': partial(InternVLChat_mimt, model_path='/mnt/hwfile/mllm/zangyuhang/hf_models/InternVL-Chat-V1-5'),
 }
 
 yivl_series = {
@@ -115,6 +141,8 @@ xcomposer_series = {
     'XComposer2': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
     'XComposer2_1.8b': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-1_8b'),
     'XComposer2_4KHD': partial(XComposer2_4KHD, model_path='internlm/internlm-xcomposer2-4khd-7b'),
+    ### multi-image multi-turn
+    'XComposer2_mimt': partial(XComposer2_mimt, model_path='/mnt/hwfile/mllm/liuziyu/finetune_IXC2/pretrain_checkpoint/'),
 }
 
 minigpt4_series = {
@@ -127,6 +155,8 @@ idefics_series = {
     'idefics_9b_instruct': partial(IDEFICS, model_pth='HuggingFaceM4/idefics-9b-instruct'),
     'idefics_80b_instruct': partial(IDEFICS, model_pth='HuggingFaceM4/idefics-80b-instruct'),
     'idefics2_8b': partial(IDEFICS2, model_path='HuggingFaceM4/idefics2-8b'),
+    ### multi-image multi-turn
+    'idefics2_8b_mimt': partial(IDEFICS2_mimt, model_path='/mnt/hwfile/mllm/zangyuhang/hf_models/idefics2-8b'),
 }
 
 instructblip_series = {
@@ -137,6 +167,8 @@ instructblip_series = {
 deepseekvl_series = {
     'deepseek_vl_7b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-7b-chat'),
     'deepseek_vl_1.3b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-1.3b-chat'),
+    ### multi-image multi-turn
+    'deepseek_vl_7b_mimt': partial(DeepSeekVL_mimt, model_path="/mnt/hwfile/mllm/zangyuhang/hf_models/deepseek-vl-7b-chat"),
 }
 
 cogvlm_series = {

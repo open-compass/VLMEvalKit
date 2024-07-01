@@ -129,6 +129,8 @@ def main():
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
+                elif listinstr(['MMDU'], dataset_name):
+                    judge_kwargs['model'] = 'gpt-4o'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
             if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
@@ -186,6 +188,8 @@ def main():
                     LLaVABench_eval(result_file, **judge_kwargs)
                 elif listinstr(['MMBench-Video'], dataset_name):
                     MMBenchVideo_eval(result_file, **judge_kwargs)
+                elif listinstr(['MMDU'], dataset_name):
+                    MMDU_eval(result_file, **judge_kwargs)
                 else:
                     logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
 
