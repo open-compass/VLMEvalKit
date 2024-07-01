@@ -30,3 +30,4 @@ from .paligemma import PaliGemma
 from .qh_360vl import QH_360VL
 from .phi3_vision import Phi3Vision
 from .wemm import WeMM
+from .cambrian import Cambrian
