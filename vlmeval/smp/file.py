@@ -133,9 +133,14 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
-    with DownloadProgressBar(unit='B', unit_scale=True,
-                             miniters=1, desc=url.split('/')[-1]) as t:
-        urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    try:
+        with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+            urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    except:
+        # Handle Failed Downloads from huggingface.co
+        if 'huggingface.co' in url:
+            return download_file(url.replace('huggingface.co', 'hf-mirror.com'), filename)
+
     return filename
 
 
