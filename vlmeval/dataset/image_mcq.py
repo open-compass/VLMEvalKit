@@ -79,53 +79,16 @@ dataset_md5_dict = {
     'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
 }
 
-img_root_map = {k: k for k in dataset_URLs}
-img_root_map.update({
-    # MMBench v1.0
-    'MMBench_DEV_EN': 'MMBench',
-    'MMBench_TEST_EN': 'MMBench',
-    'MMBench_DEV_CN': 'MMBench',
-    'MMBench_TEST_CN': 'MMBench',
-    'MMBench': 'MMBench',   # Internal Only
-    'MMBench_CN': 'MMBench',    # Internal Only
-    # MMBench v1.1
-    'MMBench_DEV_EN_V11': 'MMBench_V11',
-    'MMBench_TEST_EN_V11': 'MMBench_V11',
-    'MMBench_DEV_CN_V11': 'MMBench_V11',
-    'MMBench_TEST_CN_V11': 'MMBench_V11',
-    'MMBench_V11': 'MMBench_V11',   # Internal Only
-    'MMBench_CN_V11': 'MMBench_V11',    # Internal Only
-    # MMT-Bench
-    'MMT-Bench_ALL_MI': 'MMT-Bench',
-    'MMT-Bench_ALL': 'MMT-Bench',
-    'MMT-Bench_VAL_MI': 'MMT-Bench',
-    'MMT-Bench_VAL': 'MMT-Bench'
-})
-
 
 class ImageMCQDataset(ImageBaseDataset):
 
     def supported_dataset(self):
         return list(dataset_URLs)
 
-    def can_build(self, dataset):
-        return dataset in dataset_URLs
-
     def load_data(self, dataset):
-        data_root = LMUDataRoot()
-        os.makedirs(data_root, exist_ok=True)
-        update_flag = False
         url = dataset_URLs[dataset]
-        file_name = url.split('/')[-1]
-        data_path = osp.join(data_root, file_name)
-        if osp.exists(data_path) and md5(data_path) == dataset_md5_dict[dataset]:
-            pass
-        else:
-            warnings.warn('The dataset tsv is not downloaded')
-            download_file(url, data_path)
-            update_flag = True
-        data_path = self.localize_tsv(data_path, update_flag=update_flag)
-        return load(data_path)
+        file_md5 = dataset_md5_dict[dataset]
+        return self.prepare_tsv(url, file_md5)
 
     def build_prompt(self, line, dataset=None):
         if dataset is None:
@@ -137,7 +100,7 @@ class ImageMCQDataset(ImageBaseDataset):
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
         else:
-            tgt_path = self.dump_image(line, dataset)
+            tgt_path = self.dump_image(line)
 
         question = line['question']
         options = {
