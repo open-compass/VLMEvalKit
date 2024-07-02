@@ -22,12 +22,12 @@ def parse_args():
 def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, samples_dict={}, api_nproc=4):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
+    dataset = build_dataset(dataset_name, pack=pack)
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
-    dataset = build_dataset(dataset_name, pack=pack, is_api=getattr(model, 'is_api', False))
 
     indices = list(samples_dict.keys())
-    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe, is_api=getattr(model, 'is_api', False)) for idx in indices]
+    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe) for idx in indices]
 
     packstr = 'pack' if pack else 'nopack'
     out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
@@ -49,14 +49,12 @@ def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, sam
 
 def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
     res = load(out_file) if osp.exists(out_file) else {}
-    model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
-    is_api = getattr(model, 'is_api', False)
     rank, world_size = get_rank_and_world_size()
     if rank == 0:
-        dataset = build_dataset(dataset_name, pack=pack, is_api=is_api)
+        dataset = build_dataset(dataset_name, pack=pack)
     if world_size > 1:
         dist.barrier()
-    dataset = build_dataset(dataset_name, pack=pack, is_api=is_api)
+    dataset = build_dataset(dataset_name, pack=pack)
 
     sample_indices = list(dataset.videos) if pack else list(dataset.data['index'])
     samples = list(dataset.videos) if pack else list(range(len(dataset.data)))
@@ -67,6 +65,9 @@ def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=Fals
         return model_name
     sample_indices_subrem = [x for x in sample_indices_sub if x not in res]
 
+    model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
+
+    is_api = getattr(model, 'is_api', False)
     if is_api:
         assert world_size == 1
         supp = infer_data_api(
