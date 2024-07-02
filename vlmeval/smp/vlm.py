@@ -7,7 +7,6 @@ from uuid import uuid4
 import os.path as osp
 import base64
 from PIL import Image
-from .file import load, dump
 Image.MAX_IMAGE_PIXELS = 1e9
 
 
