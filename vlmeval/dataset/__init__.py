@@ -1,6 +1,6 @@
 from .config import dataset_URLs, dataset_md5_dict, img_root_map, DATASET_TYPE, abbr2full
-from .image_dataset import TSVDataset, split_MMMU
-from .video_dataset import TSVDatasetVideo, MMBenchVideo
+from .image_base import TSVDataset, split_MMMU
+from .mmbench_video import MMBenchVideo
 
 
 def build_dataset(dataset_name, **kwargs):
