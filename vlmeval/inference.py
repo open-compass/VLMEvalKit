@@ -7,6 +7,7 @@ from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+import pdb
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -107,6 +108,8 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
             api_nproc=api_nproc)
         for idx in indices:
             assert idx in supp
+        # import pdb 
+        # pdb.set_trace()
         res.update(supp)
         res = {k: res[k] for k in data_indices}
         dump(res, out_file)
@@ -179,6 +182,9 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
             data.pop('image')
 
         dump(data, result_file)
+        ### MMDU need to save as .tsv (answer is to long)
+        if dataset_name == 'MMDU':
+            data.to_csv(result_file.replace('.xlsx','.tsv'), sep='\t', index=False)
         for i in range(world_size):
             os.remove(tmpl.format(i))
     return model
