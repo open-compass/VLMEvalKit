@@ -51,7 +51,9 @@ dataset_URLs = {
     'MMT-Bench_VAL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL_MI.tsv',
     'MMT-Bench_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL.tsv',
     'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
-    'AesBench_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/AesBench_VAL.tsv',
+    # AesBench
+    'AesBench_VAL': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_VAL.tsv',
+    'AesBench_TEST': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_TEST.tsv',
 
     # Video Benchmarks
     'MMBench-Video': 'https://huggingface.co/datasets/nebulae09/MMBench-Video/raw/main/MMBench-Video.tsv',
@@ -108,7 +110,9 @@ dataset_md5_dict = {
     'MMT-Bench_VAL_MI': 'c7d7b998eb5cd9aa36c7d4f721472462',
     'MMT-Bench_VAL': '8dd4b730f53dbf9c3aed90ca31c928e0',
     'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
+    # AesBench
     'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
+    'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
 
     # Video Benchmarks
     'MMBench-Video': '98f7df3eb1007fc375ea6fe88a98e2ff',
