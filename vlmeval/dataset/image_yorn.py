@@ -17,13 +17,7 @@ dataset_md5_dict = {
 
 class ImageYORNDataset(ImageBaseDataset):
 
-    def supported_dataset(self):
-        return list(dataset_URLs)
-
-    def load_data(self, dataset):
-        url = dataset_URLs[dataset]
-        file_md5 = dataset_md5_dict[dataset]
-        return self.prepare_tsv(url, file_md5)
+    TYPE = 'YORN'
 
     def build_prompt(self, line, dataset=None):
         if dataset is None:

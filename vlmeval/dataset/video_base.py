@@ -4,7 +4,7 @@ from ..smp import *
 
 class VideoBaseDataset:
 
-    TYPE = 'VIDEO'
+    MODALITY = 'VIDEO'
 
     def __init__(self,
                  dataset='MMBench-Video',
