@@ -277,8 +277,8 @@ def parse_args():
         '--model',
         type=str,
         help='The LLM (GPT) used for inference. ',
-        default='chatgpt-0613',
-        choices=['chatgpt-0613'])
+        default='chatgpt-0125',
+        choices=['chatgpt-0125'])
     parser.add_argument('--nproc', type=int, default=4)
     parser.add_argument('--dataset', type=str, default=None)
     parser.add_argument('--verbose', action='store_true')

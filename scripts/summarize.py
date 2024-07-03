@@ -1,5 +1,5 @@
 from vlmeval.smp import *
-from vlmeval.utils.dataset_config import dataset_URLs
+from vlmeval.dataset import dataset_URLs
 
 def get_score(model, dataset):
 

@@ -10,18 +10,18 @@ APIBASES = {
 
 def GPT_context_window(model):
     length_map = {
-        'gpt-4-1106-preview': 128000,
-        'gpt-4-vision-preview': 128000,
         'gpt-4': 8192,
-        'gpt-4-32k': 32768,
         'gpt-4-0613': 8192,
-        'gpt-4-32k-0613': 32768,
+        'gpt-4-turbo-preview': 128000,
+        'gpt-4-1106-preview': 128000,
+        'gpt-4-0125-preview': 128000,
+        'gpt-4-vision-preview': 128000,
+        'gpt-4-turbo': 128000,
+        'gpt-4-turbo-2024-04-09': 128000,
+        'gpt-3.5-turbo': 16385,
+        'gpt-3.5-turbo-0125': 16385,
         'gpt-3.5-turbo-1106': 16385,
-        'gpt-3.5-turbo': 4096,
-        'gpt-3.5-turbo-16k': 16385,
         'gpt-3.5-turbo-instruct': 4096,
-        'gpt-3.5-turbo-0613': 4096,
-        'gpt-3.5-turbo-16k-0613': 16385,
     }
     if model in length_map:
         return length_map[model]
@@ -78,7 +78,8 @@ class OpenAIWrapper(BaseAPI):
                     f'Illegal openai_key {key}. '
                     'Please set the environment variable OPENAI_API_KEY to your openai key. '
                 )
-            self.key = key
+
+        self.key = key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
         assert img_detail in ['high', 'low']
@@ -185,6 +186,26 @@ class OpenAIWrapper(BaseAPI):
             pass
         return ret_code, answer, response
 
+    def get_image_token_len(self, img_path, detail='low'):
+        import math
+        if detail == 'low':
+            return 85
+
+        im = Image.open(img_path)
+        height, width = im.size
+        if width > 1024 or height > 1024:
+            if width > height:
+                height = int(height * 1024 / width)
+                width = 1024
+            else:
+                width = int(width * 1024 / height)
+                height = 1024
+
+        h = math.ceil(height / 512)
+        w = math.ceil(width / 512)
+        total = 85 + 170 * h * w
+        return total
+
     def get_token_len(self, inputs) -> int:
         import tiktoken
         try:
@@ -197,11 +218,7 @@ class OpenAIWrapper(BaseAPI):
             if item['type'] == 'text':
                 tot += len(enc.encode(item['value']))
             elif item['type'] == 'image':
-                tot += 85
-                if self.img_detail == 'high':
-                    img = Image.open(item['value'])
-                    npatch = np.ceil(img.size[0] / 512) * np.ceil(img.size[1] / 512)
-                    tot += npatch * 170
+                tot += self.get_image_token_len(item['value'], detail=self.img_detail)
         return tot
 
 

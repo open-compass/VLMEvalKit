@@ -4,6 +4,7 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 from PIL import Image
 from ..base import BaseModel
 from ...smp import *
+from ...dataset import DATASET_TYPE
 
 
 class StoppingCriteriaSub(StoppingCriteria):
@@ -17,9 +18,6 @@ class StoppingCriteriaSub(StoppingCriteria):
                 return True
 
         return False
-
-
-from ...utils import DATASET_TYPE
 
 
 class XComposer(BaseModel):

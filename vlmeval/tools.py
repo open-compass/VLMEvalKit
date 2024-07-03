@@ -46,12 +46,13 @@ dataset_levels = {
         ('MME', 'score.csv'), ('LLaVABench', 'score.csv'), ('RealWorldQA', 'acc.csv'),
         ('MMBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('CCBench', 'acc.csv'),
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
-        ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'),
+        ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
+        ('SEEDBench2_Plus', 'acc.csv')
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
-        ('SEEDBench2_Plus', 'acc.csv')
+        ('SEEDBench2', 'acc.csv')
     ]
 }
 
@@ -60,21 +61,19 @@ dataset_levels['l23'] = dataset_levels['l2'] + dataset_levels['l3']
 dataset_levels['l123'] = dataset_levels['l12'] + dataset_levels['l3']
 
 models = {
-    '4.33.0': list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
+    '4.33.0': list(qwen_series) + list(xcomposer_series) + [
         'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B', 'VXVERSE'
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
-    '4.37.0': [x for x in llava_series if 'next' not in x] + [
-        'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat',
-        'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
-    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series),
+    '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
+        'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
+    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
     'latest': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
-    ] + [x for x in llava_series if 'next' in x],
+    ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
     'api': list(api_models)
 }
 
 SKIP_MODELS = [
-    'InternVL-Chat-V1-1', 'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus',
     'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH',
 ]
 
@@ -252,35 +251,62 @@ def CHECK(val):
             CHECK(m)
 
 
-def decode_img(tup):
-    im, p = tup
-    if osp.exists(p):
-        return
-    decode_base64_to_image_file(im, p)
+def decode_img_omni(tup):
+    root, im, p = tup
+    images = toliststr(im)
+    paths = toliststr(p)
+    if len(images) > 1 and len(paths) == 1:
+        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+
+    assert len(images) == len(paths)
+    paths = [osp.join(root, p) for p in paths]
+    for p, im in zip(paths, images):
+        if osp.exists(p):
+            continue
+        if isinstance(im, str) and len(im) > 64:
+            decode_base64_to_image_file(im, p)
+    return paths
 
 
-def LOCALIZE(fname):
+def LOCALIZE(fname, new_fname=None):
     base_name = osp.basename(fname)
     dname = osp.splitext(base_name)[0]
     data = load(fname)
-    new_fname = fname.replace('.tsv', '_local.tsv')
+    if new_fname is None:
+        new_fname = fname.replace('.tsv', '_local.tsv')
 
     indices = list(data['index'])
+    indices_str = [str(x) for x in indices]
     images = list(data['image'])
+    image_map = {x: y for x, y in zip(indices_str, images)}
+
     root = LMUDataRoot()
     root = osp.join(root, 'images', dname)
     os.makedirs(root, exist_ok=True)
 
-    img_paths = [osp.join(root, f'{idx}.jpg') for idx in indices]
-    tups = [(im, p) for p, im in zip(img_paths, images)]
+    if 'image_path' in data:
+        img_paths = list(data['image_path'])
+    else:
+        img_paths = []
+        for i in indices_str:
+            if len(image_map[i]) <= 64:
+                idx = image_map[i]
+                assert idx in image_map and len(image_map[idx]) > 64
+                img_paths.append(f'{idx}.jpg')
+            else:
+                img_paths.append(f'{i}.jpg')
+
+    tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
     pool = mp.Pool(32)
-    pool.map(decode_img, tups)
+    ret = pool.map(decode_img_omni, tups)
     pool.close()
     data.pop('image')
-    data['image_path'] = img_paths
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     dump(data, new_fname)
     print(f'The localized version of data file is {new_fname}')
+    return new_fname
 
 
 def RUN(lvl, model):

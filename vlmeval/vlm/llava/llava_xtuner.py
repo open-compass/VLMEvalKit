@@ -14,7 +14,7 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
 
 from ..base import BaseModel
 from ...smp import cn_string, get_cache_path
-from ...utils import DATASET_TYPE
+from ...dataset import DATASET_TYPE
 
 
 class LLaVA_XTuner(BaseModel):

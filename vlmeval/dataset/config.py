@@ -20,6 +20,7 @@ dataset_URLs = {
     'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
     # SEEDBench Series
     'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
+    'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
     'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench2_Plus.tsv',
     'CORE_MM': 'https://opencompass.openxlab.space/utils/VLMEval/CORE_MM.tsv',
     'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
@@ -44,6 +45,18 @@ dataset_URLs = {
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
     'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
+    # MMT-Bench
+    'MMT-Bench_ALL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL_MI.tsv',
+    'MMT-Bench_ALL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL.tsv',
+    'MMT-Bench_VAL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL_MI.tsv',
+    'MMT-Bench_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL.tsv',
+    'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
+    # AesBench
+    'AesBench_VAL': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_VAL.tsv',
+    'AesBench_TEST': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_TEST.tsv',
+
+    # Video Benchmarks
+    'MMBench-Video': 'https://huggingface.co/datasets/nebulae09/MMBench-Video/raw/main/MMBench-Video.tsv',
 }
 
 dataset_md5_dict = {
@@ -62,9 +75,11 @@ dataset_md5_dict = {
     'MMBench_V11': 'b9276414f57af1308dcc4d0cd9b42e7c',  # Internal Only
     'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
     # CCBench
-    'CCBench': '1de88b4257e7eee3f60b18d45eda6f07',
+    'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
     'MME': 'b36b43c3f09801f5d368627fb92187c3',
+    # SEEDBench
     'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+    'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
     'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
     'CORE_MM': '8a8da2f2232e79caf98415bfdf0a202d',
     'MMVet': '748aa6d4aa9d4de798306a63718455e3',
@@ -89,6 +104,18 @@ dataset_md5_dict = {
     'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
     'RealWorldQA': '92321028d2bc29040284b6674721e48f',
     'POPE': 'c12f5acb142f2ef1f85a26ba2fbe41d5',
+    # MMT-Bench
+    'MMT-Bench_ALL_MI': '5272157097e19cdd7cb41e412ab3b7c7',
+    'MMT-Bench_ALL': 'b273a2f4c596fe4f2605de0494cd632f',
+    'MMT-Bench_VAL_MI': 'c7d7b998eb5cd9aa36c7d4f721472462',
+    'MMT-Bench_VAL': '8dd4b730f53dbf9c3aed90ca31c928e0',
+    'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
+    # AesBench
+    'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
+    'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
+
+    # Video Benchmarks
+    'MMBench-Video': '98f7df3eb1007fc375ea6fe88a98e2ff',
 }
 
 img_root_map = {k: k for k in dataset_URLs}
@@ -116,22 +143,30 @@ img_root_map.update({
     'MathVista_MINI': 'MathVista',
     'HallusionBench': 'Hallusion',
     'DocVQA_VAL': 'DocVQA',
+    # MMT-Bench
+    'MMT-Bench_ALL_MI': 'MMT-Bench',
+    'MMT-Bench_ALL': 'MMT-Bench',
+    'MMT-Bench_VAL_MI': 'MMT-Bench',
+    'MMT-Bench_VAL': 'MMT-Bench'
 })
-
-assert set(dataset_URLs) == set(img_root_map)
 
 
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
     dataset = dataset.lower()
-    if listinstr(['mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d', 'mmstar', 'realworldqa'], dataset):
+    if 'mmbench-video' in dataset:
+        return 'VideoQA'
+    elif listinstr([
+        'mmbench', 'seedbench', 'ccbench', 'mmmu', 'scienceqa', 'ai2d',
+        'mmstar', 'realworldqa', 'mmt-bench', 'aesbench'
+    ], dataset):
         return 'multi-choice'
     elif listinstr(['mme', 'hallusion', 'pope'], dataset):
         return 'Y/N'
     elif 'coco' in dataset:
         return 'Caption'
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
-                    'mmvet', 'ocrbench'], dataset):
+                    'mmvet', 'ocrbench', 'mllmguard'], dataset):
         return 'VQA'
     elif listinstr(['mtvqa_test','mtvqa_test_ja','mtvqa_test_ja_10','mtvqa_test_ar', "mtvqa_test_de_fr"], dataset):
         return 'MTVQA'

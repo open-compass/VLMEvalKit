@@ -4,6 +4,9 @@ from vlmeval.utils import track_progress_rich
 from vlmeval.utils.matching_util import can_infer
 
 
+FAIL_MSG = 'Failed to obtain answer via API.'
+
+
 def get_gpt4_ICE():
     example_1 = """
 Hint: Please answer the question requiring an integer answer and provide the final value,
@@ -110,7 +113,8 @@ def MathVista_auxeval(model, line):
     for i in range(retry):
         prediction = line['prediction']
         res = model.generate(prompt, temperature=i * 0.5)
-        if res is None:
+
+        if FAIL_MSG in res:
             log += f'Try {i}: output is {prediction}, failed to parse.\n'
         else:
             log += 'Succeed'
@@ -222,7 +226,7 @@ def parse_args():
         type=str,
         help='The LLM (GPT) used for inference. ',
         default='gpt-4-turbo',
-        choices=['gpt-4-0613', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0613'])
+        choices=['gpt-4-0613', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0125'])
     parser.add_argument('--nproc', type=int, default=4)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()

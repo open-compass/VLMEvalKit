@@ -133,9 +133,15 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
-    with DownloadProgressBar(unit='B', unit_scale=True,
-                             miniters=1, desc=url.split('/')[-1]) as t:
-        urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    try:
+        with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+            urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    except:
+        # Handle Failed Downloads from huggingface.co
+        if 'huggingface.co' in url:
+            url_new = url.replace('huggingface.co', 'hf-mirror.com')
+            os.system(f'wget {url_new} -O {filename}')
+
     return filename
 
 
@@ -227,3 +233,13 @@ def parse_file(s):
             return ('url', s)
     else:
         return (None, s)
+
+
+def file_size(f, unit='GB'):
+    stats = os.stat(f)
+    div_map = {
+        'GB': 2 ** 30,
+        'MB': 2 ** 20,
+        'KB': 2 ** 10,
+    }
+    return stats.st_size / div_map[unit]

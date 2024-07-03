@@ -189,3 +189,13 @@ def version_cmp(v1, v2, op='eq'):
     import operator
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
+
+
+def toliststr(s):
+    if isinstance(s, str) and (s[0] == '[') and (s[-1] == ']'):
+        return [str(x) for x in eval(s)]
+    elif isinstance(s, str):
+        return [s]
+    elif isinstance(s, list):
+        return [str(x) for x in s]
+    raise NotImplementedError

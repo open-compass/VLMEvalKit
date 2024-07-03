@@ -37,7 +37,8 @@ api_models = {
     'GPT4o': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4o_HIGH': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Gemini-V
-    'GeminiProVision': partial(GeminiProVision, temperature=0, retry=10),
+    'GeminiProVision': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),
+    'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
     # Qwen-VL Series
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
@@ -47,14 +48,18 @@ api_models = {
     'RekaCore': partial(Reka, model='reka-core-20240415'), 
     # Step1V Series
     'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
+    'Step1V-0701': partial(GPT4V, model='step-1v-beta0701', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
     # Internal Only
     # 'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     # 'Step1V_INT': partial(Step1V_INT, temperature=0, retry=10),
     'Claude3V_Opus': partial(Claude3V, model='claude-3-opus-20240229', temperature=0, retry=10),
     'Claude3V_Sonnet': partial(Claude3V, model='claude-3-sonnet-20240229', temperature=0, retry=10),
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
+    'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
+    # CloudWalk
+    'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10)
 }
 
 minicpm_series = {
@@ -136,9 +141,20 @@ deepseekvl_series = {
 }
 
 cogvlm_series = {
-    'cogvlm-grounding-generalist':partial(CogVlm, model_path='THUDM/cogvlm-grounding-generalist-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
-    'cogvlm-chat':partial(CogVlm, model_path='THUDM/cogvlm-chat-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
-    'cogvlm2-llama3-chat-19B':partial(CogVlm, model_path='THUDM/cogvlm2-llama3-chat-19B'),
+    'cogvlm-grounding-generalist': partial(CogVlm, model_path='THUDM/cogvlm-grounding-generalist-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
+    'cogvlm-chat': partial(CogVlm, model_path='THUDM/cogvlm-chat-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
+    'cogvlm2-llama3-chat-19B': partial(CogVlm, model_path='THUDM/cogvlm2-llama3-chat-19B'),
+    'glm-4v-9b': partial(GLM4v, model_path='THUDM/glm-4v-9b')
+}
+
+wemm_series = {
+    'WeMM': partial(WeMM, model_path='feipengma/WeMM'),
+}
+
+cambrian_series = {
+    'cambrian_8b': partial(Cambrian, model_path='nyu-visionx/cambrian-8b'),
+    'cambrian_13b': partial(Cambrian, model_path='nyu-visionx/cambrian-13b'),
+    'cambrian_34b': partial(Cambrian, model_path='nyu-visionx/cambrian-34b'),
 }
 
 supported_VLM = {}
@@ -147,7 +163,8 @@ model_groups = [
     ungrouped, api_models, 
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
-    deepseekvl_series, minicpm_series, cogvlm_series
+    deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
+    cambrian_series,
 ]
 
 for grp in model_groups:
