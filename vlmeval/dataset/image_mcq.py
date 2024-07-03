@@ -177,3 +177,17 @@ class MMMUDataset(ImageMCQDataset):
         msgs = super().build_prompt(line)
         msgs = self.split_MMMU(msgs)
         return msgs
+
+
+class CustomMCQDataset(ImageMCQDataset):
+
+    def load_data(self, dataset):
+        data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
+
+        if file_size(data_path, 'GB') > 1:
+            local_path = data_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
+                from ..tools import LOCALIZE
+                LOCALIZE(data_path, local_path)
+            data_path = local_path
+        return load(data_path)

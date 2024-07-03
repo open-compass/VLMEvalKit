@@ -127,7 +127,7 @@ class ImageBaseDataset:
         mmqa_display(line)
 
     # Return a list of dataset names that are supported by this class, can override
-    def supported_dataset(self):
+    def supported_datasets(self):
         return list(self.DATASET_URL)
 
     # Given the dataset name, return the dataset as a pandas dataframe, can override
@@ -140,10 +140,24 @@ class ImageBaseDataset:
     def post_build(self, dataset):
         pass
 
-    # Given one data record, return the built prompt (a multi-modal message)
-    @abstractmethod
+    # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
-        pass
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        return msgs
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

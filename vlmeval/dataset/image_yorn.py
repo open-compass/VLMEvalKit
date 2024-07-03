@@ -18,25 +18,3 @@ dataset_md5_dict = {
 class ImageYORNDataset(ImageBaseDataset):
 
     TYPE = 'YORN'
-
-    def build_prompt(self, line, dataset=None):
-        if dataset is None:
-            dataset = self.dataset
-
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-
-        if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
-        else:
-            tgt_path = self.dump_image(line)
-
-        question = line['question']
-
-        if isinstance(tgt_path, list):
-            msgs.extend([dict(type='image', value=p) for p in tgt_path])
-        else:
-            msgs = [dict(type='image', value=tgt_path)]
-        msgs.append(dict(type='text', value=question))
-
-        return msgs
