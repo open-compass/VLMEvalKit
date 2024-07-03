@@ -26,7 +26,7 @@ class MiniCPM_V(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMMU'], dataset):
+        if listinstr(['MMMU','MTVQA'], dataset):
             return True
         return False
 
@@ -36,6 +36,8 @@ class MiniCPM_V(BaseModel):
         tgt_path = self.dump_image(line, dataset)
 
         question = line['question']
+        if dataset is not None and DATASET_TYPE(dataset) == 'MTVQA':
+            question += "\nAnswer the question using a word or phrase in the language of the question."
         options = {
             cand: line[cand]
             for cand in string.ascii_uppercase
@@ -108,7 +110,7 @@ class MiniCPM_Llama3_V(BaseModel):
         self.vqa_prompt = 'Answer the question using a single word or phrase.'
 
     def use_custom_prompt(self, dataset):
-        if listinstr(['multi-choice', 'VQA'], DATASET_TYPE(dataset)):
+        if listinstr(['multi-choice', 'VQA', 'MTVQA'], DATASET_TYPE(dataset)):
             return True
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             return True
@@ -157,6 +159,9 @@ class MiniCPM_Llama3_V(BaseModel):
             system_prompt = self.vqa_prompt
             question = line['question']
             prompt = question
+        elif dataset is not None and DATASET_TYPE(dataset) == 'MTVQA':
+            question = line['question']
+            prompt = question+"\nAnswer the question using a word or phrase in the language of the question."
         elif DATASET_TYPE(dataset) == 'VQA':
             if listinstr(['LLaVABench'], dataset):
                 system_prompt = ''
@@ -176,6 +181,9 @@ class MiniCPM_Llama3_V(BaseModel):
         else:
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=prompt))
+
+        print(msgs)
+        
         return msgs
 
     def generate_inner(self, message, dataset=None):

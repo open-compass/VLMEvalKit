@@ -153,7 +153,7 @@ class InternVLChat(BaseModel):
         if 'V1-1' in self.model_path:
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=5)
         else:
-            kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+            kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
         if dataset is not None and listinstr(['MME'], dataset):
             question = line['question']
@@ -176,6 +176,9 @@ class InternVLChat(BaseModel):
             else:
                 question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
+        elif dataset is not None and DATASET_TYPE(dataset) == 'MTVQA':
+            question = line['question']
+            prompt = f"Answer the question using a word or phrase in the language of the question. {question}" 
         else:
             prompt = line['question']
 

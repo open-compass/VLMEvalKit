@@ -1,5 +1,6 @@
 einops
 gradio==4.15.0
+peft==0.10.0
 huggingface_hub
 matplotlib
 numpy>=1.23.4

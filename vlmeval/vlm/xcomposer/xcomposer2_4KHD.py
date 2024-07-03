@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, AutoTokenizer,AutoModelForCausalLM
 from PIL import Image
 from ..base import BaseModel
 from ...smp import *
@@ -93,7 +93,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     if output_token[0] == 0 or output_token[0] == 1:
         output_token = output_token[1:]
     output_text = model.tokenizer.decode(output_token, add_special_tokens=False)
-    output_text = output_text.split('[UNUSED_TOKEN_145]')[0].strip()
+    output_text = output_text.split('[UNUSED_TOKEN_145]')[0].strip().replace("<|im_end|> \n", "").replace("</s>", "")
     return output_text
 
 
@@ -105,8 +105,7 @@ class XComposer2_4KHD(BaseModel):
     def __init__(self, model_path='internlm/internlm-xcomposer2-4khd-7b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
-
-        model = AutoModel.from_pretrained(self.model_path, device_map='cpu', trust_remote_code=True).cuda().eval()
+        model = AutoModelForCausalLM.from_pretrained(self.model_path, device_map='cpu', trust_remote_code=True).cuda().eval()
         model.half()
         tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         model.tokenizer = tokenizer
@@ -180,7 +179,7 @@ class XComposer2_4KHD(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA':
+        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA' or DATASET_TYPE(dataset) == 'MTVQA':
             return True
         return False
 
@@ -230,6 +229,12 @@ class XComposer2_4KHD(BaseModel):
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\
                           {q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
+                          
+        elif DATASET_TYPE(dataset) == 'MTVQA':
+            q = line['question']
+            prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a word or phrase in the language of the question.\
+                        {q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
         ret = [dict(type='text', value=prompt)]
         ret.extend([dict(type='image', value=s) for s in tgt_path])
+
         return ret

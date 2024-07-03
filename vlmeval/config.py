@@ -59,8 +59,8 @@ api_models = {
 
 minicpm_series = {
     'MiniCPM-V': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
-    'MiniCPM-V-2': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
-    'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
+    'MiniCPM-V-2': partial(MiniCPM_V, model_path='/mnt/bn/lujinghui-nas-lq-data/models/MiniCPM-V-2'),
+    'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='/mnt/bn/lujinghui-nas-lq-data/models/MiniCPM-Llama3-V-2_5'),
 }
 
 xtuner_series = {
@@ -88,21 +88,21 @@ llava_series = {
     'llava_next_vicuna_7b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf'),
     'llava_next_vicuna_13b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-vicuna-13b-hf'),
     'llava_next_mistral_7b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-mistral-7b-hf'),
-    'llava_next_yi_34b': partial(LLaVA_Next, model_pth='llava-hf/llava-v1.6-34b-hf'),
+    'llava_next_yi_34b': partial(LLaVA_Next, model_pth='/mnt/bn/lujinghui-nas-lq-data/models/llava-v1.6-34b-hf'),
 }
 
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2'),
     'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus'),
-    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5'),
+    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='/mnt/bn/lujinghui-nas-lq-data/models/InternVL-Chat-V1-5'),
     'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5'),
     'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5'),
 }
 
 yivl_series = {
     'Yi_VL_6B': partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
-    'Yi_VL_34B': partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
+    'Yi_VL_34B': partial(Yi_VL, model_path='/mnt/bn/lujinghui-nas-lq-data/models/Yi-VL-34B', root=Yi_ROOT),
 }
 
 xcomposer_series = {
@@ -110,7 +110,7 @@ xcomposer_series = {
     'sharecaptioner': partial(ShareCaptioner, model_path='Lin-Chen/ShareCaptioner'),
     'XComposer2': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
     'XComposer2_1.8b': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-1_8b'),
-    'XComposer2_4KHD': partial(XComposer2_4KHD, model_path='internlm/internlm-xcomposer2-4khd-7b'),
+    'XComposer2_4KHD': partial(XComposer2_4KHD, model_path='/mnt/bn/lujinghui-nas-lq-data/models/internlm-xcomposer2-4khd-7b'),
 }
 
 minigpt4_series = {
@@ -131,7 +131,7 @@ instructblip_series = {
 }
 
 deepseekvl_series = {
-    'deepseek_vl_7b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-7b-chat'),
+    'deepseek_vl_7b': partial(DeepSeekVL, model_path='/mnt/bn/lujinghui-nas-lq-data/models/deepseek-vl-7b-chat'),
     'deepseek_vl_1.3b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-1.3b-chat'),
 }
 

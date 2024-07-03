@@ -55,6 +55,7 @@ def main():
 
             if dataset_name not in dataset_URLs:
                 file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
+
                 if not osp.exists(file_path):
                     dataset_name = abbr2full(dataset_name)
                 else:
@@ -75,7 +76,6 @@ def main():
 
             if model is None:
                 model = model_name  # which is only a name
-
             model = infer_data_job(
                 model,
                 work_dir=pred_root,
@@ -136,6 +136,8 @@ def main():
 
                 elif DATASET_TYPE(dataset_name) == 'Caption':
                     COCO_eval(result_file)
+                elif DATASET_TYPE(dataset_name) == 'MTVQA':
+                    MTVQA_eval(result_file)
                 elif dataset_name == 'MMVet':
                     MMVet_eval(result_file, **judge_kwargs)
                 elif dataset_name == 'OCRBench':

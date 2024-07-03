@@ -3,6 +3,7 @@ import torch
 from transformers import AutoModelForCausalLM
 import warnings
 from .base import BaseModel
+from ..utils import DATASET_TYPE
 
 
 class DeepSeekVL(BaseModel):
@@ -36,14 +37,16 @@ class DeepSeekVL(BaseModel):
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def prepare_inputs(self, message):
+    def prepare_inputs(self, message, dataset=None):
         content, images = '', []
         for s in message:
             if s['type'] == 'image':
                 images.append(s['value'])
                 content += '<image_placeholder>'
             elif s['type'] == 'text':
-                content += s['value']
+                content += s['value']        
+            if dataset is not None and DATASET_TYPE(dataset) == 'MTVQA':
+                content += "\nAnswer the question using a word or phrase in the language of the question."
         conversation = [
             dict(role='User', content=content, images=images),
             dict(role='Assistant', content='')
@@ -51,7 +54,7 @@ class DeepSeekVL(BaseModel):
         return conversation
 
     def generate_inner(self, message, dataset=None):
-        conversation = self.prepare_inputs(message)
+        conversation = self.prepare_inputs(message, dataset)
         from deepseek_vl.utils.io import load_pil_images
         pil_images = load_pil_images(conversation)
         prepare_inputs = self.vl_chat_processor(conversations=conversation, images=pil_images, force_batchify=True)

@@ -133,6 +133,8 @@ def DATASET_TYPE(dataset):
     elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'mathvista', 'docvqa', 'infovqa', 'llavabench',
                     'mmvet', 'ocrbench'], dataset):
         return 'VQA'
+    elif listinstr(['mtvqa_test','mtvqa_test_ja','mtvqa_test_ja_10','mtvqa_test_ar', "mtvqa_test_de_fr"], dataset):
+        return 'MTVQA'
     else:
         if dataset not in dataset_URLs:
             import warnings
