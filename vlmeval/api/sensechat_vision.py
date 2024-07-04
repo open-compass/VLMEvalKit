@@ -26,6 +26,7 @@ class SenseChatVisionWrapper(BaseAPI):
         self.ak = os.environ.get('SENSECHAT_AK', None) if ak is None else ak
         self.sk = os.environ.get('SENSECHAT_SK', None) if sk is None else sk
         assert self.ak is not None and self.sk is not None
+        self.max_new_tokens = max_tokens
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
@@ -130,7 +131,7 @@ class SenseChatVisionWrapper(BaseAPI):
             else:
                 question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
-        elif 'MMMU' in dataset:
+        elif dataset is not None and 'MMMU' in dataset:
             question = line['question']
             options = {
                 cand: line[cand]
@@ -154,7 +155,7 @@ class SenseChatVisionWrapper(BaseAPI):
         return message
 
     def message_to_promptimg(self, message, dataset=None):
-        if 'MMMU' not in dataset:
+        if dataset is None or 'MMMU' not in dataset:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = [[x['value'] for x in message if x['type'] == 'image'][0]]
         else:
@@ -176,14 +177,14 @@ class SenseChatVisionWrapper(BaseAPI):
         else:
             self.max_num = 6
 
-        if listinstr(['AI2D_TEST'], dataset):
+        if dataset is None:
+            pass
+        elif listinstr(['AI2D_TEST'], dataset):
             self.max_new_tokens = 10
         elif 'MMMU' in dataset:
             self.max_new_tokens = 1024
         elif 'MMBench' in dataset:
             self.max_new_tokens = 100
-        else:
-            self.max_new_tokens = 1024
 
         prompt, image = self.message_to_promptimg(message=inputs, dataset=dataset)
 
@@ -231,7 +232,7 @@ class SenseChatVisionWrapper(BaseAPI):
         try:
             assert response.status_code == 200
             response = response.json()['data']['choices'][0]['message'].strip()
-            if 'MMMU' in dataset:
+            if dataset is not None and 'MMMU' in dataset:
                 response = response.split('ANSWER: ')[-1].strip()
             if self.verbose:
                 self.logger.info(f'inputs: {inputs}\nanswer: {response}')
