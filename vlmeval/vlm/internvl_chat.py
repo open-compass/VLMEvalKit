@@ -99,7 +99,6 @@ class InternVLChat(BaseModel):
 
     def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, **kwargs):
         assert model_path is not None
-        assert version_cmp(transformers.__version__, '4.36.2', 'ge')
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
         device = torch.cuda.current_device()
