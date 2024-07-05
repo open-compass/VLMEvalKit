@@ -10,7 +10,7 @@ class SenseChatVisionWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self,
-                 model: str,
+                 model: str = 'SenseChat-5-Vision',
                  retry: int = 5,
                  wait: int = 5,
                  ak: str = None,

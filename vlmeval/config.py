@@ -60,7 +60,7 @@ api_models = {
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     # CloudWalk
     'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10),
-    'SenseChatVision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
+    'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
 }
 
 minicpm_series = {
