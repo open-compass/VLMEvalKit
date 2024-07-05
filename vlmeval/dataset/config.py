@@ -153,6 +153,8 @@ img_root_map.update({
 
 def DATASET_TYPE(dataset):
     # Dealing with Custom Dataset
+    if dataset is None:
+        return None
     dataset = dataset.lower()
     if 'mmbench-video' in dataset:
         return 'VideoQA'
