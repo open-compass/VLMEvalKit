@@ -1,5 +1,6 @@
 import os
 import io
+import math
 import pandas as pd
 import numpy as np
 import string
@@ -132,3 +133,29 @@ def circular_pred(df, extract_func=None):
     flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
     flags = list(flag_map.values())
     return np.mean(flags)
+
+
+def concat_images(image_list, max_concat=1, column_num=1):
+    interval = max(math.ceil(len(image_list) / max_concat), 1)
+    concatenated_images = list()
+
+    for i in range(0, len(image_list), interval):
+        images_this_batch = [
+            Image.open(filename) for filename in image_list[i:i + interval]
+        ]
+        if column_num==1:
+            total_height = images_this_batch[0].height*len(images_this_batch)
+        else:
+            total_height = images_this_batch[0].height*((len(images_this_batch)-1)//column_num+1)
+        
+        concatenated_image = Image.new('RGB', (images_this_batch[0].width*column_num, total_height), 'white')
+        x_offset, y_offset = 0, 0
+        for cnt, image in enumerate(images_this_batch):
+            concatenated_image.paste(image, (x_offset, y_offset))
+            x_offset += image.width
+            if (cnt+1)%column_num==0:
+                y_offset += image.height
+                x_offset = 0
+        concatenated_images.append(concatenated_image)
+    
+    return concatenated_images

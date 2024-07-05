@@ -1,3 +1,4 @@
+import fitz
 import pandas as pd
 import hashlib
 from ..smp import *
@@ -134,6 +135,31 @@ class TSVDataset:
         img_root = osp.join(ROOT, 'images', img_root_map[dataset] if dataset in img_root_map else dataset)
         os.makedirs(img_root, exist_ok=True)
 
+        if dataset=='MMLongBench_DOC':
+            skip_pdf_parse = True
+            for im_name in line['image_path']:
+                path = osp.join(img_root, im_name)
+                if not read_ok(path):
+                    skip_pdf_parse = False
+                    break
+
+            if skip_pdf_parse:
+                line['image'] = line['image_path'] # Just for being compatible with line 53: zip(line['image'], line['image_path']). No real use for line['image'].
+            else:
+                pdf_data = base64.b64decode(line["image"])
+                with open("./tmp.pdf", "wb") as file:
+                    file.write(pdf_data)
+                encoded_images = list()
+                with fitz.open("./tmp.pdf") as doc:
+                    for page in doc:
+                        image = page.get_pixmap(dpi=360)
+                        image.save("./tmp.png")
+                        image = Image.open("./tmp.png")
+                        encoded_image = encode_image_to_base64(image)
+                        encoded_images.append(encoded_image)
+                line['image'] = encoded_images
+                print("process {}".format(line["doc_id"]))
+        
         if 'image' in line:
             if isinstance(line['image'], list):
                 tgt_path = []

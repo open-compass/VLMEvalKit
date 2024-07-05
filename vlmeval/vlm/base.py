@@ -1,3 +1,4 @@
+import fitz
 from ..smp import *
 from ..dataset import img_root_map
 from abc import abstractmethod
@@ -33,7 +34,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def dump_image(self, line, dataset):
+    def dump_image(self, line, dataset, max_pages=1000, concat_num=-1, column_num=-1):
         """Dump the image(s) of the input line to the corresponding dataset folder.
 
         Args:
@@ -47,6 +48,35 @@ class BaseModel:
         assert isinstance(dataset, str)
         img_root = osp.join(ROOT, 'images', img_root_map[dataset] if dataset in img_root_map else dataset)
         os.makedirs(img_root, exist_ok=True)
+
+        if dataset=='MMLongBench_DOC':
+            line['image_path'] = line['image_path'][:max_pages]
+
+            skip_pdf_parse = True
+            for im_name in line['image_path']:
+                path = osp.join(img_root, im_name)
+                if not read_ok(path):
+                    skip_pdf_parse = False
+                    break
+
+            if skip_pdf_parse:
+                line['image'] = line['image_path'] # Just for being compatible with the zooped loop: zip(line['image'], line['image_path'])
+            else:
+                pdf_data = base64.b64decode(line["image"])
+                with open("./tmp.pdf", "wb") as file:
+                    file.write(pdf_data)
+                encoded_images = list()
+                with fitz.open("./tmp.pdf") as doc:
+                    doc = doc[:max_pages]
+                    for page in doc:
+                        image = page.get_pixmap(dpi=144)
+                        image.save("./tmp.png")
+                        image = Image.open("./tmp.png")
+                        encoded_image = encode_image_to_base64(image)
+                        encoded_images.append(encoded_image)
+                line['image'] = encoded_images
+                print("process {}".format(line["doc_id"]))
+        
         if 'image' in line:
             if isinstance(line['image'], list):
                 tgt_path = []
@@ -65,6 +95,18 @@ class BaseModel:
             assert 'image_path' in line
             tgt_path = toliststr(line['image_path'])
 
+        if concat_num>0:
+            assert(dataset=='MMLongBench_DOC')
+            concatenated_images = concat_images(tgt_path, max_concat=concat_num, column_num=column_num)
+
+            old_tgt_path = tgt_path
+            assert(isinstance(old_tgt_path, list))
+            tgt_path = ["_".join(old_tgt_path[0].split("_")[:-1]) + "_concat{}_{}.jpg".format(concat_num, i) for i in range(len(concatenated_images))]
+
+            for path, concatenated_image in zip(tgt_path, concatenated_images):
+                if not read_ok(path):
+                    decode_base64_to_image_file(encode_image_to_base64(concatenated_image), path)
+                    print("concat {} images to a new one with size {}. save at {}".format(len(old_tgt_path), concatenated_image.size, path))
         return tgt_path
 
     @abstractmethod

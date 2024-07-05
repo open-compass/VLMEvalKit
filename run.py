@@ -83,6 +83,9 @@ def main():
                 else:
                     custom_flag = True
 
+            if dataset_name=='MMLongBench_DOC' and not listinstr(['GPT4V', 'GPT4o', 'MiniCPM-Llama3-V-2_5', 'InternVL-Chat-V1-5', 'XComposer2_4KHD'], model_name):
+                raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
+
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
@@ -129,6 +132,8 @@ def main():
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
+                elif listinstr(['MMLongBench'], dataset_name):
+                    judge_kwargs['model'] = 'gpt-4o'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
             if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
@@ -185,6 +190,8 @@ def main():
                     VQAEval(result_file, dataset_name)
                 elif listinstr(['MathVista'], dataset_name):
                     MathVista_eval(result_file, **judge_kwargs)
+                elif listinstr(['MMLongBench'], dataset_name):
+                    MMLongBench_eval(result_file, **judge_kwargs)
                 elif listinstr(['LLaVABench'], dataset_name):
                     LLaVABench_eval(result_file, **judge_kwargs)
                 elif listinstr(['MMBench-Video'], dataset_name):

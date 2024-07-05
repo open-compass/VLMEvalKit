@@ -120,7 +120,9 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-        return True
+        if dataset is not None and listinstr(['MMLongBench_DOC'], dataset):
+            return True
+        return False
 
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
@@ -148,7 +150,10 @@ class InternVLChat(BaseModel):
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        tgt_path = self.dump_image(line, dataset)
+
+        concat_num, column_num = 5 if dataset=="MMLongBench_DOC" else -1, 2 if dataset=="MMLongBench_DOC" else -1
+        max_pages = 120
+        tgt_path = self.dump_image(line, dataset, max_pages=max_pages, concat_num=concat_num, column_num=column_num)
 
         if 'V1-1' in self.model_path:
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=5)

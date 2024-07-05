@@ -45,6 +45,8 @@ dataset_URLs = {
     'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
     'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
     'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
+    # MMLongBench-Doc
+    'MMLongBench_DOC': 'https://opencompass.openxlab.space/utils/VLMEval/MMLongBench_DOC.tsv',
     # MMT-Bench
     'MMT-Bench_ALL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL_MI.tsv',
     'MMT-Bench_ALL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL.tsv',
@@ -113,7 +115,8 @@ dataset_md5_dict = {
     # AesBench
     'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
     'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
-
+    # MMLongBench-Doc
+    'MMLongBench_DOC': '9b393e1f4c52718380d50586197eac9b',
     # Video Benchmarks
     'MMBench-Video': '98f7df3eb1007fc375ea6fe88a98e2ff',
 }
@@ -169,7 +172,7 @@ def DATASET_TYPE(dataset):
                     'mmvet', 'ocrbench', 'mllmguard'], dataset):
         return 'VQA'
     else:
-        if dataset not in dataset_URLs:
+        if dataset not in [url.lower() for url in dataset_URLs]:
             import warnings
             warnings.warn(f"Dataset {dataset} not found in dataset_URLs, will use 'multi-choice' as the default TYPE.")
             return 'multi-choice'

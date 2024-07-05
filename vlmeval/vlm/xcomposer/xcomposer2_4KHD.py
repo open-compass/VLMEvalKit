@@ -149,7 +149,7 @@ class XComposer2_4KHD(BaseModel):
         prompt, image_path = self.message_to_promptimg(message)
         if listinstr(['docvqa_test', 'infovqa_test'], dataset.lower()):
             self.model.hd_num = 65
-        elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):
+        elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench', 'mmlongbench_doc'], dataset.lower()):
             self.model.hd_num = 55
         elif listinstr(['mmmu', 'mmbench', 'mmvet'], dataset.lower()):
             self.model.hd_num = 16
@@ -180,7 +180,7 @@ class XComposer2_4KHD(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA':
+        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA' or DATASET_TYPE(dataset) == 'QA':
             return True
         return False
 
@@ -213,7 +213,10 @@ class XComposer2_4KHD(BaseModel):
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
-        tgt_path = self.dump_image(line, dataset)
+
+        concat_num, column_num = 1 if dataset=="MMLongBench_DOC" else -1, 5 if dataset=="MMLongBench_DOC" else -1
+        max_pages = 120
+        tgt_path = self.dump_image(line, dataset, max_pages=max_pages, concat_num=concat_num, column_num=column_num)
 
         if DATASET_TYPE(dataset) == 'multi-choice':
             prompt = self.build_mcqa(line)
@@ -230,6 +233,9 @@ class XComposer2_4KHD(BaseModel):
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\
                           {q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
+        else:
+            q = line['question']
+            prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
         ret = [dict(type='text', value=prompt)]
         ret.extend([dict(type='image', value=s) for s in tgt_path])
         return ret

@@ -111,7 +111,7 @@ class MiniCPM_Llama3_V(BaseModel):
     def use_custom_prompt(self, dataset):
         if listinstr(['multi-choice', 'VQA'], DATASET_TYPE(dataset)):
             return True
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):
+        elif dataset is not None and listinstr(['HallusionBench', 'MMLongBench_DOC'], dataset):
             return True
         return False
 
@@ -122,7 +122,9 @@ class MiniCPM_Llama3_V(BaseModel):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        tgt_path = self.dump_image(line, dataset)
+        concat_num, column_num = 1 if dataset=="MMLongBench_DOC" else -1, 5 if dataset=="MMLongBench_DOC" else -1
+        max_pages = 120
+        tgt_path = self.dump_image(line, dataset, max_pages=max_pages, concat_num=concat_num, column_num=column_num)
         system_prompt = ''
 
         question = line['question']
@@ -158,8 +160,8 @@ class MiniCPM_Llama3_V(BaseModel):
             system_prompt = self.vqa_prompt
             question = line['question']
             prompt = question
-        elif DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['LLaVABench'], dataset):
+        elif DATASET_TYPE(dataset) == 'VQA' or listinstr(['MMLongBench_DOC'], dataset):
+            if listinstr(['LLaVABench', 'MMLongBench_DOC'], dataset):
                 system_prompt = ''
                 prompt = question
             elif listinstr(['MMVet'], dataset):

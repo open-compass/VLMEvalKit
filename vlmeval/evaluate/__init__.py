@@ -4,6 +4,7 @@ from .multiple_choice import multiple_choice_eval
 from .coco_eval import COCO_eval
 from .vqa_eval import VQAEval
 from .mathvista_eval import MathVista_eval
+from .mmlongbench_eval import MMLongBench_eval
 from .llavabench import LLaVABench_eval
 from .misc import build_judge
 from .ocrbench_eval import OCRBench_eval

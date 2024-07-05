@@ -41,7 +41,7 @@ class OpenAIWrapper(BaseAPI):
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0,
-                 timeout: int = 60,
+                 timeout: int = 600,
                  api_base: str = None,
                  max_tokens: int = 1024,
                  img_size: int = 512,
