@@ -31,11 +31,14 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     assert getattr(model, 'is_api', False)
 
     lt, indices = len(data), list(data['index'])
-    structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
 
-    # Corner Case
-    if listinstr(['MMMU'], dataset_name):
-        structs = [split_MMMU(s) for s in structs]
+    if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+        structs = [model.build_prompt(data.iloc[i], dataset=dataset_name) for i in range(lt)]
+    else:
+        structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
+        # Corner Case
+        if listinstr(['MMMU'], dataset_name):
+            structs = [split_MMMU(s) for s in structs]
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}

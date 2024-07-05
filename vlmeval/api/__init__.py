@@ -9,10 +9,11 @@ from .claude import Claude_Wrapper, Claude3V
 from .reka import Reka
 from .glm_vision import GLMVisionAPI
 from .cloudwalk import CWWrapper
+from .sensechat_vision import SenseChatVisionAPI
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'OpenAIWrapperInternal', 'GeminiWrapper',
     'GPT4V', 'GPT4V_Internal', 'GeminiProVision', 'QwenVLWrapper', 'QwenVLAPI',
     'QwenAPI', 'Claude3V', 'Claude_Wrapper', 'Reka', 'Step1V_INT', 'GLMVisionAPI',
-    'CWWrapper'
+    'CWWrapper', 'SenseChatVisionAPI'
 ]

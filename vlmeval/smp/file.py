@@ -215,7 +215,7 @@ def last_modified(pth):
 
 
 def parse_file(s):
-    if osp.exists(s):
+    if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
         mime = mimetypes.types_map.get(suffix, 'unknown')
