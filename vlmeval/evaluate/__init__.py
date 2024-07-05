@@ -6,5 +6,5 @@ from .vqa_eval import VQAEval
 from .mathvista_eval import MathVista_eval
 from .llavabench import LLaVABench_eval
 from .misc import build_judge
-from .ocrbench import OCRBench_eval
+from .ocrbench_eval import OCRBench_eval
 from .mmbench_video import MMBenchVideo_eval

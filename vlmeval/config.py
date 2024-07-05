@@ -48,6 +48,7 @@ api_models = {
     'RekaCore': partial(Reka, model='reka-core-20240415'), 
     # Step1V Series
     'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
+    'Step1V-0701': partial(GPT4V, model='step-1v-beta0701', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
     # Internal Only
     # 'GPT4V_INT': partial(GPT4V_Internal, model='gpt-4-vision-preview', temperature=0, img_size=512, img_detail='low', retry=10),
     # 'Step1V_INT': partial(Step1V_INT, temperature=0, retry=10),
@@ -150,13 +151,20 @@ wemm_series = {
     'WeMM': partial(WeMM, model_path='feipengma/WeMM'),
 }
 
+cambrian_series = {
+    'cambrian_8b': partial(Cambrian, model_path='nyu-visionx/cambrian-8b'),
+    'cambrian_13b': partial(Cambrian, model_path='nyu-visionx/cambrian-13b'),
+    'cambrian_34b': partial(Cambrian, model_path='nyu-visionx/cambrian-34b'),
+}
+
 supported_VLM = {}
 
 model_groups = [
     ungrouped, api_models, 
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
-    deepseekvl_series, minicpm_series, cogvlm_series, wemm_series
+    deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
+    cambrian_series,
 ]
 
 for grp in model_groups:

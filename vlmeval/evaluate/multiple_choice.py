@@ -475,6 +475,11 @@ def multiple_choice_eval(eval_file, dataset='default', **judge_kwargs):
     logger.info(f'multiple_choice_eval successfully finished evaluating {eval_file}, results saved in {score_file}')
     logger.info('Score: ')
     logger.info(acc)
+
+    if dataset == 'AesBench_VAL':
+        logger.info('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
+                    please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times larger than \
+                    the VAL dataset and the leaderboard results are based on AesBench TEST.')
     return acc
 
 

@@ -78,7 +78,8 @@ class OpenAIWrapper(BaseAPI):
                     f'Illegal openai_key {key}. '
                     'Please set the environment variable OPENAI_API_KEY to your openai key. '
                 )
-            self.key = key
+
+        self.key = key
         assert img_size > 0 or img_size == -1
         self.img_size = img_size
         assert img_detail in ['high', 'low']
