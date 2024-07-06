@@ -127,8 +127,9 @@ class ImageBaseDataset:
         mmqa_display(line)
 
     # Return a list of dataset names that are supported by this class, can override
-    def supported_datasets(self):
-        return list(self.DATASET_URL)
+    @classmethod
+    def supported_datasets(cls):
+        return list(cls.DATASET_URL)
 
     # Given the dataset name, return the dataset as a pandas dataframe, can override
     def load_data(self, dataset):
