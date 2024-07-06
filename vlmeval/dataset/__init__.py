@@ -5,6 +5,7 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset
 from .image_vqa import ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, CustomVQADataset
 from .mmbench_video import MMBenchVideo
+from .utils.judge_util import build_judge
 from ..smp import *
 
 
@@ -42,5 +43,5 @@ def build_dataset(dataset_name, **kwargs):
 __all__ = [
     'MMBenchVideo', 'ImageYORNDataset', 'ImageMCQDataset', 'MMMUDataset',
     'ImageCaptionDataset', 'ImageVQADataset', 'OCRBench', 'MathVista', 'LLaVABench', 'MMVet',
-    'CustomMCQDataset', 'CustomVQADataset'
+    'CustomMCQDataset', 'CustomVQADataset', 'build_dataset', 'build_judge'
 ]

@@ -1,4 +1,3 @@
-from vlmeval.evaluate.misc import build_judge
 from vlmeval.smp import *
 from vlmeval.utils import track_progress_rich
 from vlmeval.utils.matching_util import can_infer
@@ -216,29 +215,3 @@ def MathVista_eval(eval_file, **judge_kwargs):
     logger.info(f'MathVista_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
     logger.info('Score: ')
     logger.info(score)
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description='Inference LLM Answers. ')
-    parser.add_argument('data', type=str, help='The question set for inference, in excel / tsv / json format. ')
-    parser.add_argument(
-        '--model',
-        type=str,
-        help='The LLM (GPT) used for inference. ',
-        default='gpt-4-turbo',
-        choices=['gpt-4-0613', 'gpt-4-turbo', 'chatgpt-1106', 'chatgpt-0125'])
-    parser.add_argument('--nproc', type=int, default=4)
-    parser.add_argument('--verbose', action='store_true')
-    args = parser.parse_args()
-    return args
-
-
-if __name__ == '__main__':
-    load_env()
-    args = parse_args()
-    judge_kwargs = dict(model=args.model, nproc=args.nproc, verbose=args.verbose)
-    if 'OPENAI_API_KEY_JUDGE' in os.environ and os.environ['OPENAI_API_KEY_JUDGE']:
-        judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
-    if 'OPENAI_API_BASE_JUDGE' in os.environ and os.environ['OPENAI_API_BASE_JUDGE']:
-        judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
-    MathVista_eval(eval_file=args.data, **judge_kwargs)
