@@ -8,6 +8,13 @@ from .mmbench_video import MMBenchVideo
 from ..smp import *
 
 
+def DATASET_TYPE(dataset):
+    raise NotImplementedError
+
+
+img_root_map = {}
+
+
 def build_dataset(dataset_name, **kwargs):
     if dataset_name == 'MMBench-Video':
         return MMBenchVideo(dataset_name, **kwargs)
