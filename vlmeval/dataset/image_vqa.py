@@ -1,5 +1,5 @@
 from .image_base import ImageBaseDataset
-from .utils.judge_util import build_judge
+from .utils.judge_util import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..utils import track_progress_rich
 
@@ -123,6 +123,7 @@ class MathVista(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), 'MathVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -173,6 +174,8 @@ class LLaVABench(ImageBaseDataset):
             data = load(eval_file)
             lines = [data.iloc[i] for i in range(len(data))]
             model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
+            assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+
             prompts = [build_prompt(line) for line in lines]
             tups = [(model, prompt) for prompt in prompts]
             scores = track_progress_rich(LLaVABench_atomeval, tups, nproc=nproc, chunksize=nproc)
@@ -204,6 +207,7 @@ class MMVet(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=3, **judge_kwargs)
+            assert model.working(), 'MMVet evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
