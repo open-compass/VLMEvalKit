@@ -153,6 +153,7 @@ class ImageBaseDataset:
 
         question = line['question']
 
+        msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
         else:
