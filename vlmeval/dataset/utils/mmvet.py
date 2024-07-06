@@ -1,4 +1,4 @@
-from vlmeval.smp import *
+from ...smp import *
 
 
 def build_mmvet_gpt4_prompt(line):

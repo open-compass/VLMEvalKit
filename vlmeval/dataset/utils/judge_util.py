@@ -1,6 +1,6 @@
 import os
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
-from vlmeval.smp import load_env
+from ...api import OpenAIWrapper, OpenAIWrapperInternal
+from ...smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 

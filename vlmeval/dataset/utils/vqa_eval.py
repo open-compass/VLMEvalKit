@@ -2,9 +2,8 @@
 # Partly adopted from https://github.com/GT-Vision-Lab/VQA
 # Copyright (c) 2014, Aishwarya Agrawal
 
-from vlmeval.smp import *
+from ...smp import *
 from typing import Optional
-from functools import partial
 
 
 def _process_digit_article(inText):

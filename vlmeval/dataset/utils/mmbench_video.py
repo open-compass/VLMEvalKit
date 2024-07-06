@@ -1,4 +1,4 @@
-from vlmeval.smp import *
+from ...smp import *
 import numpy as np
 
 FAIL_MSG = 'Failed to obtain answer via API.'

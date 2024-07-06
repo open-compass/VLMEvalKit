@@ -1,6 +1,6 @@
-from vlmeval.smp import *
-from vlmeval.utils import track_progress_rich
-from vlmeval.utils.matching_util import can_infer
+from ...smp import *
+from ...utils import track_progress_rich
+from ...utils.matching_util import can_infer
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'

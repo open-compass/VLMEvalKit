@@ -1,4 +1,4 @@
-from vlmeval.smp import *
+from ...smp import *
 
 
 def MME_rating(data_file):
