@@ -1,7 +1,6 @@
-from ..evaluate.misc import build_judge
-from ..evaluate.multiple_choice import extract_answer_from_item
-
 from ..smp import *
+from ..dataset.utils.judge_util import build_judge
+from ..dataset.utils.multiple_choice import extract_answer_from_item
 from .matching_util import can_infer
 from .mp_util import track_progress_rich
 
