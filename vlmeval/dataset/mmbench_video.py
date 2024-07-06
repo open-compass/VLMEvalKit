@@ -1,6 +1,8 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
+from .utils.judge_util import build_judge
+from ..utils import track_progress_rich
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -182,3 +184,54 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
         vstats['VALIDQ'] = len([x for x in prediction if x is not None])
         vstats['INVALIDQ'] = len([x for x in prediction if x is None])
         return meta, vstats
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmbench_video import get_dimension_rating, system_prompt, build_prompt
+
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        judge = judge_kwargs['model']
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
+        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+
+        model = build_judge(system_prompt=system_prompt, **judge_kwargs)
+
+        if not osp.exists(score_file):
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if model.fail_msg not in v}
+
+            data = load(eval_file)
+            data_un = data[~data['index'].isin(res)]
+            data_un = data_un[~pd.isna(data_un['prediction'])]
+            lt = len(data_un)
+            prompts = [build_prompt(data_un.iloc[i]) for i in range(lt)]
+            indices = [data_un.iloc[i]['index'] for i in range(lt)]
+
+            if len(prompts):
+                _ = track_progress_rich(
+                    model.generate,
+                    prompts,
+                    keys=indices,
+                    save=tmp_file,
+                    nproc=nproc,
+                    chunksize=nproc
+                )
+            score_map = load(tmp_file)
+            data['score'] = [score_map[idx] if idx in score_map else -1 for idx in data['index']]
+            rejected = [x for x in score_map.values() if FAIL_MSG in x]
+            data['score'] = [int(x) if istype(x, int) else -1 for x in data['score']]
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} questions, '
+                f'failed to obtain the score for another {len(rejected)} questions. '
+                f'Those questions will be counted as 0 score in ALL rating, and will not be counted in VALID rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating

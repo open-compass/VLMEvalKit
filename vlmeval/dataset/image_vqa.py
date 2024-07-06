@@ -55,6 +55,7 @@ class MathVista(ImageBaseDataset):
     DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
 
     # It returns a DataFrame
+    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mathvista import MathVista_auxeval, MathVista_acc
         model = judge_kwargs['model']
@@ -103,6 +104,7 @@ class LLaVABench(ImageBaseDataset):
     DATASET_MD5 = {'LLaVABench': 'd382a093f749a697820d3dadd61c8428'}
 
     # It returns a DataFrame
+    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import build_prompt, LLaVABench_atomeval, LLaVABench_score
         suffix = '.' + eval_file.split('.')[-1]
@@ -135,6 +137,7 @@ class MMVet(ImageBaseDataset):
     DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3'}
 
     # It returns a DataFrame
+    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmvet import MMVet_auxeval, MMVet_acc
         suffix = eval_file.split('.')[-1]

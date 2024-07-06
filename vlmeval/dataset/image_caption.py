@@ -62,6 +62,7 @@ class ImageCaptionDataset(ImageBaseDataset):
             self.img_root = osp.join(LMUDataRoot(), 'images', 'COCO')
 
     # It returns a dictionary of scores
+    @classmethod
     def evaluate(self, eval_file, **kwargs):
         data = load(eval_file)
         lt = len(data)
