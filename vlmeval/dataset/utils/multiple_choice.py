@@ -3,8 +3,6 @@ from ...utils import can_infer, track_progress_rich
 from ...smp import *
 import numpy as np
 
-INTERNAL = os.environ.get('INTERNAL', 0)
-
 MMB_abbrs = {
     'coarse_perception': 'CP',
     'finegrained_perception (instance-level)': 'FP-S',

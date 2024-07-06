@@ -30,7 +30,6 @@ def MMMU_result_transfer(result_path):
 
 def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
     logger = get_logger('Evaluation')
-    INTERNAL = os.environ.get('INTERNAL', 0)
     nproc = judge_kwargs.pop('nproc', 4)
 
     rd.seed(2680)
@@ -46,7 +45,7 @@ def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
     if model == 'exact_matching':
         model = None
     else:
-        if INTERNAL or gpt_key_set():
+        if gpt_key_set():
             model = build_judge(**judge_kwargs)
         else:
             logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')

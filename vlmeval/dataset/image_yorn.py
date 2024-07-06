@@ -41,11 +41,14 @@ class ImageYORNDataset(ImageBaseDataset):
             data['extracted'] = [ans_map[x] for x in data['index']]
             unknown = data[data['extracted'] == 'Unknown']
 
-            model = build_judge(**judge_kwargs)
-            if not model.working():
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                warnings.warn(DEBUG_MESSAGE)
+            if model == 'exact_matching':
                 model = None
+            else:
+                model = build_judge(**judge_kwargs)
+                if not model.working():
+                    warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+                    warnings.warn(DEBUG_MESSAGE)
+                    model = None
 
             if model is not None:
                 lt = len(unknown)
