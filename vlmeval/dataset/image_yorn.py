@@ -41,6 +41,7 @@ class ImageYORNDataset(ImageBaseDataset):
             data['extracted'] = [ans_map[x] for x in data['index']]
             unknown = data[data['extracted'] == 'Unknown']
 
+            model = judge_kwargs.get('model', 'exact_matching')
             if model == 'exact_matching':
                 model = None
             else:
