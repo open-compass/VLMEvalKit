@@ -6,7 +6,7 @@ from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.config import supported_VLM
 from vlmeval.dataset import dataset_URLs, DATASET_TYPE, abbr2full
-from vlmeval.utils import MMMU_result_transfer, MMTBench_result_transfer
+from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
 def parse_args():
