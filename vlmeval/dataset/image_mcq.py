@@ -180,6 +180,12 @@ class ImageMCQDataset(ImageBaseDataset):
             data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
 
         meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map and data_map[k] == meta_q_map[k], (
+                f'eval_file should be the same as or a subset of dataset {self.dataset}'
+            )
 
         # Build Answer / Category / L2-Category / Split Map
         answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
