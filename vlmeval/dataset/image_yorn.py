@@ -24,6 +24,7 @@ class ImageYORNDataset(ImageBaseDataset):
         from .utils.yorn import YOrN_Extraction, YOrN_auxeval
         from .utils.yorn import default_rating, MME_rating, Hallusion_rating, POPE_rating
 
+        dataset = self.dataset
         data = load(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
         storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')
@@ -69,11 +70,11 @@ class ImageYORNDataset(ImageBaseDataset):
         data['score'] = (data['answer'] == data['extracted'])
         dump(data, storage)
 
-        if self.dataset is not None and listinstr(['MME'], dataset):
+        if dataset is not None and listinstr(['MME'], dataset):
             score = MME_rating(storage)
-        elif self.dataset is not None and listinstr(['Hallusion'], dataset):
+        elif dataset is not None and listinstr(['Hallusion'], dataset):
             score = Hallusion_rating(storage)
-        elif self.dataset is not None and listinstr(['POPE'], dataset):
+        elif dataset is not None and listinstr(['POPE'], dataset):
             score = POPE_rating(storage)
         else:
             score = default_rating(storage)
