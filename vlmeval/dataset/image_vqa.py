@@ -1,3 +1,5 @@
+from functools import partial
+
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge, DEBUG_MESSAGE
 from ..smp import *
@@ -39,6 +41,56 @@ class ImageVQADataset(ImageBaseDataset):
         assert msgs[-1]['type'] == 'text'
         msgs[-1]['value'] += '\nAnswer the question using a single word or phrase.'
         return msgs
+
+    # It returns a DataFrame
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vqa_eval import hit_calculate, process_line
+        data = load(eval_file)
+        assert 'answer' in data and 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        lt = len(data)
+        pool = mp.Pool(16)
+        lines = [data.iloc[i] for i in range(lt)]
+        if listinstr(['TextVQA'], self.dataset):
+            res = pool.map(partial(process_line, method='vqa_score'), lines)
+        elif listinstr(['ChartQA'], self.dataset):
+            res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
+        elif listinstr(['OCRVQA'], self.dataset):
+            res = pool.map(partial(process_line, method='accuracy'), lines)
+        elif listinstr(['DocVQA', 'InfoVQA'], self.dataset):
+            res = pool.map(partial(process_line, method='anls'), lines)
+        else:  # default using vqa_score to calculate score
+            res = pool.map(process_line, lines)
+        hit = hit_calculate(res, self.dataset)
+        ret = dict()
+        if 'split' in data:
+            splits = set(data['split'])
+            for sp in splits:
+                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                # [np.mean(x['match']) >= full_score_weight for x in sub]
+                hit = hit_calculate(sub, self.dataset)
+                ret[sp] = np.mean(hit) * 100
+            sub = [r for l, r in zip(lines, res)]
+            hit = hit_calculate(sub, self.dataset)
+            ret['Overall'] = np.mean(hit) * 100
+        else:
+            ret['Overall'] = np.mean(hit) * 100
+            if 'category' in data:
+                cates = list(set(data['category']))
+                cates.sort()
+                for c in cates:
+                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    # [np.mean(x['match']) >= full_score_weight for x in sub]
+                    hit = hit_calculate(sub, self.dataset)
+                    ret[c] = np.mean(hit) * 100
+        ret = d2df(ret)
+        ret.round(2)
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(ret, result_file)
+        return ret
 
 
 class OCRBench(ImageBaseDataset):
