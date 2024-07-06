@@ -183,6 +183,7 @@ class ImageMCQDataset(ImageBaseDataset):
 
         # Build Answer / Category / L2-Category / Split Map
         answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
+        cate_map, l2_cate_map, split_map = None, None, None
         if 'category' in meta and len(set(meta['category'])) > 1:
             cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
         if 'l2-category' in meta and len(set(meta['l2-category'])) > 1:
