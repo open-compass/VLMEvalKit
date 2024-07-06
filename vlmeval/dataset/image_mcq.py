@@ -1,6 +1,7 @@
 import warnings
 
 from .image_base import ImageBaseDataset
+from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 
 
@@ -133,6 +134,127 @@ class ImageMCQDataset(ImageBaseDataset):
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import MMMU_preproc, eval_data_groups, report_acc, report_acc_MMT
+        # assert dataset is not None
+        dataset_map = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+        }
+        dataset = self.dataset
+        if dataset in dataset_map:
+            dataset = dataset_map[dataset]
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if listinstr(['mmbench', 'ccbench'], dataset.lower()):
+            data = load(eval_file)
+            data['index'] = [int(x) for x in data['index']]
+            dump(data, eval_file)
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs['model']
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+        result = {}
+        if osp.exists(result_file):
+            result = load(result_file)
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+
+        # Build Answer / Category / L2-Category / Split Map
+        answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
+        if 'category' in meta and len(set(meta['category'])) > 1:
+            cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
+        if 'l2-category' in meta and len(set(meta['l2-category'])) > 1:
+            l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])}
+        if 'split' in meta and len(set(meta['split'])) > 1:
+            split_map = {i: c for i, c in zip(meta['index'], meta['split'])}
+
+        # Change MMMU open-ended questions to multiple-choice ones for evaluation
+        if 'MMMU' in dataset:
+            data = MMMU_preproc(data)
+            answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
+
+        # Only keep those lines in the meta data
+        data = data[data['index'].isin(answer_map)]
+        data_main = data[data['index'] < int(1e6)]
+        meta_idx_set = set(meta['index'])
+        data_main = data_main[data_main['index'].isin(meta_idx_set)]
+
+        lt = len(data_main)
+
+        data_groups = []
+        for i in tqdm(range(lt)):
+            # Dealing with the normal part
+            idx = data_main.iloc[i]['index']
+            if idx not in result:
+                sub_data = data[data['index'] % int(1e6) == idx]
+                data_groups.append(sub_data)
+
+        if len(data_groups):
+            eval_data_groups(
+                model=model,
+                data_groups=data_groups,
+                answer_map=answer_map,
+                nproc=nproc,
+                result_file=result_file)
+
+        tmp_pth = f'/tmp/{timestr()}.xlsx'
+        dump(data_main, tmp_pth)
+        data_main = load(tmp_pth)
+
+        res = load(result_file)
+        indices = data_main['index']
+
+        data_main['hit'] = [res[i]['hit'] for i in indices]
+        data_main['log'] = [res[i]['log'] for i in indices]
+
+        main_idx = data_main['index']
+        if cate_map is not None:
+            data_main['category'] = [cate_map[i] for i in main_idx]
+        if l2_cate_map is not None:
+            data_main['l2-category'] = [l2_cate_map[i] for i in main_idx]
+        if split_map is not None:
+            data_main['split'] = [split_map[i] for i in indices]
+
+        # load split
+        dump(data_main, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data_main = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+
+        # May have different report acc functions for different datasets
+        if 'MMT' in dataset:
+            acc = report_acc_MMT(data_main)
+        else:
+            acc = report_acc(data_main)
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        if dataset == 'AesBench_VAL':
+            warnings.info('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
+                           please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
+                           larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
+        return acc
 
 
 class MMMUDataset(ImageMCQDataset):

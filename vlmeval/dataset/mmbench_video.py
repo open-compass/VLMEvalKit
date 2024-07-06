@@ -1,7 +1,7 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
-from .utils.judge_util import build_judge
+from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
 
 
@@ -199,6 +199,7 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
         score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
 
         model = build_judge(system_prompt=system_prompt, **judge_kwargs)
+        assert model.working(), 'MMBench-Video evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
         if not osp.exists(score_file):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)

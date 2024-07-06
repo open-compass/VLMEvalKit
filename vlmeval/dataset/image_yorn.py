@@ -1,6 +1,6 @@
 from vlmeval import *
 from .image_base import ImageBaseDataset
-from .utils.judge_util import build_judge, DEBUG_MESSAGE
+from .utils import build_judge, DEBUG_MESSAGE
 
 
 class ImageYORNDataset(ImageBaseDataset):

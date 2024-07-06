@@ -289,7 +289,8 @@ def eval_sub_data(model, sub_data, answer_map):
 
 
 # For Circular Evaluation
-def eval_data_groups(model, data_groups, answer_map, result, result_file, nproc=16):
+def eval_data_groups(model, data_groups, answer_map, result_file, nproc=16):
+    result = load(result_file) if osp.exists(result_file) else {}
     prefetched = [prefetch_sub_data(g, answer_map, verbose=False) for g in data_groups]
     remain = []
     for dg, pf in zip(data_groups, prefetched):
