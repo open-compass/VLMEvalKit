@@ -24,7 +24,7 @@ class ImageYORNDataset(ImageBaseDataset):
         from .utils.yorn import YOrN_Extraction, YOrN_auxeval
         from .utils.yorn import default_rating, MME_rating, Hallusion_rating, POPE_rating
 
-        dataset = self.dataset
+        dataset = self.dataset_name
         data = load(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
         storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')

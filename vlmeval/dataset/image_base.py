@@ -35,7 +35,7 @@ class ImageBaseDataset:
     def __init__(self, dataset='MMBench', skip_noimg=True):
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
-        self.dataset = dataset
+        self.dataset_name = dataset
         self.img_root = osp.join(ROOT, 'images', dataset)
 
         data = self.load_data(dataset)

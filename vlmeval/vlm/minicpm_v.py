@@ -116,9 +116,6 @@ class MiniCPM_Llama3_V(BaseModel):
         return False
 
     def build_prompt(self, line, dataset=None):
-        if dataset is None:
-            dataset = self.dataset
-
         if isinstance(line, int):
             line = self.data.iloc[line]
 

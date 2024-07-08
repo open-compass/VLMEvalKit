@@ -142,7 +142,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
             'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
         }
-        dataset = self.dataset
+        dataset = self.dataset_name
         if dataset in dataset_map:
             dataset = dataset_map[dataset]
         nproc = judge_kwargs.pop('nproc', 4)
@@ -184,7 +184,7 @@ class ImageMCQDataset(ImageBaseDataset):
         data_map = {x: y for x, y in zip(data['index'], data['question'])}
         for k in data_map:
             assert k in meta_q_map and data_map[k] == meta_q_map[k], (
-                f'eval_file should be the same as or a subset of dataset {self.dataset}'
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
             )
 
         # Build Answer / Category / L2-Category / Split Map
