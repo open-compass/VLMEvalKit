@@ -37,7 +37,7 @@ class QwenVL(BaseModel):
 
     def adjust_kwargs(self, dataset):
         kwargs = cp.deepcopy(self.kwargs)
-        if DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+        if DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             kwargs['max_new_tokens'] = 32
         elif DATASET_TYPE(dataset) == 'Caption' and 'COCO' in dataset:
             kwargs['max_new_tokens'] = 32

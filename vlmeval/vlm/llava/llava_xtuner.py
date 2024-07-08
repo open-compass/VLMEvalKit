@@ -148,14 +148,14 @@ class LLaVA_XTuner(BaseModel):
                           self.tokenizer.eos_token_id)
         # For single word generation
         if (dataset is not None
-                and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']):
+                and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']):
             gen_kwargs.update(
                 dict(max_new_tokens=5, do_sample=False, num_beams=1))
         return GenerationConfig(**gen_kwargs)
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 

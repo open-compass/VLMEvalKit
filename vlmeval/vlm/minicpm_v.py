@@ -62,7 +62,7 @@ class MiniCPM_V(BaseModel):
         prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             max_new_tokens = 20
         elif DATASET_TYPE(dataset) == 'Y/N':
             max_new_tokens = 100
@@ -109,7 +109,7 @@ class MiniCPM_Llama3_V(BaseModel):
         self.vqa_prompt = 'Answer the question using a single word or phrase.'
 
     def use_custom_prompt(self, dataset):
-        if listinstr(['multi-choice', 'VQA'], DATASET_TYPE(dataset)):
+        if listinstr(['MCQ', 'VQA'], DATASET_TYPE(dataset)):
             return True
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             return True
@@ -123,7 +123,7 @@ class MiniCPM_Llama3_V(BaseModel):
         system_prompt = ''
 
         question = line['question']
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             options = {
                 cand: line[cand]
                 for cand in string.ascii_uppercase
@@ -177,7 +177,7 @@ class MiniCPM_Llama3_V(BaseModel):
         return msgs
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             max_new_tokens = 200
         elif DATASET_TYPE(dataset) == 'Y/N':
             max_new_tokens = 3
