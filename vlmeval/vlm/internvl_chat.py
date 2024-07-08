@@ -192,6 +192,7 @@ class InternVLChat(BaseModel):
             self.max_num = 6
 
     def generate_v1_2(self, message, dataset=None):
+        self.INTERLEAVE = False
         prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
         image = image.resize((self.image_size, self.image_size))
