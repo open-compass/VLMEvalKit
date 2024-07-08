@@ -250,7 +250,7 @@ class InternVLChat(BaseModel):
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)            
+            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
                 image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
