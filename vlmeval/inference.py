@@ -1,7 +1,6 @@
 import torch
 import torch.distributed as dist
 from vlmeval.config import supported_VLM
-from vlmeval.dataset import build_dataset, split_MMMU
 from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
@@ -44,7 +43,6 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
     indices = [i for i in indices if i not in res]
 
     gen_func = model.generate
-    # For now, we do not use split_MMMU for MMMU dataset
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
@@ -113,7 +111,6 @@ def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        # For now, we do not use split_MMMU for MMMU dataset
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 

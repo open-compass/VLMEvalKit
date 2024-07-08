@@ -1,7 +1,6 @@
 import torch
 import torch.distributed as dist
 from vlmeval.config import supported_VLM
-from vlmeval.dataset import build_dataset, split_MMMU, MMBenchVideo
 from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
@@ -37,7 +36,6 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
     indices = [i for i in indices if i not in res]
 
     gen_func = model.generate
-    # For now, we do not use split_MMMU for MMMU dataset
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
@@ -142,7 +140,7 @@ def infer_data_job_video(
 
         meta = dataset.data
         if dataset_name == 'MMBench-Video' and pack:
-            meta, vstats = MMBenchVideo('MMBench-Video').load_pack_answers(data_all)
+            meta, vstats = dataset.load_pack_answers(data_all)
             print(f'Statitics of Pack Video Inference: {vstats}')
         else:
             for x in meta['index']:
