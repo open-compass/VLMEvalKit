@@ -38,7 +38,7 @@ class COCO_Caption_Scorer():
 
 class ImageCaptionDataset(ImageBaseDataset):
 
-    TYPE = 'CAPTION'
+    TYPE = 'Caption'
 
     DATASET_URL = {
         'COCO_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/COCO_VAL.tsv',
