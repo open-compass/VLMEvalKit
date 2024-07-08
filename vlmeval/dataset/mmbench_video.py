@@ -59,6 +59,8 @@ Even if the information in these separate frames is not enough to give an answer
 PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
+    TYPE = 'VQA'
+
     def __init__(self, dataset='MMBench-Video', pack=False):
         super().__init__(dataset=dataset, pack=pack)
 
