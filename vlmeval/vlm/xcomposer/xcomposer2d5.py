@@ -212,7 +212,7 @@ class XComposer2d5(BaseModel):
                 return self.generate_brief(image_path, prompt)
             elif listinstr(['llava', 'mmvet'], dataset.lower()):
                 return self.generate_vanilla(image_path, prompt)
-            elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+            elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
                 return self.generate_multichoice(image_path, prompt, dataset)
             elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
                 return self.generate_vqa(image_path, prompt)
@@ -221,7 +221,7 @@ class XComposer2d5(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA':
+        if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'VQA':
             return True
         return False
 
@@ -258,7 +258,7 @@ class XComposer2d5(BaseModel):
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
 
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_mcqa(line)
         elif DATASET_TYPE(dataset) == 'VQA':
             if 'mathvista' in dataset.lower():
