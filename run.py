@@ -69,9 +69,9 @@ def main():
                 dataset_kwargs['pack'] = args.pack
 
             # If distributed, first build the dataset on the main process for doing preparation works
-            if rank == 0 and world_size > 1:
-                dataset = build_dataset(dataset_name, **dataset_kwargs)
-            dist.barrier()
+            if world_size > 1:
+                dataset = build_dataset(dataset_name, **dataset_kwargs) if rank == 0 else None
+                dist.barrier()
 
             dataset = build_dataset(dataset_name, **dataset_kwargs)
             if dataset is None:
