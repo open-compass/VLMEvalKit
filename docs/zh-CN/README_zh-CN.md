@@ -2,7 +2,7 @@
 <div align="center"><b> VLMEvalKit—多模态大模型评测工具 </b></div>
 
 <div align="center">
-[<a href="README.md">English</a>] | 简体中文 | [<a href="/docs/ja/README_ja.md">日本語</a>]
+[<a href="/README.md">English</a>] | 简体中文 | [<a href="/docs/ja/README_ja.md">日本語</a>]
 </div>
 
 <div align="center">
