@@ -8,12 +8,17 @@ from .mmbench_video import MMBenchVideo
 from .utils import build_judge, extract_answer_from_item, prefetch_answer, DEBUG_MESSAGE
 from ..smp import *
 
+DATASET_CLASSES = [
+    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, MMMUDataset,
+    CustomMCQDataset, ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet,
+    CustomVQADataset, MMBenchVideo
+]
+
 
 def DATASET_TYPE(dataset):
-    raise NotImplementedError
-
-
-img_root_map = {}
+    for cls in DATASET_CLASSES:
+        if dataset in cls.supported_datasets():
+            return cls.TYPE
 
 
 def build_dataset(dataset_name, **kwargs):
@@ -30,8 +35,15 @@ def build_dataset(dataset_name, **kwargs):
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
 
     data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
-    assert osp.exists(data_file), f'Data file {data_file} does not exist.'
+    if not osp.exists(data_file):
+        warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
+        return None
+
     data = load(data_file)
+    if 'question' not in [x.lower() for x in data.columns]:
+        warnings.warn(f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
+        return None
+
     if 'A' in data and 'B' in data:
         warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
         return CustomMCQDataset(dataset=dataset_name, **kwargs)

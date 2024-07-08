@@ -64,6 +64,16 @@ class VideoBaseDataset:
             im.save(pth)
         return frame_paths
 
+    # Return a list of dataset names that are supported by this class, can override
+    @classmethod
+    def supported_datasets(cls):
+        return ['MMBench-Video']
+
+    # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
+    @abstractmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        pass
+
     @abstractmethod
     def build_prompt(self, idx, num_frames=8):
         pass
