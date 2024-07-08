@@ -5,7 +5,7 @@ from .utils import build_judge, DEBUG_MESSAGE
 
 class ImageYORNDataset(ImageBaseDataset):
 
-    TYPE = 'YORN'
+    TYPE = 'Y/N'
 
     DATASET_URL = {
         'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
