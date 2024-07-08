@@ -162,13 +162,13 @@ def main():
                 if eval_results is not None:
                     assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
                     logger.info(f'The evaluation of model {model_name} x dataset {dataset_name} has finished! ')
-                    logger.info('Evaluation Results: ')
+                    logger.info('Evaluation Results:')
                 if isinstance(eval_results, dict):
-                    logger.info(json.dumps(eval_results, indent=4))
+                    logger.info('\n' + json.dumps(eval_results, indent=4))
                 elif isinstance(eval_results, pd.DataFrame):
                     if len(eval_results) < len(eval_results.columns):
                         eval_results = eval_results.T
-                    logger.info(tabulate(eval_results))
+                    logger.info('\n' + tabulate(eval_results))
 
 
 if __name__ == '__main__':
