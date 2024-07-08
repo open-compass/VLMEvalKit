@@ -2,7 +2,6 @@ from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import img_root_map
 from vlmeval.dataset import DATASET_TYPE
-import jwt
 
 
 class SenseChatVisionWrapper(BaseAPI):
@@ -70,6 +69,7 @@ class SenseChatVisionWrapper(BaseAPI):
             return encoded_string.decode('utf-8')
 
     def encode_jwt_token(self, ak, sk):
+        import jwt
         headers = {'alg': 'HS256', 'typ': 'JWT'}
         payload = {
             'iss': ak,
