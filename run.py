@@ -64,10 +64,18 @@ def main():
         os.makedirs(pred_root, exist_ok=True)
 
         for _, dataset_name in enumerate(args.data):
+            dataset_kwargs = {}
+            if dataset_name == 'MMBench-Video':
+                dataset_kwargs['pack'] = args.pack
 
-            dataset = build_dataset(dataset_name)
+            # If distributed, first build the dataset on the main process for doing preparation works
+            if rank == 0 and world_size > 1:
+                dataset = build_dataset(dataset_name, **dataset_kwargs)
+            dist.barrier()
+
+            dataset = build_dataset(dataset_name, **dataset_kwargs)
             if dataset is None:
-                logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
+                logger.error(f'Dataset {dataset_name} is not valid,  will be skipped. ')
                 continue
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'

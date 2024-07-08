@@ -19,10 +19,10 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, samples_dict={}, api_nproc=4):
+def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_dict={}, api_nproc=4):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
-    dataset = build_dataset(dataset_name, pack=pack)
+    dataset_name = dataset.dataset_name
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
 
@@ -47,14 +47,10 @@ def infer_data_api(work_dir, model_name, dataset_name, nframe=8, pack=False, sam
     return res
 
 
-def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
     res = load(out_file) if osp.exists(out_file) else {}
     rank, world_size = get_rank_and_world_size()
-    if rank == 0:
-        dataset = build_dataset(dataset_name, pack=pack)
-    if world_size > 1:
-        dist.barrier()
-    dataset = build_dataset(dataset_name, pack=pack)
+    dataset_name = dataset.dataset_name
 
     sample_indices = list(dataset.videos) if pack else list(dataset.data['index'])
     samples = list(dataset.videos) if pack else list(range(len(dataset.data)))
@@ -73,7 +69,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, nframe=8, pack=Fals
         supp = infer_data_api(
             work_dir=work_dir,
             model_name=model_name,
-            dataset_name=dataset_name,
+            dataset=dataset,
             nframe=nframe,
             pack=pack,
             samples_dict={k: sample_map[k] for k in sample_indices_subrem},
@@ -108,12 +104,13 @@ def infer_data_job_video(
         model,
         work_dir,
         model_name,
-        dataset_name,
+        dataset,
         nframe=8,
         pack=False,
         verbose=False,
         api_nproc=4):
 
+    dataset_name = dataset.dataset_name
     packstr = 'pack' if pack else 'nopack'
     rank, world_size = get_rank_and_world_size()
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
@@ -128,7 +125,7 @@ def infer_data_job_video(
     model = infer_data(
         model,
         work_dir=work_dir,
-        dataset_name=dataset_name,
+        dataset=dataset,
         nframe=nframe,
         pack=pack,
         out_file=out_file,
@@ -143,7 +140,6 @@ def infer_data_job_video(
         for i in range(world_size):
             data_all.update(load(tmpl.format(i)))
 
-        dataset = build_dataset(dataset_name, pack=pack)
         meta = dataset.data
         if dataset_name == 'MMBench-Video' and pack:
             meta, vstats = MMBenchVideo('MMBench-Video').load_pack_answers(data_all)
