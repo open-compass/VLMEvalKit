@@ -29,6 +29,8 @@ class GLM4v(BaseModel):
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+            prompt += '\nShort Answer.'
         inputs = self.tokenizer.apply_chat_template(
             [{'role': 'user', 'image': image, 'content': prompt}],
             add_generation_prompt=True, tokenize=True, return_tensors='pt', return_dict=True
@@ -108,6 +110,8 @@ class CogVlm(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+            prompt += '\nShort Answer.'
 
         image = Image.open(image_path).convert('RGB')
         inputs = self.model.build_conversation_input_ids(

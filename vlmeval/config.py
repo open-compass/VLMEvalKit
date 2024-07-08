@@ -59,7 +59,8 @@ api_models = {
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     # CloudWalk
-    'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10)
+    'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10),
+    'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
 }
 
 minicpm_series = {
@@ -97,12 +98,19 @@ llava_series = {
 }
 
 internvl_series = {
-    'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1'),
-    'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2'),
-    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus'),
-    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5'),
-    'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5'),
-    'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5'),
+    'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
+    'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
+    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'),
+    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='V1.5'),
+    'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5', version='V1.5'),
+    'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5', version='V1.5'),
+    # InternVL2 series
+    'InternVL2-1B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-1B', version='V2.0'),
+    'InternVL2-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-2B', version='V2.0'),
+    'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
+    'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
+    'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
+    'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
 }
 
 yivl_series = {
@@ -116,6 +124,7 @@ xcomposer_series = {
     'XComposer2': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-7b'),
     'XComposer2_1.8b': partial(XComposer2, model_path='internlm/internlm-xcomposer2-vl-1_8b'),
     'XComposer2_4KHD': partial(XComposer2_4KHD, model_path='internlm/internlm-xcomposer2-4khd-7b'),
+    'XComposer2d5': partial(XComposer2d5, model_path='internlm/internlm-xcomposer2d5-7b'),
 }
 
 minigpt4_series = {

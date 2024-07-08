@@ -146,7 +146,6 @@ class LLaVA_Next(BaseModel):
 
     def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
-        assert version_cmp(transformers.__version__, '4.39.0', 'ge')
         from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
         self.model_pth = model_pth
         if '34b' in model_pth.lower():

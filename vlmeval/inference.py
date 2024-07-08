@@ -29,8 +29,7 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
 
-    lt, indices = len(data), list(data['index'])
-    structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
+    indices = list(data['index'])
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
