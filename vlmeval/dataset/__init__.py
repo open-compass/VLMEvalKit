@@ -1,5 +1,6 @@
 import warnings
 
+from .image_base import img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset
@@ -55,6 +56,6 @@ def build_dataset(dataset_name, **kwargs):
 __all__ = [
     'MMBenchVideo', 'ImageYORNDataset', 'ImageMCQDataset', 'MMMUDataset',
     'ImageCaptionDataset', 'ImageVQADataset', 'OCRBench', 'MathVista', 'LLaVABench', 'MMVet',
-    'CustomMCQDataset', 'CustomVQADataset', 'build_dataset',
+    'CustomMCQDataset', 'CustomVQADataset', 'build_dataset', 'img_root_map',
     'build_judge', 'extract_answer_from_item', 'prefetch_answer', 'DEBUG_MESSAGE'
 ]

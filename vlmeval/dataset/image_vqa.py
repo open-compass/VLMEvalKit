@@ -32,10 +32,6 @@ class ImageVQADataset(ImageBaseDataset):
         'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
     }
 
-    def post_build(self, dataset):
-        if 'OCRVQA' in dataset:
-            self.img_root = osp.join(LMUDataRoot(), 'images', 'OCRVQA')
-
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
         assert msgs[-1]['type'] == 'text'

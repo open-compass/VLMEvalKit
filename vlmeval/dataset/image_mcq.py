@@ -85,19 +85,6 @@ class ImageMCQDataset(ImageBaseDataset):
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
     }
 
-    def post_build(self, dataset):
-        img_root_map = {
-            'MMBench_DEV_EN': 'MMBench', 'MMBench_TEST_EN': 'MMBench',
-            'MMBench_DEV_CN': 'MMBench', 'MMBench_TEST_CN': 'MMBench',
-            'MMBench': 'MMBench', 'MMBench_CN': 'MMBench',
-            'MMBench_DEV_EN_V11': 'MMBench_V11', 'MMBench_TEST_EN_V11': 'MMBench_V11',
-            'MMBench_DEV_CN_V11': 'MMBench_V11', 'MMBench_TEST_CN_V11': 'MMBench_V11',
-            'MMBench_V11': 'MMBench', 'MMBench_CN_V11': 'MMBench',
-        }
-        if dataset in img_root_map:
-            ROOT = LMUDataRoot()
-            self.img_root = osp.join(ROOT, 'images', img_root_map[dataset])
-
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -275,9 +262,6 @@ class MMMUDataset(ImageMCQDataset):
         'MMMU_DEV_VAL': '521afc0f3bf341e6654327792781644d',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
     }
-
-    def post_build(self, dataset):
-        self.img_root = osp.join(LMUDataRoot(), 'images', 'MMMU')
 
     @staticmethod
     def split_MMMU(msgs):

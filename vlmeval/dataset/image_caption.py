@@ -57,10 +57,6 @@ class ImageCaptionDataset(ImageBaseDataset):
             )] * len(data)
         return data
 
-    def post_build(self, dataset):
-        if dataset == 'COCO_VAL':
-            self.img_root = osp.join(LMUDataRoot(), 'images', 'COCO')
-
     # It returns a dictionary of scores
     @classmethod
     def evaluate(self, eval_file, **kwargs):

@@ -3,6 +3,26 @@ from abc import abstractmethod
 from ..smp import *
 
 
+def img_root_map(dataset):
+    if 'OCRVQA' in dataset:
+        return 'OCRVQA'
+    if 'COCO_VAL' == dataset:
+        return 'COCO'
+    if 'MMMU' in dataset:
+        return 'MMMU'
+    mmbench_root_map = {
+        'MMBench_DEV_EN': 'MMBench', 'MMBench_TEST_EN': 'MMBench',
+        'MMBench_DEV_CN': 'MMBench', 'MMBench_TEST_CN': 'MMBench',
+        'MMBench': 'MMBench', 'MMBench_CN': 'MMBench',
+        'MMBench_DEV_EN_V11': 'MMBench_V11', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+        'MMBench_DEV_CN_V11': 'MMBench_V11', 'MMBench_TEST_CN_V11': 'MMBench_V11',
+        'MMBench_V11': 'MMBench', 'MMBench_CN_V11': 'MMBench',
+    }
+    if dataset in mmbench_root_map:
+        return mmbench_root_map[dataset]
+    return dataset
+
+
 def split_MMMU(msgs):
     text, images = None, []
     for s in msgs:
@@ -36,7 +56,7 @@ class ImageBaseDataset:
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
-        self.img_root = osp.join(ROOT, 'images', dataset)
+        self.img_root = osp.join(ROOT, 'images', img_root_map(dataset))
 
         data = self.load_data(dataset)
         self.skip_noimg = skip_noimg
