@@ -19,7 +19,8 @@ from tqdm import tqdm
 import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
-from tabulate import tabulate_formats, tabulate
+from tabulate import tabulate
+from json import JSONDecoder
 from huggingface_hub import scan_cache_dir
 from sty import fg, bg, ef, rs
 
@@ -199,3 +200,16 @@ def toliststr(s):
     elif isinstance(s, list):
         return [str(x) for x in s]
     raise NotImplementedError
+
+
+def extract_json_objects(text, decoder=JSONDecoder()):
+    pos = 0
+    while True:
+        match = text.find('{', pos)
+        if match == -1: break
+        try:
+            result, index = decoder.raw_decode(text[match:])
+            yield result
+            pos = match + index
+        except ValueError:
+            pos = match + 1

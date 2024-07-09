@@ -1,8 +1,8 @@
 from huggingface_hub import snapshot_download
-from abc import abstractmethod
-from json import JSONDecoder
-from .config import dataset_md5_dict
 from ..smp import *
+from .video_base import VideoBaseDataset
+from .utils import build_judge, DEBUG_MESSAGE
+from ..utils import track_progress_rich
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -29,105 +29,9 @@ def unwrap_hf_pkl(pth, suffix='.mp4'):
         print('The video file already exists.')
 
 
-def prepare_MMBench_Video(dataset_name='MMBench-Video', repo_id='nebulae09/MMBench-Video'):
+class MMBenchVideo(VideoBaseDataset):
 
-    def check_integrity(pth):
-        data_file = osp.join(pth, f'{dataset_name}.tsv')
-        if md5(data_file) != dataset_md5_dict['MMBench-Video']:
-            return False
-        data = load(data_file)
-        for video_pth in data['video_path']:
-            if not osp.exists(osp.join(pth, video_pth)):
-                return False
-        return True
-
-    cache_path = get_cache_path(repo_id)
-    if cache_path is not None and check_integrity(cache_path):
-        dataset_path = cache_path
-    else:
-        dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-        unwrap_hf_pkl(dataset_path)
-    data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
-
-    return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
-
-
-# Return a dictionary containing the data_file and root (video root) of the dataset
-def prepare_dataset(dataset_name):
-    if dataset_name == 'MMBench-Video':
-        return prepare_MMBench_Video(dataset_name='MMBench-Video', repo_id='nebulae09/MMBench-Video')
-    return None
-
-
-class TSVDatasetVideo:
-
-    TYPE = 'VIDEO'
-
-    def __init__(self,
-                 dataset='MMBench-Video',
-                 pack=False):
-
-        assert dataset in ['MMBench-Video']
-        try:
-            import decord
-        except:
-            warnings.warn('Please install decord via `pip install decord`.')
-        ret = prepare_dataset(dataset)
-        assert ret is not None
-        lmu_root = LMUDataRoot()
-        self.frame_root = osp.join(lmu_root, 'images', dataset)
-        os.makedirs(self.frame_root, exist_ok=True)
-        self.frame_tmpl = 'frame-{}-of-{}.jpg'
-
-        self.data_root = ret['root']
-        self.data_file = ret['data_file']
-        self.data = load(self.data_file)
-
-        assert 'question' in self.data and 'video' in self.data
-        videos = list(set(self.data['video']))
-        videos.sort()
-        self.videos = videos
-        self.pack = pack
-
-    def __len__(self):
-        return len(self.videos) if self.pack else len(self.data)
-
-    def __getitem__(self, idx):
-        if self.pack:
-            assert idx < len(self.videos)
-            sub_data = self.data[self.data['video'] == self.videos[idx]]
-            return sub_data
-        else:
-            assert idx < len(self.data)
-            return dict(self.data.iloc[idx])
-
-    def frame_paths(self, video, num_frames=8):
-        frame_root = osp.join(self.frame_root, video)
-        os.makedirs(frame_root, exist_ok=True)
-        return [osp.join(frame_root, self.frame_tmpl.format(i, num_frames)) for i in range(1, num_frames + 1)]
-
-    def save_video_frames(self, video, num_frames=8):
-        frame_paths = self.frame_paths(video, num_frames)
-        flag = np.all([osp.exists(p) for p in frame_paths])
-        if flag:
-            return frame_paths
-        vid_path = osp.join(self.data_root, video + '.mp4')
-        vid = decord.VideoReader(vid_path)
-        step_size = len(vid) / (num_frames + 1)
-        indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-        images = [vid[i].asnumpy() for i in indices]
-        images = [Image.fromarray(arr) for arr in images]
-        for im, pth in zip(images, frame_paths):
-            im.save(pth)
-        return frame_paths
-
-    @abstractmethod
-    def build_prompt(self, idx, num_frames=8):
-        pass
-
-
-class MMBenchVideo(TSVDatasetVideo):
-
+    MD5 = '98f7df3eb1007fc375ea6fe88a98e2ff'
     SYS = 'You are an AI assistant responsible for answering questions about videos.'
     FRAMES_TMPL_PACK = """
 You will be provided with {} separate frames uniformly sampled from a video, \
@@ -155,8 +59,31 @@ Even if the information in these separate frames is not enough to give an answer
 PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
+    TYPE = 'VQA'
+
     def __init__(self, dataset='MMBench-Video', pack=False):
         super().__init__(dataset=dataset, pack=pack)
+
+    def prepare_dataset(self, dataset_name='MMBench-Video', repo_id='nebulae09/MMBench-Video'):
+        def check_integrity(pth):
+            data_file = osp.join(pth, f'{dataset_name}.tsv')
+            if md5(data_file) != self.MD5:
+                return False
+            data = load(data_file)
+            for video_pth in data['video_path']:
+                if not osp.exists(osp.join(pth, video_pth)):
+                    return False
+            return True
+
+        cache_path = get_cache_path(repo_id)
+        if cache_path is not None and check_integrity(cache_path):
+            dataset_path = cache_path
+        else:
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            unwrap_hf_pkl(dataset_path)
+        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+
+        return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
 
     def build_prompt_pack(self, line, num_frames):
         if isinstance(line, int):
@@ -198,20 +125,6 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
         return self.build_prompt_pack(line, num_frames) if self.pack else self.build_prompt_nopack(line, num_frames)
 
     @staticmethod
-    def extract_json_objects(text, decoder=JSONDecoder()):
-        pos = 0
-        while True:
-            match = text.find('{', pos)
-            if match == -1:
-                break
-            try:
-                result, index = decoder.raw_decode(text[match:])
-                yield result
-                pos = match + index
-            except ValueError:
-                pos = match + 1
-
-    @staticmethod
     def remove_side_quote(s, syms=[',', '"', "'"]):
         if np.all([x in syms for x in s]):
             return ''
@@ -224,7 +137,7 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
     @staticmethod
     def robust_json_load(s):
         try:
-            jsons = list(MMBenchVideo.extract_json_objects(s))
+            jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
         except:
@@ -273,3 +186,55 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
         vstats['VALIDQ'] = len([x for x in prediction if x is not None])
         vstats['INVALIDQ'] = len([x for x in prediction if x is None])
         return meta, vstats
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmbench_video import get_dimension_rating, system_prompt, build_prompt
+
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        judge = judge_kwargs['model']
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
+        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+
+        model = build_judge(system_prompt=system_prompt, **judge_kwargs)
+        assert model.working(), 'MMBench-Video evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+
+        if not osp.exists(score_file):
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if model.fail_msg not in v}
+
+            data = load(eval_file)
+            data_un = data[~data['index'].isin(res)]
+            data_un = data_un[~pd.isna(data_un['prediction'])]
+            lt = len(data_un)
+            prompts = [build_prompt(data_un.iloc[i]) for i in range(lt)]
+            indices = [data_un.iloc[i]['index'] for i in range(lt)]
+
+            if len(prompts):
+                _ = track_progress_rich(
+                    model.generate,
+                    prompts,
+                    keys=indices,
+                    save=tmp_file,
+                    nproc=nproc,
+                    chunksize=nproc
+                )
+            score_map = load(tmp_file)
+            data['score'] = [score_map[idx] if idx in score_map else -1 for idx in data['index']]
+            rejected = [x for x in score_map.values() if FAIL_MSG in x]
+            data['score'] = [int(x) if istype(x, int) else -1 for x in data['score']]
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} questions, '
+                f'failed to obtain the score for another {len(rejected)} questions. '
+                f'Those questions will be counted as 0 score in ALL rating, and will not be counted in VALID rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating

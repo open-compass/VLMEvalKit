@@ -1,12 +1,11 @@
 import torch
 import torch.distributed as dist
 from vlmeval.smp import *
-from vlmeval.evaluate import *
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
+from vlmeval.dataset import build_dataset
 from vlmeval.config import supported_VLM
-from vlmeval.dataset import dataset_URLs, DATASET_TYPE, abbr2full
-from vlmeval.utils import MMMU_result_transfer, MMTBench_result_transfer
+from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
 def parse_args():
@@ -65,31 +64,28 @@ def main():
         os.makedirs(pred_root, exist_ok=True)
 
         for _, dataset_name in enumerate(args.data):
-            custom_flag = False
+            dataset_kwargs = {}
+            if dataset_name == 'MMBench-Video':
+                dataset_kwargs['pack'] = args.pack
 
-            if dataset_name not in dataset_URLs:
-                file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
-                if not osp.exists(file_path):
-                    dataset_name = abbr2full(dataset_name)
-                else:
-                    dataset_name = dataset_name
+            # If distributed, first build the dataset on the main process for doing preparation works
+            if world_size > 1:
+                dataset = build_dataset(dataset_name, **dataset_kwargs) if rank == 0 else None
+                dist.barrier()
 
-            if dataset_name not in dataset_URLs:
-                logger.warning(f'Dataset {dataset_name} is not officially supported. ')
-                file_path = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
-                if not osp.exists(file_path):
-                    logger.error(f'Cannot find the local dataset {dataset_name}. ')
-                    continue
-                else:
-                    custom_flag = True
+            dataset = build_dataset(dataset_name, **dataset_kwargs)
+            if dataset is None:
+                logger.error(f'Dataset {dataset_name} is not valid,  will be skipped. ')
+                continue
 
+            result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-            else:
-                result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+
             if osp.exists(result_file) and args.rerun:
-                os.system(f'rm {pred_root}/{model_name}_{dataset_name}_*')
+                for keyword in ['openai', 'gpt', 'auxmatch']:
+                    os.system(f'rm {pred_root}/{model_name}_{dataset_name}_{keyword}*')
 
             if model is None:
                 model = model_name  # which is only a name
@@ -100,7 +96,7 @@ def main():
                     model,
                     work_dir=pred_root,
                     model_name=model_name,
-                    dataset_name=dataset_name,
+                    dataset=dataset,
                     nframe=args.nframe,
                     pack=args.pack,
                     verbose=args.verbose,
@@ -110,7 +106,7 @@ def main():
                     model,
                     work_dir=pred_root,
                     model_name=model_name,
-                    dataset_name=dataset_name,
+                    dataset=dataset,
                     verbose=args.verbose,
                     api_nproc=args.nproc,
                     ignore_failed=args.ignore)
@@ -125,7 +121,7 @@ def main():
             if args.judge is not None:
                 judge_kwargs['model'] = args.judge
             else:
-                if DATASET_TYPE(dataset_name) in ['multi-choice', 'Y/N']:
+                if dataset.TYPE in ['MCQ', 'Y/N']:
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
@@ -162,35 +158,17 @@ def main():
                     continue
 
             if rank == 0 and args.mode == 'all':
-                if DATASET_TYPE(dataset_name) == 'multi-choice':
-                    dataset_name = 'default' if custom_flag else dataset_name
-                    multiple_choice_eval(
-                        result_file,
-                        dataset=dataset_name,
-                        **judge_kwargs)
-
-                elif DATASET_TYPE(dataset_name) == 'Y/N':
-                    YOrN_eval(
-                        result_file,
-                        dataset=dataset_name,
-                        **judge_kwargs)
-
-                elif DATASET_TYPE(dataset_name) == 'Caption':
-                    COCO_eval(result_file)
-                elif dataset_name == 'MMVet':
-                    MMVet_eval(result_file, **judge_kwargs)
-                elif dataset_name == 'OCRBench':
-                    OCRBench_eval(result_file)
-                elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA'], dataset_name):
-                    VQAEval(result_file, dataset_name)
-                elif listinstr(['MathVista'], dataset_name):
-                    MathVista_eval(result_file, **judge_kwargs)
-                elif listinstr(['LLaVABench'], dataset_name):
-                    LLaVABench_eval(result_file, **judge_kwargs)
-                elif listinstr(['MMBench-Video'], dataset_name):
-                    MMBenchVideo_eval(result_file, **judge_kwargs)
-                else:
-                    logger.error(f'Dataset {dataset_name} is not handled by evaluator, will be skipped. ')
+                eval_results = dataset.evaluate(result_file, **judge_kwargs)
+                if eval_results is not None:
+                    assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
+                    logger.info(f'The evaluation of model {model_name} x dataset {dataset_name} has finished! ')
+                    logger.info('Evaluation Results:')
+                if isinstance(eval_results, dict):
+                    logger.info('\n' + json.dumps(eval_results, indent=4))
+                elif isinstance(eval_results, pd.DataFrame):
+                    if len(eval_results) < len(eval_results.columns):
+                        eval_results = eval_results.T
+                    logger.info('\n' + tabulate(eval_results))
 
 
 if __name__ == '__main__':

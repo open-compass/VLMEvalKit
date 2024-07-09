@@ -1,6 +1,6 @@
 import os
-from vlmeval.api import OpenAIWrapper, OpenAIWrapperInternal
-from vlmeval.smp import load_env
+from ...api import OpenAIWrapper, OpenAIWrapperInternal
+from ...smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 
@@ -26,3 +26,16 @@ def build_judge(**kwargs):
     else:
         model = OpenAIWrapper(model_version, **kwargs)
     return model
+
+
+DEBUG_MESSAGE = """
+To debug the OpenAI API, you can try the following scripts in python:
+```python
+from vlmeval.api import OpenAIWrapper
+model = OpenAIWrapper('gpt-4-1106-preview', verbose=True)
+msgs = [dict(type='text', value='Hello!')]
+code, answer, resp = model.generate_inner(msgs)
+print(code, answer, resp)
+```
+You cam see the specific error if the API call fails.
+"""

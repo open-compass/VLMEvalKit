@@ -162,7 +162,7 @@ class InternVLChat(BaseModel):
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             question = line['question']
             prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
-        elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             if 'MathVista' in dataset:

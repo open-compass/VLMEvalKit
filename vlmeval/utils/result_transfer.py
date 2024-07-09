@@ -1,7 +1,6 @@
-from ..evaluate.misc import build_judge
-from ..evaluate.multiple_choice import extract_answer_from_item
-
 from ..smp import *
+from ..dataset.utils.judge_util import build_judge
+from ..dataset.utils.multiple_choice import extract_answer_from_item
 from .matching_util import can_infer
 from .mp_util import track_progress_rich
 
@@ -31,7 +30,6 @@ def MMMU_result_transfer(result_path):
 
 def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
     logger = get_logger('Evaluation')
-    INTERNAL = os.environ.get('INTERNAL', 0)
     nproc = judge_kwargs.pop('nproc', 4)
 
     rd.seed(2680)
@@ -46,12 +44,14 @@ def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
 
     if model == 'exact_matching':
         model = None
-    else:
-        if INTERNAL or gpt_key_set():
-            model = build_judge(**judge_kwargs)
-        else:
-            logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+    elif gpt_key_set():
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            logger.error('The OPENAI API is not working properly, will use exact matching for evaluation')
             model = None
+    else:
+        logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+        model = None
 
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_option.pkl')

@@ -45,7 +45,7 @@ class BaseModel:
         """
         ROOT = LMUDataRoot()
         assert isinstance(dataset, str)
-        img_root = osp.join(ROOT, 'images', img_root_map[dataset] if dataset in img_root_map else dataset)
+        img_root = osp.join(ROOT, 'images', img_root_map(dataset))
         os.makedirs(img_root, exist_ok=True)
         if 'image' in line:
             if isinstance(line['image'], list):

@@ -1,7 +1,6 @@
 import torch
 import torch.distributed as dist
 from vlmeval.config import supported_VLM
-from vlmeval.dataset import build_dataset, split_MMMU, MMBenchVideo
 from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
@@ -19,10 +18,10 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc=4, ignore_failed=False):
+def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
-    dataset = build_dataset(dataset_name)
+    dataset_name = dataset.dataset_name
     data = dataset.data
     if index_set is not None:
         data = data[data['index'].isin(index_set)]
@@ -30,15 +29,7 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
 
-    lt, indices = len(data), list(data['index'])
-
-    if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-        structs = [model.build_prompt(data.iloc[i], dataset=dataset_name) for i in range(lt)]
-    else:
-        structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-        # Corner Case
-        if listinstr(['MMMU'], dataset_name):
-            structs = [split_MMMU(s) for s in structs]
+    indices = list(data['index'])
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
@@ -51,7 +42,6 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     indices = [i for i in indices if i not in res]
 
     gen_func = model.generate
-    # For now, we do not use split_MMMU for MMMU dataset
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
@@ -64,19 +54,14 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     return res
 
 
-def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4):
+    dataset_name = dataset.dataset_name
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
     if osp.exists(out_file):
         res.update(load(out_file))
 
     rank, world_size = get_rank_and_world_size()
-    if rank == 0:
-        dataset = build_dataset(dataset_name)
-    if world_size > 1:
-        dist.barrier()
-    dataset = build_dataset(dataset_name)
-
     sheet_indices = list(range(rank, len(dataset), world_size))
     lt = len(sheet_indices)
     data = dataset.data.iloc[sheet_indices]
@@ -105,7 +90,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         supp = infer_data_api(
             work_dir=work_dir,
             model_name=model_name,
-            dataset_name=dataset_name,
+            dataset=dataset,
             index_set=set(indices),
             api_nproc=api_nproc)
         for idx in indices:
@@ -125,11 +110,6 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        # Corner Case
-        if listinstr(['MMMU'], dataset_name):
-            struct = split_MMMU(struct)
-
-        # For now, we do not use split_MMMU for MMMU dataset
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
@@ -146,8 +126,9 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
 
 
 # A wrapper for infer_data, do the pre & post processing
-def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
+def infer_data_job(model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
+    dataset_name = dataset.dataset_name
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
@@ -165,7 +146,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
     out_file = tmpl.format(rank)
 
     model = infer_data(
-        model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
+        model, work_dir=work_dir, dataset=dataset, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
     if world_size > 1:
         dist.barrier()
 
@@ -174,7 +155,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         for i in range(world_size):
             data_all.update(load(tmpl.format(i)))
 
-        data = build_dataset(dataset_name).data
+        data = dataset.data
         for x in data['index']:
             assert x in data_all
         data['prediction'] = [str(data_all[x]) for x in data['index']]
@@ -182,73 +163,6 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
             data.pop('image')
 
         dump(data, result_file)
-        for i in range(world_size):
-            os.remove(tmpl.format(i))
-    return model
-
-
-# A wrapper for infer_data, do the pre & post processing
-def infer_data_job_video(
-        model,
-        work_dir,
-        model_name,
-        dataset_name,
-        nframe=8,
-        pack=False,
-        verbose=False,
-        api_nproc=4,
-        ignore_failed=False):
-
-    rank, world_size = get_rank_and_world_size()
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
-
-    prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
-
-    # Dump Predictions to Prev File if result file exists
-    if osp.exists(result_file):
-        if rank == 0:
-            data = load(result_file)
-            results = {k: v for k, v in zip(data['index'], data['prediction'])}
-            if not ignore_failed:
-                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
-            dump(results, prev_file)
-        if world_size > 1:
-            dist.barrier()
-
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
-    out_file = tmpl.format(rank)
-
-    model = infer_data(
-        model,
-        work_dir=work_dir,
-        dataset_name=dataset_name,
-        nframe=nframe,
-        pack=pack,
-        out_file=out_file,
-        verbose=verbose,
-        api_nproc=api_nproc)
-
-    if world_size > 1:
-        dist.barrier()
-
-    if rank == 0:
-        data_all = {}
-        for i in range(world_size):
-            data_all.update(load(tmpl.format(i)))
-
-        dataset = build_dataset(dataset_name)
-        meta = dataset.data
-        if dataset_name == 'MMBench-Video' and pack:
-            meta, vstats = MMBenchVideo('MMBench-Video').load_pack_answers(data_all)
-            print(f'Statitics of Pack Video Inference: {vstats}')
-        else:
-            for x in meta['index']:
-                assert x in data_all
-            meta['prediction'] = [str(data_all[x]) for x in meta['index']]
-            if 'image' in meta:
-                meta.pop('image')
-
-        dump(meta, result_file)
         for i in range(world_size):
             os.remove(tmpl.format(i))
     return model

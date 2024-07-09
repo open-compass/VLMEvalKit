@@ -77,7 +77,7 @@ class Monkey(BaseModel):
         if dataset is None:
             return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'Y/N' or dataset == 'HallusionBench':
+        if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'Y/N' or dataset == 'HallusionBench':
             return self.generate_multichoice(image_path, prompt)
         else:
             return self.generate_vanilla(image_path, prompt)
@@ -159,7 +159,7 @@ class MonkeyChat(BaseModel):
         if dataset is None:
             return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'Y/N' or dataset == 'HallusionBench':
+        if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'Y/N' or dataset == 'HallusionBench':
             return self.generate_multichoice(image_path, prompt)
         else:
             return self.generate_vanilla(image_path, prompt)

@@ -55,7 +55,7 @@ class GLMVisionWrapper(BaseAPI):
                 text += msg['value']
             elif msg['type'] == 'image':
                 content.append(dict(type='image_url', image_url=dict(url=encode_image_file_to_base64(msg['value']))))
-        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             text += '\nShort Answer.'
         content.append(dict(type='text', text=text))
         ret = [dict(role='user', content=content)]
