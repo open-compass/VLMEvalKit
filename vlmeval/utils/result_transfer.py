@@ -44,12 +44,14 @@ def MMTBench_result_transfer(eval_file, dataset='default', **judge_kwargs):
 
     if model == 'exact_matching':
         model = None
-    else:
-        if gpt_key_set():
-            model = build_judge(**judge_kwargs)
-        else:
-            logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+    elif gpt_key_set():
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            logger.error('The OPENAI API is not working properly, will use exact matching for evaluation')
             model = None
+    else:
+        logger.error('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+        model = None
 
     logger.info(f'Evaluating {eval_file}')
     result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_option.pkl')

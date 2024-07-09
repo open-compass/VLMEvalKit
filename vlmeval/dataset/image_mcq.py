@@ -147,12 +147,15 @@ class ImageMCQDataset(ImageBaseDataset):
 
         if model == 'exact_matching':
             model = None
-        else:
+        elif gpt_key_set():
             model = build_judge(**judge_kwargs)
             if not model.working():
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
         result = {}
