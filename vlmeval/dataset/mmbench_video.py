@@ -55,8 +55,6 @@ You will be provided with {} separate frames uniformly sampled from a video, \
 the frames are provided in chronological order of the video.
 Please analyze these images and provide the answer to the question about the video content.
 Please directly reply with your response to the only question.
-Even if the information in these separate frames is not enough to give an answer, \
-PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
 """
 
     TYPE = 'VQA'
@@ -113,7 +111,7 @@ PLEASE GIVE A RESPONSE TO EACH OF THE QUESTIONS IN THE FORMAT DESCRIBED ABOVE.
             line = self.data.iloc[line]
 
         frames = self.save_video_frames(line['video'], num_frames)
-        sys_prompt = self.SYS + self.FRAMES_TMPL_NOPACK.format(num_frames)
+        sys_prompt = self.FRAMES_TMPL_NOPACK.format(num_frames)
         message = [dict(type='text', value=sys_prompt)]
         for im in frames:
             message.append(dict(type='image', value=im))
