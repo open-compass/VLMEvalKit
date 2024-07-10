@@ -28,7 +28,7 @@ PS: 日本語の README には最新のアップデートがすべて含まれ�
 
 **公式のマルチモーダルリーダーボードでのパフォーマンス数値は、ここからダウンロードできます！**
 
-[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [すべての詳細な結果をダウンロード](http://opencompass.openxlab.space/utils/OpenVLM.json)。
+[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [すべての詳細な結果をダウンロード](http://opencompass.openxlab.space/assets/OpenVLM.json)。
 
 **Supported Image Understanding Dataset**
 
