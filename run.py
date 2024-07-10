@@ -16,7 +16,7 @@ def parse_args():
     # Args that only apply to Video Dataset
     parser.add_argument('--nframe', type=int, default=8)
     parser.add_argument('--pack', action='store_true')
-    parser.add_argument('--use_subtitle', action='store_true')
+    parser.add_argument('--use-subtitle', action='store_true')
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='.', help='select the output directory')
     # Infer + Eval or Infer Only

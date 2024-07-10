@@ -14,7 +14,7 @@ class VideoBaseDataset:
         except:
             warnings.warn('Please install decord via `pip install decord`.')
 
-        assert dataset in ['MMBench-Video']
+        self.dataset_name = dataset
         ret = self.prepare_dataset(dataset)
         assert ret is not None
         lmu_root = LMUDataRoot()
@@ -67,7 +67,7 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video']
+        return ['MMBench-Video', 'Video-MME']
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod
