@@ -116,7 +116,7 @@ def infer_data_job_video(
     if osp.exists(result_file):
         return model_name
 
-    tmpl = result_file.replace('.xlsx', '.pkl')
+    tmpl = osp.basename(result_file).replace('.xlsx', '.pkl')
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{tmpl}')
     out_file = tmpl.format(rank)
 
