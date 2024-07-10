@@ -106,18 +106,17 @@ def infer_data_job_video(
         nframe=8,
         pack=False,
         verbose=False,
-        api_nproc=4):
+        api_nproc=4,
+        result_file=""):
 
     dataset_name = dataset.dataset_name
-    packstr = 'pack' if pack else 'nopack'
     rank, world_size = get_rank_and_world_size()
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
 
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model_name
 
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{result_file.replace(".xlsx", ".pkl")}')
     out_file = tmpl.format(rank)
 
     model = infer_data(
