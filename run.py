@@ -86,8 +86,9 @@ def main():
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
             if dataset_name in ['Video-MME']:
-                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame.xlsx' if not args.use_subtitle else f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_subtitle.xlsx'
-            
+                subtitle_str = 'subs' if args.use_subtitle else 'nosubs'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{subtitle_str}.xlsx'
+
             if osp.exists(result_file) and args.rerun:
                 for keyword in ['openai', 'gpt', 'auxmatch']:
                     os.system(f'rm {pred_root}/{model_name}_{dataset_name}_{keyword}*')

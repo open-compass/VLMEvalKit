@@ -28,7 +28,7 @@ def build_dataset(dataset_name, **kwargs):
         return MMBenchVideo(dataset_name, **kwargs)
     if dataset_name == 'Video-MME':
         return VideoMME(dataset_name, **kwargs)
-    
+
     datasets = [
         ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
         MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet
