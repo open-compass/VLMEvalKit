@@ -37,7 +37,7 @@
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
 
-[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [下载全部细粒度测试结果](http://opencompass.openxlab.space/utils/OpenVLM.json)。
+[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [下载全部细粒度测试结果](http://opencompass.openxlab.space/assets/OpenVLM.json)。
 
 ### 支持的图文多模态评测集
 
