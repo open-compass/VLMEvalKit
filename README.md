@@ -40,7 +40,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 
 **The performance numbers on our official multi-modal leaderboards can be downloaded from here!**
 
-[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [Download All DETAILED Results](http://opencompass.openxlab.space/utils/OpenVLM.json).
+[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [Download All DETAILED Results](http://opencompass.openxlab.space/assets/OpenVLM.json).
 
 **Supported Image Understanding Dataset**
 
