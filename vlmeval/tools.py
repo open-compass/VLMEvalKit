@@ -30,6 +30,8 @@ CLI_HELP_MSG = \
             vlmutil check [model_name/model_series]
         7. Run evaluation for missing results:
             vlmutil run l2 hf
+        8. Evaluate data file:
+            vlmutil eval [dataset_name] [prediction_file]
 
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
@@ -355,6 +357,28 @@ def RUN(lvl, model):
         os.system(cmd)
 
 
+def EVAL(dataset_name, data_file):
+    from vlmeval.dataset import build_dataset
+    logger = get_logger('VLMEvalKit Tool-Eval')
+    dataset = build_dataset(dataset_name)
+    # Set the judge kwargs first before evaluation or dumping
+    judge_kwargs = {'nproc': 4, 'verbose': True}
+    if dataset.TYPE in ['MCQ', 'Y/N']:
+        judge_kwargs['model'] = 'chatgpt-0125'
+    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
+        judge_kwargs['model'] = 'gpt-4-turbo'
+    eval_results = dataset.evaluate(data_file, **judge_kwargs)
+    if eval_results is not None:
+        assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
+        logger.info('Evaluation Results:')
+    if isinstance(eval_results, dict):
+        logger.info('\n' + json.dumps(eval_results, indent=4))
+    elif isinstance(eval_results, pd.DataFrame):
+        if len(eval_results) < len(eval_results.columns):
+            eval_results = eval_results.T
+        logger.info('\n' + tabulate(eval_results))
+
+
 def cli():
     logger = get_logger('VLMEvalKit Tools')
     args = sys.argv[1:]
@@ -396,6 +420,10 @@ def cli():
             lvl = args[1]
             model = args[2] if len(args) > 2 else 'all'
             RUN(lvl, model)
+        elif args[0].lower() == 'eval':
+            assert len(args) == 3
+            dataset, data_file = args[1], args[2]
+            EVAL(dataset, data_file)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
