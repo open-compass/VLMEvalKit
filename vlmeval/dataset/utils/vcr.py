@@ -3,8 +3,7 @@ from functools import partial
 from ..image_base import ImageBaseDataset
 from vlmeval.smp import *
 
-
-def initialize():
+try:
     import evaluate
     import spacy
     rouge = evaluate.load('rouge', experiment_id=str(uuid.uuid4()))
@@ -21,7 +20,8 @@ def initialize():
         nlp_zh = spacy.load('zh_core_web_sm')
 
     nlp = {'en': nlp_en, 'zh': nlp_zh}
-    return nlp, rouge
+except:
+    pass
 
 
 def rough_filter(answer_text):
@@ -65,7 +65,6 @@ def tokenize(text, language):
     list: The list of tokens.
     """
     assert language in ['en', 'zh']
-    nlp, _ = initialize()
     nlp_language = nlp[language]
     processed_text = nlp_language(text)
     return [token.text for token in processed_text]
@@ -173,7 +172,6 @@ def process_match_single_new(
     Returns:
     tuple: The image id (question_id, int) and the result per id (dict of dict of dict).
     """
-    _, rouge = initialize()
     result_per_id = {image_id: {}}
     if isinstance(answer, str):
         answer = eval(answer)
@@ -248,7 +246,6 @@ class VCRDataset(ImageBaseDataset):
     #                               'Please restore the covered texts without outputting the explanations.')
     #     return msgs
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import multiprocessing
 
