@@ -10,23 +10,47 @@ def get_gpt4_ICE():
     example_1 = """
 ---
 Question: List the primary questions asked about the services in this report.
-Analysis:  The primary questions asked about the services in the report for The Limes Residential Home are:\n\n1. Is the service safe?\n2. Is the service effective?\n3. Is the service caring?\n4. Is the service responsive?\n5. Is the service well-led?
-Extracted answer: ['Is the servife safe?', 'Is the service effective', 'Is the serve caring?', 'Is the service responsive?', 'Is the service well-led?']
+Analysis:  The primary questions asked about the services in the report for The Limes Residential Home are:\n\n
+1. Is the service safe?\n
+2. Is the service effective?\n
+3. Is the service caring?\n
+4. Is the service responsive?\n
+5. Is the service well-led?
+Extracted answer: [
+    'Is the servife safe?',
+    'Is the service effective',
+    'Is the serve caring?',
+    'Is the service responsive?',
+    'Is the service well-led?'
+]
 Answer format: List\n
 """
 
     example_2 = """
 ---
 Question: How many regulations of the HSCA 2008 are breached in all according to this report?
-Analysis: According to the report, the provider breached 10 Health and Social Care Act 2008 (Regulated Activities) Regulations in total. Here are the specifics:\n\n1. Regulation 13: Safeguarding service users from abuse and improper treatment\n2. Regulation 12: Safe care and treatment\n3. Regulation 18: Staffing\n4. Regulation 11: Need for consent\n5. Regulation 10: Dignity and respect\n6. Regulation 9: Person-centred care\n7. Regulation 17: Good governance\n8. Regulation 18 (CQC Registration Regulations 2009): Notification of other incidents\n9. Regulation 18: Failure to maintain an accurate and up-to-date care plan\n10. Regulation 11: Failure to implement the Mental Capacity Act 2005 code of practice effectively\n\nThese breaches involve issues concerning staffing, safeguarding, medicines management, dignity and respect, consent, care planning, governance, and failure to notify the CQC of incidents.
+Analysis: According to the report, the provider breached 10 Health and Social Care Act 2008 (Regulated Activities)
+Regulations in total. Here are the specifics:\n\n1. Regulation 13: Safeguarding service users from abuse and
+improper treatment\n2. Regulation 12: Safe care and treatment\n3. Regulation 18: Staffing\n4. Regulation 11:
+Need for consent\n5. Regulation 10: Dignity and respect\n6. Regulation 9: Person-centred care\n7. Regulation 17:
+Good governance\n8. Regulation 18 (CQC Registration Regulations 2009): Notification of other incidents\n9.
+Regulation 18: Failure to maintain an accurate and up-to-date care plan\n10. Regulation 11: Failure to implement
+the Mental Capacity Act 2005 code of practice effectively\n\nThese breaches involve issues concerning staffing,
+safeguarding, medicines management, dignity and respect, consent, care planning, governance, and failure to
+notify the CQC of incidents.
 Extracted answer: 10
 Answer format: Integer\n
 """
 
     example_3 = """
 ---
-Question: According to the survey that is the percentage of Chinese who are paying more or about the same attention to politics after Trump's election?
-Analysis: The survey provided does not specify the percentage of Chinese individuals specifically who are paying more or about the same attention to politics after Trump's election. The report focuses primarily on American demographics and does not include specific details about the Chinese population in relation to this question. If you need information about a different demographic or a summary of the findings from the American demographic, I can certainly help with that!
+Question: According to the survey that is the percentage of Chinese who are paying more or
+about the same attention to politics after Trump's election?
+Analysis: The survey provided does not specify the percentage of Chinese individuals specifically who are paying
+more or about the same attention to politics after Trump's election. The report focuses primarily on American
+demographics and does not include specific details about the Chinese population in relation to this question. If
+you need information about a different demographic or a summary of the findings from the American demographic,
+I can certainly help with that!
 Extracted answer: Not answerable
 Answer format: String\n
 """
@@ -34,7 +58,9 @@ Answer format: String\n
     example_4 = """
 ---
 Question: How many quotations from male respondent over 50 years old are included in this report?
-Analysis: The image you've provided appears to be a screenshot of a document with multiple charts. However, the text is too small and blurry to read accurately. If you can provide a clearer image or more context, I might be able to help you with your question.
+Analysis: The image you've provided appears to be a screenshot of a document with multiple charts. However, the
+text is too small and blurry to read accurately. If you can provide a clearer image or more context, I might be
+able to help you with your question.
 Extracted answer: Fail to answer
 Answer format: String\n
 """
@@ -45,13 +71,17 @@ Answer format: String\n
 def build_mmlongbench_gpt4_prompt(line):
     task_description = """
 Given the question and analysis, you are tasked to extract answers with required formats from the free-form analysis.
-- Your extracted answers should be one of the following formats: (1) Integer, (2) Float, (3) String and (4) List. If you find the analysis the question can not be answered from the given documents, type "Not answerable". Exception: If the analysis only tells you that it can not read/understand the images or documents, type "Fail to answer".
+- Your extracted answers should be one of the following formats: (1) Integer, (2) Float, (3) String and (4) List.
+If you find the analysis the question can not be answered from the given documents, type "Not answerable".
+Exception: If the analysis only tells you that it can not read/understand the images or documents,
+type "Fail to answer".
 - Please make your response as concise as possible. Also note that your response should be formatted as below:
 ```
 Extracted answer: [answer]
 Answer format: [answer format]
 ```
-Please read the following example, then extract the answer from the model response and type it at the end of the prompt.\n
+Please read the following example, then extract the answer from the model response
+and type it at the end of the prompt.\n
 """
     question = line['question']
     prediction = str(line['prediction'])
@@ -69,13 +99,14 @@ def anls_compute(groundtruth, prediction, threshold=0.5):
     length = max(len(groundtruth.upper()), len(prediction.upper()))
     value = 0.0 if length == 0 else float(dist) / float(length)
     anls = 1.0 - value
-    if anls<=threshold:
+    if anls <= threshold:
         anls = 0.0
     return anls
 
 
 def is_float_equal(reference, prediction, include_percentage: bool = False, is_close: float = False) -> bool:
     from math import isclose
+
     def get_precision(gt_ans: float) -> int:
         precision = 3
         if '.' in str(gt_ans):
@@ -157,6 +188,7 @@ def isfloat(num):
     except ValueError:
         return False
 
+
 def concat_images(image_list, max_concat=1, column_num=1):
     import math
     interval = max(math.ceil(len(image_list) / max_concat), 1)
@@ -181,24 +213,24 @@ def concat_images(image_list, max_concat=1, column_num=1):
 
 
 def eval_score(gt, pred, answer_type):
-    if answer_type=='Int':
+    if answer_type == 'Int':
         try:
             gt, pred = int(gt), int(float(pred))
         except:
             pred = ''
-        score = (gt==pred)
-    elif answer_type=='Float':
+        score = (gt == pred)
+    elif answer_type == 'Float':
         try:
             gt = float(get_clean_string(str(gt)))
             pred = float(get_clean_string(str(pred)))
         except:
             pred = ''
         score = is_float_equal(gt, pred, include_percentage=True, is_close=True)
-    elif answer_type=='Str':
+    elif answer_type == 'Str':
         gt = get_clean_string(gt)
         pred = get_clean_string(pred)
         if is_exact_match(gt):
-            score = (gt==pred)
+            score = (gt == pred)
         else:
             score = anls_compute(gt, pred)
     else:
@@ -211,14 +243,14 @@ def eval_score(gt, pred, answer_type):
         if not isinstance(pred, list):
             pred = [pred]
         print(len(gt), len(pred))
-        if len(gt)!=len(pred):
+        if len(gt) != len(pred):
             score = 0.0
         else:
             gt = sorted([get_clean_string(a) for a in gt])
             pred = sorted([get_clean_string(a) for a in pred])
             print(gt, pred)
             if isfloat(gt[0]) or is_exact_match(gt[0]):
-                score = ('-'.join(gt)=='-'.join(pred))
+                score = ('-'.join(gt) == '-'.join(pred))
             else:
                 score = min([anls_compute(gt_v, pred_v) for gt_v, pred_v in zip(gt, pred)])
 
@@ -248,11 +280,11 @@ def MMLongBench_auxeval(model, line):
 
 
 def get_f1(data):
-    gt_pos_data = data[data.apply(lambda k: k['answer']!='Not answerable', axis=1)]
-    pred_pos_data = data[data.apply(lambda k: k['pred']!='Not answerable', axis=1)]
-    recall = sum(gt_pos_data['score'].tolist())/len(gt_pos_data)
-    precision = sum(pred_pos_data['score'].tolist())/len(pred_pos_data)
-    return 2*recall*precision/(recall+precision)
+    gt_pos_data = data[data.apply(lambda k: k['answer'] != 'Not answerable', axis=1)]
+    pred_pos_data = data[data.apply(lambda k: k['pred'] != 'Not answerable', axis=1)]
+    recall = sum(gt_pos_data['score'].tolist()) / len(gt_pos_data)
+    precision = sum(pred_pos_data['score'].tolist()) / len(pred_pos_data)
+    return 2 * recall * precision / (recall + precision)
 
 
 def MMLongBench_acc(result_file):
@@ -277,24 +309,30 @@ def MMLongBench_acc(result_file):
     data_text = data[data.apply(lambda k: 'Pure-text (Plain-text)' in eval(k['evidence_sources']), axis=1)]
     data_layout = data[data.apply(lambda k: 'Generalized-text (Layout)' in eval(k['evidence_sources']), axis=1)]
 
-    data_single = data[data.apply(lambda k: len(eval(k['evidence_pages']))==1, axis=1)]
-    data_multi = data[data.apply(lambda k: len(eval(k['evidence_pages']))>1, axis=1)]
-    data_unans = data[data.apply(lambda k: len(eval(k['evidence_pages']))==0, axis=1)]
+    data_single = data[data.apply(lambda k: len(eval(k['evidence_pages'])) == 1, axis=1)]
+    data_multi = data[data.apply(lambda k: len(eval(k['evidence_pages'])) > 1, axis=1)]
+    data_unans = data[data.apply(lambda k: len(eval(k['evidence_pages'])) == 0, axis=1)]
 
     res = dict()
-    res['category'] = ['overall_f1', 'overall_acc', 'text', 'layout', 'table', 'chart', 'image', 'single-page', 'multi-page', 'unanswerable']
-    res['num'] = [len(data), len(data), len(data_text), len(data_layout), len(data_table), len(data_chart), len(data_image), len(data_single), len(data_multi), len(data_unans)]
+    res['category'] = [
+        'overall_f1', 'overall_acc', 'text', 'layout', 'table', 'chart',
+        'image', 'single-page', 'multi-page', 'unanswerable'
+    ]
+    res['num'] = [
+        len(data), len(data), len(data_text), len(data_layout), len(data_table),
+        len(data_chart), len(data_image), len(data_single), len(data_multi), len(data_unans)
+    ]
     res['avg_score'] = [
         get_f1(data),
-        overall_score/len(data),
-        sum(data_text['score'].tolist())/len(data_text) if len(data_text)>0 else 0.0,
-        sum(data_layout['score'].tolist())/len(data_layout) if len(data_layout)>0 else 0.0,
-        sum(data_table['score'].tolist())/len(data_table) if len(data_table)>0 else 0.0,
-        sum(data_chart['score'].tolist())/len(data_chart) if len(data_chart)>0 else 0.0,
-        sum(data_image['score'].tolist())/len(data_image) if len(data_image)>0 else 0.0,
-        sum(data_single['score'].tolist())/len(data_single) if len(data_single)>0 else 0.0,
-        sum(data_multi['score'].tolist())/len(data_multi) if len(data_multi)>0 else 0.0,
-        sum(data_unans['score'].tolist())/len(data_unans) if len(data_unans)>0 else 0.0,
+        overall_score / len(data),
+        sum(data_text['score'].tolist()) / len(data_text) if len(data_text) > 0 else 0.0,
+        sum(data_layout['score'].tolist()) / len(data_layout) if len(data_layout) > 0 else 0.0,
+        sum(data_table['score'].tolist()) / len(data_table) if len(data_table) > 0 else 0.0,
+        sum(data_chart['score'].tolist()) / len(data_chart) if len(data_chart) > 0 else 0.0,
+        sum(data_image['score'].tolist()) / len(data_image) if len(data_image) > 0 else 0.0,
+        sum(data_single['score'].tolist()) / len(data_single) if len(data_single) > 0 else 0.0,
+        sum(data_multi['score'].tolist()) / len(data_multi) if len(data_multi) > 0 else 0.0,
+        sum(data_unans['score'].tolist()) / len(data_unans) if len(data_unans) > 0 else 0.0,
     ]
     res = pd.DataFrame(res)
     return res
@@ -333,7 +371,6 @@ class MMLongBench(ImageBaseDataset):
         self.concat_num = concat_num
         self.column_num = column_num
 
-
     def dump_image(self, origin_line):
         os.makedirs(self.img_root, exist_ok=True)
         try:
@@ -350,8 +387,9 @@ class MMLongBench(ImageBaseDataset):
                 skip_pdf_parse = False
                 break
 
+        # Just for being compatible with the zooped loop: zip(line['image'], line['image_path'])
         if skip_pdf_parse:
-            line['image'] = line['image_path'] # Just for being compatible with the zooped loop: zip(line['image'], line['image_path'])
+            line['image'] = line['image_path']
         else:
             pdf_data = base64.b64decode(line['image'])
             pdf_file = io.BytesIO(pdf_data)
@@ -389,13 +427,17 @@ class MMLongBench(ImageBaseDataset):
             concatenated_images = concat_images(tgt_path, max_concat=self.concat_num, column_num=self.column_num)
 
             old_tgt_path = tgt_path
-            assert(isinstance(old_tgt_path, list))
-            tgt_path = ['_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat{}_{}.jpg'.format(self.concat_num, i) for i in range(len(concatenated_images))]
+            assert isinstance(old_tgt_path, list)
+            tgt_path = [
+                '_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat{}_{}.jpg'.format(self.concat_num, i)
+                for i in range(len(concatenated_images))
+            ]
 
             for path, concatenated_image in zip(tgt_path, concatenated_images):
                 if not read_ok(path):
                     decode_base64_to_image_file(encode_image_to_base64(concatenated_image), path)
-                    print('concat {} images to a new one with size {}. save at {}'.format(len(old_tgt_path), concatenated_image.size, path))
+                    num_images, image_size = len(old_tgt_path), concatenated_image.size
+                    print('concat {} images to a new one with size {}. save at {}'.format(num_images, image_size, path))
         return tgt_path
 
     @classmethod
