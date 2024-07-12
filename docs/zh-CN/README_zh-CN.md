@@ -24,6 +24,7 @@
 ## 🆕 更新
 
 - **[2024-07-12]** 支持了多模态长文档内容理解基准 [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/), 感谢 [**mayubo2333**](https://github.com/mayubo2333) 🔥🔥🔥
+- **[2024-07-12]** 支持了 [**VCR**](https://github.com/tianyu-z/vcr), 一个视觉 caption 修复测试基准, 感谢 [**tianyu-z**](https://github.com/tianyu-z) and [**sheryc**](https://github.com/sheryc) 🔥🔥🔥
 - **[2024-07-08]** 支持了 [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer), 感谢 [**LightDXY**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-07-08]** 支持了 [**InternVL2**](https://huggingface.co/OpenGVLab/InternVL2-26B), 感谢 [**czczup**](https://github.com/czczup) 🔥🔥🔥
 - **[2024-06-27]** 支持了 [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
@@ -32,7 +33,6 @@
 - **[2024-06-26]** 首次支持了视频理解评测基准 [**MMBench-Video**](https://mmbench-video.github.io)，可以用于测试支持多图输入的图文多模态大模型的。[**快速开始**](/docs/zh-CN/Quickstart.md) 中提供了启动 MMBench-Video 测试的方式 🔥🔥🔥
 - **[2024-06-24]** 支持了 [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 的评测，该模型在 [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 上**排名第二** 🔥🔥🔥
 - **[2024-06-22]** 由于 GPT-3.5-Turbo-0613 已被 OpenAI 废弃，我们改为使用 GPT-3.5-Turbo-0125 辅助答案提取
-- **[2024-06-18]** 支持了 [**SEEDBench2**](https://arxiv.org/abs/2311.17092)，感谢 [**Bohao-Lee**](https://github.com/Bohao-Lee)🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -57,7 +57,7 @@
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | MCQ                                          | [**POPE**](https://github.com/AoiDragon/POPE) | POPE                                           | Y/N                                            |
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ      |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
-| [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA | | | |
+| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR_[EN/ZH]_[EASY/HARD]_[ALL/500/100] | VCR | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
