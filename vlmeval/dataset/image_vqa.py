@@ -7,7 +7,6 @@ from ..utils import track_progress_rich
 
 
 class ImageVQADataset(ImageBaseDataset):
-
     TYPE = 'VQA'
 
     DATASET_URL = {
@@ -41,6 +40,7 @@ class ImageVQADataset(ImageBaseDataset):
     # It returns a DataFrame
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.vqa_eval import hit_calculate, process_line
+
         data = load(eval_file)
         dataset = self.dataset_name
         assert 'answer' in data and 'prediction' in data
@@ -91,21 +91,26 @@ class ImageVQADataset(ImageBaseDataset):
 
 
 class OCRBench(ImageBaseDataset):
-
     TYPE = 'VQA'
-    DATASET_URL = {'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv'}
+    DATASET_URL = {
+        'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv'
+    }
     DATASET_MD5 = {'OCRBench': 'e953d98a987cc6e26ef717b61260b778'}
 
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         OCRBench_score = {
-            'Regular Text Recognition': 0, 'Irregular Text Recognition': 0,
-            'Artistic Text Recognition': 0, 'Handwriting Recognition': 0,
-            'Digit String Recognition': 0, 'Non-Semantic Text Recognition': 0,
-            'Scene Text-centric VQA': 0, 'Doc-oriented VQA': 0,
+            'Regular Text Recognition': 0,
+            'Irregular Text Recognition': 0,
+            'Artistic Text Recognition': 0,
+            'Handwriting Recognition': 0,
+            'Digit String Recognition': 0,
+            'Non-Semantic Text Recognition': 0,
+            'Scene Text-centric VQA': 0,
+            'Doc-oriented VQA': 0,
             'Key Information Extraction': 0,
-            'Handwritten Mathematical Expression Recognition': 0
+            'Handwritten Mathematical Expression Recognition': 0,
         }
 
         data = load(eval_file)
@@ -132,37 +137,37 @@ class OCRBench(ImageBaseDataset):
                         break
 
         final_score_dict = {}
-        final_score_dict['Text Recognition'] = (
-            OCRBench_score['Regular Text Recognition'] + OCRBench_score['Irregular Text Recognition']
-            + OCRBench_score['Artistic Text Recognition'] + OCRBench_score['Handwriting Recognition']
-            + OCRBench_score['Digit String Recognition'] + OCRBench_score['Non-Semantic Text Recognition']
-        )
+        final_score_dict['Text Recognition'] = \
+            (OCRBench_score['Regular Text Recognition'] + OCRBench_score['Irregular Text Recognition']
+             + OCRBench_score['Artistic Text Recognition'] + OCRBench_score['Handwriting Recognition']
+             + OCRBench_score['Digit String Recognition'] + OCRBench_score['Non-Semantic Text Recognition'])
         final_score_dict['Scene Text-centric VQA'] = OCRBench_score['Scene Text-centric VQA']
         final_score_dict['Doc-oriented VQA'] = OCRBench_score['Doc-oriented VQA']
         final_score_dict['Key Information Extraction'] = OCRBench_score['Key Information Extraction']
         final_score_dict['Handwritten Mathematical Expression Recognition'] = \
-            OCRBench_score['Handwritten Mathematical Expression Recognition']
-        final_score_dict['Final Score'] = (
-            final_score_dict['Text Recognition'] + final_score_dict['Scene Text-centric VQA']
-            + final_score_dict['Doc-oriented VQA'] + final_score_dict['Key Information Extraction']
-            + final_score_dict['Handwritten Mathematical Expression Recognition']
-        )
-        final_score_dict['Final Score Norm'] = float(final_score_dict['Final Score']) / 10
+            (OCRBench_score['Handwritten Mathematical Expression Recognition'])
+        final_score_dict['Final Score'] = \
+            (final_score_dict['Text Recognition'] + final_score_dict['Scene Text-centric VQA']
+             + final_score_dict['Doc-oriented VQA'] + final_score_dict['Key Information Extraction']
+             + final_score_dict['Handwritten Mathematical Expression Recognition'])
+        final_score_dict['Final Score Norm'] = (float(final_score_dict['Final Score']) / 10)
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
         return final_score_dict
 
 
 class MathVista(ImageBaseDataset):
-
     TYPE = 'VQA'
-    DATASET_URL = {'MathVista_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'}
+    DATASET_URL = {
+        'MathVista_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
+    }
     DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
 
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mathvista import MathVista_auxeval, MathVista_acc
+
         model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
@@ -172,7 +177,7 @@ class MathVista(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), 'MathVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            assert model.working(), ('MathVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -186,8 +191,13 @@ class MathVista(ImageBaseDataset):
 
             if len(indices):
                 new_results = track_progress_rich(
-                    MathVista_auxeval, tups, nproc=nproc, chunksize=nproc,
-                    keys=indices, save=tmp_file)
+                    MathVista_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
@@ -204,7 +214,6 @@ class MathVista(ImageBaseDataset):
 
 
 class LLaVABench(ImageBaseDataset):
-
     TYPE = 'VQA'
     DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}
     DATASET_MD5 = {'LLaVABench': 'd382a093f749a697820d3dadd61c8428'}
@@ -212,7 +221,12 @@ class LLaVABench(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.llavabench import build_prompt, LLaVABench_atomeval, LLaVABench_score
+        from .utils.llavabench import (
+            build_prompt,
+            LLaVABench_atomeval,
+            LLaVABench_score,
+        )
+
         suffix = '.' + eval_file.split('.')[-1]
         record_file = eval_file.replace(suffix, '_openai_result' + suffix)
         score_file = eval_file.replace(suffix, '_score.csv')
@@ -223,7 +237,7 @@ class LLaVABench(ImageBaseDataset):
             data = load(eval_file)
             lines = [data.iloc[i] for i in range(len(data))]
             model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
-            assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            assert model.working(), ('LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
 
             prompts = [build_prompt(line) for line in lines]
             tups = [(model, prompt) for prompt in prompts]
@@ -239,15 +253,17 @@ class LLaVABench(ImageBaseDataset):
 
 
 class MMVet(ImageBaseDataset):
-
     TYPE = 'VQA'
-    DATASET_URL = {'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv'}
+    DATASET_URL = {
+        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv'
+    }
     DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3'}
 
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmvet import MMVet_auxeval, MMVet_acc
+
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs['model']
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
@@ -256,7 +272,7 @@ class MMVet(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=3, **judge_kwargs)
-            assert model.working(), 'MMVet evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            assert model.working(), ('MMVet evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -269,8 +285,13 @@ class MMVet(ImageBaseDataset):
 
             if len(indices):
                 new_results = track_progress_rich(
-                    MMVet_auxeval, tups, nproc=nproc, chunksize=nproc,
-                    keys=indices, save=tmp_file)
+                    MMVet_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
@@ -288,7 +309,6 @@ class MMVet(ImageBaseDataset):
 
 
 class CustomVQADataset(ImageBaseDataset):
-
     TYPE = 'VQA'
 
     def load_data(self, dataset):
@@ -298,6 +318,7 @@ class CustomVQADataset(ImageBaseDataset):
             local_path = data_path.replace('.tsv', '_local.tsv')
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
                 from ..tools import LOCALIZE
+
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)

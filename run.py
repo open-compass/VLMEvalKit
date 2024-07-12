@@ -1,10 +1,11 @@
 import torch
 import torch.distributed as dist
-from vlmeval.smp import *
+
+from vlmeval.config import supported_VLM
+from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
-from vlmeval.dataset import build_dataset
-from vlmeval.config import supported_VLM
+from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
@@ -72,8 +73,8 @@ def main():
             if world_size > 1:
                 dataset = build_dataset(dataset_name, **dataset_kwargs) if rank == 0 else None
                 dist.barrier()
-
-            dataset = build_dataset(dataset_name, **dataset_kwargs)
+            else:
+                dataset = build_dataset(dataset_name, **dataset_kwargs)
             if dataset is None:
                 logger.error(f'Dataset {dataset_name} is not valid,  will be skipped. ')
                 continue
@@ -133,17 +134,21 @@ def main():
             if rank == 0:
                 if dataset_name in ['MMMU_TEST']:
                     result_json = MMMU_result_transfer(result_file)
-                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, json file saved in {result_json}')  # noqa: E501
+                    logger.info(f'Transfer MMMU_TEST result to json for official evaluation, '
+                                f'json file saved in {result_json}')  # noqa: E501
                     continue
                 elif 'MMT-Bench_ALL' in dataset_name:
                     submission_file = MMTBench_result_transfer(result_file, **judge_kwargs)
-                    logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation (https://eval.ai/web/challenges/challenge-page/2328/overview), submission file saved in {submission_file}')  # noqa: E501
+                    logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation '
+                                f'(https://eval.ai/web/challenges/challenge-page/2328/overview), '
+                                f'submission file saved in {submission_file}')  # noqa: E501
                     continue
                 elif 'MLLMGuard_DS' in dataset_name:
                     logger.info('The evaluation of MLLMGuard_DS is not supported yet. ')  # noqa: E501
                     continue
                 elif 'AesBench_TEST' == dataset_name:
-                    logger.info(f'The results are saved in {result_file}. Please send it to the AesBench Team via huangyipo@hotmail.com.')  # noqa: E501
+                    logger.info(f'The results are saved in {result_file}. '
+                                f'Please send it to the AesBench Team via huangyipo@hotmail.com.')  # noqa: E501
                     continue
 
             if dataset_name in [

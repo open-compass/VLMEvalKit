@@ -19,6 +19,7 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 | COCO_VAL               | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |
 | OCRVQA_[TEST/TESTCORE] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 | TextVQA_VAL            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| VCR_[EN/ZH]_[EASY/HARD][_ALL/_500/_100]            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
