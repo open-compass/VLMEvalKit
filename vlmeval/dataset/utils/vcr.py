@@ -3,25 +3,38 @@ from functools import partial
 from ..image_base import ImageBaseDataset
 from vlmeval.smp import *
 
-try:
+rouge = None
+nlp_en = None
+nlp_zh = None
+nlp = None
+
+
+def initialize():
     import evaluate
     import spacy
-    rouge = evaluate.load('rouge', experiment_id=str(uuid.uuid4()))
+
+    global rouge, nlp_en, nlp_zh, nlp
+
+    try:
+        rouge = evaluate.load('rouge', experiment_id=str(uuid.uuid4()))
+    except:
+        warnings.warn('Please first `pip install rouge_score`.')
+
     try:
         nlp_en = spacy.load('en_core_web_sm')
     except:
+        warnings.warn('Will automatically download en_core_web_sm via spacy.')
         spacy.cli.download('en_core_web_sm')
         nlp_en = spacy.load('en_core_web_sm')
 
     try:
         nlp_zh = spacy.load('zh_core_web_sm')
     except:
+        warnings.warn('Will automatically download zh_core_web_sm via spacy.')
         spacy.cli.download('zh_core_web_sm')
         nlp_zh = spacy.load('zh_core_web_sm')
 
     nlp = {'en': nlp_en, 'zh': nlp_zh}
-except:
-    pass
 
 
 def rough_filter(answer_text):
@@ -233,6 +246,7 @@ class VCRDataset(ImageBaseDataset):
     def __init__(self, dataset='VCR_EN_EASY_500', skip_noimg=True):
         super().__init__(dataset, skip_noimg)
 
+        initialize()
         self.language = 'en' if 'EN' in dataset else 'zh'
         self.difficulty = 'easy' if 'EASY' in dataset else 'hard'
 

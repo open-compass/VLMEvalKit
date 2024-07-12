@@ -25,6 +25,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 
 ## 🆕 News
 
+- **[2024-07-12]** We have supported [**VCR**](https://github.com/tianyu-z/vcr), a benchmark for visual caption restoration evaluation, thanks to [**tianyu-z**](https://github.com/tianyu-z) and [**sheryc**](https://github.com/sheryc) 🔥🔥🔥
 - **[2024-07-08]** We have supported [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer), thanks to [**LightDXY**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-07-08]** We have supported [**InternVL2**](https://huggingface.co/OpenGVLab/InternVL2-26B), thanks to [**czczup**](https://github.com/czczup) 🔥🔥🔥
 - **[2024-06-27]** We have supported [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
@@ -34,7 +35,6 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 - **[2024-06-24]** We have supported the evaluation of [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet), it ranked the **2nd** on the [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 🔥🔥🔥
 - **[2024-06-22]** Since GPT-3.5-Turbo-0613 is no longer supported yet, we switch to GPT-3.5-Turbo-0125 for choice extraction
 - **[2024-06-18]** We have supported [**SEEDBench2**](https://arxiv.org/abs/2311.17092),  thanks to [**Bohao-Lee**](https://github.com/Bohao-Lee)🔥🔥🔥
-- **[2024-06-18]** We have supported [**MMT-Bench**](https://mmt-bench.github.io), thanks to [**KainingYing**](https://github.com/KainingYing)🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
