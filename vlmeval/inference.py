@@ -99,6 +99,8 @@ def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc
         res = {k: res[k] for k in data_indices}
         dump(res, out_file)
         return model_name
+    else:
+        model.set_dump_image(dataset.dump_image)
 
     for i in tqdm(range(lt)):
         idx = data.iloc[i]['index']

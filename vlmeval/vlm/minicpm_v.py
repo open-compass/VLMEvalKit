@@ -156,7 +156,7 @@ class MiniCPM_Llama3_V(BaseModel):
             question = line['question']
             prompt = question
         elif DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['LLaVABench'], dataset):
+            if listinstr(['LLaVABench', 'MMLongBench_DOC'], dataset):
                 system_prompt = ''
                 prompt = question
             elif listinstr(['MMVet'], dataset):
