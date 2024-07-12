@@ -4,9 +4,9 @@ from .image_base import img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset
-from .image_vqa import ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, VCRDataset, CustomVQADataset
+from .image_vqa import ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, CustomVQADataset
 from .mmbench_video import MMBenchVideo
-from .utils import build_judge, extract_answer_from_item, prefetch_answer, DEBUG_MESSAGE
+from .utils import *
 from ..smp import *
 
 DATASET_CLASSES = [
