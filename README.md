@@ -67,7 +67,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 
 **\-** Only inference is supported in VLMEvalKit
 
-VLMEvalKit will use an **judge LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**
+VLMEvalKit will use a **judge LLM** to extract answer from the output if you set the key, otherwise it uses the **exact matching** mode (find "Yes", "No", "A", "B", "C"... in the output strings). **The exact matching can only be applied to the Yes-or-No tasks and the Multi-choice tasks.**
 
 **Supported Video Understanding Dataset**
 
