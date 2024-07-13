@@ -149,8 +149,10 @@ class XComposer2_4KHD(BaseModel):
         prompt, image_path = self.message_to_promptimg(message)
         if listinstr(['docvqa_test', 'infovqa_test'], dataset.lower()):
             self.model.hd_num = 65
-        elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench', 'mmlongbench_doc'], dataset.lower()):
+        elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):
             self.model.hd_num = 55
+        elif listinstr(['mmlongbench_doc'], dataset.lower()):
+            self.model.hd_num = 45
         elif listinstr(['mmmu', 'mmbench', 'mmvet'], dataset.lower()):
             self.model.hd_num = 16
         else:

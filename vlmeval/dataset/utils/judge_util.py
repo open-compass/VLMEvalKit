@@ -7,6 +7,7 @@ INTERNAL = os.environ.get('INTERNAL', 0)
 
 def build_judge(**kwargs):
     model = kwargs.pop('model', None)
+    kwargs.pop('nproc', None)
     load_env()
     LOCAL_LLM = os.environ.get('LOCAL_LLM', None)
     if LOCAL_LLM is None:
