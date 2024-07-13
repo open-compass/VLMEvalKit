@@ -151,6 +151,8 @@ class XComposer2_4KHD(BaseModel):
             self.model.hd_num = 65
         elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):
             self.model.hd_num = 55
+        elif listinstr(['mmlongbench_doc'], dataset.lower()):
+            self.model.hd_num = 45
         elif listinstr(['mmmu', 'mmbench', 'mmvet'], dataset.lower()):
             self.model.hd_num = 16
         else:
@@ -226,6 +228,9 @@ class XComposer2_4KHD(BaseModel):
                 prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}\
                          Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]\
                          assistant\n'.format(meta_instruction, q)
+            elif listinstr(['mmlongbench_doc'], dataset.lower()):
+                q = line['question']
+                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
             else:
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\

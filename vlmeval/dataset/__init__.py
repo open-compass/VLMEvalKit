@@ -11,7 +11,7 @@ from ..smp import *
 
 DATASET_CLASSES = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, MMMUDataset,
-    CustomMCQDataset, ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, VCRDataset,
+    CustomMCQDataset, ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, MMLongBench, VCRDataset,
     CustomVQADataset, MMBenchVideo
 ]
 
@@ -27,7 +27,7 @@ def build_dataset(dataset_name, **kwargs):
         return MMBenchVideo(dataset_name, **kwargs)
     datasets = [
         ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
-        MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, VCRDataset,
+        MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MMLongBench, VCRDataset,
     ]
     for cls in datasets:
         if dataset_name in cls.supported_datasets():
@@ -55,7 +55,7 @@ def build_dataset(dataset_name, **kwargs):
 
 __all__ = [
     'MMBenchVideo', 'ImageYORNDataset', 'ImageMCQDataset', 'MMMUDataset',
-    'ImageCaptionDataset', 'ImageVQADataset', 'OCRBench', 'MathVista', 'LLaVABench', 'MMVet', 'VCRDataset',
-    'CustomMCQDataset', 'CustomVQADataset', 'build_dataset', 'img_root_map',
+    'ImageCaptionDataset', 'ImageVQADataset', 'OCRBench', 'MathVista', 'LLaVABench', 'MMVet', 'MMLongBench',
+    'VCRDataset', 'CustomMCQDataset', 'CustomVQADataset', 'build_dataset', 'img_root_map',
     'build_judge', 'extract_answer_from_item', 'prefetch_answer', 'DEBUG_MESSAGE'
 ]

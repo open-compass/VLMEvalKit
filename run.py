@@ -66,6 +66,8 @@ def main():
 
         for _, dataset_name in enumerate(args.data):
             dataset_kwargs = {}
+            if dataset_name == 'MMLongBench_DOC':
+                dataset_kwargs['model'] = model_name
             if dataset_name == 'MMBench-Video':
                 dataset_kwargs['pack'] = args.pack
 
@@ -76,7 +78,7 @@ def main():
             else:
                 dataset = build_dataset(dataset_name, **dataset_kwargs)
             if dataset is None:
-                logger.error(f'Dataset {dataset_name} is not valid,  will be skipped. ')
+                logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                 continue
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
@@ -126,6 +128,8 @@ def main():
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
+                elif listinstr(['MMLongBench'], dataset_name):
+                    judge_kwargs['model'] = 'gpt-4o'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
             if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):

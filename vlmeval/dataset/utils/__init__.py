@@ -4,8 +4,10 @@ from .vqa_eval import levenshtein_distance
 
 
 # Add your dataset class here
+from .mmlongbench import MMLongBench
 from .vcr import VCRDataset
 dataset_list = [
+    'MMLongBench',
     'VCRDataset',
 ]
 
