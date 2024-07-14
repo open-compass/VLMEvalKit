@@ -48,7 +48,7 @@ PS: 日本語の README には最新のアップデートがすべて含まれ�
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | MCQ                                          | [**POPE**](https://github.com/AoiDragon/POPE) | POPE                                           | Y/N                                            |
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ  |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
-| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR_[EN/ZH]_[EASY/HARD]_[ALL/500/100] | VCR | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
+| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VCR | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
 
 **\*** ゼロショット設定で合理的な結果を出せないVLMの一部の評価結果のみを提供しています
 
