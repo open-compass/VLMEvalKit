@@ -17,7 +17,7 @@ LEADERBORAD_INTRODUCTION = """# OpenVLM Leaderboard
 
 This leaderboard was last updated: {}. 
 
-OpenVLM Leaderboard only includes open-source VLMs or API models that are publicly available. To add your own model to the leaderboard, please create a PR in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) to support your VLM and then we will help with the evaluation and updating the leaderboard. For any questions or concerns, please feel free to contact us at [opencompass,duanhaodong]@pjlab.org.cn.
+OpenVLM Leaderboard only includes open-source VLMs or API models that are publicly available. To add your own model to the leaderboard, please create a PR in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) to support your VLM and then we will help with the evaluation and updating the leaderboard. For any questions or concerns, please feel free to contact us at [opencompass, duanhaodong]@pjlab.org.cn.
 """
 # CONSTANTS-FIELDS
 META_FIELDS = ['Method', 'Param (B)', 'Language Model', 'Vision Model', 'OpenSource', 'Verified']
@@ -133,7 +133,7 @@ LEADERBOARD_MD['LLaVABench'] = """
 LEADERBOARD_MD['COCO_VAL'] = """
 ## COCO Caption Results
 
--  By default, we evaluate COCO Caption Validation set (5000 samples), and report the following metrics: `BLEU-1, BLEU-4, CIDEr, ROUGE-L
+-  By default, we evaluate COCO Caption Validation set (5000 samples), and report the following metrics: BLEU-1, BLEU-4, CIDEr, ROUGE-L (default sorted by CIDEr).
 -  We use the following prompt to evaluate all VLMs: `Please describe this image in general. Directly provide the description, do not include prefix like "This image depicts". `
 - **No specific prompt is adopted for all VLMs.**
 """
@@ -195,4 +195,22 @@ LEADERBOARD_MD['POPE'] = """
 - Note that the official POPE dataset contains approximately 8910 cases. POPE includes three tracks, and there are some overlapping samples among the three tracks. To reduce the data file size, we have kept only a single copy of the overlapping samples (about 5127 examples). However, the final accuracy will be calculated on the ~9k samples.
 - Some API models, due to safety policies, refuse to answer certain questions, so their actual capabilities may be higher than the reported scores.
 - We report the average F1 score across the three types of data as the overall score. Accuracy, precision, and recall are also shown in the table. F1 score = 2 * (precision * recall) / (precision + recall). 
+"""
+
+LEADERBOARD_MD['SEEDBench2_Plus'] = """
+## SEEDBench2 Plus Evaluation Results
+
+- SEEDBench2 Plus comprises 2.3K multiple-choice questions with precise human annotations, spanning three broad categories: Charts, Maps, and Webs, each of which covers a wide spectrum of textrich scenarios in the real world.
+"""
+
+LEADERBOARD_MD['MMTBench_VAL'] = """
+## MMTBench Validation Evaluation Results
+
+- MMT-Bench comprises 31,325 meticulously curated multi-choice visual questions from various multimodal scenarios such as vehicle driving and embodied navigation, covering 32 core meta-tasks and 162 subtasks in multimodal understanding.
+"""
+
+LEADERBOARD_MD['SEEDBench2'] = """
+## SEEDBench2 Evaluation Results
+
+- SEEDBench2 comprises 24K multiple-choice questions with accurate human annotations, which spans 27 dimensions, including the evaluation of both text and image generation.
 """
