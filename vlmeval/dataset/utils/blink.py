@@ -49,28 +49,6 @@ def BLINK_auxeval(model, line):
     log += 'All 5 retries failed to get multiple choice.\n'
     return dict(log=log, res='')
 
-def list_to_dict(lst):
-    return {chr(65 + i): val for i, val in enumerate(lst)}
-
-
-def post_check(line, prefetch=False):
-    res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
-    try:
-        ans = line['answer_option']
-        choices = list_to_dict(eval(line['choices']))
-        res = can_infer(response, choices)
-        if prefetch:
-            return res
-    except ValueError:
-        pass
-
-    if res == ans:
-        return res if prefetch else True
-    else:
-        return False
-
 
 def BLINK_acc(result_file):
     data = load(result_file)
@@ -78,34 +56,22 @@ def BLINK_acc(result_file):
     fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
-    skill_list = []
+    
     for i in range(lt):
         item = data.iloc[i]
+        print('item', item)
         cate = item['task']
         tot['Overall'] += 1
-        try:
-            skills = eval(item['skills'])
-        except SyntaxError:
-            skills = [item['skills']]
-        for skill in skills:
-            if skill not in skill_list:
-                skill_list.append(skill)
-            tot[skill] += 1
         tot[cate] += 1
-        if item['log'] == 'Prefetch succeed':
+        if item['log'] == 'Succeed':
             fetch['Overall'] += 1
             fetch[cate] += 1
-            for skill in skills:
-                fetch[skill] += 1
-        if post_check(item, prefetch=False):
+        if item['res'] == item['answer']:
             hit['Overall'] += 1
             hit[cate] += 1
-            for skill in skills:
-                hit[skill] += 1
-
     res = defaultdict(list)
     for k in tot.keys():
-        res['Task&Skill'].append(k)
+        res['Tasks'].append(k)
         res['tot'].append(tot[k])
         res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])

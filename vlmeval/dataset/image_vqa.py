@@ -312,7 +312,7 @@ class MMVet(ImageBaseDataset):
 class BLINK(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.json'
+        'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv'
     }
     DATASET_MD5 = {'BLINK': None}
 
