@@ -115,9 +115,13 @@ def BUILD_L2_DF(results, dataset):
     # Use the first 5 non-overall fields as required fields
     required_fields = overall_fields if len(overall_fields) else non_overall_fields[:5]
 
-    if 'Overall' in overall_fields:
+    if dataset == 'OCRBench':
+        df = df.sort_values('Final Score')
+    elif dataset == 'COCO_VAL':
+        df = df.sort_values('CIDEr')
+    else:
         df = df.sort_values('Overall')
-        df = df.iloc[::-1]
+    df = df.iloc[::-1]
 
     check_box = {}
     check_box['essential'] = ['Method', 'Param (B)', 'Language Model', 'Vision Model']
