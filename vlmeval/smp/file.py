@@ -243,3 +243,10 @@ def file_size(f, unit='GB'):
         'KB': 2 ** 10,
     }
     return stats.st_size / div_map[unit]
+
+
+def parquet_to_tsv(file_path):
+    data = pd.read_parquet(file_path)
+    pth = '/'.join(file_path.split('/')[:-1])
+    data_name = file_path.split('/')[-1].split('.')[0]
+    data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
