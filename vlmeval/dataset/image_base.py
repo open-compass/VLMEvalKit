@@ -39,7 +39,6 @@ class ImageBaseDataset:
         self.skip_noimg = skip_noimg
         if skip_noimg and 'image' in data:
             data = data[~pd.isna(data['image'])]
-
         data['index'] = [str(x) for x in data['index']]
 
         self.meta_only = True

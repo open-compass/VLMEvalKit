@@ -40,7 +40,7 @@ CLI_HELP_MSG = \
 dataset_levels = {
     'l1': [
         ('MMVet', 'gpt-4-turbo_score.csv'), ('MMMU_DEV_VAL', 'acc.csv'),
-        ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
+        ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('BLINK', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
         ('OCRBench', 'score.json'), ('AI2D_TEST', 'acc.csv'), ('MMStar', 'acc.csv'),
         ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv')
     ],
@@ -365,7 +365,7 @@ def EVAL(dataset_name, data_file):
     judge_kwargs = {'nproc': 4, 'verbose': True}
     if dataset.TYPE in ['MCQ', 'Y/N']:
         judge_kwargs['model'] = 'chatgpt-0125'
-    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
+    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'BLINK'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:
