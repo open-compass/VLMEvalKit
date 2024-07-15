@@ -80,7 +80,7 @@ xtuner_series = {
 
 qwen_series = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
-    'qwen_chat': partial(QwenVL, model_path='Qwen/Qwen-VL-Chat'),
+    'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'monkey': partial(Monkey, model_path='echo840/Monkey'),
     'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat')
 }
