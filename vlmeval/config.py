@@ -21,7 +21,7 @@ ungrouped = {
     'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'OmniLMM_12B': partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B': partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
-    'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-Llama-3-8B-V'),
+    'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-v1_1-Llama-3-8B-V'),
     'VXVERSE': partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
     'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
     '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
@@ -80,7 +80,7 @@ xtuner_series = {
 
 qwen_series = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
-    'qwen_chat': partial(QwenVL, model_path='Qwen/Qwen-VL-Chat'),
+    'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'monkey': partial(Monkey, model_path='echo840/Monkey'),
     'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat')
 }

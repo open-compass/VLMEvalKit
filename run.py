@@ -75,6 +75,9 @@ def main():
             if world_size > 1:
                 dataset = build_dataset(dataset_name, **dataset_kwargs) if rank == 0 else None
                 dist.barrier()
+                dataset_list = [dataset]
+                dist.broadcast_object_list(dataset_list, src=0)
+                dataset = dataset_list[0]
             else:
                 dataset = build_dataset(dataset_name, **dataset_kwargs)
             if dataset is None:
