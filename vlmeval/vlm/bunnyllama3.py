@@ -24,9 +24,7 @@ class BunnyLLama3(BaseModel):
         self.kwargs = kwargs
 
     def use_custom_prompt(self, dataset):
-        dataset = dataset.lower()
-
-        if listinstr(['multi-choice', 'Y/N'], DATASET_TYPE(dataset)) or listinstr(
+        if listinstr(['MCQ', 'Y/N'], DATASET_TYPE(dataset)) or listinstr(
                 ['mathvista', 'ocrvqa', 'textvqa', 'chartqa', 'docvqa'], dataset.lower()):
             return True
         else:
@@ -43,8 +41,7 @@ class BunnyLLama3(BaseModel):
 
         prompt = line['question']
 
-        dataset = dataset.lower()
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             if listinstr(['mmmu'], dataset):
                 hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
                 assert hint is None
