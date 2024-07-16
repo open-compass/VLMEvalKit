@@ -24,8 +24,7 @@ class BunnyLLama3(BaseModel):
         self.kwargs = kwargs
 
     def use_custom_prompt(self, dataset):
-        if listinstr(['MCQ', 'Y/N'], DATASET_TYPE(dataset)) or listinstr(
-                ['mathvista', 'ocrvqa', 'textvqa', 'chartqa', 'docvqa'], dataset.lower()):
+        if listinstr(['MCQ', 'Y/N'], DATASET_TYPE(dataset)) or listinstr(['mathvista'], dataset.lower()):
             return True
         else:
             return False
@@ -42,7 +41,7 @@ class BunnyLLama3(BaseModel):
         prompt = line['question']
 
         if DATASET_TYPE(dataset) == 'MCQ':
-            if listinstr(['mmmu'], dataset):
+            if listinstr(['mmmu'], dataset.lower()):
                 hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
                 assert hint is None
 
@@ -82,18 +81,18 @@ class BunnyLLama3(BaseModel):
                     options_prompt += f'{key}. {item}\n'
 
                 prompt += question + options_prompt
-                if listinstr(['cn', 'ccbench'], dataset):
+                if listinstr(['cn', 'ccbench'], dataset.lower()):
                     prompt += '请直接回答选项字母。'
                 else:
                     prompt += "Answer with the option's letter from the given choices directly."
         elif DATASET_TYPE(dataset) == 'Y/N':
-            if listinstr(['mme'], dataset):
+            if listinstr(['mme'], dataset.lower()):
                 if not listinstr(
                         ['code_reasoning', 'commonsense_reasoning', 'numerical_calculation', 'text_translation'],
                         line['category']):
                     prompt = prompt.replace(' Please answer yes or no.',
                                             '\nAnswer the question using a single word or phrase.')
-            elif listinstr(['pope'], dataset):
+            elif listinstr(['pope'], dataset.lower()):
                 prompt = prompt.replace(' Please answer yes or no.',
                                         '\nAnswer the question using a single word or phrase.')
         elif listinstr(['mathvista'], dataset.lower()):
@@ -103,8 +102,6 @@ class BunnyLLama3(BaseModel):
             if match.group(4) is not None:
                 prompt += '\n' + match.group(4).rstrip('\n')
             prompt += '\n' + match.group(1)
-        elif listinstr(['ocrvqa', 'textvqa', 'chartqa', 'docvqa'], dataset.lower()):
-            prompt += '\nAnswer the question using a single word or phrase.'
         else:
             raise ValueError(
                 f"Bunny doesn't implement a custom prompt for {dataset}. It should use the default prompt, but didn't.")
