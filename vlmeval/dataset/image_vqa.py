@@ -314,7 +314,7 @@ class BLINK(ImageBaseDataset):
     DATASET_URL = {
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv'
     }
-    DATASET_MD5 = {'BLINK': None}
+    DATASET_MD5 = {'BLINK': 'b50b9066d581a3eda42c4a0918213f9e'}
 
     # It returns a DataFrame
     @classmethod

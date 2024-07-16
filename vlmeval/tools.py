@@ -40,7 +40,7 @@ CLI_HELP_MSG = \
 dataset_levels = {
     'l1': [
         ('MMVet', 'gpt-4-turbo_score.csv'), ('MMMU_DEV_VAL', 'acc.csv'),
-        ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('BLINK', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
+        ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('HallusionBench', 'score.csv'),
         ('OCRBench', 'score.json'), ('AI2D_TEST', 'acc.csv'), ('MMStar', 'acc.csv'),
         ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv')
     ],
@@ -49,7 +49,7 @@ dataset_levels = {
         ('MMBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('CCBench', 'acc.csv'),
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
         ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
-        ('SEEDBench2_Plus', 'acc.csv')
+        ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'gpt-4-turbo_score.csv')
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
