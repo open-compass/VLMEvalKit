@@ -170,6 +170,40 @@ def build_prompt(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
+def build_prompt_blink(question, options, prediction):
+    tmpl = (
+        'You are an AI assistant who will help me to match an answer with several options of a single-choice question. '
+        'You are provided with a question, several options, and an answer, '
+        'and you need to find which option is most similar to the answer. '
+        "If the answer says things like refuse to answer, I'm sorry cannot help, etc., output Z."
+        'If the meaning of all options are significantly different from the answer, '
+        'or the answer does not select any option, output Z. '
+        'Your should output one of the choices, A, B, C, D (if they are valid options), or Z.\n'
+        'Example 1: \n'
+        'Question: Which point is closer to the camera?\nSelect from the following choices.\n'
+        'Options: A. Point A\nB. Point B\n(Z) Failed\n'
+        'Answer: Point B, where the child is sitting, is closer to the camera.\nYour output: (B)\n'
+        'Example 2: \n'
+        'Question: Which point is closer to the camera?\nSelect from the following choices.\n'
+        'Options: (A) Point A\n(B) Point B\n(Z) Failed\n'
+        "Answer: I'm sorry, but I can't assist with that request.\nYour output: (Z)\n"
+        'Example 3: \n'
+        'Question: Which point is corresponding to the reference point?\nSelect from the following choices.\n'
+        'Options: (A) Point A\n(B) Point B\n(Z) Failed\n'
+        'Answer:The reference point (REF) on the first image is at the tip of the pot, '
+        'which is the part used to Poke if the pots were used for that action. Looking at the second image, '
+        'we need to find the part of the object that would correspond to poking.\n'
+        "(A) Point A is at the tip of the spoon's handle, which is not used for poking.\n"
+        '(B) Point B is at the bottom of the spoon, which is not used for poking.\n'
+        '(C) Point C is on the side of the pspoonot, which is not used for poking.\n'
+        '(D) Point D is at the tip of the spoon, which is not used for poking.\n'
+        '\nTherefore, there is no correct answer in the choices\nYour output: (Z)\n'
+        'Example 4: \n'
+        'Question: {}?\nOptions: {}\n(Z) Failed\nAnswer: {}\nYour output: '
+    )
+    return tmpl.format(question, options, prediction)
+
+
 def build_prompt_cn(question, options, prediction):
     tmpl = (
         '你是一个帮助我匹配答案与单选题中多个选项的 AI 助手。'
@@ -199,13 +233,15 @@ def prefetch_answer(item):
     return can_infer(item['prediction'], choices)
 
 
-def extract_answer_from_item(model, item):
+def extract_answer_from_item(model, item, dataset_name=None):
     logger = get_logger('Evaluation')
     # It will return: (pred, raw, llm_time)
     choices = build_choices(item)
     option_str = build_option_str(choices)
 
-    if cn_string(item['question']):
+    if dataset_name == 'BLINK':
+        prompt = build_prompt_blink(item['question'], option_str, item['prediction'])
+    elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
     else:
         prompt = build_prompt(item['question'], option_str, item['prediction'])
@@ -257,7 +293,7 @@ def prefetch_sub_data(sub_data, answer_map, verbose=False):
 
 
 # For Circular Evaluation
-def eval_sub_data(model, sub_data, answer_map):
+def eval_sub_data(model, sub_data, answer_map, dataset_name=None):
     res, GT, PRED = prefetch_sub_data(sub_data, answer_map, verbose=True)
     if res is not None:
         return res
@@ -268,7 +304,7 @@ def eval_sub_data(model, sub_data, answer_map):
         if PRED[i]:
             log += f'Rolling {i} Matched.\n'
         else:
-            res = extract_answer_from_item(model, sub_data.iloc[i])
+            res = extract_answer_from_item(model, sub_data.iloc[i], dataset_name=dataset_name)
             opt, match_log = res['opt'], res['log']
             PRED[i] = opt
             if PRED[i] != GT[i]:
@@ -287,7 +323,7 @@ def eval_sub_data(model, sub_data, answer_map):
 
 
 # For Circular Evaluation
-def eval_data_groups(model, data_groups, answer_map, result_file, nproc=16):
+def eval_data_groups(model, data_groups, answer_map, result_file, nproc=16, dataset_name=None):
     result = load(result_file) if osp.exists(result_file) else {}
     prefetched = [prefetch_sub_data(g, answer_map, verbose=False) for g in data_groups]
     remain = []
@@ -297,7 +333,9 @@ def eval_data_groups(model, data_groups, answer_map, result_file, nproc=16):
         else:
             remain.append(dg)
     dump(result, result_file)
-    tups = [(model, x, answer_map) for x in remain]
+    tups = [
+        dict(model=model, sub_data=x, answer_map=answer_map, dataset_name=dataset_name) for x in remain
+    ]
     keys = [x.iloc[0]['index'] % 1e6 for x in remain]
     if len(tups) == 0:
         return

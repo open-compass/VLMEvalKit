@@ -45,6 +45,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
+        'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
     }
 
     DATASET_MD5 = {
@@ -83,6 +84,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
+        'BLINK': '3b6649b6a662184ea046908e5506260e',
     }
 
     def build_prompt(self, line):
@@ -214,7 +216,8 @@ class ImageMCQDataset(ImageBaseDataset):
                 data_groups=data_groups,
                 answer_map=answer_map,
                 nproc=nproc,
-                result_file=result_file)
+                result_file=result_file,
+                dataset_name=self.dataset_name)
 
         tmp_pth = f'/tmp/{timestr()}.xlsx'
         dump(data_main, tmp_pth)
