@@ -161,8 +161,7 @@ class MathVista(ImageBaseDataset):
     DATASET_URL = {
         'MathVista_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
     }
-    # DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
-    DATASET_MD5 = {'MathVista_MINI': None}
+    DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
 
     # It returns a DataFrame
     @classmethod

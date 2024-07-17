@@ -42,10 +42,6 @@ for d in datasets:
             bad = [x for x in data['res'] if FAIL_MSG in str(x)]
             if len(bad):
                 print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
-        elif 'BLINK' in d:
-            bad = [x for x in data['res'] if FAIL_MSG in str(x)]
-            if len(bad):
-                print(f'Model {model_name} x Dataset {d} Evaluation: {len(bad)} out of {len(data)} failed.')
             
         elif d == 'LLaVABench':
             sub = data[data['gpt4_score'] == -1]

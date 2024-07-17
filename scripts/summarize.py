@@ -5,11 +5,13 @@ def get_score(model, dataset):
 
     file_name = f'{model}/{model}_{dataset}'
     if listinstr([
-        'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D_TEST', 'MMStar', 'RealWorldQA'], dataset):
+        'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 
+        'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK'
+    ], dataset):
         file_name += '_acc.csv'
     elif listinstr(['MME', 'Hallusion', 'LLaVABench'], dataset):
         file_name += '_score.csv'
-    elif listinstr(['MMVet', 'MathVista', 'BLINK'], dataset):
+    elif listinstr(['MMVet', 'MathVista'], dataset):
         file_name += '_gpt-4-turbo_score.csv'
     elif listinstr(['COCO', 'OCRBench'], dataset):
         file_name += '_score.json'
@@ -35,7 +37,7 @@ def get_score(model, dataset):
                 ret['MMBench_DEV_CN'] = a * 100
             elif n == 'test':
                 ret['MMBench_TEST_CN'] = a * 100
-    elif listinstr(['SEEDBench', 'ScienceQA', 'MMBench', 'AI2D_TEST', 'MMStar', 'RealWorldQA'], dataset):
+    elif listinstr(['SEEDBench', 'ScienceQA', 'MMBench', 'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK'], dataset):
         ret[dataset] = data['Overall'][0] * 100
     elif 'MME' == dataset:
         ret[dataset] = data['perception'][0] + data['reasoning'][0]
@@ -50,9 +52,6 @@ def get_score(model, dataset):
         data = data[data['split'] == 'validation']
         ret['MMMU (val)'] = float(data.iloc[0]['Overall']) * 100
     elif 'MathVista' in dataset:
-        data = data[data['Task&Skill'] == 'Overall']
-        ret[dataset] = float(data.iloc[0]['acc'])
-    elif 'BLINK' in dataset:
         data = data[data['Task&Skill'] == 'Overall']
         ret[dataset] = float(data.iloc[0]['acc'])
     elif 'LLaVABench' in dataset:

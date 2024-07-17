@@ -3,8 +3,8 @@ import warnings
 from .image_base import img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
-from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset
-from .image_vqa import ImageVQADataset, OCRBench, MathVista, BLINK, LLaVABench, MMVet, CustomVQADataset
+from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, BLINK
+from .image_vqa import ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, CustomVQADataset
 from .mmbench_video import MMBenchVideo
 from .utils import *
 from ..smp import *
