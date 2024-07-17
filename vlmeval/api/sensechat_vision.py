@@ -123,8 +123,6 @@ class SenseChatVisionWrapper(BaseAPI):
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             if 'MathVista' in dataset:
                 prompt = line['question']
-            elif 'BLINK' in dataset:
-                prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
