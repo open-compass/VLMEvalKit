@@ -354,7 +354,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
             items.append(item)
 
     tups = [dict(model=model, sub_data=x, dataset_name=dataset_name) for x in items]
-    keys = [x.iloc[0]['index'] for x in items]
+    keys = [x['index'] for x in items]
     if len(tups):
         res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
         result = load(result_file)
