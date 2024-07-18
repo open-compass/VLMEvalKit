@@ -25,6 +25,8 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 
 ## 🆕 News
 
+- **[2024-07-18]** We have supported [**BLINK**](https://zeyofu.github.io/blink/), thanks to [**zeyofu**](https://zeyofu.github.io)🔥🔥🔥
+- **[2024-07-18]** We released the first version of [**VLMEvalKit Technical Report**](https://www.arxiv.org/abs/2407.11691). We greatly welcome contributions from the community and are glad to share the corresponding credit: All Contributions will be acknowledged in the report and Contributors with 3 or more major contributions (implementing an MLLM, benchmark, or major feature) can share the authorship of the tech report 🔥🔥🔥
 - **[2024-07-12]** We have supported [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/), a benchmark for long-context document understanding, thanks to [**mayubo2333**](https://github.com/mayubo2333) 🔥🔥🔥
 - **[2024-07-12]** We have supported [**VCR**](https://github.com/tianyu-z/vcr), a benchmark for visual caption restoration evaluation, thanks to [**tianyu-z**](https://github.com/tianyu-z) and [**sheryc**](https://github.com/sheryc) 🔥🔥🔥
 - **[2024-07-08]** We have supported [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer), thanks to [**LightDXY**](https://github.com/LightDXY) 🔥🔥🔥
@@ -33,8 +35,6 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 - **[2024-06-27]** We have supported [**AesBench**](https://github.com/yipoh/AesBench), thanks to [**Yipo Huang**](https://github.com/yipoh) and [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
 - **[2024-06-26]** We have supported the evaluation of [**CongRong**](https://mllm.cloudwalk.com/web), it ranked **3rd** on the [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 🔥🔥🔥
 - **[2024-06-26]** We firstly support a video understanding benchmark: [**MMBench-Video**](https://mmbench-video.github.io), Image LVLMs that accept multiple images as inputs can be evaluated on the video understanding benchmarks. Check [**QuickStart**](/docs/en/Quickstart.md) to learn how to perform the evaluation 🔥🔥🔥
-- **[2024-06-24]** We have supported the evaluation of [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet), it ranked the **2nd** on the [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 🔥🔥🔥
-- **[2024-06-22]** Since GPT-3.5-Turbo-0613 is no longer supported yet, we switch to GPT-3.5-Turbo-0125 for choice extraction
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -59,8 +59,9 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 | [**InfoVQA**](https://www.docvqa.org/datasets/infographicvqa)+ | InfoVQA_[VAL/TEST] | VQA | [**OCRBench**](https://github.com/Yuliang-Liu/MultimodalOCR) | OCRBench | VQA |
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | MCQ                                          | [**POPE**](https://github.com/AoiDragon/POPE) | POPE                                           | Y/N                                            |
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ  |
-| [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
-| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
+| [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench)+ | AesBench_[VAL/TEST] | MCQ |
+| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR\_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
+| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ |  |  |  |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
@@ -91,10 +92,10 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-[1/2]**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅 | [**ShareGPT4V-[7B/13B]**](https://sharegpt4v.github.io)🚅     | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
 | [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-[Chat/Llama3]**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**ShareCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
 | [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅, [**Monkey-Chat**](https://github.com/Yuliang-Liu/Monkey)🚅 | [**EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️         | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
-| [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer)🚅🎞️ | [**MiniCPM-[V1/V2/V2.5]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat-[V1-1/V1-2/V1-2-Plus/V1-5/V2]**](https://github.com/OpenGVLab/InternVL)🚅🎞️, <br>[**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ |
+| [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer)🚅🎞️ | [**MiniCPM-[V1/V2/V2.5]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat-[V1-1/V1-2/V1-5/V2]**](https://github.com/OpenGVLab/InternVL)🚅🎞️, <br>[**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
 | [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) 🚅 | [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)🚅 | [**WeMM**](https://github.com/scenarios/WeMM)🚅               |
-| [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    |  [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) |                                                              |                                                              |
+| [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    | [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) |                                                              |                                                              |
 
 🎞️: Support multiple images as inputs.
 
@@ -129,6 +130,13 @@ See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstar
 
 To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/Development.md) | [开发指南](/docs/zh-CN/Development_zh-CN.md)].
 
+**Call for contributions**
+
+To promote the contribution from the community and share the corresponding credit (in the next report update):
+
+- All Contributions will be acknowledged in the report.
+- Contributors with 3 or more major contributions (implementing an MLLM, benchmark, or major feature) can join the author list of [VLMEvalKit Technical Report](https://www.arxiv.org/abs/2407.11691) on ArXiv. Eligible contributors can create an issue or dm kennyutc in [VLMEvalKit Discord Channel](https://discord.com/invite/evDT4GZmxN).
+
 ## 🎯 The Goal of VLMEvalKit
 
 **The codebase is designed to:**
@@ -151,11 +159,14 @@ If you find this work helpful, please consider to **star🌟** this repo. Thanks
 If you use VLMEvalKit in your research or wish to refer to published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@misc{2023opencompass,
-    title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
-    author={OpenCompass Contributors},
-    howpublished = {\url{https://github.com/open-compass/opencompass}},
-    year={2023}
+@misc{duan2024vlmevalkit,
+      title={VLMEvalKit: An Open-Source Toolkit for Evaluating Large Multi-Modality Models},
+      author={Haodong Duan and Junming Yang and Yuxuan Qiao and Xinyu Fang and Lin Chen and Yuan Liu and Xiaoyi Dong and Yuhang Zang and Pan Zhang and Jiaqi Wang and Dahua Lin and Kai Chen},
+      year={2024},
+      eprint={2407.11691},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2407.11691},
 }
 ```
 
