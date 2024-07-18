@@ -118,7 +118,7 @@ class SenseChatVisionWrapper(BaseAPI):
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             question = line['question']
             prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
-        elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice' and 'MMMU' not in dataset:
+        elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ' and 'MMMU' not in dataset:
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             if 'MathVista' in dataset:
