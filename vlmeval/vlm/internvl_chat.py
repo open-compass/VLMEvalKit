@@ -286,7 +286,7 @@ class InternVLChat(BaseModel):
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                upscale_flag = image_idx == 0 and listinstr(['MMMU_DEV_VAL'], dataset)
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
                     file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
