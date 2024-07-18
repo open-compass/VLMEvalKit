@@ -373,7 +373,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
 # data, meta are pd.DataFrame, result_file is a path
 def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
     result = {}
-    if osp.exits(result_file):
+    if osp.exists(result_file):
         result = load(result_file)
     # Build Answer Map
     answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
