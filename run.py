@@ -169,7 +169,13 @@ def main():
                     )
                     continue
 
+            eval_proxy = os.environ.get('EVAL_PROXY', None)
+            old_proxy = os.environ.get('HTTP_PROXY', '')
+
             if rank == 0 and args.mode == 'all':
+                if eval_proxy is not None:
+                    proxy_set(eval_proxy)
+
                 eval_results = dataset.evaluate(result_file, **judge_kwargs)
                 if eval_results is not None:
                     assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
@@ -181,6 +187,9 @@ def main():
                     if len(eval_results) < len(eval_results.columns):
                         eval_results = eval_results.T
                     logger.info('\n' + tabulate(eval_results))
+
+                if eval_proxy is not None:
+                    proxy_set(old_proxy)
 
 
 if __name__ == '__main__':
