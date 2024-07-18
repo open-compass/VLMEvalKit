@@ -92,7 +92,7 @@ class mPLUG_Owl2(BaseModel):
         prompt_full = 'USER: '
         images = []
         if num_images == 1:
-            prompt, image = self.message_to_promptimg(message)
+            prompt, image = self.message_to_promptimg(message, dataset=dataset)
             prompt_full += f'<|image|>{prompt} \nASSISTANT: '
             images.append(image)
         else:

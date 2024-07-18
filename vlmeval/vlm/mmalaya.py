@@ -25,7 +25,7 @@ class MMAlaya(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         # read image
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         # tokenize prompt, and proprecess image
         input_ids, image_tensor, stopping_criteria = self.model.prepare_for_inference(

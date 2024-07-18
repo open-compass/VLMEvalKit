@@ -50,7 +50,7 @@ class WeMM(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
 
         if dataset == 'HallusionBench':
             prompt = prompt + ' Please answer yes or no. Answer the question using a single word or phrase.'

@@ -131,7 +131,7 @@ class XComposer2d5(BaseModel):
         self.model.hd_num = 36
         self.model.id_scale = self.id_scale
 
-    def message_to_promptimg(self, message):
+    def message_to_promptimg(self, message, dataset=None):
         num_images = len([x for x in message if x['type'] == 'image'])
         if num_images == 0:
             prompt = '\n'.join([x['value']
@@ -200,7 +200,7 @@ class XComposer2d5(BaseModel):
         return out
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
 
         with torch.cuda.amp.autocast():
             if dataset is None:

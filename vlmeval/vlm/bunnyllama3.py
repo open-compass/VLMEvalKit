@@ -117,7 +117,7 @@ class BunnyLLama3(BaseModel):
 
     def generate_inner(self, message, dataset=None):
 
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
 
         text = (f'A chat between a curious user and an artificial intelligence assistant. '
                 f"The assistant gives helpful, detailed, and polite answers to the user's questions. "

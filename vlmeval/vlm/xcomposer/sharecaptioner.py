@@ -57,7 +57,7 @@ class ShareCaptioner(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         seg1 = '<|User|>:'
         seg2 = f'{prompt}{self.model.eoh}\n<|Bot|>:'
         self.seg_emb1 = self.model.encode_text(seg1, add_special_tokens=True)

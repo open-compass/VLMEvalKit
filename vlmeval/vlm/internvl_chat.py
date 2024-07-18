@@ -236,7 +236,7 @@ class InternVLChat(BaseModel):
 
     def generate_v1_2(self, message, dataset=None):
         self.INTERLEAVE = False
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         image = image.resize((self.image_size, self.image_size))
         image_processor = CLIPImageProcessor.from_pretrained(self.model_path)

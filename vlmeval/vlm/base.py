@@ -114,7 +114,7 @@ class BaseModel:
             assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
         return self.generate_inner(message, dataset)
 
-    def message_to_promptimg(self, message):
+    def message_to_promptimg(self, message, dataset=None):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         warnings.warn(
@@ -126,5 +126,9 @@ class BaseModel:
             image = None
         else:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-            image = [x['value'] for x in message if x['type'] == 'image'][0]
+            images = [x['value'] for x in message if x['type'] == 'image']
+            if 'BLINK' == dataset:
+                image = concat_images(images, target_size=512)
+            else:
+                image = images[0]
         return prompt, image

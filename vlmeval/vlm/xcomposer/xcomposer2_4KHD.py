@@ -146,7 +146,7 @@ class XComposer2_4KHD(BaseModel):
         return out
 
     def generate(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         if listinstr(['docvqa_test', 'infovqa_test'], dataset.lower()):
             self.model.hd_num = 65
         elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):

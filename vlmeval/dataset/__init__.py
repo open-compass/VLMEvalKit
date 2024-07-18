@@ -13,7 +13,8 @@ from ..smp import *
 # Add new supported dataset class here
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
-    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MMLongBench, VCRDataset,
+    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet,
+    MMLongBench, VCRDataset
 ]
 
 VIDEO_DATASET = [
