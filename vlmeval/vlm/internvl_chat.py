@@ -114,14 +114,14 @@ def split_model(model_name):
         for j in range(num_layer):
             device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
             layer_cnt += 1
-    device_map['vision_model'] = 0
-    device_map['mlp1'] = 0
-    device_map['language_model.model.tok_embeddings'] = 0
-    device_map['language_model.model.embed_tokens'] = 0
-    device_map['language_model.output'] = 0
-    device_map['language_model.model.norm'] = 0
-    device_map['language_model.lm_head'] = 0
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = 0
+    device_map['vision_model'] = rank
+    device_map['mlp1'] = rank
+    device_map['language_model.model.tok_embeddings'] = rank
+    device_map['language_model.model.embed_tokens'] = rank
+    device_map['language_model.output'] = rank
+    device_map['language_model.model.norm'] = rank
+    device_map['language_model.lm_head'] = rank
+    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
     return device_map
 
 
