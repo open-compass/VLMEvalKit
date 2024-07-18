@@ -192,7 +192,7 @@ class LLaVA_XTuner(BaseModel):
         from xtuner.dataset.utils import expand2square
         from xtuner.model.utils import prepare_inputs_labels_for_multimodal
         from xtuner.utils import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         prompt = prompt.replace('<image>', '')
         image = Image.open(image_path).convert('RGB')
         image = expand2square(

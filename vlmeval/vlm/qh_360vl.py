@@ -33,7 +33,7 @@ class QH_360VL(BaseModel):
 
     def generate(self, message, dataset=None):
 
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         print(prompt)
         image = Image.open(image_path).convert('RGB')
         terminators = [

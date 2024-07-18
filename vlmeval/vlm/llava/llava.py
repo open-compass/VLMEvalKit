@@ -231,7 +231,7 @@ class LLaVA_Next(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         prompt = prompt.replace('<image>', '[ImageHere]')
         if prompt.find('[ImageHere]') != prompt.rfind('[ImageHere]'):
             prompt += '\nThere exists multiple images in the conversation, but only the first one is displayed.'

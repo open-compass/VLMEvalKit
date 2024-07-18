@@ -155,7 +155,7 @@ class SenseChatVisionWrapper(BaseAPI):
         return message
 
     def message_to_promptimg(self, message, dataset=None):
-        if dataset is None or 'MMMU' not in dataset:
+        if dataset is None or listinstr(['MMMU', 'BLINK'], dataset):
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = [[x['value'] for x in message if x['type'] == 'image'][0]]
         else:

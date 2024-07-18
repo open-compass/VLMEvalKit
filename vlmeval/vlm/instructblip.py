@@ -49,7 +49,7 @@ class InstructBLIP(BaseModel):
         self.vis_processors = vis_processors
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         vis_processors = self.vis_processors
         raw_image = Image.open(image_path).convert('RGB')
         image_tensor = vis_processors['eval'](raw_image).unsqueeze(0).to(self.device)

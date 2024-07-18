@@ -3,7 +3,7 @@ import random as rd
 from abc import abstractmethod
 import os.path as osp
 import copy as cp
-from ..smp import get_logger, parse_file
+from ..smp import get_logger, parse_file, concat_images
 
 
 class BaseAPI:
@@ -175,7 +175,7 @@ class BaseAPI:
 
         return self.fail_msg if answer in ['', None] else answer
 
-    def message_to_promptimg(self, message):
+    def message_to_promptimg(self, message, dataset=None):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         import warnings
@@ -191,5 +191,8 @@ class BaseAPI:
             image = [x['value'] for x in message if x['type'] == 'image'][0]
         else:
             prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
-            image = [x['value'] for x in message if x['type'] == 'image'][0]
+            if dataset == 'BLINK':
+                image = concat_images([x['value'] for x in message if x['type'] == 'image'], target_size=512)
+            else:
+                image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image

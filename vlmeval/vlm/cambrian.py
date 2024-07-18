@@ -64,7 +64,7 @@ class Cambrian(BaseModel):
         return input_ids, image_tensor, image_size, prompt
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         input_ids, image_tensor, image_sizes, prompt = self.process(image, prompt)
         input_ids = input_ids.to(device='cuda', non_blocking=True)

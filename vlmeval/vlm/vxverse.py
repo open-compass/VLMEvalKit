@@ -94,7 +94,7 @@ class VXVERSE(BaseModel):
         self.kwargs = default_kwargs
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
 
         image = Image.open(image_path).convert('RGB')
         image = self.vis_processor(image)
