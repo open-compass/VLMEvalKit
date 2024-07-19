@@ -1,6 +1,14 @@
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
 <div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
 
+[![][github-release-shield]][github-release-link]
+[![][github-releasedate-shield]][github-releasedate-link]
+[![][github-contributors-shield]][github-contributors-link]<br>
+[![][github-forks-shield]][github-forks-link]
+[![][github-stars-shield]][github-stars-link]
+[![][github-issues-shield]][github-issues-link]
+[![][github-license-shield]][github-license-link]
+
 <div align="center">
 English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/docs/ja/README_ja.md">日本語</a>]
 </div>
