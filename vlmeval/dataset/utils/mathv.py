@@ -7,6 +7,7 @@ except ImportError:
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 def is_equal(asw: str, gt_asw: str) -> bool:
     if type(asw) != str or type(gt_asw) != str:
         print('Warning: input is not string')
@@ -18,7 +19,7 @@ def is_equal(asw: str, gt_asw: str) -> bool:
     try:
         a = eval(gt_asw)
         b = eval(asw)
-        if abs(a-b) < 1e-6:
+        if abs(a - b) < 1e-6:
             return True
     except:
         pass
@@ -32,7 +33,6 @@ def is_equal(asw: str, gt_asw: str) -> bool:
     except:
         pass
     return False
-
 
 
 def get_gpt4_ICE():
