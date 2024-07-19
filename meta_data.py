@@ -203,14 +203,17 @@ LEADERBOARD_MD['SEEDBench2_Plus'] = """
 - SEEDBench2 Plus comprises 2.3K multiple-choice questions with precise human annotations, spanning three broad categories: Charts, Maps, and Webs, each of which covers a wide spectrum of textrich scenarios in the real world.
 """
 
-LEADERBOARD_MD['MMTBench_VAL'] = """
-## MMTBench Validation Evaluation Results
+LEADERBOARD_MD['MMT-Bench_VAL'] = """
+## MMT-Bench Validation Evaluation Results
 
 - MMT-Bench comprises 31,325 meticulously curated multi-choice visual questions from various multimodal scenarios such as vehicle driving and embodied navigation, covering 32 core meta-tasks and 162 subtasks in multimodal understanding.
+- MMT-Bench_VAL is the validation set of MMT-Bench. MMT-Bench_ALL includes both validation and test sets. The suffix `MI`, such as `MMT-Bench_VAL_MI`, represents the multi-image version of the dataset with several images input. 
+The defualt version is the single-image version, which concats the multiple images into a single image as input.
 """
 
 LEADERBOARD_MD['SEEDBench2'] = """
 ## SEEDBench2 Evaluation Results
 
 - SEEDBench2 comprises 24K multiple-choice questions with accurate human annotations, which spans 27 dimensions, including the evaluation of both text and image generation.
+- Note that we only evaluate and report the part of model's results on the SEEDBench2.
 """
