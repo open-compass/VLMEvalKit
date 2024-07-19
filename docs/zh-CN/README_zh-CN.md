@@ -21,7 +21,7 @@
 </div>
 
 <div align="center">
-<a herf="https://www.arxiv.org/abs/2407.11691"> 📝 技术报告 </a>
+<a href="https://www.arxiv.org/abs/2407.11691"> 📝 技术报告 </a>
 </div>
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
