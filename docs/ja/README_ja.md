@@ -1,26 +1,22 @@
+<div align="center">
+
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
-<div align="center"><b>大規模視覚言語モデルの評価ツールキット</b></div>
 
-<div align="center">
-[<a href="/README.md">英語</a>] | [<a href="/docs/zh-CN/README_zh-CN.md">中国語</a>] | 日本語
-</div>
+<b>VLMEvalKit: 大規模視覚言語モデルの評価ツールキット</b>
 
-<div align="center">
-<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 リーダーボード </a> •
-<a href="#-データセットとモデル">📊データセット & モデル </a> •
-<a href="#%EF%B8%8F-クイックスタート">🏗️クイックスタート </a> •
-<a href="#%EF%B8%8F-開発ガイド">🛠️開発 </a> •
-<a href="#-VLMEvalKitの目標">🎯目標 </a> •
-<a href="#%EF%B8%8F-引用">🖊️引用 </a>
-</div>
+[![][github-contributors-shield]][github-contributors-link] • [![][github-forks-shield]][github-forks-link] • [![][github-stars-shield]][github-stars-link] • [![][github-issues-shield]][github-issues-link] • [![][github-license-shield]][github-license-link]
 
-<div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard </a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab Mirror)</a>
-<a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a>
-</div>
+[English](/README.md) | [简体中文](/docs/zh-CN/README_zh-CN.md) | 日本語
 
-<div align="center">
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass Learderboard </a> •
+<a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
+<a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
+<a href="#%EF%B8%8F-development-guide">🛠️Development </a> •
+<a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
+<a href="#%EF%B8%8F-citation">🖊️Citation </a>
+
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HF Leaderboard</a> •
+<a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a> •
 <a href="https://www.arxiv.org/abs/2407.11691">📝 Technical Report</a>
 </div>
 
@@ -167,10 +163,15 @@ print(ret)  # 提供された画像にはリンゴが2個あります。
 }
 ```
 
-## 💻 OpenCompassの他のプロジェクト
+<p align="right"><a href="#top">🔝Top に戻る</a></p>
 
-- [Opencompass](https://github.com/open-compass/opencompass/): LLM評価プラットフォームで、LLaMA、LLaMa2、ChatGLM2、ChatGPT、Claudeなどの幅広いモデルを50以上のデータセットでサポートしています。
-- [MMBench](https://github.com/open-compass/MMBench/): "MMBench: Is Your Multi-modal Model an All-around Player?"の公式リポジトリ。
-- [BotChat](https://github.com/open-compass/BotChat/): LLMのマルチラウンドチャット能力を評価します。
-- [LawBench](https://github.com/open-compass/LawBench): 大規模言語モデルの法的知識をベンチマークします。
-- [Ada-LEval](https://github.com/open-compass/Ada-LEval): 言語モデルの長文コンテキストモデリング能力を測定します。
+[github-contributors-link]: https://github.com/open-compass/VLMEvalKit/graphs/contributors
+[github-contributors-shield]: https://img.shields.io/github/contributors/open-compass/VLMEvalKit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/open-compass/VLMEvalKit/network/members
+[github-forks-shield]: https://img.shields.io/github/forks/open-compass/VLMEvalKit?color=8ae8ff&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/open-compass/VLMEvalKit/issues
+[github-issues-shield]: https://img.shields.io/github/issues/open-compass/VLMEvalKit?color=ff80eb&labelColor=black&style=flat-square
+[github-license-link]: https://github.com/open-compass/VLMEvalKit/blob/main/LICENSE
+[github-license-shield]: https://img.shields.io/github/license/open-compass/VLMEvalKit?color=white&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/open-compass/VLMEvalKit/stargazers
+[github-stars-shield]: https://img.shields.io/github/stars/open-compass/VLMEvalKit?color=ffcb47&labelColor=black&style=flat-square

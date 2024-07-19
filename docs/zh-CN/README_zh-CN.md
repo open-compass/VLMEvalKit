@@ -1,28 +1,25 @@
+<div align="center">
+
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
-<div align="center"><b> VLMEvalKit—多模态大模型评测工具 </b></div>
 
-<div align="center">
-[<a href="/README.md">English</a>] | 简体中文 | [<a href="/docs/ja/README_ja.md">日本語</a>]
+<b>VLMEvalKit: 一种多模态大模型评测工具 </b>
+
+[![][github-contributors-shield]][github-contributors-link] • [![][github-forks-shield]][github-forks-link] • [![][github-stars-shield]][github-stars-link] • [![][github-issues-shield]][github-issues-link] • [![][github-license-shield]][github-license-link]
+
+[English](README.md) | 简体中文 | [日本語](/docs/ja/README_ja.md)
+
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass 排行榜 </a> •
+<a href="#-datasets-models-and-evaluation-results">📊 数据集和模型 </a> •
+<a href="#%EF%B8%8F-quickstart">🏗️ 快速开始 </a> •
+<a href="#%EF%B8%8F-development-guide">🛠️ 开发指南 </a> •
+<a href="#-the-goal-of-vlmevalkit">🎯 我们的目标 </a> •
+<a href="#%EF%B8%8F-citation">🖊️ 引用 </a>
+
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HuggingFace 排行榜 (存档全部性能) </a> •
+<a href="https://discord.gg/evDT4GZmxN">🔊 Discord 频道 </a> •
+<a href="https://www.arxiv.org/abs/2407.11691">📝 技术报告 </a>
 </div>
 
-<div align="center">
-<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 性能榜单 </a> •
-<a href="#data-model-results">📊 数据集和模型 </a> •
-<a href="#quickstart">🏗️ 快速开始 </a> •
-<a href="#development">🛠️ 开发 </a> •
-<a href="#goal-of-vlmevalkit">🎯 我们的目标 </a> •
-<a href="#citation">🖊️ 引用 </a>
-</div>
-
-<div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 排行榜 </a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab 镜像)</a>
-<a href="https://discord.gg/evDT4GZmxN">🔊 Discord 频道</a>
-</div>
-
-<div align="center">
-<a href="https://www.arxiv.org/abs/2407.11691"> 📝 技术报告 </a>
-</div>
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
@@ -180,10 +177,15 @@ print(ret)  # 提供的图片中有两个苹果
 }
 ```
 
-## 💻 OpenCompass 的其他项目
+<p align="right"><a href="#top">🔝回到顶部</a></p>
 
-- [Opencompass](https://github.com/open-compass/opencompass/): 一个大模型评测平台，支持广泛的模型 (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude等) 覆盖 50 多个数据集。
-- [MMBench](https://github.com/open-compass/MMBench/): 官方代码库 "MMBench: Is Your Multi-modal Model an All-around Player?"
-- [BotChat](https://github.com/open-compass/BotChat/): 评测大模型多轮对话能力。
-- [LawBench](https://github.com/open-compass/LawBench): 对大语言模型的法律知识进行测试。
-- [Ada-LEval](https://github.com/open-compass/ada-leval): 对大语言模型的长文本建模能力进行测试。
+[github-contributors-link]: https://github.com/open-compass/VLMEvalKit/graphs/contributors
+[github-contributors-shield]: https://img.shields.io/github/contributors/open-compass/VLMEvalKit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/open-compass/VLMEvalKit/network/members
+[github-forks-shield]: https://img.shields.io/github/forks/open-compass/VLMEvalKit?color=8ae8ff&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/open-compass/VLMEvalKit/issues
+[github-issues-shield]: https://img.shields.io/github/issues/open-compass/VLMEvalKit?color=ff80eb&labelColor=black&style=flat-square
+[github-license-link]: https://github.com/open-compass/VLMEvalKit/blob/main/LICENSE
+[github-license-shield]: https://img.shields.io/github/license/open-compass/VLMEvalKit?color=white&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/open-compass/VLMEvalKit/stargazers
+[github-stars-shield]: https://img.shields.io/github/stars/open-compass/VLMEvalKit?color=ffcb47&labelColor=black&style=flat-square
