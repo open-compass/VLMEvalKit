@@ -20,11 +20,16 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a>
 </div>
 
+<div align="center">
+<a herf="https://www.arxiv.org/abs/2407.11691"> 📝 Technical Report </a>
+</div>
+
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
 
+- **[2024-07-19]** We have supported [**MathVision**](https://mathvision-cuhk.github.io), thanks to [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 - **[2024-07-18]** We have supported [**BLINK**](https://zeyofu.github.io/blink/), thanks to [**zeyofu**](https://zeyofu.github.io)🔥🔥🔥
 - **[2024-07-18]** We released the first version of [**VLMEvalKit Technical Report**](https://www.arxiv.org/abs/2407.11691). We greatly welcome contributions from the community and are glad to share the corresponding credit: All Contributions will be acknowledged in the report and Contributors with 3 or more major contributions (implementing an MLLM, benchmark, or major feature) can share the authorship of the tech report 🔥🔥🔥
 - **[2024-07-12]** We have supported [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/), a benchmark for long-context document understanding, thanks to [**mayubo2333**](https://github.com/mayubo2333) 🔥🔥🔥
@@ -34,7 +39,6 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 - **[2024-06-27]** We have supported [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
 - **[2024-06-27]** We have supported [**AesBench**](https://github.com/yipoh/AesBench), thanks to [**Yipo Huang**](https://github.com/yipoh) and [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
 - **[2024-06-26]** We have supported the evaluation of [**CongRong**](https://mllm.cloudwalk.com/web), it ranked **3rd** on the [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 🔥🔥🔥
-- **[2024-06-26]** We firstly support a video understanding benchmark: [**MMBench-Video**](https://mmbench-video.github.io), Image LVLMs that accept multiple images as inputs can be evaluated on the video understanding benchmarks. Check [**QuickStart**](/docs/en/Quickstart.md) to learn how to perform the evaluation 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -61,7 +65,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ  |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench)+ | AesBench_[VAL/TEST] | MCQ |
 | [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR\_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
-| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ |  |  |  |
+| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 

@@ -19,10 +19,15 @@
 <a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab 镜像)</a>
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord 频道</a>
 </div>
+
+<div align="center">
+<a herf="https://www.arxiv.org/abs/2407.11691"> 📝 技术报告 </a>
+</div>
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
 
+- **[2024-07-19]** 支持了 [**MathVision**](https://mathvision-cuhk.github.io), 感谢 [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 - **[2024-07-18]** 支持了 [**BLINK**](https://zeyofu.github.io/blink/)， 感谢 [**zeyofu**](https://zeyofu.github.io)🔥🔥🔥
 - **[2024-07-18]** 我们发布了第一版 [**VLMEvalKit 技术报告**](https://www.arxiv.org/abs/2407.11691)，我们欢迎来自社区的贡献并十分乐意分享相应的 credit：在下一次 report 更新中，我们将致谢所有的贡献，同时，具备三个或以上主要贡献 (支持新模型、评测集、或是主要特性) 的贡献者将可以加入技术报告的作者列表 🔥🔥🔥
 - **[2024-07-12]** 支持了多模态长文档内容理解基准 [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/), 感谢 [**mayubo2333**](https://github.com/mayubo2333) 🔥🔥🔥
@@ -32,7 +37,6 @@
 - **[2024-06-27]** 支持了 [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
 - **[2024-06-27]** 支持了 [**AesBench**](https://github.com/yipoh/AesBench)，感谢 [**Yipo Huang**](https://github.com/yipoh) 与 [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
 - **[2024-06-26]** 支持了 [**CongRong**](https://mllm.cloudwalk.com/web) 的评测，该模型在 [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 上**排名第三** 🔥🔥🔥
-- **[2024-06-26]** 首次支持了视频理解评测基准 [**MMBench-Video**](https://mmbench-video.github.io)，可以用于测试支持多图输入的图文多模态大模型的。[**快速开始**](/docs/zh-CN/Quickstart.md) 中提供了启动 MMBench-Video 测试的方式 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -58,7 +62,7 @@
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ      |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
 | [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR\_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
-| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ |  |  |  |
+| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 

@@ -15,9 +15,13 @@
 </div>
 
 <div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 リーダーボード</a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlabミラー)</a>
-<a href="https://discord.gg/evDT4GZmxN">🔊 Discordチャンネル</a>
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard </a>
+<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab Mirror)</a>
+<a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a>
+</div>
+
+<div align="center">
+<a herf="https://www.arxiv.org/abs/2407.11691"> 📝 Technical Report </a>
 </div>
 
 **VLMEvalKit**（pythonパッケージ名は**vlmeval**）は、**大規模視覚言語モデル（LVLMs）**の**オープンソース評価ツールキット**です。このツールキットは、複数のリポジトリでのデータ準備という重労働なしに、さまざまなベンチマークでLVLMsの**ワンコマンド評価**を可能にします。VLMEvalKitでは、すべてのLVLMsに対して**生成ベースの評価**を採用し、**正確なマッチング**と**LLMベースの回答抽出**の両方で得られた評価結果を提供します。
@@ -49,7 +53,7 @@ PS: 日本語の README には最新のアップデートがすべて含まれ�
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ  |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
 | [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR、_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
-| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ |  |  |  |
+| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
 
 **\*** ゼロショット設定で合理的な結果を出せないVLMの一部の評価結果のみを提供しています
 
