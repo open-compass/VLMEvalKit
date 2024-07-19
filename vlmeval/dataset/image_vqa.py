@@ -216,18 +216,20 @@ class MathVista(ImageBaseDataset):
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MATH_V': 'MATH_V.tsv',
-        'MATH_V_MINI': 'MATH_V_MINI.tsv'
+        'MathVision': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
+        'MathVision_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision_MINI.tsv'
     }
-    DATASET_MD5 = {'MATH_V': 'ee50b33870bb4444a6691c8a4ecfcc1c',
-                   'MATH_V_MINI': 'd6029644ef32ca3aec575bf31f947964'}
+    DATASET_MD5 = {
+        'MathVision': 'ee50b33870bb4444a6691c8a4ecfcc1c',
+        'MathVision_MINI': 'd6029644ef32ca3aec575bf31f947964'
+    }
 
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mathv import MATH_V_auxeval, MATH_V_acc
 
-        if "model" in judge_kwargs:
+        if 'model' in judge_kwargs:
             model = judge_kwargs['model']
         else:
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
