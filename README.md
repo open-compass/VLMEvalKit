@@ -25,6 +25,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 ## 🆕 News
 
+- **[2024-07-19]** We have supported [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/), evaluation results coming soon🔥🔥🔥
 - **[2024-07-19]** We have supported [**MathVision**](https://mathvision-cuhk.github.io), thanks to [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 - **[2024-07-19]** We have supported [**LLaVA-Next-Interleave-7B**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) and [**LLaVA-Next-LLaMA-3**](https://huggingface.co/lmms-lab/llama3-llava-next-8b) 🔥🔥🔥
 - **[2024-07-18]** We have supported [**BLINK**](https://zeyofu.github.io/blink/), thanks to [**zeyofu**](https://zeyofu.github.io)🔥🔥🔥
@@ -34,7 +35,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-07-08]** We have supported [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer), thanks to [**LightDXY**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-07-08]** We have supported [**InternVL2**](https://huggingface.co/OpenGVLab/InternVL2-26B), thanks to [**czczup**](https://github.com/czczup) 🔥🔥🔥
 - **[2024-06-27]** We have supported [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
-- **[2024-06-27]** We have supported [**AesBench**](https://github.com/yipoh/AesBench), thanks to [**Yipo Huang**](https://github.com/yipoh) and [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -82,7 +82,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**GPT-4v (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🎞️🚅      | [**Gemini-1.0-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Gemini-1.5-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v) 🎞️🚅 |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
 | [**Reka-[Edge / Flash / Core]**](https://www.reka.ai)🚅       | [**Qwen-VL-[Plus / Max]**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅 | [**Claude3-[Haiku / Sonnet / Opus]**](https://www.anthropic.com/news/claude-3-family) 🎞️🚅 | [**GLM-4v**](https://open.bigmodel.cn/dev/howuse/glm4v) 🚅    | [**CongRong**](https://mllm.cloudwalk.com/web) 🎞️🚅 |
-| [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 🎞️🚅 |                                                              |                                                              |                                                              |                                                   |
+| [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 🎞️🚅 | [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/) 🎞️🚅 |                                                              |                                                              |                                                   |
 
 **Supported PyTorch / HF Models**
 
