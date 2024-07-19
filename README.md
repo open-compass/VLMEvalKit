@@ -8,15 +8,14 @@
 
 English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/README_ja.md)
 
-<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OC Learderboard </a> •
 <a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
 <a href="#%EF%B8%8F-quickstart">🏗️Quickstart </a> •
 <a href="#%EF%B8%8F-development-guide">🛠️Development </a> •
 <a href="#-the-goal-of-vlmevalkit">🎯Goal </a> •
 <a href="#%EF%B8%8F-citation">🖊️Citation </a>
 
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard</a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab Mirror)</a> •
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HF Leaderboard</a> •
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a> •
 <a href="https://www.arxiv.org/abs/2407.11691">📝 Technical Report</a>
 </div>
