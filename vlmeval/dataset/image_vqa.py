@@ -221,7 +221,7 @@ class MathVision(ImageBaseDataset):
     }
     DATASET_MD5 = {
         'MathVision': '93f6de14f7916e598aa1b7165589831e',
-        'MathVision_MINI': '060fe4fa5d868987ce179307bd5f8a33 '
+        'MathVision_MINI': '060fe4fa5d868987ce179307bd5f8a33'
     }
 
     # It returns a DataFrame
