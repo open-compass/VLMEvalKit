@@ -1,17 +1,9 @@
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
-<div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div>
+<div align="center"><b>A Toolkit for Evaluating Large Vision-Language Models. </b></div><br />
 
-[![][github-release-shield]][github-release-link]
-[![][github-releasedate-shield]][github-releasedate-link]
-[![][github-contributors-shield]][github-contributors-link]<br>
-[![][github-forks-shield]][github-forks-link]
-[![][github-stars-shield]][github-stars-link]
-[![][github-issues-shield]][github-issues-link]
-[![][github-license-shield]][github-license-link]
+[![][github-contributors-shield]][github-contributors-link][![][github-forks-shield]][github-forks-link][![][github-stars-shield]][github-stars-link][![][github-issues-shield]][github-issues-link][![][github-license-shield]][github-license-link]
 
-<div align="center">
-English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/docs/ja/README_ja.md">日本語</a>]
-</div>
+English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/README_ja.md)
 
 <div align="center">
 <a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 Learderboard </a> •
@@ -26,9 +18,6 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 <a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 Leaderboard</a>
 <a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab Mirror)</a>
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a>
-</div>
-
-<div align="center">
 <a href="https://www.arxiv.org/abs/2407.11691">📝 Technical Report</a>
 </div>
 
@@ -182,10 +171,15 @@ If you use VLMEvalKit in your research or wish to refer to published OpenSource 
 }
 ```
 
-## 💻 Other Projects in OpenCompass
+<p align="right"><a href="#top">🔝Back to top</a></p>
 
-- [Opencompass](https://github.com/open-compass/opencompass/): An LLM evaluation platform, supporting a wide range of models (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude, etc) over 50+ datasets.
-- [MMBench](https://github.com/open-compass/MMBench/): Official Repo of "MMBench: Is Your Multi-modal Model an All-around Player?"
-- [BotChat](https://github.com/open-compass/BotChat/): Evaluating LLMs' multi-round chatting capability.
-- [LawBench](https://github.com/open-compass/LawBench): Benchmarking Legal Knowledge of Large Language Models.
-- [Ada-LEval](https://github.com/open-compass/Ada-LEval): Length Adaptive Evaluation, measures the long-context modeling capability of language models.
+[github-contributors-link]: https://github.com/open-compass/VLMEvalKit/graphs/contributors
+[github-contributors-shield]: https://img.shields.io/github/contributors/open-compass/VLMEvalKit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/open-compass/VLMEvalKit/network/members
+[github-forks-shield]: https://img.shields.io/github/forks/open-compass/VLMEvalKit?color=8ae8ff&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/open-compass/VLMEvalKit/issues
+[github-issues-shield]: https://img.shields.io/github/issues/open-compass/VLMEvalKit?color=ff80eb&labelColor=black&style=flat-square
+[github-license-link]: https://github.com/open-compass/VLMEvalKit/blob/main/LICENSE
+[github-license-shield]: https://img.shields.io/github/license/open-compass/VLMEvalKit?color=white&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/open-compass/VLMEvalKit/stargazers
+[github-stars-shield]: https://img.shields.io/github/stars/open-compass/VLMEvalKit?color=ffcb47&labelColor=black&style=flat-square
