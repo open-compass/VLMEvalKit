@@ -220,8 +220,8 @@ class MathVision(ImageBaseDataset):
         'MathVision_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision_MINI.tsv'
     }
     DATASET_MD5 = {
-        'MathVision': 'ee50b33870bb4444a6691c8a4ecfcc1c',
-        'MathVision_MINI': 'd6029644ef32ca3aec575bf31f947964'
+        'MathVision': '93f6de14f7916e598aa1b7165589831e',
+        'MathVision_MINI': '060fe4fa5d868987ce179307bd5f8a33 '
     }
 
     # It returns a DataFrame
