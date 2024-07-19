@@ -50,7 +50,7 @@ The multi-modal messages `msgs` is a list of dictionaries, each dictionary has t
 - `type`: We currently support two types, choices are ["image", "text"].
 - `value`: When type=='text' , the value is the text message (a single string); when type=='image', the value can be the local path of an image file, or the image URL.
 
-Currently a multi-modal message may contain arbitarily interleaved images and texts. If your model do not support that, our recommended practice is to take the first image and concatenated text messages as the input to the model.
+Currently a multi-modal message may contain arbitarily interleaved images and texts. If your model do not support that, our recommended practice is to take the first image and concatenated text messages as the input to the model. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
 
 Here are some examples of multi-modal messages:
 
