@@ -21,7 +21,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 </div>
 
 <div align="center">
-<a href="https://www.arxiv.org/abs/2407.11691"> 📝 Technical Report </a>
+<a href="https://www.arxiv.org/abs/2407.11691">📝 Technical Report</a>
 </div>
 
 
