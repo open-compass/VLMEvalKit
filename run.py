@@ -129,7 +129,7 @@ def main():
             else:
                 if dataset.TYPE in ['MCQ', 'Y/N']:
                     judge_kwargs['model'] = 'chatgpt-0125'
-                elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
+                elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
                 elif listinstr(['MMLongBench'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4o'

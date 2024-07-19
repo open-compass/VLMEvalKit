@@ -140,7 +140,12 @@ def download_file(url, filename=None):
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
-            os.system(f'wget {url_new} -O {filename}')
+            try:
+                os.system(f'wget {url_new} -O {filename}')
+            except:
+                raise Exception(f'Failed to download {url}')
+        else:
+            raise Exception(f'Failed to download {url}')
 
     return filename
 
