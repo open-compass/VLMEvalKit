@@ -34,11 +34,15 @@ TSV 文件中的内容组成为：
     - 编码：`encode_image_to_base64`（对于PIL Image）/ `encode_image_file_to_base64`（对于图片文件路径）
     - 解码：`decode_base64_to_image`（对于PIL Image）/ `decode_base64_to_image_file`（对于图片文件路径）
 
-### 2. 自定义数据集的指标实现
+### 2. 自定义数据集的 prompt 构建
+
+`ImageBaseDataset` 定义了默认的 prompt 格式。如果需要针对数据集添加 prompt，或给模型输入 `Interleave` 的数据格式，可以通过 `build_prompt(line)` 函数实现。该函数输入为，每次给定 TSV 文件中的一行，包含 index, image, question 等内容作为 line。该函数将返回一个多模态消息 `msg` 的字典列表 `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`，包括图片路径和将被输入到 VLMs 的文本 prompt。对于 interleave 类型输入，可以直接将图片路径的字典放置到 image token 位置。
+
+### 3. 自定义数据集的指标实现
 
 增加对 benchmark 的评测需要自定义一个该数据集的 class 对象，从而实现数据集的指标计算。图文多模态数据集均继承自 `vlmeval/dataset/image_base.py` 中的 `ImageBaseDataset` 对象。其中 `TYPE` 定义了数据集的类型；`DATASET_URL` 为数据集的下载地址；`DATASET_MD5` 为数据集文件的 md5 一致性编码检查。
 
-在 class 中需要实现 `evaluate(eval_file, **judge_kwargs)` 类函数，对自定义的数据集结果进行指标计算和结果输出。如果需要针对数据集添加 prompt，可以通过实现 `build_prompt(line)` 函数进行实现。给定 TSV 文件中的一行作为 line，该函数生成一个多模态消息 `msg` 的字典列表 `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`，包括图片路径和将被输入到 VLMs 的文本 prompt。
+在 class 中**需要实现** `evaluate(eval_file, **judge_kwargs)` 类函数，对自定义的数据集结果进行指标计算和结果输出。函数输入 `eval_file` 为模型预测结果 `{model_name}_{dataset}.xlsx` 的路径。可以通过 `load(eval_file)` 文件将其读取为 panda.DataFrames 类型，其中包含 index, question, answer, category, prediction 等字段。`judge_kwargs` 参数将传递一个评测相关的字典，如：judge 模型的名称，api 请求线程数等。**函数的返回值**为评估完成的准确度等指标，其格式为由 list 组成的字典，并组织成 panda.DataFrames 类型。
 
 ## 实现一个新的模型
 

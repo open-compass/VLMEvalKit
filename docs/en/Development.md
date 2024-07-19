@@ -34,11 +34,15 @@ The contents of the TSV file consist of:
   - Encoding: `encode_image_to_base64 `(for PIL Image) / `encode_image_file_to_base64` (for image file path)
   - Decoding: `decode_base64_to_image`(for PIL Image) / `decode_base64_to_image_file` (for image file path)
 
-### 2. Cutomize your benchmark metrics
+### 2. Cutomize your benchmark prompt
+
+`ImageBaseDataset` defines the default prompt format. If you need to add prompts specific to the dataset or input data in the `Interleave` format to the model, you can implement this through the `build_prompt(line)` function. This function takes a line from a TSV file as input, containing fields such as index, image, question, etc. The function returns a dictionary list of multimodal messages `msg` in the format `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`, including the image path and the text prompt to be input into VLMs. For interleave type inputs, you can directly place the dictionary of the image path at the image token position.
+
+### 3. Cutomize your benchmark metrics
 
 To add evaluation for a new benchmark, you need to customize a class object to implement the dataset’s metrics calculation. Multimodal datasets inherit from the `ImageBaseDataset` object in `vlmeval/dataset/image_base.py`. The TYPE defines the type of dataset, `DATASET_URL` is the download address of the dataset, and `DATASET_MD5` is the MD5 checksum for consistency checking of the dataset file.
 
-In this class, you need to implement the `evaluate(eval_file, **judge_kwargs)` class function to calculate metrics and output results for the custom dataset. If you need to add prompts for the dataset, you can do so by implementing the `build_prompt(line)` function. Given a line from the TSV file as line, this function generates a list dictionary `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]` representing a multimodal message `msg`, including the image path and the text prompt to be input into the VLMs.
+In this class, **you need to implement** the `evaluate(eval_file, **judge_kwargs)` class function to calculate metrics and output results for the custom dataset. The function input `eval_file` is the path to the model prediction results file `{model_name}_{dataset}.xlsx`. This file can be read as a pandas.DataFrame using the `load(eval_file)` method, containing fields such as index, question, answer, category, prediction, etc. The judge_kwargs will pass a dictionary related to evaluation, such as the name of the `judge model`, the number of API request threads, etc. **The return value** of the function is the calculated accuracy and other metrics, formatted as a dictionary composed of lists, organized into a pandas.DataFrame.
 
 ## Implement a new model
 
