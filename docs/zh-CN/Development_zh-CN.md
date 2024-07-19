@@ -2,9 +2,13 @@
 
 ## 实现一个新的 benchmark
 
-示例 PR: **添加 OCRBench** ([#91](https://github.com/open-compass/VLMEvalKit/pull/91/files))
+示例 PR: **添加 Math-Vision Benchmark** ([#292](https://github.com/open-compass/VLMEvalKit/pull/292/files))
 
-目前，我们将每一个 benchmark 数据集设置为一个单独的 TSV 文件。在推理过程中，数据文件将自动下载到 `$LMUData`（如果没有明确设置的话，默认路径是 `$HOME/LMUData`）。所有现有的 benchmark 测试 TSV 文件都由 `vlmeval/utils/dataset_config.py` 中实现的 `TSVDataset` 处理。
+### 1. TSV 数据文件准备
+
+目前，我们将每一个 benchmark 数据集设置为一个单独的 TSV 文件。在推理过程中，数据文件将自动下载到 `$LMUData`（如果没有明确设置的话，默认路径是 `$HOME/LMUData`）。你也可以在环境变量中自定义设置`LMUData=/path/to/your/data`。
+
+TSV 文件中的内容组成为：
 
 | 数据集名称 \ 字段  | index | image | image_path | question | hint | multi-choice<br>options | answer | category | l2-category | split |
 | ---------------------- | ----- | ----- | ---------- | -------- | ---- | ----------------------- | ------ | -------- | ----------- | ----- |
@@ -30,17 +34,21 @@
     - 编码：`encode_image_to_base64`（对于PIL Image）/ `encode_image_file_to_base64`（对于图片文件路径）
     - 解码：`decode_base64_to_image`（对于PIL Image）/ `decode_base64_to_image_file`（对于图片文件路径）
 
-此外，你定义的数据集类**应该实现方法 `build_prompt(self, line, dataset=None)`**。给定行号或 TSV 文件中的一行作为 line，该函数生成一个字典 `dict(image=image_path, text=prompt)`，包括图片路径和将被输入到 VLMs 的文本 prompt。
+### 2. 自定义数据集的指标实现
+
+增加对新 benchmark 的评测需要在 `vlmeval/dataset/utils` 中自定义一个该数据集的 class 对象，从而实现数据集的指标计算。图文多模态数据集均继承自 `vlmeval/dataset/image_base.py` 中的 `ImageBaseDataset` 对象。其中 `TYPE` 定义了数据集的类型；`DATASET_URL` 为数据集的下载地址；`DATASET_MD5` 为数据集文件的 md5 一致性编码检查。
+
+在 class 中需要实现 `evaluate(eval_file, **judge_kwargs)` 类函数，对自定义的数据集结果进行指标计算和结果输出。如果需要针对数据集添加 prompt，可以通过实现 `build_prompt(line)` 函数进行实现。给定 TSV 文件中的一行作为 line，该函数生成一个多模态消息 `msg` 的字典 `dict(image=image_path, text=prompt)`，包括图片路径和将被输入到 VLMs 的文本 prompt。
 
 ## 实现一个新的模型
 
-示例 PR: **支持 Monkey** ([#45](https://github.com/open-compass/VLMEvalKit/pull/45/files))
+示例 PR: **支持 LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
-现有所有的模型都在 `vlmeval/vlm` 中实现。对于一个最基本的模型，你的模型类**应该实现方法** `generate(msgs, dataset=None)`。这个函数将向 VLM 输入一个多模态数据，并返回 VLM 的预测（一个字符串）。可选参数 `dataset` 可以用作模型在不同推理策略之间切换的标志。
+现有所有的模型都在 `vlmeval/vlm` 中实现。对于一个最基本的模型，你的模型类**应该实现方法** `generate_inner(msgs, dataset=None)`。这个函数将向 VLM 输入一个多模态数据，并返回 VLM 的预测（一个字符串）。可选参数 `dataset` 可以用作模型在不同推理策略之间切换的标志。
 
-多模态消息 `msgs` 是一个字典列表，每个字典有两个键：类型和值：
+其中多模态消息 `msgs` 是一个字典列表，每个字典有两个键：类型和值：
 - `type`：我们目前支持两种类型，选项是 ["image", "text"]。
-- `value`：当类型为 `text` 时，值是文本消息（一个字符串）；当类型为'image'时，值可以是图像文件的本地路径，或者是图像的URL。
+- `value`：当类型为 `text` 时，值是文本消息（一个字符串）；当类型为 `image` 时，值可以是图像文件的本地路径，或者是图像的URL。
 
 > 目前，一个多模态消息可能包含任意交错的图像和文本。如果你的模型不支持这一点，我们推荐的做法是取第一张图像和连接的文本消息作为模型的输入。
 
