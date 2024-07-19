@@ -6,7 +6,7 @@ Example PR: **Math-Vision Benchmark** ([#292](https://github.com/open-compass/VL
 
 ### 1. Prepare your benchmark tsv file
 
-Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded to `$LMUData` (default path is `$HOME/LMUData`, if not set explicitly). You can also customize it in the environment variable `LMUData=/path/to/your/data`.
+Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded from the definited `DATASET_URL` link to `$LMUData` file (default path is `$HOME/LMUData`, if not set explicitly). You can upload the prepared TSV file to a downloadable address (e.g., Huggingface) or send it to us at <opencompass@pjlab.org.cn>. We will assist in uploading the dataset to the server. You can also customize `LMUData` path in the environment variable `LMUData=/path/to/your/data`.
 
 The contents of the TSV file consist of:
 
@@ -36,9 +36,9 @@ The contents of the TSV file consist of:
 
 ### 2. Cutomize your benchmark metrics
 
-To add evaluation for a new benchmark, you need to customize a class object for the dataset in `vlmeval/dataset/utils` to implement the dataset’s metrics calculation. Multimodal datasets inherit from the `ImageBaseDataset` object in `vlmeval/dataset/image_base.py`. The TYPE defines the type of dataset, `DATASET_URL` is the download address of the dataset, and `DATASET_MD5` is the MD5 checksum for consistency checking of the dataset file.
+To add evaluation for a new benchmark, you need to customize a class object to implement the dataset’s metrics calculation. Multimodal datasets inherit from the `ImageBaseDataset` object in `vlmeval/dataset/image_base.py`. The TYPE defines the type of dataset, `DATASET_URL` is the download address of the dataset, and `DATASET_MD5` is the MD5 checksum for consistency checking of the dataset file.
 
-In this class, you need to implement the `evaluate(eval_file, **judge_kwargs)` class function to calculate metrics and output results for the custom dataset. If you need to add prompts for the dataset, you can do so by implementing the `build_prompt(line)` function. Given a line from the TSV file as line, this function generates a dictionary `dict(image=image_path, text=prompt)` representing a multimodal message `msg`, including the image path and the text prompt to be input into the VLMs.
+In this class, you need to implement the `evaluate(eval_file, **judge_kwargs)` class function to calculate metrics and output results for the custom dataset. If you need to add prompts for the dataset, you can do so by implementing the `build_prompt(line)` function. Given a line from the TSV file as line, this function generates a list dictionary `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]` representing a multimodal message `msg`, including the image path and the text prompt to be input into the VLMs.
 
 ## Implement a new model
 

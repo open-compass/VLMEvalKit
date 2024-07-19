@@ -6,7 +6,7 @@
 
 ### 1. TSV 数据文件准备
 
-目前，我们将每一个 benchmark 数据集设置为一个单独的 TSV 文件。在推理过程中，数据文件将自动下载到 `$LMUData`（如果没有明确设置的话，默认路径是 `$HOME/LMUData`）。你也可以在环境变量中自定义设置`LMUData=/path/to/your/data`。
+目前，我们将每一个 benchmark 数据集设置为一个单独的 TSV 文件。在推理过程中，数据文件将从数据集定义的 `DATASET_URL` 链接地址自动下载到 `$LMUData` 中（如果没有明确设置的话，默认路径是 `$HOME/LMUData`）。你可以将准备好的 TSV 文件上传到一个可下载的地址（如：huggingface），或发送给我们 <opencompass@pjlab.org.cn>，我们将帮助上传数据集到服务器中。此外，你也可以在环境变量中自定义设置下载路径 `LMUData=/path/to/your/data`。
 
 TSV 文件中的内容组成为：
 
@@ -36,9 +36,9 @@ TSV 文件中的内容组成为：
 
 ### 2. 自定义数据集的指标实现
 
-增加对新 benchmark 的评测需要在 `vlmeval/dataset/utils` 中自定义一个该数据集的 class 对象，从而实现数据集的指标计算。图文多模态数据集均继承自 `vlmeval/dataset/image_base.py` 中的 `ImageBaseDataset` 对象。其中 `TYPE` 定义了数据集的类型；`DATASET_URL` 为数据集的下载地址；`DATASET_MD5` 为数据集文件的 md5 一致性编码检查。
+增加对 benchmark 的评测需要自定义一个该数据集的 class 对象，从而实现数据集的指标计算。图文多模态数据集均继承自 `vlmeval/dataset/image_base.py` 中的 `ImageBaseDataset` 对象。其中 `TYPE` 定义了数据集的类型；`DATASET_URL` 为数据集的下载地址；`DATASET_MD5` 为数据集文件的 md5 一致性编码检查。
 
-在 class 中需要实现 `evaluate(eval_file, **judge_kwargs)` 类函数，对自定义的数据集结果进行指标计算和结果输出。如果需要针对数据集添加 prompt，可以通过实现 `build_prompt(line)` 函数进行实现。给定 TSV 文件中的一行作为 line，该函数生成一个多模态消息 `msg` 的字典 `dict(image=image_path, text=prompt)`，包括图片路径和将被输入到 VLMs 的文本 prompt。
+在 class 中需要实现 `evaluate(eval_file, **judge_kwargs)` 类函数，对自定义的数据集结果进行指标计算和结果输出。如果需要针对数据集添加 prompt，可以通过实现 `build_prompt(line)` 函数进行实现。给定 TSV 文件中的一行作为 line，该函数生成一个多模态消息 `msg` 的字典列表 `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`，包括图片路径和将被输入到 VLMs 的文本 prompt。
 
 ## 实现一个新的模型
 
