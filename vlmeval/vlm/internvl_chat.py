@@ -149,13 +149,40 @@ class InternVLChat(BaseModel):
         else:
             device = torch.cuda.current_device()
             self.device = device
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                trust_remote_code=True,
-                load_in_8bit=load_in_8bit).eval()
-            if not load_in_8bit:
-                self.model = self.model.to(device)
+            from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
+        
+            self.model_path = model_path
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
+            
+            with init_empty_weights():
+                model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
+                                                trust_remote_code=True,
+                                                load_in_8bit=load_in_8bit).eval()
+
+            local_rank = int(os.environ.get('LOCAL_RANK', 0))
+            device_num = torch.cuda.device_count()
+
+            device_1 = local_rank
+            device_2 = local_rank + device_num // 2
+            no_split_module = model._no_split_modules
+            
+            device_map = infer_auto_device_map(
+                model,
+                max_memory={
+                    device_1: '40GiB',
+                    device_2: '40GiB'
+                },
+                no_split_module_classes=no_split_module)
+            
+            model = dispatch_model(
+                model,
+                device_map=device_map,
+                offload_folder="offload").eval()
+
+        if not load_in_8bit:
+            self.model = self.model.to(device)
+
+        self.model = model
 
         self.image_size = self.model.config.vision_config.image_size
         self.version = version

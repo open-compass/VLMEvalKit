@@ -21,7 +21,7 @@ class Emu(BaseModel):
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
-        local_rank = os.environ.get('LOCAL_RANK', 0)
+        local_rank = int(os.environ.get('LOCAL_RANK', 0))
 
         device_num = torch.cuda.device_count()
         assert local_rank * 2 <= device_num, 'The number of devices does not match the world size'

@@ -30,3 +30,4 @@ validators
 visual_genome
 xlsxwriter
 xtuner
+accelerate
