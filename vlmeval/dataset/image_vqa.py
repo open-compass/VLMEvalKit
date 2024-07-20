@@ -213,6 +213,70 @@ class MathVista(ImageBaseDataset):
         return score
 
 
+class MathVision(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'MathVision': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
+        'MathVision_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision_MINI.tsv'
+    }
+    DATASET_MD5 = {
+        'MathVision': '93f6de14f7916e598aa1b7165589831e',
+        'MathVision_MINI': '060fe4fa5d868987ce179307bd5f8a33'
+    }
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mathv import MATH_V_auxeval, MATH_V_acc
+
+        if 'model' in judge_kwargs:
+            model = judge_kwargs['model']
+        else:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MATH-Vision evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MATH_V_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = MATH_V_acc(storage)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}

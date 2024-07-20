@@ -20,14 +20,20 @@ pip install -e .
 
   ```bash
   # .env 文件，将其放置在 $VLMEvalKit 下
-  # Alles-apin-token
-  ALLES=
   # 专有 VLMs 的 API 密钥
   DASHSCOPE_API_KEY=
   GOOGLE_API_KEY=
   OPENAI_API_KEY=
   OPENAI_API_BASE=
   STEPAI_API_KEY=
+  REKA_API_KEY=
+  GLMV_API_KEY=
+  CW_API_BASE=
+  CW_API_KEY=
+  SENSECHAT_AK=
+  SENSECHAT_SK=
+  # 你可以设置一个专用于评估阶段 API 调用的代理
+  EVAL_PROXY=
   ```
 
 - 如果需要使用 API 在对应键值空白处填写上你的密钥。这些 API 密钥将在进行推理和评估时自动加载。

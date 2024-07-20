@@ -1,4 +1,5 @@
-from vlmeval import *
+from ..smp import *
+from ..utils import *
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 

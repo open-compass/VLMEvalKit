@@ -59,7 +59,7 @@ class MiniCPM_V(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
         if DATASET_TYPE(dataset) == 'MCQ':

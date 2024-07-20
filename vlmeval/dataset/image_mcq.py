@@ -45,6 +45,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
+        'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
     }
 
     DATASET_MD5 = {
@@ -83,6 +84,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
+        'BLINK': '3b6649b6a662184ea046908e5506260e',
     }
 
     def build_prompt(self, line):
@@ -123,7 +125,7 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import MMMU_preproc, eval_data_groups, report_acc, report_acc_MMT
+        from .utils.multiple_choice import report_acc, report_acc_MMT, mcq_circular_eval, mcq_vanilla_eval
         # assert dataset is not None
         dataset_map = {
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
@@ -134,10 +136,12 @@ class ImageMCQDataset(ImageBaseDataset):
             dataset = dataset_map[dataset]
         nproc = judge_kwargs.pop('nproc', 4)
 
+        circular = False
         if listinstr(['mmbench', 'ccbench'], dataset.lower()):
             data = load(eval_file)
             data['index'] = [int(x) for x in data['index']]
             dump(data, eval_file)
+            circular = True
 
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
@@ -158,9 +162,6 @@ class ImageMCQDataset(ImageBaseDataset):
             model = None
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
-        result = {}
-        if osp.exists(result_file):
-            result = load(result_file)
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -173,76 +174,24 @@ class ImageMCQDataset(ImageBaseDataset):
         meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
         data_map = {x: y for x, y in zip(data['index'], data['question'])}
         for k in data_map:
-            assert k in meta_q_map and data_map[k] == meta_q_map[k], (
+            assert k in meta_q_map, (
                 f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
             )
 
-        # Build Answer / Category / L2-Category / Split Map
-        answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
-        cate_map, l2_cate_map, split_map = None, None, None
-        if 'category' in meta and len(set(meta['category'])) > 1:
-            cate_map = {i: c for i, c in zip(meta['index'], meta['category'])}
-        if 'l2-category' in meta and len(set(meta['l2-category'])) > 1:
-            l2_cate_map = {i: c for i, c in zip(meta['index'], meta['l2-category'])}
-        if 'split' in meta and len(set(meta['split'])) > 1:
-            split_map = {i: c for i, c in zip(meta['index'], meta['split'])}
-
-        # Change MMMU open-ended questions to multiple-choice ones for evaluation
-        if 'MMMU' in dataset:
-            data = MMMU_preproc(data)
-            answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
-
-        # Only keep those lines in the meta data
-        data = data[data['index'].isin(answer_map)]
-        data_main = data[data['index'] < int(1e6)]
-        meta_idx_set = set(meta['index'])
-        data_main = data_main[data_main['index'].isin(meta_idx_set)]
-
-        lt = len(data_main)
-
-        data_groups = []
-        for i in tqdm(range(lt)):
-            # Dealing with the normal part
-            idx = data_main.iloc[i]['index']
-            if idx not in result:
-                sub_data = data[data['index'] % int(1e6) == idx]
-                data_groups.append(sub_data)
-
-        if len(data_groups):
-            eval_data_groups(
-                model=model,
-                data_groups=data_groups,
-                answer_map=answer_map,
-                nproc=nproc,
-                result_file=result_file)
-
-        tmp_pth = f'/tmp/{timestr()}.xlsx'
-        dump(data_main, tmp_pth)
-        data_main = load(tmp_pth)
-
-        res = load(result_file)
-        indices = data_main['index']
-
-        data_main['hit'] = [res[i]['hit'] for i in indices]
-        data_main['log'] = [res[i]['log'] for i in indices]
-
-        main_idx = data_main['index']
-        if cate_map is not None:
-            data_main['category'] = [cate_map[i] for i in main_idx]
-        if l2_cate_map is not None:
-            data_main['l2-category'] = [l2_cate_map[i] for i in main_idx]
-        if split_map is not None:
-            data_main['split'] = [split_map[i] for i in indices]
+        if circular:
+            data = mcq_circular_eval(model, data, meta, nproc, result_file, self.dataset_name)
+        else:
+            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # load split
-        dump(data_main, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        data_main = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
-            acc = report_acc_MMT(data_main)
+            acc = report_acc_MMT(data)
         else:
-            acc = report_acc(data_main)
+            acc = report_acc(data)
 
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         dump(acc, score_file)

@@ -47,7 +47,7 @@ class PandaGPT(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         struct = {
             'prompt': prompt,
             'image_paths': [image_path],

@@ -27,9 +27,9 @@ class GLM4v(BaseModel):
         self.end_text_token = '<|endoftext|>'
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
-        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             prompt += '\nShort Answer.'
         inputs = self.tokenizer.apply_chat_template(
             [{'role': 'user', 'image': image, 'content': prompt}],
@@ -109,8 +109,8 @@ class CogVlm(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
-        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
+        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             prompt += '\nShort Answer.'
 
         image = Image.open(image_path).convert('RGB')

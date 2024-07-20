@@ -21,14 +21,20 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
 
   ```bash
   # The .env file, place it under $VLMEvalKit
-  # Alles-apin-token, for intra-org use only
-  ALLES=
   # API Keys of Proprietary VLMs
   DASHSCOPE_API_KEY=
   GOOGLE_API_KEY=
   OPENAI_API_KEY=
   OPENAI_API_BASE=
   STEPAI_API_KEY=
+  REKA_API_KEY=
+  GLMV_API_KEY=
+  CW_API_BASE=
+  CW_API_KEY=
+  SENSECHAT_AK=
+  SENSECHAT_SK=
+  # You can also set a proxy for alling api models during the evaluation stage
+  EVAL_PROXY=
   ```
 
 - Fill the blanks with your API keys (if necessary). Those API keys will be automatically loaded when doing the inference and evaluation.

@@ -1,38 +1,39 @@
+<div align="center">
+
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
-<div align="center"><b> VLMEvalKit—多模态大模型评测工具 </b></div>
 
-<div align="center">
-[<a href="/README.md">English</a>] | 简体中文 | [<a href="/docs/ja/README_ja.md">日本語</a>]
+<b>VLMEvalKit: 一种多模态大模型评测工具 </b>
+
+[![][github-contributors-shield]][github-contributors-link] • [![][github-forks-shield]][github-forks-link] • [![][github-stars-shield]][github-stars-link] • [![][github-issues-shield]][github-issues-link] • [![][github-license-shield]][github-license-link]
+
+[English](README.md) | 简体中文 | [日本語](/docs/ja/README_ja.md)
+
+<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass 排行榜 </a> •
+<a href="#-datasets-models-and-evaluation-results">📊 数据集和模型 </a> •
+<a href="#%EF%B8%8F-quickstart">🏗️ 快速开始 </a> •
+<a href="#%EF%B8%8F-development-guide">🛠️ 开发指南 </a> •
+<a href="#-the-goal-of-vlmevalkit">🎯 我们的目标 </a> •
+<a href="#%EF%B8%8F-citation">🖊️ 引用 </a>
+
+<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HuggingFace 排行榜 (存档全部性能) </a> •
+<a href="https://discord.gg/evDT4GZmxN">🔊 Discord 频道 </a> •
+<a href="https://www.arxiv.org/abs/2407.11691">📝 技术报告 </a>
 </div>
 
-<div align="center">
-<a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 性能榜单 </a> •
-<a href="#data-model-results">📊 数据集和模型 </a> •
-<a href="#quickstart">🏗️ 快速开始 </a> •
-<a href="#development">🛠️ 开发 </a> •
-<a href="#goal-of-vlmevalkit">🎯 我们的目标 </a> •
-<a href="#citation">🖊️ 引用 </a>
-</div>
-
-<div align="center">
-<a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 排行榜 </a>
-<a href="https://openxlab.org.cn/apps/detail/kennyutc/open_mllm_leaderboard">(🤖 OpenXlab 镜像)</a>
-<a href="https://discord.gg/evDT4GZmxN">🔊 Discord 频道</a>
-</div>
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
 
+- **[2024-07-19]** 支持了 [**MathVision**](https://mathvision-cuhk.github.io), 感谢 [**scikkk**](https://github.com/scikkk)🔥🔥🔥
+- **[2024-07-19]** 支持了 [**LLaVA-Next-Interleave-7B**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 和 [**LLaVA-Next-LLaMA-3**](https://huggingface.co/lmms-lab/llama3-llava-next-8b) 🔥🔥🔥
+- **[2024-07-18]** 支持了 [**BLINK**](https://zeyofu.github.io/blink/)， 感谢 [**zeyofu**](https://zeyofu.github.io)🔥🔥🔥
+- **[2024-07-18]** 我们发布了第一版 [**VLMEvalKit 技术报告**](https://www.arxiv.org/abs/2407.11691)，我们欢迎来自社区的贡献并十分乐意分享相应的 credit：在下一次 report 更新中，我们将致谢所有的贡献，同时，具备三个或以上主要贡献 (支持新模型、评测集、或是主要特性) 的贡献者将可以加入技术报告的作者列表 🔥🔥🔥
 - **[2024-07-12]** 支持了多模态长文档内容理解基准 [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/), 感谢 [**mayubo2333**](https://github.com/mayubo2333) 🔥🔥🔥
 - **[2024-07-12]** 支持了 [**VCR**](https://github.com/tianyu-z/vcr), 一个视觉 caption 修复测试基准, 感谢 [**tianyu-z**](https://github.com/tianyu-z) and [**sheryc**](https://github.com/sheryc) 🔥🔥🔥
 - **[2024-07-08]** 支持了 [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer), 感谢 [**LightDXY**](https://github.com/LightDXY) 🔥🔥🔥
 - **[2024-07-08]** 支持了 [**InternVL2**](https://huggingface.co/OpenGVLab/InternVL2-26B), 感谢 [**czczup**](https://github.com/czczup) 🔥🔥🔥
 - **[2024-06-27]** 支持了 [**Cambrian**](https://cambrian-mllm.github.io/) 🔥🔥🔥
 - **[2024-06-27]** 支持了 [**AesBench**](https://github.com/yipoh/AesBench)，感谢 [**Yipo Huang**](https://github.com/yipoh) 与 [**Quan Yuan**](https://github.com/dylanqyuan)🔥🔥🔥
-- **[2024-06-26]** 支持了 [**CongRong**](https://mllm.cloudwalk.com/web) 的评测，该模型在 [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 上**排名第三** 🔥🔥🔥
-- **[2024-06-26]** 首次支持了视频理解评测基准 [**MMBench-Video**](https://mmbench-video.github.io)，可以用于测试支持多图输入的图文多模态大模型的。[**快速开始**](/docs/zh-CN/Quickstart.md) 中提供了启动 MMBench-Video 测试的方式 🔥🔥🔥
-- **[2024-06-24]** 支持了 [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 的评测，该模型在 [**Open VLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard) 上**排名第二** 🔥🔥🔥
-- **[2024-06-22]** 由于 GPT-3.5-Turbo-0613 已被 OpenAI 废弃，我们改为使用 GPT-3.5-Turbo-0125 辅助答案提取
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -57,7 +58,8 @@
 | [**RealWorldQA**](https://x.ai/blog/grok-1.5v)            | RealWorldQA | MCQ                                          | [**POPE**](https://github.com/AoiDragon/POPE) | POPE                                           | Y/N                                            |
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ      |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
-| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
+| [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR\_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
+| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
@@ -83,23 +85,16 @@
 
 **基于 PyTorch / HF 的开源模型**
 
-| [**GPT-4v (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🎞️🚅      | [**Gemini-1.0-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Gemini-1.5-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v) 🎞️🚅 |
-| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
-| [**Reka-[Edge / Flash / Core]**](https://www.reka.ai)🚅       | [**Qwen-VL-[Plus / Max]**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅 | [**Claude3-[Haiku / Sonnet / Opus]**](https://www.anthropic.com/news/claude-3-family) 🎞️🚅 | [**GLM-4v**](https://open.bigmodel.cn/dev/howuse/glm4v) 🚅    | [**CongRong**](https://mllm.cloudwalk.com/web) 🎞️🚅 |
-| [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 🎞️🚅 |                                                              |                                                              |                                                              |                                                   |
-
-**Supported PyTorch / HF Models**
-
 | [**IDEFICS-[9B/80B/v2-8B]-Instruct**](https://huggingface.co/HuggingFaceM4/idefics-9b-instruct)🎞️🚅 | [**InstructBLIP-[7B/13B]**](https://github.com/salesforce/LAVIS/blob/main/projects/instructblip/README.md) | [**LLaVA-[v1-7B/v1.5-7B/v1.5-13B]**](https://github.com/haotian-liu/LLaVA) | [**MiniGPT-4-[v1-7B/v1-13B/v2-7B]**](https://github.com/Vision-CAIR/MiniGPT-4) |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | [**mPLUG-Owl2**](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)🎞️ | [**OpenFlamingo-v2**](https://github.com/mlfoundations/open_flamingo)🎞️ | [**PandaGPT-13B**](https://github.com/yxuansu/PandaGPT)      | [**Qwen-VL**](https://huggingface.co/Qwen/Qwen-VL)🎞️🚅, [**Qwen-VL-Chat**](https://huggingface.co/Qwen/Qwen-VL-Chat)🎞️**🚅** |
 | [**VisualGLM-6B**](https://huggingface.co/THUDM/visualglm-6b)🚅 | [**InternLM-XComposer-[1/2]**](https://huggingface.co/internlm/internlm-xcomposer-7b)🚅 | [**ShareGPT4V-[7B/13B]**](https://sharegpt4v.github.io)🚅     | [**TransCore-M**](https://github.com/PCIResearch/TransCore-M) |
 | [**LLaVA (XTuner)**](https://huggingface.co/xtuner/llava-internlm-7b)🚅 | [**CogVLM-[Chat/Llama3]**](https://huggingface.co/THUDM/cogvlm-chat-hf)🚅 | [**ShareCaptioner**](https://huggingface.co/spaces/Lin-Chen/Share-Captioner)🚅 | [**CogVLM-Grounding-Generalist**](https://huggingface.co/THUDM/cogvlm-grounding-generalist-hf)🚅 |
 | [**Monkey**](https://github.com/Yuliang-Liu/Monkey)🚅, [**Monkey-Chat**](https://github.com/Yuliang-Liu/Monkey)🚅 | [**EMU2-Chat**](https://github.com/baaivision/Emu)🚅🎞️         | [**Yi-VL-[6B/34B]**](https://huggingface.co/01-ai/Yi-VL-6B)  | [**MMAlaya**](https://huggingface.co/DataCanvas/MMAlaya)🚅    |
-| [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer)🚅🎞️ | [**MiniCPM-[V1/V2/V2.5]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat-[V1-1/V1-2/V1-2-Plus/V1-5/V2]**](https://github.com/OpenGVLab/InternVL)🚅🎞️, <br>[**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ |
-| [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
+| [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer)🚅🎞️ | [**MiniCPM-[V1/V2/V2.5]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat-[V1-1/V1-2/V1-5/V2]**](https://github.com/OpenGVLab/InternVL)🚅🎞️, <br>[**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ |
+| [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-v1_1-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
 | [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) 🚅 | [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)🚅 | [**WeMM**](https://github.com/scenarios/WeMM)🚅               |
-| [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    |  [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) |                                                              |                                                              |
+| [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    | [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) |   [**LLaVA-Next-[Interleave-7B/LLaMA-3/Qwen-32B]**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 🎞️   |                                                              |
 
 🎞️ 表示支持多图片输入。
 
@@ -137,6 +132,11 @@ print(ret)  # 提供的图片中有两个苹果
 
 要开发自定义评测数据集，支持其他 VLMs，或为 VLMEvalKit 贡献代码，请参阅[**开发指南**](/docs/zh-CN/Development_zh-CN.md)。
 
+为激励来自社区的共享并分享相应的 credit，在下一次 report 更新中，我们将：
+
+- 致谢所有的 contribution
+- 具备三个或以上主要贡献 (支持新模型、评测集、或是主要特性) 的贡献者将可以加入技术报告的作者列表 。合条件的贡献者可以创建 issue 或是在 [VLMEvalKit Discord Channel](https://discord.com/invite/evDT4GZmxN) 私信 kennyutc，我们将进行跟进
+
 ## 🎯 VLMEvalKit 的目标 <a id="goal-of-vlmevalkit"></a>
 
 **该代码库的设计目标是：**
@@ -159,18 +159,26 @@ print(ret)  # 提供的图片中有两个苹果
 如果您在研究中使用了 VLMEvalKit，或希望参考已发布的开源评估结果，请使用以下 BibTeX 条目以及与您使用的特定 VLM / 基准测试相对应的 BibTex 条目。
 
 ```bib
-@misc{2023opencompass,
-    title={OpenCompass: A Universal Evaluation Platform for Foundation Models},
-    author={OpenCompass Contributors},
-    howpublished = {\url{https://github.com/open-compass/opencompass}},
-    year={2023}
+@misc{duan2024vlmevalkit,
+      title={VLMEvalKit: An Open-Source Toolkit for Evaluating Large Multi-Modality Models},
+      author={Haodong Duan and Junming Yang and Yuxuan Qiao and Xinyu Fang and Lin Chen and Yuan Liu and Xiaoyi Dong and Yuhang Zang and Pan Zhang and Jiaqi Wang and Dahua Lin and Kai Chen},
+      year={2024},
+      eprint={2407.11691},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2407.11691},
 }
 ```
 
-## 💻 OpenCompass 的其他项目
+<p align="right"><a href="#top">🔝回到顶部</a></p>
 
-- [Opencompass](https://github.com/open-compass/opencompass/): 一个大模型评测平台，支持广泛的模型 (LLaMA, LLaMa2, ChatGLM2, ChatGPT, Claude等) 覆盖 50 多个数据集。
-- [MMBench](https://github.com/open-compass/MMBench/): 官方代码库 "MMBench: Is Your Multi-modal Model an All-around Player?"
-- [BotChat](https://github.com/open-compass/BotChat/): 评测大模型多轮对话能力。
-- [LawBench](https://github.com/open-compass/LawBench): 对大语言模型的法律知识进行测试。
-- [Ada-LEval](https://github.com/open-compass/ada-leval): 对大语言模型的长文本建模能力进行测试。
+[github-contributors-link]: https://github.com/open-compass/VLMEvalKit/graphs/contributors
+[github-contributors-shield]: https://img.shields.io/github/contributors/open-compass/VLMEvalKit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/open-compass/VLMEvalKit/network/members
+[github-forks-shield]: https://img.shields.io/github/forks/open-compass/VLMEvalKit?color=8ae8ff&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/open-compass/VLMEvalKit/issues
+[github-issues-shield]: https://img.shields.io/github/issues/open-compass/VLMEvalKit?color=ff80eb&labelColor=black&style=flat-square
+[github-license-link]: https://github.com/open-compass/VLMEvalKit/blob/main/LICENSE
+[github-license-shield]: https://img.shields.io/github/license/open-compass/VLMEvalKit?color=white&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/open-compass/VLMEvalKit/stargazers
+[github-stars-shield]: https://img.shields.io/github/stars/open-compass/VLMEvalKit?color=ffcb47&labelColor=black&style=flat-square
