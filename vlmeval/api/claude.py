@@ -51,7 +51,12 @@ class Claude_Wrapper(BaseAPI):
 
                 item = {
                     'type': 'image',
-                    'source': {'type': 'base64', 'media_type': media_type, 'data': encode_image_file_to_base64(pth)}
+                    # Will resize images that are too large to 4096 (max-edge)
+                    'source': {
+                        'type': 'base64',
+                        'media_type': media_type,
+                        'data': encode_image_file_to_base64(pth, target_size=4096)
+                    }
                 }
 
             elif msg['type'] == 'text':
