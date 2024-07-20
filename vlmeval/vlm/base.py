@@ -6,7 +6,7 @@ from abc import abstractmethod
 class BaseModel:
 
     INTERLEAVE = False
-    allowed_types = ['text', 'image']
+    allowed_types = ['text', 'image', 'video']
 
     def __init__(self):
         self.dump_image_func = None
@@ -128,3 +128,19 @@ class BaseModel:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
+    
+    def message_to_promptvideo(self, message):
+        if self.VIDEO_LLM:
+            num_videos = len([x for x in message if x['type'] == 'video'])
+            if num_videos == 0:
+                prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+                video = None
+            else: 
+                prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+                video = [x['value'] for x in message if x['type'] == 'video'][0]
+            return prompt, video
+        else:
+            import sys
+            warnings.warn('Model does not support video input.')
+            sys.exit(-1)
+

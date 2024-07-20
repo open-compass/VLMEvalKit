@@ -25,6 +25,7 @@ English | [<a href="/docs/zh-CN/README_zh-CN.md">简体中文</a>] | [<a href="/
 
 ## 🆕 News
 
+- **[2024-07-20]** We have supported [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, the first Video-LLM to be supported by our repository! Using [**this fork version**](https://github.com/FangXinyu-0913/Video-LLaVA) to install Video-LLaVA (**More Recommended**) or install [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) to use it!
 - **[2024-07-12]** We have supported [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/), a benchmark for long-context document understanding, thanks to [**mayubo2333**](https://github.com/mayubo2333) 🔥🔥🔥
 - **[2024-07-12]** We have supported [**VCR**](https://github.com/tianyu-z/vcr), a benchmark for visual caption restoration evaluation, thanks to [**tianyu-z**](https://github.com/tianyu-z) and [**sheryc**](https://github.com/sheryc) 🔥🔥🔥
 - **[2024-07-08]** We have supported [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer), thanks to [**LightDXY**](https://github.com/LightDXY) 🔥🔥🔥
@@ -94,11 +95,13 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**InternLM-XComposer-2.5**](https://github.com/InternLM/InternLM-XComposer)🚅🎞️ | [**MiniCPM-[V1/V2/V2.5]**](https://huggingface.co/openbmb/MiniCPM-V)🚅 | [**OmniLMM-12B**](https://huggingface.co/openbmb/OmniLMM-12B) | [**InternVL-Chat-[V1-1/V1-2/V1-2-Plus/V1-5/V2]**](https://github.com/OpenGVLab/InternVL)🚅🎞️, <br>[**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ |
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
 | [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) 🚅 | [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)🚅 | [**WeMM**](https://github.com/scenarios/WeMM)🚅               |
-| [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    |  [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) |                                                              |                                                              |
+| [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    |  [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) | [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬                                                            |                                                              |
 
 🎞️: Support multiple images as inputs.
 
 🚅: Models can be used without any additional configuration/operation.
+
+🎬: Support Video as inputs.
 
 **Transformers Version Recommendation:**
 
@@ -107,7 +110,7 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==4.33.0` **for**: `Qwen series`, `Monkey series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `ShareCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`, `PandaGPT`, `VXVERSE`, `GLM-4v-9B`.
 - **Please use** `transformers==4.37.0` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-[V1/V2]`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`, `Cambrian Series`.
 - **Please use** `transformers==4.40.0` **for**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `LLaVA-Next series`, `360VL-70B`, `Phi-3-Vision`, `WeMM`.
-- **Please use** `transformers==latest` **for**: `PaliGemma-3B`.
+- **Please use** `transformers==latest` **for**: `PaliGemma-3B`, `Video-LLaVA-7B-HF`.
 
 ```python
 # Demo

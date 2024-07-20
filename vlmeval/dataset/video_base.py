@@ -15,6 +15,7 @@ class VideoBaseDataset:
             warnings.warn('Please install decord via `pip install decord`.')
 
         assert dataset in ['MMBench-Video']
+        self.dataset_name = dataset
         ret = self.prepare_dataset(dataset)
         assert ret is not None
         lmu_root = LMUDataRoot()
