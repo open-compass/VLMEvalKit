@@ -159,7 +159,7 @@ def main():
                     continue
 
             if dataset_name in [
-                'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN'
+                'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN',
                 'MMBench_TEST_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_V11', 'MMBench_CN_V11'
             ]:
                 if not MMBenchOfficialServer(dataset_name):
