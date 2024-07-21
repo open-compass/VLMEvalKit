@@ -81,12 +81,12 @@ SKIP_MODELS = [
     'flamingov2', 'MiniGPT-4-v1-7B', 'MiniGPT-4-v2', 'PandaGPT_13B',
     'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
-    'cogvlm-grounding-generalist',
+    'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus',
 ]
 
 LARGE_MODELS = [
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'idefics_80b_instruct',
-    '360VL-70B', 'emu2_chat', 'InternVL2-76B',
+    'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
 ]
 
 
