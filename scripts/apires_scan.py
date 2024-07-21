@@ -1,5 +1,6 @@
 import sys
 from vlmeval import *
+from vlmeval.dataset import SUPPORTED_DATASETS
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 root = sys.argv[1]
