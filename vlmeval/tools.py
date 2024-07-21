@@ -411,8 +411,12 @@ def cli():
             missing_list = MISSING(args[1])
             logger = get_logger('Find Missing')
             logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
+            lines = []
             for m, D in missing_list:
-                logger.info(colored(f'Model {m}, Dataset {D}', 'red'))
+                line = f'Model {m}, Dataset {D}'
+                logger.info(colored(line, 'red'))
+                lines.append(line)
+            mwlines(lines, f'{args[1]}_missing.txt')
         elif args[0].lower() == 'circular':
             assert len(args) >= 2
             CIRCULAR(args[1])
