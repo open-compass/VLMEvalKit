@@ -7,9 +7,8 @@ if root[-1] in '/\\':
     root = root[:-1]
 
 model_name = root.split('/')[-1]
-datasets = list(dataset_URLs)
 
-for d in datasets:
+for d in SUPPORTED_DATASETS:
     fname = f'{model_name}_{d}.xlsx'
     pth = osp.join(root, fname)
     if osp.exists(pth):
