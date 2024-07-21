@@ -174,7 +174,12 @@ class LLaVA_Next(BaseModel):
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
-    def apply_prompt_template(self, prompt):
+    def apply_prompt_template(self, prompt, dataset=None):
+
+        if dataset is not None and DATASET_TYPE(dataset) == "MTVQA":
+            prompt+="\nAnswer the question using a word or phrase in the language of the question."
+
+        
         model_pth = self.model_pth.lower()
         if 'mistral' in model_pth:
             template = '[INST] PLACEHOLDER [/INST]'
@@ -193,6 +198,10 @@ class LLaVA_Next(BaseModel):
             raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
 
         prompt = template.replace('PLACEHOLDER', f'<image>\n{prompt}')
+
+        print("============")
+        print(prompt)
+        
         return prompt
 
     def use_custom_prompt(self, dataset):
@@ -238,7 +247,7 @@ class LLaVA_Next(BaseModel):
             prompt += '\nThere exists multiple images in the conversation, but only the first one is displayed.'
 
         image = Image.open(image_path).convert('RGB')
-        prompt = self.apply_prompt_template(prompt)
+        prompt = self.apply_prompt_template(prompt, dataset)
 
         inputs = self.processor(prompt, image, return_tensors='pt').to('cuda')
         output = self.model.generate(**inputs, **self.kwargs)
@@ -251,10 +260,15 @@ class LLaVA_Next(BaseModel):
             answer = answer.split('ASSISTANT:')[1].strip()
         elif 'assistant\n' in answer:
             answer = answer.split('assistant\n')[1].strip()
+        elif 'assistant \n' in answer:
+            answer = answer.split('assistant \n')[1].strip()
 
         if '</s>' in answer:
             answer = answer.split('</s>')[0].strip()
         if '<|im_end|>' in answer:
             answer = answer.split('<|im_end|>')[0].strip()
+
+        print('------------------')
+        print(answer)
 
         return answer

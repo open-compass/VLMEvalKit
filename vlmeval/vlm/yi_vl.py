@@ -6,6 +6,7 @@ from PIL import Image
 from vlmeval.smp import get_cache_path, load, dump, splitlen
 from huggingface_hub import snapshot_download
 from .base import BaseModel
+from ..dataset.config import DATASET_TYPE
 
 
 """
@@ -105,6 +106,9 @@ class Yi_VL(BaseModel):
         from llava.mm_utils import KeywordsStoppingCriteria, expand2square, tokenizer_image_token
 
         qs = DEFAULT_IMAGE_TOKEN + '\n' + prompt
+        if dataset is not None and DATASET_TYPE(dataset) == "MTVQA":
+            qs+="\nAnswer the question using a word or phrase in the language of the question."
+
         conv = conv_templates[self.conv_mode].copy()
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)

@@ -3,7 +3,7 @@ import torch
 from transformers import AutoModelForCausalLM
 import warnings
 from .base import BaseModel
-from ..utils import DATASET_TYPE
+from ..dataset.config import DATASET_TYPE
 
 
 class DeepSeekVL(BaseModel):
