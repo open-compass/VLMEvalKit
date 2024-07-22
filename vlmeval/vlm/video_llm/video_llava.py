@@ -19,7 +19,7 @@ def read_video_pyav(container, indices):
             break
         if i >= start_index and i in indices:
             frames.append(frame)
-    return np.stack([x.to_ndarray(format="rgb24") for x in frames])
+    return np.stack([x.to_ndarray(format='rgb24') for x in frames])
 
 
 class VideoLLaVA_HF(BaseModel):
@@ -56,8 +56,8 @@ class VideoLLaVA_HF(BaseModel):
         indices = np.arange(0, total_frames, total_frames / self.nframe).astype(int)
         clip = read_video_pyav(container, indices)
 
-        prompt = f"USER: <video>\n{question} ASSISTANT:"
-        inputs = self.processor(text=prompt, videos=clip, return_tensors="pt").to(self.model.device)
+        prompt = f'USER: <video>\n{question} ASSISTANT:'
+        inputs = self.processor(text=prompt, videos=clip, return_tensors='pt').to(self.model.device)
 
         # Generate args -- deperecated
         generation_args = {
@@ -117,7 +117,7 @@ class VideoLLaVA(BaseModel):
         else:
             qs = ''.join([DEFAULT_IMAGE_TOKEN] * 8) + '\n' + qs
 
-        conv_mode = "llava_v1"
+        conv_mode = 'llava_v1'
         device = torch.device('cuda')
         conv = conv_templates[conv_mode].copy()
         conv.append_message(conv.roles[0], qs)
