@@ -61,7 +61,8 @@ class VideoBaseDataset:
         images = [vid[i].asnumpy() for i in indices]
         images = [Image.fromarray(arr) for arr in images]
         for im, pth in zip(images, frame_paths):
-            im.save(pth)
+            if not osp.exists(pth):
+                im.save(pth)
         return frame_paths
 
     # Return a list of dataset names that are supported by this class, can override
