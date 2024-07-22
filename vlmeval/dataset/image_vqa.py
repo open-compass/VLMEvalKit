@@ -394,6 +394,7 @@ class MTVQADataset(ImageBaseDataset):
             cate = line['category']
             score = 1.0 if ans in pred else 0.0
             category_scores[cate].append(score)
+            category_scores['Average'].append(score)
         # Calculate the average score for each category, the score is normalized to [0, 100]
         category_averages = {category: np.mean(scores) * 100 for category, scores in category_scores.items()}
 
