@@ -96,8 +96,8 @@ def main():
                     logger.info('Video-MME not support Pack Mode, directly change to unpack')
                     args.pack = False
                 packstr = 'pack' if args.pack else 'nopack'
-                subtitle_str = 'subs' if args.use_subtitle else 'nosubs'
-                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitle_str}.xlsx'
+                subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
 
             if osp.exists(result_file) and args.rerun:
                 for keyword in ['openai', 'gpt', 'auxmatch']:

@@ -54,7 +54,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
     @classmethod
     def supported_datasets(cls):
         return ['Video-MME']
-    
+
     def prepare_dataset(self, dataset_name='Video-MME', repo_id='lmms-lab/Video-MME'):
 
         def check_integrity(pth):
