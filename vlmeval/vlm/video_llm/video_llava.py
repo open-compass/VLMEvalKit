@@ -33,8 +33,8 @@ class VideoLLaVA_HF(BaseModel):
             from transformers import VideoLlavaProcessor, VideoLlavaForConditionalGeneration
         except:
             warnings.warn('Please install the latest version transformers. \
-                          You can install by `pip install --upgrade git+https://github.com/huggingface/transformers.git` \
-                          or `pip install transformers==4.42.0`.')
+                          You can install by `pip install transformers==4.42.0` \
+                          or `pip install --upgrade git+https://github.com/huggingface/transformers.git`.')
             sys.exit(-1)
 
         assert model_path is not None
@@ -82,11 +82,12 @@ class VideoLLaVA(BaseModel):
     INTERLEAVE = False
     VIDEO_LLM = True
 
-    def __init__(self, model_path='LanguageBind/Video-LLaVA-7B',  **kwargs):
+    def __init__(self, model_path='LanguageBind/Video-LLaVA-7B', **kwargs):
         assert model_path is not None
         try:
             from videollava.conversation import conv_templates, SeparatorStyle
-            from videollava.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
+            from videollava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
+            from videollava.constants import DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
             from videollava.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
             from videollava.model.builder import load_pretrained_model
             from videollava.model.language_model.llava_llama import LlavaLlamaForCausalLM
@@ -107,7 +108,8 @@ class VideoLLaVA(BaseModel):
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from videollava.conversation import conv_templates, SeparatorStyle
-        from videollava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
+        from videollava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
+        from videollava.constants import DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
         from videollava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
         if model.config.mm_use_im_start_end:
@@ -124,7 +126,8 @@ class VideoLLaVA(BaseModel):
 
         video_tensor = video_processor.preprocess(video, return_tensors='pt')['pixel_values'][0].half().to(device)
 
-        input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(device)
+        input_ids = tokenizer_image_token(prompt, tokenizer, \
+                                          IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(device)
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
