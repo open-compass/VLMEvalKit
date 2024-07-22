@@ -372,6 +372,48 @@ class MMVet(ImageBaseDataset):
         return score
 
 
+class MTVQADataset(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {'MTVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MTVQA_TEST.tsv'}
+    DATASET_MD5 = {'MTVQA_TEST': 'd87c17dbab934b7cd89c0a3c1c5657f4'}
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        assert 'answer' in data and 'prediction' in data and 'category' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        if 'split' in data:
+            assert np.all([x.lower() == 'test' for x in data['split']]), 'We only support MTVQA_TEST for now. '
+        lt = len(data)
+        category_scores = defaultdict(list)
+        for i in range(lt):
+            line = data.iloc[i]
+            ans = line['answer'].strip().lower().replace('.', '')
+            pred = line['prediction'].strip().lower().replace('.', '')
+            cate = line['category']
+            score = 1.0 if ans in pred else 0.0
+            category_scores[cate].append(score)
+            category_scores['Average'].append(score)
+        # Calculate the average score for each category, the score is normalized to [0, 100]
+        category_averages = {category: np.mean(scores) * 100 for category, scores in category_scores.items()}
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.json')
+        dump(category_averages, result_file)
+
+        return category_averages
+
+    # MT-VQA adopts a custom prompt
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert sum([x['type'] == 'text' for x in msgs]) == 1
+        for item in msgs:
+            if item['type'] == 'text':
+                item['value'] += '\nAnswer the question using a word or phrase in the language of the question.'
+        return msgs
+
+
 class CustomVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
 
