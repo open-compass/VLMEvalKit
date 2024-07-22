@@ -126,7 +126,7 @@ class VideoLLaVA(BaseModel):
 
         video_tensor = video_processor.preprocess(video, return_tensors='pt')['pixel_values'][0].half().to(device)
 
-        input_ids = tokenizer_image_token(prompt, tokenizer, \
+        input_ids = tokenizer_image_token(prompt, tokenizer,
                                           IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(device)
 
         stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
