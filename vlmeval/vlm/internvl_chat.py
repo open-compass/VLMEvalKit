@@ -154,10 +154,9 @@ class InternVLChat(BaseModel):
             self.model_path = model_path
             self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
             
-            with init_empty_weights():
-                model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
-                                                trust_remote_code=True,
-                                                load_in_8bit=load_in_8bit).eval()
+            model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
+                                            trust_remote_code=True,
+                                            load_in_8bit=load_in_8bit).eval()
 
             local_rank = int(os.environ.get('LOCAL_RANK', 0))
             device_num = torch.cuda.device_count()

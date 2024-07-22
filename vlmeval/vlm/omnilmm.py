@@ -6,6 +6,7 @@ from transformers import AutoTokenizer
 from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
+from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
 
 DEFAULT_IMAGE_TOKEN = '<image>'
@@ -73,7 +74,26 @@ class OmniLMM12B(BaseModel):
 
     def __init__(self, model_path, root, **kwargs) -> None:
         sys.path.append(root)
-        model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
+        with init_empty_weights():
+            model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
+        
+        local_rank = int(os.environ.get('LOCAL_RANK', 0))
+        device_num = torch.cuda.device_count()
+
+        device_1 = local_rank
+        device_2 = local_rank + device_num // 2
+        device_map = infer_auto_device_map(
+            model,
+            max_memory={
+                device_1: '22GiB',
+                device_2: '22GiB'
+            },
+            no_split_module_classes=['Eva','MistralDecoderLayer', 'ModuleList', 'Resampler'])
+        print(device_map)
+        model = dispatch_model(
+            model,
+            device_map=device_map).eval()
+        
         self.model = model
         self.image_token_len = image_token_len
         self.image_transform = img_processor
@@ -90,7 +110,7 @@ class OmniLMM12B(BaseModel):
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
+        prompt, image_path = self.message_to_promptimg(message)
         try:
             image = Image.open(image_path).convert('RGB')
         except:
