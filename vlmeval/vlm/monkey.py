@@ -73,7 +73,7 @@ class Monkey(BaseModel):
         return response
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         if dataset is None:
             return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)
@@ -155,7 +155,7 @@ class MonkeyChat(BaseModel):
         return response
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         if dataset is None:
             return self.generate_vanilla(image_path, prompt)
         assert isinstance(dataset, str)

@@ -122,7 +122,7 @@ class TransCoreM(BaseModel):
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
 
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'

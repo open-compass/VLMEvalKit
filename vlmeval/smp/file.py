@@ -140,7 +140,12 @@ def download_file(url, filename=None):
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
-            os.system(f'wget {url_new} -O {filename}')
+            try:
+                os.system(f'wget {url_new} -O {filename}')
+            except:
+                raise Exception(f'Failed to download {url}')
+        else:
+            raise Exception(f'Failed to download {url}')
 
     return filename
 
@@ -243,3 +248,10 @@ def file_size(f, unit='GB'):
         'KB': 2 ** 10,
     }
     return stats.st_size / div_map[unit]
+
+
+def parquet_to_tsv(file_path):
+    data = pd.read_parquet(file_path)
+    pth = '/'.join(file_path.split('/')[:-1])
+    data_name = file_path.split('/')[-1].split('.')[0]
+    data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)

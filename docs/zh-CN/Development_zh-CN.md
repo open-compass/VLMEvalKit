@@ -19,6 +19,7 @@
 | COCO_VAL               | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |
 | OCRVQA_[TEST/TESTCORE] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 | TextVQA_VAL            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| VCR_[EN/ZH]\_[EASY/HARD]_[ALL/500/100]            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 
 <div align="center"><b>表 1. 支持的数据集的 TSV 字段。</b></div>
 

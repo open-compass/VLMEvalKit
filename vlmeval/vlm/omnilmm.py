@@ -90,7 +90,7 @@ class OmniLMM12B(BaseModel):
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         try:
             image = Image.open(image_path).convert('RGB')
         except:

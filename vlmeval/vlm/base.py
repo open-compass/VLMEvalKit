@@ -8,6 +8,9 @@ class BaseModel:
     INTERLEAVE = False
     allowed_types = ['text', 'image']
 
+    def __init__(self):
+        self.dump_image_func = None
+
     def use_custom_prompt(self, dataset):
         """Whether to use custom prompt for the given dataset.
 
@@ -33,39 +36,11 @@ class BaseModel:
         """
         raise NotImplementedError
 
+    def set_dump_image(self, dump_image_func):
+        self.dump_image_func = dump_image_func
+
     def dump_image(self, line, dataset):
-        """Dump the image(s) of the input line to the corresponding dataset folder.
-
-        Args:
-            line (line of pd.DataFrame): The raw input line.
-            dataset (str): The name of the dataset.
-
-        Returns:
-            str | list[str]: The paths of the dumped images.
-        """
-        ROOT = LMUDataRoot()
-        assert isinstance(dataset, str)
-        img_root = osp.join(ROOT, 'images', img_root_map(dataset))
-        os.makedirs(img_root, exist_ok=True)
-        if 'image' in line:
-            if isinstance(line['image'], list):
-                tgt_path = []
-                assert 'image_path' in line
-                for img, im_name in zip(line['image'], line['image_path']):
-                    path = osp.join(img_root, im_name)
-                    if not read_ok(path):
-                        decode_base64_to_image_file(img, path)
-                    tgt_path.append(path)
-            else:
-                tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-                if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
-                tgt_path = [tgt_path]
-        else:
-            assert 'image_path' in line
-            tgt_path = toliststr(line['image_path'])
-
-        return tgt_path
+        return self.dump_image_func(line)
 
     @abstractmethod
     def generate_inner(self, message, dataset=None):
@@ -139,7 +114,7 @@ class BaseModel:
             assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
         return self.generate_inner(message, dataset)
 
-    def message_to_promptimg(self, message):
+    def message_to_promptimg(self, message, dataset=None):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         warnings.warn(
@@ -151,5 +126,9 @@ class BaseModel:
             image = None
         else:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-            image = [x['value'] for x in message if x['type'] == 'image'][0]
+            images = [x['value'] for x in message if x['type'] == 'image']
+            if 'BLINK' == dataset:
+                image = concat_images(images, target_size=512)
+            else:
+                image = images[0]
         return prompt, image

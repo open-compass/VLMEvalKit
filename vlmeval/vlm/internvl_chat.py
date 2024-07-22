@@ -95,6 +95,36 @@ def load_image(image_file, input_size=448, max_num=6, upscale=False):
     return pixel_values
 
 
+# This function is used to split InternVL2-Llama3-76B
+def split_model(model_name):
+    import math
+    device_map = {}
+    num_gpus = torch.cuda.device_count()
+    rank, world_size = get_rank_and_world_size()
+    num_gpus = num_gpus // world_size
+
+    num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
+                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
+    # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
+    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.2))
+    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.8)
+    layer_cnt = 0
+    for i, num_layer in enumerate(num_layers_per_gpu):
+        for j in range(num_layer):
+            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
+            layer_cnt += 1
+    device_map['vision_model'] = rank
+    device_map['mlp1'] = rank
+    device_map['language_model.model.tok_embeddings'] = rank
+    device_map['language_model.model.embed_tokens'] = rank
+    device_map['language_model.output'] = rank
+    device_map['language_model.model.norm'] = rank
+    device_map['language_model.lm_head'] = rank
+    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
+    return device_map
+
+
 class InternVLChat(BaseModel):
 
     INSTALL_REQ = False
@@ -106,13 +136,26 @@ class InternVLChat(BaseModel):
 
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
-        device = torch.cuda.current_device()
-        self.device = device
-        self.model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
-                                               trust_remote_code=True,
-                                               load_in_8bit=load_in_8bit).eval()
-        if not load_in_8bit:
-            self.model = self.model.to(device)
+
+        if listinstr(['InternVL2-Llama3-76B'], model_path):
+            device_map = split_model(model_path.split('/')[1])
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                load_in_8bit=load_in_8bit,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                device_map=device_map).eval()
+        else:
+            device = torch.cuda.current_device()
+            self.device = device
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                load_in_8bit=load_in_8bit).eval()
+            if not load_in_8bit:
+                self.model = self.model.to(device)
 
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
@@ -193,7 +236,7 @@ class InternVLChat(BaseModel):
 
     def generate_v1_2(self, message, dataset=None):
         self.INTERLEAVE = False
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         image = image.resize((self.image_size, self.image_size))
         image_processor = CLIPImageProcessor.from_pretrained(self.model_path)
@@ -243,7 +286,7 @@ class InternVLChat(BaseModel):
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                upscale_flag = image_idx == 0 and listinstr(['MMMU_DEV_VAL'], dataset)
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
                     file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))

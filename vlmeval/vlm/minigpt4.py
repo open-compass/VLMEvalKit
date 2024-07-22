@@ -69,7 +69,7 @@ class MiniGPT4(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         from minigpt4.conversation.conversation import Chat
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         if self.mode == 'v2':
             chat = Chat(self.model, self.vis_processor, device=self.device)
         else:

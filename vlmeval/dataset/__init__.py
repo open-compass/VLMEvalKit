@@ -4,17 +4,32 @@ from .image_base import img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset
-from .image_vqa import ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet, CustomVQADataset
+from .image_vqa import ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, CustomVQADataset
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
-from .utils import build_judge, extract_answer_from_item, prefetch_answer, DEBUG_MESSAGE
+from .utils import *
 from ..smp import *
 
-DATASET_CLASSES = [
-    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, MMMUDataset,
-    CustomMCQDataset, ImageVQADataset, OCRBench, MathVista, LLaVABench, MMVet,
-    CustomVQADataset, MMBenchVideo
+
+# Add new supported dataset class here
+IMAGE_DATASET = [
+    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
+    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet,
+    MMLongBench, VCRDataset
 ]
+
+VIDEO_DATASET = [
+    MMBenchVideo, VideoMME
+]
+
+CUSTOM_DATASET = [
+    CustomMCQDataset, CustomVQADataset,
+]
+
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + CUSTOM_DATASET
+SUPPORTED_DATASETS = []
+for DATASET_CLS in DATASET_CLASSES:
+    SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
 
 
 def DATASET_TYPE(dataset):
@@ -24,6 +39,7 @@ def DATASET_TYPE(dataset):
 
 
 def build_dataset(dataset_name, **kwargs):
+<<<<<<< HEAD
     if dataset_name == 'MMBench-Video':
         return MMBenchVideo(dataset_name, **kwargs)
     if dataset_name == 'Video-MME':
@@ -34,6 +50,9 @@ def build_dataset(dataset_name, **kwargs):
         MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet
     ]
     for cls in datasets:
+=======
+    for cls in (IMAGE_DATASET + VIDEO_DATASET):
+>>>>>>> main
         if dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
@@ -58,8 +77,5 @@ def build_dataset(dataset_name, **kwargs):
 
 
 __all__ = [
-    'MMBenchVideo', 'ImageYORNDataset', 'ImageMCQDataset', 'MMMUDataset',
-    'ImageCaptionDataset', 'ImageVQADataset', 'OCRBench', 'MathVista', 'LLaVABench', 'MMVet',
-    'CustomMCQDataset', 'CustomVQADataset', 'build_dataset', 'img_root_map',
-    'build_judge', 'extract_answer_from_item', 'prefetch_answer', 'DEBUG_MESSAGE'
-]
+    'build_dataset', 'img_root_map', 'build_judge', 'extract_answer_from_item', 'prefetch_answer', 'DEBUG_MESSAGE'
+] + [cls.__name__ for cls in DATASET_CLASSES]
