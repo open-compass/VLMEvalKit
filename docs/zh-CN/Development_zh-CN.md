@@ -4,7 +4,14 @@
 
 示例 PR: **添加 Math-Vision Benchmark** ([#292](https://github.com/open-compass/VLMEvalKit/pull/292/files))
 
-### 1. TSV 数据文件准备
+目前在 VLMEvalKit 中，benchmark 以数据集类的形式呈现，当你新增一个 benchmark 时，你可以选择复用现有的数据集类 (如单选题 benchmark 可复用 `ImageMCQDataset`)，或是实现新的数据集类。你的数据集类必须支持以下两种方法 (复用父类或自行实现):
+
+- `build_prompt(self, line)`: 方法输入 `line` 类型为 int (对应数据 index) 或 `pd.Series` (对应数据原始 record)。方法输出一条 `multi-modal message` 作为多模态模型输入，`multi-modal message` 是一个图文交错的列表，如以下格式 (一图一文): `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`。
+- `evaluate(self, eval_file, **judge_kwargs)`: 方法输入 `eval_file` 为多模态模型的预测结果 (多以 `.xlsx` 格式存在)，如 benchmark evaluation 需要大语言模型 (一般为 GPT) 辅助，则 `judge_kwargs` 传入大语言模型的参数。方法输出 benchmark 的评测结果，以 `dict` 或 `pd.DataFrame` 的形式。
+
+以下，我们简述新增数据集的通常步骤：
+
+### 1. TSV 数据文件准备 (图文评测集)
 
 目前，我们将每一个 benchmark 数据集设置为一个单独的 TSV 文件。在推理过程中，数据文件将从数据集定义的 `DATASET_URL` 链接地址自动下载到 `$LMUData` 中（如果没有明确设置的话，默认路径是 `$HOME/LMUData`）。你可以将准备好的 TSV 文件上传到一个可下载的地址（如：huggingface），或发送给我们 <opencompass@pjlab.org.cn>，我们将帮助上传数据集到服务器中。此外，你也可以在环境变量中自定义设置下载路径 `LMUData=/path/to/your/data`。
 
@@ -27,12 +34,14 @@ TSV 文件中的内容组成为：
 
 <div align="center"><b>表 1. 支持的数据集的 TSV 字段。</b></div>
 
-**TSV 中一些字段的介绍：**
+**TSV 中必须字段的介绍：**
 
 - **index:** 一个整数，`tsv` 中每一行的唯一标识
 - **image:** 图片的 base64 编码，你可以使用 `vlmeval/smp.py` 中实现的API进行编码和解码：
     - 编码：`encode_image_to_base64`（对于PIL Image）/ `encode_image_file_to_base64`（对于图片文件路径）
     - 解码：`decode_base64_to_image`（对于PIL Image）/ `decode_base64_to_image_file`（对于图片文件路径）
+- **question:** 针对图像所提取出的问题，类型为字符串
+- **answer:** 问题的答案，类型为字符串，Test 集可缺失这一字段
 
 ### 2. 自定义数据集的 prompt 构建
 

@@ -4,6 +4,13 @@
 
 Example PR: **Math-Vision Benchmark** ([#292](https://github.com/open-compass/VLMEvalKit/pull/292/files))
 
+In VLMEvalKit, benchmarks are organized as dataset classes. When you try to implement a new benchmark, you can either reuse existing dataset classes (*e.g.*, You can reuse `ImageMCQDataset` when implementing a new multi-choice benchmark), or support a new dataset class. Each dataset must have the following two member functions (either reuse the one of the parent class or implement your own):
+
+- `build_prompt(self, line)`: The function input `line` is an integer (the sample index) or a `pd.Series` object (the raw record of the sample). The function outputs a `multi-modal message`, serving as the input of an MLLM. The `multi-modal message` is an interleaved list of multi-modal messages adopting the following format (the example includes an image and a text message): `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`.
+- `evaluate(self, eval_file,  **judge_kwargs)`: The function input `eval_file` is the MLLM prediction (typically in `.xlsx` format). If the benchmark requires an external LLM (typically GPT) for evaluation, then `judge_kwargs` can pass the arguments for the LLM. The function outputs the benchmark evaluation results (metrics) in the form of `dict` or `pd.DataFrame`.
+
+We then brief the typical steps to implement a new benchmark under VLMEvalKit:
+
 ### 1. Prepare your benchmark tsv file
 
 Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded from the definited `DATASET_URL` link to `$LMUData` file (default path is `$HOME/LMUData`, if not set explicitly). You can upload the prepared TSV file to a downloadable address (e.g., Huggingface) or send it to us at <opencompass@pjlab.org.cn>. We will assist in uploading the dataset to the server. You can also customize `LMUData` path in the environment variable `LMUData=/path/to/your/data`.
@@ -27,12 +34,14 @@ The contents of the TSV file consist of:
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
-**Intro to some fields:**
+**Intro to mandatory fields in the `TSV` file:**
 
 - **index:** Integer, Unique for each line in `tsv`
-- **image:** the base64 of the image, you can use APIs implemented in `vlmeval/smp.py` for encoding and decoding:
+- **image:** The base64 of the image, you can use APIs implemented in `vlmeval/smp.py` for encoding and decoding:
   - Encoding: `encode_image_to_base64 `(for PIL Image) / `encode_image_file_to_base64` (for image file path)
   - Decoding: `decode_base64_to_image`(for PIL Image) / `decode_base64_to_image_file` (for image file path)
+- **question**: The question corresponding to the image, a string
+- **answer**: The answer to the question, a string. The `test` split does not need this field
 
 ### 2. Cutomize your benchmark prompt
 
