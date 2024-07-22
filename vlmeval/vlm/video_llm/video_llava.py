@@ -8,6 +8,7 @@ from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
 
+
 def read_video_pyav(container, indices):
     frames = []
     container.seek(0)
@@ -31,9 +32,11 @@ class VideoLLaVA_HF(BaseModel):
         try:
             from transformers import VideoLlavaProcessor, VideoLlavaForConditionalGeneration
         except:
-            warnings.warn('Please install the latest version transformers. You can install by `pip install --upgrade git+https://github.com/huggingface/transformers.git` or `pip install transformers==4.42.0`.')
+            warnings.warn('Please install the latest version transformers. \
+                          You can install by `pip install --upgrade git+https://github.com/huggingface/transformers.git` \
+                          or `pip install transformers==4.42.0`.')
             sys.exit(-1)
-            
+
         assert model_path is not None
         self.model_path = model_path
         self.model = VideoLlavaForConditionalGeneration.from_pretrained(model_path)
@@ -67,12 +70,12 @@ class VideoLLaVA_HF(BaseModel):
         generate_ids = self.model.generate(**inputs, **generation_args)
         generate_ids = generate_ids[:, inputs['input_ids'].shape[1]:]
         response = self.processor.batch_decode(
-            generate_ids, 
-            skip_special_tokens=True, 
+            generate_ids,
+            skip_special_tokens=True,
             clean_up_tokenization_spaces=False
         )[0]
         return response
-    
+
 
 class VideoLLaVA(BaseModel):
     INSTALL_REQ = False
@@ -104,13 +107,13 @@ class VideoLLaVA(BaseModel):
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from videollava.conversation import conv_templates, SeparatorStyle
-        from videollava.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
+        from videollava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
         from videollava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
         if model.config.mm_use_im_start_end:
-            qs = DEFAULT_VID_START_TOKEN + ''.join([DEFAULT_IMAGE_TOKEN]*8) + DEFAULT_VID_END_TOKEN + '\n' + qs
+            qs = DEFAULT_VID_START_TOKEN + ''.join([DEFAULT_IMAGE_TOKEN] * 8) + DEFAULT_VID_END_TOKEN + '\n' + qs
         else:
-            qs = ''.join([DEFAULT_IMAGE_TOKEN]*8) + '\n' + qs
+            qs = ''.join([DEFAULT_IMAGE_TOKEN] * 8) + '\n' + qs
 
         conv_mode = "llava_v1"
         device = torch.device('cuda')
@@ -118,7 +121,6 @@ class VideoLLaVA(BaseModel):
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
-
 
         video_tensor = video_processor.preprocess(video, return_tensors='pt')['pixel_values'][0].half().to(device)
 
@@ -153,4 +155,3 @@ class VideoLLaVA(BaseModel):
         question, video = self.message_to_promptvideo(message)
         response = self.get_model_output(self.model, self.processor['video'], self.tokenizer, video, question)
         return response
-        

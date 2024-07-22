@@ -132,14 +132,14 @@ class BaseModel:
             else:
                 image = images[0]
         return prompt, image
-    
+
     def message_to_promptvideo(self, message):
         if self.VIDEO_LLM:
             num_videos = len([x for x in message if x['type'] == 'video'])
             if num_videos == 0:
                 prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
                 video = None
-            else: 
+            else:
                 prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
                 video = [x['value'] for x in message if x['type'] == 'video'][0]
             return prompt, video
@@ -147,4 +147,3 @@ class BaseModel:
             import sys
             warnings.warn('Model does not support video input.')
             sys.exit(-1)
-

@@ -127,7 +127,10 @@ Please directly reply with your response to the only question.
         return message
 
     def build_prompt(self, line, num_frames, video_llm):
-        return self.build_prompt_pack(line, num_frames) if self.pack and not video_llm else self.build_prompt_nopack(line, num_frames, video_llm)
+        if self.pack and not video_llm:
+            return self.build_prompt_pack(line, num_frames)
+        else:
+            return self.build_prompt_nopack(line, num_frames, video_llm)
 
     @staticmethod
     def remove_side_quote(s, syms=[',', '"', "'"]):
