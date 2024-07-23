@@ -83,6 +83,7 @@ Please directly reply with your response to the only question.
         else:
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unwrap_hf_pkl(dataset_path)
+        self.video_path = osp.join(dataset_path, 'video/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
         return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
@@ -109,22 +110,31 @@ Please directly reply with your response to the only question.
         message.append(dict(type='text', value=prompt))
         return message
 
-    def build_prompt_nopack(self, line, num_frames):
+    def build_prompt_nopack(self, line, num_frames, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-
-        frames = self.save_video_frames(line['video'], num_frames)
-        sys_prompt = self.FRAMES_TMPL_NOPACK.format(num_frames)
-        message = [dict(type='text', value=sys_prompt)]
-        for im in frames:
-            message.append(dict(type='image', value=im))
-        prompt = 'Question: {}\nAnswer: '.format(line['question'])
-        message.append(dict(type='text', value=prompt))
+        if video_llm:
+            question = line['question']
+            prefix, video_idx_path = os.path.split(line['video_path'])
+            message = [dict(type='text', value=question)]
+            message.append(dict(type='video', value=os.path.join(self.video_path, video_idx_path)))
+            return message
+        else:
+            frames = self.save_video_frames(line['video'], num_frames)
+            sys_prompt = self.FRAMES_TMPL_NOPACK.format(num_frames)
+            message = [dict(type='text', value=sys_prompt)]
+            for im in frames:
+                message.append(dict(type='image', value=im))
+            prompt = 'Question: {}\nAnswer: '.format(line['question'])
+            message.append(dict(type='text', value=prompt))
         return message
 
-    def build_prompt(self, line, num_frames):
-        return self.build_prompt_pack(line, num_frames) if self.pack else self.build_prompt_nopack(line, num_frames)
+    def build_prompt(self, line, num_frames, video_llm):
+        if self.pack and not video_llm:
+            return self.build_prompt_pack(line, num_frames)
+        else:
+            return self.build_prompt_nopack(line, num_frames, video_llm)
 
     @staticmethod
     def remove_side_quote(s, syms=[',', '"', "'"]):
