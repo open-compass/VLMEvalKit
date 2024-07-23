@@ -31,4 +31,5 @@ from .qh_360vl import QH_360VL
 from .phi3_vision import Phi3Vision
 from .wemm import WeMM
 from .cambrian import Cambrian
+from .chameleon import Chameleon
 from .video_llm.video_llava import VideoLLaVA, VideoLLaVA_HF

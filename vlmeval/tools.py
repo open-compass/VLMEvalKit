@@ -75,13 +75,18 @@ models = {
     'api': list(api_models)
 }
 
+# SKIP_MODELS will be skipped in report_missing and run APIs
 SKIP_MODELS = [
-    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH',
+    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH', 'GPT4V',
+    'flamingov2', 'MiniGPT-4-v1-7B', 'MiniGPT-4-v2', 'PandaGPT_13B',
+    'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
+    'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
+    'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus',
 ]
 
 LARGE_MODELS = [
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'idefics_80b_instruct',
-    '360VL-70B', 'emu2_chat'
+    'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
 ]
 
 
@@ -326,6 +331,8 @@ def RUN(lvl, model):
     missing = MISSING(lvl)
     if model == 'all':
         pass
+    elif model == 'api':
+        missing = [x for x in missing if x[0] in models['api']]
     elif model == 'hf':
         missing = [x for x in missing if x[0] not in models['api']]
     elif model in models:
@@ -338,6 +345,8 @@ def RUN(lvl, model):
     for m, D in missing:
         groups[m].append(D)
     for m in groups:
+        if m in SKIP_MODELS:
+            continue
         datasets = ' '.join(groups[m])
         logger.info(f'Running {m} on {datasets}')
         exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
@@ -402,8 +411,12 @@ def cli():
             missing_list = MISSING(args[1])
             logger = get_logger('Find Missing')
             logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
+            lines = []
             for m, D in missing_list:
-                logger.info(colored(f'Model {m}, Dataset {D}', 'red'))
+                line = f'Model {m}, Dataset {D}'
+                logger.info(colored(line, 'red'))
+                lines.append(line)
+            mwlines(lines, f'{args[1]}_missing.txt')
         elif args[0].lower() == 'circular':
             assert len(args) >= 2
             CIRCULAR(args[1])

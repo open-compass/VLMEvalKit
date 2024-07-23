@@ -4,7 +4,9 @@ from .image_base import img_root_map
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset
-from .image_vqa import ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, CustomVQADataset
+from .image_vqa import (
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, CustomVQADataset
+)
 from .mmbench_video import MMBenchVideo
 from .utils import *
 from ..smp import *
@@ -13,7 +15,7 @@ from ..smp import *
 # Add new supported dataset class here
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
-    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet,
+    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset,
     MMLongBench, VCRDataset
 ]
 
@@ -26,6 +28,9 @@ CUSTOM_DATASET = [
 ]
 
 DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + CUSTOM_DATASET
+SUPPORTED_DATASETS = []
+for DATASET_CLS in DATASET_CLASSES:
+    SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
 
 
 def DATASET_TYPE(dataset):

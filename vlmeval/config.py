@@ -178,6 +178,11 @@ cambrian_series = {
     'cambrian_34b': partial(Cambrian, model_path='nyu-visionx/cambrian-34b'),
 }
 
+chameleon_series = {
+    'chameleon_7b': partial(Chameleon, model_path='facebook/chameleon-7b'),
+    'chameleon_30b': partial(Chameleon, model_path='facebook/chameleon-30b'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -185,7 +190,7 @@ model_groups = [
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
-    cambrian_series, video_models,
+    cambrian_series, chameleon_series, video_models,
 ]
 
 for grp in model_groups:
