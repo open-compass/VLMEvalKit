@@ -78,7 +78,7 @@ class VideoLLaVA_HF(BaseModel):
 
 
 class VideoLLaVA(BaseModel):
-    INSTALL_REQ = False
+    INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
 
