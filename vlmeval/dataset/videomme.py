@@ -45,7 +45,7 @@ Select the best answer to the following multiple-choice question based on the vi
 Respond with only the letter (A, B, C, or D) of the correct option.
 """
 
-    TYPE = 'VQA'
+    TYPE = 'MCQ'
 
     def __init__(self, dataset='Video-MME', use_subtitle=False):
         super().__init__(dataset=dataset)
