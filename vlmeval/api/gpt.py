@@ -126,10 +126,8 @@ class OpenAIWrapper(BaseAPI):
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
-    def prepare_inputs(self, inputs):
-        input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
+    def prepare_itlist(self, inputs):
+        assert np.all([isinstance(x, dict) for x in inputs])
         has_images = np.sum([x['type'] == 'image' for x in inputs])
         if has_images:
             content_list = []
@@ -142,11 +140,24 @@ class OpenAIWrapper(BaseAPI):
                     b64 = encode_image_to_base64(img, target_size=self.img_size)
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
-            input_msgs.append(dict(role='user', content=content_list))
         else:
             assert all([x['type'] == 'text' for x in inputs])
             text = '\n'.join([x['value'] for x in inputs])
-            input_msgs.append(dict(role='user', content=text))
+            content_list = [dict(type='text', value=text)]
+        return content_list
+
+    def prepare_inputs(self, inputs):
+        input_msgs = []
+        if self.system_prompt is not None:
+            input_msgs.append(dict(role='system', content=self.system_prompt))
+        assert isinstance(inputs, list) and isinstance(inputs[0], dict)
+        assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
+        if 'role' in inputs[0]:
+            assert inputs[-1]['role'] == 'user', inputs[-1]
+            for item in inputs:
+                input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
+        else:
+            input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
     def generate_inner(self, inputs, **kwargs) -> str:
@@ -185,6 +196,9 @@ class OpenAIWrapper(BaseAPI):
         except:
             pass
         return ret_code, answer, response
+
+    def chat_inner(self, inputs, **kwargs):
+        return self.generate_inner(inputs, **kwargs)
 
     def get_image_token_len(self, img_path, detail='low'):
         import math
