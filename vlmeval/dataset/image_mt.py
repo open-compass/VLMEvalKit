@@ -2,7 +2,7 @@ from .image_base import ImageBaseDataset
 from ..smp import *
 
 
-class MTImageDataset(ImageBaseDataset):
+class ImageMTDataset(ImageBaseDataset):
 
     TYPE = 'MT'
     DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
