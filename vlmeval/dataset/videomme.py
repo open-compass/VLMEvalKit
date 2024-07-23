@@ -170,7 +170,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         return frame_paths, indices, video_info
 
-    def build_prompt(self, line, num_frames):
+    def build_prompt(self, line, num_frames, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -196,8 +196,11 @@ Respond with only the letter (A, B, C, or D) of the correct option.
             subtitles = ''
 
         message = [dict(type='text', value=self.SYS)]
-        for im in frames:
-            message.append(dict(type='image', value=im))
+        if video_llm:
+            message.append(dict(type='video', value=osp.join(self.data_root, 'video', line['video'] + '.mp4')))
+        else:
+            for im in frames:
+                message.append(dict(type='image', value=im))
 
         text_prompt = self.FRAMES_TMPL_NOSUB if not self.use_subtitle else self.FRAMES_TMPL_SUB.format(subtitles)
         message.append(dict(type='text', value=text_prompt))
