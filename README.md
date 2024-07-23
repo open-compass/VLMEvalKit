@@ -101,7 +101,6 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    | [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) | [**LLaVA-Next-[Interleave-7B/LLaMA-3/Qwen-32B]**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 🎞️ | [**Chameleon-[7B/30B]**](https://huggingface.co/facebook/chameleon-7b)🚅🎞️ | 
 [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 |
 
-
 🎞️: Support multiple images as inputs.
 
 🚅: Models can be used without any additional configuration/operation.
