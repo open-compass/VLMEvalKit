@@ -2,9 +2,20 @@
 
 ## Implement a new benchmark
 
-Example PR: **Add OCRBench** ([#91](https://github.com/open-compass/VLMEvalKit/pull/91/files))
+Example PR: **Math-Vision Benchmark** ([#292](https://github.com/open-compass/VLMEvalKit/pull/292/files))
 
-Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded to `$LMUData` (default path is `$HOME/LMUData`, if not set explicitly). All existing benchmark TSV files are handled by `TSVDataset` implemented in `vlmeval/utils/dataset_config.py`.
+In VLMEvalKit, benchmarks are organized as dataset classes. When you try to implement a new benchmark, you can either reuse existing dataset classes (*e.g.*, You can reuse `ImageMCQDataset` when implementing a new multi-choice benchmark), or support a new dataset class. Each dataset must have the following two member functions (either reuse the one of the parent class or implement your own):
+
+- `build_prompt(self, line)`: The function input `line` is an integer (the sample index) or a `pd.Series` object (the raw record of the sample). The function outputs a `multi-modal message`, serving as the input of an MLLM. The `multi-modal message` is an interleaved list of multi-modal messages adopting the following format (the example includes an image and a text message): `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`.
+- `evaluate(self, eval_file,  **judge_kwargs)`: The function input `eval_file` is the MLLM prediction (typically in `.xlsx` format). If the benchmark requires an external LLM (typically GPT) for evaluation, then `judge_kwargs` can pass the arguments for the LLM. The function outputs the benchmark evaluation results (metrics) in the form of `dict` or `pd.DataFrame`.
+
+We then brief the typical steps to implement a new benchmark under VLMEvalKit:
+
+### 1. Prepare your benchmark tsv file
+
+Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded from the definited `DATASET_URL` link to `$LMUData` file (default path is `$HOME/LMUData`, if not set explicitly). You can upload the prepared TSV file to a downloadable address (e.g., Huggingface) or send it to us at <opencompass@pjlab.org.cn>. We will assist in uploading the dataset to the server. You can also customize `LMUData` path in the environment variable `LMUData=/path/to/your/data`.
+
+The contents of the TSV file consist of:
 
 | Dataset Name \ Fields  | index | image | image_path | question | hint | multi-choice<br>options | answer | category | l2-category | split |
 | ---------------------- | ----- | ----- | ---------- | -------- | ---- | ----------------------- | ------ | -------- | ----------- | ----- |
@@ -23,26 +34,36 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
-**Intro to some fields:**
+**Intro to mandatory fields in the `TSV` file:**
 
 - **index:** Integer, Unique for each line in `tsv`
-- **image:** the base64 of the image, you can use APIs implemented in `vlmeval/smp.py` for encoding and decoding:
+- **image:** The base64 of the image, you can use APIs implemented in `vlmeval/smp.py` for encoding and decoding:
   - Encoding: `encode_image_to_base64 `(for PIL Image) / `encode_image_file_to_base64` (for image file path)
   - Decoding: `decode_base64_to_image`(for PIL Image) / `decode_base64_to_image_file` (for image file path)
+- **question**: The question corresponding to the image, a string
+- **answer**: The answer to the question, a string. The `test` split does not need this field
 
-Besides, your dataset class **should implement the method `build_prompt(self, line, dataset=None)`**. Given line as a line number or one line in the TSV file, the function yields a dictionary `dict(image=image_path, text=prompt)`, including the image path and the prompt that will be fed to the VLMs.
+### 2. Cutomize your benchmark prompt
+
+`ImageBaseDataset` defines the default prompt format. If you need to add prompts specific to the dataset or input data in the `Interleave` format to the model, you can implement this through the `build_prompt(line)` function. This function takes a line from a TSV file as input, containing fields such as index, image, question, etc. The function returns a dictionary list of multimodal messages `msg` in the format `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`, including the image path and the text prompt to be input into VLMs. For interleave type inputs, you can directly place the dictionary of the image path at the image token position.
+
+### 3. Cutomize your benchmark metrics
+
+To add evaluation for a new benchmark, you need to customize a class object to implement the dataset’s metrics calculation. Multimodal datasets inherit from the `ImageBaseDataset` object in `vlmeval/dataset/image_base.py`. The TYPE defines the type of dataset, `DATASET_URL` is the download address of the dataset, and `DATASET_MD5` is the MD5 checksum for consistency checking of the dataset file.
+
+In this class, **you need to implement** the `evaluate(eval_file, **judge_kwargs)` class function to calculate metrics and output results for the custom dataset. The function input `eval_file` is the path to the model prediction results file `{model_name}_{dataset}.xlsx`. This file can be read as a pandas.DataFrame using the `load(eval_file)` method, containing fields such as index, question, answer, category, prediction, etc. The judge_kwargs will pass a dictionary related to evaluation, such as the name of the `judge model`, the number of API request threads, etc. **The return value** of the function is the calculated accuracy and other metrics, formatted as a dictionary composed of lists, organized into a pandas.DataFrame.
 
 ## Implement a new model
 
-Example PR: **Support Monkey** ([#45](https://github.com/open-compass/VLMEvalKit/pull/45/files))
+Example PR: **Support LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
-All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **should implement the method** `generate(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
+All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **should implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
 
 The multi-modal messages `msgs` is a list of dictionaries, each dictionary has two keys: type and value:
 - `type`: We currently support two types, choices are ["image", "text"].
 - `value`: When type=='text' , the value is the text message (a single string); when type=='image', the value can be the local path of an image file, or the image URL.
 
-Currently a multi-modal message may contain arbitarily interleaved images and texts. If your model do not support that, our recommended practice is to take the first image and concatenated text messages as the input to the model.
+Currently a multi-modal message may contain arbitarily interleaved images and texts. If your model do not support that, our recommended practice is to take the first image and concatenated text messages as the input to the model. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
 
 Here are some examples of multi-modal messages:
 
