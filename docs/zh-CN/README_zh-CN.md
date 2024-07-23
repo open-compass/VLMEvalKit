@@ -24,6 +24,8 @@
 
 ## 🆕 更新
 
+- **[2024-07-23]** 支持了 [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, 我们的仓库支持的首个视频多模态大模型! 使用 [**这一分支版本**](https://github.com/FangXinyu-0913/Video-LLaVA) 安装 Video-LLaVA (**更推荐**) 或安装 [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) 来使用它!
+- **[2024-07-22]** 支持了 [**Video-MME**](https://video-mme.github.io/), 感谢 [**Yuhan Dai**](https://github.com/dirkiedai) 🔥🔥🔥
 - **[2024-07-22]** 支持了 [**MT-VQA**](https://github.com/bytedance/MTVQA), 感谢 Jinghui Lu 🔥🔥🔥
 - **[2024-07-19]** 支持了 [**MathVision**](https://mathvision-cuhk.github.io), 感谢 [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 - **[2024-07-19]** 支持了 [**LLaVA-Next-Interleave-7B**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 和 [**LLaVA-Next-LLaMA-3**](https://huggingface.co/lmms-lab/llama3-llava-next-8b) 🔥🔥🔥
