@@ -25,7 +25,8 @@ MAIN_FIELDS = [
     'MMBench_V11', 'MMStar', 'MME',
     'MMMU_VAL', 'MathVista', 'OCRBench', 'AI2D', 
     'HallusionBench', 'SEEDBench_IMG', 'MMVet', 
-    'LLaVABench', 'CCBench', 'RealWorldQA', 'POPE', 'ScienceQA_TEST'
+    'LLaVABench', 'CCBench', 'RealWorldQA', 'POPE', 'ScienceQA_TEST',
+    'SEEDBench2_Plus', 'MMT-Bench_VAL', 'BLINK'
 ]
 DEFAULT_BENCH = [
     'MMBench_V11', 'MMStar', 'MMMU_VAL', 'MathVista', 'OCRBench', 'AI2D', 
