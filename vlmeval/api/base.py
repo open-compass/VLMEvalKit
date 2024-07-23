@@ -145,7 +145,7 @@ class BaseAPI:
 
         for i in range(self.retry):
             try:
-                ret_code, answer, log = self.generate_inner(messages, **kwargs)
+                ret_code, answer, log = self.chat_inner(messages, **kwargs)
                 if ret_code == 0 and self.fail_msg not in answer and answer != '':
                     if self.verbose:
                         print(answer)
