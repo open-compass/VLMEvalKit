@@ -80,6 +80,7 @@ def BUILD_L1_DF(results, fields):
 def BUILD_L2_DF(results, dataset):
     res = defaultdict(list)
     fields = list(list(results.values())[0][dataset].keys())
+
     non_overall_fields = [x for x in fields if 'Overall' not in x]
     overall_fields = [x for x in fields if 'Overall' in x]
     if dataset == 'MME':
