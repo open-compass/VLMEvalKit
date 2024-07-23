@@ -81,7 +81,7 @@ def BUILD_L2_DF(results, dataset):
     res = defaultdict(list)
     sub = [v for v in results.values() if dataset in v]
     assert len(sub)
-    fields = list(sub[dataset].keys())
+    fields = list(sub[0][dataset].keys())
 
     non_overall_fields = [x for x in fields if 'Overall' not in x]
     overall_fields = [x for x in fields if 'Overall' in x]
