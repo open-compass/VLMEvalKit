@@ -229,7 +229,9 @@ class OpenAIWrapper(BaseAPI):
         assert isinstance(inputs, list)
         tot = 0
         for item in inputs:
-            if item['type'] == 'text':
+            if 'role' in item:
+                tot += self.get_token_len(item['content'])
+            elif item['type'] == 'text':
                 tot += len(enc.encode(item['value']))
             elif item['type'] == 'image':
                 tot += self.get_image_token_len(item['value'], detail=self.img_detail)
