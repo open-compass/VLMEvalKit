@@ -82,7 +82,7 @@ SKIP_MODELS = [
     'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus',
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore'
 ]
 
 LARGE_MODELS = [

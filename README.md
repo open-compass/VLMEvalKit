@@ -24,7 +24,9 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+
 - **[2024-07-23]** We have supported [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, the first Video-LLM to be supported by our repository! Using [**this fork version**](https://github.com/FangXinyu-0913/Video-LLaVA) to install Video-LLaVA (**More Recommended**) or install [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) to use it!
+- **[2024-07-23]** We have supported [**Video-MME**](https://video-mme.github.io/), thanks to [**Yuhan Dai**](https://github.com/dirkiedai)🔥🔥🔥
 - **[2024-07-22]** We have supported [**MT-VQA**](https://github.com/bytedance/MTVQA), thanks to Jinghui Lu 🔥🔥🔥
 - **[2024-07-19]** We have supported [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/), evaluation results coming soon🔥🔥🔥
 - **[2024-07-19]** We have supported [**MathVision**](https://mathvision-cuhk.github.io), thanks to [**scikkk**](https://github.com/scikkk)🔥🔥🔥
@@ -76,7 +78,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 
 | Dataset                                              | Dataset Names (for run.py) | Task | Dataset | Dataset Names (for run.py) | Task |
 | ---------------------------------------------------- | -------------------------- | ---- | ------- | -------------------------- | ---- |
-| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  |         |                            |      |
+| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  | [**Video-MME**](https://video-mme.github.io/)        |    Video-MME                        | MCQ     |
 
 **Supported API Models**
 
