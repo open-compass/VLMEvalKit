@@ -219,7 +219,7 @@ LEADERBOARD_MD['SEEDBench2'] = """
 - Note that we only evaluate and report the part of model's results on the SEEDBench2.
 """
 
-LEADERBOARD_MD['BLINK'] == """
+LEADERBOARD_MD['BLINK'] = """
 ## BLINK Test Evaluation Results
 
 - BLINK is a benchmark containing 14 visual perception tasks that can be solved by humans “within a blink”, but pose significant challenges for current multimodal large language models (LLMs).
