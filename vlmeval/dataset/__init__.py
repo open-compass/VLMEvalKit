@@ -8,6 +8,7 @@ from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, CustomVQADataset
 )
 from .mmbench_video import MMBenchVideo
+from .videomme import VideoMME
 from .utils import *
 from ..smp import *
 
@@ -20,7 +21,7 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo
+    MMBenchVideo, VideoMME
 ]
 
 CUSTOM_DATASET = [

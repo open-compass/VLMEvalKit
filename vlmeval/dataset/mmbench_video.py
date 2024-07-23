@@ -62,6 +62,10 @@ Please directly reply with your response to the only question.
     def __init__(self, dataset='MMBench-Video', pack=False):
         super().__init__(dataset=dataset, pack=pack)
 
+    @classmethod
+    def supported_datasets(cls):
+        return ['MMBench-Video']
+
     def prepare_dataset(self, dataset_name='MMBench-Video', repo_id='nebulae09/MMBench-Video'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')

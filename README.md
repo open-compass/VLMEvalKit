@@ -25,6 +25,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 ## 🆕 News
 
+- **[2024-07-23]** We have supported [**Video-MME**](https://video-mme.github.io/), thanks to [**Yuhan Dai**](https://github.com/dirkiedai)🔥🔥🔥
 - **[2024-07-22]** We have supported [**MT-VQA**](https://github.com/bytedance/MTVQA), thanks to Jinghui Lu 🔥🔥🔥
 - **[2024-07-19]** We have supported [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/), evaluation results coming soon🔥🔥🔥
 - **[2024-07-19]** We have supported [**MathVision**](https://mathvision-cuhk.github.io), thanks to [**scikkk**](https://github.com/scikkk)🔥🔥🔥
@@ -76,7 +77,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 
 | Dataset                                              | Dataset Names (for run.py) | Task | Dataset | Dataset Names (for run.py) | Task |
 | ---------------------------------------------------- | -------------------------- | ---- | ------- | -------------------------- | ---- |
-| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  |         |                            |      |
+| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  | [**Video-MME**](https://video-mme.github.io/)        |    Video-MME                        | MCQ     |
 
 **Supported API Models**
 
