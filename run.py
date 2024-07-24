@@ -17,6 +17,7 @@ def parse_args():
     # Args that only apply to Video Dataset
     parser.add_argument('--nframe', type=int, default=8)
     parser.add_argument('--pack', action='store_true')
+    parser.add_argument('--use-subtitle', action='store_true')
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='.', help='select the output directory')
     # Infer + Eval or Infer Only
@@ -70,6 +71,8 @@ def main():
                 dataset_kwargs['model'] = model_name
             if dataset_name == 'MMBench-Video':
                 dataset_kwargs['pack'] = args.pack
+            if dataset_name == 'Video-MME':
+                dataset_kwargs['use_subtitle'] = args.use_subtitle
 
             # If distributed, first build the dataset on the main process for doing preparation works
             if world_size > 1:
@@ -88,6 +91,13 @@ def main():
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+            if dataset_name in ['Video-MME']:
+                if args.pack:
+                    logger.info('Video-MME not support Pack Mode, directly change to unpack')
+                    args.pack = False
+                packstr = 'pack' if args.pack else 'nopack'
+                subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
 
             if osp.exists(result_file) and args.rerun:
                 for keyword in ['openai', 'gpt', 'auxmatch']:
@@ -97,7 +107,7 @@ def main():
                 model = model_name  # which is only a name
 
             # Perform the Inference
-            if dataset_name == 'MMBench-Video':
+            if dataset_name == 'MMBench-Video' or dataset_name == 'Video-MME':
                 model = infer_data_job_video(
                     model,
                     work_dir=pred_root,
@@ -106,6 +116,7 @@ def main():
                     nframe=args.nframe,
                     pack=args.pack,
                     verbose=args.verbose,
+                    subtitle=args.use_subtitle,
                     api_nproc=args.nproc)
             else:
                 model = infer_data_job(

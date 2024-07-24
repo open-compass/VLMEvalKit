@@ -24,6 +24,8 @@
 
 ## 🆕 更新
 
+- **[2024-07-23]** 支持了 [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, 我们的仓库支持的首个视频多模态大模型! 使用 [**这一分支版本**](https://github.com/FangXinyu-0913/Video-LLaVA) 安装 Video-LLaVA (**更推荐**) 或安装 [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) 来使用它!
+- **[2024-07-22]** 支持了 [**Video-MME**](https://video-mme.github.io/), 感谢 [**Yuhan Dai**](https://github.com/dirkiedai) 🔥🔥🔥
 - **[2024-07-22]** 支持了 [**MT-VQA**](https://github.com/bytedance/MTVQA), 感谢 Jinghui Lu 🔥🔥🔥
 - **[2024-07-19]** 支持了 [**MathVision**](https://mathvision-cuhk.github.io), 感谢 [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 - **[2024-07-19]** 支持了 [**LLaVA-Next-Interleave-7B**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 和 [**LLaVA-Next-LLaMA-3**](https://huggingface.co/lmms-lab/llama3-llava-next-8b) 🔥🔥🔥
@@ -96,10 +98,13 @@
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅 | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-v1_1-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
 | [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) 🚅 | [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)🚅 | [**WeMM**](https://github.com/scenarios/WeMM)🚅               |
 | [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    | [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) |   [**LLaVA-Next-[Interleave-7B/LLaMA-3/Qwen-32B]**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 🎞️   | [**Chameleon-[7B/30B]**](https://huggingface.co/facebook/chameleon-7b)🚅🎞️ |
+| [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 |  |  |  |
 
 🎞️ 表示支持多图片输入。
 
 🚅 表示模型可以被直接使用，不需任何额外的配置。
+
+🎬 表示支持视频输入。
 
 ### 其他
 
@@ -110,7 +115,7 @@
 - **请用** `transformers==4.33.0` **来运行**: `Qwen series`, `Monkey series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `SharedCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`, `PandaGPT`, `VXVERSE`, `GLM-4v-9B`.
 - **请用** `transformers==4.37.0 ` **来运行**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-V (v1, v2)`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`, `Cambrian Series`.
 - **请用** `transformers==4.40.0 ` **来运行**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `LLaVA-Next series`, `360VL-70B`， `Phi-3-Vision`，`WeMM`.
-- **请用** `transformers==latest` **来运行**: `PaliGemma-3B`, `Chameleon series`.
+- **请用** `transformers==latest` **来运行**: `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`.
 
 **如何测试一个 VLM 是否可以正常运行:**
 
