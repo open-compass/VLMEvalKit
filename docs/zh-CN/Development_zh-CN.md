@@ -37,7 +37,7 @@ TSV 文件中的内容组成为：
 **TSV 中必须字段的介绍：**
 
 - **index:** 一个整数，`tsv` 中每一行的唯一标识
-- **image:** 图片的 base64 编码，你可以使用 `vlmeval/smp.py` 中实现的API进行编码和解码：
+- **image:** 图片的 base64 编码，你可以使用 `vlmeval/smp/vlm.py` 中实现的API进行编码和解码：
     - 编码：`encode_image_to_base64`（对于PIL Image）/ `encode_image_file_to_base64`（对于图片文件路径）
     - 解码：`decode_base64_to_image`（对于PIL Image）/ `decode_base64_to_image_file`（对于图片文件路径）
 - **question:** 针对图像所提取出的问题，类型为字符串
