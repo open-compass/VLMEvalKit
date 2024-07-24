@@ -71,7 +71,7 @@ models = {
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
     'latest': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
-    ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
+    ] + [x for x in llava_series if 'next' in x] + list(wemm_series) + list(chameleon_series),
     'api': list(api_models)
 }
 
@@ -339,6 +339,8 @@ def RUN(lvl, model):
         missing = [x for x in missing if x[0] in models[missing]]
     elif model in supported_VLM:
         missing = [x for x in missing if x[0] == model]
+    else:
+        warnings.warn(f'Invalid model {model}.')
 
     missing.sort(key=lambda x: x[0])
     groups = defaultdict(list)
