@@ -1,5 +1,5 @@
 import os
-from ...api import OpenAIWrapper, OpenAIWrapperInternal
+from ...api import OpenAIWrapper
 from ...smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
@@ -23,10 +23,7 @@ def build_judge(**kwargs):
         model_version = model_map[model]
     else:
         model_version = LOCAL_LLM
-    if INTERNAL:
-        model = OpenAIWrapperInternal(model_version, **kwargs)
-    else:
-        model = OpenAIWrapper(model_version, **kwargs)
+    model = OpenAIWrapper(model_version, **kwargs)
     return model
 
 
