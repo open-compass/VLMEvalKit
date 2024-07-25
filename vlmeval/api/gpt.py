@@ -2,6 +2,7 @@ from ..smp import *
 import os
 import sys
 from .base import BaseAPI
+from openai import OpenAI
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -175,27 +176,43 @@ class OpenAIWrapper(BaseAPI):
         if max_tokens <= 0:
             return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
 
+        # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
             headers = {'Content-Type': 'application/json', 'api-key': os.getenv('AZURE_OPENAI_API_KEY')}
+            payload = dict(
+                model=self.model,
+                messages=input_msgs,
+                max_tokens=max_tokens,
+                n=1,
+                temperature=temperature,
+                **kwargs)
+            response = requests.post(
+                self.api_base,
+                headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+            ret_code = response.status_code
+            ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
+            answer = self.fail_msg
+            try:
+                resp_struct = json.loads(response.text)
+                answer = resp_struct['choices'][0]['message']['content'].strip()
+            except:
+                pass
+            return ret_code, answer, response
         else:
-            headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
-        payload = dict(
-            model=self.model,
-            messages=input_msgs,
-            max_tokens=max_tokens,
-            n=1,
-            temperature=temperature,
-            **kwargs)
-        response = requests.post(self.api_base, headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
-        ret_code = response.status_code
-        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
-        answer = self.fail_msg
-        try:
-            resp_struct = json.loads(response.text)
-            answer = resp_struct['choices'][0]['message']['content'].strip()
-        except:
-            pass
-        return ret_code, answer, response
+            cli = OpenAI()
+            cli.base_url = self.api_base
+            cli.api_key = self.key
+            try:
+                response = self.client.chat.completions.create(
+                    model='gpt-4o-mini',
+                    messages=input_msgs,
+                    max_tokens=max_tokens,
+                    n=1,
+                    temperature=temperature,
+                    **kwargs)
+                return 0, response.choices[0].message.content, response
+            except Exception as e:
+                return -1, self.fail_msg + ' : ' + str(e), None
 
     def chat_inner(self, inputs, **kwargs):
         return self.generate_inner(inputs, **kwargs)
