@@ -5,6 +5,7 @@ from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
+from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
@@ -97,7 +98,7 @@ def main():
                 model = model_name  # which is only a name
 
             # Perform the Inference
-            if dataset_name == 'MMBench-Video':
+            if dataset.MODALITY == 'VIDEO':
                 model = infer_data_job_video(
                     model,
                     work_dir=pred_root,
@@ -107,6 +108,15 @@ def main():
                     pack=args.pack,
                     verbose=args.verbose,
                     api_nproc=args.nproc)
+            elif dataset.TYPE == 'MT':
+                model = infer_data_job_mt(
+                    model,
+                    work_dir=pred_root,
+                    model_name=model_name,
+                    dataset=dataset,
+                    verbose=args.verbose,
+                    api_nproc=args.nproc,
+                    ignore_failed=args.ignore)
             else:
                 model = infer_data_job(
                     model,
