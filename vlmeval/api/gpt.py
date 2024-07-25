@@ -179,7 +179,7 @@ class OpenAIWrapper(BaseAPI):
         if self.use_azure:
             headers = {'Content-Type': 'application/json', 'api-key': os.getenv('AZURE_OPENAI_API_KEY')}
         else:
-            headers = {'Content-Type': 'application/json', 'api-key': os.getenv('AZURE_OPENAI_API_KEY')}
+            headers = {'Content-Type': 'application/json', 'api-key': os.getenv('OPENAI_API_KEY')}
         payload = dict(
             model=self.model,
             messages=input_msgs,
