@@ -20,7 +20,7 @@ class IDEFICS(BaseModel):
             model_pth, torch_dtype=torch.bfloat16, device_map='auto'
         )
         self.processor = AutoProcessor.from_pretrained(model_pth)
-        kwargs_default = {'max_length': 512}
+        kwargs_default = {'max_new_tokens': 512}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         self.file_root = osp.dirname(__file__)
