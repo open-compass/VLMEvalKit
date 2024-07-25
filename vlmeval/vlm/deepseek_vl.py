@@ -76,3 +76,6 @@ class DeepSeekVL(BaseModel):
             **self.kwargs)
         answer = self.tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
         return answer
+
+    def chat_inner(self, message, dataset=None):
+        return self.generate_inner(message, dataset=dataset)
