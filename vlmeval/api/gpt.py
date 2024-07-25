@@ -177,9 +177,9 @@ class OpenAIWrapper(BaseAPI):
 
         # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
-            headers = {'Content-Type': 'application/json', 'api-key': os.getenv('AZURE_OPENAI_API_KEY')}
+            headers = {'Content-Type': 'application/json', 'api-key': self.key}
         else:
-            headers = {'Content-Type': 'application/json', 'api-key': os.getenv('OPENAI_API_KEY')}
+            headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
             model=self.model,
             messages=input_msgs,
