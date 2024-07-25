@@ -72,7 +72,7 @@ models = {
     '4.40.0': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
     ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
-    'latest': ['paligemma-3b-mix-448'] + list(chameleon_series),
+    'latest': ['paligemma-3b-mix-448'] + list(chameleon_series) + list(ovis_series),
     'api': list(api_models)
 }
 
@@ -83,8 +83,8 @@ SKIP_MODELS = [
     'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore'
-]
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
+] + list(vila_series)
 
 LARGE_MODELS = [
     'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
