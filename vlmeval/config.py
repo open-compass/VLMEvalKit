@@ -183,6 +183,10 @@ chameleon_series = {
     'chameleon_30b': partial(Chameleon, model_path='facebook/chameleon-30b'),
 }
 
+ovis_series = {
+    'Ovis1.5-Llama3-8B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Llama3-8B')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -190,7 +194,7 @@ model_groups = [
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
-    cambrian_series, chameleon_series, video_models,
+    cambrian_series, chameleon_series, video_models, ovis_series
 ]
 
 for grp in model_groups:
