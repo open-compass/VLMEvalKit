@@ -50,8 +50,8 @@ class Claude_Wrapper(BaseAPI):
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    img = Image.open(msg['value'])
-                    suffix = osp.splitext(img)[-1].lower()
+                    pth = msg['value']
+                    suffix = osp.splitext(pth)[-1].lower()
                     media_type = mimetypes.types_map.get(suffix, None)
                     assert media_type is not None
 
@@ -60,7 +60,7 @@ class Claude_Wrapper(BaseAPI):
                         source={
                             'type': 'base64',
                             'media_type': media_type,
-                            'data': encode_image_file_to_base64(img, target_size=4096)
+                            'data': encode_image_file_to_base64(pth, target_size=4096)
                         }))
         else:
             assert all([x['type'] == 'text' for x in inputs])
