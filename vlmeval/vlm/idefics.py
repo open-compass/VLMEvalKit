@@ -135,7 +135,7 @@ class IDEFICS2(BaseModel):
                     images.append(img)
                     prompt += '<image>'
                 elif item['type'] == 'text':
-                    msg += item['value'].strip()
+                    prompt += item['value'].strip()
                 prompt += '<end_of_utterance>\n'
         return prompt + 'Assistant: '
 
