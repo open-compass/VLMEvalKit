@@ -324,7 +324,7 @@ def RUN(lvl, model):
     logger = get_logger('Run Missing')
 
     def get_env(name):
-        assert name in ['433', '437', 'latest']
+        assert name in ['433', '437', '440', 'latest']
         load_env()
         env_key = f'ENV_{name}'
         return os.environ.get(env_key, None)
