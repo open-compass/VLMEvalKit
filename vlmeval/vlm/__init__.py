@@ -34,3 +34,4 @@ from .cambrian import Cambrian
 from .chameleon import Chameleon
 from .video_llm.video_llava import VideoLLaVA, VideoLLaVA_HF
 from .vila import VILA
+from .ovis import Ovis
