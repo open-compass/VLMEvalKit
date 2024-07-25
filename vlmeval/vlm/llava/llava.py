@@ -127,6 +127,12 @@ class LLaVA(BaseModel):
             prompt += ' ' if utter['role'] == 'user' else self.stop_str
         assert message[-1]['role'] == 'user', message
         prompt += 'ASSISTANT: '
+
+        images = [Image.open(s).convert('RGB') for s in images]
+        args = abstractproperty()
+        args.image_aspect_ratio = 'pad'
+        image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
+
         input_ids = tokenizer_image_token(
             prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
         keywords = [self.stop_str]
