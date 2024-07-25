@@ -16,9 +16,9 @@ class Ovis(BaseModel):
         self.device = torch.cuda.current_device()
         self.dtype = torch.bfloat16
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_path, 
-            torch_dtype=self.dtype, 
-            multimodal_max_length=8192, 
+            self.model_path,
+            torch_dtype=self.dtype,
+            multimodal_max_length=8192,
             trust_remote_code=True
         )
         self.model = self.model.eval().to(device=self.device)
