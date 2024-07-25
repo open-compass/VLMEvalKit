@@ -127,6 +127,18 @@ class BaseAPI:
         else:
             return None
 
+    # May exceed the context windows size, so try with different turn numbers.
+    def chat_inner(self, inputs, **kwargs):
+        while len(inputs):
+            try:
+                return self.generate_inner(inputs, **kwargs)
+            except:
+                inputs = inputs[1:]
+                while len(inputs) and inputs[0]['role'] != 'user':
+                    inputs = inputs[1:]
+                continue
+        return -1, self.fail_msg + ': ' + 'Failed with all possible conversation turns.', None
+
     def chat(self, messages, **kwargs1):
         """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
         assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
@@ -142,6 +154,8 @@ class BaseAPI:
         # a very small random delay [0s - 0.5s]
         T = rd.random() * 0.5
         time.sleep(T)
+
+        assert messages[-1]['role'] == 'user'
 
         for i in range(self.retry):
             try:

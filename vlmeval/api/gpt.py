@@ -200,9 +200,6 @@ class OpenAIWrapper(BaseAPI):
             pass
         return ret_code, answer, response
 
-    def chat_inner(self, inputs, **kwargs):
-        return self.generate_inner(inputs, **kwargs)
-
     def get_image_token_len(self, img_path, detail='low'):
         import math
         if detail == 'low':
