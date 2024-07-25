@@ -45,7 +45,7 @@ class ImageMTDataset(ImageBaseDataset):
             dlgs.append(dict(role='user', content=content))
             assert '<ImageHere>' not in a, 'We currently do not support images in the answer. '
             content = [dict(type='text', value=a)]
-            dlgs.append(dict(role='assistent', content=content))
+            dlgs.append(dict(role='assistant', content=content))
         return dlgs
 
     def evaluate(self, eval_file, **judge_kwargs):
