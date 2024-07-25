@@ -1,6 +1,5 @@
 import torch
 import warnings
-import av
 import copy as cp
 import numpy as np
 import sys
@@ -47,6 +46,7 @@ class VideoLLaVA_HF(BaseModel):
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
+        import av
         question, video = self.message_to_promptvideo(message)
 
         container = av.open(video)

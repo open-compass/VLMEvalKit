@@ -3,6 +3,7 @@ import warnings
 from .base import BaseModel
 from ..smp import *
 from PIL import Image
+import torch
 
 
 class Chameleon(BaseModel):
