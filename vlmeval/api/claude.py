@@ -86,6 +86,7 @@ class Claude_Wrapper(BaseAPI):
             'model': self.model,
             'max_tokens': self.max_tokens,
             'messages': self.prepare_inputs(inputs),
+            'system': self.system_prompt,
             **kwargs
         })
         response = requests.request('POST', url, headers=headers, data=payload)
