@@ -203,7 +203,7 @@ class OpenAIWrapper(BaseAPI):
             cli.base_url = self.api_base
             cli.api_key = self.key
             try:
-                response = self.client.chat.completions.create(
+                response = cli.chat.completions.create(
                     model='gpt-4o-mini',
                     messages=input_msgs,
                     max_tokens=max_tokens,
