@@ -70,7 +70,16 @@ class QwenVLWrapper(BaseAPI):
     def generate_inner(self, inputs, **kwargs) -> str:
         from dashscope import MultiModalConversation
         assert isinstance(inputs, str) or isinstance(inputs, list)
-        pure_text = np.all([x['type'] == 'text' for x in inputs])
+
+        if 'type' in inputs[0]:
+            pure_text = np.all([x['type'] == 'text' for x in inputs])
+        else:
+            pure_text = True
+            for inp in inputs:
+                if not np.all([x['type'] == 'text' for x in inp['content']]):
+                    pure_text = False
+                    break
+
         assert not pure_text
         messages = self.prepare_inputs(inputs)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
