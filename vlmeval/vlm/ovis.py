@@ -12,6 +12,7 @@ class Ovis(BaseModel):
 
     def __init__(self, model_path='AIDC-AI/Ovis1.5-Llama3-8B', **kwargs):
         assert model_path is not None
+        # Recommand to install `transformers==4.42.4`.
         self.model_path = model_path
         self.device = torch.cuda.current_device()
         self.dtype = torch.bfloat16
