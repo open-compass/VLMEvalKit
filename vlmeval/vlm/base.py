@@ -122,13 +122,13 @@ class BaseModel:
             assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg
             msg['content'] = self.preproc_content(msg['content'])
 
-        while len(inputs):
+        while len(messages):
             try:
                 return self.chat_inner(messages, dataset=dataset)
             except:
-                inputs = inputs[1:]
-                while len(inputs) and inputs[0]['role'] != 'user':
-                    inputs = inputs[1:]
+                messages = messages[1:]
+                while len(messages) and messages[0]['role'] != 'user':
+                    messages = messages[1:]
                 continue
         return 'Chat Mode: Failed with all possible conversation turns.'
 
