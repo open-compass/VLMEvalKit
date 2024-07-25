@@ -225,13 +225,19 @@ class MiniCPM_Llama3_V(BaseModel):
         msgs = []
         for msg in message:
             content = []
+            if len(msg['content']) == 1 and msg['content'][0]['type'] == 'text':
+                msg_new = {'role': msg['role'], 'content': msg['content'][0]['value']}
+                msgs.append(msg_new)
+                continue
+
             for x in msg['content']:
                 if x['type'] == 'text':
                     content.append(x['value'])
                 elif x['type'] == 'image':
                     image = Image.open(x['value']).convert('RGB')
                     content.append(image)
-            msgs = [{'role': msg['role'], 'content': content}]
+            msg_new = {'role': msg['role'], 'content': content}
+            msgs.append(msg_new)
 
         res = self.model.chat(
             msgs=msgs,
