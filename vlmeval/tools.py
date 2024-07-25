@@ -69,9 +69,10 @@ models = {
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
-    'latest': [
-        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
-    ] + [x for x in llava_series if 'next' in x] + list(wemm_series) + list(chameleon_series),
+    '4.40.0': [
+        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
+    ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
+    'latest': ['paligemma-3b-mix-448'] + list(chameleon_series),
     'api': list(api_models)
 }
 
@@ -355,6 +356,7 @@ def RUN(lvl, model):
         if m not in models['api']:
             env = '433'
             env = '437' if m in models['4.37.0'] else env
+            env = '440' if m in models['4.40.0'] else env
             env = 'latest' if m in models['latest'] else env
             pth = get_env(env)
             if pth is not None:
