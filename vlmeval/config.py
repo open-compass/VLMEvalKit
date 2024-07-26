@@ -11,6 +11,12 @@ Mini_Gemini_ROOT = None
 VXVERSE_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
+video_models = {
+    'Video-LLaVA-7B':partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
+    'Video-LLaVA-7B-HF':partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf')
+
+}
+
 ungrouped = {
     'TransCore_M': partial(TransCoreM, root=TransCore_ROOT),
     'PandaGPT_13B': partial(PandaGPT, name='PandaGPT_13B', root=PandaGPT_ROOT),
@@ -25,7 +31,7 @@ ungrouped = {
     'VXVERSE': partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
     'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
     '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
-    'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
+    'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct')
 }
 
 api_models = {
@@ -44,9 +50,9 @@ api_models = {
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
     # Reka Series
-    'RekaEdge': partial(Reka, model='reka-edge-20240208'), 
-    'RekaFlash': partial(Reka, model='reka-flash-20240226'), 
-    'RekaCore': partial(Reka, model='reka-core-20240415'), 
+    'RekaEdge': partial(Reka, model='reka-edge-20240208'),
+    'RekaFlash': partial(Reka, model='reka-flash-20240226'),
+    'RekaCore': partial(Reka, model='reka-core-20240415'),
     # Step1V Series
     'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
     'Step1V-0701': partial(GPT4V, model='step-1v-beta0701', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10),
@@ -174,14 +180,24 @@ chameleon_series = {
     'chameleon_30b': partial(Chameleon, model_path='facebook/chameleon-30b'),
 }
 
+vila_series = {
+    'vila_8b': partial(VILA, model_path='Efficient-Large-Model/Llama-3-VILA1.5-8b'),
+    'vila_13b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-13b'),
+    'vila_40b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-40b'),
+}
+
+ovis_series = {
+    'Ovis1.5-Llama3-8B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Llama3-8B')
+}
+
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, api_models, 
+    ungrouped, api_models,
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
-    cambrian_series, chameleon_series
+    cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
 ]
 
 for grp in model_groups:

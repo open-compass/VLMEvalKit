@@ -81,7 +81,9 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
-        struct = dataset.build_prompt(sample_map[idx], num_frames=nframe)
+        nframe = getattr(model, 'nframe', 0) if getattr(model, 'nframe', 0) > 0 else nframe
+        # when using video-llm, build prompt returns video+question; otherwise, several frames+question
+        struct = dataset.build_prompt(sample_map[idx], num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False))
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
@@ -106,18 +108,25 @@ def infer_data_job_video(
         nframe=8,
         pack=False,
         verbose=False,
+        subtitle=False,
         api_nproc=4):
 
     dataset_name = dataset.dataset_name
     packstr = 'pack' if pack else 'nopack'
     rank, world_size = get_rank_and_world_size()
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
+    if dataset_name == 'Video-MME':
+        subtitle_str = 'subs' if subtitle else 'nosubs'
+        result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
 
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model_name
 
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
+    if dataset_name == 'Video-MME':
+        subtitle_str = 'subs' if subtitle else 'nosubs'
+        tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(

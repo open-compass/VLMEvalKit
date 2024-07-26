@@ -37,7 +37,7 @@ The contents of the TSV file consist of:
 **Intro to mandatory fields in the `TSV` file:**
 
 - **index:** Integer, Unique for each line in `tsv`
-- **image:** The base64 of the image, you can use APIs implemented in `vlmeval/smp.py` for encoding and decoding:
+- **image:** The base64 of the image, you can use APIs implemented in `vlmeval/smp/vlm.py` for encoding and decoding:
   - Encoding: `encode_image_to_base64 `(for PIL Image) / `encode_image_file_to_base64` (for image file path)
   - Decoding: `decode_base64_to_image`(for PIL Image) / `decode_base64_to_image_file` (for image file path)
 - **question**: The question corresponding to the image, a string
