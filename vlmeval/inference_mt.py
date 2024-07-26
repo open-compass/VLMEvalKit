@@ -27,7 +27,7 @@ def chat_mt(model, messages, dataset_name):
         utter = messages[2 * i]
         utter_stack.append(utter)
         try:
-            resp = model.chat(utter_stack, dataset_name=dataset_name)
+            resp = model.chat(utter_stack, dataset=dataset_name)
             utter_stack.append(dict(role='assistant', content=resp))
         except:
             resp = FAIL_MSG
@@ -132,7 +132,7 @@ def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        response = model.chat(message=struct, dataset=dataset_name)
+        response = model.chat(struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:
