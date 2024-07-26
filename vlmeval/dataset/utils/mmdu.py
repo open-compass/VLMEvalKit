@@ -88,13 +88,9 @@ answers_end_prompt = '[The End of Assistant’s Answer]'
 
 
 def mmdu_score(model, line):
-    question = line['question']
-    question = eval(question)
-    gt = line['answer']
-    gt = eval(gt)
-
-    nturn = len('question')
-    prediction = [line[f'prediction_{i}'] for i in range(1, nturn + 1)]
+    question = eval(line['question'])
+    gt = eval(line['answer'])
+    prediction = eval(line['prediction'])
 
     DIMS = [
         'Creativity', 'Richness', 'Visual Perception', 'Logical Coherence',

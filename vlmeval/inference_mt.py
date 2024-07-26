@@ -151,7 +151,7 @@ def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc
 def infer_data_job_mt(model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
+    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.tsv')
 
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)
@@ -170,15 +170,7 @@ def infer_data_job_mt(model, work_dir, model_name, dataset, verbose=False, api_n
         for x in data['index']:
             assert x in data_all
 
-        turns = [len(eval(qlist)) for qlist in data['question']]
-        max_turn = max(turns)
-        answer_list = [data_all[x] for x in data['index']]
-
-        for i in range(max_turn):
-            key = f'prediction_{i}'
-            data[key] = [ans[i] if len(ans) > i else None for ans in answer_list]
-
-        data['nturn'] = turns
+        data['prediction'] = [data_all[x] for x in data['index']]
         if 'image' in data:
             data.pop('image')
 

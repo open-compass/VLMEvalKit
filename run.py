@@ -100,6 +100,9 @@ def main():
                 subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
 
+            if dataset.TYPE == 'MT':
+                result_file = result_file.replace('.xlsx', '.tsv')
+
             if osp.exists(result_file) and args.rerun:
                 for keyword in ['openai', 'gpt', 'auxmatch']:
                     os.system(f'rm {pred_root}/{model_name}_{dataset_name}_{keyword}*')
