@@ -380,6 +380,8 @@ def EVAL(dataset_name, data_file):
         judge_kwargs['model'] = 'chatgpt-0125'
     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'
+    elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+        judge_kwargs['model'] = 'gpt-4o'
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:
         assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
