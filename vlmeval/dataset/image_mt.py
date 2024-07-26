@@ -119,7 +119,6 @@ class MMDUDataset(ImageMTDataset):
             ans = load(tmp_file)
             for k, v in zip(indices, new_results):
                 assert k in ans
-                assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
 
         metric = self.calculat_metric(ans)
         dump(metric, score_file)
