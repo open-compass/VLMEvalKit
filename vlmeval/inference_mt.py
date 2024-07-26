@@ -132,7 +132,7 @@ def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        response = model.chat(struct, dataset=dataset_name)
+        response = chat_mt(model, struct, dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:
