@@ -129,6 +129,7 @@ class BaseAPI:
 
     # May exceed the context windows size, so try with different turn numbers.
     def chat_inner(self, inputs, **kwargs):
+        _ = kwargs.pop('dataset', None)
         while len(inputs):
             try:
                 return self.generate_inner(inputs, **kwargs)
