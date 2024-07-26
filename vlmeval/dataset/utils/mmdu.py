@@ -1,21 +1,6 @@
-from .judge_util import build_judge
 from ...smp import *
-from ...utils import track_progress_rich
 
-
-def mmdu_gpt4_judge(model, line):
-    question = line['question']
-    question = eval(question)
-    gt = line['answer']
-    gt = eval(gt)
-    prediction = line['prediction']
-    try:
-        prediction = eval(prediction)
-    except Exception as e:
-        print({e})
-        return None
-
-    meta_prompt = """
+meta_prompt = """
 You are an assistant skilled at evaluating the quality of creative text.
 Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to \
 the user question displayed below. You'll need to assess the response on the following dimensions: \
@@ -60,7 +45,7 @@ Scores 5-6 when mostly coherent, with few errors, but may struggle to maintain c
 Scores 7-8 when excellent logical handling, very few errors.
 Scores 9-10 when flawless logic, impeccable in handling complexity, \
 and significantly higher logical coherence compared to the reference answer.
-Answer Accuracy
+Answer Accuracy:
 Scores 1-2 when the answer is significantly inconsistent with the question or contains obvious errors.
 Scores 3-4 when the answer is partially correct but contains some errors or is incomplete.
 Scores 5-6 when the answer is basically correct but lacks details or is not sufficiently detailed.
@@ -95,13 +80,29 @@ ensuring your scores are integers:
 {'Dimension One': Score, 'Dimension Two': Score, ..., 'Overall Score': Score}, \
 for example: {'Creativity': 9, 'Richness': 6, ..., 'Overall Score': 7}.\n
 """
-    question_begin_prompt = '[Question]'
-    reference_begin_prompt = '[The Start of Reference Answer]'
-    reference_end_prompt = '[The End of Reference Answer]'
-    answers_begin_prompt = '[The Start of Assistant’s Answer]'
-    answers_end_prompt = '[The End of Assistant’s Answer]'
+question_begin_prompt = '[Question]'
+reference_begin_prompt = '[The Start of Reference Answer]'
+reference_end_prompt = '[The End of Reference Answer]'
+answers_begin_prompt = '[The Start of Assistant’s Answer]'
+answers_end_prompt = '[The End of Assistant’s Answer]'
+
+
+def mmdu_score(model, line):
+    question = line['question']
+    question = eval(question)
+    gt = line['answer']
+    gt = eval(gt)
+
+    nturn = len('question')
+    prediction = [line[f'prediction_{i}'] for i in range(1, nturn + 1)]
+
+    DIMS = [
+        'Creativity', 'Richness', 'Visual Perception', 'Logical Coherence',
+        'Answer Accuracy', 'Image Relationship Understanding', 'Overall Score'
+    ]
 
     all_result_dict = []
+    logs = []
     for j in range(len(question)):
         try:
             prompt = meta_prompt + question_begin_prompt + '\n' + question[j] + '\n\n' + \
@@ -113,17 +114,17 @@ for example: {'Creativity': 9, 'Richness': 6, ..., 'Overall Score': 7}.\n
             dictionary_str = response[start_index: end_index]
             result_dict = eval(dictionary_str)
             all_result_dict.append(result_dict)
+            if all([x in result_dict for x in DIMS]):
+                logs.append('Succeed')
+            else:
+                logs.append(
+                    f'Following Dims are not in results of turn {j}: '
+                    f'{",".join([x for x in DIMS if x not in result_dict])}'
+                )
         except Exception as e:
             print({e})
-            all_result_dict.append(None)
+            all_result_dict.append({d: None for d in DIMS})
+            logs.append(str(e))
 
-    if len(all_result_dict) == 0:
-        print('mmdu_eval error in one dialogu')
-        return None
-    else:
         df = pd.DataFrame(all_result_dict)
-        totals = df.sum()
-        num_dicts = len(all_result_dict)
-        result = totals.to_dict()
-        result['Number'] = num_dicts
-        return result
+        return dict(res=df, log='\n'.join(logs))

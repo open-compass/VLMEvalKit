@@ -181,7 +181,16 @@ def infer_data_job_mt(model, work_dir, model_name, dataset, verbose=False, api_n
         data = dataset.data
         for x in data['index']:
             assert x in data_all
-        data['prediction'] = [str(data_all[x]) for x in data['index']]
+
+        turns = [len(eval(qlist)) for qlist in data['question']]
+        max_turn = max(turns)
+        answer_list = [data_all[x] for x in data['index']]
+
+        for i in range(max_turn):
+            key = f'prediction_{i}'
+            data[key] = [ans[i] if len(ans) > i else None for ans in answer_list]
+
+        data['nturn'] = turns
         if 'image' in data:
             data.pop('image')
 
