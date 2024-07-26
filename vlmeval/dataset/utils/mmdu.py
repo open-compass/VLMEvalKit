@@ -122,5 +122,5 @@ def mmdu_score(model, line):
             all_result_dict.append({d: None for d in DIMS})
             logs.append(str(e))
 
-        df = pd.DataFrame(all_result_dict)
-        return dict(res=df, log='\n'.join(logs))
+    df = pd.DataFrame(all_result_dict)
+    return dict(res=df, log='\n'.join(logs))
