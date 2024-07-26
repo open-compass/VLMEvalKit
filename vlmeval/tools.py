@@ -69,19 +69,25 @@ models = {
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
-    'latest': [
-        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
+    '4.40.0': [
+        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
     ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
+    'latest': ['paligemma-3b-mix-448'] + list(chameleon_series) + list(ovis_series),
     'api': list(api_models)
 }
 
+# SKIP_MODELS will be skipped in report_missing and run APIs
 SKIP_MODELS = [
-    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH',
-]
+    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH', 'GPT4V',
+    'flamingov2', 'MiniGPT-4-v1-7B', 'MiniGPT-4-v2', 'PandaGPT_13B',
+    'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
+    'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
+    'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
+] + list(vila_series)
 
 LARGE_MODELS = [
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'idefics_80b_instruct',
-    '360VL-70B', 'emu2_chat'
+    'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
 ]
 
 
@@ -318,7 +324,7 @@ def RUN(lvl, model):
     logger = get_logger('Run Missing')
 
     def get_env(name):
-        assert name in ['433', '437', 'latest']
+        assert name in ['433', '437', '440', 'latest']
         load_env()
         env_key = f'ENV_{name}'
         return os.environ.get(env_key, None)
@@ -326,24 +332,31 @@ def RUN(lvl, model):
     missing = MISSING(lvl)
     if model == 'all':
         pass
+    elif model == 'api':
+        missing = [x for x in missing if x[0] in models['api']]
     elif model == 'hf':
         missing = [x for x in missing if x[0] not in models['api']]
     elif model in models:
         missing = [x for x in missing if x[0] in models[missing]]
     elif model in supported_VLM:
         missing = [x for x in missing if x[0] == model]
+    else:
+        warnings.warn(f'Invalid model {model}.')
 
     missing.sort(key=lambda x: x[0])
     groups = defaultdict(list)
     for m, D in missing:
         groups[m].append(D)
     for m in groups:
+        if m in SKIP_MODELS:
+            continue
         datasets = ' '.join(groups[m])
         logger.info(f'Running {m} on {datasets}')
         exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
         if m not in models['api']:
             env = '433'
             env = '437' if m in models['4.37.0'] else env
+            env = '440' if m in models['4.40.0'] else env
             env = 'latest' if m in models['latest'] else env
             pth = get_env(env)
             if pth is not None:
@@ -402,8 +415,12 @@ def cli():
             missing_list = MISSING(args[1])
             logger = get_logger('Find Missing')
             logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
+            lines = []
             for m, D in missing_list:
-                logger.info(colored(f'Model {m}, Dataset {D}', 'red'))
+                line = f'Model {m}, Dataset {D}'
+                logger.info(colored(line, 'red'))
+                lines.append(line)
+            mwlines(lines, f'{args[1]}_missing.txt')
         elif args[0].lower() == 'circular':
             assert len(args) >= 2
             CIRCULAR(args[1])
