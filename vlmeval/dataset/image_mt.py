@@ -90,7 +90,7 @@ class MMDUDataset(ImageMTDataset):
         score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
         nproc = judge_kwargs.pop('nproc', 4)
 
-        data = load(eval_file.replace('.xlsx', '.tsv'))
+        data = load(eval_file)
         model = judge_kwargs.pop('model', 'gpt-4o')
         judge_model = build_judge(model=model, **judge_kwargs)
 
