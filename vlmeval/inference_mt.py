@@ -76,6 +76,7 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
 
 def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4):
     dataset_name = dataset.dataset_name
+    res = {}
     if osp.exists(out_file):
         res.update(load(out_file))
 
