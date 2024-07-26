@@ -42,7 +42,7 @@ class PandaGPT(BaseModel):
         model.load_state_dict(delta_ckpt, strict=False)
         torch.cuda.empty_cache()
         # self.model = model.eval().half().cuda()
-        
+
         local_rank = int(os.environ.get('LOCAL_RANK', 0))
         device_num = torch.cuda.device_count()
 

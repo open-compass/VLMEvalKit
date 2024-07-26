@@ -1,3 +1,4 @@
+accelerate
 einops
 gradio
 huggingface_hub
@@ -30,4 +31,3 @@ validators
 visual_genome
 xlsxwriter
 xtuner
-accelerate

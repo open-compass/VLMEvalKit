@@ -76,7 +76,7 @@ class OmniLMM12B(BaseModel):
         sys.path.append(root)
         with init_empty_weights():
             model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
-        
+
         local_rank = int(os.environ.get('LOCAL_RANK', 0))
         device_num = torch.cuda.device_count()
 
@@ -93,7 +93,7 @@ class OmniLMM12B(BaseModel):
         model = dispatch_model(
             model,
             device_map=device_map).eval()
-        
+
         self.model = model
         self.image_token_len = image_token_len
         self.image_transform = img_processor

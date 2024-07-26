@@ -8,6 +8,7 @@ import os.path as osp
 import base64
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = 1e9
+import torch
 
 
 def rescale_img(img, tgt=None):
@@ -169,3 +170,43 @@ def circular_pred(df, extract_func=None):
     flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
     flags = list(flag_map.values())
     return np.mean(flags)
+
+
+def get_memory():
+    total_memory = torch.cuda.get_device_properties(0).total_memory
+    total_mem = total_memory / 1024 / 1024 / 1024
+    return total_mem
+
+
+def build_device_map(model, defualt_map=None, no_split=None):
+    total_num_gpus = torch.cuda.device_count()
+    rank, world_size = get_rank_and_world_size()
+
+    alpha = 1 if world_size == total_num_gpus else 0.96
+    beta = 1 if world_size == total_num_gpus else 0.8
+    num_gpus = total_num_gpus // world_size
+    memory_map = {}
+    per_gpu_mem = get_memory() * alpha
+    memory_map.update({rank: f'{beta * per_gpu_mem:.2f}GiB'})
+    for gpu_id in range(1, num_gpus):
+        memory_map.update({rank + gpu_id * world_size: f'{per_gpu_mem:.2f}GiB'})
+
+    no_split_module = model._no_split_modules
+    no_split_module = no_split_module.extend(no_split) if no_split is not None else no_split_module
+    device_map = infer_auto_device_map(
+        model,
+        max_memory=memory_map,
+        no_split_module_classes=no_split_module
+    )
+    if no_split is not None:
+        for i in no_split:
+            device_map[i] = rank
+
+    try:
+        model = dispatch_model(
+            model,
+            device_map=device_map).eval()
+    except:
+        assert model is not None, f"Model can not be loaded to {world_size} process with {get_memory() * total_num_gpus} GiB,
+        try to decrease --proc-per-node or increase gpu memory."
+    return model, device_map

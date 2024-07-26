@@ -52,7 +52,7 @@ class CogVlm(BaseModel):
     def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
         assert model_path is not None
         from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
-        
+
         with init_empty_weights():
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
@@ -60,14 +60,14 @@ class CogVlm(BaseModel):
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
             )
-        
+
         local_rank = int(os.environ.get('LOCAL_RANK', 0))
         device_num = torch.cuda.device_count()
 
         device_1 = local_rank
         device_2 = local_rank + device_num // 2
         no_split_module = model._no_split_modules
-        
+
         device_map = infer_auto_device_map(
             model,
             max_memory={
