@@ -62,7 +62,7 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
 
-    structs = [dict(model=model, message=struct, dataset=dataset_name) for struct in structs]
+    structs = [dict(model=model, messages=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
         track_progress_rich(chat_mt, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
