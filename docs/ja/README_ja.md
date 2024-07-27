@@ -50,7 +50,7 @@ PS: 日本語の README には最新のアップデートがすべて含まれ�
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
 | [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR、_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
 | [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
-| [**MT-VQA**](https://github.com/bytedance/MTVQA)+ | MTVQA_TEST | VQA |  |  |  |
+| [**MT-VQA**](https://github.com/bytedance/MTVQA)+ | MTVQA_TEST | VQA | [**MMDU**](https://liuziyu77.github.io/MMDU/)+ | MMDU | VQA (multi-turn) |
 
 **\*** ゼロショット設定で合理的な結果を出せないVLMの一部の評価結果のみを提供しています
 

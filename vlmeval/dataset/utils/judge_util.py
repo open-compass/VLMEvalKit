@@ -1,5 +1,5 @@
 import os
-from ...api import OpenAIWrapper, OpenAIWrapperInternal
+from ...api import OpenAIWrapper
 from ...smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
@@ -18,15 +18,13 @@ def build_judge(**kwargs):
             'gpt-4-0409': 'gpt-4-turbo-2024-04-09',
             'chatgpt-1106': 'gpt-3.5-turbo-1106',
             'chatgpt-0125': 'gpt-3.5-turbo-0125',
-            'gpt-4o': 'gpt-4o-2024-05-13'
+            'gpt-4o': 'gpt-4o-2024-05-13',
+            'gpt-4o-mini': 'gpt-4o-mini-2024-07-18',
         }
         model_version = model_map[model]
     else:
         model_version = LOCAL_LLM
-    if INTERNAL:
-        model = OpenAIWrapperInternal(model_version, **kwargs)
-    else:
-        model = OpenAIWrapper(model_version, **kwargs)
+    model = OpenAIWrapper(model_version, **kwargs)
     return model
 
 

@@ -23,6 +23,8 @@
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
+- **[2024-07-27]** [**VLMEvalKit 技术报告**](https://www.arxiv.org/abs/2407.11691) 被 ACMMM 24' OpenSource 接收 🔥🔥🔥
+- **[2024-07-27]** 支持了 [**MMDU**](https://liuziyu77.github.io/MMDU/)，这是我们支持的首个多图多轮评测集，感谢 [**Liuziyu77**](https://github.com/Liuziyu77/)🔥🔥🔥
 - **[2024-07-25]** 支持了 [**VILA**](https://github.com/NVlabs/VILA/), 感谢 [**amitbcp**](https://github.com/amitbcp), 评测结果很快到来 🔥🔥🔥
 - **[2024-07-25]** 支持了 [**Ovis1.5**](https://github.com/AIDC-AI/Ovis), 感谢 [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
 - **[2024-07-23]** 支持了 [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, 我们的仓库支持的首个视频多模态大模型! 使用 [**这一分支版本**](https://github.com/FangXinyu-0913/Video-LLaVA) 安装 Video-LLaVA (**更推荐**) 或安装 [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) 来使用它!
@@ -31,8 +33,6 @@
 - **[2024-07-19]** 支持了 [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/), 评测结果很快到来 🔥🔥🔥
 - **[2024-07-19]** 支持了 [**MathVision**](https://mathvision-cuhk.github.io), 感谢 [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 - **[2024-07-19]** 支持了 [**LLaVA-Next-Interleave-7B**](https://huggingface.co/lmms-lab/llava-next-interleave-qwen-7b) 和 [**LLaVA-Next-LLaMA-3**](https://huggingface.co/lmms-lab/llama3-llava-next-8b) 🔥🔥🔥
-- **[2024-07-18]** 支持了 [**BLINK**](https://zeyofu.github.io/blink/)， 感谢 [**zeyofu**](https://zeyofu.github.io)🔥🔥🔥
-- **[2024-07-18]** 我们发布了第一版 [**VLMEvalKit 技术报告**](https://www.arxiv.org/abs/2407.11691)，我们欢迎来自社区的贡献并十分乐意分享相应的 credit：在下一次 report 更新中，我们将致谢所有的贡献，同时，具备三个或以上主要贡献 (支持新模型、评测集、或是主要特性) 的贡献者将可以加入技术报告的作者列表 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -58,8 +58,8 @@
 | [**Core-MM**](https://github.com/core-mm/core-mm)-          | CORE_MM | VQA                                               | [**MMT-Bench**](https://mmt-bench.github.io)                 | MMT-Bench_[VAL/VAL_MI/ALL/ALL_MI]                | MCQ      |
 | [**MLLMGuard**](https://github.com/Carol-gutianle/MLLMGuard) - | MLLMGuard_DS | VQA | [**AesBench**](https://github.com/yipoh/AesBench) | AesBench_[VAL/TEST] | MCQ |
 | [**VCR-wiki**](https://huggingface.co/datasets/vcr-org/)+ | VCR\_[EN/ZH]\_[EASY/HARD]_[ALL/500/100] | VQA | [**MMLongBench-Doc**](https://mayubo2333.github.io/MMLongBench-Doc/)+ | MMLongBench_DOC | VQA |
-| [**BLINK**](https://zeyofu.github.io/blink/) + | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
-| [**MT-VQA**](https://github.com/bytedance/MTVQA)+ | MTVQA_TEST | VQA |  |  |  |
+| [**BLINK**](https://zeyofu.github.io/blink/) | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
+| [**MT-VQA**](https://github.com/bytedance/MTVQA)+ | MTVQA_TEST | VQA | [**MMDU**](https://liuziyu77.github.io/MMDU/)+ | MMDU | VQA (multi-turn) |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
