@@ -122,6 +122,23 @@ class IDEFICS2(BaseModel):
         prompt += '<end_of_utterance>\nAssistant: Answer:'
         return prompt, images
 
+    def build_prompt_mt(self, message):
+        prompt, images = '', []
+        for msg in message:
+            if msg['role'] == 'user':
+                prompt += 'User: '
+            elif msg['role'] == 'assistant':
+                prompt += 'Assistant: '
+            for item in msg['content']:
+                if item['type'] == 'image':
+                    img = load_image(item['value'])
+                    images.append(img)
+                    prompt += '<image>'
+                elif item['type'] == 'text':
+                    prompt += item['value'].strip()
+                prompt += '<end_of_utterance>\n'
+        return prompt + 'Assistant: '
+
     def build_prompt_mmbench(self, message):
         replace_mapping = {
             '\nOptions:': '\nChoices:',
@@ -208,6 +225,18 @@ class IDEFICS2(BaseModel):
         if 'A.' in prompt and 'B.' in prompt:
             prompt += ' Answer:'
         return prompt, images
+
+    def chat_inner(self, message, dataset=None):
+        formatted_messages, formatted_images = self.build_prompt_mt(message)
+        inputs = self._process(formatted_messages, formatted_images)
+
+        generated_ids = self.model.generate(**inputs, **self.kwargs)
+        generated_text = self.processor.batch_decode(
+            generated_ids[:, inputs['input_ids'].size(1):], skip_special_tokens=True
+        )[0]
+        response = generated_text.strip()
+        # print(dataset, " | ", formatted_messages.replace("\n", "\\n"), " | ", response.replace("\n", "\\n"))
+        return response
 
     def generate_inner(self, message, dataset=None):
         if dataset in [
