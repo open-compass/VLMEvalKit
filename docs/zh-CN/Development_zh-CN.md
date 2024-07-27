@@ -57,7 +57,7 @@ TSV 文件中的内容组成为：
 
 示例 PR: **支持 LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
-**1. 支持 `generate_inner` API (必须).  **
+**1. 支持 `generate_inner` API (必须)**
 
 现有所有的模型都在 `vlmeval/vlm` 中实现。对于一个最基本的模型，你的模型类**应该实现方法** `generate_inner(msgs, dataset=None)`。这个函数将向 VLM 输入一个多模态数据，并返回 VLM 的预测（一个字符串）。可选参数 `dataset` 可以用作模型在不同推理策略之间切换的标志。
 

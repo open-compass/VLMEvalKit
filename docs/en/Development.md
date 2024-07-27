@@ -57,7 +57,7 @@ In this class, **you need to implement** the `evaluate(eval_file, **judge_kwargs
 
 Example PR: **Support LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
-**1. Support `generate_inner` API (mandatory).  **
+**1. Support `generate_inner` API (mandatory).**
 
 All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **must implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
 
@@ -94,7 +94,7 @@ msg2 = [IMAGE_URL, IMAGE_URL,  'How many apples are there in these images?']
 response = model.generate(msg1)
 ```
 
-**Support Custom Prompt (optional). **
+**Support Custom Prompt (optional).**
 
 Besides, your model can support **custom prompt building** by implementing two optional methods: `use_custom_prompt(dataset)` and `build_prompt(line, dataset=None)`.
 
@@ -103,7 +103,7 @@ Both functions take the dataset name as the input：
 -  `use_custom_prompt(dataset)` returns a boolean flag, indicating whether the model should use the custom prompt building strategy.
 - If `use_custom_prompt(dataset)` returns True, `build_prompt(line, dataset)` should return a customly bulit multimodal message for the corresponding `dataset`, given `line`, which is a dictionary that includes the necessary information of a data sample. If `use_custom_prompt(dataset)` returns False, the default prompt building strategy will be used.
 
-**Support multi-turn chatting (optional). **
+**Support multi-turn chatting (optional).**
 
 You can also support the multi-turn chatting and evaluation with your VLM by supporting the `chat_inner(message, dataset)` function. The function outputs a single string response, and the `message` is a list of chat history, following the below format.
 
