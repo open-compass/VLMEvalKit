@@ -114,6 +114,24 @@ class BaseModel:
             assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
         return self.generate_inner(message, dataset)
 
+    def chat(self, messages, dataset=None):
+        """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
+        assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        for msg in messages:
+            assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
+            assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg
+            msg['content'] = self.preproc_content(msg['content'])
+
+        while len(messages):
+            try:
+                return self.chat_inner(messages, dataset=dataset)
+            except:
+                messages = messages[1:]
+                while len(messages) and messages[0]['role'] != 'user':
+                    messages = messages[1:]
+                continue
+        return 'Chat Mode: Failed with all possible conversation turns.'
+
     def message_to_promptimg(self, message, dataset=None):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__

@@ -57,6 +57,8 @@ TSV 文件中的内容组成为：
 
 示例 PR: **支持 LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
+**1. 支持 `generate_inner` API (必须)**
+
 现有所有的模型都在 `vlmeval/vlm` 中实现。对于一个最基本的模型，你的模型类**应该实现方法** `generate_inner(msgs, dataset=None)`。这个函数将向 VLM 输入一个多模态数据，并返回 VLM 的预测（一个字符串）。可选参数 `dataset` 可以用作模型在不同推理策略之间切换的标志。
 
 其中多模态消息 `msgs` 是一个字典列表，每个字典有两个键：类型和值：
@@ -92,7 +94,32 @@ msg2 = [IMAGE_URL, IMAGE_URL,  'How many apples are there in these images?']
 response = model.generate(msg1)
 ```
 
-此外，你的模型可以通过实现两个可选方法来支持自定义提示构建：`use_custom_prompt(dataset)` 和 `build_prompt(line, dataset=None)`。这两个函数都将数据集名称作为输入。`use_custom_prompt` 将返回一个布尔值，指示模型是否应使用自定义提示构建策略。如果它返回 True，`build_prompt` 应该为相应的数据集返回一个自定义构建的多模态消息，line 数据是一个包含数据样本所需信息的字典。如果它返回False，则将使用默认的 prompt 构建策略。
+**2. 支持自定义提示词构建 (可选)**
+
+此外，你的模型可以通过实现两个可选方法来支持自定义提示构建：`use_custom_prompt(dataset)` 和 `build_prompt(line, dataset=None)`。
+
+- `use_custom_prompt(dataset)` 将返回一个布尔值，指示模型是否应使用自定义提示构建策略。
+- 如果`use_custom_prompt(dataset)`返回 True，`build_prompt(line, dataset)` 应该为相应的数据集返回一个自定义构建的多模态消息，line 数据是一个包含数据样本所需信息的字典。如果`use_custom_prompt(dataset)` 返回False，则将使用默认的 prompt 构建策略。
+
+**3. 支持多轮对话 (可选)**
+
+你可以通过支持 `chat_inner(message, dataset)` API 为你的模型新增多轮对话功能并兼容多轮对话评测。这个 API 输出一个字符串型回复，`message` 包含一个聊天记录的列表，格式如下：
+
+```python
+# Assume msg1, msg2, msg3, ... are multi-modal messages following the previously described format
+# `chat_inner` take the following chat history list as input:
+message = [
+    dict(role='user', content=msg1),
+    dict(role='assistant', content=msg2),
+    dict(role='user', content=msg3),
+    dict(role='assistant', content=msg4),
+	......
+    dict(role='user', content=msgn),
+]
+# `message` should contain an odd number of chat utterances, the role of utterances should be interleaved "user" and "assistant", with the role of the last utterance to be "user".
+# The chat function will call `chat_inner`
+response = model.chat(message)
+```
 
 ### 示例 PRs：
 

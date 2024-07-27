@@ -26,6 +26,11 @@ class LLaVA(BaseModel):
 
         warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
         assert osp.exists(model_pth) or splitlen(model_pth) == 2
+        self.system_prompt = (
+            'A chat between a curious human and an artificial intelligence assistant. '
+            "The assistant gives helpful, detailed, and polite answers to the human's questions. "
+        )
+        self.stop_str = '</s>'
 
         if model_pth == 'Lin-Chen/ShareGPT4V-7B':
             model_name = 'llava-v1.5-7b'
@@ -98,39 +103,63 @@ class LLaVA(BaseModel):
         message.append(dict(type='text', value=prompt))
         return message
 
-    def generate_inner(self, message, dataset=None):
+    def concat_tilist(self, message):
+        text, images = '', []
+        for item in message:
+            if item['type'] == 'text':
+                text += item['value']
+            elif item['type'] == 'image':
+                text += ' <image> '
+                images.append(item['value'])
+        return text, images
+
+    def chat_inner(self, message, dataset=None):
         from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from llava.constants import (
-            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
-        from llava.conversation import conv_templates, SeparatorStyle
+        from llava.constants import IMAGE_TOKEN_INDEX
 
-        # Support interleave text and image
-        conv = conv_templates[self.conv_mode].copy()
-        conv.append_message(conv.roles[0], 'PLACEHOLDER')
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-
-        content, images = '', []
-        for msg in message:
-            if msg['type'] == 'text':
-                content += msg['value']
-            elif msg['type'] == 'image':
-                if self.model.config.mm_use_im_start_end:
-                    content += DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n'
-                else:
-                    content += DEFAULT_IMAGE_TOKEN + '\n'
-                images.append(msg['value'])
+        prompt = self.system_prompt
+        images = []
+        for utter in message:
+            prompt += 'USER: ' if utter['role'] == 'user' else 'ASSISTANT: '
+            content, images_sub = self.concat_tilist(utter['content'])
+            prompt += content
+            images.extend(images_sub)
+            prompt += ' ' if utter['role'] == 'user' else self.stop_str
+        assert message[-1]['role'] == 'user', message
+        prompt += 'ASSISTANT: '
 
         images = [Image.open(s).convert('RGB') for s in images]
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
         image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
-        prompt = prompt.replace('PLACEHOLDER', content)
 
         input_ids = tokenizer_image_token(
             prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
-        stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
-        keywords = [stop_str]
+        keywords = [self.stop_str]
+        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+        with torch.inference_mode():
+            output_ids = self.model.generate(
+                input_ids, images=image_tensor, stopping_criteria=[stopping_criteria], **self.kwargs)
+        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+        return output
+
+    def generate_inner(self, message, dataset=None):
+        from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
+        from llava.constants import IMAGE_TOKEN_INDEX
+
+        # Support interleave text and image
+        content, images = self.concat_tilist(message)
+
+        images = [Image.open(s).convert('RGB') for s in images]
+        args = abstractproperty()
+        args.image_aspect_ratio = 'pad'
+        image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
+
+        prompt = self.system_prompt + 'USER: ' + content + ' ASSISTANT: '
+
+        input_ids = tokenizer_image_token(
+            prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
+        keywords = [self.stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
             output_ids = self.model.generate(

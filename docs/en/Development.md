@@ -17,20 +17,20 @@ Currently, we organize a benchmark as one single TSV file. During inference, the
 
 The contents of the TSV file consist of:
 
-| Dataset Name \ Fields  | index | image | image_path | question | hint | multi-choice<br>options | answer | category | l2-category | split |
-| ---------------------- | ----- | ----- | ---------- | -------- | ---- | ----------------------- | ------ | -------- | ----------- | ----- |
-| MMBench_DEV_[CN/EN]    | ✅     | ✅     |            | ✅        | ✅    | ✅                       | ✅      | ✅        | ✅           | ✅     |
-| MMBench_TEST_[CN/EN]   | ✅     | ✅     |            | ✅        | ✅    | ✅                       |        | ✅        | ✅           | ✅     |
-| CCBench                | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
-| SEEDBench_IMG          | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
-| MME                    | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
-| CORE_MM                | ✅     | ✅     | ✅          | ✅        |      |                         |        | ✅        |             |       |
-| MMVet                  | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
-| MMMU_DEV_VAL           | ✅     | ✅     | ✅          | ✅        |      | ✅                       | ✅      | ✅        | ✅           | ✅     |
-| COCO_VAL               | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |
-| OCRVQA_[TEST/TESTCORE] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
-| TextVQA_VAL            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
-| VCR_[EN/ZH]\_[EASY/HARD]_[ALL/500/100]            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| Dataset Name \ Fields                   | index | image | image_path | question | hint | multi-choice<br>options | answer | category | l2-category | split |
+| --------------------------------------- | ----- | ----- | ---------- | -------- | ---- | ----------------------- | ------ | -------- | ----------- | ----- |
+| MMBench_DEV_[CN/EN]                     | ✅     | ✅     |            | ✅        | ✅    | ✅                       | ✅      | ✅        | ✅           | ✅     |
+| MMBench_TEST_[CN/EN]                    | ✅     | ✅     |            | ✅        | ✅    | ✅                       |        | ✅        | ✅           | ✅     |
+| CCBench                                 | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
+| SEEDBench_IMG                           | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
+| MME                                     | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
+| CORE_MM                                 | ✅     | ✅     | ✅          | ✅        |      |                         |        | ✅        |             |       |
+| MMVet                                   | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
+| MMMU_DEV_VAL                            | ✅     | ✅     | ✅          | ✅        |      | ✅                       | ✅      | ✅        | ✅           | ✅     |
+| COCO_VAL                                | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |
+| OCRVQA_[TEST/TESTCORE]                  | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| TextVQA_VAL                             | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| VCR_[EN/ZH]\_[EASY/HARD]\_[ALL/500/100] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
@@ -57,13 +57,15 @@ In this class, **you need to implement** the `evaluate(eval_file, **judge_kwargs
 
 Example PR: **Support LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
-All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **should implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
+**1. Support `generate_inner` API (mandatory).**
+
+All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **must implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
 
 The multi-modal messages `msgs` is a list of dictionaries, each dictionary has two keys: type and value:
 - `type`: We currently support two types, choices are ["image", "text"].
 - `value`: When type=='text' , the value is the text message (a single string); when type=='image', the value can be the local path of an image file, or the image URL.
 
-Currently a multi-modal message may contain arbitarily interleaved images and texts. If your model do not support that, our recommended practice is to take the first image and concatenated text messages as the input to the model. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
+Currently a multi-modal message may contain arbitrarily interleaved images and texts. If your model do not support that, a practice can be taking the 1st image and concatenated text messages as the input. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
 
 Here are some examples of multi-modal messages:
 
@@ -92,7 +94,34 @@ msg2 = [IMAGE_URL, IMAGE_URL,  'How many apples are there in these images?']
 response = model.generate(msg1)
 ```
 
-Besides, your model can support custom prompt building by implementing two optional methods: `use_custom_prompt(dataset)` and `build_prompt(line, dataset=None)`. Both functions take the dataset name as the input. `use_custom_prompt` will return a boolean flag, indicating whether the model should use the custom prompt building strategy. If it returns True, `build_prompt` should return a customly bulit multimodal message for the corresponding `dataset`, given `line`, which is a dictionary that includes the necessary information of a data sample. If it returns False, the default prompt building strategy will be used.
+**Support Custom Prompt (optional).**
+
+Besides, your model can support **custom prompt building** by implementing two optional methods: `use_custom_prompt(dataset)` and `build_prompt(line, dataset=None)`.
+
+Both functions take the dataset name as the input：
+
+-  `use_custom_prompt(dataset)` returns a boolean flag, indicating whether the model should use the custom prompt building strategy.
+- If `use_custom_prompt(dataset)` returns True, `build_prompt(line, dataset)` should return a customly bulit multimodal message for the corresponding `dataset`, given `line`, which is a dictionary that includes the necessary information of a data sample. If `use_custom_prompt(dataset)` returns False, the default prompt building strategy will be used.
+
+**Support multi-turn chatting (optional).**
+
+You can also support the multi-turn chatting and evaluation with your VLM by supporting the `chat_inner(message, dataset)` function. The function outputs a single string response, and the `message` is a list of chat history, following the below format.
+
+```python
+# Assume msg1, msg2, msg3, ... are multi-modal messages following the previously described format
+# `chat_inner` take the following chat history list as input:
+message = [
+    dict(role='user', content=msg1),
+    dict(role='assistant', content=msg2),
+    dict(role='user', content=msg3),
+    dict(role='assistant', content=msg4),
+	......
+    dict(role='user', content=msgn),
+]
+# `message` should contain an odd number of chat utterances, the role of utterances should be interleaved "user" and "assistant", with the role of the last utterance to be "user".
+# The chat function will call `chat_inner`
+response = model.chat(message)
+```
 
 ### Example PRs:
 

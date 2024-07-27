@@ -211,3 +211,41 @@ class MiniCPM_Llama3_V(BaseModel):
         if isinstance(res, tuple) and len(res) > 0:
             res = res[0]
         return res
+
+    def chat_inner(self, message, dataset=None):
+        max_new_tokens = 1024
+
+        default_kwargs = dict(
+            max_new_tokens=max_new_tokens,
+            sampling=False,
+            num_beams=self.num_beams,
+        )
+        default_kwargs.update(self.kwargs)
+
+        msgs = []
+        for msg in message:
+            content = []
+            if len(msg['content']) == 1 and msg['content'][0]['type'] == 'text':
+                msg_new = {'role': msg['role'], 'content': msg['content'][0]['value']}
+                msgs.append(msg_new)
+                continue
+
+            for x in msg['content']:
+                if x['type'] == 'text':
+                    content.append(x['value'])
+                elif x['type'] == 'image':
+                    image = Image.open(x['value']).convert('RGB')
+                    content.append(image)
+            msg_new = {'role': msg['role'], 'content': content}
+            msgs.append(msg_new)
+
+        res = self.model.chat(
+            msgs=msgs,
+            context=None,
+            image=None,
+            tokenizer=self.tokenizer,
+            **default_kwargs)
+
+        if isinstance(res, tuple) and len(res) > 0:
+            res = res[0]
+        return res
