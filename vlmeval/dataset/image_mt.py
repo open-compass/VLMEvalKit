@@ -70,11 +70,14 @@ class MMDUDataset(ImageMTDataset):
                 line = res.iloc[i]
                 for k in self.DIMS:
                     tot[k] += 1
-                    if k in line and line[k] is not None and isinstance(line[k], int):
-                        score = int(line[k])
-                        score = np.clip(score, 0, 10)
-                        all[k] += score
-                        valid[k] += 1
+                    if k in line and line[k] is not None:
+                        try:
+                            score = int(line[k])
+                            score = np.clip(score, 0, 10)
+                            all[k] += score
+                            valid[k] += 1
+                        except Exception as e:
+                            print(f'Failed to parse the score: {str(e)}')
         sp1 = {'set': 'all'}
         sp1.update({k: all[k] / tot[k] * 10 for k in self.DIMS})
         sp2 = {'set': 'valid'}
