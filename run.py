@@ -91,13 +91,16 @@ def main():
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-            if dataset_name in ['Video-MME']:
+            else:
                 if args.pack:
-                    logger.info('Video-MME not support Pack Mode, directly change to unpack')
+                    logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                     args.pack = False
                 packstr = 'pack' if args.pack else 'nopack'
-                subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
+                if dataset_name in ['Video-MME']:
+                    subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
+                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
+                else:
+                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
 
             if osp.exists(result_file) and args.rerun:
                 for keyword in ['openai', 'gpt', 'auxmatch']:
@@ -107,7 +110,7 @@ def main():
                 model = model_name  # which is only a name
 
             # Perform the Inference
-            if dataset_name == 'MMBench-Video' or dataset_name == 'Video-MME':
+            if dataset_name in ['MMBench-Video', 'Video-MME', 'MVBench']:
                 model = infer_data_job_video(
                     model,
                     work_dir=pred_root,
