@@ -69,9 +69,10 @@ models = {
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
-    'latest': [
-        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
+    '4.40.0': [
+        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
     ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
+    'latest': ['paligemma-3b-mix-448'] + list(chameleon_series) + list(ovis_series),
     'api': list(api_models)
 }
 
@@ -82,8 +83,8 @@ SKIP_MODELS = [
     'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore'
-]
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
+] + list(vila_series)
 
 LARGE_MODELS = [
     'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
@@ -323,7 +324,7 @@ def RUN(lvl, model):
     logger = get_logger('Run Missing')
 
     def get_env(name):
-        assert name in ['433', '437', 'latest']
+        assert name in ['433', '437', '440', 'latest']
         load_env()
         env_key = f'ENV_{name}'
         return os.environ.get(env_key, None)
@@ -339,6 +340,8 @@ def RUN(lvl, model):
         missing = [x for x in missing if x[0] in models[missing]]
     elif model in supported_VLM:
         missing = [x for x in missing if x[0] == model]
+    else:
+        warnings.warn(f'Invalid model {model}.')
 
     missing.sort(key=lambda x: x[0])
     groups = defaultdict(list)
@@ -353,6 +356,7 @@ def RUN(lvl, model):
         if m not in models['api']:
             env = '433'
             env = '437' if m in models['4.37.0'] else env
+            env = '440' if m in models['4.40.0'] else env
             env = 'latest' if m in models['latest'] else env
             pth = get_env(env)
             if pth is not None:
@@ -376,6 +380,8 @@ def EVAL(dataset_name, data_file):
         judge_kwargs['model'] = 'chatgpt-0125'
     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'
+    elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+        judge_kwargs['model'] = 'gpt-4o'
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:
         assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
