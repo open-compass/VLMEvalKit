@@ -47,6 +47,8 @@ class VILA(BaseModel):
             exit(-1)
 
         self.model = self.model.cuda()
+        if '3b' in model_path:
+            self.conv_mode = 'vicuna_v1'
         if '8b' in model_path:
             self.conv_mode = 'llama_3'
         elif '13b' in model_path:
