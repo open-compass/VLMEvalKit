@@ -37,17 +37,26 @@ class DeepSeekVL(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def prepare_inputs(self, message):
-        content, images = '', []
-        for s in message:
-            if s['type'] == 'image':
-                images.append(s['value'])
-                content += '<image_placeholder>'
-            elif s['type'] == 'text':
-                content += s['value']
-        conversation = [
-            dict(role='User', content=content, images=images),
-            dict(role='Assistant', content='')
-        ]
+        def prepare_itlist(msgs):
+            content, images = '', []
+            for s in msgs:
+                if s['type'] == 'image':
+                    images.append(s['value'])
+                    content += '<image_placeholder>'
+                elif s['type'] == 'text':
+                    content += s['value']
+            return content, images
+        conversation = []
+        if 'role' not in message[0]:
+            content, images = prepare_itlist(message)
+            conversation.append(dict(role='User', content=content, images=images))
+        else:
+            role_map = {'user': 'User', 'assistant': 'Assistant'}
+            for msgs in message:
+                role = role_map[msgs['role']]
+                content, images = prepare_itlist(msgs['content'])
+                conversation.append(dict(role=role, content=content, images=images))
+        conversation.append(dict(role='Assistant', content=''))
         return conversation
 
     def generate_inner(self, message, dataset=None):
@@ -67,3 +76,6 @@ class DeepSeekVL(BaseModel):
             **self.kwargs)
         answer = self.tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
         return answer
+
+    def chat_inner(self, message, dataset=None):
+        return self.generate_inner(message, dataset=dataset)
