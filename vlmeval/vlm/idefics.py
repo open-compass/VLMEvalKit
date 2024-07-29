@@ -12,14 +12,14 @@ class IDEFICS(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_pth='HuggingFaceM4/idefics-9b-instruct', **kwargs):
-        assert osp.exists(model_pth) or splitlen(model_pth) == 2
+    def __init__(self, model_path='HuggingFaceM4/idefics-9b-instruct', **kwargs):
+        assert osp.exists(model_path) or splitlen(model_path) == 2
         from transformers import IdeficsForVisionText2Text, AutoProcessor
 
         self.model = IdeficsForVisionText2Text.from_pretrained(
-            model_pth, torch_dtype=torch.bfloat16, device_map='auto'
+            model_path, torch_dtype=torch.bfloat16, device_map='auto'
         )
-        self.processor = AutoProcessor.from_pretrained(model_pth)
+        self.processor = AutoProcessor.from_pretrained(model_path)
         kwargs_default = {'max_new_tokens': 512}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
@@ -31,7 +31,7 @@ class IDEFICS(BaseModel):
     def generate_inner(self, message, dataset=None):
         prompts = (
             ['Users:']
-            + [x['value'] if x['type'] == 'text' else Image.open(x['value']) for x in message]
+            + [msg['value'] if msg['type'] == 'text' else Image.open(msg['value']) for msg in message]
             + ['<end_of_utterance>', '\nAssistant: ']
         )
         inputs = self.processor(

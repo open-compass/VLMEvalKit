@@ -15,7 +15,7 @@ class LLaVA(BaseModel):
     INTERLEAVE = True
 
     def __init__(self,
-                 model_pth='liuhaotian/llava_v1.5_7b',
+                 model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
         try:
             from llava.model.builder import load_pretrained_model
@@ -25,30 +25,30 @@ class LLaVA(BaseModel):
             sys.exit(-1)
 
         warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
-        assert osp.exists(model_pth) or splitlen(model_pth) == 2
+        assert osp.exists(model_path) or splitlen(model_path) == 2
         self.system_prompt = (
             'A chat between a curious human and an artificial intelligence assistant. '
             "The assistant gives helpful, detailed, and polite answers to the human's questions. "
         )
         self.stop_str = '</s>'
 
-        if model_pth == 'Lin-Chen/ShareGPT4V-7B':
+        if model_path == 'Lin-Chen/ShareGPT4V-7B':
             model_name = 'llava-v1.5-7b'
-        elif model_pth == 'Lin-Chen/ShareGPT4V-13B':
+        elif model_path == 'Lin-Chen/ShareGPT4V-13B':
             model_name = 'llava-v1.5-13b'
         else:
-            model_name = get_model_name_from_path(model_pth)
+            model_name = get_model_name_from_path(model_path)
 
         try:
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path=model_pth,
+                model_path=model_path,
                 model_base=None,
                 model_name=model_name,
                 device='cpu',
                 device_map='cpu'
             )
         except:
-            if 'ShareGPT4V' in model_pth:
+            if 'ShareGPT4V' in model_path:
                 import llava
                 warnings.warn(
                     'Please manually remove the encoder type check in '
@@ -174,14 +174,14 @@ class LLaVA_Next(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
+    def __init__(self, model_path='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
         from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
-        self.model_pth = model_pth
-        if '34b' in model_pth.lower():
-            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth, use_fast=False)
+        self.model_path = model_path
+        if '34b' in model_path.lower():
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_path, use_fast=False)
         else:
-            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth)
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_path)
         flash_attn_flag = False
         try:
             import flash_attn
@@ -191,10 +191,10 @@ class LLaVA_Next(BaseModel):
 
         if flash_attn_flag:
             model = LlavaNextForConditionalGeneration.from_pretrained(
-                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+                self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
         else:
             model = LlavaNextForConditionalGeneration.from_pretrained(
-                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+                self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
 
         model = model.eval()
         self.model = model.cuda()
@@ -204,22 +204,22 @@ class LLaVA_Next(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def apply_prompt_template(self, prompt):
-        model_pth = self.model_pth.lower()
-        if 'mistral' in model_pth:
+        model_path = self.model_path.lower()
+        if 'mistral' in model_path:
             template = '[INST] PLACEHOLDER [/INST]'
-        elif 'vicuna' in model_pth:
+        elif 'vicuna' in model_path:
             template = (
                 'A chat between a curious human and an artificial intelligence assistant. '
                 "The assistant gives helpful, detailed, and polite answers to the human's questions. "
                 'USER: PLACEHOLDER ASSISTANT:'
             )
-        elif '34b' in model_pth:
+        elif '34b' in model_path:
             template = (
                 '<|im_start|>system\nAnswer the questions.<|im_end|><|im_start|>user\nPLACEHOLDER<|im_end|>'
                 '<|im_start|>assistant\n'
             )
         else:
-            raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
+            raise NotImplementedError(f'Prompt template for {model_path} not implemented.')
 
         prompt = template.replace('PLACEHOLDER', f'<image>\n{prompt}')
         return prompt
