@@ -185,9 +185,10 @@ chameleon_series = {
 }
 
 vila_series = {
-    'vila_8b': partial(VILA, model_path='Efficient-Large-Model/Llama-3-VILA1.5-8b'),
-    'vila_13b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-13b'),
-    'vila_40b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-40b'),
+    'VILA1.5-3b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-3b'),
+    'Llama-3-VILA1.5-8b': partial(VILA, model_path='Efficient-Large-Model/Llama-3-VILA1.5-8b'),
+    'VILA1.5-13b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-13b'),
+    'VILA1.5-40b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-40b'),
 }
 
 ovis_series = {
