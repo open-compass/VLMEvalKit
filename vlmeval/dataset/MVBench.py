@@ -169,7 +169,7 @@ class MVBench(VideoBaseDataset):
         images_group = list()
         frame_indices = self.get_index(bound, fps, max_frame, first_idx=0) 
         for frame_index in frame_indices:
-            img = Image.fromarray(vr[frame_index].numpy())
+            img = Image.fromarray(vr[frame_index].asnumpy())
             images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
@@ -197,6 +197,19 @@ class MVBench(VideoBaseDataset):
             images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
+    
+    def save_video_frames(self, imgs, video_name, frames):
+
+        frame_paths = self.frame_paths(video_name, frames)
+        flag = np.all([osp.exists(p) for p in frame_paths])
+
+        if not flag:
+            images = [Image.fromarray(arr) for arr in imgs]
+            for im, pth in zip(images, frame_paths):
+                if not osp.exists(pth):
+                    im.save(pth)
+
+        return frame_paths
     
     def qa_template(self, data):
         question = f"Question: {data['question']}\n"
@@ -267,8 +280,10 @@ class MVBench(VideoBaseDataset):
                 )
             video_path = os.path.join(line['prefix'], line['video'])
             decord_method = self.decord_method[line['data_type']]
+            self.num_segments = num_frames if num_frames > 0 else self.nframe
             torch_imgs = decord_method(video_path, bound)
-            for im in torch_imgs:
+            img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+            for im in img_frame_paths: 
                 message.append(dict(type='image', value=im))
 
         message.append(dict(type='text', value='Best option:('))
