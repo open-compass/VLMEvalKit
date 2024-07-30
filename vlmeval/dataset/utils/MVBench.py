@@ -6,6 +6,7 @@ import numbers
 import math
 import torch
 
+
 def get_dimension_rating(data_path):
     data = load(data_path)
     result_board = {}
@@ -27,22 +28,24 @@ def get_dimension_rating(data_path):
 
     return result_board
 
+
 def check_ans(pred, gt):
     flag = False
-    
+
     pred_list = pred.lower().split(' ')
-    pred_option, pred_content = pred_list[0], ' '.join(pred_list[1:])
+    pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
     gt_list = gt.lower().split(' ')
     gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
     if gt_content[-1] == '.':
         gt_content = gt_content[:-1]
-    
+
     if pred_option.replace('.', '') in gt_option:
         flag = True
     elif gt_option in pred_option:
         flag = True
-        
+
     return flag
+
 
 class GroupRandomCrop(object):
     def __init__(self, size):
@@ -62,7 +65,7 @@ class GroupRandomCrop(object):
         y1 = random.randint(0, h - th)
 
         for img in img_group:
-            assert(img.size[0] == w and img.size[1] == h)
+            assert (img.size[0] == w and img.size[1] == h)
             if w == tw and h == th:
                 out_images.append(img)
             else:
@@ -91,7 +94,7 @@ class MultiGroupRandomCrop(object):
             y1 = random.randint(0, h - th)
 
             for img in img_group:
-                assert(img.size[0] == w and img.size[1] == h)
+                assert (img.size[0] == w and img.size[1] == h)
                 if w == tw and h == th:
                     out_images.append(img)
                 else:
@@ -269,10 +272,8 @@ class GroupMultiScaleCrop(object):
             img.crop(
                 (offset_w,
                  offset_h,
-                 offset_w +
-                 crop_w,
-                 offset_h +
-                 crop_h)) for img in img_group]
+                 offset_w + crop_w,
+                 offset_h + crop_h)) for img in img_group]
         ret_img_group = [img.resize((self.input_size[0], self.input_size[1]), self.interpolation)
                          for img in crop_img_group]
         return ret_img_group
@@ -375,7 +376,7 @@ class GroupRandomSizedCrop(object):
             out_group = list()
             for img in img_group:
                 img = img.crop((x1, y1, x1 + w, y1 + h))
-                assert(img.size == (w, h))
+                assert (img.size == (w, h))
                 out_group.append(
                     img.resize(
                         (self.size, self.size), self.interpolation))
@@ -415,7 +416,7 @@ class Stack(object):
                 return np.concatenate([np.array(x)[:, :, ::-1]
                                        for x in img_group], axis=2)
             else:
-                #print(np.concatenate(img_group, axis=2).shape)
+                # print(np.concatenate(img_group, axis=2).shape)
                 # print(img_group[0].shape)
                 return np.concatenate(img_group, axis=2)
 
