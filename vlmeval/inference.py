@@ -1,8 +1,7 @@
 import torch
 import torch.distributed as dist
-import datetime
-from vlmeval.config import supported_VLM, api_models
-from vlmeval.utils import TSVDataset, track_progress_rich, split_MMMU
+from vlmeval.config import supported_VLM
+from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -19,10 +18,10 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc=4, ignore_failed=False):
+def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
-    dataset = TSVDataset(dataset_name)
+    dataset_name = dataset.dataset_name
     data = dataset.data
     if index_set is not None:
         data = data[data['index'].isin(index_set)]
@@ -32,10 +31,6 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
 
     lt, indices = len(data), list(data['index'])
     structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-
-    # Corner Case
-    if listinstr(['MMMU'], dataset_name):
-        structs = [split_MMMU(s) for s in structs]
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
@@ -48,7 +43,6 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     indices = [i for i in indices if i not in res]
 
     gen_func = model.generate
-    # For now, we do not use split_MMMU for MMMU dataset
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
@@ -61,19 +55,14 @@ def infer_data_api(work_dir, model_name, dataset_name, index_set=None, api_nproc
     return res
 
 
-def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4):
+    dataset_name = dataset.dataset_name
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
     if osp.exists(out_file):
         res.update(load(out_file))
 
     rank, world_size = get_rank_and_world_size()
-    if rank == 0:
-        dataset = TSVDataset(dataset_name)
-    if world_size > 1:
-        dist.barrier()
-    dataset = TSVDataset(dataset_name)
-
     sheet_indices = list(range(rank, len(dataset), world_size))
     lt = len(sheet_indices)
     data = dataset.data.iloc[sheet_indices]
@@ -102,7 +91,7 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         supp = infer_data_api(
             work_dir=work_dir,
             model_name=model_name,
-            dataset_name=dataset_name,
+            dataset=dataset,
             index_set=set(indices),
             api_nproc=api_nproc)
         for idx in indices:
@@ -111,6 +100,8 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         res = {k: res[k] for k in data_indices}
         dump(res, out_file)
         return model_name
+    else:
+        model.set_dump_image(dataset.dump_image)
 
     for i in tqdm(range(lt)):
         idx = data.iloc[i]['index']
@@ -122,11 +113,6 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        # Corner Case
-        if listinstr(['MMMU'], dataset_name):
-            struct = split_MMMU(struct)
-
-        # For now, we do not use split_MMMU for MMMU dataset
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
@@ -143,8 +129,9 @@ def infer_data(model_name, work_dir, dataset_name, out_file, verbose=False, api_
 
 
 # A wrapper for infer_data, do the pre & post processing
-def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api_nproc=4, ignore_failed=False):
+def infer_data_job(model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False):
     rank, world_size = get_rank_and_world_size()
+    dataset_name = dataset.dataset_name
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
@@ -162,7 +149,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
     out_file = tmpl.format(rank)
 
     model = infer_data(
-        model, work_dir=work_dir, dataset_name=dataset_name, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
+        model, work_dir=work_dir, dataset=dataset, out_file=out_file, verbose=verbose, api_nproc=api_nproc)
     if world_size > 1:
         dist.barrier()
 
@@ -171,7 +158,7 @@ def infer_data_job(model, work_dir, model_name, dataset_name, verbose=False, api
         for i in range(world_size):
             data_all.update(load(tmpl.format(i)))
 
-        data = TSVDataset(dataset_name).data
+        data = dataset.data
         for x in data['index']:
             assert x in data_all
         data['prediction'] = [str(data_all[x]) for x in data['index']]

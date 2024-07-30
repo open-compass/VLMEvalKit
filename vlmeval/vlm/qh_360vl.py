@@ -5,7 +5,7 @@ import os.path as osp
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class QH_360VL(BaseModel):
@@ -33,7 +33,7 @@ class QH_360VL(BaseModel):
 
     def generate(self, message, dataset=None):
 
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         print(prompt)
         image = Image.open(image_path).convert('RGB')
         terminators = [

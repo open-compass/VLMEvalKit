@@ -5,7 +5,8 @@ import sys
 import os.path as osp
 from ..base import BaseModel
 from ...smp import *
-from ...utils import DATASET_TYPE
+from ...dataset import DATASET_TYPE
+import copy
 
 
 class LLaVA(BaseModel):
@@ -14,7 +15,7 @@ class LLaVA(BaseModel):
     INTERLEAVE = True
 
     def __init__(self,
-                 model_pth='liuhaotian/llava_v1.5_7b',
+                 model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
         try:
             from llava.model.builder import load_pretrained_model
@@ -24,25 +25,30 @@ class LLaVA(BaseModel):
             sys.exit(-1)
 
         warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
-        assert osp.exists(model_pth) or splitlen(model_pth) == 2
+        assert osp.exists(model_path) or splitlen(model_path) == 2
+        self.system_prompt = (
+            'A chat between a curious human and an artificial intelligence assistant. '
+            "The assistant gives helpful, detailed, and polite answers to the human's questions. "
+        )
+        self.stop_str = '</s>'
 
-        if model_pth == 'Lin-Chen/ShareGPT4V-7B':
+        if model_path == 'Lin-Chen/ShareGPT4V-7B':
             model_name = 'llava-v1.5-7b'
-        elif model_pth == 'Lin-Chen/ShareGPT4V-13B':
+        elif model_path == 'Lin-Chen/ShareGPT4V-13B':
             model_name = 'llava-v1.5-13b'
         else:
-            model_name = get_model_name_from_path(model_pth)
+            model_name = get_model_name_from_path(model_path)
 
         try:
             self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
-                model_path=model_pth,
+                model_path=model_path,
                 model_base=None,
                 model_name=model_name,
                 device='cpu',
                 device_map='cpu'
             )
         except:
-            if 'ShareGPT4V' in model_pth:
+            if 'ShareGPT4V' in model_path:
                 import llava
                 warnings.warn(
                     'Please manually remove the encoder type check in '
@@ -62,7 +68,7 @@ class LLaVA(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -97,39 +103,63 @@ class LLaVA(BaseModel):
         message.append(dict(type='text', value=prompt))
         return message
 
-    def generate_inner(self, message, dataset=None):
+    def concat_tilist(self, message):
+        text, images = '', []
+        for item in message:
+            if item['type'] == 'text':
+                text += item['value']
+            elif item['type'] == 'image':
+                text += ' <image> '
+                images.append(item['value'])
+        return text, images
+
+    def chat_inner(self, message, dataset=None):
         from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from llava.constants import (
-            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
-        from llava.conversation import conv_templates, SeparatorStyle
+        from llava.constants import IMAGE_TOKEN_INDEX
 
-        # Support interleave text and image
-        conv = conv_templates[self.conv_mode].copy()
-        conv.append_message(conv.roles[0], 'PLACEHOLDER')
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
-
-        content, images = '', []
-        for msg in message:
-            if msg['type'] == 'text':
-                content += msg['value']
-            elif msg['type'] == 'image':
-                if self.model.config.mm_use_im_start_end:
-                    content += DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n'
-                else:
-                    content += DEFAULT_IMAGE_TOKEN + '\n'
-                images.append(msg['value'])
+        prompt = self.system_prompt
+        images = []
+        for utter in message:
+            prompt += 'USER: ' if utter['role'] == 'user' else 'ASSISTANT: '
+            content, images_sub = self.concat_tilist(utter['content'])
+            prompt += content
+            images.extend(images_sub)
+            prompt += ' ' if utter['role'] == 'user' else self.stop_str
+        assert message[-1]['role'] == 'user', message
+        prompt += 'ASSISTANT: '
 
         images = [Image.open(s).convert('RGB') for s in images]
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
         image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
-        prompt = prompt.replace('PLACEHOLDER', content)
 
         input_ids = tokenizer_image_token(
             prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
-        stop_str = conv.sep if conv.sep_style != SeparatorStyle.TWO else conv.sep2
-        keywords = [stop_str]
+        keywords = [self.stop_str]
+        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+        with torch.inference_mode():
+            output_ids = self.model.generate(
+                input_ids, images=image_tensor, stopping_criteria=[stopping_criteria], **self.kwargs)
+        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
+        return output
+
+    def generate_inner(self, message, dataset=None):
+        from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
+        from llava.constants import IMAGE_TOKEN_INDEX
+
+        # Support interleave text and image
+        content, images = self.concat_tilist(message)
+
+        images = [Image.open(s).convert('RGB') for s in images]
+        args = abstractproperty()
+        args.image_aspect_ratio = 'pad'
+        image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
+
+        prompt = self.system_prompt + 'USER: ' + content + ' ASSISTANT: '
+
+        input_ids = tokenizer_image_token(
+            prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
+        keywords = [self.stop_str]
         stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
             output_ids = self.model.generate(
@@ -142,17 +172,19 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
-    def __init__(self, model_pth='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
+    def __init__(self, model_path='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
-        assert version_cmp(transformers.__version__, '4.39.0', 'ge')
-        from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
-        self.model_pth = model_pth
-        if '34b' in model_pth.lower():
-            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth, use_fast=False)
+        from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration, \
+            AutoProcessor, LlavaForConditionalGeneration
+        self.model_path = model_path
+        if '34b' in model_path.lower():
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_path, use_fast=False)
+        elif 'interleave' in model_path.lower():
+            self.processor = AutoProcessor.from_pretrained(self.model_path)
         else:
-            self.processor = LlavaNextProcessor.from_pretrained(self.model_pth)
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_path)
         flash_attn_flag = False
         try:
             import flash_attn
@@ -161,11 +193,19 @@ class LLaVA_Next(BaseModel):
             pass
 
         if flash_attn_flag:
-            model = LlavaNextForConditionalGeneration.from_pretrained(
-                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+            if 'interleave' in model_path.lower():
+                model = LlavaForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+            else:
+                model = LlavaNextForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
         else:
-            model = LlavaNextForConditionalGeneration.from_pretrained(
-                self.model_pth, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+            if 'interleave' in model_path.lower():
+                model = LlavaForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+            else:
+                model = LlavaNextForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
 
         model = model.eval()
         self.model = model.cuda()
@@ -175,29 +215,49 @@ class LLaVA_Next(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def apply_prompt_template(self, prompt):
-        model_pth = self.model_pth.lower()
-        if 'mistral' in model_pth:
+        model_path = self.model_path.lower()
+        if 'mistral' in model_path:
             template = '[INST] PLACEHOLDER [/INST]'
-        elif 'vicuna' in model_pth:
+        elif 'vicuna' in model_path:
             template = (
                 'A chat between a curious human and an artificial intelligence assistant. '
                 "The assistant gives helpful, detailed, and polite answers to the human's questions. "
                 'USER: PLACEHOLDER ASSISTANT:'
             )
-        elif '34b' in model_pth:
+        elif '34b' in model_path:
             template = (
                 '<|im_start|>system\nAnswer the questions.<|im_end|><|im_start|>user\nPLACEHOLDER<|im_end|>'
                 '<|im_start|>assistant\n'
             )
         else:
-            raise NotImplementedError(f'Prompt template for {model_pth} not implemented.')
+            raise NotImplementedError(f'Prompt template for {model_path} not implemented.')
 
         prompt = template.replace('PLACEHOLDER', f'<image>\n{prompt}')
         return prompt
 
+    def output_process(self, answer):
+        if '<s>' in answer:
+            answer = answer.replace('<s>', '').strip()
+        if '[/INST]' in answer:
+            answer = answer.split('[/INST]')[1].strip()
+        elif 'ASSISTANT:' in answer:
+            answer = answer.split('ASSISTANT:')[1].strip()
+        elif 'assistant\n' in answer:
+            answer = answer.split('assistant\n')[1].strip()
+        elif '<|end_header_id|>\n\n' in answer:
+            answer = answer.split('<|end_header_id|>\n\n')[2].strip()
+
+        if '</s>' in answer:
+            answer = answer.split('</s>')[0].strip()
+        elif '<|im_end|>' in answer:
+            answer = answer.split('<|im_end|>')[0].strip()
+        elif '<|eot_id|>' in answer:
+            answer = answer.split('<|eot_id|>')[0].strip()
+        return answer
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -232,29 +292,89 @@ class LLaVA_Next(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
-        prompt = prompt.replace('<image>', '[ImageHere]')
-        if prompt.find('[ImageHere]') != prompt.rfind('[ImageHere]'):
-            prompt += '\nThere exists multiple images in the conversation, but only the first one is displayed.'
-
-        image = Image.open(image_path).convert('RGB')
-        prompt = self.apply_prompt_template(prompt)
-
-        inputs = self.processor(prompt, image, return_tensors='pt').to('cuda')
+        content, images = [], []
+        for msg in message:
+            if msg['type'] == 'text':
+                content.append({'type': msg['type'], 'text': msg['value']})
+            else:
+                content.append({'type': 'image'})
+                images.append(Image.open(msg['value']).convert('RGB'))
+        conversation = [
+            {
+                'role': 'user',
+                'content': content,
+            }
+        ]
+        prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+        inputs = self.processor(prompt, images, return_tensors='pt').to('cuda', torch.float16)
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
-        if '<s>' in answer:
-            answer = answer.replace('<s>', '').strip()
-        if '[/INST]' in answer:
-            answer = answer.split('[/INST]')[1].strip()
-        elif 'ASSISTANT:' in answer:
-            answer = answer.split('ASSISTANT:')[1].strip()
-        elif 'assistant\n' in answer:
-            answer = answer.split('assistant\n')[1].strip()
-
-        if '</s>' in answer:
-            answer = answer.split('</s>')[0].strip()
-        if '<|im_end|>' in answer:
-            answer = answer.split('<|im_end|>')[0].strip()
-
+        answer = self.output_process(answer)
         return answer
+
+
+class LLaVA_Next2(BaseModel):
+    INSTALL_REQ = True
+    INTERLEAVE = True
+
+    DEFAULT_IMAGE_TOKEN = '<image>'
+    IMAGE_TOKEN_INDEX = -200
+
+    def __init__(self, model_path='lmms-lab/llama3-llava-next-8b', **kwargs):
+        assert model_path is not None
+        try:
+            from llava.model.builder import load_pretrained_model
+            from llava.conversation import conv_templates
+            from llava.mm_utils import get_model_name_from_path, tokenizer_image_token
+        except:
+            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+
+        model_name = get_model_name_from_path(model_path)
+        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map=None)
+        model.cuda().eval()
+        model.tie_weights()
+
+        if 'llama3' in model_path.lower():
+            conv_mode = 'llava_llama_3'
+        elif 'qwen' in model_path.lower():
+            conv_mode = 'qwen_1_5'
+        self.conv_template = conv_mode
+        self.conv_templates = conv_templates
+        self.tokenizer = tokenizer
+        self.model = model
+        self.image_processor = image_processor
+        self.tokenizer_image_token = tokenizer_image_token
+
+    def generate_inner(self, message, dataset=None):
+        content, images = '', []
+        for msg in message:
+            if msg['type'] == 'text':
+                content += msg['value']
+            else:
+                images.append(Image.open(msg['value']).convert('RGB'))
+                content += (self.DEFAULT_IMAGE_TOKEN + '\n')
+
+        preprocess = self.image_processor.preprocess
+        image_tokenizer = self.tokenizer_image_token
+        image_tensor = [
+            preprocess(f, return_tensors='pt')['pixel_values'][0].half().cuda() for f in images
+        ]
+        image_tensor = torch.stack(image_tensor)
+
+        conv = copy.deepcopy(self.conv_templates[self.conv_template])
+        conv.append_message(conv.roles[0], content)
+        conv.append_message(conv.roles[1], None)
+        prompt_question = conv.get_prompt()
+
+        input_ids = image_tokenizer(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors='pt')
+        input_ids = input_ids.unsqueeze(0).cuda()
+
+        cont = self.model.generate(
+            input_ids,
+            images=image_tensor,
+            do_sample=False,
+            temperature=0,
+            max_new_tokens=512,
+        )
+        text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
+        return text_outputs

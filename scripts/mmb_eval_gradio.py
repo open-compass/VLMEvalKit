@@ -4,7 +4,7 @@ import gradio as gr
 
 HEADER = """
 # Welcome to MMBench👏👏
-We are delighted that you are willing to submit the evaluation results to the MMBench official website! The evaluation service currently can handle submissions of MMBench, MMBench-CN, and CCBench. We use `gpt-3.5-turbo-0613` to help answer matching. Evaluation Codes in VLMEvalKit: https://github.com/open-compass/VLMEvalKit. Please adopt / follow the implementation of VLMEvalKit to generate the submission files. 
+We are delighted that you are willing to submit the evaluation results to the MMBench official website! The evaluation service currently can handle submissions of MMBench, MMBench-CN, and CCBench. We use `gpt-3.5-turbo-0125` to help answer matching. Evaluation Codes in VLMEvalKit: https://github.com/open-compass/VLMEvalKit. Please adopt / follow the implementation of VLMEvalKit to generate the submission files. 
 Moreover, this is a temporary solution, which **does not support ChatGPT-based answer extraction**. So you need to make sure values in the `prediction` field of your submission files are single characters in A, B, C, D. Other free-form answers can not be recognized by the evaluation script and will be marked as **WRONG**. 
 
 The evaluation script is available at https://github.com/open-compass/VLMEvalKit/tree/main/scripts/mmb_eval_gradio.py

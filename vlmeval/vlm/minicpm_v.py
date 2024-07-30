@@ -4,7 +4,7 @@ from transformers import AutoModel, AutoTokenizer
 
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class MiniCPM_V(BaseModel):
@@ -59,10 +59,10 @@ class MiniCPM_V(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         msgs = [{'role': 'user', 'content': prompt}]
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             max_new_tokens = 20
         elif DATASET_TYPE(dataset) == 'Y/N':
             max_new_tokens = 100
@@ -86,6 +86,7 @@ class MiniCPM_V(BaseModel):
 
 
 class MiniCPM_Llama3_V(BaseModel):
+
     INSTALL_REQ = False
     INTERLEAVE = True
 
@@ -108,16 +109,13 @@ class MiniCPM_Llama3_V(BaseModel):
         self.vqa_prompt = 'Answer the question using a single word or phrase.'
 
     def use_custom_prompt(self, dataset):
-        if listinstr(['multi-choice', 'VQA'], DATASET_TYPE(dataset)):
+        if listinstr(['MCQ', 'VQA'], DATASET_TYPE(dataset)):
             return True
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             return True
         return False
 
     def build_prompt(self, line, dataset=None):
-        if dataset is None:
-            dataset = self.dataset
-
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -125,7 +123,7 @@ class MiniCPM_Llama3_V(BaseModel):
         system_prompt = ''
 
         question = line['question']
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             options = {
                 cand: line[cand]
                 for cand in string.ascii_uppercase
@@ -158,7 +156,7 @@ class MiniCPM_Llama3_V(BaseModel):
             question = line['question']
             prompt = question
         elif DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['LLaVABench'], dataset):
+            if listinstr(['LLaVABench', 'MMLongBench_DOC'], dataset):
                 system_prompt = ''
                 prompt = question
             elif listinstr(['MMVet'], dataset):
@@ -179,7 +177,7 @@ class MiniCPM_Llama3_V(BaseModel):
         return msgs
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             max_new_tokens = 200
         elif DATASET_TYPE(dataset) == 'Y/N':
             max_new_tokens = 3
@@ -209,6 +207,44 @@ class MiniCPM_Llama3_V(BaseModel):
             tokenizer=self.tokenizer,
             **default_kwargs
         )
+
+        if isinstance(res, tuple) and len(res) > 0:
+            res = res[0]
+        return res
+
+    def chat_inner(self, message, dataset=None):
+        max_new_tokens = 1024
+
+        default_kwargs = dict(
+            max_new_tokens=max_new_tokens,
+            sampling=False,
+            num_beams=self.num_beams,
+        )
+        default_kwargs.update(self.kwargs)
+
+        msgs = []
+        for msg in message:
+            content = []
+            if len(msg['content']) == 1 and msg['content'][0]['type'] == 'text':
+                msg_new = {'role': msg['role'], 'content': msg['content'][0]['value']}
+                msgs.append(msg_new)
+                continue
+
+            for x in msg['content']:
+                if x['type'] == 'text':
+                    content.append(x['value'])
+                elif x['type'] == 'image':
+                    image = Image.open(x['value']).convert('RGB')
+                    content.append(image)
+            msg_new = {'role': msg['role'], 'content': content}
+            msgs.append(msg_new)
+
+        res = self.model.chat(
+            msgs=msgs,
+            context=None,
+            image=None,
+            tokenizer=self.tokenizer,
+            **default_kwargs)
 
         if isinstance(res, tuple) and len(res) > 0:
             res = res[0]

@@ -3,7 +3,7 @@ from vlmeval.config import *
 from vlmeval.smp import *
 
 # Define valid modes
-MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run')
+MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run', 'eval')
 
 CLI_HELP_MSG = \
     f"""
@@ -30,6 +30,8 @@ CLI_HELP_MSG = \
             vlmutil check [model_name/model_series]
         7. Run evaluation for missing results:
             vlmutil run l2 hf
+        8. Evaluate data file:
+            vlmutil eval [dataset_name] [prediction_file]
 
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
@@ -46,12 +48,13 @@ dataset_levels = {
         ('MME', 'score.csv'), ('LLaVABench', 'score.csv'), ('RealWorldQA', 'acc.csv'),
         ('MMBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('CCBench', 'acc.csv'),
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
-        ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'),
+        ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
+        ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv')
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
-        ('SEEDBench2_Plus', 'acc.csv')
+        ('SEEDBench2', 'acc.csv')
     ]
 }
 
@@ -60,27 +63,33 @@ dataset_levels['l23'] = dataset_levels['l2'] + dataset_levels['l3']
 dataset_levels['l123'] = dataset_levels['l12'] + dataset_levels['l3']
 
 models = {
-    '4.33.0': list(qwen_series) + list(internvl_series) + list(xcomposer_series) + [
+    '4.33.0': list(qwen_series) + list(xcomposer_series) + [
         'mPLUG-Owl2', 'flamingov2', 'VisualGLM_6b', 'MMAlaya', 'PandaGPT_13B', 'VXVERSE'
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
-    '4.37.0': [x for x in llava_series if 'next' not in x] + [
-        'TransCore_M', 'cogvlm-chat', 'cogvlm-grounding-generalist', 'emu2_chat',
-        'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B', 'InternVL-Chat-V1-5'
-    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series),
-    'latest': [
-        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'paligemma-3b-mix-448'
-    ] + [x for x in llava_series if 'next' in x],
+    '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
+        'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
+    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
+    '4.40.0': [
+        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
+    ] + list(wemm_series),
+    'latest': ['paligemma-3b-mix-448'] + + [x for x in llava_series if 'next' in x]
+    + list(chameleon_series) + list(ovis_series),
     'api': list(api_models)
 }
 
+# SKIP_MODELS will be skipped in report_missing and run APIs
 SKIP_MODELS = [
-    'InternVL-Chat-V1-1', 'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus',
-    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH',
-]
+    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH', 'GPT4V',
+    'flamingov2', 'MiniGPT-4-v1-7B', 'MiniGPT-4-v2', 'PandaGPT_13B',
+    'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
+    'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
+    'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
+    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
+    'llava_next_72b', 'llava_next_110b', 'llava_next_qwen_32b',
+] + list(vila_series)
 
 LARGE_MODELS = [
-    'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'idefics_80b_instruct',
-    '360VL-70B', 'emu2_chat'
+    'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
 ]
 
 
@@ -252,35 +261,62 @@ def CHECK(val):
             CHECK(m)
 
 
-def decode_img(tup):
-    im, p = tup
-    if osp.exists(p):
-        return
-    decode_base64_to_image_file(im, p)
+def decode_img_omni(tup):
+    root, im, p = tup
+    images = toliststr(im)
+    paths = toliststr(p)
+    if len(images) > 1 and len(paths) == 1:
+        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+
+    assert len(images) == len(paths)
+    paths = [osp.join(root, p) for p in paths]
+    for p, im in zip(paths, images):
+        if osp.exists(p):
+            continue
+        if isinstance(im, str) and len(im) > 64:
+            decode_base64_to_image_file(im, p)
+    return paths
 
 
-def LOCALIZE(fname):
+def LOCALIZE(fname, new_fname=None):
     base_name = osp.basename(fname)
     dname = osp.splitext(base_name)[0]
     data = load(fname)
-    new_fname = fname.replace('.tsv', '_local.tsv')
+    if new_fname is None:
+        new_fname = fname.replace('.tsv', '_local.tsv')
 
     indices = list(data['index'])
+    indices_str = [str(x) for x in indices]
     images = list(data['image'])
+    image_map = {x: y for x, y in zip(indices_str, images)}
+
     root = LMUDataRoot()
     root = osp.join(root, 'images', dname)
     os.makedirs(root, exist_ok=True)
 
-    img_paths = [osp.join(root, f'{idx}.jpg') for idx in indices]
-    tups = [(im, p) for p, im in zip(img_paths, images)]
+    if 'image_path' in data:
+        img_paths = list(data['image_path'])
+    else:
+        img_paths = []
+        for i in indices_str:
+            if len(image_map[i]) <= 64:
+                idx = image_map[i]
+                assert idx in image_map and len(image_map[idx]) > 64
+                img_paths.append(f'{idx}.jpg')
+            else:
+                img_paths.append(f'{i}.jpg')
+
+    tups = [(root, im, p) for p, im in zip(img_paths, images)]
 
     pool = mp.Pool(32)
-    pool.map(decode_img, tups)
+    ret = pool.map(decode_img_omni, tups)
     pool.close()
     data.pop('image')
-    data['image_path'] = img_paths
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     dump(data, new_fname)
     print(f'The localized version of data file is {new_fname}')
+    return new_fname
 
 
 def RUN(lvl, model):
@@ -290,7 +326,7 @@ def RUN(lvl, model):
     logger = get_logger('Run Missing')
 
     def get_env(name):
-        assert name in ['433', '437', 'latest']
+        assert name in ['433', '437', '440', 'latest']
         load_env()
         env_key = f'ENV_{name}'
         return os.environ.get(env_key, None)
@@ -298,24 +334,31 @@ def RUN(lvl, model):
     missing = MISSING(lvl)
     if model == 'all':
         pass
+    elif model == 'api':
+        missing = [x for x in missing if x[0] in models['api']]
     elif model == 'hf':
         missing = [x for x in missing if x[0] not in models['api']]
     elif model in models:
         missing = [x for x in missing if x[0] in models[missing]]
     elif model in supported_VLM:
         missing = [x for x in missing if x[0] == model]
+    else:
+        warnings.warn(f'Invalid model {model}.')
 
     missing.sort(key=lambda x: x[0])
     groups = defaultdict(list)
     for m, D in missing:
         groups[m].append(D)
     for m in groups:
+        if m in SKIP_MODELS:
+            continue
         datasets = ' '.join(groups[m])
         logger.info(f'Running {m} on {datasets}')
         exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
         if m not in models['api']:
             env = '433'
             env = '437' if m in models['4.37.0'] else env
+            env = '440' if m in models['4.40.0'] else env
             env = 'latest' if m in models['latest'] else env
             pth = get_env(env)
             if pth is not None:
@@ -327,6 +370,30 @@ def RUN(lvl, model):
         elif exe.endswith('python'):
             cmd = f'{exe} {SCRIPT} --model {m} --data {datasets}'
         os.system(cmd)
+
+
+def EVAL(dataset_name, data_file):
+    from vlmeval.dataset import build_dataset
+    logger = get_logger('VLMEvalKit Tool-Eval')
+    dataset = build_dataset(dataset_name)
+    # Set the judge kwargs first before evaluation or dumping
+    judge_kwargs = {'nproc': 4, 'verbose': True}
+    if dataset.TYPE in ['MCQ', 'Y/N']:
+        judge_kwargs['model'] = 'chatgpt-0125'
+    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
+        judge_kwargs['model'] = 'gpt-4-turbo'
+    elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+        judge_kwargs['model'] = 'gpt-4o'
+    eval_results = dataset.evaluate(data_file, **judge_kwargs)
+    if eval_results is not None:
+        assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
+        logger.info('Evaluation Results:')
+    if isinstance(eval_results, dict):
+        logger.info('\n' + json.dumps(eval_results, indent=4))
+    elif isinstance(eval_results, pd.DataFrame):
+        if len(eval_results) < len(eval_results.columns):
+            eval_results = eval_results.T
+        logger.info('\n' + tabulate(eval_results))
 
 
 def cli():
@@ -352,8 +419,12 @@ def cli():
             missing_list = MISSING(args[1])
             logger = get_logger('Find Missing')
             logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
+            lines = []
             for m, D in missing_list:
-                logger.info(colored(f'Model {m}, Dataset {D}', 'red'))
+                line = f'Model {m}, Dataset {D}'
+                logger.info(colored(line, 'red'))
+                lines.append(line)
+            mwlines(lines, f'{args[1]}_missing.txt')
         elif args[0].lower() == 'circular':
             assert len(args) >= 2
             CIRCULAR(args[1])
@@ -370,6 +441,10 @@ def cli():
             lvl = args[1]
             model = args[2] if len(args) > 2 else 'all'
             RUN(lvl, model)
+        elif args[0].lower() == 'eval':
+            assert len(args) == 3
+            dataset, data_file = args[1], args[2]
+            EVAL(dataset, data_file)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)

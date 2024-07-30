@@ -5,7 +5,7 @@ except ImportError:
 
 from .smp import *
 from .api import *
-from .evaluate import *
+from .dataset import *
 from .utils import *
 from .vlm import *
 from .config import *

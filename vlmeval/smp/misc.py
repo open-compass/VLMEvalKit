@@ -19,7 +19,8 @@ from tqdm import tqdm
 import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
-from tabulate import tabulate_formats, tabulate
+from tabulate import tabulate
+from json import JSONDecoder
 from huggingface_hub import scan_cache_dir
 from sty import fg, bg, ef, rs
 
@@ -189,3 +190,26 @@ def version_cmp(v1, v2, op='eq'):
     import operator
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
+
+
+def toliststr(s):
+    if isinstance(s, str) and (s[0] == '[') and (s[-1] == ']'):
+        return [str(x) for x in eval(s)]
+    elif isinstance(s, str):
+        return [s]
+    elif isinstance(s, list):
+        return [str(x) for x in s]
+    raise NotImplementedError
+
+
+def extract_json_objects(text, decoder=JSONDecoder()):
+    pos = 0
+    while True:
+        match = text.find('{', pos)
+        if match == -1: break
+        try:
+            result, index = decoder.raw_decode(text[match:])
+            yield result
+            pos = match + index
+        except ValueError:
+            pos = match + 1

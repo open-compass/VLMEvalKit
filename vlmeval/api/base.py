@@ -3,7 +3,7 @@ import random as rd
 from abc import abstractmethod
 import os.path as osp
 import copy as cp
-from ..smp import get_logger, parse_file
+from ..smp import get_logger, parse_file, concat_images
 
 
 class BaseAPI:
@@ -127,6 +127,61 @@ class BaseAPI:
         else:
             return None
 
+    # May exceed the context windows size, so try with different turn numbers.
+    def chat_inner(self, inputs, **kwargs):
+        _ = kwargs.pop('dataset', None)
+        while len(inputs):
+            try:
+                return self.generate_inner(inputs, **kwargs)
+            except:
+                inputs = inputs[1:]
+                while len(inputs) and inputs[0]['role'] != 'user':
+                    inputs = inputs[1:]
+                continue
+        return -1, self.fail_msg + ': ' + 'Failed with all possible conversation turns.', None
+
+    def chat(self, messages, **kwargs1):
+        """The main function for multi-turn chatting. Will call `chat_inner` with the preprocessed input messages."""
+        assert hasattr(self, 'chat_inner'), 'The API model should has the `chat_inner` method. '
+        for msg in messages:
+            assert isinstance(msg, dict) and 'role' in msg and 'content' in msg, msg
+            assert self.check_content(msg['content']) in ['str', 'dict', 'liststr', 'listdict'], msg
+            msg['content'] = self.preproc_content(msg['content'])
+        # merge kwargs
+        kwargs = cp.deepcopy(self.default_kwargs)
+        kwargs.update(kwargs1)
+
+        answer = None
+        # a very small random delay [0s - 0.5s]
+        T = rd.random() * 0.5
+        time.sleep(T)
+
+        assert messages[-1]['role'] == 'user'
+
+        for i in range(self.retry):
+            try:
+                ret_code, answer, log = self.chat_inner(messages, **kwargs)
+                if ret_code == 0 and self.fail_msg not in answer and answer != '':
+                    if self.verbose:
+                        print(answer)
+                    return answer
+                elif self.verbose:
+                    if not isinstance(log, str):
+                        try:
+                            log = log.text
+                        except:
+                            self.logger.warning(f'Failed to parse {log} as an http response. ')
+                    self.logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
+            except Exception as err:
+                if self.verbose:
+                    self.logger.error(f'An error occured during try {i}:')
+                    self.logger.error(err)
+            # delay before each retry
+            T = rd.random() * self.wait * 2
+            time.sleep(T)
+
+        return self.fail_msg if answer in ['', None] else answer
+
     def generate(self, message, **kwargs1):
         """The main function to generate the answer. Will call `generate_inner` with the preprocessed input messages.
 
@@ -175,7 +230,7 @@ class BaseAPI:
 
         return self.fail_msg if answer in ['', None] else answer
 
-    def message_to_promptimg(self, message):
+    def message_to_promptimg(self, message, dataset=None):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         import warnings
@@ -191,5 +246,8 @@ class BaseAPI:
             image = [x['value'] for x in message if x['type'] == 'image'][0]
         else:
             prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
-            image = [x['value'] for x in message if x['type'] == 'image'][0]
+            if dataset == 'BLINK':
+                image = concat_images([x['value'] for x in message if x['type'] == 'image'], target_size=512)
+            else:
+                image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image

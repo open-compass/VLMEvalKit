@@ -133,9 +133,20 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
-    with DownloadProgressBar(unit='B', unit_scale=True,
-                             miniters=1, desc=url.split('/')[-1]) as t:
-        urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    try:
+        with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+            urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+    except:
+        # Handle Failed Downloads from huggingface.co
+        if 'huggingface.co' in url:
+            url_new = url.replace('huggingface.co', 'hf-mirror.com')
+            try:
+                os.system(f'wget {url_new} -O {filename}')
+            except:
+                raise Exception(f'Failed to download {url}')
+        else:
+            raise Exception(f'Failed to download {url}')
+
     return filename
 
 
@@ -209,7 +220,7 @@ def last_modified(pth):
 
 
 def parse_file(s):
-    if osp.exists(s):
+    if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
         mime = mimetypes.types_map.get(suffix, 'unknown')
@@ -227,3 +238,20 @@ def parse_file(s):
             return ('url', s)
     else:
         return (None, s)
+
+
+def file_size(f, unit='GB'):
+    stats = os.stat(f)
+    div_map = {
+        'GB': 2 ** 30,
+        'MB': 2 ** 20,
+        'KB': 2 ** 10,
+    }
+    return stats.st_size / div_map[unit]
+
+
+def parquet_to_tsv(file_path):
+    data = pd.read_parquet(file_path)
+    pth = '/'.join(file_path.split('/')[:-1])
+    data_name = file_path.split('/')[-1].split('.')[0]
+    data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)

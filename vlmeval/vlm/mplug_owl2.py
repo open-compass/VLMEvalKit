@@ -3,7 +3,7 @@ import torch
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class mPLUG_Owl2(BaseModel):
@@ -42,7 +42,7 @@ class mPLUG_Owl2(BaseModel):
         assert dataset is not None
         if listinstr(['MMMU'], dataset):
             return False
-        if DATASET_TYPE(dataset) == 'multi-choice' or dataset == 'MMVet':
+        if DATASET_TYPE(dataset) == 'MCQ' or dataset == 'MMVet':
             return True
         return False
 
@@ -53,7 +53,7 @@ class mPLUG_Owl2(BaseModel):
         question = line['question']
         if dataset == 'MMVet':
             prompt = question + '\nAnswer the question directly. '
-        elif DATASET_TYPE(dataset) == 'multi-choice':
+        elif DATASET_TYPE(dataset) == 'MCQ':
             options = {
                 cand: line[cand]
                 for cand in string.ascii_uppercase
@@ -85,14 +85,14 @@ class mPLUG_Owl2(BaseModel):
             kwargs['length_penalty'] = 0
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             kwargs['length_penalty'] = 0
-        elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+        elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             kwargs['max_new_tokens'] = 10
         num_images = len([x for x in message if x['type'] == 'image'])
         assert num_images >= 0
         prompt_full = 'USER: '
         images = []
         if num_images == 1:
-            prompt, image = self.message_to_promptimg(message)
+            prompt, image = self.message_to_promptimg(message, dataset=dataset)
             prompt_full += f'<|image|>{prompt} \nASSISTANT: '
             images.append(image)
         else:

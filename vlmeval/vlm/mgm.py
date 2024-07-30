@@ -70,7 +70,7 @@ class Mini_Gemini(BaseModel):
                 'which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" '
             )
 
-        prompt, image = self.message_to_promptimg(message)
+        prompt, image = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image)
         prompt = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + prompt
         conv = conv_templates[self.conv_mode].copy()

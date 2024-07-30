@@ -2,7 +2,7 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from ..base import BaseModel
 from ...smp import *
-from ...utils import DATASET_TYPE
+from ...dataset import DATASET_TYPE
 
 
 class ShareCaptioner(BaseModel):
@@ -21,7 +21,7 @@ class ShareCaptioner(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -30,7 +30,7 @@ class ShareCaptioner(BaseModel):
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
 
-        if dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+        if dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             question = line['question']
             hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
             if hint is not None:
@@ -57,7 +57,7 @@ class ShareCaptioner(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         seg1 = '<|User|>:'
         seg2 = f'{prompt}{self.model.eoh}\n<|Bot|>:'
         self.seg_emb1 = self.model.encode_text(seg1, add_special_tokens=True)

@@ -3,7 +3,7 @@ from transformers import AutoModel, AutoTokenizer
 from PIL import Image
 from ..base import BaseModel
 from ...smp import *
-from ...utils import DATASET_TYPE
+from ...dataset import DATASET_TYPE
 import numpy as np
 import torchvision.transforms as transforms
 
@@ -146,11 +146,13 @@ class XComposer2_4KHD(BaseModel):
         return out
 
     def generate(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         if listinstr(['docvqa_test', 'infovqa_test'], dataset.lower()):
             self.model.hd_num = 65
         elif listinstr(['docvqa_val', 'infovqa_val', 'OCRBench'], dataset.lower()):
             self.model.hd_num = 55
+        elif listinstr(['mmlongbench_doc'], dataset.lower()):
+            self.model.hd_num = 45
         elif listinstr(['mmmu', 'mmbench', 'mmvet'], dataset.lower()):
             self.model.hd_num = 16
         else:
@@ -169,7 +171,7 @@ class XComposer2_4KHD(BaseModel):
             elif listinstr(['llava', 'mmvet'], dataset.lower()):
                 return self.generate_vanilla(image_path, prompt)
 
-            elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+            elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
                 return self.generate_multichoice(image_path, prompt, dataset)
 
             elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
@@ -180,7 +182,7 @@ class XComposer2_4KHD(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA':
+        if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'VQA':
             return True
         return False
 
@@ -215,7 +217,7 @@ class XComposer2_4KHD(BaseModel):
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
 
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_mcqa(line)
         elif DATASET_TYPE(dataset) == 'VQA':
             if 'mathvista' in dataset.lower():
@@ -226,6 +228,9 @@ class XComposer2_4KHD(BaseModel):
                 prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}\
                          Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]\
                          assistant\n'.format(meta_instruction, q)
+            elif listinstr(['mmlongbench_doc'], dataset.lower()):
+                q = line['question']
+                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
             else:
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\

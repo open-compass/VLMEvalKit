@@ -14,7 +14,7 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
 
 from ..base import BaseModel
 from ...smp import cn_string, get_cache_path
-from ...utils import DATASET_TYPE
+from ...dataset import DATASET_TYPE
 
 
 class LLaVA_XTuner(BaseModel):
@@ -148,14 +148,14 @@ class LLaVA_XTuner(BaseModel):
                           self.tokenizer.eos_token_id)
         # For single word generation
         if (dataset is not None
-                and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']):
+                and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']):
             gen_kwargs.update(
                 dict(max_new_tokens=5, do_sample=False, num_beams=1))
         return GenerationConfig(**gen_kwargs)
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -192,7 +192,7 @@ class LLaVA_XTuner(BaseModel):
         from xtuner.dataset.utils import expand2square
         from xtuner.model.utils import prepare_inputs_labels_for_multimodal
         from xtuner.utils import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         prompt = prompt.replace('<image>', '')
         image = Image.open(image_path).convert('RGB')
         image = expand2square(

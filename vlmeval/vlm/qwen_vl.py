@@ -4,7 +4,7 @@ import warnings
 import copy as cp
 from .base import BaseModel
 from ..smp import isimg, listinstr
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 
 
 class QwenVL(BaseModel):
@@ -37,7 +37,7 @@ class QwenVL(BaseModel):
 
     def adjust_kwargs(self, dataset):
         kwargs = cp.deepcopy(self.kwargs)
-        if DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
+        if DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             kwargs['max_new_tokens'] = 32
         elif DATASET_TYPE(dataset) == 'Caption' and 'COCO' in dataset:
             kwargs['max_new_tokens'] = 32
@@ -87,8 +87,40 @@ class QwenVLChat(BaseModel):
         self.kwargs = kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
+    def build_history(self, message):
+
+        def concat_tilist(tilist):
+            image_cnt = 1
+            prompt = ''
+            for item in tilist:
+                if item['type'] == 'text':
+                    prompt += item['value']
+                elif item['type'] == 'image':
+                    prompt += f"Picture {image_cnt}: <img>{item['value']}</img>\n"
+                    image_cnt += 1
+            return prompt
+
+        assert len(message) % 2 == 0
+        hist = []
+        for i in range(len(message) // 2):
+            m1, m2 = message[2 * i], message[2 * i + 1]
+            assert m1['role'] == 'user' and m2['role'] == 'assistant'
+            hist.append((concat_tilist(m1['content']), concat_tilist(m2['content'])))
+        return hist
+
     def generate_inner(self, message, dataset=None):
         vl_list = [{'image': s['value']} if s['type'] == 'image' else {'text': s['value']} for s in message]
         query = self.tokenizer.from_list_format(vl_list)
         response, _ = self.model.chat(self.tokenizer, query=query, history=None, **self.kwargs)
+        return response
+
+    def chat_inner(self, message, dataset=None):
+        assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
+        history = self.build_history(message[:-1])
+        vl_list = [
+            {'image': s['value']} if s['type'] == 'image' else {'text': s['value']}
+            for s in message[-1]['content']
+        ]
+        query = self.tokenizer.from_list_format(vl_list)
+        response, _ = self.model.chat(self.tokenizer, query=query, history=history, **self.kwargs)
         return response

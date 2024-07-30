@@ -4,7 +4,7 @@ from transformers import AutoModel, AutoTokenizer
 from PIL import Image
 from ..base import BaseModel
 from ...smp import *
-from ...utils import DATASET_TYPE
+from ...dataset import DATASET_TYPE
 import re
 pattern = re.compile(r'[A-Z]')
 
@@ -136,7 +136,7 @@ class XComposer2(BaseModel):
         return out
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         with torch.cuda.amp.autocast():
             if dataset is None:
                 return self.generate_vanilla(image_path, prompt)
@@ -150,7 +150,7 @@ class XComposer2(BaseModel):
             elif listinstr(['llava'], dataset.lower()):
                 return self.generate_vanilla(image_path, prompt)
 
-            elif dataset is not None and DATASET_TYPE(dataset) == 'multi-choice':
+            elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
                 return self.generate_multichoice(image_path, prompt, dataset)
 
             elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
@@ -161,7 +161,7 @@ class XComposer2(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice' or DATASET_TYPE(dataset) == 'VQA':
+        if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'VQA':
             return True
         return False
 
@@ -196,7 +196,7 @@ class XComposer2(BaseModel):
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
 
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_mcqa(line)
         elif DATASET_TYPE(dataset) == 'VQA':
             if 'mathvista' in dataset.lower():

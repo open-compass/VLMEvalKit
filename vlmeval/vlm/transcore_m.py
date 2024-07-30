@@ -3,7 +3,7 @@ import torch
 from abc import abstractproperty
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
+from ..dataset import DATASET_TYPE
 from transformers import AutoTokenizer, BitsAndBytesConfig
 
 
@@ -82,7 +82,7 @@ class TransCoreM(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -122,7 +122,7 @@ class TransCoreM(BaseModel):
             IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
         from transcorem.conversation import conv_templates, SeparatorStyle
 
-        prompt, image_path = self.message_to_promptimg(message)
+        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image_path).convert('RGB')
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'

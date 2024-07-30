@@ -1,11 +1,13 @@
 from vlmeval.smp import *
-from vlmeval.utils.dataset_config import dataset_URLs
+from vlmeval.dataset import dataset_URLs
 
 def get_score(model, dataset):
 
     file_name = f'{model}/{model}_{dataset}'
     if listinstr([
-        'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 'AI2D_TEST', 'MMStar', 'RealWorldQA'], dataset):
+        'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 
+        'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK'
+    ], dataset):
         file_name += '_acc.csv'
     elif listinstr(['MME', 'Hallusion', 'LLaVABench'], dataset):
         file_name += '_score.csv'
@@ -35,7 +37,7 @@ def get_score(model, dataset):
                 ret['MMBench_DEV_CN'] = a * 100
             elif n == 'test':
                 ret['MMBench_TEST_CN'] = a * 100
-    elif listinstr(['SEEDBench', 'ScienceQA', 'MMBench', 'AI2D_TEST', 'MMStar', 'RealWorldQA'], dataset):
+    elif listinstr(['SEEDBench', 'ScienceQA', 'MMBench', 'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK'], dataset):
         ret[dataset] = data['Overall'][0] * 100
     elif 'MME' == dataset:
         ret[dataset] = data['perception'][0] + data['reasoning'][0]
