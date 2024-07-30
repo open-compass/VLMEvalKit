@@ -172,7 +172,7 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
@@ -261,15 +261,21 @@ class LLaVA_Next(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-        prompt = prompt.replace('<image>', '[ImageHere]')
-        if prompt.find('[ImageHere]') != prompt.rfind('[ImageHere]'):
-            prompt += '\nThere exists multiple images in the conversation, but only the first one is displayed.'
-
-        image = Image.open(image_path).convert('RGB')
-        prompt = self.apply_prompt_template(prompt)
-
-        inputs = self.processor(prompt, image, return_tensors='pt').to('cuda')
+        content, images = [], []
+        for msg in message:
+            if msg['type'] == 'text':
+                content.append({'type': msg['type'], 'text': msg['value']})
+            else:
+                content.append({'type': 'image'})
+                images.append(Image.open(msg['value']))
+        conversation = [
+            {
+                'role': 'user',
+                'content': content,
+            }
+        ]
+        prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+        inputs = self.processor(prompt, images, return_tensors='pt').to('cuda')
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         if '<s>' in answer:
