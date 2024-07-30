@@ -103,10 +103,12 @@ llava_series = {
     'llava_next_vicuna_13b': partial(LLaVA_Next, model_path='llava-hf/llava-v1.6-vicuna-13b-hf'),
     'llava_next_mistral_7b': partial(LLaVA_Next, model_path='llava-hf/llava-v1.6-mistral-7b-hf'),
     'llava_next_yi_34b': partial(LLaVA_Next, model_path='llava-hf/llava-v1.6-34b-hf'),
-    'llava_next_llama3': partial(LLaVA_Next2, model_path='lmms-lab/llama3-llava-next-8b'),
+    'llava_next_llama3': partial(LLaVA_Next, model_path='llava-hf/llama3-llava-next-8b-hf'),
+    'llava_next_72b': partial(LLaVA_Next, model_path='llava-hf/llava-next-72b-hf'),
+    'llava_next_110b': partial(LLaVA_Next, model_path='llava-hf/llava-next-110b-hf'),
     'llava_next_qwen_32b': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-qwen-32b'),
-    'llava_next_interleave_7b': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-interleave-qwen-7b'),
-    'llava_next_interleave_7b_dpo': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-interleave-qwen-7b-dpo'),
+    'llava_next_interleave_7b': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-hf'),
+    'llava_next_interleave_7b_dpo': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-dpo-hf'),
 }
 
 internvl_series = {
@@ -185,13 +187,15 @@ chameleon_series = {
 }
 
 vila_series = {
-    'vila_8b': partial(VILA, model_path='Efficient-Large-Model/Llama-3-VILA1.5-8b'),
-    'vila_13b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-13b'),
-    'vila_40b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-40b'),
+    'VILA1.5-3b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-3b'),
+    'Llama-3-VILA1.5-8b': partial(VILA, model_path='Efficient-Large-Model/Llama-3-VILA1.5-8b'),
+    'VILA1.5-13b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-13b'),
+    'VILA1.5-40b': partial(VILA, model_path='Efficient-Large-Model/VILA1.5-40b'),
 }
 
 ovis_series = {
-    'Ovis1.5-Llama3-8B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Llama3-8B')
+    'Ovis1.5-Llama3-8B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Llama3-8B'),
+    'Ovis1.5-Gemma2-9B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Gemma2-9B')
 }
 
 supported_VLM = {}

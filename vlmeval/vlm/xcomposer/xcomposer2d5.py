@@ -80,7 +80,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
             except:
                 image = images[im_idx].convert('RGB')
             if len(images) > 1:
-                image = HD_transform(image, im_num=4, id_scale=model.id_scale)
+                image = HD_transform(image, im_num=model.hd_num // len(images), id_scale=model.id_scale)
             else:
                 image = HD_transform(
                     image, im_num=model.hd_num, id_scale=model.id_scale)
@@ -160,8 +160,11 @@ class XComposer2d5(BaseModel):
                 im_prompt = ' '.join(im_prompt)
                 for i in range(len(image)):
                     prompt = prompt.replace(f'<image {i+1}>', f'Image{i+1} ')
-                prompt = im_prompt + prompt
-                print(prompt)
+                if listinstr(['mmlongbench'], dataset.lower()):     # fix bug for multi-image prompt
+                    prompt = '[UNUSED_TOKEN_146]user\n' + im_prompt + re.sub(
+                        re.escape('[UNUSED_TOKEN_146]user\n'), '', prompt
+                    )
+                    prompt = re.sub('Image1$', '', prompt)
         return prompt, image
 
     def generate_mme(self, image_path, text):
@@ -269,7 +272,9 @@ class XComposer2d5(BaseModel):
                 prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}\
                          Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]\
                          assistant\n'.format(meta_instruction, q)
-
+            elif listinstr(['mmlongbench_doc'], dataset.lower()):
+                q = line['question']
+                prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
             else:
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\nAnswer the question using a single word or phrase.\
