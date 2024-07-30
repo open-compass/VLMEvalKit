@@ -71,8 +71,9 @@ models = {
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
     '4.40.0': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
-    ] + [x for x in llava_series if 'next' in x] + list(wemm_series),
-    'latest': ['paligemma-3b-mix-448'] + list(chameleon_series) + list(ovis_series),
+    ] + list(wemm_series),
+    'latest': ['paligemma-3b-mix-448'] + [x for x in llava_series if 'next' in x]
+    + list(chameleon_series) + list(ovis_series),
     'api': list(api_models)
 }
 
@@ -84,6 +85,7 @@ SKIP_MODELS = [
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
     'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
+    'llava_next_72b', 'llava_next_110b', 'llava_next_qwen_32b',
 ] + list(vila_series)
 
 LARGE_MODELS = [
@@ -378,7 +380,7 @@ def EVAL(dataset_name, data_file):
     judge_kwargs = {'nproc': 4, 'verbose': True}
     if dataset.TYPE in ['MCQ', 'Y/N']:
         judge_kwargs['model'] = 'chatgpt-0125'
-    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video'], dataset_name):
+    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'
     elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
         judge_kwargs['model'] = 'gpt-4o'

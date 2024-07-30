@@ -12,7 +12,7 @@ class Ovis(BaseModel):
 
     def __init__(self, model_path='AIDC-AI/Ovis1.5-Llama3-8B', **kwargs):
         assert model_path is not None
-        # Recommand to install `transformers==4.42.4`.
+        # Recommend to install `transformers==4.43.2` and `torch==2.1.2`.
         self.model_path = model_path
         self.device = torch.cuda.current_device()
         self.dtype = torch.bfloat16
@@ -69,6 +69,8 @@ class Ovis(BaseModel):
 
     def built_yorn_prompt(self, line, dataset=None):
         prompt = line['question']
+        if listinstr(['HallusionBench'], dataset):
+            prompt += ' Please answer yes or no.'
         prompt += '\n请用单个词或短语回答问题。' if cn_string(
             prompt) else '\nAnswer the question using a single word or phrase.'
         return prompt
