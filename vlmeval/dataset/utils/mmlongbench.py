@@ -1,4 +1,9 @@
 import re
+import math
+from urllib.request import urlopen
+from PIL import Image, ImageDraw, ImageFont
+import torchvision.transforms as transforms
+
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
 from vlmeval.smp import *
 from ..image_base import ImageBaseDataset
@@ -105,8 +110,6 @@ def anls_compute(groundtruth, prediction, threshold=0.5):
 
 
 def is_float_equal(reference, prediction, include_percentage: bool = False, is_close: float = False) -> bool:
-    from math import isclose
-
     def get_precision(gt_ans: float) -> int:
         precision = 3
         if '.' in str(gt_ans):
@@ -126,7 +129,7 @@ def is_float_equal(reference, prediction, include_percentage: bool = False, is_c
     for item in gt_result:
         try:
             if is_close:
-                if isclose(item, prediction, rel_tol=0.01):
+                if math.isclose(item, prediction, rel_tol=0.01):
                     return True
             precision = max(min(get_precision(prediction), get_precision(item)), 2)
             if round(prediction, precision) == round(item, precision):
@@ -189,26 +192,104 @@ def isfloat(num):
         return False
 
 
-def concat_images(image_list, max_concat=1, column_num=1):
-    import math
-    interval = max(math.ceil(len(image_list) / max_concat), 1)
-    concatenated_images = []
-    for i in range(0, len(image_list), interval):
-        batch_images = [Image.open(filename) for filename in image_list[i:i + interval]]
-        if column_num == 1:
-            total_height = batch_images[0].height * len(batch_images)
-        else:
-            total_height = batch_images[0].height * ((len(batch_images) - 1) // column_num + 1)
-        concatenated_image = Image.new('RGB', (batch_images[0].width * column_num, total_height), 'white')
+def get_font():
+    try:
+        truetype_url = 'https://huggingface.co/internlm/internlm-xcomposer2d5-7b/resolve/main/SimHei.ttf?download=true'
+        ff = urlopen(truetype_url)
+        font = ImageFont.truetype(ff, size=40)
+    except:
+        print('Fail to download the font. Use the default one.')
+        font = ImageFont.load_default(size=40)
+    return font
 
-        x_offset, y_offset = 0, 0
-        for count, image in enumerate(batch_images):
-            concatenated_image.paste(image, (x_offset, y_offset))
-            x_offset += image.width
-            if (count + 1) % column_num == 0:
-                y_offset += image.height
-                x_offset = 0
-        concatenated_images.append(concatenated_image)
+
+def frame2img(img_path_list, font, save_path=None, idx_start=0):
+    imgs = [Image.open(img_path) for img_path in img_path_list]
+
+    new_imgs = []
+    for img in imgs:
+        w, h = img.size
+        scale = w / h
+        if w > h:
+            new_w = 560 * 2
+            new_h = int(560 * 2 / scale)
+        else:
+            new_w = int(560 * 2 * scale)
+            new_h = 560 * 2
+        img = transforms.functional.resize(img, [new_h, new_w],)
+        new_imgs.append(img)
+    imgs = new_imgs
+    new_w = 0
+    new_h = 0
+    pad = 40
+    if w > h:
+        for im in imgs:
+            w, h = im.size
+            new_w = max(new_w, w)
+            new_h += h + 10 + pad
+        new_img = Image.new('RGB', (new_w, new_h), 'white')
+        draw = ImageDraw.Draw(new_img)
+        curr_h = 0
+        for idx, im in enumerate(imgs):
+            w, h = im.size
+            new_img.paste(im, (0, pad + curr_h))
+            draw.text((0, curr_h), f'<IMAGE {idx+idx_start}>', font=font, fill='black')
+            if idx + 1 < len(imgs):
+                draw.line([(0, pad + curr_h + h + 5), (new_w, pad + curr_h + h + 5)], fill='black', width=2)
+            curr_h += h + 10 + pad
+    else:
+        for im in imgs:
+            w, h = im.size
+            new_w += w + 10
+            new_h = max(new_h, h)
+        new_h += pad
+        new_img = Image.new('RGB', (new_w, new_h), 'white')
+        draw = ImageDraw.Draw(new_img)
+        curr_w = 0
+        for idx, im in enumerate(imgs):
+            w, h = im.size
+            new_img.paste(im, (curr_w, pad))
+            draw.text((curr_w, 0), f'<IMAGE {idx+idx_start}>', font=font, fill='black')
+            if idx + 1 < len(imgs):
+                draw.line([(curr_w + w + 5, 0), (curr_w + w + 5, new_h)], fill='black', width=2)
+            curr_w += w + 10
+
+    if save_path is not None:
+        new_img.save(save_path)
+
+    return new_img
+
+
+def concat_images(image_list, max_concat=1, column_num=1):
+    concatenated_images = []
+    if column_num == -1:
+        MAX_COLUMN_NUM = 20
+        max_concat = 1
+        while len(image_list) / max_concat > MAX_COLUMN_NUM:
+            max_concat += 1
+        interval = max(math.ceil(len(image_list) / max_concat), 1)
+        for i in range(0, len(image_list), interval):
+            batch_images = image_list[i:i + interval]
+            concatenated_image = frame2img(batch_images, font=get_font(), idx_start=i)
+            concatenated_images.append(concatenated_image)
+    else:
+        interval = max(math.ceil(len(image_list) / max_concat), 1)
+        for i in range(0, len(image_list), interval):
+            batch_images = [Image.open(filename) for filename in image_list[i:i + interval]]
+            if column_num == 1:
+                total_height = batch_images[0].height * len(batch_images)
+            else:
+                total_height = batch_images[0].height * ((len(batch_images) - 1) // column_num + 1)
+            concatenated_image = Image.new('RGB', (batch_images[0].width * column_num, total_height), 'white')
+
+            x_offset, y_offset = 0, 0
+            for count, image in enumerate(batch_images):
+                concatenated_image.paste(image, (x_offset, y_offset))
+                x_offset += image.width
+                if (count + 1) % column_num == 0:
+                    y_offset += image.height
+                    x_offset = 0
+            concatenated_images.append(concatenated_image)
     return concatenated_images
 
 
@@ -358,6 +439,7 @@ class MMLongBench(ImageBaseDataset):
         'MiniCPM-Llama3-V-2_5': (1, 5),
         'InternVL-Chat-V1-5': (5, 2),
         'XComposer2_4KHD': (1, 5),
+        'XComposer2d5': (1, -1),
     }
 
     def __init__(self, dataset, **kwargs):
@@ -430,10 +512,16 @@ class MMLongBench(ImageBaseDataset):
 
             old_tgt_path = tgt_path
             assert isinstance(old_tgt_path, list)
-            tgt_path = [
-                '_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat{}_{}.jpg'.format(self.concat_num, i)
-                for i in range(len(concatenated_images))
-            ]
+            if self.column_num != -1:
+                tgt_path = [
+                    '_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat{}_{}.jpg'.format(self.concat_num, i)
+                    for i in range(len(concatenated_images))
+                ]
+            else:
+                tgt_path = [
+                    '_'.join(old_tgt_path[0].split('_')[:-1]) + '_concat_all_{}.jpg'.format(i)
+                    for i in range(len(concatenated_images))
+                ]
 
             for path, concatenated_image in zip(tgt_path, concatenated_images):
                 if not read_ok(path):
