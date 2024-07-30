@@ -1,3 +1,4 @@
+import re
 import math
 from typing import List
 
@@ -10,41 +11,59 @@ from vlmeval.dataset.utils.mmlongbench import concat_images, MMLongBench_auxeval
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
-def DUDE_acc(result_file):
+def get_f1(gt, pred):
+    gt_bow, pred_bow = gt.strip().split(), pred.strip().split()
+    if not gt_bow or not pred_bow:
+        return 0.0
+
+    recall = len([pred_e for pred_e in pred_bow if pred_e in gt_bow]) / len(gt_bow)
+    precision = len([pred_e for pred_e in pred_bow if pred_e in gt_bow]) / len(pred_bow)
+    f1 = 2 * recall * precision / (recall + precision) if (recall + precision) > 1e-4 else 0.0
+    return f1
+
+
+def SlideVQA_acc(result_file):
     data = load(result_file)
-    overall_score = 0.0
-    score_list = list()
+    anls_list, em_list, f1_list = list(), list(), list()
     for i in range(len(data)):
         item = data.iloc[i]
         if isinstance(item['answer'], float) and math.isnan(item['answer']):
             item['answer'] = 'Not answerable'
 
-        item['answer'] = item['answer'].lower()
-        item['pred'] = item['pred'].lower()
-        score = anls_compute(item['answer'], item['pred'])
-        score_list.append(score)
-        overall_score += score
+        item['answer'] = re.sub('\n', '', item['answer']).lower()
+        item['pred'] = str(item['pred']).lower()
+        anls_score = anls_compute(item['answer'], item['pred'])
+        em_score = (item['answer'].strip() == item['pred'].strip())
+        f1_score = get_f1(item['answer'], item['pred'])
+        anls_list.append(anls_score)
+        em_list.append(em_score)
+        f1_list.append(f1_score)
+        print('---------------------')
+        print(item['answer'], item['pred'], anls_score, em_score, f1_score)
 
-    data['score'] = score_list
+    data['anls'] = anls_list
+    data['em'] = em_list
+    data['f1'] = f1_list
     dump(data, result_file)
 
     res = dict()
-    res['category'], res['num'], res['avg_score'] = ['anls'], [len(data)], [overall_score / len(data)]
+    res['category'], res['num'] = ['anls', 'EM', 'F1'], [len(data), len(data), len(data)]
+    res['avg'] = [sum(anls_list) / len(data), sum(em_list) / len(data), sum(f1_list) / len(data)]
     res = pd.DataFrame(res)
     return res
 
 
-class DUDE(ImageBaseDataset):
+class SlideVQA(ImageBaseDataset):
 
     TYPE = 'VQA'
 
     DATASET_URL = {
-        'DUDE': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE_DEV.tsv',
-        'DUDE_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE_DEV_MINI.tsv',
+        'SLIDEVQA_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/SLIDEVQA_MINI.tsv',
+        'SLIDEVQA': 'https://opencompass.openxlab.space/utils/VLMEval/SLIDEVQA.tsv',
     }
     DATASET_MD5 = {
-        'DUDE': '130d860d08206e1e407cd77150c10d88',
-        'DUDE_MINI': 'e0c0d998114f0cca7516d12039d2b538',
+        'SLIDEVQA_MINI': '6d9a8d8814fa5b7669deb2af3a3208eb',
+        'SLIDEVQA': '5e822c2f800e94c1e23badfd478326b6',
     }
 
     SUPPORTED_MODELS = {
@@ -63,8 +82,8 @@ class DUDE(ImageBaseDataset):
         self.model_list = list(self.SUPPORTED_MODELS.keys())
         model_name = kwargs['model']
         if not listinstr(self.model_list, model_name):
-            raise AssertionError("{} doesn't support the evaluation on DUDE.".format(model_name))
-        super(DUDE, self).__init__(dataset)
+            raise AssertionError("{} doesn't support the evaluation on SlideVQA.".format(model_name))
+        super(SlideVQA, self).__init__(dataset)
 
         self.is_api = True if listinstr(['GPT4'], model_name) else False
         self.max_pages = 120
@@ -74,39 +93,11 @@ class DUDE(ImageBaseDataset):
 
     def dump_image(self, origin_line):
         os.makedirs(self.img_root, exist_ok=True)
-        try:
-            import fitz
-        except:
-            warnings.warn('Please use `pip install pymupdf` to parse PDF files.')
 
         line = origin_line.copy()
         if not isinstance(line['image_path'], List):
             line['image_path'] = [line['image_path']]
         line['image_path'] = line['image_path'][:self.max_pages]
-        skip_pdf_parse = True
-        for im_name in line['image_path']:
-            path = osp.join(self.img_root, im_name)
-            if not read_ok(path):
-                skip_pdf_parse = False
-                break
-
-        # Just for being compatible with the zooped loop: zip(line['image'], line['image_path'])
-        if skip_pdf_parse:
-            line['image'] = line['image_path']
-        else:
-            pdf_data = base64.b64decode(line['image'])
-            pdf_file = io.BytesIO(pdf_data)
-            encoded_images = []
-            with fitz.open(stream=pdf_file, filetype='pdf') as doc:
-                doc = doc[:self.max_pages]
-                for page in doc:
-                    image = page.get_pixmap(dpi=144)
-                    image_file = io.BytesIO(image.tobytes(output='png'))
-                    image = Image.open(image_file)
-                    encoded_image = encode_image_to_base64(image)
-                    encoded_images.append(encoded_image)
-            line['image'] = encoded_images
-            print('process {}'.format(line['doc_id']))
 
         if 'image' in line:
             if isinstance(line['image'], list):
@@ -157,7 +148,7 @@ class DUDE(ImageBaseDataset):
         tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
 
         if osp.exists(storage):
-            logger.warning(f'GPT scoring file {storage} already exists, will reuse it in DUDE_eval. ')
+            logger.warning(f'GPT scoring file {storage} already exists, will reuse it in SlideVQA_eval. ')
         else:
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
@@ -189,10 +180,10 @@ class DUDE(ImageBaseDataset):
             data['pred'] = [pred_map[idx] for idx in data['index']]
             dump(data, storage)
 
-        score = DUDE_acc(storage)
+        score = SlideVQA_acc(storage)
         score_pth = storage.replace('.xlsx', '_score.csv')
 
         dump(score, score_pth)
-        logger.info(f'DUDE successfully finished evaluating {eval_file}, results saved in {score_pth}')
+        logger.info(f'SlideVQA successfully finished evaluating {eval_file}, results saved in {score_pth}')
         logger.info('Score: ')
         logger.info(score)

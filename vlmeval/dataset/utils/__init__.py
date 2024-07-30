@@ -7,10 +7,13 @@ from .vqa_eval import levenshtein_distance
 from .mmlongbench import MMLongBench
 from .vcr import VCRDataset
 from .dude import DUDE
+from .slidevqa import SlideVQA
+
 dataset_list = [
     'MMLongBench',
     'VCRDataset',
     'DUDE',
+    'SlideVQA'
 ]
 
 
