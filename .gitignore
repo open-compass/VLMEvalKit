@@ -156,3 +156,4 @@ cython_debug/
 images/
 
 scripts/*ttf
+.history
