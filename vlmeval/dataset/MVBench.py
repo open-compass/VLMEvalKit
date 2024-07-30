@@ -5,6 +5,7 @@ from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
 import torchvision.transforms as T
+from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 from decord import VideoReader, cpu
 import imageio
@@ -114,9 +115,25 @@ class MVBench(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
+            def move_files(pth):
+                # special for mvbench
+                src_folder = os.path.join(pth, 'video/data0613')
+                for subdir in os.listdir(src_folder):
+                    subdir_path = os.path.join(src_folder, subdir)
+                    if os.path.isdir(subdir_path):
+                        for subsubdir in os.listdir(subdir_path):
+                            subsubdir_path = os.path.join(subdir_path, subsubdir)
+                            if os.path.isdir(subsubdir_path):
+                                for item in os.listdir(subsubdir_path):
+                                    item_path = os.path.join(subsubdir_path, item)
+                                    target_folder = os.path.join(pth, 'video', subdir, subsubdir, item)
+                                    if not os.path.exists(target_folder):
+                                        shutil.move(item_path, os.path.join(target_folder, item))
+
             hf_token = os.environ.get('HUGGINGFACE_TOKEN') 
             huggingface_hub.login(hf_token) 
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            move_files(dataset_path)
             unzip_hf_zip(dataset_path)
             generate_tsv(dataset_path)
 
@@ -204,7 +221,10 @@ class MVBench(VideoBaseDataset):
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            images = [Image.fromarray(arr) for arr in imgs]
+            block_size = imgs.size(0) // frames
+            split_tensors = torch.split(imgs, block_size)
+            to_pil = transforms.ToPILImage()
+            images = [to_pil(arr) for arr in split_tensors]
             for im, pth in zip(images, frame_paths):
                 if not osp.exists(pth):
                     im.save(pth)
