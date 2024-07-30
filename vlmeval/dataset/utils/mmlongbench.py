@@ -193,9 +193,13 @@ def isfloat(num):
 
 
 def get_font():
-    truetype_url = 'https://huggingface.co/internlm/internlm-xcomposer2d5-7b/resolve/main/SimHei.ttf?download=true'
-    ff = urlopen(truetype_url)
-    font = ImageFont.truetype(ff, size=40)
+    try:
+        truetype_url = 'https://huggingface.co/internlm/internlm-xcomposer2d5-7b/resolve/main/SimHei.ttf?download=true'
+        ff = urlopen(truetype_url)
+        font = ImageFont.truetype(ff, size=40)
+    except:
+        print('Fail to download the font. Use the default one.')
+        font = ImageFont.load_default(size=40)
     return font
 
 
