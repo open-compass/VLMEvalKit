@@ -172,14 +172,17 @@ class LLaVA(BaseModel):
 class LLaVA_Next(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='llava-hf/llava-v1.6-vicuna-7b-hf', **kwargs):
         import transformers
-        from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration
+        from transformers import LlavaNextProcessor, LlavaNextForConditionalGeneration, \
+            AutoProcessor, LlavaForConditionalGeneration
         self.model_path = model_path
         if '34b' in model_path.lower():
             self.processor = LlavaNextProcessor.from_pretrained(self.model_path, use_fast=False)
+        elif 'interleave' in model_path.lower():
+            self.processor = AutoProcessor.from_pretrained(self.model_path)
         else:
             self.processor = LlavaNextProcessor.from_pretrained(self.model_path)
         flash_attn_flag = False
@@ -190,11 +193,19 @@ class LLaVA_Next(BaseModel):
             pass
 
         if flash_attn_flag:
-            model = LlavaNextForConditionalGeneration.from_pretrained(
-                self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+            if 'interleave' in model_path.lower():
+                model = LlavaForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
+            else:
+                model = LlavaNextForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True, use_flash_attention_2=True)
         else:
-            model = LlavaNextForConditionalGeneration.from_pretrained(
-                self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+            if 'interleave' in model_path.lower():
+                model = LlavaForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
+            else:
+                model = LlavaNextForConditionalGeneration.from_pretrained(
+                    self.model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True)
 
         model = model.eval()
         self.model = model.cuda()
@@ -223,6 +234,26 @@ class LLaVA_Next(BaseModel):
 
         prompt = template.replace('PLACEHOLDER', f'<image>\n{prompt}')
         return prompt
+
+    def output_process(self, answer):
+        if '<s>' in answer:
+            answer = answer.replace('<s>', '').strip()
+        if '[/INST]' in answer:
+            answer = answer.split('[/INST]')[1].strip()
+        elif 'ASSISTANT:' in answer:
+            answer = answer.split('ASSISTANT:')[1].strip()
+        elif 'assistant\n' in answer:
+            answer = answer.split('assistant\n')[1].strip()
+        elif '<|end_header_id|>\n\n' in answer:
+            answer = answer.split('<|end_header_id|>\n\n')[2].strip()
+
+        if '</s>' in answer:
+            answer = answer.split('</s>')[0].strip()
+        elif '<|im_end|>' in answer:
+            answer = answer.split('<|im_end|>')[0].strip()
+        elif '<|eot_id|>' in answer:
+            answer = answer.split('<|eot_id|>')[0].strip()
+        return answer
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -261,31 +292,24 @@ class LLaVA_Next(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-        prompt = prompt.replace('<image>', '[ImageHere]')
-        if prompt.find('[ImageHere]') != prompt.rfind('[ImageHere]'):
-            prompt += '\nThere exists multiple images in the conversation, but only the first one is displayed.'
-
-        image = Image.open(image_path).convert('RGB')
-        prompt = self.apply_prompt_template(prompt)
-
-        inputs = self.processor(prompt, image, return_tensors='pt').to('cuda')
+        content, images = [], []
+        for msg in message:
+            if msg['type'] == 'text':
+                content.append({'type': msg['type'], 'text': msg['value']})
+            else:
+                content.append({'type': 'image'})
+                images.append(Image.open(msg['value']).convert('RGB'))
+        conversation = [
+            {
+                'role': 'user',
+                'content': content,
+            }
+        ]
+        prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+        inputs = self.processor(prompt, images, return_tensors='pt').to('cuda', torch.float16)
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
-        if '<s>' in answer:
-            answer = answer.replace('<s>', '').strip()
-        if '[/INST]' in answer:
-            answer = answer.split('[/INST]')[1].strip()
-        elif 'ASSISTANT:' in answer:
-            answer = answer.split('ASSISTANT:')[1].strip()
-        elif 'assistant\n' in answer:
-            answer = answer.split('assistant\n')[1].strip()
-
-        if '</s>' in answer:
-            answer = answer.split('</s>')[0].strip()
-        if '<|im_end|>' in answer:
-            answer = answer.split('<|im_end|>')[0].strip()
-
+        answer = self.output_process(answer)
         return answer
 
 
