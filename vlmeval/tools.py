@@ -85,6 +85,7 @@ SKIP_MODELS = [
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
     'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
+    'llava_next_72b', 'llava_next_110b', 'llava_next_qwen_32b',
 ] + list(vila_series)
 
 LARGE_MODELS = [
