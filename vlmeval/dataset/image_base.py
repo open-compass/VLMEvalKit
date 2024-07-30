@@ -87,7 +87,7 @@ class ImageBaseDataset:
             download_file(url, data_path)
             update_flag = True
 
-        if file_size(data_path, 'GB') > 1:
+        if file_size(data_path, 'GB') > 2:  # Change the upper limit from 1GB to 2GB for DUDE (~1.6GB)
             local_path = data_path.replace('.tsv', '_local.tsv')
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
                 from ..tools import LOCALIZE

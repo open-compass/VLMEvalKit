@@ -18,7 +18,7 @@ from ..smp import *
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset,
-    MMLongBench, VCRDataset, MMDUDataset
+    MMLongBench, VCRDataset, MMDUDataset, DUDE
 ]
 
 VIDEO_DATASET = [
