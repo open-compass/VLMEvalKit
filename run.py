@@ -99,8 +99,7 @@ def main():
                 packstr = 'pack' if args.pack else 'nopack'
                 if dataset_name in ['Video-MME']:
                     subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                    result_file = f'{pred_root}/{model_name}_{dataset_name}_
-                                    {args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
+                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
                 else:
                     result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
 
