@@ -153,7 +153,10 @@ class LLaVA(BaseModel):
         images = [Image.open(s).convert('RGB') for s in images]
         args = abstractproperty()
         args.image_aspect_ratio = 'pad'
-        image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
+        if images:
+            image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
+        else:
+            image_tensor = None
 
         prompt = self.system_prompt + 'USER: ' + content + ' ASSISTANT: '
 
