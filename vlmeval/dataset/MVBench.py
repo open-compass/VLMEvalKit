@@ -34,46 +34,46 @@ Based on your observations, select the best option that accurately addresses the
 
     def __init__(self, dataset='MVBench', pack=False):
         self.type_data_list = {
-            "Action Sequence": ("action_sequence.json", "your_data_path/star/Charades_v1_480/", 
-                                "video", True),  # has start & end
-            "Action Prediction": ("action_prediction.json", "your_data_path/star/Charades_v1_480/",
-                                   "video", True),  # has start & end
-            "Action Antonym": ("action_antonym.json", "your_data_path/ssv2_video/", 
-                               "video", False),
-            "Fine-grained Action": ("fine_grained_action.json", 
-                                    "your_data_path/Moments_in_Time_Raw/videos/", "video", False),
-            "Unexpected Action": ("unexpected_action.json", 
-                                  "your_data_path/FunQA_test/test/", "video", False),
-            "Object Existence": ("object_existence.json", 
-                                 "your_data_path/clevrer/video_validation/", "video", False),
-            "Object Interaction": ("object_interaction.json", 
-                                   "your_data_path/star/Charades_v1_480/", "video", True),  # has start & end
-            "Object Shuffle": ("object_shuffle.json", 
-                               "your_data_path/perception/videos/", "video", False),
-            "Moving Direction": ("moving_direction.json", 
-                                 "your_data_path/clevrer/video_validation/", "video", False),
-            "Action Localization": ("action_localization.json", 
-                                    "your_data_path/sta/sta_video/", "video", True),   # has start & end
-            "Scene Transition": ("scene_transition.json", 
-                                 "your_data_path/scene_qa/video/", "video", False),
-            "Action Count": ("action_count.json", 
-                             "your_data_path/perception/videos/", "video", False),
-            "Moving Count": ("moving_count.json", 
-                             "your_data_path/clevrer/video_validation/", "video", False),
-            "Moving Attribute": ("moving_attribute.json", 
-                                 "your_data_path/clevrer/video_validation/", "video", False),
-            "State Change": ("state_change.json", 
-                             "your_data_path/perception/videos/", "video", False),
-            "Fine-grained Pose": ("fine_grained_pose.json", 
-                                  "your_data_path/nturgbd/", "video", False),
-            "Character Order": ("character_order.json", 
-                                "your_data_path/perception/videos/", "video", False),
-            "Egocentric Navigation": ("egocentric_navigation.json", 
-                                      "your_data_path/vlnqa/", "video", False),
-            "Episodic Reasoning": ("episodic_reasoning.json", 
-                                   "your_data_path/tvqa/frames_fps3_hq/", "frame", True),  # has start & end, read frame
-            "Counterfactual Inference": ("counterfactual_inference.json", 
-                                         "your_data_path/clevrer/video_validation/", "video", False),
+            'Action Sequence': ('action_sequence.json', 'your_data_path/star/Charades_v1_480/',
+                                'video', True),  # has start & end
+            'Action Prediction': ('action_prediction.json', 'your_data_path/star/Charades_v1_480/',
+                                   'video', True),  # has start & end
+            'Action Antonym': ('action_antonym.json', 'your_data_path/ssv2_video/',
+                               'video', False),
+            'Fine-grained Action': ('fine_grained_action.json',
+                                    'your_data_path/Moments_in_Time_Raw/videos/', 'video', False),
+            'Unexpected Action': ('unexpected_action.json',
+                                  'your_data_path/FunQA_test/test/', 'video', False),
+            'Object Existence': ('object_existence.json',
+                                 'your_data_path/clevrer/video_validation/', 'video', False),
+            'Object Interaction': ('object_interaction.json',
+                                   'your_data_path/star/Charades_v1_480/', 'video', True),  # has start & end
+            'Object Shuffle': ('object_shuffle.json',
+                               'your_data_path/perception/videos/', 'video', False),
+            'Moving Direction': ('moving_direction.json',
+                                 'your_data_path/clevrer/video_validation/', 'video', False),
+            'Action Localization': ('action_localization.json',
+                                    'your_data_path/sta/sta_video/', 'video', True),   # has start & end
+            'Scene Transition': ('scene_transition.json',
+                                 'your_data_path/scene_qa/video/', 'video', False),
+            'Action Count': ('action_count.json',
+                             'your_data_path/perception/videos/', 'video', False),
+            'Moving Count': ('moving_count.json',
+                             'your_data_path/clevrer/video_validation/', 'video', False),
+            'Moving Attribute': ('moving_attribute.json',
+                                 'your_data_path/clevrer/video_validation/', 'video', False),
+            'State Change': ('state_change.json',
+                             'your_data_path/perception/videos/', 'video', False),
+            'Fine-grained Pose': ('fine_grained_pose.json',
+                                  'your_data_path/nturgbd/', 'video', False),
+            'Character Order': ('character_order.json',
+                                'your_data_path/perception/videos/', 'video', False),
+            'Egocentric Navigation': ('egocentric_navigation.json',
+                                      'your_data_path/vlnqa/', 'video', False),
+            'Episodic Reasoning': ('episodic_reasoning.json',
+                                   'your_data_path/tvqa/frames_fps3_hq/', 'frame', True),  # has start & end, read frame
+            'Counterfactual Inference': ('counterfactual_inference.json',
+                                         'your_data_path/clevrer/video_validation/', 'video', False),
         }
         super().__init__(dataset=dataset, pack=pack)
 
@@ -153,8 +153,8 @@ Based on your observations, select the best option that accurately addresses the
                                     if not os.path.exists(target_folder):
                                         shutil.move(item_path, os.path.join(target_folder, item))
 
-            hf_token = os.environ.get('HUGGINGFACE_TOKEN') 
-            huggingface_hub.login(hf_token) 
+            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+            huggingface_hub.login(hf_token)
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             move_files(dataset_path)
             unzip_hf_zip(dataset_path)
@@ -182,7 +182,7 @@ Based on your observations, select the best option that accurately addresses the
             GroupCenterCrop(crop_size),
             Stack(),
             ToTorchFormatTensor(),
-            GroupNormalize(input_mean, input_std) 
+            GroupNormalize(input_mean, input_std)
         ])
 
         return dict(root=dataset_path, data_file=data_file)
@@ -207,7 +207,7 @@ Based on your observations, select the best option that accurately addresses the
         fps = float(vr.get_avg_fps())
 
         images_group = list()
-        frame_indices = self.get_index(bound, fps, max_frame, first_idx=0) 
+        frame_indices = self.get_index(bound, fps, max_frame, first_idx=0)
         for frame_index in frame_indices:
             img = Image.fromarray(vr[frame_index].asnumpy())
             images_group.append(img)
@@ -218,7 +218,7 @@ Based on your observations, select the best option that accurately addresses the
         gif = imageio.get_reader(video_path)
         max_frame = len(gif) - 1
         images_group = list()
-        frame_indices = self.get_index(bound, fps, max_frame, first_idx=0) 
+        frame_indices = self.get_index(bound, fps, max_frame, first_idx=0)
         for index, frame in enumerate(gif):
             if index in frame_indices:
                 img = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
@@ -232,7 +232,7 @@ Based on your observations, select the best option that accurately addresses the
         images_group = list()
         frame_indices = self.get_index(bound, fps, max_frame, first_idx=1)  # frame_idx starts from 1
         for frame_index in frame_indices:
-            img = Image.open(os.path.join(video_path, f"{frame_index:05d}.jpg"))
+            img = Image.open(os.path.join(video_path, f'{frame_index:05d}.jpg'))
             images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
@@ -254,16 +254,16 @@ Based on your observations, select the best option that accurately addresses the
         return frame_paths
 
     def qa_template(self, data):
-        question = f"Question: {data['question']}\n"
-        question += "Options:\n"
+        question = f'Question: {data['question']}\n'
+        question += 'Options:\n'
         answer = data['answer']
         answer_idx = -1
         for idx, c in enumerate(eval(data['candidates'])):
-            question += f"({chr(ord('A') + idx)}) {c}\n"
+            question += f'({chr(ord('A') + idx)}) {c}\n'
             if c == answer:
                 answer_idx = idx
         question = question.rstrip()
-        answer = f"({chr(ord('A') + answer_idx)}) {answer}"
+        answer = f'({chr(ord('A') + answer_idx)}) {answer}'
         return question, answer
 
     def load_into_video_and_process(self, line):
@@ -293,7 +293,7 @@ Based on your observations, select the best option that accurately addresses the
             output_video_path = f'{base_name}_processed{suffix}'
             if not os.path.exists(output_video_path):
                 video_clip = VideoFileClip(processed_video_path)
-                clip = video_clip.subclip(line['start'], min(line['end'],video_clip.duration))
+                clip = video_clip.subclip(line['start'], min(line['end'], video_clip.duration))
                 clip.write_videofile(output_video_path)
                 clip.close()
         else:
@@ -325,7 +325,7 @@ Based on your observations, select the best option that accurately addresses the
             self.num_segments = num_frames if num_frames > 0 else self.nframe
             torch_imgs = decord_method(video_path, bound)
             img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
-            for im in img_frame_paths: 
+            for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
 
         message.append(dict(type='text', value='Best option:('))
@@ -355,9 +355,9 @@ Based on your observations, select the best option that accurately addresses the
                 for id, c in enumerate(options):
                     if c == ans:
                         answer_idx = id
-                ans = f"({chr(ord('A') + answer_idx)}) {ans}"
+                ans = f'({chr(ord('A') + answer_idx)}) {ans}'
 
-                if FAIL_MSG in pred: 
+                if FAIL_MSG in pred:
                     data.loc[idx, 'score'] = -1
                 else:
                     data.loc[idx, 'score'] = int(check_ans(pred, ans))

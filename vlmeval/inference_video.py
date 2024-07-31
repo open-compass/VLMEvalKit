@@ -26,7 +26,8 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
-    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
+    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe,
+                                    video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
 
     packstr = 'pack' if pack else 'nopack'
     out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
@@ -82,7 +83,7 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
         if idx in res:
             continue
         # adapt to model frame sample number first
-        nframe = getattr(model, 'nframe', 0) if getattr(model, 'nframe', 0) > 0 else nframe 
+        nframe = getattr(model, 'nframe', 0) if getattr(model, 'nframe', 0) > 0 else nframe
         # when using video-llm, build prompt returns video+question; otherwise, several frames+question
         struct = dataset.build_prompt(sample_map[idx], num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False))
         response = model.generate(message=struct, dataset=dataset_name)
