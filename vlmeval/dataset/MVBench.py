@@ -254,7 +254,7 @@ Based on your observations, select the best option that accurately addresses the
         return frame_paths
 
     def qa_template(self, data):
-        question = f'Question: {data['question']}\n'
+        question = f"Question: {data['question']}\n"
         question += 'Options:\n'
         answer = data['answer']
         answer_idx = -1
