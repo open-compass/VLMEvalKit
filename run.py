@@ -97,11 +97,10 @@ def main():
                     logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                     args.pack = False
                 packstr = 'pack' if args.pack else 'nopack'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
                 if dataset_name in ['Video-MME']:
                     subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
-                else:
-                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                    result_file = result_file.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
             if dataset.TYPE == 'MT':
                 result_file = result_file.replace('.xlsx', '.tsv')

@@ -77,7 +77,6 @@ Based on your observations, select the best option that accurately addresses the
         }
         super().__init__(dataset=dataset, pack=pack)
 
-
     @classmethod
     def supported_datasets(cls):
         return ['MVBench']
@@ -233,7 +232,7 @@ Based on your observations, select the best option that accurately addresses the
     def read_frame(self, video_path, bound=None, fps=3):
         max_frame = len(os.listdir(video_path))
         images_group = list()
-        frame_indices = self.get_index(bound, fps, max_frame, first_idx=1) # frame_idx starts from 1
+        frame_indices = self.get_index(bound, fps, max_frame, first_idx=1)  # frame_idx starts from 1
         for frame_index in frame_indices:
             img = Image.open(os.path.join(video_path, f'{frame_index:05d}.jpg'))
             images_group.append(img)
