@@ -39,6 +39,12 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_VAL.tsv',
         'AesBench_TEST': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_TEST.tsv',
+        # Q-Bench1
+        'Q-Bench1_VAL': 'https://huggingface.co/datasets/zhangzicheng/qbench_tsv/resolve/main/Q-Bench1_VAL.tsv',
+        'Q-Bench1_TEST': 'https://huggingface.co/datasets/zhangzicheng/qbench_tsv/resolve/main/Q-Bench1_TEST.tsv',
+        # A-Bench
+        'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
+        'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
@@ -78,6 +84,12 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
         'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
+        # Q-Bench1 
+        'Q-Bench1_VAL': '837bdb6cd2da571713543462815187b7',
+        'Q-Bench1_TEST': 'df94fcf6b2836dff36d3ed6b22d1d626',
+        # A-Bench
+        'A-Bench_VAL': '0318064b96fe42fd234f924027976126',
+        'A-Bench_TEST': 'a2ad9ae464309d779ab4778a7a85a20e',
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
