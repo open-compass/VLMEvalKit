@@ -109,7 +109,7 @@ def post_check(line, prefetch=False):
             if prefetch:
                 return res
         else:
-            res = str(res)
+            res = str(response)
             ans = str(ans)
     except ValueError:
         pass
