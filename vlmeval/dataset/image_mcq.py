@@ -86,10 +86,10 @@ class ImageMCQDataset(ImageBaseDataset):
         'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
         # Q-Bench1 
         'Q-Bench1_VAL': '837bdb6cd2da571713543462815187b7',
-        'Q-Bench1_TEST': 'df94fcf6b2836dff36d3ed6b22d1d626',
+        'Q-Bench1_TEST': '15e759bfd58c9d5f30b23a317d347153',
         # A-Bench
         'A-Bench_VAL': '218563ec50d34bb336c814143a5bb9c1',
-        'A-Bench_TEST': '07e7345eced96a153f018cc5f46c4407',
+        'A-Bench_TEST': '567013fb033a20cf23f51d8e865bd16c',
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
