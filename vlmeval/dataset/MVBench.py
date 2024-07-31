@@ -24,35 +24,58 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 class MVBench(VideoBaseDataset):
 
     MD5 = 'ae2a2607e2f8618155709220c6e927a6'
-    SYS = 'Carefully watch the video and pay attention to the cause and sequence of events, the detail and movement of objects, and the action and pose of persons. Based on your observations, select the best option that accurately addresses the question.\n'
+    SYS = """
+Carefully watch the video and pay attention to the cause and sequence of events, \
+the detail and movement of objects, and the action and pose of persons. \
+Based on your observations, select the best option that accurately addresses the question.\n
+"""
 
     TYPE = 'MCQ'
 
     def __init__(self, dataset='MVBench', pack=False):
         self.type_data_list = {
-            "Action Sequence": ("action_sequence.json", "your_data_path/star/Charades_v1_480/", "video", True),  # has start & end
-            "Action Prediction": ("action_prediction.json", "your_data_path/star/Charades_v1_480/", "video", True),  # has start & end
-            "Action Antonym": ("action_antonym.json", "your_data_path/ssv2_video/", "video", False),
-            "Fine-grained Action": ("fine_grained_action.json", "your_data_path/Moments_in_Time_Raw/videos/", "video", False),
-            "Unexpected Action": ("unexpected_action.json", "your_data_path/FunQA_test/test/", "video", False),
-            "Object Existence": ("object_existence.json", "your_data_path/clevrer/video_validation/", "video", False),
-            "Object Interaction": ("object_interaction.json", "your_data_path/star/Charades_v1_480/", "video", True),  # has start & end
-            "Object Shuffle": ("object_shuffle.json", "your_data_path/perception/videos/", "video", False),
-            "Moving Direction": ("moving_direction.json", "your_data_path/clevrer/video_validation/", "video", False),
-            "Action Localization": ("action_localization.json", "your_data_path/sta/sta_video/", "video", True),   # has start & end
-            "Scene Transition": ("scene_transition.json", "your_data_path/scene_qa/video/", "video", False),
-            "Action Count": ("action_count.json", "your_data_path/perception/videos/", "video", False),
-            "Moving Count": ("moving_count.json", "your_data_path/clevrer/video_validation/", "video", False),
-            "Moving Attribute": ("moving_attribute.json", "your_data_path/clevrer/video_validation/", "video", False),
-            "State Change": ("state_change.json", "your_data_path/perception/videos/", "video", False),
-            "Fine-grained Pose": ("fine_grained_pose.json", "your_data_path/nturgbd/", "video", False),
-            "Character Order": ("character_order.json", "your_data_path/perception/videos/", "video", False),
-            "Egocentric Navigation": ("egocentric_navigation.json", "your_data_path/vlnqa/", "video", False),
-            "Episodic Reasoning": ("episodic_reasoning.json", "your_data_path/tvqa/frames_fps3_hq/", "frame", True),  # has start & end, read frame
-            "Counterfactual Inference": ("counterfactual_inference.json", "your_data_path/clevrer/video_validation/", "video", False),
+            "Action Sequence": ("action_sequence.json", "your_data_path/star/Charades_v1_480/", 
+                                "video", True),  # has start & end
+            "Action Prediction": ("action_prediction.json", "your_data_path/star/Charades_v1_480/",
+                                   "video", True),  # has start & end
+            "Action Antonym": ("action_antonym.json", "your_data_path/ssv2_video/", 
+                               "video", False),
+            "Fine-grained Action": ("fine_grained_action.json", 
+                                    "your_data_path/Moments_in_Time_Raw/videos/", "video", False),
+            "Unexpected Action": ("unexpected_action.json", 
+                                  "your_data_path/FunQA_test/test/", "video", False),
+            "Object Existence": ("object_existence.json", 
+                                 "your_data_path/clevrer/video_validation/", "video", False),
+            "Object Interaction": ("object_interaction.json", 
+                                   "your_data_path/star/Charades_v1_480/", "video", True),  # has start & end
+            "Object Shuffle": ("object_shuffle.json", 
+                               "your_data_path/perception/videos/", "video", False),
+            "Moving Direction": ("moving_direction.json", 
+                                 "your_data_path/clevrer/video_validation/", "video", False),
+            "Action Localization": ("action_localization.json", 
+                                    "your_data_path/sta/sta_video/", "video", True),   # has start & end
+            "Scene Transition": ("scene_transition.json", 
+                                 "your_data_path/scene_qa/video/", "video", False),
+            "Action Count": ("action_count.json", 
+                             "your_data_path/perception/videos/", "video", False),
+            "Moving Count": ("moving_count.json", 
+                             "your_data_path/clevrer/video_validation/", "video", False),
+            "Moving Attribute": ("moving_attribute.json", 
+                                 "your_data_path/clevrer/video_validation/", "video", False),
+            "State Change": ("state_change.json", 
+                             "your_data_path/perception/videos/", "video", False),
+            "Fine-grained Pose": ("fine_grained_pose.json", 
+                                  "your_data_path/nturgbd/", "video", False),
+            "Character Order": ("character_order.json", 
+                                "your_data_path/perception/videos/", "video", False),
+            "Egocentric Navigation": ("egocentric_navigation.json", 
+                                      "your_data_path/vlnqa/", "video", False),
+            "Episodic Reasoning": ("episodic_reasoning.json", 
+                                   "your_data_path/tvqa/frames_fps3_hq/", "frame", True),  # has start & end, read frame
+            "Counterfactual Inference": ("counterfactual_inference.json", 
+                                         "your_data_path/clevrer/video_validation/", "video", False),
         }
         super().__init__(dataset=dataset, pack=pack)
-
 
     @classmethod
     def supported_datasets(cls):
@@ -72,8 +95,8 @@ class MVBench(VideoBaseDataset):
             for idx, item in data.iterrows():
                 if not osp.exists(osp.join(pth, item['prefix'], item['video'])):
                     return False
-            return True 
-        
+            return True
+
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
@@ -84,7 +107,6 @@ class MVBench(VideoBaseDataset):
                     if filename.endswith('.zip'):
                         # 构建完整的文件路径
                         zip_path = os.path.join(pth, filename)
-                        
                         # 解压 ZIP 文件
                         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                             zip_ref.extractall(pth)
@@ -145,11 +167,11 @@ class MVBench(VideoBaseDataset):
             'gif': self.read_gif,
             'frame': self.read_frame,
         }
-        
+
         self.nframe = 8
         self.resolution = 224
         self.frame_fps = 3
-        
+
         # transform
         crop_size = self.resolution
         scale_size = self.resolution
@@ -164,7 +186,7 @@ class MVBench(VideoBaseDataset):
         ])
 
         return dict(root=dataset_path, data_file=data_file)
-    
+
     def get_index(self, bound, fps, max_frame, first_idx=0):
         if bound:
             start, end = bound[0], bound[1]
@@ -178,12 +200,12 @@ class MVBench(VideoBaseDataset):
             for idx in range(self.num_segments)
         ])
         return frame_indices
-    
+
     def read_video(self, video_path, bound=None):
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         max_frame = len(vr) - 1
         fps = float(vr.get_avg_fps())
-        
+
         images_group = list()
         frame_indices = self.get_index(bound, fps, max_frame, first_idx=0) 
         for frame_index in frame_indices:
@@ -191,11 +213,10 @@ class MVBench(VideoBaseDataset):
             images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
-    
+
     def read_gif(self, video_path, bound=None, fps=25):
         gif = imageio.get_reader(video_path)
         max_frame = len(gif) - 1
-        
         images_group = list()
         frame_indices = self.get_index(bound, fps, max_frame, first_idx=0) 
         for index, frame in enumerate(gif):
@@ -205,17 +226,17 @@ class MVBench(VideoBaseDataset):
                 images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
-    
+
     def read_frame(self, video_path, bound=None, fps=3):
         max_frame = len(os.listdir(video_path))
         images_group = list()
-        frame_indices = self.get_index(bound, fps, max_frame, first_idx=1) # frame_idx starts from 1
+        frame_indices = self.get_index(bound, fps, max_frame, first_idx=1)  # frame_idx starts from 1
         for frame_index in frame_indices:
             img = Image.open(os.path.join(video_path, f"{frame_index:05d}.jpg"))
             images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
-    
+
     def save_video_frames(self, imgs, video_name, frames):
 
         frame_paths = self.frame_paths(video_name, frames)
@@ -231,7 +252,7 @@ class MVBench(VideoBaseDataset):
                     im.save(pth)
 
         return frame_paths
-    
+
     def qa_template(self, data):
         question = f"Question: {data['question']}\n"
         question += "Options:\n"
@@ -244,10 +265,10 @@ class MVBench(VideoBaseDataset):
         question = question.rstrip()
         answer = f"({chr(ord('A') + answer_idx)}) {answer}"
         return question, answer
-    
+
     def load_into_video_and_process(self, line):
         video_path = os.path.join(line['prefix'], line['video'])
-    
+
         if line['data_type'] in ['gif'] or os.path.splitext(video_path)[1] in ['.webm']:
             processed_video_path = video_path.replace(os.path.splitext(video_path)[1], '.mp4')
             if not os.path.exists(processed_video_path):
@@ -277,9 +298,9 @@ class MVBench(VideoBaseDataset):
                 clip.close()
         else:
             output_video_path = processed_video_path
-        
+
         return output_video_path
-    
+
     def build_prompt(self, line, num_frames, video_llm):
         if isinstance(line, int):
             assert line < len(self)
