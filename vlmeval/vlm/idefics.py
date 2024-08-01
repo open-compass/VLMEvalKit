@@ -568,7 +568,10 @@ class IDEFICS3(BaseModel):
                     instruction = instruction.replace(k, v)
                 prompt += instruction.strip()
         # CoT
-        prompt += '\Think step by step before giving your final answer as "Final answer: ..."<end_of_utterance>\nAssistant:'
+        if 'A.' in prompt and 'B.' in prompt:
+            prompt += '\Think step by step and explain your reasoning. Then, answer with the letter."<end_of_utterance>\nAssistant:'
+        else:
+            prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant:'
         #prompt += '<end_of_utterance>\nAssistant:'
         #if 'A.' in prompt and 'B.' in prompt:
         #    prompt += ' Answer:'
