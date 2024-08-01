@@ -137,52 +137,27 @@ class InternVLChat(BaseModel):
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
-        if listinstr(['InternVL2-Llama3-76B'], model_path):
-            device_map = split_model(model_path.split('/')[1])
-            self.model = AutoModel.from_pretrained(
+        if not load_in_8bit:
+            model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
-                device_map=device_map).eval()
+                device_map='cpu').eval()
+            default_map = [
+                'vision_model', 'mlp1', 'language_model.model.tok_embeddings', 
+                'language_model.model.embed_tokens', 'language_model.output',
+                'language_model.model.norm', 'language_model.lm_head'
+            ]
+            model, _ = build_device_map(model, default_map)
         else:
-            device = torch.cuda.current_device()
-            self.device = device
-            from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
-
-            self.model_path = model_path
-            self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
-
             model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
                                             trust_remote_code=True,
                                             load_in_8bit=load_in_8bit).eval()
-
-            local_rank = int(os.environ.get('LOCAL_RANK', 0))
-            device_num = torch.cuda.device_count()
-
-            device_1 = local_rank
-            device_2 = local_rank + device_num // 2
-            no_split_module = model._no_split_modules
-
-            device_map = infer_auto_device_map(
-                model,
-                max_memory={
-                    device_1: '40GiB',
-                    device_2: '40GiB'
-                },
-                no_split_module_classes=no_split_module)
-
-            model = dispatch_model(
-                model,
-                device_map=device_map,
-                offload_folder='offload').eval()
-
-        if not load_in_8bit:
-            self.model = self.model.to(device)
-
+        self.device = torch.cuda.current_device()
+        self.model_path = model_path
         self.model = model
-
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
         self.kwargs = kwargs
