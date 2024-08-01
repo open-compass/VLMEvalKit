@@ -146,15 +146,16 @@ class InternVLChat(BaseModel):
                 low_cpu_mem_usage=True,
                 device_map='cpu').eval()
             default_map = [
-                'vision_model', 'mlp1', 'language_model.model.tok_embeddings', 
+                'vision_model', 'mlp1', 'language_model.model.tok_embeddings',
                 'language_model.model.embed_tokens', 'language_model.output',
                 'language_model.model.norm', 'language_model.lm_head'
             ]
             model, _ = build_device_map(model, default_map)
         else:
-            model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,
-                                            trust_remote_code=True,
-                                            load_in_8bit=load_in_8bit).eval()
+            model = AutoModel.from_pretrained(
+                model_path, torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                load_in_8bit=load_in_8bit).eval()
         self.device = torch.cuda.current_device()
         self.model_path = model_path
         self.model = model

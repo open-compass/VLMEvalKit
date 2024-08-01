@@ -186,7 +186,7 @@ def build_device_map(model, default_map=None, no_split=None, alpha=0.97, beta=0.
     rank, world_size = get_rank_and_world_size()
     if world_size == total_num_gpus:
         return model.cuda()
-    
+
     num_gpus = total_num_gpus // world_size
     memory_map = {}
     per_gpu_mem = 45 * alpha
@@ -209,11 +209,8 @@ def build_device_map(model, default_map=None, no_split=None, alpha=0.97, beta=0.
             device_map[i] = rank
     for value in device_map.values():
         assert value != 'disk', 'Please check and make sure to have enough memory to load model.'
-    try:
-        model = dispatch_model(
-            model,
-            device_map=device_map).eval()
-    except:
-        assert model is not None, f"""Model can not be loaded to {world_size} process with {get_memory() * total_num_gpus} GiB,
-        try to decrease --proc-per-node or increase gpu memory."""
+
+    model = dispatch_model(
+        model,
+        device_map=device_map).eval()
     return model, device_map

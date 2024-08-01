@@ -76,9 +76,9 @@ class OmniLMM12B(BaseModel):
         sys.path.append(root)
         with init_empty_weights():
             model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
-        
+
         default_map = ['lm_head', 'model.norm', 'model.resampler', 'model.layers']
-        no_split = ['Eva','MistralDecoderLayer', 'ModuleList', 'Resampler']
+        no_split = ['Eva', 'MistralDecoderLayer', 'ModuleList', 'Resampler']
         model, _ = build_device_map(model, default_map, no_split)
 
         self.model = model
