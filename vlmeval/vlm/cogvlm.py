@@ -27,9 +27,9 @@ class GLM4v(BaseModel):
         self.end_text_token = '<|endoftext|>'
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
-        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
             prompt += '\nShort Answer.'
         inputs = self.tokenizer.apply_chat_template(
             [{'role': 'user', 'image': image, 'content': prompt}],
@@ -51,8 +51,8 @@ class CogVlm(BaseModel):
 
     def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
         assert model_path is not None
-        from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
-
+        from accelerate import init_empty_weights
+        
         with init_empty_weights():
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
@@ -60,25 +60,8 @@ class CogVlm(BaseModel):
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
             )
-
-        local_rank = int(os.environ.get('LOCAL_RANK', 0))
-        device_num = torch.cuda.device_count()
-
-        device_1 = local_rank
-        device_2 = local_rank + device_num // 2
-        no_split_module = model._no_split_modules
-
-        device_map = infer_auto_device_map(
-            model,
-            max_memory={
-                device_1: '22GiB',
-                device_2: '22GiB'
-            },
-            no_split_module_classes=no_split_module)
-        model = dispatch_model(
-            model,
-            device_map=device_map).eval()
-
+        model, _ = build_device_map(model)
+        
         self.kwargs = kwargs
         if tokenizer_name:
             tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name)
