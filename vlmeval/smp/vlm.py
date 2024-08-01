@@ -8,6 +8,10 @@ import os.path as osp
 import base64
 from PIL import Image
 import sys
+import torch
+from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
+from .misc import get_rank_and_world_size
+
 
 Image.MAX_IMAGE_PIXELS = 1e9
 
@@ -179,3 +183,44 @@ def circular_pred(df, extract_func=None):
     flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
     flags = list(flag_map.values())
     return np.mean(flags)
+
+
+def get_memory():
+    total_memory = torch.cuda.get_device_properties(0).total_memory
+    total_mem = total_memory / 1024 / 1024 / 1024
+    return total_mem
+
+
+def build_device_map(model, default_map=None, no_split=None, alpha=0.97, beta=0.9):
+    total_num_gpus = torch.cuda.device_count()
+    rank, world_size = get_rank_and_world_size()
+    if world_size == total_num_gpus:
+        return model.cuda()
+
+    num_gpus = total_num_gpus // world_size
+    memory_map = {}
+    per_gpu_mem = 45 * alpha
+    memory_map.update({rank: f'{beta * per_gpu_mem:.2f}GiB'})
+    for gpu_id in range(1, num_gpus):
+        memory_map.update({rank + gpu_id * world_size: f'{per_gpu_mem:.2f}GiB'})
+    if hasattr(model, '_no_split_modules'):
+        no_split_module = model._no_split_modules
+    else:
+        no_split_module = []
+    if no_split is not None:
+        no_split_module = list(set((no_split_module + no_split)))
+    device_map = infer_auto_device_map(
+        model,
+        max_memory=memory_map,
+        no_split_module_classes=no_split_module
+    )
+    if default_map is not None:
+        for i in default_map:
+            device_map[i] = rank
+    for value in device_map.values():
+        assert value != 'disk', 'Please check and make sure to have enough memory to load model.'
+
+    model = dispatch_model(
+        model,
+        device_map=device_map).eval()
+    return model, device_map

@@ -1,3 +1,4 @@
+accelerate
 einops
 gradio
 huggingface_hub

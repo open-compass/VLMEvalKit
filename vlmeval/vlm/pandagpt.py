@@ -3,6 +3,7 @@ import torch
 import os.path as osp
 import warnings
 from .base import BaseModel
+from ..smp import *
 
 
 class PandaGPT(BaseModel):
@@ -40,7 +41,12 @@ class PandaGPT(BaseModel):
         delta_ckpt = torch.load(self.args['delta_ckpt_path'], map_location=torch.device('cpu'))
         model.load_state_dict(delta_ckpt, strict=False)
         torch.cuda.empty_cache()
-        self.model = model.eval().half().cuda()
+
+        default_map = ['llama_model.base_model.model.lm_head', 'llama_proj']
+        no_split_list = ['LlamaDecoderLayer', 'VisionTransformer']
+        model, _ = build_device_map(model, default_map, no_split_list)
+
+        self.model = model.eval()
         kwargs_default = {'top_p': 0.9, 'do_sample': False, 'max_tgt_len': 128, 'temperature': 0.001}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default

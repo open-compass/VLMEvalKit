@@ -21,17 +21,11 @@ class Emu(BaseModel):
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
-        local_rank = os.environ.get('LOCAL_RANK', 0)
+        local_rank = int(os.environ.get('LOCAL_RANK', 0))
 
         device_num = torch.cuda.device_count()
         assert local_rank * 2 <= device_num, 'The number of devices does not match the world size'
         assert device_num >= 2, 'You need at least 2 GPUs to use EMU'
-
-        device_1 = local_rank
-        device_2 = local_rank + device_num // 2
-
-        torch.cuda.set_device(device_1)
-        torch.cuda.set_device(device_2)
 
         tokenizer = AutoTokenizer.from_pretrained(model_path)  # "BAAI/Emu2-Chat"
         self.tokenizer = tokenizer
@@ -42,20 +36,9 @@ class Emu(BaseModel):
                 low_cpu_mem_usage=True,
                 trust_remote_code=True)
 
-        device_map = infer_auto_device_map(
-            model,
-            max_memory={
-                device_1: '38GiB',
-                device_2: '38GiB'
-            },
-            no_split_module_classes=['Block', 'LlamaDecoderLayer'])
-
-        # input and output logits should be on same device
-        device_map['model.decoder.lm.lm_head'] = device_1
-
-        model = dispatch_model(
-            model,
-            device_map=device_map).eval()
+        no_split = ['Block', 'LlamaDecoderLayer']
+        default_map = ['model.decoder.lm.lm_head']
+        model, _ = build_device_map(model, default_map, no_split)
 
         self.model = model
         kwargs_default = dict(max_new_tokens=512, length_penalty=-1)

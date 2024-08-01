@@ -137,26 +137,28 @@ class InternVLChat(BaseModel):
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
-        if listinstr(['InternVL2-Llama3-76B'], model_path):
-            device_map = split_model(model_path.split('/')[1])
-            self.model = AutoModel.from_pretrained(
+        if not load_in_8bit:
+            model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
-                device_map=device_map).eval()
+                device_map='cpu').eval()
+            default_map = [
+                'vision_model', 'mlp1', 'language_model.model.tok_embeddings',
+                'language_model.model.embed_tokens', 'language_model.output',
+                'language_model.model.norm', 'language_model.lm_head'
+            ]
+            model, _ = build_device_map(model, default_map)
         else:
-            device = torch.cuda.current_device()
-            self.device = device
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
+            model = AutoModel.from_pretrained(
+                model_path, torch_dtype=torch.bfloat16,
                 trust_remote_code=True,
                 load_in_8bit=load_in_8bit).eval()
-            if not load_in_8bit:
-                self.model = self.model.to(device)
-
+        self.device = torch.cuda.current_device()
+        self.model_path = model_path
+        self.model = model
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
         self.kwargs = kwargs

@@ -5,6 +5,7 @@ from transformers import AutoTokenizer
 from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
+from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
 
 DEFAULT_IMAGE_TOKEN = '<image>'
@@ -97,7 +98,13 @@ class OmniLMM12B(BaseModel):
 
     def __init__(self, model_path, root, **kwargs) -> None:
         sys.path.append(root)
-        model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
+        with init_empty_weights():
+            model, img_processor, image_token_len, tokenizer = init_omni_lmm(model_path)
+
+        default_map = ['lm_head', 'model.norm', 'model.resampler', 'model.layers']
+        no_split = ['Eva', 'MistralDecoderLayer', 'ModuleList', 'Resampler']
+        model, _ = build_device_map(model, default_map, no_split)
+
         self.model = model
         self.image_token_len = image_token_len
         self.image_transform = img_processor

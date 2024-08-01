@@ -27,9 +27,9 @@ class GLM4v(BaseModel):
         self.end_text_token = '<|endoftext|>'
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
+        prompt, image_path = self.message_to_promptimg(message)
         image = Image.open(image_path).convert('RGB')
-        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
+        if dataset is not None and DATASET_TYPE(dataset) in ['multi-choice', 'Y/N']:
             prompt += '\nShort Answer.'
         inputs = self.tokenizer.apply_chat_template(
             [{'role': 'user', 'image': image, 'content': prompt}],
@@ -51,11 +51,16 @@ class CogVlm(BaseModel):
 
     def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
         assert model_path is not None
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-            trust_remote_code=True,
-        ).to('cuda').eval()
+        from accelerate import init_empty_weights
+
+        with init_empty_weights():
+            model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+            )
+        model, _ = build_device_map(model)
 
         self.kwargs = kwargs
         if tokenizer_name:
