@@ -328,10 +328,6 @@ class IDEFICS3(BaseModel):
             # model = VLlama3ForCausalLM.from_pretrained(path_unwrapped_model, torch_dtype=torch.bfloat16, device_map="auto")  # DEBUG
             model = VLlama3ForCausalLM.from_pretrained(path_unwrapped_model, torch_dtype=torch.bfloat16)
             model.to("cuda:0")  # DEBUG
-            # Load adapter
-            path_unwrapped_adapter = os.path.join(path_model, "unwrapped_adapter")
-            model.load_adapter(path_unwrapped_adapter)
-            model.enable_adapters()
             # Eval mode
             model.eval()
             return tokenizer, model
