@@ -52,7 +52,7 @@ class CogVlm(BaseModel):
     def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
         assert model_path is not None
         from accelerate import init_empty_weights
-        
+
         with init_empty_weights():
             model = AutoModelForCausalLM.from_pretrained(
                 model_path,
@@ -61,7 +61,7 @@ class CogVlm(BaseModel):
                 trust_remote_code=True,
             )
         model, _ = build_device_map(model)
-        
+
         self.kwargs = kwargs
         if tokenizer_name:
             tokenizer = LlamaTokenizer.from_pretrained(tokenizer_name)
