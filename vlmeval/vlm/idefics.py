@@ -526,15 +526,15 @@ class IDEFICS3(BaseModel):
                 prompt += instruction.strip()
         
         # CoT
-        prompt = prompt.replace("Answer with the letter.", "").strip()
-        if 'A.' in prompt and 'B.' in prompt:
-            prompt += '\Think step by step and explain your reasoning. Then, answer with the letter."<end_of_utterance>\nAssistant: Let\' think step by step.'
-        else:
-            prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant: Let\' think step by step.'
-
-        #prompt += '<end_of_utterance>\nAssistant:'
+        #prompt = prompt.replace("Answer with the letter.", "").strip()
         #if 'A.' in prompt and 'B.' in prompt:
-        #    prompt += ' Answer:'
+        #    prompt += '\Think step by step and explain your reasoning. Then, answer with the letter."<end_of_utterance>\nAssistant: Let\' think step by step.'
+        #else:
+        #    prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant: Let\' think step by step.'
+
+        prompt += '<end_of_utterance>\nAssistant:'
+        if 'A.' in prompt and 'B.' in prompt:
+            prompt += ' Answer:'
         
         return prompt, images
 
