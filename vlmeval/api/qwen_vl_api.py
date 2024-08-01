@@ -35,28 +35,53 @@ class QwenVLWrapper(BaseAPI):
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
-    @staticmethod
-    def build_msgs(msgs_raw, system_prompt=None):
-        msgs = cp.deepcopy(msgs_raw)
-        ret = []
-        if system_prompt is not None:
-            content = list(dict(text=system_prompt))
-            ret.append(dict(role='system', content=content))
-        content = []
-        for msg in msgs:
-            if msg['type'] == 'text':
-                content.append(dict(text=msg['value']))
-            elif msg['type'] == 'image':
-                content.append(dict(image='file://' + msg['value']))
-        ret.append(dict(role='user', content=content))
-        return ret
+    # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
+    # content can be a string or a list of image & text
+    def prepare_itlist(self, inputs):
+        assert np.all([isinstance(x, dict) for x in inputs])
+        has_images = np.sum([x['type'] == 'image' for x in inputs])
+        if has_images:
+            content_list = []
+            for msg in inputs:
+                if msg['type'] == 'text':
+                    content_list.append(dict(text=msg['value']))
+                elif msg['type'] == 'image':
+                    content_list.append(dict(image='file://' + msg['value']))
+        else:
+            assert all([x['type'] == 'text' for x in inputs])
+            text = '\n'.join([x['value'] for x in inputs])
+            content_list = [dict(text=text)]
+        return content_list
+
+    def prepare_inputs(self, inputs):
+        input_msgs = []
+        if self.system_prompt is not None:
+            input_msgs.append(dict(role='system', content=self.system_prompt))
+        assert isinstance(inputs, list) and isinstance(inputs[0], dict)
+        assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
+        if 'role' in inputs[0]:
+            assert inputs[-1]['role'] == 'user', inputs[-1]
+            for item in inputs:
+                input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
+        else:
+            input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
+        return input_msgs
 
     def generate_inner(self, inputs, **kwargs) -> str:
         from dashscope import MultiModalConversation
         assert isinstance(inputs, str) or isinstance(inputs, list)
-        pure_text = np.all([x['type'] == 'text' for x in inputs])
+
+        if 'type' in inputs[0]:
+            pure_text = np.all([x['type'] == 'text' for x in inputs])
+        else:
+            pure_text = True
+            for inp in inputs:
+                if not np.all([x['type'] == 'text' for x in inp['content']]):
+                    pure_text = False
+                    break
+
         assert not pure_text
-        messages = self.build_msgs(msgs_raw=inputs, system_prompt=self.system_prompt)
+        messages = self.prepare_inputs(inputs)
         gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
         gen_config.update(kwargs)
         try:
