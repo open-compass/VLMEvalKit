@@ -580,10 +580,10 @@ class IDEFICS3(BaseModel):
         #else:
         #    prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant: Let\' think step by step.'
 
-        if 'A.' in prompt and 'B.' in prompt:
-            prompt += '<end_of_utterance>\nAssistant: Answer:'
-        else:
-            prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant: Let\'s think step by step.'
+        #if 'A.' in prompt and 'B.' in prompt:
+        #    prompt += '<end_of_utterance>\nAssistant: Answer:'
+        #else:
+        #    prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant: Let\'s think step by step.'
 
 
         #prompt += '<end_of_utterance>\nAssistant:'
