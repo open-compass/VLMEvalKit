@@ -138,7 +138,7 @@ class InternVLChat(BaseModel):
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
         if listinstr(['InternVL2-Llama3-76B'], model_path):
-            device_map = split_model(model_path.split('/')[1])
+            device_map = split_model(model_path.split('/')[-1])
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
@@ -188,6 +188,20 @@ class InternVLChat(BaseModel):
 
         return prompt
 
+    def build_video_prompt(self, prompt, dataset=None, max_nframe=64):
+        for start in range(0, max_nframe, 8):
+            images_to_remove = ''.join([f'<image-{i}>' for i in range(start + 1, start + 9)])
+            prompt = prompt.replace(images_to_remove, '')
+        for i in range(max_nframe):
+            prompt = prompt.replace(f'<image-{i + 1}>', f'Frame{i + 1}')
+        if listinstr(['MMBench-Video'], dataset):
+            prompt = prompt.replace('\nAnswer:', '')
+            prompt += '\nAnswer the question using a single word or phrase.'
+        elif listinstr(['Video-MME'], dataset):
+            prompt = prompt.replace('\nAnswer:', '')
+            prompt += "\nAnswer with the option's letter from the given choices directly."
+        return prompt
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -208,7 +222,7 @@ class InternVLChat(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if 'MathVista' in dataset:
+            if listinstr(['MathVista', 'MathVision'], dataset):
                 prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']
@@ -231,6 +245,8 @@ class InternVLChat(BaseModel):
             self.max_num = 18
         elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
             self.max_num = 24
+        elif dataset is not None and listinstr(['MMBench-Video', 'Video-MME', 'Video'], dataset):
+            self.max_num = 1
         else:
             self.max_num = 6
 
@@ -251,6 +267,9 @@ class InternVLChat(BaseModel):
         image_num = len([x for x in message if x['type'] == 'image'])
         prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
 
+        if listinstr(['Video'], dataset):
+            prompt = self.build_video_prompt(prompt, dataset)
+
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             pixel_values_list = []
@@ -263,8 +282,12 @@ class InternVLChat(BaseModel):
         else:
             pixel_values = None
         with torch.no_grad():
-            response = self.model.chat(self.tokenizer, pixel_values=pixel_values,
-                                       question=prompt, generation_config=self.kwargs)
+            response = self.model.chat(
+                self.tokenizer,
+                pixel_values=pixel_values,
+                question=prompt,
+                generation_config=self.kwargs,
+                verbose=False)
         return response
 
     def generate_v2(self, message, dataset=None):
@@ -280,6 +303,9 @@ class InternVLChat(BaseModel):
                     prompt += f'<image-{image_idx}>'
                     image_idx += 1
             prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
+
+        if listinstr(['Video'], dataset):
+            prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
@@ -303,22 +329,19 @@ class InternVLChat(BaseModel):
             num_patches_list = []
 
         with torch.no_grad():
-            try:
-                response = self.model.chat(
-                    self.tokenizer,
-                    pixel_values=pixel_values,
-                    num_patches_list=num_patches_list,
-                    question=prompt,
-                    generation_config=self.kwargs
-                )
-            except torch.cuda.OutOfMemoryError:
-                response = 'A'
-                torch.cuda.empty_cache()
+            response = self.model.chat(
+                self.tokenizer,
+                pixel_values=pixel_values,
+                num_patches_list=num_patches_list,
+                question=prompt,
+                generation_config=self.kwargs,
+                verbose=False
+            )
         return response
 
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)
-        print(f'Generating with {self.version}')
+        print(f'InternVL model version: {self.version}')
         if self.version in ['V1.1', 'V1.2']:
             return self.generate_v1_2(message, dataset)
         elif self.version == 'V1.5':
