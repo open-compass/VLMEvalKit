@@ -586,9 +586,9 @@ class IDEFICS3(BaseModel):
         #    prompt += '\Think step by step and explain your reasoning. Then, answer with the requested format."<end_of_utterance>\nAssistant: Let\'s think step by step.'
 
 
-        prompt += '<end_of_utterance>\nAssistant:'
-        if 'A.' in prompt and 'B.' in prompt:
-            prompt += ' Answer:'
+        #prompt += '<end_of_utterance>\nAssistant:'
+        #if 'A.' in prompt and 'B.' in prompt:
+        #    prompt += ' Answer:'
         return prompt, images
 
     def chat_inner(self, message, dataset=None):
