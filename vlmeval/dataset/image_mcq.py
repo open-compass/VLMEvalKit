@@ -84,7 +84,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
         'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
-        # Q-Bench1 
+        # Q-Bench1
         'Q-Bench1_VAL': '837bdb6cd2da571713543462815187b7',
         'Q-Bench1_TEST': '15e759bfd58c9d5f30b23a317d347153',
         # A-Bench
