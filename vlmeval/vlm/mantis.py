@@ -38,8 +38,7 @@ try:
     best_fit_attn_implementation = 'flash_attention_2'
 except ImportError:
     best_fit_attn_implementation = 'eager'
-
-
+    
 class Mantis(BaseModel):
     """
     Mantis Model
@@ -128,7 +127,6 @@ class Mantis(BaseModel):
             answer = answer.split('assistant\n')[1].strip()
         elif '<|end_header_id|>\n\n' in answer:
             answer = answer.split('<|end_header_id|>\n\n')[2].strip()
-
         if '</s>' in answer:
             answer = answer.split('</s>')[0].strip()
         elif '<|im_end|>' in answer:
