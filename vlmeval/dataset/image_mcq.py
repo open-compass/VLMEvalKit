@@ -82,7 +82,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
-        'AI2D_TEST_NO_MASK': '172721a86e8cf660bc6df8fb1f076b22',
+        'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
