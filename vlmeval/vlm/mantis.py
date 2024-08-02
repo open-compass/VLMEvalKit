@@ -37,11 +37,11 @@ class Mantis(BaseModel):
         except:
             warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git')
 
-        # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2". 
-        # Seems FA2 is not effective during inference: 
+        # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2".
+        # Seems FA2 is not effective during inference:
         # https://discuss.huggingface.co/t/flash-attention-has-no-effect-on-inference/73453/5
         # if is_flash_attn_2_available:
-        #     best_fit_attn_implementation = "flash_attention_2" 
+        #     best_fit_attn_implementation = "flash_attention_2"
         # flash_attn has a bug that says: ERROR Error query and key must have the same dtype in generating
 
         try:
@@ -162,7 +162,7 @@ class Mantis(BaseModel):
             prompt = [{'role': 'user', 'content': content}]
             prompt = self.processor.apply_chat_template(prompt, add_generation_prompt=True)
         else:
-            # Follow the Mantis code base to make sure they are consistent: 
+            # Follow the Mantis code base to make sure they are consistent:
             # https://github.com/TIGER-AI-Lab/Mantis/blob/main/mantis/models/mllava/utils.py#L33
             # Users don't need to define chat template as it is done here
             if 'llama-3' in self.model.language_model.name_or_path.lower():
@@ -187,7 +187,7 @@ class Mantis(BaseModel):
 
         inputs = self.processor(prompt, images, return_tensors='pt', truncation=True)
         # FIXME: Fuyu model would return a list instead of a pytorch tensor. This weird behavior needs fixing.
-        if 'image_patches' in inputs.keys():  
+        if 'image_patches' in inputs.keys():
             inputs['image_patches'] = inputs['image_patches'][0]
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
         output = self.model.generate(**inputs, **self.kwargs)
