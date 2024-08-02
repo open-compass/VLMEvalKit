@@ -209,7 +209,7 @@ class ImageMCQDataset(ImageBaseDataset):
         dump(acc, score_file)
 
         if dataset == 'AesBench_VAL':
-            warnings.info('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
+            warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
         return acc
