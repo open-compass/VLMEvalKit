@@ -128,6 +128,9 @@ class IDEFICS2(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 prompt += instruction
+        prompt += '<end_of_utterance>\nAssistant: Answer:'
+        print(prompt)
+        print("\n\n\n------------------\n\n\n")
         return prompt, images
 
     def build_prompt_mt(self, message):
