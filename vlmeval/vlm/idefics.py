@@ -567,11 +567,9 @@ class IDEFICS3(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 prompt += instruction.strip()
-        # CoT
-        prompt += '\Think step by step before giving your final answer as "Final answer: ..."<end_of_utterance>\nAssistant:'
-        #prompt += '<end_of_utterance>\nAssistant:'
-        #if 'A.' in prompt and 'B.' in prompt:
-        #    prompt += ' Answer:'
+        prompt += '<end_of_utterance>\nAssistant:'
+        if 'A.' in prompt and 'B.' in prompt:
+            prompt += ' Answer:'
         return prompt, images
 
     def chat_inner(self, message, dataset=None):
