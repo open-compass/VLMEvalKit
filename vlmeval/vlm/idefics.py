@@ -336,7 +336,7 @@ class IDEFICS3(BaseModel):
             model.eval()
             return tokenizer, model
         
-        PATH_MODEL = "/fsx/m4/experiments/local_experiment_dir/s3_async_temporary_checkpoint_folder/tr_309_308_ft_400/"
+        PATH_MODEL = "/fsx/m4/experiments/local_experiment_dir/tr_309_308_ft/opt_step-925/"
         self.tokenizer, self.model = load_model_and_tokenizer(path_model=PATH_MODEL)
 
         kwargs_default = {'max_new_tokens': 512}
