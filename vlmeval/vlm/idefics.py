@@ -402,7 +402,7 @@ class IDEFICS3(BaseModel):
         for msg in message:
             if msg['type'] == 'image':
                 img = load_image(msg['value'])
-                img = self.upscale_image(image=img, res_image_side=4*364)
+                img = self.upscale_image(image=img, res_image_side=3*364)
                 splitted_images_array, text_splitted_images = get_splitted_images_and_corresponding_text(
                     image=img,
                     vision_encoder_max_image_size=364,
