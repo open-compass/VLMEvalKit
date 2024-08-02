@@ -5,7 +5,7 @@ exclude: |
       vlmeval/config.py
   )
 repos:
-  - repo: https://mirror.ghproxy.com/https://github.com/PyCQA/flake8
+  - repo: /https://github.com/PyCQA/flake8
     rev: 5.0.4
     hooks:
       - id: flake8
@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: yapf
         args: ["--style={column_limit=120}"]
-  - repo: https://mirror.ghproxy.com/https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.1.0
     hooks:
       - id: trailing-whitespace
@@ -29,6 +29,3 @@ repos:
         args: ["--remove"]
       - id: mixed-line-ending
         args: ["--fix=lf"]
-      - id: end-of-file-fixer
-      - id: mixed-line-ending
-        args: [ '--fix=lf' ]
