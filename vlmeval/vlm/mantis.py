@@ -38,8 +38,10 @@ try:
     best_fit_attn_implementation = 'flash_attention_2'
 except ImportError:
     best_fit_attn_implementation = 'eager'
-    
+
 class Mantis(BaseModel):
+
+    
     """
     Mantis Model
     This implementation is adpated from the Llava model from llava.py and the Idefics model from idefics.py
