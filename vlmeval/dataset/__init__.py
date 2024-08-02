@@ -64,7 +64,7 @@ def build_dataset(dataset_name, **kwargs):
         return None
 
     if 'A' in data and 'B' in data:
-        if "image" in data or "image_path" in data:
+        if 'image' in data or 'image_path' in data:
             warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
             return CustomMCQDataset(dataset=dataset_name, **kwargs)
         else:
