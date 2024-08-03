@@ -9,6 +9,7 @@ from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, CustomVQADataset
 )
 from .mmbench_video import MMBenchVideo
+from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .utils import *
 from ..smp import *
@@ -25,11 +26,15 @@ VIDEO_DATASET = [
     MMBenchVideo, VideoMME
 ]
 
-CUSTOM_DATASET = [
-    CustomMCQDataset, CustomVQADataset,
+TEXT_DATASET = [
+    TextMCQDataset
 ]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + CUSTOM_DATASET
+CUSTOM_DATASET = [
+    CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
+]
+
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
@@ -42,7 +47,7 @@ def DATASET_TYPE(dataset):
 
 
 def build_dataset(dataset_name, **kwargs):
-    for cls in (IMAGE_DATASET + VIDEO_DATASET):
+    for cls in (IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET):
         if dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
@@ -59,8 +64,12 @@ def build_dataset(dataset_name, **kwargs):
         return None
 
     if 'A' in data and 'B' in data:
-        warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
-        return CustomMCQDataset(dataset=dataset_name, **kwargs)
+        if 'image' in data or 'image_path' in data:
+            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
+            return CustomMCQDataset(dataset=dataset_name, **kwargs)
+        else:
+            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ')
+            return CustomTextMCQDataset(dataset=dataset_name, **kwargs)
     else:
         warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ')
         return CustomVQADataset(dataset=dataset_name, **kwargs)
