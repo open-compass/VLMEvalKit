@@ -33,5 +33,6 @@ from .wemm import WeMM
 from .cambrian import Cambrian
 from .chameleon import Chameleon
 from .video_llm.video_llava import VideoLLaVA, VideoLLaVA_HF
+from .video_llm.videochat2 import VideoChat2_HD
 from .vila import VILA
 from .ovis import Ovis

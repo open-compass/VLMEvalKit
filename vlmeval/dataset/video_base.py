@@ -58,7 +58,7 @@ class VideoBaseDataset:
         vid = decord.VideoReader(vid_path)
         step_size = len(vid) / (num_frames + 1)
         indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-        images = [vid[i].asnumpy() for i in indices]
+        images = [vid[i].numpy() for i in indices]
         images = [Image.fromarray(arr) for arr in images]
         for im, pth in zip(images, frame_paths):
             if not osp.exists(pth):
