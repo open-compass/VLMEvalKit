@@ -52,6 +52,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
+        'TaskMeAnything_v1_ImageQA': 'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/blob/main/TaskMeAnything-v1-imageqa-random.tsv'
     }
 
     DATASET_MD5 = {
@@ -97,6 +98,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
+        'TaskMeAnything_v1_ImageQA': '14cce4225839c4b2dbc68cee86f173d7'
     }
 
     def build_prompt(self, line):
