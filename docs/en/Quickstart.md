@@ -33,7 +33,7 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   CW_API_KEY=
   SENSECHAT_AK=
   SENSECHAT_SK=
-  # You can also set a proxy for alling api models during the evaluation stage
+  # You can also set a proxy for calling api models during the evaluation stage
   EVAL_PROXY=
   ```
 
