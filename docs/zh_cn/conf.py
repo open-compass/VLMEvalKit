@@ -27,7 +27,7 @@ copyright = '2023, VLMEvalKit'
 author = 'VLMEvalKit Authors'
 
 # The full version, including alpha/beta/rc tags
-version_file = '../../opencompass/__init__.py'
+version_file = '../../vlmevalkit/__init__.py'
 
 
 def get_version():
@@ -120,7 +120,7 @@ html_js_files = [
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'opencompassdoc'
+htmlhelp_basename = 'vlmevalkitdoc'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -142,7 +142,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (root_doc, 'opencompass.tex', 'VLMEvalKit Documentation', author,
+    (root_doc, 'vlmevalkit.tex', 'VLMEvalKit Documentation', author,
      'manual'),
 ]
 
@@ -150,7 +150,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(root_doc, 'opencompass', 'VLMEvalKit Documentation', [author],
+man_pages = [(root_doc, 'vlmevalkit', 'VLMEvalKit Documentation', [author],
               1)]
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -159,7 +159,7 @@ man_pages = [(root_doc, 'opencompass', 'VLMEvalKit Documentation', [author],
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (root_doc, 'opencompass', 'VLMEvalKit Documentation', author,
+    (root_doc, 'vlmevalkit', 'VLMEvalKit Documentation', author,
      'VLMEvalKit Authors', 'AGI evaluation toolbox and benchmark.',
      'Miscellaneous'),
 ]
