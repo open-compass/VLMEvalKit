@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
 from vlmeval.smp import *
-from ..image_base import ImageBaseDataset
+from .image_base import ImageBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
