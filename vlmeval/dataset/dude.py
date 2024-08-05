@@ -39,8 +39,8 @@ class DUDE(ImageBaseDataset):
     TYPE = 'VQA'
 
     DATASET_URL = {
-        'DUDE': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE_DEV.tsv',
-        'DUDE_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE_DEV_MINI.tsv',
+        'DUDE': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE.tsv',
+        'DUDE_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE_MINI.tsv',
     }
     DATASET_MD5 = {
         'DUDE': '130d860d08206e1e407cd77150c10d88',
