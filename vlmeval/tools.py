@@ -73,7 +73,7 @@ models = {
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
     ] + list(wemm_series),
     'latest': ['paligemma-3b-mix-448'] + [x for x in llava_series if 'next' in x]
-    + list(chameleon_series) + list(ovis_series),
+    + list(chameleon_series) + list(ovis_series) + list(mantis_series),
     'api': list(api_models)
 }
 
