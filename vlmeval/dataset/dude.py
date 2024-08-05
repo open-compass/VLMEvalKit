@@ -53,6 +53,7 @@ class DUDE(ImageBaseDataset):
         'GPT4V_HIGH': (1, 1),
         'GPT4o': (1, 1),
         'GPT4o_HIGH': (1, 1),
+        'GPT4o_MINI': (1, 1),
         'XComposer2d5': (1, -1),
         'XComposer2_4KHD': (1, -1),
         'MiniCPM-Llama3-V-2_5': (1, 5),

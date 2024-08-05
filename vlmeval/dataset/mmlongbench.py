@@ -436,6 +436,7 @@ class MMLongBench(ImageBaseDataset):
         'GPT4V_HIGH': (1, 1),
         'GPT4o': (1, 1),
         'GPT4o_HIGH': (1, 1),
+        'GPT4o_MINI': (1, 1),
         'MiniCPM-Llama3-V-2_5': (1, 5),
         'InternVL-Chat-V1-5': (5, 2),
         'XComposer2_4KHD': (1, 5),
