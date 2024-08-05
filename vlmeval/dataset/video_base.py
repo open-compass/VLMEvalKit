@@ -1,6 +1,9 @@
 from abc import abstractmethod
 from ..smp import *
 
+def video_root_map(dataset):
+    return dataset
+
 
 class VideoBaseDataset:
 
@@ -8,29 +11,62 @@ class VideoBaseDataset:
 
     def __init__(self,
                  dataset='MMBench-Video',
-                 pack=False):
+                 pack=False, skip_novideo=True):
         try:
             import decord
         except:
             warnings.warn('Please install decord via `pip install decord`.')
 
-        self.dataset_name = dataset
-        ret = self.prepare_dataset(dataset)
-        assert ret is not None
-        lmu_root = LMUDataRoot()
-        self.frame_root = osp.join(lmu_root, 'images', dataset)
-        os.makedirs(self.frame_root, exist_ok=True)
-        self.frame_tmpl = 'frame-{}-of-{}.jpg'
+        # the init for previous two video dataset
+        if dataset in ['MMBench-Video', 'Video-MME']:
+            self.dataset_name = dataset
+            ret = self.prepare_dataset(dataset)
+            assert ret is not None
+            lmu_root = LMUDataRoot()
+            self.frame_root = osp.join(lmu_root, 'images', dataset)
+            os.makedirs(self.frame_root, exist_ok=True)
+            self.frame_tmpl = 'frame-{}-of-{}.jpg'
 
-        self.data_root = ret['root']
-        self.data_file = ret['data_file']
-        self.data = load(self.data_file)
+            self.data_root = ret['root']
+            self.data_file = ret['data_file']
+            self.data = load(self.data_file)
 
-        assert 'question' in self.data and 'video' in self.data
-        videos = list(set(self.data['video']))
-        videos.sort()
-        self.videos = videos
-        self.pack = pack
+            assert 'question' in self.data and 'video' in self.data
+            videos = list(set(self.data['video']))
+            videos.sort()
+            self.videos = videos
+            self.pack = pack
+
+        # dataset init without prepare_dataset, just like image_base
+        else:
+            lmu_root = LMUDataRoot()
+            # You can override this variable to save image files to a different directory
+            self.dataset_name = dataset
+            self.frame_root = osp.join(lmu_root, 'images', dataset)
+            self.frame_tmpl = 'frame-{}-of-{}.jpg'
+            data, data_root = self.load_data(dataset)
+            self.data_root = data_root
+            self.meta_only = True
+            self.skip_novideo = skip_novideo
+            if skip_novideo and 'video' in data:
+                data = data[~pd.isna(data['video'])]
+
+            data['index'] = [str(x) for x in data['index']]
+            data['index'] = [str(x) for x in data['index']]
+
+            if 'video' in data:
+                self.meta_only = False
+
+            if 'video_path' in data:
+                paths = [toliststr(x) for x in data['video_path']]
+                data['video_path'] = [x[0] if len(x) == 1 else x for x in paths]
+
+            if np.all([istype(x, int) for x in data['index']]):
+                data['index'] = [int(x) for x in data['index']]
+
+            self.data = data
+            self.post_build(dataset)
+
 
     def __len__(self):
         return len(self.videos) if self.pack else len(self.data)
@@ -43,6 +79,29 @@ class VideoBaseDataset:
         else:
             assert idx < len(self.data)
             return dict(self.data.iloc[idx])
+        
+    def load_data(self, dataset):
+        url = self.DATASET_URL[dataset]
+        file_md5 = self.DATASET_MD5[dataset]
+        return self.prepare_tsv(url, file_md5)
+    
+    def prepare_tsv(self, url, file_md5=None):
+        data_root = LMUDataRoot()
+        os.makedirs(data_root, exist_ok=True)
+        update_flag = False
+        file_name = url.split('/')[-1]
+        data_path = osp.join(data_root, file_name)
+        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
+            pass
+        else:
+            warnings.warn('The dataset tsv is not downloaded')
+            download_file(url, data_path)
+            update_flag = True
+        
+        return load(data_path), data_root
+
+    def post_build(self, dataset):
+        pass
 
     def frame_paths(self, video, num_frames=8):
         frame_root = osp.join(self.frame_root, video)
@@ -68,7 +127,8 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video', 'Video-MME']
+        return ['MMBench-Video', 'Video-MME'] + list(cls.DATASET_URL)
+    
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

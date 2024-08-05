@@ -11,6 +11,7 @@ from .image_vqa import (
 from .mmbench_video import MMBenchVideo
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
+from .video_mcq import VideoMCQDataset
 from .utils import *
 from ..smp import *
 
@@ -23,7 +24,7 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME
+    MMBenchVideo, VideoMME, VideoMCQDataset
 ]
 
 TEXT_DATASET = [
