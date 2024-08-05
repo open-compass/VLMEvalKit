@@ -23,16 +23,16 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-08-05]** We have supported a new evaluation strategy for [**AI2D**](https://allenai.org/data/diagrams), which do not mask the corresponding areas when choices are uppercase letters. Instead, the area is annotated by a rectangle contour. Set the dataset name to `AI2D_TEST_NO_MASK` to evaluate under this setting (The leaderboard now is still using the previous setting)
+- **[2024-08-05]** We have supported [**Mantis**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2), thanks to [**BrenchCC**](https://github.com/BrenchCC)🔥🔥🔥
+- **[2024-08-05]** We have supported [**Q-Bench**](https://github.com/Q-Future/Q-Bench) and [**A-Bench**](https://github.com/Q-Future/A-Bench), thanks to [**zzc-1998**](https://github.com/zzc-1998)🔥🔥🔥
 - **[2024-07-29]** We have supported [**Yi-Vision**](https://platform.lingyiwanwu.com)🔥🔥🔥
-- **[2024-07-27]** [**VLMEvalKit Technical Report**](https://www.arxiv.org/abs/2407.11691) has been accepted by ACMMM 24' OpenSource 🔥🔥🔥
+- **[2024-07-27]** [**VLMEvalKit Technical Report**](https://www.arxiv.org/abs/2407.11691) has been accepted by [**ACMMM 24' OpenSource**](https://2024.acmmm.org/open-source-software-competition) 🔥🔥🔥
 - **[2024-07-27]** We have supported [**MMDU**](https://liuziyu77.github.io/MMDU/), which is one of the first multi-turn & multi-image benchmark, thanks to [**Liuziyu77**](https://github.com/Liuziyu77/)🔥🔥🔥
 - **[2024-07-25]** We have supported [**VILA**](https://github.com/NVlabs/VILA/), thanks to [**amitbcp**](https://github.com/amitbcp), evaluation results coming soon🔥🔥🔥
 - **[2024-07-25]** We have supported [**Ovis1.5**](https://github.com/AIDC-AI/Ovis), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
 - **[2024-07-23]** We have supported [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, the first Video-LLM to be supported by our repository! Using [**this fork version**](https://github.com/FangXinyu-0913/Video-LLaVA) to install Video-LLaVA (**More Recommended**) or install [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) to use it!
 - **[2024-07-23]** We have supported [**Video-MME**](https://video-mme.github.io/), thanks to [**Yuhan Dai**](https://github.com/dirkiedai)🔥🔥🔥
-- **[2024-07-22]** We have supported [**MT-VQA**](https://github.com/bytedance/MTVQA), thanks to Jinghui Lu 🔥🔥🔥
-- **[2024-07-19]** We have supported [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/), evaluation results coming soon🔥🔥🔥
-- **[2024-07-19]** We have supported [**MathVision**](https://mathvision-cuhk.github.io), thanks to [**scikkk**](https://github.com/scikkk)🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -96,7 +96,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅🎞️ | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-v1_1-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
 | [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) 🚅 | [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)🚅 | [**WeMM**](https://github.com/scenarios/WeMM)🚅               |
 | [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    | [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) | [**LLaVA-Next-[Qwen-32B]**](https://huggingface.co/lmms-lab/llava-next-qwen-32b) 🎞️ | [**Chameleon-[7B/30B]**](https://huggingface.co/facebook/chameleon-7b)🚅🎞️ |
-| [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 | [**VILA1.5-[3B/8B/13B/40B]**](https://github.com/NVlabs/VILA/)🎞️ | [**Ovis1.5-[Llama3-8B/Gemma2-9B]**](https://github.com/AIDC-AI/Ovis) 🚅🎞 |  |
+| [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 | [**VILA1.5-[3B/8B/13B/40B]**](https://github.com/NVlabs/VILA/)🎞️ | [**Ovis1.5-[Llama3-8B/Gemma2-9B]**](https://github.com/AIDC-AI/Ovis) 🚅🎞️ | [**Mantis-8B-[siglip-llama3/clip-llama3/Idefics2/Fuyu]**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2) 🎞️ |
 
 🎞️: Support multiple images as inputs.
 
