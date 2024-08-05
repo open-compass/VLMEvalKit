@@ -31,9 +31,10 @@ version_file = '../../vlmeval/__init__.py'
 
 
 def get_version():
+    namespace = {}
     with open(version_file, 'r') as f:
-        exec(compile(f.read(), version_file, 'exec'))
-    return locals()['__version__']
+        exec(compile(f.read(), version_file, 'exec'), namespace)
+    return namespace['__version__']
 
 
 release = get_version()
