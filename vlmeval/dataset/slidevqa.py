@@ -107,7 +107,6 @@ class SlideVQA(ImageBaseDataset):
                 for img, im_name in zip(line['image'], line['image_path']):
                     path = osp.join(self.img_root, im_name)
                     if not read_ok(path):
-                        print(path)
                         decode_base64_to_image_file(img, path)
                     tgt_path.append(path)
             else:
