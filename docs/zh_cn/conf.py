@@ -12,6 +12,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import ast
 import subprocess
 import sys
 
@@ -31,10 +32,18 @@ version_file = '../../vlmeval/__init__.py'
 
 
 def get_version():
-    namespace = {}
     with open(version_file, 'r') as f:
-        exec(compile(f.read(), version_file, 'exec'), namespace)
-    return namespace['__version__']
+        file_content = f.read()
+    # Parse the file content into an abstract syntax tree (AST)
+    tree = ast.parse(file_content, filename=version_file)
+    
+    # Iterate through the body of the AST, looking for an assignment to __version__
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "__version__":
+                    return node.value.s
+    raise ValueError("__version__ not found")
 
 
 release = get_version()
