@@ -52,7 +52,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
-        'TaskMeAnything_v1_imageqa_random': 'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/blob/main/TaskMeAnything-v1-imageqa-random.tsv'
+        'TaskMeAnything_v1_imageqa_random': 'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
     }
 
     DATASET_MD5 = {
