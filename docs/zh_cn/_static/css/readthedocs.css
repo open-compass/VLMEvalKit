@@ -1,10 +1,10 @@
 .header-logo {
-    background-image: url("../image/logo.svg");
-    background-size: contain;
-    height: 150px;
-    width: 300px;
-    margin-top: -12px;
+  background-image: url("../image/logo.svg");
+  background-size: 275px 80px;
+  height: 80px;
+  width: 275px;
 }
+
 
 @media screen and (min-width: 1100px) {
   .header-logo {
