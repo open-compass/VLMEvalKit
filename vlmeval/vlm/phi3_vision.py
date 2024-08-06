@@ -8,7 +8,7 @@ from ..smp import *
 class Phi3Vision(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='microsoft/Phi-3-vision-128k-instruct', **kwargs):
         try:
@@ -24,13 +24,31 @@ class Phi3Vision(BaseModel):
         self.kwargs = kwargs
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-        image = Image.open(image_path).convert('RGB')
-        messages = [
-            {'role': 'user', 'content': f'<|image_1|>\n{prompt}'}
-        ]
+        messages = []
+        image_cnt = 1
+        image_list = []
+        for msg in message:
+            content = ''
+            # If message is just text in the conversation
+            if len(msg['content']) == 1 and msg['content'][0]['type'] == 'text':
+                msg_new = {'role': msg['role'], 'content': msg['content'][0]['value']}
+                messages.append(msg_new)
+                continue
+
+            # If both image & text is present
+            for x in msg['content']:
+                if x['type'] == 'text':
+                    content += x['value']
+                elif x['type'] == 'image':
+                    image = Image.open(x['value']).convert('RGB')
+                    content += f'<|image_{image_cnt}|>\n'
+                    image_list.append(image)
+                    image_cnt += 1
+            msg_new = {'role': msg['role'], 'content': content}
+            messages.append(msg_new)
+
         prompt = self.processor.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = self.processor(prompt, [image], return_tensors='pt').to('cuda')
+        inputs = self.processor(prompt, image_list, return_tensors='pt').to('cuda')
 
         generation_args = {
             'max_new_tokens': 500,
