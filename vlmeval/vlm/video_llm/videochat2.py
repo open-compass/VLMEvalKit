@@ -8,6 +8,7 @@ import os
 import requests
 import shutil
 import huggingface_hub
+from transformers import StoppingCriteria, StoppingCriteriaList
 from huggingface_hub import snapshot_download
 from PIL import Image
 from torchvision.transforms import PILToTensor
@@ -16,6 +17,42 @@ from peft import get_peft_model, LoraConfig, TaskType
 from ..base import BaseModel
 from ...smp import *
 from ...dataset import DATASET_TYPE
+
+def get_prompt(conv):
+    ret = conv.system + conv.sep
+    for role, message in conv.messages:
+        if message:
+            ret += role + " " + message + " " + conv.sep
+        else:
+            ret += role
+    return ret
+
+
+def get_prompt2(conv):
+    ret = conv.system + conv.sep
+    count = 0
+    for role, message in conv.messages:
+        count += 1
+        if count == len(conv.messages):
+            ret += role + " " + message
+        else:
+            if message:
+                ret += role + " " + message + " " + conv.sep
+            else:
+                ret += role
+    return ret
+
+
+class StoppingCriteriaSub(StoppingCriteria):
+    def __init__(self, stops=[], encounters=1):
+        super().__init__()
+        self.stops = stops
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor):
+        for stop in self.stops:
+            if torch.all((stop == input_ids[0][-len(stop):])).item():
+                return True
+        return False
+
 
 class VideoChat2_HD(BaseModel):
     INSTALL_REQ = True
@@ -40,6 +77,7 @@ Based on your observations, select the best option that accurately addresses the
         sys.path.append(osp.join(root,'video_chat2'))
         try:
             from utils.config import Config
+            from utils.easydict import EasyDict
             from models import VideoChat2_it_hd_mistral
             from dataset.hd_utils import HD_transform_padding, HD_transform_no_padding
         except:
@@ -199,20 +237,77 @@ Based on your observations, select the best option that accurately addresses the
     def ask(self, text, conv):
         conv.messages.append([conv.roles[0], text])
 
-    def infer_mme(
-        self, data_sample, system="",
+    def get_context_emb(self, conv, model, img_list, answer_prompt=None, print_res=False):
+        if answer_prompt:
+            prompt = get_prompt2(conv)
+        else:
+            prompt = get_prompt(conv)
+        if print_res:
+            print(prompt)
+        if '<VideoHere>' in prompt:
+            prompt_segs = prompt.split('<VideoHere>')
+        else:
+            prompt_segs = prompt.split('<ImageHere>')
+        assert len(prompt_segs) == len(img_list) + 1, "Unmatched numbers of image placeholders and images."
+        with torch.no_grad():
+            seg_tokens = [
+                model.mistral_tokenizer(
+                    seg, return_tensors="pt", add_special_tokens=i == 0).to("cuda").input_ids
+                # only add bos to the first seg
+                for i, seg in enumerate(prompt_segs)
+            ]
+            seg_embs = [model.mistral_model.base_model.model.model.embed_tokens(seg_t) for seg_t in seg_tokens]
+    #         seg_embs = [model.mistral_model.model.embed_tokens(seg_t) for seg_t in seg_tokens]
+        mixed_embs = [emb for pair in zip(seg_embs[:-1], img_list) for emb in pair] + [seg_embs[-1]]
+        mixed_embs = torch.cat(mixed_embs, dim=1)
+        return mixed_embs
+
+    def answer(self, conv, model, img_list, do_sample=True, max_new_tokens=200, num_beams=1, min_length=1, top_p=0.9,
+               repetition_penalty=1.0, length_penalty=1, temperature=1.0, answer_prompt=None, print_res=False):
+        stop_words_ids = [
+            torch.tensor([2]).to("cuda"),
+            torch.tensor([29871, 2]).to("cuda")]  # '</s>' can be encoded in two different ways.
+        stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
+
+        conv.messages.append([conv.roles[1], answer_prompt])
+        embs = self.get_context_emb(conv, model, img_list, answer_prompt=answer_prompt, print_res=print_res)
+        with torch.no_grad():
+            outputs = self.model.mistral_model.generate(
+                inputs_embeds=embs,
+                max_new_tokens=max_new_tokens,
+                stopping_criteria=stopping_criteria,
+                num_beams=num_beams,
+                do_sample=do_sample,
+                min_length=min_length,
+                top_p=top_p,
+                repetition_penalty=repetition_penalty,
+                length_penalty=length_penalty,
+                temperature=temperature,
+            )
+        output_token = outputs[0]
+        if output_token[0] == 0:  # the model might output a unknow token <unk> at the beginning. remove it
+            output_token = output_token[1:]
+        if output_token[0] == 1:  # some users find that there is a start token <s> at the beginning. remove it
+            output_token = output_token[1:]
+        output_text = model.mistral_tokenizer.decode(output_token, add_special_tokens=False)
+        output_text = output_text.split('</s>')[0]  # remove the stop sign </s>
+    #     output_text = output_text.split('[/INST]')[-1].strip()
+        conv.messages[-1][1] = output_text + '</s>'
+        return output_text, output_token.cpu().numpy()
+
+    def infer_data(
+        self, data_sample, system=" ",
         question_prompt='', # add in the end of question
         answer_prompt=None, # add in the begining of answer
         return_prompt='',  # add in the begining of return message
         system_q=False, # whether add question in the system prompt for QFormer
         print_res=True,
-        system_llm=False,
-        add_subtitle=False,
+        system_llm=False
     ):
         assert system_q == False, "do not support system_q now"
         video = data_sample["video"]
         T_, C, H, W = video.shape
-        video = video.reshape(1, T_, C, H, W).to("cuda:0")
+        video = video.reshape(1, T_, C, H, W).to("cuda")
 
         video_list = []
         with torch.no_grad():
@@ -221,48 +316,84 @@ Based on your observations, select the best option that accurately addresses the
             else:
                 video_emb, _, _ = self.model.encode_img(video, system)
         video_list.append(video_emb[0])
+        question = data_sample['question']
 
-        pred_list = []
-        gt_list = []
-        for idx, qa in enumerate(data_sample['qa_list']):
-            print(f"----------qa_{idx}---------", flush=True)
-            chat = EasyDict({
-                "system": system,
-                "roles": ("[INST]", "[/INST]"),
-                "messages": [],
-                "sep": ""
-            })
+        from utils.easydict import EasyDict
+        chat = EasyDict({
+            "system": system,
+            "roles": ("[INST]", "[/INST]"),
+            "messages": [],
+            "sep": ""
+        })
 
-            if add_subtitle:
-                if data_sample['subtitle'] != '':
-                    subtitle = f"This video's subtitles are listed below: {data_sample['subtitle']}"
-                    chat.messages.append([chat.roles[0], f"{subtitle}\n<Video><VideoHere></Video> [/INST]"])
-                else:
-                    chat.messages.append([chat.roles[0], f"<Video><VideoHere></Video> [/INST]"])
-            else:
-                chat.messages.append([chat.roles[0], f"<Video><VideoHere></Video> [/INST]"])
+        if data_sample['subtitle'] != '':
+            subtitle = f"This video's subtitles are listed below: {data_sample['subtitle']}"
+            chat.messages.append([chat.roles[0], f"{subtitle}\n<Video><VideoHere></Video> [/INST]"])
+        else:
+            chat.messages.append([chat.roles[0], f"<Video><VideoHere></Video> [/INST]"])
 
-            if system_llm:
-                prompt = system + qa[0] + question_prompt
-            else:
-                prompt = qa[0] + question_prompt
+        if system_llm:
+            prompt = system + question + question_prompt
+        else:
+            prompt = question + question_prompt
 
-            self.ask(prompt, chat)
+        self.ask(prompt, chat)
 
-            llm_message = answer(
-                conv=chat, model=self.model, do_sample=False,
-                img_list=video_list, max_new_tokens=100,
-                answer_prompt=answer_prompt, print_res=print_res
-            )[0]
-            # remove potential explanation
-            llm_message = return_prompt + llm_message.strip().split('\n')[0]
-            print(f"Pred: {llm_message}", flush=True)
-            print(f"GT: {qa[1]}", flush=True)
-            pred_list.append(llm_message[1])
-            gt_list.append(qa[1][1])
-        return pred_list, gt_list
+        llm_message = self.answer(
+            conv=chat, model=self.model, do_sample=False,
+            img_list=video_list, max_new_tokens=100,
+            answer_prompt=answer_prompt, print_res=print_res
+        )[0]
+        # remove potential explanation
+        llm_message = return_prompt + llm_message.strip().split('\n')[0]
+
+        return llm_message[1]
+
+    def qa_template(self, data):
+        question = data.split('Answer:')[0].split('\n')[0] + '\n'
+        question += "Options:\n"
+        choices = data.split('Answer:')[0].split('\n')[1:]
+        choices = [item for item in choices if item != '']  # remove blank space
+        for idx, c in enumerate(choices):
+            cur_choice, cur_text = c[0], c[3:]
+            question += f"({cur_choice}) {cur_text}\n"
+        question = question.rstrip()
+        return question
+
+    def split_subtitle(self, data):
+        if 'This video\'s subtitles are listed below' in data:
+            # 找到subtitle的起始和结束位置
+            start_marker = "This video's subtitles are listed below:"
+            end_marker = "Select the best answer to the following multiple-choice question based on the video."
+
+            start_index = data.find(start_marker) + len(start_marker)
+            end_index = data.find(end_marker)
+
+            # 提取subtitle部分
+            subtitle = data[start_index:end_index].strip()
+            return subtitle
+        else:
+            return ''
 
     def generate_inner(self, message, dataset=None):
-        question, video = self.message_to_promptvideo(message)
-        imgs = self.read_video(video)
+        _, video = self.message_to_promptvideo(message)
+        torch_imgs = self.read_video(video)
+        subtitle = self.split_subtitle(message[-2]['value'])
+        question = self.qa_template(message[-1]['value'])
+        example = {
+            'subtitle': subtitle,
+            'video': torch_imgs,
+            'question': question
+        }
+        pred_option = self.infer_data(
+            example,
+            " ",
+            question_prompt="\nOnly give the best option.",
+            answer_prompt="Best option:(",
+            return_prompt='(',
+            system_q=False,
+            print_res=False,
+            system_llm=True
+        )
+        return pred_option
 
