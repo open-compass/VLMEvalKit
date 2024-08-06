@@ -23,6 +23,7 @@
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
+- **[2024-08-06]** 支持了 [**TaskMeAnything ImageQA-Random Dataset**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random), 感谢 [**weikaih04**](https://github.com/weikaih04)🔥🔥🔥
 - **[2024-08-05]** 我们为 [**AI2D**](https://allenai.org/data/diagrams) 支持了一种新的测试方式，在这种方式下，当选项是大写字母时，对应区域并不会被覆盖掉。相反，我们用矩形轮廓来标注对应区域。使用数据集名称 `AI2D_TEST_NO_MASK` 以在这种新设定下评测 (当前榜单上 AI2D 的性能仍使用旧设定得到)
 - **[2024-08-05]** 支持了 [**Mantis**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2), 感谢 [**BrenchCC**](https://github.com/BrenchCC)🔥🔥🔥
 - **[2024-08-05]** 支持了 [**Q-Bench**](https://github.com/Q-Future/Q-Bench) 和 [**A-Bench**](https://github.com/Q-Future/A-Bench), 感谢 [**zzc-1998**](https://github.com/zzc-1998)🔥🔥🔥
@@ -32,7 +33,6 @@
 - **[2024-07-25]** 支持了 [**VILA**](https://github.com/NVlabs/VILA/), 感谢 [**amitbcp**](https://github.com/amitbcp), 评测结果很快到来 🔥🔥🔥
 - **[2024-07-25]** 支持了 [**Ovis1.5**](https://github.com/AIDC-AI/Ovis), 感谢 [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
 - **[2024-07-23]** 支持了 [**Video-LLaVA**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🔥🔥🔥, 我们的仓库支持的首个视频多模态大模型! 使用 [**这一分支版本**](https://github.com/FangXinyu-0913/Video-LLaVA) 安装 Video-LLaVA (**更推荐**) 或安装 [**transformers**](https://huggingface.co/docs/transformers/v4.42.0/en/model_doc/video_llava) 来使用它!
-- **[2024-07-22]** 支持了 [**Video-MME**](https://video-mme.github.io/), 感谢 [**Yuhan Dai**](https://github.com/dirkiedai) 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -61,6 +61,7 @@
 | [**BLINK**](https://zeyofu.github.io/blink/) | BLINK | MCQ | [**MathVision**](https://mathvision-cuhk.github.io)+ | MathVision<br>MathVision_MINI | VQA |
 | [**MT-VQA**](https://github.com/bytedance/MTVQA)+ | MTVQA_TEST | VQA | [**MMDU**](https://liuziyu77.github.io/MMDU/)+ | MMDU | VQA (multi-turn) |
 | [**Q-Bench1**](https://github.com/Q-Future/Q-Bench)+ | Q-Bench1_[VAL/TEST] | MCQ | [**A-Bench**](https://github.com/Q-Future/A-Bench)+ | A-Bench_[VAL/TEST] | MCQ |
+| [**TaskMeAnything ImageQA Random**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random)+ | TaskMeAnything_v1_imageqa_random | MCQ  | | | |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
