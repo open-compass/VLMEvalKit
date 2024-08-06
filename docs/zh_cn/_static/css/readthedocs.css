@@ -1,8 +1,8 @@
 .header-logo {
     background-image: url("../image/logo.svg");
-    background-size: 275px 120px;
+    background-size: 300px 120px;
     height: 120px;
-    width: 275px;
+    width: 300px;
     margin-top: -12px;
 }
 
