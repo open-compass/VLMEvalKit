@@ -156,4 +156,10 @@ cython_debug/
 images/
 
 scripts/*ttf
-.historycache_dir/*
+.history
+cache_dir/*
+Chat-Univi/*
+llama-vid/*
+MMBenchVideo/*
+Chat-UniVi/*
+
