@@ -1,17 +1,15 @@
 from abc import abstractmethod
 from ..smp import *
 
+
 def video_root_map(dataset):
     return dataset
 
 
 class VideoBaseDataset:
-
     MODALITY = 'VIDEO'
 
-    def __init__(self,
-                 dataset='MMBench-Video',
-                 pack=False, skip_novideo=True):
+    def __init__(self, dataset='MMBench-Video', pack=False, skip_novideo=True):
         try:
             import decord
         except:
@@ -67,7 +65,6 @@ class VideoBaseDataset:
             self.data = data
             self.post_build(dataset)
 
-
     def __len__(self):
         return len(self.videos) if self.pack else len(self.data)
 
@@ -79,16 +76,15 @@ class VideoBaseDataset:
         else:
             assert idx < len(self.data)
             return dict(self.data.iloc[idx])
-        
+
     def load_data(self, dataset):
         url = self.DATASET_URL[dataset]
         file_md5 = self.DATASET_MD5[dataset]
         return self.prepare_tsv(url, file_md5)
-    
+
     def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
-        update_flag = False
         file_name = url.split('/')[-1]
         data_path = osp.join(data_root, file_name)
         if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
@@ -96,8 +92,6 @@ class VideoBaseDataset:
         else:
             warnings.warn('The dataset tsv is not downloaded')
             download_file(url, data_path)
-            update_flag = True
-        
         return load(data_path), data_root
 
     def post_build(self, dataset):
@@ -128,7 +122,6 @@ class VideoBaseDataset:
     @classmethod
     def supported_datasets(cls):
         return ['MMBench-Video', 'Video-MME'] + list(cls.DATASET_URL)
-    
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

@@ -15,18 +15,20 @@ def combine_images(self):
 
 
 class VideoMCQDataset(VideoBaseDataset):
-    
     TYPE = 'MCQ'
 
     DATASET_URL = {
         # TaskMeAnything_v1_videoqa
-        'TaskMeAnything_v1_videoqa_random': 'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-videoqa-random/resolve/main/TaskMeAnything-v1-videoqa-random.tsv'
+        'TaskMeAnything_v1_videoqa_random': (
+            'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-videoqa-random/'
+            'resolve/main/TaskMeAnything-v1-videoqa-random.tsv'
+        )
         # Other Benchmarks
     }
 
     DATASET_MD5 = {
         # TaskMeAnything_v1_videoqa
-        'TaskMeAnything_v1_videoqa_random': "d18394a66dd476f0ff7b92bb9c300aeb"
+        'TaskMeAnything_v1_videoqa_random': 'd18394a66dd476f0ff7b92bb9c300aeb'
         # Other Benchmarks
     }
 
@@ -37,12 +39,11 @@ class VideoMCQDataset(VideoBaseDataset):
             f.write(base64.b64decode(base64_string))
         return video_name, video_path
 
-    
-    def build_prompt(self, line, num_frames: int, video_llm: bool, is_combine_images: bool=False):
+    def build_prompt(self, line, num_frames: int, video_llm: bool, is_combine_images: bool = False):
         # if line is an index, get the line from the data
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         # the video stored in data should be a binary stream format
         video_name, video_path = self.base64_to_mp4(line['video'])
         message = []
@@ -51,23 +52,20 @@ class VideoMCQDataset(VideoBaseDataset):
             message.append(dict(type='video', value=video_path))
         elif is_combine_images:
             # combine images means that combine all the frames into one image, instead of provide a sequences of image.
-            # This is useful for some models that only accept one image as input. 
-            # And I was surprised to find that most of the time, ImageQA models perform better with a combined image instead of a sequence of frames.
+            # This is useful for some models that only accept one image as input.
+            # And I was surprised to find that most of the time, ImageQA models perform better
+            # with a combined image instead of a sequence of frames.
             frame_paths = self.save_video_frames(video_name, num_frames)
             combined_image = combine_images(frame_paths)
             message.append(dict(type='image', value=combined_image))
-        else: 
+        else:
             frame_paths = self.save_video_frames(video_name, num_frames)
             for im in frame_paths:
                 message.append(dict(type='image', value=im))
-        
+
         # setup default prompt for MCQ
         question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
+        options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
         options_prompt = 'Options:\n'
         for key, item in options.items():
             options_prompt += f'{key}. {item}\n'
@@ -81,7 +79,7 @@ class VideoMCQDataset(VideoBaseDataset):
             prompt += 'Please select the correct answer from the options above. \n'
         message.append(dict(type='text', value=prompt))
         return message
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             mcq_circular_eval,
@@ -95,7 +93,6 @@ class VideoMCQDataset(VideoBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         circular = False
-        
 
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
@@ -128,9 +125,7 @@ class VideoMCQDataset(VideoBaseDataset):
         meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
         data_map = {x: y for x, y in zip(data['index'], data['question'])}
         for k in data_map:
-            assert k in meta_q_map, (
-                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
-            )
+            assert k in meta_q_map, f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
 
         if circular:
             data = mcq_circular_eval(model, data, meta, nproc, result_file, self.dataset_name)
