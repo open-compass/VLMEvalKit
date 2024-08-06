@@ -26,7 +26,7 @@ class VideoMCQDataset(VideoBaseDataset):
 
     DATASET_MD5 = {
         # TaskMeAnything_v1_videoqa
-        'TaskMeAnything_v1_videoqa_random': "627cb1409a98d3cc4f28928c2e0efdde"
+        'TaskMeAnything_v1_videoqa_random': "d18394a66dd476f0ff7b92bb9c300aeb"
         # Other Benchmarks
     }
 
