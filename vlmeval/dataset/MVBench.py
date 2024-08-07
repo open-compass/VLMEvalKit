@@ -24,10 +24,9 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 class MVBench(VideoBaseDataset):
 
     MD5 = 'ae2a2607e2f8618155709220c6e927a6'
-    SYS = """
-Carefully watch the video and pay attention to the cause and sequence of events, \
+    SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
-Based on your observations, select the best option that accurately addresses the question.\n
+Based on your observations, select the best option that accurately addresses the question.
 """
 
     TYPE = 'MCQ'
@@ -309,11 +308,10 @@ Based on your observations, select the best option that accurately addresses the
             line = self.data.iloc[line]
 
         question, answer = self.qa_template(line)
-        text_prompt = self.SYS + question + '\nOnly give the best option.'
-        message = [dict(type='text', value=text_prompt)]
+        message = [dict(type='text', value=self.SYS)]
+        message.append(dict(type='text', value=question))
         if video_llm:
-            with logging.disable(logging.CRITICAL):
-                new_video_path = self.load_into_video_and_process(line)
+            new_video_path = self.load_into_video_and_process(line)
             message.append(dict(type='video', value=new_video_path))
         else:
             bound = None
@@ -329,7 +327,7 @@ Based on your observations, select the best option that accurately addresses the
             img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
-
+        message.append(dict(type='text', value='\nOnly give the best option.'))
         message.append(dict(type='text', value='Best option:('))
         return message
 
@@ -382,10 +380,9 @@ Based on your observations, select the best option that accurately addresses the
 class MVBench_MP4(VideoBaseDataset):
 
     MP4_MD5 = '39fe4899efcb87d3ce31c6b7cd51a482'
-    SYS = """
-Carefully watch the video and pay attention to the cause and sequence of events, \
+    SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
-Based on your observations, select the best option that accurately addresses the question.\n
+Based on your observations, select the best option that accurately addresses the question.
 """
     TYPE = 'MCQ'
 
@@ -518,8 +515,6 @@ Based on your observations, select the best option that accurately addresses the
             line = self.data.iloc[line]
 
         question, answer = self.qa_template(line)
-        # text_prompt = self.SYS + question + '\nOnly give the best option.'
-        # message = [dict(type='text', value=text_prompt)]
         message = [dict(type='text', value=self.SYS)]
         message.append(dict(type='text', value=question))
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
@@ -532,7 +527,8 @@ Based on your observations, select the best option that accurately addresses the
             img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
-
+        message.append(dict(type='text', value='\nOnly give the best option.'))
+        message.append(dict(type='text', value='Best option:('))
         return message
 
     @classmethod
