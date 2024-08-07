@@ -194,7 +194,7 @@ def isfloat(num):
 
 def get_font():
     try:
-        truetype_url = 'https://huggingface.co/internlm/internlm-xcomposer2d5-7b/resolve/main/SimHei.ttf?download=true'
+        truetype_url = 'http://opencompass.openxlab.space/utils/Fonts/SimHei.ttf'
         ff = urlopen(truetype_url)
         font = ImageFont.truetype(ff, size=40)
     except:
