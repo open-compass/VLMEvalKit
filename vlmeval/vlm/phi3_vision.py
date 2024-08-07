@@ -24,32 +24,21 @@ class Phi3Vision(BaseModel):
         self.kwargs = kwargs
 
     def generate_inner(self, message, dataset=None):
-        messages = []
-        image_cnt = 1
-        image_list = []
-        for msg in message:
-            content = ''
-            # If message is just text in the conversation
-            if len(msg['content']) == 1 and msg['content'][0]['type'] == 'text':
-                msg_new = {'role': msg['role'], 'content': msg['content'][0]['value']}
-                messages.append(msg_new)
-                continue
+        content = []
+        image_paths = []
 
-            # If both image & text is present
-            for x in msg['content']:
-                if x['type'] == 'text':
-                    content += x['value']
-                elif x['type'] == 'image':
-                    image = Image.open(x['value']).convert('RGB')
-                    content += f'<|image_{image_cnt}|>\n'
-                    image_list.append(image)
-                    image_cnt += 1
-            msg_new = {'role': msg['role'], 'content': content}
-            messages.append(msg_new)
+        for x in message:
+            if x['type'] == 'text':
+                content.append(x['value'])
+            elif x['type'] == 'image':
+                image_index = len(image_paths) + 1
+                image_paths.append(x['value'])
+                content.append(f'\n[image_{image_index}]')
 
-        prompt = self.processor.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = self.processor(prompt, image_list, return_tensors='pt').to('cuda')
-
+        msgs = [{'role': 'user', 'content': ''.join(content)}]
+        prompt = self.processor.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        images_list = [Image.open(path).convert('RGB') for path in image_paths]
+        inputs = self.processor(prompt, images_list, return_tensors='pt').to('cuda')
         generation_args = {
             'max_new_tokens': 500,
             'temperature': 0.0,
