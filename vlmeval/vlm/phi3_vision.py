@@ -33,7 +33,7 @@ class Phi3Vision(BaseModel):
             elif x['type'] == 'image':
                 image_index = len(image_paths) + 1
                 image_paths.append(x['value'])
-                content.append(f'\n[image_{image_index}]')
+                content.append(f'<|image_{image_index}|>')
 
         msgs = [{'role': 'user', 'content': ''.join(content)}]
         prompt = self.processor.tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
