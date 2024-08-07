@@ -73,6 +73,18 @@ class DUDE(ImageBaseDataset):
         self.concat_num = concat_num
         self.column_num = column_num
 
+    def prepare_tsv(self, url, file_md5=None):
+        data_root = LMUDataRoot()
+        os.makedirs(data_root, exist_ok=True)
+        file_name = url.split('/')[-1]
+        data_path = osp.join(data_root, file_name)
+        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
+            pass
+        else:
+            warnings.warn('The dataset tsv is not downloaded')
+            download_file(url, data_path)
+        return load(data_path)
+
     def dump_image(self, origin_line):
         os.makedirs(self.img_root, exist_ok=True)
         try:
