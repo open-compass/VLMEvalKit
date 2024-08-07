@@ -44,7 +44,6 @@ def main():
 
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
-
     if args.retry is not None:
         for k, v in supported_VLM.items():
             if hasattr(v, 'keywords') and 'retry' in v.keywords:
@@ -89,6 +88,9 @@ def main():
                 continue
 
             result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+            if dataset_name in ['TaskMeAnything_v1_videoqa_random']:
+                packstr = 'pack' if args.pack else 'nopack'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
