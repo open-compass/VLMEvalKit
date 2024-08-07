@@ -303,7 +303,7 @@ class MiniCPM_V_2_6(BaseModel):
             return False
 
     def use_upsize(self, dataset):
-        if listinstr(['MMVet', 'MMBench', 'MMStar', 'AI2D'], dataset):
+        if listinstr(['MMVet', 'MMBench', 'MMStar', 'AI2D', 'OCRBench'], dataset):
             return True
         else:
             return False
