@@ -87,7 +87,7 @@ SKIP_MODELS = [
     'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
     'llava_next_72b', 'llava_next_110b', 'MiniCPM-V', 'sharecaptioner', 'XComposer',
     'VisualGLM_6b', 'idefics_9b_instruct', 'idefics_80b_instruct',
-    'mPLUG-Owl2', 'MMAlaya', 'OmniLMM_12B', 'emu2_chat'
+    'mPLUG-Owl2', 'MMAlaya', 'OmniLMM_12B', 'emu2_chat', 'VXVERSE'
 ] + list(minigpt4_series) + list(instructblip_series) + list(xtuner_series)
 + list(chameleon_series) + list(vila_series)
 
