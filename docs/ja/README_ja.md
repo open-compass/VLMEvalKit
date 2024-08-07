@@ -6,7 +6,7 @@
 
 [![][github-contributors-shield]][github-contributors-link] • [![][github-forks-shield]][github-forks-link] • [![][github-stars-shield]][github-stars-link] • [![][github-issues-shield]][github-issues-link] • [![][github-license-shield]][github-license-link]
 
-[English](/README.md) | [简体中文](/docs/zh_cn/README_zh-CN.md) | 日本語
+[English](/README.md) | [简体中文](/docs/zh-CN/README_zh-CN.md) | 日本語
 
 <a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass Learderboard </a> •
 <a href="#-datasets-models-and-evaluation-results">📊Datasets & Models </a> •
