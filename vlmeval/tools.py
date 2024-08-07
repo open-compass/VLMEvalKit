@@ -70,7 +70,7 @@ models = {
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
     '4.40.0': [
-        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
+        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
     'latest': ['paligemma-3b-mix-448'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),
@@ -356,10 +356,15 @@ def RUN(lvl, model):
         logger.info(f'Running {m} on {datasets}')
         exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
         if m not in models['api']:
-            env = '433'
+            env = None
+            env = 'latest' if m in models['latest'] else env
+            env = '433' if m in models['4.33.0'] else env
             env = '437' if m in models['4.37.0'] else env
             env = '440' if m in models['4.40.0'] else env
-            env = 'latest' if m in models['latest'] else env
+            if env is None:
+                # Not found, default to latest
+                env = 'latest'
+                logger.warning(f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
             pth = get_env(env)
             if pth is not None:
                 exe = osp.join(pth, 'bin', exe)
@@ -439,8 +444,12 @@ def cli():
         elif args[0].lower() == 'run':
             assert len(args) >= 2
             lvl = args[1]
-            model = args[2] if len(args) > 2 else 'all'
-            RUN(lvl, model)
+            if len(args) == 2:
+                model = 'all'
+                RUN(lvl, model)
+            else:
+                for model in args[2:]:
+                    RUN(lvl, model)
         elif args[0].lower() == 'eval':
             assert len(args) == 3
             dataset, data_file = args[1], args[2]
