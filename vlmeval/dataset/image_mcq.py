@@ -103,7 +103,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
-        'TaskMeAnything_v1_imageqa_random': '93b7290b447ef947f3b3abae5ad4bc1b'
+        'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889'
     }
 
     def build_prompt(self, line):

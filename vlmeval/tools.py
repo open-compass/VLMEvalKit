@@ -79,14 +79,17 @@ models = {
 
 # SKIP_MODELS will be skipped in report_missing and run APIs
 SKIP_MODELS = [
-    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH', 'GPT4V',
-    'flamingov2', 'MiniGPT-4-v1-7B', 'MiniGPT-4-v2', 'PandaGPT_13B',
+    'MGM_7B', 'GPT4V_HIGH', 'GPT4V', 'flamingov2', 'PandaGPT_13B',
     'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
+    'llava_v1_7b', 'sharegpt4v_7b', 'sharegpt4v_13b',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
     'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
-    'llava_next_72b', 'llava_next_110b', 'llava_next_qwen_32b',
-] + list(vila_series)
+    'llava_next_72b', 'llava_next_110b', 'MiniCPM-V', 'sharecaptioner', 'XComposer',
+    'VisualGLM_6b', 'idefics_9b_instruct', 'idefics_80b_instruct',
+    'mPLUG-Owl2', 'MMAlaya', 'OmniLMM_12B', 'emu2_chat', 'VXVERSE'
+] + list(minigpt4_series) + list(instructblip_series) + list(xtuner_series)
++ list(chameleon_series) + list(vila_series)
 
 LARGE_MODELS = [
     'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
