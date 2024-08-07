@@ -68,7 +68,7 @@ def main():
 
         for _, dataset_name in enumerate(args.data):
             dataset_kwargs = {}
-            if dataset_name == 'MMLongBench_DOC':
+            if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
                 dataset_kwargs['model'] = model_name
             if dataset_name == 'MMBench-Video':
                 dataset_kwargs['pack'] = args.pack
@@ -155,7 +155,7 @@ def main():
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
-                elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+                elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4o'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
