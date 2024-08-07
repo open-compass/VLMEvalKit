@@ -199,7 +199,7 @@ def build_device_map(model, default_map=None, no_split=None, alpha=0.97, beta=0.
 
     num_gpus = total_num_gpus // world_size
     memory_map = {}
-    per_gpu_mem = 45 * alpha
+    per_gpu_mem = get_memory() * alpha
     memory_map.update({rank: f'{beta * per_gpu_mem:.2f}GiB'})
     for gpu_id in range(1, num_gpus):
         memory_map.update({rank + gpu_id * world_size: f'{per_gpu_mem:.2f}GiB'})
