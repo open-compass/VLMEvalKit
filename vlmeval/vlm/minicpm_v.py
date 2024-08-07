@@ -451,4 +451,3 @@ class MiniCPM_V_2_6(BaseModel):
             res = res[0]
 
         return res
-    
