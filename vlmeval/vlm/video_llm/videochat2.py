@@ -59,12 +59,6 @@ class VideoChat2_HD(BaseModel):
     INTERLEAVE = True
     VIDEO_LLM = True
 
-    SYS = """
-Carefully watch the video and pay attention to the cause and sequence of events, \
-the detail and movement of objects, and the action and pose of persons. \
-Based on your observations, select the best option that accurately addresses the question.\n
-"""
-
     def __init__(self, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B', root='./Ask-Anything', config_file='./configs/videochat2_hd.json', **kwargs):
         self.config_file = config_file
         self.root = root
@@ -272,7 +266,7 @@ Based on your observations, select the best option that accurately addresses the
         conv.messages.append([conv.roles[1], answer_prompt])
         embs = self.get_context_emb(conv, model, img_list, answer_prompt=answer_prompt, print_res=print_res)
         with torch.no_grad():
-            outputs = self.model.mistral_model.generate(
+            outputs = model.mistral_model.generate(
                 inputs_embeds=embs,
                 max_new_tokens=max_new_tokens,
                 stopping_criteria=stopping_criteria,
@@ -376,24 +370,49 @@ Based on your observations, select the best option that accurately addresses the
             return ''
 
     def generate_inner(self, message, dataset=None):
-        _, video = self.message_to_promptvideo(message)
-        torch_imgs = self.read_video(video)
-        subtitle = self.split_subtitle(message[-2]['value'])
-        question = self.qa_template(message[-1]['value'])
-        example = {
-            'subtitle': subtitle,
-            'video': torch_imgs,
-            'question': question
-        }
-        pred_option = self.infer_data(
-            example,
-            " ",
-            question_prompt="\nOnly give the best option.",
-            answer_prompt="Best option:(",
-            return_prompt='(',
-            system_q=False,
-            print_res=False,
-            system_llm=True
-        )
-        return pred_option
+        if dataset == 'Video-MME':
+            _, video = self.message_to_promptvideo(message)
+            torch_imgs = self.read_video(video)
+            subtitle = self.split_subtitle(message[-2]['value'])
+            question = self.qa_template(message[-1]['value'])
+            example = {
+                'subtitle': subtitle,
+                'video': torch_imgs,
+                'question': question
+            }
+            pred_option = self.infer_data(
+                example,
+                " ",
+                question_prompt="\nOnly give the best option.",
+                answer_prompt="Best option:(",
+                return_prompt='(',
+                system_q=False,
+                print_res=False,
+                system_llm=True
+            )
+            return pred_option
+
+        elif dataset == 'MVBench' or dataset == 'MVBench_MP4':
+            _, video = self.message_to_promptvideo(message)
+            torch_imgs = self.read_video(video)
+            example = {
+                'subtitle': '',
+                'video': torch_imgs,
+                'question': message[1]['value']
+            }
+            pred_option = self.infer_data(
+                example,
+                message[0]['value'],
+                question_prompt="\nOnly give the best option.",
+                answer_prompt="Best option:(",
+                return_prompt='(',
+                system_q=False,
+                print_res=False,
+                system_llm=True
+            )
+            return pred_option
+
+        else:
+            raise NotImplementedError
+
 
