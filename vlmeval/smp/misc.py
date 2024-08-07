@@ -72,7 +72,7 @@ def bincount(lst):
         bins[item] += 1
     return bins
 
-def get_cache_path(repo_id):
+def get_cache_path(repo_id, branch=None):
     hf_cache_info = scan_cache_dir()
     repos = list(hf_cache_info.repos)
     repo = None
@@ -83,6 +83,8 @@ def get_cache_path(repo_id):
     if repo is None:
         return None
     revs = list(repo.revisions)
+    if branch is not None:
+        revs = [r for r in revs if r.refs == frozenset({branch})]
     rev2keep, last_modified = None, 0
     for rev in revs:
         if rev.last_modified > last_modified:

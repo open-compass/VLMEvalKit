@@ -97,7 +97,7 @@ Based on your observations, select the best option that accurately addresses the
                     return False
             return True
 
-        cache_path = get_cache_path(repo_id)
+        cache_path = get_cache_path(repo_id, branch='main')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
@@ -331,6 +331,208 @@ Based on your observations, select the best option that accurately addresses the
                 message.append(dict(type='image', value=im))
 
         message.append(dict(type='text', value='Best option:('))
+        return message
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+
+        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', '_rating.json')
+        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+
+        if not osp.exists(score_file):
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+
+            data = load(eval_file)
+            data_un = data[~pd.isna(data['prediction'])]
+
+            for idx in data['index']:
+                ans = data.loc[data['index'] == idx, 'answer'].values[0]
+                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+                options = eval(data.loc[data['index'] == idx, 'candidates'].values[0])
+                answer_idx = -1
+                for id, c in enumerate(options):
+                    if c == ans:
+                        answer_idx = id
+                ans = f"({chr(ord('A') + answer_idx)}) {ans}"
+
+                if FAIL_MSG in pred:
+                    data.loc[idx, 'score'] = -1
+                else:
+                    data.loc[idx, 'score'] = int(check_ans(pred, ans))
+
+            rejected = [x for x in data['score'] if x == -1]
+
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+                f'failed to obtain the score for another {len(rejected)} questions. '
+                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating
+
+
+class MVBench_MP4(VideoBaseDataset):
+
+    MP4_MD5 = '39fe4899efcb87d3ce31c6b7cd51a482'
+    SYS = """
+Carefully watch the video and pay attention to the cause and sequence of events, \
+the detail and movement of objects, and the action and pose of persons. \
+Based on your observations, select the best option that accurately addresses the question.\n
+"""
+    TYPE = 'MCQ'
+
+    def __init__(self, dataset='MVBench_MP4', pack=False):
+        super().__init__(dataset=dataset, pack=pack)
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['MVBench_MP4']
+
+    def prepare_dataset(self, dataset_name='MVBench_MP4', repo_id='OpenGVLab/MVBench'):
+        def check_integrity(pth):
+            data_file = osp.join(pth, f'{dataset_name}.tsv')
+
+            if not os.path.exists(data_file):
+                return False
+
+            if md5(data_file) != self.MP4_MD5:
+                return False
+
+            data = load(data_file)
+            for idx, item in data.iterrows():
+                if not osp.exists(osp.join(pth, item['prefix'], item['video'])):
+                    return False
+            return True
+
+        cache_path = get_cache_path(repo_id, branch='mp4')
+        if cache_path is not None and check_integrity(cache_path):
+            dataset_path = cache_path
+        else:
+            def generate_tsv(pth):
+                data_file = osp.join(pth, f'{dataset_name}.tsv')
+                if os.path.exists(data_file) and md5(data_file) == self.MD5:
+                    return
+                json_data_path = os.path.join(dataset_path, 'test.json')
+                json_data = load(json_data_path)
+                root_data_dict = json_data['root']
+                self.data_list = []
+                for k, v in json_data['meta'].items():
+                    for item in v:
+                        self.data_list.append({
+                            'task_type': k,
+                            'prefix': root_data_dict[k],
+                            'video': item['video'],
+                            'question': item['question'],
+                            'answer': item['answer'],
+                            'candidates': item['candidates']
+                        })
+                data_df = pd.DataFrame(self.data_list)
+                data_df = data_df.assign(index=range(len(data_df)))
+                data_df.to_csv(data_file, sep='\t', index=False)
+
+            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+            huggingface_hub.login(hf_token)
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset', revision='mp4')
+            generate_tsv(dataset_path)
+
+        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+
+        self.nframe = 8
+        self.resolution = 224
+
+        # transform
+        crop_size = self.resolution
+        scale_size = self.resolution
+        input_mean = [0.48145466, 0.4578275, 0.40821073]
+        input_std = [0.26862954, 0.26130258, 0.27577711]
+        self.transform = T.Compose([
+            GroupScale(int(scale_size), interpolation=InterpolationMode.BICUBIC),
+            GroupCenterCrop(crop_size),
+            Stack(),
+            ToTorchFormatTensor(),
+            GroupNormalize(input_mean, input_std)
+        ])
+
+        return dict(root=dataset_path, data_file=data_file)
+
+    def qa_template(self, data):
+        question = f"Question: {data['question']}\n"
+        question += 'Options:\n'
+        answer = data['answer']
+        answer_idx = -1
+        for idx, c in enumerate(eval(data['candidates'])):
+            question += f"({chr(ord('A') + idx)}) {c}\n"
+            if c == answer:
+                answer_idx = idx
+        question = question.rstrip()
+        answer = f"({chr(ord('A') + answer_idx)}) {answer}"
+        return question, answer
+
+    def get_index(self, max_frame):
+        seg_size = float(max_frame) / self.num_segments
+        frame_indices = np.array([
+            int((seg_size / 2) + np.round(seg_size * idx))
+            for idx in range(self.num_segments)
+        ])
+        return frame_indices
+
+    def read_video(self, video_path, bound=None):
+        vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
+        max_frame = len(vr) - 1
+
+        images_group = list()
+        frame_indices = self.get_index(max_frame)
+        for frame_index in frame_indices:
+            img = Image.fromarray(vr[frame_index].asnumpy())
+            images_group.append(img)
+        torch_imgs = self.transform(images_group)
+        return torch_imgs
+
+    def save_video_frames(self, imgs, video_name, frames):
+
+        frame_paths = self.frame_paths(video_name, frames)
+        flag = np.all([osp.exists(p) for p in frame_paths])
+
+        if not flag:
+            block_size = imgs.size(0) // frames
+            split_tensors = torch.split(imgs, block_size)
+            to_pil = transforms.ToPILImage()
+            images = [to_pil(arr) for arr in split_tensors]
+            for im, pth in zip(images, frame_paths):
+                if not osp.exists(pth):
+                    im.save(pth)
+
+        return frame_paths
+
+    def build_prompt(self, line, num_frames, video_llm):
+        if isinstance(line, int):
+            assert line < len(self)
+            line = self.data.iloc[line]
+
+        question, answer = self.qa_template(line)
+        # text_prompt = self.SYS + question + '\nOnly give the best option.'
+        # message = [dict(type='text', value=text_prompt)]
+        message = [dict(type='text', value=self.SYS)]
+        message.append(dict(type='text', value=question))
+        video_path = os.path.join(self.data_root, line['prefix'], line['video'])
+        if video_llm:
+            message.append(dict(type='video', value=video_path))
+        else:
+            video_path = os.path.join(self.data_root, line['prefix'], line['video'])
+            self.num_segments = num_frames if num_frames > 0 else self.nframe
+            torch_imgs = self.read_video(video_path)
+            img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+            for im in img_frame_paths:
+                message.append(dict(type='image', value=im))
+
         return message
 
     @classmethod

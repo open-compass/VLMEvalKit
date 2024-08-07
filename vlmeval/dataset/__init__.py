@@ -10,7 +10,7 @@ from .image_vqa import (
 )
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
-from .MVBench import MVBench
+from .MVBench import MVBench, MVBench_MP4
 from .utils import *
 from ..smp import *
 
@@ -23,7 +23,7 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4
 ]
 
 CUSTOM_DATASET = [
