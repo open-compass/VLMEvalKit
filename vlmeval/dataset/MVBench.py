@@ -312,8 +312,7 @@ Based on your observations, select the best option that accurately addresses the
         text_prompt = self.SYS + question + '\nOnly give the best option.'
         message = [dict(type='text', value=text_prompt)]
         if video_llm:
-            with logging.disable(logging.CRITICAL):
-                new_video_path = self.load_into_video_and_process(line)
+            new_video_path = self.load_into_video_and_process(line)
             message.append(dict(type='video', value=new_video_path))
         else:
             bound = None
