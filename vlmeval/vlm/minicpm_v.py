@@ -299,6 +299,12 @@ class MiniCPM_V_2_6(BaseModel):
         elif listinstr(['MathVista', 'MMVet', 'MMBench', 'MMStar', 'AI2D', 'RealWorldQA',
                         'POPE', 'ScienceQA', 'TextVQA', 'DocVQA'], dataset):
             return False
+        elif listinstr(['MME'], dataset):
+            mme_cfg = os.getenv('MME_CFG', 'perception')
+            if mme_cfg == 'perception':
+                return False
+            elif mme_cfg == 'reasoning':
+                return True
         else:
             return False
 
