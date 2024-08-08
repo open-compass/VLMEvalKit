@@ -16,13 +16,15 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 <a href="#%EF%B8%8F-citation">🖊️Citation </a>
 
 <a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HF Leaderboard</a> •
-<a href="https://discord.gg/evDT4GZmxN">🔊 Discord Channel</a> •
-<a href="https://www.arxiv.org/abs/2407.11691">📝 Technical Report</a>
+<a href="https://huggingface.co/datasets/VLMEval/OpenVLMRecords">🤗 Evaluation Records</a> •
+<a href="https://discord.gg/evDT4GZmxN">🔊 Discord</a> •
+<a href="https://www.arxiv.org/abs/2407.11691">📝 Report</a>
 </div>
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-08-08]** We created a HuggingFace Dataset: [OpenVLMRecords](https://huggingface.co/datasets/VLMEval/OpenVLMRecords) to keep all our evaluation records. You can find sample level predictions of all evaluated benchmarks there🔥🔥🔥
 - **[2024-08-08]** We have supported [**MiniCPM-V 2.6**](https://huggingface.co/openbmb/MiniCPM-V-2_6), thanks to [**lihytotoro**](https://github.com/lihytotoro)🔥🔥🔥
 - **[2024-08-07]** We have supported two new multi-image understanding benchmarks: [**DUDE**](https://arxiv.org/abs/2305.08455) and [**SlideVQA**](https://arxiv.org/abs/2301.04883), thanks to [**mayubo2333**](https://github.com/mayubo2333/)🔥🔥🔥
 - **[2024-08-06]** We have supported [**TaskMeAnything ImageQA-Random Dataset**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random), thanks to [**weikaih04**](https://github.com/weikaih04)🔥🔥🔥
@@ -32,7 +34,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-07-29]** We have supported [**Yi-Vision**](https://platform.lingyiwanwu.com)🔥🔥🔥
 - **[2024-07-27]** [**VLMEvalKit Technical Report**](https://www.arxiv.org/abs/2407.11691) has been accepted by [**ACMMM 24' OpenSource**](https://2024.acmmm.org/open-source-software-competition) 🔥🔥🔥
 - **[2024-07-27]** We have supported [**MMDU**](https://liuziyu77.github.io/MMDU/), which is one of the first multi-turn & multi-image benchmark, thanks to [**Liuziyu77**](https://github.com/Liuziyu77/)🔥🔥🔥
-- **[2024-07-25]** We have supported [**VILA**](https://github.com/NVlabs/VILA/), thanks to [**amitbcp**](https://github.com/amitbcp), evaluation results coming soon🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
