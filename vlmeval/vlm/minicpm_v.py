@@ -288,12 +288,16 @@ class MiniCPM_V_2_6(BaseModel):
                                      '''then output the final answer in the format of "Answer: single number '''
                                      '''or single word or phrase".\n\n''')
 
-    def use_custom_prompt(self, dataset):
+    def use_custom_prompt(self, dataset=None):
+        if dataset is None:
+            return False
         if listinstr(['MCQ', 'VQA', 'Y/N'], DATASET_TYPE(dataset)):
             return True
         return False
 
-    def use_cot(self, dataset):
+    def use_cot(self, dataset=None):
+        if dataset is None:
+            return False
         if listinstr(['MMMU', 'HallusionBench', 'OCRBench', 'ChartQA'], dataset):
             return True
         elif listinstr(['MathVista', 'MMVet', 'MMBench', 'MMStar', 'AI2D', 'RealWorldQA',
@@ -302,7 +306,9 @@ class MiniCPM_V_2_6(BaseModel):
         else:
             return False
 
-    def use_upsize(self, dataset):
+    def use_upsize(self, dataset=None):
+        if dataset is None:
+            return False
         if listinstr(['MMVet', 'MMBench', 'MMStar', 'AI2D', 'OCRBench'], dataset):
             return True
         else:
