@@ -36,14 +36,14 @@ def get_version():
         file_content = f.read()
     # Parse the file content into an abstract syntax tree (AST)
     tree = ast.parse(file_content, filename=version_file)
-    
+
     # Iterate through the body of the AST, looking for an assignment to __version__
     for node in tree.body:
         if isinstance(node, ast.Assign):
             for target in node.targets:
-                if isinstance(target, ast.Name) and target.id == "__version__":
+                if isinstance(target, ast.Name) and target.id == '__version__':
                     return node.value.s
-    raise ValueError("__version__ not found")
+    raise ValueError('__version__ not found')
 
 
 release = get_version()
