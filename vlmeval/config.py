@@ -42,6 +42,7 @@ api_models = {
     'GPT4V_20240409_HIGH': partial(GPT4V, model='gpt-4-turbo-2024-04-09', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GPT4o': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=512, img_detail='low', retry=10),
     'GPT4o_HIGH': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=-1, img_detail='high', retry=10),
+    'GPT4o_20240806': partial(GPT4V, model='gpt-4o-2024-08-06', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GPT4o_MINI': partial(GPT4V, model='gpt-4o-mini-2024-07-18', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Gemini
     'GeminiProVision': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),
@@ -69,12 +70,14 @@ api_models = {
     'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10),
     # SenseChat-V
     'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
+    'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
 }
 
 minicpm_series = {
     'MiniCPM-V': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
+    'MiniCPM-V-2_6': partial(MiniCPM_V_2_6, model_path='openbmb/MiniCPM-V-2_6'),
 }
 
 xtuner_series = {

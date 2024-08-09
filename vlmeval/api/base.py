@@ -3,7 +3,7 @@ import random as rd
 from abc import abstractmethod
 import os.path as osp
 import copy as cp
-from ..smp import get_logger, parse_file, concat_images
+from ..smp import get_logger, parse_file, concat_images_vlmeval
 
 
 class BaseAPI:
@@ -247,7 +247,9 @@ class BaseAPI:
         else:
             prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
             if dataset == 'BLINK':
-                image = concat_images([x['value'] for x in message if x['type'] == 'image'], target_size=512)
+                image = concat_images_vlmeval(
+                    [x['value'] for x in message if x['type'] == 'image'],
+                    target_size=512)
             else:
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image

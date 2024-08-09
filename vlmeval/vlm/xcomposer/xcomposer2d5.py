@@ -160,7 +160,7 @@ class XComposer2d5(BaseModel):
                 im_prompt = ' '.join(im_prompt)
                 for i in range(len(image)):
                     prompt = prompt.replace(f'<image {i+1}>', f'Image{i+1} ')
-                if listinstr(['mmlongbench'], dataset.lower()):     # fix bug for multi-image prompt
+                if listinstr(['mmlongbench', 'dude', 'slidevqa'], dataset.lower()):     # fix bug for multi-image prompt
                     prompt = '[UNUSED_TOKEN_146]user\n' + im_prompt + re.sub(
                         re.escape('[UNUSED_TOKEN_146]user\n'), '', prompt
                     )
@@ -272,7 +272,7 @@ class XComposer2d5(BaseModel):
                 prompt = '[UNUSED_TOKEN_146]system\n{}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]user\n{}\
                          Answer this question in detail.[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]\
                          assistant\n'.format(meta_instruction, q)
-            elif listinstr(['mmlongbench_doc'], dataset.lower()):
+            elif listinstr(['mmlongbench_doc', 'dude', 'slidevqa'], dataset.lower()):
                 q = line['question']
                 prompt = f'[UNUSED_TOKEN_146]user\n{q}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n'
             else:

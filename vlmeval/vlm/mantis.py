@@ -142,24 +142,25 @@ class Mantis(BaseModel):
             answer = answer.split('<|im_end|>')[0].strip()
         elif '<|eot_id|>' in answer:
             answer = answer.split('<|eot_id|>')[0].strip()
+        elif '<end_of_utterance>':
+            answer = answer.split('<end_of_utterance>')[0].strip()
         return answer
 
     def generate_inner(self, message, dataset=None):
         content, images = '', []
+        ide_content, question = [], ''
         for msg in message:
             if msg['type'] == 'text':
                 content += msg['value']
+                question += msg['value']
             else:
                 images.append(Image.open(msg['value']).convert('RGB'))
                 content += (self.DEFAULT_IMAGE_TOKEN + '\n')
+                ide_content.append({'type': 'image'})
         if self._is_idefics:
             # Follow the idefics implementation:
-            content = []
-            if self.DEFAULT_IMAGE_TOKEN not in content:
-                for _ in images:
-                    content.append({'type': 'image'})
-            content.append({'type': 'text', 'text': content})
-            prompt = [{'role': 'user', 'content': content}]
+            ide_content.append({'type': 'text', 'text': question})
+            prompt = [{'role': 'user', 'content': ide_content}]
             prompt = self.processor.apply_chat_template(prompt, add_generation_prompt=True)
         else:
             # Follow the Mantis code base to make sure they are consistent:
