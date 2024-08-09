@@ -17,6 +17,7 @@ from .slidevqa import SlideVQA
 from .mmbench_video import MMBenchVideo
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
+from .MVBench import MVBench, MVBench_MP4
 from .utils import *
 from ..smp import *
 
@@ -29,7 +30,7 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4
 ]
 
 TEXT_DATASET = [

@@ -162,7 +162,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            images = [vid[i].asnumpy() for i in indices]
+            images = [vid[i].numpy() for i in indices]
             images = [Image.fromarray(arr) for arr in images]
             for im, pth in zip(images, frame_paths):
                 if not osp.exists(pth):
