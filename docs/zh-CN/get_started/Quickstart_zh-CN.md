@@ -21,18 +21,29 @@ pip install -e .
   ```bash
   # .env 文件，将其放置在 $VLMEvalKit 下
   # 专有 VLMs 的 API 密钥
+  # QwenVL APIs
   DASHSCOPE_API_KEY=
+  # Gemini w. Google Cloud Backends
   GOOGLE_API_KEY=
+  # OpenAI API
   OPENAI_API_KEY=
   OPENAI_API_BASE=
+  # StepAI API
   STEPAI_API_KEY=
+  # REKA API
   REKA_API_KEY=
+  # GLMV API
   GLMV_API_KEY=
+  # CongRong API
   CW_API_BASE=
   CW_API_KEY=
+  # SenseChat-V API
   SENSECHAT_AK=
   SENSECHAT_SK=
-  # 你可以设置一个专用于评估阶段 API 调用的代理
+  # Hunyuan-Vision API
+  HUNYUAN_SECRET_KEY=
+  HUNYUAN_SECRET_ID=
+  # 你可以设置一个评估时代理，评估阶段产生的 API 调用将通过这个代理进行
   EVAL_PROXY=
   ```
 

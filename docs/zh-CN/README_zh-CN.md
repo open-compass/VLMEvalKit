@@ -24,6 +24,7 @@
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
+- **[2024-08-09]** 支持了 [**Hunyuan-Vision**](https://cloud.tencent.com/document/product/1729)，评测结果将很快更新🔥🔥🔥
 - **[2024-08-08]** 创建了 HuggingFace 数据集 [**OpenVLMRecords**](https://huggingface.co/datasets/VLMEval/OpenVLMRecords) 用以维护全部原始评测记录。这个仓库提供了题目级的所有原始模型回答🔥🔥🔥
 - **[2024-08-08]** 支持了 [**MiniCPM-V 2.6**](https://huggingface.co/openbmb/MiniCPM-V-2_6), 感谢 [**lihytotoro**](https://github.com/lihytotoro)🔥🔥🔥
 - **[2024-08-07]** 支持了两个新的多图理解评测基准：[**DUDE**](https://arxiv.org/abs/2305.08455) 和 [**SlideVQA**](https://arxiv.org/abs/2301.04883), 感谢 [**mayubo2333**](https://github.com/mayubo2333/)🔥🔥🔥
@@ -33,7 +34,6 @@
 - **[2024-08-05]** 支持了 [**Q-Bench**](https://github.com/Q-Future/Q-Bench) 和 [**A-Bench**](https://github.com/Q-Future/A-Bench), 感谢 [**zzc-1998**](https://github.com/zzc-1998)🔥🔥🔥
 - **[2024-07-29]** 支持了 [**Yi-Vision**](https://platform.lingyiwanwu.com)🔥🔥🔥
 - **[2024-07-27]** [**VLMEvalKit 技术报告**](https://www.arxiv.org/abs/2407.11691) 被 [**ACMMM 24' OpenSource**](https://2024.acmmm.org/open-source-software-competition)接收 🔥🔥🔥
-- **[2024-07-27]** 支持了 [**MMDU**](https://liuziyu77.github.io/MMDU/)，这是我们支持的首个多图多轮评测集，感谢 [**Liuziyu77**](https://github.com/Liuziyu77/)🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
@@ -86,7 +86,7 @@
 | [**GPT-4v (20231106, 20240409)**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**GPT-4o**](https://openai.com/index/hello-gpt-4o/) 🎞️🚅      | [**Gemini-1.0-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Gemini-1.5-Pro**](https://platform.openai.com/docs/guides/vision) 🎞️🚅 | [**Step-1V**](https://www.stepfun.com/#step1v) 🎞️🚅 |
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
 | [**Reka-[Edge / Flash / Core]**](https://www.reka.ai)🚅       | [**Qwen-VL-[Plus / Max]**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅 | [**Claude3-[Haiku / Sonnet / Opus]**](https://www.anthropic.com/news/claude-3-family) 🎞️🚅 | [**GLM-4v**](https://open.bigmodel.cn/dev/howuse/glm4v) 🚅    | [**CongRong**](https://mllm.cloudwalk.com/web) 🎞️🚅 |
-| [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 🎞️🚅 | [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/) 🎞️🚅 | [**Yi-Vision**](https://platform.lingyiwanwu.com)🎞️🚅          |                                                              |                                                   |
+| [**Claude3.5-Sonnet**](https://www.anthropic.com/news/claude-3-5-sonnet) 🎞️🚅 | [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/) 🎞️🚅 | [**Yi-Vision**](https://platform.lingyiwanwu.com)🎞️🚅          | [**Hunyuan-Vision**](https://cloud.tencent.com/document/product/1729)🎞️🚅 |                                                   |
 
 **基于 PyTorch / HF 的开源模型**
 
