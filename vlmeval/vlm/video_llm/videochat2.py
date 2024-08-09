@@ -18,11 +18,12 @@ from ..base import BaseModel
 from ...smp import *
 from ...dataset import DATASET_TYPE
 
+
 def get_prompt(conv):
     ret = conv.system + conv.sep
     for role, message in conv.messages:
         if message:
-            ret += role + " " + message + " " + conv.sep
+            ret += role + ' ' + message + ' ' + conv.sep
         else:
             ret += role
     return ret
@@ -34,10 +35,10 @@ def get_prompt2(conv):
     for role, message in conv.messages:
         count += 1
         if count == len(conv.messages):
-            ret += role + " " + message
+            ret += role + ' ' + message
         else:
             if message:
-                ret += role + " " + message + " " + conv.sep
+                ret += role + ' ' + message + ' ' + conv.sep
             else:
                 ret += role
     return ret
@@ -47,6 +48,7 @@ class StoppingCriteriaSub(StoppingCriteria):
     def __init__(self, stops=[], encounters=1):
         super().__init__()
         self.stops = stops
+
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor):
         for stop in self.stops:
             if torch.all((stop == input_ids[0][-len(stop):])).item():
@@ -59,16 +61,19 @@ class VideoChat2_HD(BaseModel):
     INTERLEAVE = True
     VIDEO_LLM = True
 
-    def __init__(self, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B', root='./Ask-Anything', config_file='./configs/videochat2_hd.json', **kwargs):
+    def __init__(self, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B',
+                 root='./Ask-Anything', config_file='./configs/videochat2_hd.json',
+                 **kwargs):
         self.config_file = config_file
         self.root = root
         self.model_path = model_path
 
         if root is None:
-            warnings.warn('Please set `root` to Ask-Anything directory, which is cloned from here: https://github.com/OpenGVLab/Ask-Anything')
+            warnings.warn('Please set `root` to Ask-Anything directory, \
+                          which is cloned from here: https://github.com/OpenGVLab/Ask-Anything')
             sys.exit(-1)
 
-        sys.path.append(osp.join(root,'video_chat2'))
+        sys.path.append(osp.join(root, 'video_chat2'))
         try:
             from utils.config import Config
             from utils.easydict import EasyDict
@@ -101,9 +106,9 @@ class VideoChat2_HD(BaseModel):
                 with open(destination_path, 'wb') as file:
                     response.raw.decode_content = True
                     shutil.copyfileobj(response.raw, file)
-                print(f"文件已下载并保存到 {destination_path}")
+                print(f'File downloaded and saved to {destination_path}')
             else:
-                print(f"下载失败，状态码: {response.status_code}")
+                print(f'Download failed, status code: {response.status_code}')
 
         hf_token = os.environ.get('HUGGINGFACE_TOKEN')
         huggingface_hub.login(hf_token)
@@ -118,18 +123,18 @@ class VideoChat2_HD(BaseModel):
             task_type=TaskType.CAUSAL_LM, inference_mode=False,
             r=16, lora_alpha=32, lora_dropout=0.,
             target_modules=[
-                "q_proj", "k_proj", "v_proj", "o_proj",
-                "gate_proj", "up_proj", "down_proj", "lm_head"
+                'q_proj', 'k_proj', 'v_proj', 'o_proj',
+                'gate_proj', 'up_proj', 'down_proj', 'lm_head'
             ]
         )
         model.mistral_model = get_peft_model(model.mistral_model, peft_config)
         stage4_model_path = snapshot_download(repo_id=model_path, repo_type='model')
-        state_dict = torch.load(osp.join(stage4_model_path, 'videochat2_hd_mistral_7b_stage4.pth'), "cuda")
+        state_dict = torch.load(osp.join(stage4_model_path, 'videochat2_hd_mistral_7b_stage4.pth'), 'cuda')
 
         if 'model' in state_dict.keys():
-            msg = model.load_state_dict(state_dict['model'], strict=False)
+            model.load_state_dict(state_dict['model'], strict=False)
         else:
-            msg = model.load_state_dict(state_dict, strict=False)
+            model.load_state_dict(state_dict, strict=False)
 
         model = model.to(torch.device('cuda'))
         model = model.eval()
@@ -154,7 +159,9 @@ class VideoChat2_HD(BaseModel):
             transforms.Normalize(mean, std)
         ])
 
-    def get_sinusoid_encoding_table(self, n_position=784, d_hid=1024, cur_frame=8, ckpt_num_frame=4, pre_n_position=784):
+    def get_sinusoid_encoding_table(self, n_position=784, d_hid=1024,
+                                    cur_frame=8, ckpt_num_frame=4,
+                                    pre_n_position=784):
         ''' Sinusoid position encoding table '''
         # TODO: make it with torch instead of numpy
         def get_position_angle_vec(position):
@@ -162,21 +169,21 @@ class VideoChat2_HD(BaseModel):
 
         # generate checkpoint position embedding
         sinusoid_table = np.array([get_position_angle_vec(pos_i) for pos_i in range(pre_n_position)])
-        sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2]) # dim 2i
-        sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2]) # dim 2i+1
+        sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
+        sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
         sinusoid_table = torch.tensor(sinusoid_table, dtype=torch.float, requires_grad=False).unsqueeze(0)
 
-        print(f"n_position: {n_position}")
-        print(f"pre_n_position: {pre_n_position}")
+        print(f'n_position: {n_position}')
+        print(f'pre_n_position: {pre_n_position}')
 
         if n_position != pre_n_position:
             T = ckpt_num_frame  # checkpoint frame
             P = 14  # checkpoint size
             C = d_hid
-            new_P = int((n_position // cur_frame) ** 0.5) # testing size
+            new_P = int((n_position // cur_frame) ** 0.5)  # testing size
             if new_P != 14:
                 print(f'Pretraining uses 14x14, but current version is {new_P}x{new_P}')
-                print(f'Interpolate the position embedding')
+                print('Interpolate the position embedding')
                 sinusoid_table = sinusoid_table.reshape(-1, T, P, P, C)
                 sinusoid_table = sinusoid_table.reshape(-1, P, P, C).permute(0, 3, 1, 2)
                 sinusoid_table = torch.nn.functional.interpolate(
@@ -187,16 +194,16 @@ class VideoChat2_HD(BaseModel):
 
         if cur_frame != ckpt_num_frame:
             print(f'Pretraining uses 4 frames, but current frame is {cur_frame}')
-            print(f'Interpolate the position embedding')
+            print('Interpolate the position embedding')
             T = ckpt_num_frame  # checkpoint frame
             new_T = cur_frame  # testing frame
             # interpolate
-            P = int((n_position // cur_frame) ** 0.5) # testing size
+            P = int((n_position // cur_frame) ** 0.5)  # testing size
             C = d_hid
             sinusoid_table = sinusoid_table.reshape(-1, T, P, P, C)
             sinusoid_table = sinusoid_table.permute(0, 2, 3, 4, 1).reshape(-1, C, T)  # BHW, C, T
             sinusoid_table = torch.nn.functional.interpolate(sinusoid_table, size=new_T, mode='linear')
-            sinusoid_table = sinusoid_table.reshape(1, P, P, C, new_T).permute(0, 4, 1, 2, 3) # B, T, H, W, C
+            sinusoid_table = sinusoid_table.reshape(1, P, P, C, new_T).permute(0, 4, 1, 2, 3)  # B, T, H, W, C
             sinusoid_table = sinusoid_table.flatten(1, 3)  # B, THW, C
 
         return sinusoid_table
@@ -242,11 +249,11 @@ class VideoChat2_HD(BaseModel):
             prompt_segs = prompt.split('<VideoHere>')
         else:
             prompt_segs = prompt.split('<ImageHere>')
-        assert len(prompt_segs) == len(img_list) + 1, "Unmatched numbers of image placeholders and images."
+        assert len(prompt_segs) == len(img_list) + 1, 'Unmatched numbers of image placeholders and images.'
         with torch.no_grad():
             seg_tokens = [
                 model.mistral_tokenizer(
-                    seg, return_tensors="pt", add_special_tokens=i == 0).to("cuda").input_ids
+                    seg, return_tensors='pt', add_special_tokens=i == 0).to('cuda').input_ids
                 # only add bos to the first seg
                 for i, seg in enumerate(prompt_segs)
             ]
@@ -259,8 +266,8 @@ class VideoChat2_HD(BaseModel):
     def answer(self, conv, model, img_list, do_sample=True, max_new_tokens=200, num_beams=1, min_length=1, top_p=0.9,
                repetition_penalty=1.0, length_penalty=1, temperature=1.0, answer_prompt=None, print_res=False):
         stop_words_ids = [
-            torch.tensor([2]).to("cuda"),
-            torch.tensor([29871, 2]).to("cuda")]  # '</s>' can be encoded in two different ways.
+            torch.tensor([2]).to('cuda'),
+            torch.tensor([29871, 2]).to('cuda')]  # '</s>' can be encoded in two different ways.
         stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
 
         conv.messages.append([conv.roles[1], answer_prompt])
@@ -290,18 +297,18 @@ class VideoChat2_HD(BaseModel):
         return output_text, output_token.cpu().numpy()
 
     def infer_data(
-        self, data_sample, system=" ",
-        question_prompt='', # add in the end of question
-        answer_prompt=None, # add in the begining of answer
+        self, data_sample, system=' ',
+        question_prompt='',  # add in the end of question
+        answer_prompt=None,  # add in the begining of answer
         return_prompt='',  # add in the begining of return message
-        system_q=False, # whether add question in the system prompt for QFormer
+        system_q=False,  # whether add question in the system prompt for QFormer
         print_res=True,
         system_llm=False
     ):
-        assert system_q == False, "do not support system_q now"
-        video = data_sample["video"]
+        assert system_q is False, 'do not support system_q now'
+        video = data_sample['video']
         T_, C, H, W = video.shape
-        video = video.reshape(1, T_, C, H, W).to("cuda")
+        video = video.reshape(1, T_, C, H, W).to('cuda')
 
         video_list = []
         with torch.no_grad():
@@ -314,17 +321,17 @@ class VideoChat2_HD(BaseModel):
 
         from utils.easydict import EasyDict
         chat = EasyDict({
-            "system": system,
-            "roles": ("[INST]", "[/INST]"),
-            "messages": [],
-            "sep": ""
+            'system': system,
+            'roles': ('[INST]', '[/INST]'),
+            'messages': [],
+            'sep': ''
         })
 
         if data_sample['subtitle'] != '':
             subtitle = f"This video's subtitles are listed below: {data_sample['subtitle']}"
-            chat.messages.append([chat.roles[0], f"{subtitle}\n<Video><VideoHere></Video> [/INST]"])
+            chat.messages.append([chat.roles[0], f'{subtitle}\n<Video><VideoHere></Video> [/INST]'])
         else:
-            chat.messages.append([chat.roles[0], f"<Video><VideoHere></Video> [/INST]"])
+            chat.messages.append([chat.roles[0], '<Video><VideoHere></Video> [/INST]'])
 
         if system_llm:
             prompt = system + question + question_prompt
@@ -345,20 +352,20 @@ class VideoChat2_HD(BaseModel):
 
     def qa_template(self, data):
         question = data.split('Answer:')[0].split('\n')[0] + '\n'
-        question += "Options:\n"
+        question += 'Options:\n'
         choices = data.split('Answer:')[0].split('\n')[1:]
         choices = [item for item in choices if item != '']  # remove blank space
         for idx, c in enumerate(choices):
             cur_choice, cur_text = c[0], c[3:]
-            question += f"({cur_choice}) {cur_text}\n"
+            question += f'({cur_choice}) {cur_text}\n'
         question = question.rstrip()
         return question
 
     def split_subtitle(self, data):
         if 'This video\'s subtitles are listed below' in data:
             # 找到subtitle的起始和结束位置
-            start_marker = "This video's subtitles are listed below:"
-            end_marker = "Select the best answer to the following multiple-choice question based on the video."
+            start_marker = 'This video\'s subtitles are listed below:'
+            end_marker = 'Select the best answer to the following multiple-choice question based on the video.'
 
             start_index = data.find(start_marker) + len(start_marker)
             end_index = data.find(end_marker)
@@ -382,9 +389,9 @@ class VideoChat2_HD(BaseModel):
             }
             pred_option = self.infer_data(
                 example,
-                " ",
-                question_prompt="\nOnly give the best option.",
-                answer_prompt="Best option:(",
+                ' ',
+                question_prompt='\nOnly give the best option.',
+                answer_prompt='Best option:(',
                 return_prompt='(',
                 system_q=False,
                 print_res=False,
@@ -403,8 +410,8 @@ class VideoChat2_HD(BaseModel):
             pred_option = self.infer_data(
                 example,
                 message[0]['value'],
-                question_prompt="\nOnly give the best option.",
-                answer_prompt="Best option:(",
+                question_prompt='\nOnly give the best option.',
+                answer_prompt='Best option:(',
                 return_prompt='(',
                 system_q=False,
                 print_res=False,
@@ -414,5 +421,3 @@ class VideoChat2_HD(BaseModel):
 
         else:
             raise NotImplementedError
-
-
