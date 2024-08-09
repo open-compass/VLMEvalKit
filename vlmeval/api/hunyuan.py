@@ -30,10 +30,10 @@ class HunyuanWrapper(BaseAPI):
 
         warnings.warn('You may need to set the env variable HUNYUAN_SECRET_ID & HUNYUAN_SECRET_KEY to use Hunyuan. ')
 
-        secret_key = os.environ.get('HUNYUNA_SECRET_KEY', secret_key)
-        assert secret_key is not None, 'Please set the environment variable HUNYUNA_SECRET_KEY. '
-        secret_id = os.environ.get('HUNYUNA_SECRET_ID', secret_id)
-        assert secret_id is not None, 'Please set the environment variable HUNYUNA_SECRET_ID. '
+        secret_key = os.environ.get('HUNYUAN_SECRET_KEY', secret_key)
+        assert secret_key is not None, 'Please set the environment variable HUNYUAN_SECRET_KEY. '
+        secret_id = os.environ.get('HUNYUAN_SECRET_ID', secret_id)
+        assert secret_id is not None, 'Please set the environment variable HUNYUAN_SECRET_ID. '
 
         self.model = model
         self.endpoint = api_base
