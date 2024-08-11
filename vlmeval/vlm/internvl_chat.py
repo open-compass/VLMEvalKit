@@ -440,14 +440,6 @@ class InternVLChat(BaseModel):
             pixel_values = None
             num_patches_list = []
 
-        # response, history = self.model.chat(
-        #                 self.tokenizer,
-        #                 pixel_values=pixel_values,
-        #                 num_patches_list=num_patches_list,
-        #                 question=question,
-        #                 generation_config=self.kwargs,
-        #                 history=history, return_history=True
-        #                                     )
         response, history = self.model.chat(
             self.tokenizer,
             pixel_values=pixel_values,
