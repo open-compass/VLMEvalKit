@@ -18,7 +18,7 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_dict={}, api_nproc=4):
+def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_dict={}, api_nproc=4, fps=-1):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
@@ -26,10 +26,12 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
-    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe) for idx in indices]
+    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False), fps=fps) for idx in indices]
 
     packstr = 'pack' if pack else 'nopack'
     out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
+    if fps > 0:
+        out_file = out_file.replace('.pkl', f'_fps{fps}.pkl')
     res = load(out_file) if osp.exists(out_file) else {}
 
     structs = [s for i, s in zip(indices, structs) if i not in res]
@@ -45,7 +47,7 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
     return res
 
 
-def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, verbose=False, api_nproc=4, fps=-1):
     res = load(out_file) if osp.exists(out_file) else {}
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
@@ -71,12 +73,15 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
             nframe=nframe,
             pack=pack,
             samples_dict={k: sample_map[k] for k in sample_indices_subrem},
-            api_nproc=api_nproc)
+            api_nproc=api_nproc,
+            fps=fps)
         for k in sample_indices_subrem:
             assert k in supp
         res.update(supp)
         dump(res, out_file)
         return model_name
+
+    #TODO: not fix below with fps
 
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
@@ -109,7 +114,8 @@ def infer_data_job_video(
         pack=False,
         verbose=False,
         subtitle=False,
-        api_nproc=4):
+        api_nproc=4,
+        fps=-1):
 
     dataset_name = dataset.dataset_name
     packstr = 'pack' if pack else 'nopack'
@@ -118,7 +124,8 @@ def infer_data_job_video(
     if dataset_name == 'Video-MME':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
-
+    if fps > 0:
+        result_file = result_file.replace('.xlsx', f'_fps{fps}.xlsx')
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model_name
@@ -127,6 +134,9 @@ def infer_data_job_video(
     if dataset_name == 'Video-MME':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
+
+    if fps > 0:
+        tmpl = tmpl.replace('.pkl', f'_fps{fps}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(
@@ -137,7 +147,8 @@ def infer_data_job_video(
         pack=pack,
         out_file=out_file,
         verbose=verbose,
-        api_nproc=api_nproc)
+        api_nproc=api_nproc,
+        fps=fps)
 
     if world_size > 1:
         dist.barrier()

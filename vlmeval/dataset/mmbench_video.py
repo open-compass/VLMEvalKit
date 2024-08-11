@@ -88,7 +88,7 @@ Please directly reply with your response to the only question.
 
         return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
 
-    def build_prompt_pack(self, line, num_frames):
+    def build_prompt_pack(self, line, num_frames, fps=-1):
         if isinstance(line, int):
             assert line < len(self)
             video = self.videos[line]
@@ -97,9 +97,9 @@ Please directly reply with your response to the only question.
         elif isinstance(line, str):
             video = line
 
-        frames = self.save_video_frames(video, num_frames)
+        frames = self.save_video_frames(video, num_frames, fps)
         sub = self.data[self.data['video'] == video]
-        sys_prompt = self.SYS + self.FRAMES_TMPL_PACK.format(num_frames)
+        sys_prompt = self.SYS + self.FRAMES_TMPL_PACK.format(len(frames))
         message = [dict(type='text', value=sys_prompt)]
         for im in frames:
             message.append(dict(type='image', value=im))
@@ -130,9 +130,9 @@ Please directly reply with your response to the only question.
             message.append(dict(type='text', value=prompt))
         return message
 
-    def build_prompt(self, line, num_frames, video_llm):
+    def build_prompt(self, line, num_frames, video_llm, fps):
         if self.pack and not video_llm:
-            return self.build_prompt_pack(line, num_frames)
+            return self.build_prompt_pack(line, num_frames, fps)
         else:
             return self.build_prompt_nopack(line, num_frames, video_llm)
 
