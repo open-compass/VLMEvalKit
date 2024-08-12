@@ -45,6 +45,38 @@ class ImageMCQDataset(ImageBaseDataset):
         # A-Bench
         'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
         'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
+        # MMMB
+        'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
+        'MMMB_cn': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_cn.tsv',
+        'MMMB_en': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_en.tsv',
+        'MMMB_pt': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_pt.tsv',
+        'MMMB_ru': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ru.tsv',
+        'MMMB_tr': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_tr.tsv',
+        # Multilingual MMBench
+        'MMBench_dev_ar': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/'
+            'resolve/main/mmbench/mmbench_dev_ar.tsv'
+        ),
+        'MMBench_dev_cn': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_cn.tsv'
+        ),
+        'MMBench_dev_en': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_en.tsv'
+        ),
+        'MMBench_dev_pt': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_pt.tsv'
+        ),
+        'MMBench_dev_tr': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_tr.tsv'
+        ),
+        'MMBench_dev_ru': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_ru.tsv'
+        ),
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
