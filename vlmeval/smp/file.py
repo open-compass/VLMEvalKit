@@ -135,7 +135,7 @@ def download_file(url, filename=None):
 
     # If HF_ENDPOINT is set, replace huggingface.co with it
     if 'huggingface.co' in url and 'HF_ENDPOINT' in os.environ:
-        url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'])
+        url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'].split('://')[1])
 
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
