@@ -134,7 +134,7 @@ def download_file(url, filename=None):
         filename = url.split('/')[-1]
 
     # If HF_ENDPOINT is set, replace huggingface.co with it
-    if 'huggingface.co' in url and 'HF_ENDPOINT' in os.environ:
+    if 'huggingface.co' in url and os.environ.get('HF_ENDPOINT', '') != '':
         url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'].split('://')[1])
 
     try:
