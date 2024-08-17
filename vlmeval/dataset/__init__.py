@@ -68,6 +68,7 @@ class ConcatDataset(ImageBaseDataset):
         org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
+    @classmethod
     def supported_datasets(cls):
         return list(cls.DATASET_SETS)
 
