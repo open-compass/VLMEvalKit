@@ -135,7 +135,7 @@ def DATASET_TYPE(dataset):
 
 
 def build_dataset(dataset_name, **kwargs):
-    for cls in (IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET):
+    for cls in SUPPORTED_DATASETS:
         if dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
