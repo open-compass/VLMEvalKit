@@ -31,6 +31,8 @@ The contents of the TSV file consist of:
 | OCRVQA_[TEST/TESTCORE]                  | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 | TextVQA_VAL                             | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 | VCR_[EN/ZH]\_[EASY/HARD]\_[ALL/500/100] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| MMMB_[en/cn/pt/ar/tr/ru] | ✅     | ✅     |            | ✅        | ✅     | ✅     | ✅      | ✅         |             |✅       |
+| MMBench_dev_[en/cn/pt/ar/tr/ru] | ✅     | ✅     |            | ✅        | ✅     | ✅     | ✅      | ✅         | ✅            |✅       |
 
 <div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
 
