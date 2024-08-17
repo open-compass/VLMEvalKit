@@ -34,7 +34,6 @@
 - **[2024-08-05]** 支持了 [**Mantis**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2), 感谢 [**BrenchCC**](https://github.com/BrenchCC)🔥🔥🔥
 - **[2024-08-05]** 支持了 [**Q-Bench**](https://github.com/Q-Future/Q-Bench) 和 [**A-Bench**](https://github.com/Q-Future/A-Bench), 感谢 [**zzc-1998**](https://github.com/zzc-1998)🔥🔥🔥
 - **[2024-07-29]** 支持了 [**Yi-Vision**](https://platform.lingyiwanwu.com)🔥🔥🔥
-- **[2024-07-27]** [**VLMEvalKit 技术报告**](https://www.arxiv.org/abs/2407.11691) 被 [**ACMMM 24' OpenSource**](https://2024.acmmm.org/open-source-software-competition)接收 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果

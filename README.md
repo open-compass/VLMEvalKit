@@ -34,7 +34,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-08-05]** We have supported [**Mantis**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2), thanks to [**BrenchCC**](https://github.com/BrenchCC)🔥🔥🔥
 - **[2024-08-05]** We have supported [**Q-Bench**](https://github.com/Q-Future/Q-Bench) and [**A-Bench**](https://github.com/Q-Future/A-Bench), thanks to [**zzc-1998**](https://github.com/zzc-1998)🔥🔥🔥
 - **[2024-07-29]** We have supported [**Yi-Vision**](https://platform.lingyiwanwu.com)🔥🔥🔥
-- **[2024-07-27]** [**VLMEvalKit Technical Report**](https://www.arxiv.org/abs/2407.11691) has been accepted by [**ACMMM 24' OpenSource**](https://2024.acmmm.org/open-source-software-competition) 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
