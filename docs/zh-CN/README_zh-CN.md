@@ -6,7 +6,7 @@
 
 [![][github-contributors-shield]][github-contributors-link] • [![][github-forks-shield]][github-forks-link] • [![][github-stars-shield]][github-stars-link] • [![][github-issues-shield]][github-issues-link] • [![][github-license-shield]][github-license-link]
 
-[English](README.md) | 简体中文 | [日本語](/docs/ja/README_ja.md)
+[English](/README.md) | 简体中文 | [日本語](/docs/ja/README_ja.md)
 
 <a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass 排行榜 </a> •
 <a href="#-datasets-models-and-evaluation-results">📊 数据集和模型 </a> •
@@ -134,7 +134,7 @@ print(ret)  # 提供的图片中有两个苹果
 
 ## 🏗️ 快速开始 <a id="quickstart"></a>
 
-请参阅[**快速开始**](/docs/zh-CN/Quickstart_zh-CN.md)获取入门指南。
+请参阅[**快速开始**](/docs/zh-CN/get_started/Quickstart.md)获取入门指南。
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
