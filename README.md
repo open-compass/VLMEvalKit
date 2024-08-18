@@ -131,11 +131,11 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🏗️ QuickStart
 
-See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/get_started/Quickstart_zh-CN.md)] for a quick start guide.
+See [[QuickStart](/docs/en/get_started/Quickstart.md) | [快速开始](/docs/zh-CN/get_started/Quickstart.md)] for a quick start guide.
 
 ## 🛠️ Development Guide
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/Development.md) | [开发指南](/docs/zh-CN/advanced_guides/Development_zh-CN.md)].
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/advanced_guides/Development.md) | [开发指南](/docs/zh-CN/advanced_guides/Development.md)].
 
 **Call for contributions**
 
