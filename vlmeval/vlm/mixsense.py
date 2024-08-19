@@ -28,7 +28,7 @@ class LLama3Mixsense(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
-        input_ids = self.model.text_process(prompt, self.tokenizer)
+        input_ids = self.model.text_process(prompt, self.tokenizer).to(device='cuda')
         image = Image.open(image_path).convert('RGB')
         image_tensor = self.model.image_process([image]).to(dtype=self.model.dtype, device='cuda')
         # generate
