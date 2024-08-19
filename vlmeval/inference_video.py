@@ -87,7 +87,8 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
             continue
         nframe = getattr(model, 'nframe', 0) if getattr(model, 'nframe', 0) > 0 else nframe
         # when using video-llm, build prompt returns video+question; otherwise, several frames+question
-        struct = dataset.build_prompt(sample_map[idx], num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False), fps=fps)
+        struct = dataset.build_prompt(sample_map[idx], num_frames=nframe,
+                                      video_llm=getattr(model, 'VIDEO_LLM', False), fps=fps)
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
