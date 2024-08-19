@@ -78,7 +78,7 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-language = 'cn'
+language = 'en'
 
 # The master toctree document.
 root_doc = 'index'
@@ -110,7 +110,7 @@ html_theme_options = {
         },
     ],
     # Specify the language of shared menu
-    'menu_lang': 'cn',
+    'menu_lang': 'en',
     # Disable the default edit on GitHub
     'default_edit_on_github': False,
 }
@@ -232,11 +232,3 @@ autodoc_typehints = 'none'
 
 # The not found page
 notfound_template = '404.html'
-
-
-def builder_inited_handler(app):
-    subprocess.run(['./cp_origin_docs.sh'])
-
-
-def setup(app):
-    app.connect('builder-inited', builder_inited_handler)
