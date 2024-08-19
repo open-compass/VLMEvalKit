@@ -15,7 +15,7 @@ import os
 import glob
 from moviepy.editor import VideoFileClip, ImageSequenceClip
 import moviepy.config_defaults
-from .utils.MVBench import *
+from .utils.mvbench import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
