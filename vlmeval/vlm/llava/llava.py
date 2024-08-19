@@ -416,11 +416,15 @@ class LLaVA_OneVision(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         content, images = '', []
+        image_sizes = []  # Store image sizes
+
         for msg in message:
             if msg['type'] == 'text':
                 content += msg['value']
             else:
-                images.append(Image.open(msg['value']).convert('RGB'))
+                img = Image.open(msg['value']).convert('RGB')
+                images.append(img)
+                image_sizes.append(img.size)  # Store the size of each image
                 content += (self.DEFAULT_IMAGE_TOKEN + '\n')
 
         # Process images using the class attribute self.process_images
@@ -438,9 +442,11 @@ class LLaVA_OneVision(BaseModel):
                                                return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
+        # Pass image sizes along with other parameters
         cont = self.model.generate(
             input_ids,
             images=image_tensor,
+            image_sizes=image_sizes,  # Pass the image sizes here
             do_sample=False,
             temperature=0,
             max_new_tokens=4096,
