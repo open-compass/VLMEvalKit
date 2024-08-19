@@ -127,7 +127,8 @@ for DATASET_CLS in DATASET_CLASSES:
 def DATASET_TYPE(dataset):
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
-            return cls.TYPE
+            if hasattr(cls, 'TYPE'):
+                return cls.TYPE
     dataset = build_dataset(dataset)
     if dataset is not None:
         return dataset.TYPE
