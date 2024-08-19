@@ -176,7 +176,6 @@ class OpenAIWrapper(BaseAPI):
 
         context_window = GPT_context_window(self.model)
         max_tokens = min(max_tokens, context_window - self.get_token_len(inputs))
-        print(f'Context Window: {context_window}, Tokens: {max_tokens}, existing token length: {self.get_token_len(inputs)}')
         if 0 < max_tokens <= 100:
             self.logger.warning(
                 'Less than 100 tokens left, '
