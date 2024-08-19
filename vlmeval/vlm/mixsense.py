@@ -22,15 +22,15 @@ class LLama3Mixsense(BaseModel):
             model_path, trust_remote_code=True
         )
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, device_map='auto', trust_remote_code=True
-        )
+            model_path, trust_remote_code=True
+        ).to('cuda').eval()
         self.kwargs = kwargs
 
     def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message)
         input_ids = self.model.text_process(prompt, self.tokenizer)
         image = Image.open(image_path).convert('RGB')
-        image_tensor = self.model.image_process([image]).to(dtype=self.model.dtype, device=device)
+        image_tensor = self.model.image_process([image]).to(dtype=self.model.dtype, device='cuda')
         # generate
         with torch.inference_mode():
             output_ids = self.model.generate(
