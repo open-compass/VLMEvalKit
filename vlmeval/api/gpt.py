@@ -197,6 +197,8 @@ class OpenAIWrapper(BaseAPI):
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg
+        import time
+        time.sleep(5)
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
