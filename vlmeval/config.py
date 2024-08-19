@@ -32,8 +32,8 @@ ungrouped = {
     'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
     '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
     'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
-    # 'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'), #/data2/omchat_dev/omchat/checkpoints/omchat-beta2_hf
-    'OmChat-BETA': partial(OmChat, model_path='/ssd/ljj/proj/VLMEvalKit/omchat-v2.0-13B-single-beta_hf'), # /ssd/ljj/proj/VLMEvalKit/omchat-v2.0-13B-single-beta_hf # /data2/omchat_dev/omchat/checkpoints/omchat-beta2_beta_hf
+    'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
+    'OmChat-BETA': partial(OmChat, model_path='/ssd/ljj/proj/VLMEvalKit/omchat-v2.0-13B-single-beta_hf'), 
 }
 
 api_models = {
