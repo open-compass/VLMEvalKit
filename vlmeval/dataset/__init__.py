@@ -138,6 +138,13 @@ def DATASET_TYPE(dataset):
         if dataset in cls.supported_datasets():
             if hasattr(cls, 'TYPE'):
                 return cls.TYPE
+    # Have to add specific routine to handle ConcatDataset
+    if dataset in ConcatDataset.DATASET_SETS:
+        dataset_list = ConcatDataset.DATASET_SETS[dataset]
+        TYPES = [DATASET_TYPE(dname) for dname in dataset_list]
+        assert np.all([x == TYPES[0] for x in TYPES]), (dataset_list, TYPES)
+        return TYPES[0]
+
     dataset = build_dataset(dataset)
     if dataset is not None:
         return dataset.TYPE
