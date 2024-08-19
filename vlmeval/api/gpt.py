@@ -111,7 +111,7 @@ class OpenAIWrapper(BaseAPI):
         else:
             if api_base is None:
                 if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
-                    self.logger.error('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
+                    self.logger.info('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
                     api_base = os.environ['OPENAI_API_BASE']
                 else:
                     api_base = 'OFFICIAL'

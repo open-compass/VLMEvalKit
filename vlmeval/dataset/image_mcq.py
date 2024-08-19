@@ -45,13 +45,50 @@ class ImageMCQDataset(ImageBaseDataset):
         # A-Bench
         'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
         'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
+        # MMMB
+        'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
+        'MMMB_cn': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_cn.tsv',
+        'MMMB_en': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_en.tsv',
+        'MMMB_pt': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_pt.tsv',
+        'MMMB_ru': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ru.tsv',
+        'MMMB_tr': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_tr.tsv',
+        # Multilingual MMBench
+        'MMBench_dev_ar': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/'
+            'resolve/main/mmbench/mmbench_dev_ar.tsv'
+        ),
+        'MMBench_dev_cn': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_cn.tsv'
+        ),
+        'MMBench_dev_en': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_en.tsv'
+        ),
+        'MMBench_dev_pt': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_pt.tsv'
+        ),
+        'MMBench_dev_tr': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_tr.tsv'
+        ),
+        'MMBench_dev_ru': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_ru.tsv'
+        ),
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
+        'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
+        'TaskMeAnything_v1_imageqa_random': (
+            'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
+            'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
+        )
     }
 
     DATASET_MD5 = {
@@ -93,10 +130,12 @@ class ImageMCQDataset(ImageBaseDataset):
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
+        'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
+        'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889'
     }
 
     def build_prompt(self, line):

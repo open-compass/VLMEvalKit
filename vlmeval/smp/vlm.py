@@ -23,7 +23,7 @@ def rescale_img(img, tgt=None):
     return img
 
 
-def concat_images(images, target_size=-1, mode='h', return_image=False):
+def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
     from .file import md5
 
     ims = [Image.open(im) for im in images]

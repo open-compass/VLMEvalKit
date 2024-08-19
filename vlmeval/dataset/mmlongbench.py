@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
 from vlmeval.smp import *
-from ..image_base import ImageBaseDataset
+from .image_base import ImageBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -194,7 +194,7 @@ def isfloat(num):
 
 def get_font():
     try:
-        truetype_url = 'https://huggingface.co/internlm/internlm-xcomposer2d5-7b/resolve/main/SimHei.ttf?download=true'
+        truetype_url = 'http://opencompass.openxlab.space/utils/Fonts/SimHei.ttf'
         ff = urlopen(truetype_url)
         font = ImageFont.truetype(ff, size=40)
     except:
@@ -436,6 +436,7 @@ class MMLongBench(ImageBaseDataset):
         'GPT4V_HIGH': (1, 1),
         'GPT4o': (1, 1),
         'GPT4o_HIGH': (1, 1),
+        'GPT4o_MINI': (1, 1),
         'MiniCPM-Llama3-V-2_5': (1, 5),
         'InternVL-Chat-V1-5': (5, 2),
         'XComposer2_4KHD': (1, 5),
