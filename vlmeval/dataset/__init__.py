@@ -19,7 +19,6 @@ from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .utils import *
 from ..smp import *
-from ..tools import localize_df
 
 
 class ConcatDataset(ImageBaseDataset):
