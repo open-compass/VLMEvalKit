@@ -110,7 +110,7 @@ Please directly reply with your response to the only question.
         message.append(dict(type='text', value=prompt))
         return message
 
-    def build_prompt_nopack(self, line, num_frames, video_llm):
+    def build_prompt_nopack(self, line, num_frames, video_llm, fps):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -121,8 +121,8 @@ Please directly reply with your response to the only question.
             message.append(dict(type='video', value=os.path.join(self.video_path, video_idx_path)))
             return message
         else:
-            frames = self.save_video_frames(line['video'], num_frames)
-            sys_prompt = self.FRAMES_TMPL_NOPACK.format(num_frames)
+            frames = self.save_video_frames(line['video'], num_frames, fps)
+            sys_prompt = self.FRAMES_TMPL_NOPACK.format(len(frames))
             message = [dict(type='text', value=sys_prompt)]
             for im in frames:
                 message.append(dict(type='image', value=im))
@@ -134,7 +134,7 @@ Please directly reply with your response to the only question.
         if self.pack and not video_llm:
             return self.build_prompt_pack(line, num_frames, fps)
         else:
-            return self.build_prompt_nopack(line, num_frames, video_llm)
+            return self.build_prompt_nopack(line, num_frames, video_llm, fps)
 
     @staticmethod
     def remove_side_quote(s, syms=[',', '"', "'"]):
