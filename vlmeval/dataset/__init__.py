@@ -19,6 +19,7 @@ from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .utils import *
 from ..smp import *
+from ..tools import localize_df
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -53,7 +54,9 @@ class ConcatDataset(ImageBaseDataset):
         for dname in datasets:
             data = self.dataset_map[dname].data
             data['SUB_DATASET'] = [dname] * len(data)
-            data_all.append(data)
+            data_new = localize_df(data, dname, nproc=16)
+            data_all.append(data_new)
+
         data = pd.concat(data_all)
         data['original_index'] = data.pop('index')
         data['index'] = np.arange(len(data))
@@ -69,12 +72,11 @@ class ConcatDataset(ImageBaseDataset):
         return self.dataset_map[dname].build_prompt(org_line)
 
     def dump_image(self, line):
-        assert not isinstance(line, int)
-        idx = line['original_index']
-        dname = line['SUB_DATASET']
-        org_data = self.dataset_map[dname].data
-        org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
-        return self.dataset_map[dname].dump_image(org_line)
+        # Assert all images are pre-dumped
+        assert 'image' not in line
+        assert 'image_path' in line
+        tgt_path = toliststr(line['image_path'])
+        return tgt_path
 
     @classmethod
     def supported_datasets(cls):

@@ -280,13 +280,8 @@ def decode_img_omni(tup):
     return paths
 
 
-def LOCALIZE(fname, new_fname=None):
-    base_name = osp.basename(fname)
-    dname = osp.splitext(base_name)[0]
-    data = load(fname)
-    if new_fname is None:
-        new_fname = fname.replace('.tsv', '_local.tsv')
-
+def localize_df(data, dname, nproc=32):
+    assert 'image' in data
     indices = list(data['index'])
     indices_str = [str(x) for x in indices]
     images = list(data['image'])
@@ -316,7 +311,19 @@ def LOCALIZE(fname, new_fname=None):
     data.pop('image')
     if 'image_path' not in data:
         data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
-    dump(data, new_fname)
+    return data
+
+
+def LOCALIZE(fname, new_fname=None):
+    if new_fname is None:
+        new_fname = fname.replace('.tsv', '_local.tsv')
+
+    base_name = osp.basename(fname)
+    dname = osp.splitext(base_name)[0]
+
+    data = load(fname)
+    data_new = localize_df(data, dname)
+    dump(data_new, new_fname)
     print(f'The localized version of data file is {new_fname}')
     return new_fname
 
