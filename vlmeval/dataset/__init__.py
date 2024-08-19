@@ -37,7 +37,7 @@ class ConcatDataset(ImageBaseDataset):
         datasets = self.DATASET_SETS[dataset]
         self.dataset_map = {}
         # The name of the compliation
-        self.dataset = dataset
+        self.dataset_name = dataset
         self.datasets = datasets
         for dname in datasets:
             dataset = build_dataset(dname)
@@ -77,7 +77,7 @@ class ConcatDataset(ImageBaseDataset):
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset, dname)
+            tgt = eval_file.replace(self.dataset_name, dname)
             data_sub = data_all[data_all['SUB_DATASET'] == dname]
             data_sub.pop('index')
             data_sub['index'] = data_sub.pop('original_index')
@@ -86,7 +86,7 @@ class ConcatDataset(ImageBaseDataset):
         # Then, evaluate each dataset separately
         results_all = []
         for dname in self.datasets:
-            tgt = eval_file.replace(self.dataset, dname)
+            tgt = eval_file.replace(self.dataset_name, dname)
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
             assert isinstance(res, pd.DataFrame)
             res['DATASET'] = [dname] * len(res)
