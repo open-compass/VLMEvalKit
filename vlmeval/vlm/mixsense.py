@@ -6,7 +6,6 @@ import warnings
 
 from .base import BaseModel
 from ..smp import *
-from ..utils import DATASET_TYPE
 
 
 class LLama3Mixsense(BaseModel):
