@@ -304,6 +304,7 @@ class MMMUDataset(ImageMCQDataset):
         msgs = self.split_MMMU(msgs)
         return msgs
 
+
 class GMAIMMBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {
@@ -329,7 +330,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         if group_column not in df:
             raise ValueError(f"Column '{group_column}' not found in dataframe.")
-        
+
         abilities = list(set(df[group_column]))
         abilities = ['None' if isinstance(ab, float) and pd.isna(ab) else ab for ab in abilities]
         abilities.sort()
@@ -338,9 +339,8 @@ class GMAIMMBenchDataset(ImageMCQDataset):
             ab_name = ab
             sub_df = df[df[group_column] == ab]
             res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
-        
-        return pd.DataFrame(res)
 
+        return pd.DataFrame(res)
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import report_acc, mcq_vanilla_eval
@@ -869,4 +869,3 @@ class CustomMCQDataset(ImageMCQDataset):
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)
-
