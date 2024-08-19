@@ -68,6 +68,14 @@ class ConcatDataset(ImageBaseDataset):
         org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
+    def dump_image(self, line):
+        assert not isinstance(line, int)
+        idx = line['original_index']
+        dname = line['SUB_DATASET']
+        org_data = self.dataset_map[dname].data
+        org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
+        return self.dataset_map[dname].dump_image(org_line)
+
     @classmethod
     def supported_datasets(cls):
         return list(cls.DATASET_SETS)
