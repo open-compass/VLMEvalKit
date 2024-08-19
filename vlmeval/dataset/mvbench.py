@@ -281,7 +281,7 @@ Based on your observations, select the best option that accurately addresses the
             input_images = os.path.join(video_path, '*.jpg')
             processed_video_path = f'{video_path}.mp4'
             if not os.path.exists(processed_video_path):
-                # 使用 MoviePy 将图像序列转换为 MP4
+                # using MoviePy to transform images into MP4
                 image_files = sorted(glob.glob(input_images))
                 image_clip = ImageSequenceClip(image_files, fps=self.frame_fps)
                 image_clip.write_videofile(processed_video_path, codec='libx264')
