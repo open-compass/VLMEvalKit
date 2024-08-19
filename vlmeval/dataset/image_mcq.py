@@ -39,13 +39,56 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_VAL.tsv',
         'AesBench_TEST': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_TEST.tsv',
+        # Q-Bench1
+        'Q-Bench1_VAL': 'https://huggingface.co/datasets/zhangzicheng/qbench_tsv/resolve/main/Q-Bench1_VAL.tsv',
+        'Q-Bench1_TEST': 'https://huggingface.co/datasets/zhangzicheng/qbench_tsv/resolve/main/Q-Bench1_TEST.tsv',
+        # A-Bench
+        'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
+        'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
+        # MMMB
+        'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
+        'MMMB_cn': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_cn.tsv',
+        'MMMB_en': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_en.tsv',
+        'MMMB_pt': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_pt.tsv',
+        'MMMB_ru': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ru.tsv',
+        'MMMB_tr': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_tr.tsv',
+        # Multilingual MMBench
+        'MMBench_dev_ar': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/'
+            'resolve/main/mmbench/mmbench_dev_ar.tsv'
+        ),
+        'MMBench_dev_cn': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_cn.tsv'
+        ),
+        'MMBench_dev_en': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_en.tsv'
+        ),
+        'MMBench_dev_pt': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_pt.tsv'
+        ),
+        'MMBench_dev_tr': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_tr.tsv'
+        ),
+        'MMBench_dev_ru': (
+            'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/',
+            'resolve/main/mmbench/mmbench_dev_ru.tsv'
+        ),
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
+        'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
+        'TaskMeAnything_v1_imageqa_random': (
+            'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
+            'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
+        )
     }
 
     DATASET_MD5 = {
@@ -78,13 +121,21 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
         'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
+        # Q-Bench1
+        'Q-Bench1_VAL': '837bdb6cd2da571713543462815187b7',
+        'Q-Bench1_TEST': '15e759bfd58c9d5f30b23a317d347153',
+        # A-Bench
+        'A-Bench_VAL': '218563ec50d34bb336c814143a5bb9c1',
+        'A-Bench_TEST': '567013fb033a20cf23f51d8e865bd16c',
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
+        'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
+        'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889'
     }
 
     def build_prompt(self, line):
@@ -197,7 +248,7 @@ class ImageMCQDataset(ImageBaseDataset):
         dump(acc, score_file)
 
         if dataset == 'AesBench_VAL':
-            warnings.info('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
+            warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
         return acc

@@ -60,6 +60,10 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('STEPAI_API_KEY', '')
             if key is None:
                 key = env_key
+        elif 'yi-vision' in model:
+            env_key = os.environ.get('YI_API_KEY', '')
+            if key is None:
+                key = env_key
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -107,7 +111,7 @@ class OpenAIWrapper(BaseAPI):
         else:
             if api_base is None:
                 if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
-                    self.logger.error('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
+                    self.logger.info('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
                     api_base = os.environ['OPENAI_API_BASE']
                 else:
                     api_base = 'OFFICIAL'

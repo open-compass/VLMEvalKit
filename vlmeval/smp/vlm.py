@@ -7,6 +7,8 @@ from uuid import uuid4
 import os.path as osp
 import base64
 from PIL import Image
+import sys
+
 Image.MAX_IMAGE_PIXELS = 1e9
 
 
@@ -21,11 +23,15 @@ def rescale_img(img, tgt=None):
     return img
 
 
-def concat_images(images, target_size=-1, mode='h', return_image=False):
+def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
     from .file import md5
+
     ims = [Image.open(im) for im in images]
     if target_size != -1:
-        ims = [rescale_img(im, (-1, target_size) if mode == 'h' else (target_size, -1)) for im in ims]
+        ims = [
+            rescale_img(im, (-1, target_size) if mode == 'h' else (target_size, -1))
+            for im in ims
+        ]
 
     ws, hs = [x.width for x in ims], [x.height for x in ims]
     if mode == 'h':
@@ -147,6 +153,7 @@ def circular_pred(df, extract_func=None):
         extract_func = lambda x: x  # noqa: E731
     df = df.sort_values('index')
     from vlmeval.utils import can_infer_option
+
     shift = int(1e6)
 
     choices = [extract_func(x) for x in df['prediction']]
@@ -155,9 +162,12 @@ def circular_pred(df, extract_func=None):
     valid_map = {i: True for i in pred_map if i < 1e6}
     for i in df['index']:
         if i >= shift and pred_map[i] and pred_map[i - shift]:
-            if (
-                pred_map[i] not in list(string.ascii_uppercase) or  # noqa: W504
-                pred_map[i - shift] not in list(string.ascii_uppercase)
+            if pred_map[i] not in list(
+                string.ascii_uppercase
+            ) or pred_map[  # noqa: W504
+                i - shift
+            ] not in list(
+                string.ascii_uppercase
             ):
 
                 valid_map[i % shift] = False

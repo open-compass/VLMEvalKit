@@ -51,3 +51,51 @@ class Phi3Vision(BaseModel):
             clean_up_tokenization_spaces=False
         )[0]
         return response
+
+    def chat_inner(self, message, dataset=None):
+
+        messages = []
+        image_cnt = 1
+        image_list = []
+        for msg in message:
+            content = ''
+            # If message is just text in the conversation
+            if len(msg['content']) == 1 and msg['content'][0]['type'] == 'text':
+                msg_new = {'role': msg['role'], 'content': msg['content'][0]['value']}
+                messages.append(msg_new)
+                continue
+
+            # If both image & text is present
+            for x in msg['content']:
+                if x['type'] == 'text':
+                    content += x['value']
+                elif x['type'] == 'image':
+                    image = Image.open(x['value']).convert('RGB')
+                    content += f'<|image_{image_cnt}|>\n'
+                    image_list.append(image)
+                    image_cnt += 1
+            msg_new = {'role': msg['role'], 'content': content}
+            messages.append(msg_new)
+
+        prompt = self.processor.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = self.processor(prompt, image_list, return_tensors='pt').to('cuda')
+
+        generation_args = {
+            'max_new_tokens': 500,
+            'temperature': 0.0,
+            'do_sample': False,
+        }
+        generation_args.update(self.kwargs)
+
+        generate_ids = self.model.generate(
+            **inputs,
+            eos_token_id=self.processor.tokenizer.eos_token_id,
+            **generation_args
+        )
+        generate_ids = generate_ids[:, inputs['input_ids'].shape[1]:]
+        response = self.processor.batch_decode(
+            generate_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False
+        )[0]
+        return response

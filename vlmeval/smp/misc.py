@@ -18,7 +18,6 @@ from multiprocessing import Pool, current_process
 from tqdm import tqdm
 import datetime
 import matplotlib.pyplot as plt
-import seaborn as sns
 from tabulate import tabulate
 from json import JSONDecoder
 from huggingface_hub import scan_cache_dir

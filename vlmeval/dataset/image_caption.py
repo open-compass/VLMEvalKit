@@ -1,13 +1,13 @@
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.cider.cider import Cider
-
 from .image_base import ImageBaseDataset
 from ..smp import *
 
 
 class COCO_Caption_Scorer():
     def __init__(self, ref, gt):
+        from pycocoevalcap.bleu.bleu import Bleu
+        from pycocoevalcap.rouge.rouge import Rouge
+        from pycocoevalcap.cider.cider import Cider
+
         self.ref = ref
         self.gt = gt
         print('setting up scorers...')
