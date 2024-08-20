@@ -155,7 +155,6 @@ def main():
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
-                    judge_kwargs['use_azure'] = True
                 elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4o'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
