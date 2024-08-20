@@ -24,6 +24,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-08-19]** We have supported [**MUIR**](https://muirbench.github.io), thanks to **amitbcp** 🔥🔥🔥
 - **[2024-08-19]** We have supported [**Llama-3-MixSenseV1_1**](https://huggingface.co/Zero-Vision/Llama-3-MixSenseV1_1), thanks to **Zero-Vision** 🔥🔥🔥
 - **[2024-08-12]** We have supported [**MMMB and Multilingual MMBench**](https://arxiv.org/abs/2406.02539), thanks to [**Hai-Long Sun**](https://github.com/sun-hailong)🔥🔥🔥
 - **[2024-08-09]** We have supported [**Hunyuan-Vision**](https://cloud.tencent.com/document/product/1729), evaluation results coming soon🔥🔥🔥
