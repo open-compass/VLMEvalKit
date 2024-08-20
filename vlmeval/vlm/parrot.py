@@ -20,7 +20,7 @@ class Parrot(BaseModel):
             from parrot.utils.mm_utils import process_images
         except:
             warnings.warn('Please install Parrot before using Parrot')
-            warnings.warn('Please install VILA from https://github.com/AIDC-AI/Parrot')
+            warnings.warn('Please install Parrot from https://github.com/AIDC-AI/Parrot')
             warnings.warn('Using `pip install -e . --no-deps` in the Parrot directory')
             warnings.warn('Recommend to install transformers==4.39.0')
             sys.exit(-1)
@@ -107,7 +107,7 @@ class Parrot(BaseModel):
 
         if len(options):
             default_prompt = "\nAnswer with the option's letter from the given choices directly."
-            if dataset[-3:] == '_zh' or cn_string(prompt):
+            if dataset[-3:] == '_cn' or cn_string(prompt):
                 default_prompt = '\n请直接用给定选项中的选项字母回答。'
             elif dataset[-3:] == '_pt':
                 default_prompt = '\nResponda diretamente com a letra da opção das escolhas dadas.'
