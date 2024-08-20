@@ -7,7 +7,6 @@ from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
 
-
 class OmChat(BaseModel):
 
     INSTALL_REQ = True
