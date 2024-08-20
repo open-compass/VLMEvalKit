@@ -28,7 +28,7 @@ from .bunnyllama3 import BunnyLLama3
 from .vxverse import VXVERSE
 from .paligemma import PaliGemma
 from .qh_360vl import QH_360VL
-from .phi3_vision import Phi3Vision
+from .phi3_vision import Phi3Vision, Phi3_5Vision
 from .wemm import WeMM
 from .cambrian import Cambrian
 from .chameleon import Chameleon
