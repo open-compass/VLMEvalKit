@@ -1,5 +1,3 @@
-einops
-flash_attn
 gradio
 huggingface_hub
 matplotlib
@@ -20,7 +18,6 @@ sty
 tabulate
 tiktoken
 timeout-decorator
-timm
 torch>=2.0.1
 tqdm
 transformers
