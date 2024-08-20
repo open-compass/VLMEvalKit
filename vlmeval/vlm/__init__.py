@@ -37,3 +37,4 @@ from .vila import VILA
 from .ovis import Ovis
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
+from .omchat import OmChat
