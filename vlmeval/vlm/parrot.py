@@ -10,7 +10,7 @@ from ..smp import *
 
 class Parrot(BaseModel):
     INSTALL_REQ = False
-    INTERLEAVE = True
+    INTERLEAVE = False
 
     def __init__(self, model_path='AIDC-AI/Parrot-7B', **kwargs):
         try:
@@ -22,6 +22,7 @@ class Parrot(BaseModel):
             warnings.warn('Please install Parrot before using Parrot')
             warnings.warn('Please install VILA from https://github.com/AIDC-AI/Parrot')
             warnings.warn('Using `pip install -e . --no-deps` in the Parrot directory')
+            warnings.warn('Recommend to install transformers==4.39.0')
             sys.exit(-1)
 
         self.process_images = process_images
