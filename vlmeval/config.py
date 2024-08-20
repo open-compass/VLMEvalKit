@@ -34,6 +34,7 @@ ungrouped = {
     'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
     'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1'),
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
+    'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
 }
 
 api_models = {
@@ -113,6 +114,12 @@ llava_series = {
     'llava_next_qwen_32b': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-qwen-32b'),
     'llava_next_interleave_7b': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-hf'),
     'llava_next_interleave_7b_dpo': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-dpo-hf'),
+    'llava_onevision_qwen2_0.5b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-si'),
+    'llava_onevision_qwen2_7b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-si'),
+    'llava_onevision_qwen2_72b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-si'),
+    'llava_onevision_qwen2_0.5b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-ov'),
+    'llava_onevision_qwen2_7b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'),
+    'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov'),
 }
 
 internvl_series = {
