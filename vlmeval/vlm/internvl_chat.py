@@ -12,6 +12,7 @@ import torchvision.transforms as T
 import transformers
 
 from torchvision.transforms.functional import InterpolationMode
+import re
 
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -137,6 +138,19 @@ class InternVLChat(BaseModel):
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
+        # Regular expression to match the pattern 'Image' followed by a number, e.g. Image1
+        self.pattern = r'Image(\d+)'
+        # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
+        self.replacement = r'Image-\1'
+
+        # Convert InternVL2 response to dataset format
+        # e.g. Image1 -> Image-1
+
+        # Regular expression to match the pattern 'Image-' followed by a number
+        self.reverse_pattern = r'Image-(\d+)'
+        # Replacement pattern to remove the hyphen (Image-1 -> Image1)
+        self.reverse_replacement = r'Image\1'
+
         if listinstr(['InternVL2-Llama3-76B'], model_path):
             device_map = split_model(model_path.split('/')[-1])
             self.model = AutoModel.from_pretrained(
@@ -163,7 +177,12 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-        return True
+
+        if dataset is not None and listinstr(['MMDU'], dataset):
+            # For Multi-Turn we don't have custom prompt
+            return False
+        else:
+            return True
 
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
@@ -350,3 +369,101 @@ class InternVLChat(BaseModel):
             return self.generate_v2(message, dataset)
         else:
             raise ValueError(f'Unsupported version: {self.version}')
+
+    def build_history(self, message):
+        # Global Variables
+        image_path = []
+        image_cnt = 0
+
+        def concat_tilist(tilist):
+            nonlocal image_cnt  # Declare image_cnt as nonlocal to modify it
+            prompt = ''
+            for item in tilist:
+                # Substitute the pattern in the text
+                if item['type'] == 'text':
+                    prompt += re.sub(self.pattern, self.replacement, item['value'])
+                elif item['type'] == 'image':
+                    image_cnt += 1
+                    prompt += '<image>\n'
+                    image_path.append(item['value'])
+            return prompt
+
+        # Only previous messages
+        assert len(message) % 2 == 0
+        history = []
+        for i in range(len(message) // 2):
+            m1, m2 = message[2 * i], message[2 * i + 1]
+            assert m1['role'] == 'user' and m2['role'] == 'assistant'
+            history.append((concat_tilist(m1['content']), concat_tilist(m2['content'])))
+
+        return history, image_path, image_cnt
+
+    def chat_inner_v2(self, message, dataset=None):
+
+        image_cnt = 0
+        if len(message) > 1:
+            history, image_path, image_cnt = self.build_history(message[:-1])
+        else:
+            history, image_path, image_cnt = None, [], 1
+        current_msg = message[-1]
+        question = ''
+
+        # If message is just text in the conversation
+        if len(current_msg['content']) == 1 and current_msg['content'][0]['type'] == 'text':
+            question = current_msg['content'][0]['value']
+            question = re.sub(self.pattern, self.replacement, question)  # Fix pattern as per InternVL
+        else:
+            for msg in current_msg['content']:
+                if msg['type'] == 'text':
+                    question += re.sub(self.pattern, self.replacement, msg['value'])
+                elif msg['type'] == 'image':
+                    image_cnt += 1
+                    question += '<image>\n'
+                    image_path.append(msg['value'])
+
+        if image_cnt > 1:
+            num_patches_list = []
+            pixel_values_list = []
+            for image_idx, file_name in enumerate(image_path):
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+                curr_pixel_values = load_image(
+                    file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                num_patches_list.append(curr_pixel_values.size(0))
+                pixel_values_list.append(curr_pixel_values)
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_cnt == 1:
+            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            pixel_values = load_image(
+                image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+            num_patches_list = [pixel_values.size(0)]
+        else:
+            pixel_values = None
+            num_patches_list = []
+
+        response, history = self.model.chat(
+            self.tokenizer,
+            pixel_values=pixel_values,
+            num_patches_list=num_patches_list,
+            question=question,
+            generation_config=self.kwargs,
+            history=history,
+            return_history=True
+        )
+
+        response = re.sub(self.reverse_pattern, self.reverse_replacement, response)
+
+        return response
+
+    def chat_inner(self, message, dataset=None):
+        self.set_max_num(dataset)
+
+        if self.version in ['V1.1', 'V1.2']:
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
+        elif self.version == 'V1.5':
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
+        elif self.version == 'V2.0':
+            kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
+            self.kwargs = kwargs_default
+            return self.chat_inner_v2(message, dataset)
+        else:
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
