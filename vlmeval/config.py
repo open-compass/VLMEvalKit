@@ -33,8 +33,8 @@ ungrouped = {
     '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
     'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
     'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1'),
+    'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
-
 }
 
 api_models = {
