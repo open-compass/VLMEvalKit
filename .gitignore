@@ -161,7 +161,7 @@ scripts/*ttf
 cache_dir/*
 
 outputs
-omchat*
 omchat*.sh
+omchat_*
 omchat-*
 .vscode/
