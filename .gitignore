@@ -159,3 +159,5 @@ images/
 
 scripts/*ttf
 cache_dir/*
+work-dir/
+LMUData/

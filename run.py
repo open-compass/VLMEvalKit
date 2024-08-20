@@ -1,3 +1,6 @@
+import os
+os.environ['LMUData'] = '/data02/zhaop-l/code/VLMEvalKit/LMUData'
+
 import torch
 import torch.distributed as dist
 

@@ -296,7 +296,8 @@ class MMMUDataset(ImageMCQDataset):
 
 
 class CustomMCQDataset(ImageMCQDataset):
-
+    TYPE = 'MCQ'
+    DATASET_URL = {}
     def load_data(self, dataset):
         data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
 
@@ -306,4 +307,6 @@ class CustomMCQDataset(ImageMCQDataset):
                 from ..tools import LOCALIZE
                 LOCALIZE(data_path, local_path)
             data_path = local_path
+        if dataset not in self.DATASET_URL:
+            self.DATASET_URL[dataset] = ''
         return load(data_path)

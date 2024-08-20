@@ -203,6 +203,7 @@ class InternVLChat(BaseModel):
         return prompt
 
     def build_prompt(self, line, dataset=None):
+        # print(f'this build prompt,dataset {dataset}, {DATASET_TYPE(dataset)}')
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
