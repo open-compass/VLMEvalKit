@@ -7,6 +7,7 @@ from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
 
+
 class OmChat(BaseModel):
 
     INSTALL_REQ = True
@@ -16,22 +17,27 @@ class OmChat(BaseModel):
         assert model_path is not None
         self.model_path = model_path
         print(f'load from {self.model_path}')
-        self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True, torch_dtype=torch.float16).cuda().eval()
+        model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True, torch_dtype=torch.float16)
+        self.model = model.cuda().eval()
         self.kwargs = kwargs
         self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
 
         # system prompt
-        self.default_system_prompt = "You are a helpful assistant. Focus on accuracy and reliability in your response."
-        self.new1_system_prompt = "You are a helpful assistant."
-        self.new2_system_prompt = "Read the following question carefully, solve it step by step, and then output the final answer in the format of 'Answer: single number or single word or phrase'.\n\n"
+        self.default_system_prompt = 'You are a helpful assistant. Focus on accuracy and reliability in your response.'
+        self.new1_system_prompt = 'You are a helpful assistant.'
+        self.new2_system_prompt = (
+            'Read the following question carefully, '
+            'solve it step by step, '
+            'and then output the final answer in the format of '
+            "'Answer: single number or single word or phrase'.\n\n"
+        )
 
         # suffix_prompt for MCQ
         self.mcq_suffix_prompt_en = 'Please select the correct answer from the options above. \n'
         self.mcq_suffix_prompt_cn = '请直接回答选项字母。\n'
         # suffix_prompt for Y/N
         self.yorn_suffix_prompt = ' Please answer yes or no. Answer the question using a single word or phrase.'
-
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -59,7 +65,7 @@ class OmChat(BaseModel):
             options_prompt = 'Options:\n'
             for key, item in options.items():
                 options_prompt += f'{key}. {item}\n'
-            
+
             prompt = ''
             if hint is not None:
                 prompt += f'Hint: {hint}\n'
@@ -85,10 +91,14 @@ class OmChat(BaseModel):
         message.append(dict(type='text', value=prompt))
 
         return message
-    
+
     def message_to_promptimg(self, message, dataset=None):
         if dataset is None or listinstr(['MMMU'], dataset):
-            prompt = '\n'.join([re.sub(r'<image\s*\d+>', '<image>', x['value']) for x in message if x['type'] == 'text'])
+            prompt = '\n'.join([
+                re.sub(r'<image\s*\d+>', '<image>', x['value'])
+                for x in message
+                if x['type'] == 'text'
+            ])
             image = [x['value'] for x in message if x['type'] == 'image']
         else:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
@@ -102,7 +112,7 @@ class OmChat(BaseModel):
                 return input_string[:-1]
             else:
                 return input_string
-            
+
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         image = [Image.open(img_path).convert('RGB') for img_path in image_path]
 
@@ -110,8 +120,7 @@ class OmChat(BaseModel):
             max_new_tokens=1024,
             do_sample=False,
             temperature=0.0,
-            top_p=1,
-            )
+            top_p=1)
 
         if dataset is not None and listinstr(['MathVista_MINI'], dataset):
             system_prompt = self.new2_system_prompt
@@ -119,8 +128,7 @@ class OmChat(BaseModel):
             system_prompt = self.new1_system_prompt
         else:
             system_prompt = self.default_system_prompt
-                
-        inputs = self.processor(text=prompt, system_prompt=system_prompt, images=image, return_tensors="pt").to("cuda")
+        inputs = self.processor(text=prompt, system_prompt=system_prompt, images=image, return_tensors='pt').to('cuda')
         default_kwargs.update(self.kwargs)
 
         with torch.inference_mode():
@@ -129,23 +137,22 @@ class OmChat(BaseModel):
                 eos_token_id=self.model.generation_config.eos_token_id,
                 **default_kwargs
             )
-        res = self.processor.tokenizer.decode(output_ids[0, inputs.input_ids.shape[1] :]).strip()
+        res = self.processor.tokenizer.decode(output_ids[0, inputs.input_ids.shape[1]:]).strip()
         if '<|im_end|>' in res:
             res = res.split('<|im_end|>')[0].strip()
 
         if dataset != 'MMMU_DEV_VAL':
-            if res.startswith("Answer: "):
-                res = res[len("Answer: "):]
+            if res.startswith('Answer: '):
+                res = res[len('Answer: '):]
 
-            match = re.search(r"\nThe answer is:(.+)", res)
+            match = re.search(r'\nThe answer is:(.+)', res)
             if match:
                 res = match.group(1).strip()
 
         # for OCRBench
-        doc_match = re.search(r"<doc>(.*?)<\/doc>", res)
+        doc_match = re.search(r'<doc>(.*?)<\/doc>', res)
         if doc_match:
             res = doc_match.group(1).strip()
-            
         res = replace_last_dot(res)
 
         return res

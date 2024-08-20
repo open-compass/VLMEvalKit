@@ -159,9 +159,3 @@ images/
 
 scripts/*ttf
 cache_dir/*
-
-outputs
-omchat*.sh
-omchat_*
-omchat-*
-.vscode/
