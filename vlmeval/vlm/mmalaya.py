@@ -193,7 +193,8 @@ def split_model(model_name):
 class MMAlaya2(BaseModel):
     """
     This implementation fine-tunes 20 LoRA modules based on the InternVL-Chat-V1-5 model.
-    The fine-tuned LoRA modules are then merged with the InternVL-Chat-V1-5 model using the PEFT model merging method, TIES.
+    The fine-tuned LoRA modules are then merged with the InternVL-Chat-V1-5 model 
+    using the PEFT model merging method, TIES.
     The code is based on the implementation in `vlmeval/vlm/internvl_chat.py`.
     """
 
