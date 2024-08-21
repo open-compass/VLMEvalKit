@@ -18,29 +18,29 @@ class MMAlaya(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self, model_path='DataCanvas/MMAlaya', **kwargs):
+    def __init__(self, model_path="DataCanvas/MMAlaya", **kwargs):
         assert model_path is not None
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(model_path, device_map='cpu', trust_remote_code=True).eval()
+        model = AutoModelForCausalLM.from_pretrained(model_path, device_map="cpu", trust_remote_code=True).eval()
         # need initialize tokenizer
         model.initialize_tokenizer(self.tokenizer)
         self.model = model.cuda()
 
         self.kwargs = kwargs
-        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
         # read image
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-        image = Image.open(image_path).convert('RGB')
+        image = Image.open(image_path).convert("RGB")
         # tokenize prompt, and proprecess image
         input_ids, image_tensor, stopping_criteria = self.model.prepare_for_inference(
             prompt,
             self.tokenizer,
             image,
-            return_tensors='pt')
+            return_tensors="pt")
         with torch.inference_mode():
             output_ids = self.model.generate(
                 inputs=input_ids.cuda(),
@@ -193,7 +193,7 @@ def split_model(model_name):
 class MMAlaya2(BaseModel):
     """
     This implementation fine-tunes 20 LoRA modules based on the InternVL-Chat-V1-5 model.
-    The fine-tuned LoRA modules are then merged with the InternVL-Chat-V1-5 model 
+    The fine-tuned LoRA modules are then merged with the InternVL-Chat-V1-5 model
     using the PEFT model merging method, TIES.
     The code is based on the implementation in `vlmeval/vlm/internvl_chat.py`.
     """
@@ -216,15 +216,15 @@ class MMAlaya2(BaseModel):
             model_path, trust_remote_code=True, use_fast=False
         )
 
-        # Regular expression to match the pattern 'Image' followed by a number, e.g. Image1
+        # Regular expression to match the pattern "Image" followed by a number, e.g. Image1
         self.pattern = r"Image(\d+)"
-        # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
+        # Replacement pattern to insert a hyphen between "Image" and the number, e.g. Image-1
         self.replacement = r"Image-\1"
 
         # Convert InternVL2 response to dataset format
         # e.g. Image1 -> Image-1
 
-        # Regular expression to match the pattern 'Image-' followed by a number
+        # Regular expression to match the pattern "Image-" followed by a number
         self.reverse_pattern = r"Image-(\d+)"
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r"Image\1"
