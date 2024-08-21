@@ -127,7 +127,7 @@ internvl_series = {
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
     'InternVL2-26B': partial(InternVLChat, model_path='/data03/public/models/InternVL2-26B/', version='V2.0'),
-    'InternVL2-26B-Lora': partial(InternVLChat, model_path='/data03/public/models/InternVL2-26B/', version='V2.0'),
+    'InternVL2-26B-Lora': partial(InternVLChat, model_path='/data02/zhaop-l/models/InternVL2_26B_building_drawings_lora_v1/', version='V2.0'),
     'InternVL2-26B-Full': partial(InternVLChat, model_path='/data03/public/models/InternVL2-26B/', version='V2.0'),
     'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
@@ -210,6 +210,13 @@ mantis_series = {
     'Mantis-8B-Fuyu': partial(Mantis, model_path='TIGER-Lab/Mantis-8B-Fuyu')
 }
 
+minimonkey_series = {
+	'Mini-Monkey-InternVL2-26B-Base': partial(MiniMonkeyChat, model_path='/data02/zhaop-l/models/InternVL2-26B-Monkey/', version='V2.0'),
+    'Mini-Monkey-InternVL2-26B-Lora': partial(MiniMonkeyChat, model_path='/data02/zhaop-l/models/InternVL2_26B_building_drawings_lora_v1/', version='V2.0'),
+    'Mini-Monkey-InternVL2-26B-Full': partial(MiniMonkeyChat, model_path='/data02/zhaop-l/code/InternVL/work_dirs/minimonkey/20240817/minimonkey_finetune_full_2024081702/checkpoint-23000', version='V2.0'),
+
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -218,7 +225,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series,
+    mantis_series,minimonkey_series,
 ]
 
 for grp in model_groups:
