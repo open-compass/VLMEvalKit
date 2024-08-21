@@ -81,8 +81,7 @@ class OmChat(BaseModel):
                         prompt += self.mcq_suffix_prompt_cn
 
         elif DATASET_TYPE(dataset) == 'Y/N':
-            if dataset is not None and listinstr(['MME', 'HallusionBench'], dataset):
-                prompt = question + self.yorn_suffix_prompt
+            prompt = question + self.yorn_suffix_prompt
 
         print(DATASET_TYPE(dataset))
         message = []
