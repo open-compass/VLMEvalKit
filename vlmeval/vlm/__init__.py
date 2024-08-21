@@ -39,3 +39,4 @@ from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
 from .omchat import OmChat
+from .mplug_owl3 import mPLUG_Owl3
