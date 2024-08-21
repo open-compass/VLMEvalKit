@@ -26,7 +26,8 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
-    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe) for idx in indices]
+    structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe,
+                                    video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
 
     packstr = 'pack' if pack else 'nopack'
     out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'

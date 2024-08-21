@@ -221,6 +221,8 @@ class IDEFICS2(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 prompt += instruction.strip()
+        if 'A.' in prompt and 'B.' in prompt:
+            prompt += '\nAnswer with the letter.'
         prompt += '<end_of_utterance>\nAssistant:'
         if 'A.' in prompt and 'B.' in prompt:
             prompt += ' Answer:'
