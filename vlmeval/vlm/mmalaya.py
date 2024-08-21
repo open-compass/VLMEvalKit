@@ -21,14 +21,20 @@ class MMAlaya(BaseModel):
     def __init__(self, model_path="DataCanvas/MMAlaya", **kwargs):
         assert model_path is not None
         self.model_path = model_path
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(model_path, device_map="cpu", trust_remote_code=True).eval()
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_path, trust_remote_code=True
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, device_map="cpu", trust_remote_code=True
+        ).eval()
         # need initialize tokenizer
         model.initialize_tokenizer(self.tokenizer)
         self.model = model.cuda()
 
         self.kwargs = kwargs
-        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+        warnings.warn(
+            f"Following kwargs received: {self.kwargs}, will use as generation config. "
+        )
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
@@ -37,10 +43,8 @@ class MMAlaya(BaseModel):
         image = Image.open(image_path).convert("RGB")
         # tokenize prompt, and proprecess image
         input_ids, image_tensor, stopping_criteria = self.model.prepare_for_inference(
-            prompt,
-            self.tokenizer,
-            image,
-            return_tensors="pt")
+            prompt, self.tokenizer, image, return_tensors="pt"
+        )
         with torch.inference_mode():
             output_ids = self.model.generate(
                 inputs=input_ids.cuda(),
@@ -56,7 +60,7 @@ class MMAlaya(BaseModel):
             response = self.tokenizer.batch_decode(
                 output_ids[:, input_token_len:].cpu(),
                 skip_special_tokens=True,
-                clean_up_tokenization_spaces=False
+                clean_up_tokenization_spaces=False,
             )[0].strip()
         return response
 
