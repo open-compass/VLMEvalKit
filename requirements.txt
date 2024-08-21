@@ -1,3 +1,5 @@
+einops
+flash_attn
 gradio
 huggingface_hub
 matplotlib
@@ -7,6 +9,7 @@ openai==1.3.5
 opencv-python>=4.4.0.46
 openpyxl
 pandas
+peft
 pillow
 portalocker
 python-dotenv
@@ -18,6 +21,7 @@ sty
 tabulate
 tiktoken
 timeout-decorator
+timm
 torch>=2.0.1
 tqdm
 transformers
