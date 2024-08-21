@@ -14,6 +14,8 @@ class OmChat(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='omlab/omchat-v2.0-13B-single-beta_hf', **kwargs):
+
+        # Recommend to install `transformers==4.44.0`
         assert model_path is not None
         self.model_path = model_path
         print(f'load from {self.model_path}')
