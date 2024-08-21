@@ -58,7 +58,6 @@ def evaluate_tabfact(data, score_keys):
     num_correct = 0
     manual_check = 0
     start_time = time.time()
-    import pdb; pdb.set_trace()
     for instance in data:
         if instance["prediction"] == None:
             instance["prediction"] = "none"

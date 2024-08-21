@@ -448,9 +448,10 @@ class TableVQABench(ImageBaseDataset):
 
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        eval_result = pd.DataFrame(eval_result)
         dump(eval_result, result_file)
 
-        return pd.DataFrame(eval_result)
+        return eval_result
     
     # TableVQABench adopts a custom prompt
     def build_prompt(self, line):
@@ -458,12 +459,12 @@ class TableVQABench(ImageBaseDataset):
         assert sum([x['type'] == 'text' for x in msgs]) == 1
         for item in msgs:
             if item['type'] == 'text':
-                if line["split"] == 'fintabnetqa':
-                    item['value'] = self.FINTABNETQA_PROMPT + item['value']
-                elif line["split"] == 'vtabfact':
-                    item['value'] = self.VTABFACT_PROMPT + item['value']
-                elif line["split"] == 'vwtq_syn' or line["split"] == 'vwtq':
-                    item['value'] = self.VWTQ_PROMPT + item['value']
+                if line['split'] == 'fintabnetqa':
+                    item['value'] = self.FINTABNETQA_PROMPT.format_map({"question": item['value']})
+                elif line['split'] == 'vtabfact':
+                    item['value'] = self.VTABFACT_PROMPT.format_map({"question": item['value']})
+                elif line["split"] == 'vwtq_syn' or line['split'] == 'vwtq':
+                    item['value'] = self.VWTQ_PROMPT.format_map({"question": item['value']})
         return msgs
 
 
