@@ -8,8 +8,11 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
 class mPLUG_Owl3(BaseModel):
+    # No separate model module is required, but the dependencies must be met.
+    # https://github.com/X-PLUG/mPLUG-Owl/blob/main/mPLUG-Owl3/requirements.txt
     INSTALL_REQ = True
     INTERLEAVE = True
+    INSTALL_REQ_TXT = 'https://github.com/X-PLUG/mPLUG-Owl/blob/main/mPLUG-Owl3/requirements.txt'
 
     def __init__(self, model_path='mPLUG/mPLUG-Owl3-7B-240728', **kwargs):
         assert model_path is not None
@@ -26,6 +29,12 @@ class mPLUG_Owl3(BaseModel):
         )
         self.model = model.eval().cuda()
         self.processor = self.model.init_processor(self.tokenizer)
+        self.logger = get_logger('mPLUG_Owl3')
+        if self.INSTALL_REQ:
+            self.logger.info(
+                f"Please remember to meet the requirements first\n"
+                f"Here: {self.INSTALL_REQ_TXT}"
+            )
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -35,6 +44,7 @@ class mPLUG_Owl3(BaseModel):
             return True
         return False
 
+    # Currently same to mPLUG_Owl2
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
@@ -80,24 +90,20 @@ class mPLUG_Owl3(BaseModel):
         images = []
         prompt_full = ""
 
-        # 需要修改，这个模型能interleave
-        # if num_images == 1:
-        #     prompt, image = self.message_to_promptimg(message, dataset=dataset)
-        #     prompt_full += f'<|image|>{prompt}'
-        #     images.append(image)
-        # else:
-        #     for msg in message:
-        #         if msg['type'] == 'image':
-        #             images.append(msg['value'])
-        #             prompt_full += '<|image|>'
-        #         elif msg['type'] == 'text':
-        #             prompt_full += msg['value']
-        #     prompt_full += '\nASSISTANT: '
+        for msg in message:
+            if msg['type'] == 'image':
+                images.append(msg['value'])
+                prompt_full += '<|image|>'
+            elif msg['type'] == 'text':
+                prompt_full += msg['value']
 
         needed_messages = [
             {"role": "user", "content": prompt_full},
             {"role": "assistant", "content": ""}
         ]
+
+        self.logger.info(f"needed_messages: {needed_messages}")
+
         images = [self.preproc_image(fname) for fname in images]
 
         inputs = self.processor(needed_messages, images=images, videos=None)
@@ -105,11 +111,10 @@ class mPLUG_Owl3(BaseModel):
         inputs.to('cuda')
         inputs.update({
             'tokenizer': self.tokenizer,
-            'max_new_tokens': 100,
+            'max_new_tokens': 1024,
             'decode_text': True,
         })
 
         g = self.model.generate(**inputs)
-        print(g)
 
         return g
