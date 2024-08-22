@@ -32,8 +32,8 @@ class mPLUG_Owl3(BaseModel):
         self.logger = get_logger('mPLUG_Owl3')
         if self.INSTALL_REQ:
             self.logger.info(
-                f"Please remember to meet the requirements first\n"
-                f"Here: {self.INSTALL_REQ_TXT}"
+                f'Please remember to meet the requirements first\n'
+                f'Here: {self.INSTALL_REQ_TXT}'
             )
 
     def use_custom_prompt(self, dataset):
@@ -88,7 +88,7 @@ class mPLUG_Owl3(BaseModel):
         assert num_images >= 0
 
         images = []
-        prompt_full = ""
+        prompt_full = ''
 
         for msg in message:
             if msg['type'] == 'image':
@@ -98,11 +98,11 @@ class mPLUG_Owl3(BaseModel):
                 prompt_full += msg['value']
 
         needed_messages = [
-            {"role": "user", "content": prompt_full},
-            {"role": "assistant", "content": ""}
+            {'role': 'user', 'content': prompt_full},
+            {'role': 'assistant', 'content': ''}
         ]
 
-        self.logger.info(f"needed_messages: {needed_messages}")
+        self.logger.info(f'needed_messages: {needed_messages}')
 
         images = [self.preproc_image(fname) for fname in images]
 
