@@ -103,6 +103,8 @@ class mPLUG_Owl3(BaseModel):
         ]
 
         self.logger.info(f'needed_messages: {needed_messages}')
+        self.logger.info(f'num_images: {num_images}')
+        self.logger.info(f'images: {images}')
 
         images = [self.preproc_image(fname) for fname in images]
 
@@ -117,4 +119,4 @@ class mPLUG_Owl3(BaseModel):
 
         g = self.model.generate(**inputs)
 
-        return g
+        return g[0]
