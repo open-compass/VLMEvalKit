@@ -7,31 +7,35 @@ import sys
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
-
+from huggingface_hub import snapshot_download
 
 class VideoChatGPT(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
 
-    def __init__(self, model_path='Video-ChatGPT/video_chatgpt-7B.bin', **kwargs):
+    def __init__(self, model_path='Video-ChatGPT/video_chatgpt-7B.bin', dir_root=None, **kwargs):
         assert model_path is not None
+        sys.path.append(dir_root)
         try:
             from video_chatgpt.eval.model_utils import initialize_model
         except:
             warnings.warn(
-                'Please export video_chatgpt to python path. \
+                'Please first install requirements and set the root path to use Video-ChatGPT. \
                 Follow the instructions at https://github.com/mbzuai-oryx/Video-ChatGPT?tab=readme-ov-file#installation-wrench'
             )
             sys.exit(-1)
-        model_name = 'Path to LLaVA-7B-Lightening Model'
-        if not os.path.exists(model_path):
+        model_name = snapshot_download('mmaaz60/LLaVA-7B-Lightening-v1-1')
+        projection_name = 'video_chatgpt-7B.bin'
+        projection_path = os.path.join(model_path, projection_name)
+        if not os.path.exists(projection_path):
             warnings.warn(
-                f'LLaVA-Lightening Model {model_path} does not exist. Please download from https://huggingface.co/mmaaz60/LLaVA-7B-Lightening-v1-1 .'
+                f'Video-ChatGPT Model {model_path} does not exist. \
+                    Please download from https://github.com/mbzuai-oryx/Video-ChatGPT.'
             )
             sys.exit(-1)
         model, vision_tower, tokenizer, image_processor, video_token_len = initialize_model(
-            model_name, model_path
+            model_name, projection_path
         )
         self.tokenizer = tokenizer
         self.model = model
@@ -45,8 +49,6 @@ class VideoChatGPT(BaseModel):
         from video_chatgpt.eval.model_utils import load_video
         from video_chatgpt.inference import video_chatgpt_infer
         conv_mode = 'video-chatgpt_v1'
-
-        video_formats = ['.mp4', '.avi', '.mov', '.mkv']
 
         video_frames = load_video(video)
 
