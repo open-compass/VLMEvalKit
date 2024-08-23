@@ -160,8 +160,4 @@ images/
 scripts/*ttf
 .history
 cache_dir/*
-Chat-Univi/*
-llama-vid/*
-MMBenchVideo/*
-Chat-UniVi/*
 

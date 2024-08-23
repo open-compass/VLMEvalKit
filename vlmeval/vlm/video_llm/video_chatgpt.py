@@ -14,13 +14,14 @@ class VideoChatGPT(BaseModel):
     INTERLEAVE = False
     VIDEO_LLM = True
 
-    def __init__(self, model_path='LanguageBind/Video-LLaVA-7B', **kwargs):
+    def __init__(self, model_path='Video-ChatGPT/video_chatgpt-7B.bin', **kwargs):
         assert model_path is not None
         try:
             from video_chatgpt.eval.model_utils import initialize_model
         except:
             warnings.warn(
-                'Please export video_chatgpt to python path.'
+                'Please export video_chatgpt to python path. \
+                Follow the instructions at https://github.com/mbzuai-oryx/Video-ChatGPT?tab=readme-ov-file#installation-wrench'
             )
             sys.exit(-1)
         model_name = 'Path to LLaVA-7B-Lightening Model'

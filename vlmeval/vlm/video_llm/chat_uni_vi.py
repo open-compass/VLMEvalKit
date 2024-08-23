@@ -91,7 +91,7 @@ class Chatunivi(BaseModel):
         try:
             from ChatUniVi.model.builder import load_pretrained_model
         except:
-            warnings.warn('Please install Video-LLaVA from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
+            warnings.warn('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
             sys.exit(-1)
         model_name = "ChatUniVi"
         tokenizer, model, processor, context_len = load_pretrained_model(model_path, None, model_name)

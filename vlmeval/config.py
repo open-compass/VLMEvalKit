@@ -15,10 +15,8 @@ video_models = {
     'Video-LLaVA-7B': partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
     'Video-LLaVA-7B-HF': partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf'),
     'Chat-UniVi': partial(Chatunivi, model_path="Chat-UniVi/Chat-UniVi"),
-    'LLaMAVID-224-7B': partial(LLaMAVID, model_path='llama-vid/llama-vid-7b-full-224-video-fps-1'),
-    'Video-ChatGPT': partial(
-        VideoChatGPT, model_path='Video-ChatGPT/video_chatgpt-7B.bin'
-    ),
+    'LLaMA-VID-7B': partial(LLaMAVID, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1'),
+    'Video-ChatGPT': partial(VideoChatGPT, model_path='Video-ChatGPT/video_chatgpt-7B.bin'),
 }
 
 ungrouped = {

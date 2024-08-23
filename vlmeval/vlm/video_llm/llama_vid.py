@@ -5,9 +5,10 @@ import numpy as np
 import sys
 import os
 from ..base import BaseModel
-from ...smp import isimg, listinstr
+from ...smp import isimg, listinstr, load, dump, download_file
 from ...dataset import DATASET_TYPE
 from decord import VideoReader, cpu
+from huggingface_hub import snapshot_download
 
 def load_video(video_path):
     vr = VideoReader(video_path, ctx=cpu(0))
@@ -18,25 +19,42 @@ def load_video(video_path):
     return spare_frames
 
 
+def change_file(file_path, mm_vision_tower):
+    org_data = load(file_path)
+    org_data['image_processor'] = './vlmeval/vlm/video_llm/configs/llama_vid/processor/clip-patch14-224'
+    org_data['mm_vision_tower'] = mm_vision_tower
+    dump(org_data, file_path)
+
+
 class LLaMAVID(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
 
-    def __init__(self, model_path=None, **kwargs):
+    def __init__(self, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1', **kwargs):
         assert model_path is not None
         try:
             from llamavid.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
         except:
-            warnings.warn('Please install LLaMA-VID from https://github.com/FangXinyu-0913/Video-LLaVA.')
+            warnings.warn('Please install LLaMA-VID from https://github.com/dvlab-research/LLaMA-VID.')
             sys.exit(-1)
 
         model_base = None
         model_name = get_model_name_from_path(model_path)
+        
+        eva_vit_g_url = 'https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth'
+        true_model_path = snapshot_download(model_path)
+        eva_vit_path = os.path.join(true_model_path, 'eva_vit_g.pth')
+        if not os.path.exists(eva_vit_path):
+            download_file(eva_vit_g_url, eva_vit_path)
+        config_path = os.path.join(true_model_path, 'config.json')
+        change_file(config_path, eva_vit_path)
+
         tokenizer, model, image_processor, context_len = load_pretrained_model(
-            model_path, model_base, model_name, None
+            true_model_path, model_base, model_name, None, device_map='cpu', device='cpu'
         )
+        model.cuda()
         self.tokenizer = tokenizer
         self.model = model
         self.processor = image_processor
@@ -60,15 +78,6 @@ class LLaMAVID(BaseModel):
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
-
-        video_formats = ['.mp4', '.avi', '.mov', '.mkv']
-        # Load the video file
-        for fmt in video_formats:  # Added this line
-            # temp_path = os.path.join(args.video_dir, f"{video}{fmt}")
-            temp_path = f"{video}{fmt}"
-            if os.path.exists(temp_path):
-                video_path = temp_path
-                break
 
         # Check if the video exists
         if os.path.exists(video):

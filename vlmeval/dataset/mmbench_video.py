@@ -77,18 +77,14 @@ Please directly reply with your response to the only question.
                     return False
             return True
 
-        # cache_path = get_cache_path(repo_id)
-        # if cache_path is not None and check_integrity(cache_path):
-        #     dataset_path = cache_path
-        # else:
-        #     dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-        #     unwrap_hf_pkl(dataset_path)
-        # self.video_path = osp.join(dataset_path, 'video/')
-        # data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
-
-        dataset_path = '/mnt/hwfile/opencompass/dhd/MMBench-Video'
+        cache_path = get_cache_path(repo_id)
+        if cache_path is not None and check_integrity(cache_path):
+            dataset_path = cache_path
+        else:
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            unwrap_hf_pkl(dataset_path)
         self.video_path = osp.join(dataset_path, 'video/')
-        data_file = osp.join(dataset_path, f'MMBench_VIDEO_0423_T1998.tsv')
+        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
         return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
 
