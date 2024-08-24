@@ -64,6 +64,9 @@ class IDEFICS2(BaseModel):
     def __init__(self, model_path='HuggingFaceM4/idefics2-8b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
+        if 'Idefics3' in self.model_path.lower():
+            warnings.warn('Install transfomers from source: PR https://github.com/open-compass/VLMEvalKit/pull/379')
+            warnings.warn('Reference: https://huggingface.co/HuggingFaceM4/Idefics3-8B-Llama3')
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.model = AutoModelForVision2Seq.from_pretrained(
             model_path,

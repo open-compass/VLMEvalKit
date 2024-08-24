@@ -30,8 +30,9 @@ ungrouped = {
     'VXVERSE': partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
     'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
     '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
-    'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
-    'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1')
+    'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1'),
+    'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
+    'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
 }
 
 api_models = {
@@ -165,6 +166,10 @@ idefics_series = {
     'idefics_9b_instruct': partial(IDEFICS, model_path='HuggingFaceM4/idefics-9b-instruct'),
     'idefics_80b_instruct': partial(IDEFICS, model_path='HuggingFaceM4/idefics-80b-instruct'),
     'idefics2_8b': partial(IDEFICS2, model_path='HuggingFaceM4/idefics2-8b'),
+
+    # Idefics3 follows Idefics2 Pattern
+    'Idefics3-8B-Llama3': partial(IDEFICS2, model_path='HuggingFaceM4/Idefics3-8B-Llama3'),
+
 }
 
 instructblip_series = {
@@ -218,6 +223,11 @@ mantis_series = {
     'Mantis-8B-Fuyu': partial(Mantis, model_path='TIGER-Lab/Mantis-8B-Fuyu')
 }
 
+phi3_series = {
+    'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
+    'Phi-3.5-Vision': partial(Phi3_5Vision, model_path='microsoft/Phi-3.5-vision-instruct')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -226,7 +236,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, mmalaya_series
+    mantis_series, mmalaya_series, phi3_series
 ]
 
 for grp in model_groups:
