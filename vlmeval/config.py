@@ -23,8 +23,7 @@ ungrouped = {
     'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth='anas-awadalla/mpt-7b', ckpt_pth='openflamingo/OpenFlamingo-9B-vitl-mpt7b'),
     'VisualGLM_6b': partial(VisualGLM, model_path='THUDM/visualglm-6b'),
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
-    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat',),
-    'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
+    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
     'OmniLMM_12B': partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B': partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-v1_1-Llama-3-8B-V'),
@@ -72,6 +71,11 @@ api_models = {
     # SenseChat-V
     'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
+}
+
+mmalaya_series = {
+    'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
+    'MMAlaya2': partial(MMAlaya2, model_path='DataCanvas/MMAlaya2'),
 }
 
 minicpm_series = {
@@ -232,7 +236,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, phi3_series
+    mantis_series, mmalaya_series, phi3_series
 ]
 
 for grp in model_groups:
