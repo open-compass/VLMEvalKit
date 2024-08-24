@@ -132,7 +132,7 @@ class ImageBaseDataset:
     # Given the dataset name, return the dataset as a pandas dataframe, can override
     def load_data(self, dataset):
         url = self.DATASET_URL[dataset]
-        file_md5 = self.DATASET_MD5[dataset]
+        file_md5 = self.DATASET_MD5[dataset] if dataset in self.DATASET_MD5 else None
         return self.prepare_tsv(url, file_md5)
 
     # Post built hook, will be called after the dataset is built, can override
