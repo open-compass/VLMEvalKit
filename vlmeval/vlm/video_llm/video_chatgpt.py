@@ -9,6 +9,7 @@ from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
 from huggingface_hub import snapshot_download
 
+
 class VideoChatGPT(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
@@ -22,7 +23,7 @@ class VideoChatGPT(BaseModel):
         except:
             warnings.warn(
                 'Please first install requirements and set the root path to use Video-ChatGPT. \
-                Follow the instructions at https://github.com/mbzuai-oryx/Video-ChatGPT?tab=readme-ov-file#installation-wrench'
+                Follow the instructions at https://github.com/mbzuai-oryx/Video-ChatGPT.'
             )
             sys.exit(-1)
         model_name = snapshot_download('mmaaz60/LLaVA-7B-Lightening-v1-1')

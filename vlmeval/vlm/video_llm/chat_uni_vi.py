@@ -10,6 +10,7 @@ from ...dataset import DATASET_TYPE
 from decord import VideoReader, cpu
 from PIL import Image
 
+
 def _get_rawvideo_dec(
     video_path,
     image_processor,
@@ -74,7 +75,7 @@ def _get_rawvideo_dec(
 
         return patch_images, slice_len
     else:
-        print("video path: {} error.".format(video_path))
+        print('video path: {} error.'.format(video_path))
 
     video_mask[:max_video_length] = [1] * max_video_length
 
@@ -86,14 +87,14 @@ class Chatunivi(BaseModel):
     INTERLEAVE = False
     VIDEO_LLM = True
 
-    def __init__(self, model_path="Chat-UniVi/Chat-UniVi", **kwargs):
+    def __init__(self, model_path='Chat-UniVi/Chat-UniVi', **kwargs):
         assert model_path is not None
         try:
             from ChatUniVi.model.builder import load_pretrained_model
         except:
             warnings.warn('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
             sys.exit(-1)
-        model_name = "ChatUniVi"
+        model_name = 'ChatUniVi'
         tokenizer, model, processor, context_len = load_pretrained_model(model_path, None, model_name)
         self.tokenizer = tokenizer
         self.model = model
@@ -121,15 +122,15 @@ class Chatunivi(BaseModel):
             KeywordsStoppingCriteria,
         )
 
-        mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)
-        mm_use_im_patch_token = getattr(model.config, "mm_use_im_patch_token", True)
+        mm_use_im_start_end = getattr(model.config, 'mm_use_im_start_end', False)
+        mm_use_im_patch_token = getattr(model.config, 'mm_use_im_patch_token', True)
         if mm_use_im_patch_token:
             tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
         if mm_use_im_start_end:
             tokenizer.add_tokens([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True)
         model.resize_token_embeddings(len(tokenizer))
 
-        if model.config.config["use_cluster"]:
+        if model.config.config['use_cluster']:
             for n, m in model.named_modules():
                 m = m.to(dtype=torch.bfloat16)
 
@@ -140,7 +141,7 @@ class Chatunivi(BaseModel):
         else:
             qs = DEFAULT_IMAGE_TOKEN * slice_len + '\n' + qs
 
-        conv = conv_templates["v1"].copy()
+        conv = conv_templates['v1'].copy()
         conv.append_message(conv.roles[0], qs)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
@@ -176,7 +177,7 @@ class Chatunivi(BaseModel):
         if outputs.endswith(stop_str):
             outputs = outputs[:-len(stop_str)]
         outputs = outputs.strip()
-        return(outputs)
+        return outputs
 
     def generate_inner(self, message, dataset=None):
         question, video = self.message_to_promptvideo(message)

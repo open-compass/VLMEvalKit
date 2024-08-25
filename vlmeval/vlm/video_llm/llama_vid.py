@@ -10,11 +10,12 @@ from ...dataset import DATASET_TYPE
 from decord import VideoReader, cpu
 from huggingface_hub import snapshot_download
 
+
 def load_video(video_path):
     vr = VideoReader(video_path, ctx=cpu(0))
     total_frame_num = len(vr)
     fps = round(vr.get_avg_fps())
-    frame_idx = [i for i in range(0, len(vr), fps)]
+    frame_idx = [i for i in range(0, total_frame_num, fps)]
     spare_frames = vr.get_batch(frame_idx).asnumpy()
     return spare_frames
 
@@ -42,7 +43,7 @@ class LLaMAVID(BaseModel):
 
         model_base = None
         model_name = get_model_name_from_path(model_path)
-        
+
         eva_vit_g_url = 'https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth'
         true_model_path = snapshot_download(model_path)
         eva_vit_path = os.path.join(true_model_path, 'eva_vit_g.pth')
@@ -63,7 +64,8 @@ class LLaMAVID(BaseModel):
         self.nframe = 8
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
-        from llamavid.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        from llamavid.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
+        from llamavid.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
         from llamavid.conversation import conv_templates, SeparatorStyle
         from llava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
