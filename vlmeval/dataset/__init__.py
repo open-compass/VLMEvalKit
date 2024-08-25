@@ -115,7 +115,7 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, mvbench, MVBench_MP4
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4
 ]
 
 TEXT_DATASET = [
