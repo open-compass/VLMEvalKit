@@ -273,7 +273,7 @@ Based on your observations, select the best option that accurately addresses the
         if line['data_type'] in ['gif'] or os.path.splitext(video_path)[1] in ['.webm']:
             processed_video_path = video_path.replace(os.path.splitext(video_path)[1], '.mp4')
             if not os.path.exists(processed_video_path):
-                # 使用 MoviePy 将 GIF, webm 转换为 MP4
+                # using MoviePy to transform GIF, webm into mp4 format
                 gif_clip = VideoFileClip(video_path)
                 gif_clip.write_videofile(processed_video_path, codec='libx264')
                 gif_clip.close()
@@ -281,7 +281,7 @@ Based on your observations, select the best option that accurately addresses the
             input_images = os.path.join(video_path, '*.jpg')
             processed_video_path = f'{video_path}.mp4'
             if not os.path.exists(processed_video_path):
-                # using MoviePy to transform images into MP4
+                # using MoviePy to transform images into mp4
                 image_files = sorted(glob.glob(input_images))
                 image_clip = ImageSequenceClip(image_files, fps=self.frame_fps)
                 image_clip.write_videofile(processed_video_path, codec='libx264')
@@ -379,7 +379,7 @@ Based on your observations, select the best option that accurately addresses the
 
 class MVBench_MP4(VideoBaseDataset):
 
-    MP4_MD5 = '39fe4899efcb87d3ce31c6b7cd51a482'
+    MP4_MD5 = '7b4608045347904c28c153015a7a2b6b'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -409,7 +409,7 @@ Based on your observations, select the best option that accurately addresses the
                     return False
             return True
 
-        cache_path = get_cache_path(repo_id, branch='mp4')
+        cache_path = get_cache_path(repo_id, branch='video')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
@@ -437,7 +437,7 @@ Based on your observations, select the best option that accurately addresses the
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             huggingface_hub.login(hf_token)
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset', revision='mp4')
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset', revision='video')
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
