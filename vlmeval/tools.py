@@ -54,7 +54,9 @@ dataset_levels = {
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
-        ('SEEDBench2', 'acc.csv')
+        ('SEEDBench2', 'acc.csv'), ('MTVQA_TEST', 'acc.json'),
+        ('Q-Bench1_VAL', 'acc.csv'),
+        ('A-Bench_VAL', 'acc.csv')
     ]
 }
 
@@ -68,11 +70,12 @@ models = {
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
-    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
+        'cogvlm-grounding-generalist', 'cogvlm-chat', 'cogvlm2-llama3-chat-19B',
+    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cambrian_series),
     '4.40.0': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
-    'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6'] + [x for x in llava_series if 'next' in x]
+    'latest': ['paligemma-3b-mix-448', 'glm-4v-9b'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),
     'api': list(api_models)
 }
