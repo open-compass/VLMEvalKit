@@ -15,7 +15,7 @@ class VideoChatGPT(BaseModel):
     INTERLEAVE = False
     VIDEO_LLM = True
 
-    def __init__(self, model_path='Video-ChatGPT/video_chatgpt-7B.bin', dir_root=None, **kwargs):
+    def __init__(self, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=None, **kwargs):
         assert model_path is not None
         sys.path.append(dir_root)
         try:
@@ -26,17 +26,13 @@ class VideoChatGPT(BaseModel):
                 Follow the instructions at https://github.com/mbzuai-oryx/Video-ChatGPT.'
             )
             sys.exit(-1)
-        model_name = snapshot_download('mmaaz60/LLaVA-7B-Lightening-v1-1')
+        base_model_path = snapshot_download('mmaaz60/LLaVA-7B-Lightening-v1-1')
+        projection_path = snapshot_download(model_path)
         projection_name = 'video_chatgpt-7B.bin'
-        projection_path = os.path.join(model_path, projection_name)
-        if not os.path.exists(projection_path):
-            warnings.warn(
-                f'Video-ChatGPT Model {model_path} does not exist. \
-                    Please download from https://github.com/mbzuai-oryx/Video-ChatGPT.'
-            )
-            sys.exit(-1)
+        projection_path = os.path.join(projection_path, projection_name)
+
         model, vision_tower, tokenizer, image_processor, video_token_len = initialize_model(
-            model_name, projection_path
+            base_model_path, projection_path
         )
         self.tokenizer = tokenizer
         self.model = model
@@ -52,8 +48,7 @@ class VideoChatGPT(BaseModel):
         conv_mode = 'video-chatgpt_v1'
 
         video_frames = load_video(video)
-
-        # Run inference on the video and add the output to the list
+        # Run inference on the video and questions
         output = video_chatgpt_infer(
             video_frames,
             qs,
