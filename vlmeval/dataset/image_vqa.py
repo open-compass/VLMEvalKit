@@ -452,7 +452,7 @@ class TableVQABench(ImageBaseDataset):
         dump(eval_result, result_file)
 
         return eval_result
-    
+
     # TableVQABench adopts a custom prompt
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
@@ -460,11 +460,11 @@ class TableVQABench(ImageBaseDataset):
         for item in msgs:
             if item['type'] == 'text':
                 if line['split'] == 'fintabnetqa':
-                    item['value'] = self.FINTABNETQA_PROMPT.format_map({"question": item['value']})
+                    item['value'] = self.FINTABNETQA_PROMPT.format_map({'question': item['value']})
                 elif line['split'] == 'vtabfact':
-                    item['value'] = self.VTABFACT_PROMPT.format_map({"question": item['value']})
-                elif line["split"] == 'vwtq_syn' or line['split'] == 'vwtq':
-                    item['value'] = self.VWTQ_PROMPT.format_map({"question": item['value']})
+                    item['value'] = self.VTABFACT_PROMPT.format_map({'question': item['value']})
+                elif line['split'] == 'vwtq_syn' or line['split'] == 'vwtq':
+                    item['value'] = self.VWTQ_PROMPT.format_map({'question': item['value']})
         return msgs
 
 
