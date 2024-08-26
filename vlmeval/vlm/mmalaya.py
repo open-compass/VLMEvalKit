@@ -241,7 +241,12 @@ class MMAlaya2(BaseModel):
         ).eval()
 
         self.image_size = self.model.config.vision_config.image_size
-        self.kwargs = kwargs
+
+        kwargs_default = dict(
+            do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1
+        )
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
         warnings.warn(
             f'Following kwargs received: {self.kwargs}, will use as generation config. '
         )
@@ -288,11 +293,6 @@ class MMAlaya2(BaseModel):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
-
-        kwargs_default = dict(
-            do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1
-        )
-        self.kwargs = kwargs_default
 
         if dataset is not None and listinstr(['MME'], dataset):
             question = line['question']
