@@ -1,10 +1,8 @@
-import sys
 import torch
-from PIL import Image
 from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModel
 
 
 class mPLUG_Owl3(BaseModel):
@@ -14,20 +12,26 @@ class mPLUG_Owl3(BaseModel):
     INTERLEAVE = True
     INSTALL_REQ_TXT = 'https://github.com/X-PLUG/mPLUG-Owl/blob/main/mPLUG-Owl3/requirements.txt'
 
-    def __init__(self, model_path='mPLUG/mPLUG-Owl3-7B-240728', **kwargs):
+    def __init__(self, model_path=None, **kwargs):
         assert model_path is not None
-        self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path,
             trust_remote_code=True
         )
-        model = AutoModelForCausalLM.from_pretrained(
+        from mplug_owl3_dsy import mPLUGOwl3Model
+        # self.model = mPLUGOwl3Model.from_pretrained(
+        #     model_path,
+        #     attn_implementation='flash_attention_2',
+        #     torch_dtype=torch.half,
+        #     # trust_remote_code=True
+        # )
+        self.model = AutoModel.from_pretrained(
             model_path,
             attn_implementation='flash_attention_2',
             torch_dtype=torch.half,
             trust_remote_code=True
         )
-        self.model = model.eval().cuda()
+        self.model.eval().cuda()
         self.processor = self.model.init_processor(self.tokenizer)
         self.logger = get_logger('mPLUG_Owl3')
         if self.INSTALL_REQ:
@@ -77,10 +81,19 @@ class mPLUG_Owl3(BaseModel):
         return message
 
     def preproc_image(self, fname):
+        from PIL import Image
         image = Image.open(fname).convert('RGB')
-        # TAG-DSY: need or not?
-        # max_edge = max(image.size)
-        # image = image.resize((max_edge, max_edge))
+        # resize to max_size
+        max_size = 448 * 16
+        if max(image.size) > max_size:
+            w, h = image.size
+            if w > h:
+                new_w = max_size
+                new_h = int(h * max_size / w)
+            else:
+                new_h = max_size
+                new_w = int(w * max_size / h)
+            image = image.resize((new_w, new_h), resample=Image.BICUBIC)
         return image
 
     def generate_inner(self, message, dataset=None):
@@ -118,5 +131,5 @@ class mPLUG_Owl3(BaseModel):
         })
 
         g = self.model.generate(**inputs)
-
+        print(g)
         return g[0]
