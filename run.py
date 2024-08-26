@@ -92,7 +92,7 @@ def main():
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-            else:
+            elif dataset.MODALITY == 'VIDEO':
                 if args.pack:
                     logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                     args.pack = False
