@@ -24,3 +24,6 @@ transformers
 typing_extensions
 validators
 xlsxwriter
+decord
+imageio
+moviepy
