@@ -166,7 +166,7 @@ def split_model(model_name):
     num_gpus = num_gpus // world_size
     assert num_gpus >= 1
     if num_gpus == 1:
-        return None
+        return device_map
 
     num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
                   'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
@@ -229,6 +229,8 @@ class MMAlaya2(BaseModel):
         self.reverse_replacement = r'Image\1'
 
         device_map = split_model('InternVL2-26B')
+        if len(device_map) == 0:
+            device_map = {'': 'cuda'}
 
         self.model = AutoModel.from_pretrained(
             model_path,
