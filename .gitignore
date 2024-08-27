@@ -158,6 +158,7 @@ cython_debug/
 images/
 
 scripts/*ttf
+.history
 cache_dir/*
 
 # Evaluation Outputs
