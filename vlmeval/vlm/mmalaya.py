@@ -346,8 +346,9 @@ class MMAlaya2(BaseModel):
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             pixel_values_list = []
+            max_num = max(1, self.max_num // image_num)
             for file_name in image_path:
-                pixel_values_list.append(load_image(file_name, max_num=self.max_num).cuda().to(torch.bfloat16))
+                pixel_values_list.append(load_image(file_name, max_num=max_num).cuda().to(torch.bfloat16))
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
