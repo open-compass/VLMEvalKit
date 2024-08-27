@@ -5,6 +5,37 @@ from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 
 
+MMMB_URLS = {
+    'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
+    'MMMB_cn': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_cn.tsv',
+    'MMMB_en': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_en.tsv',
+    'MMMB_pt': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_pt.tsv',
+    'MMMB_ru': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ru.tsv',
+    'MMMB_tr': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_tr.tsv',
+}
+
+MTL_MMBench_URLS = {
+    'MMBench_dev_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmbench/mmbench_dev_ar.tsv',
+    'MMBench_dev_cn': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmbench/mmbench_dev_cn.tsv',
+    'MMBench_dev_en': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmbench/mmbench_dev_en.tsv',
+    'MMBench_dev_pt': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmbench/mmbench_dev_pt.tsv',
+    'MMBench_dev_tr': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmbench/mmbench_dev_tr.tsv',
+    'MMBench_dev_ru': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmbench/mmbench_dev_ru.tsv',
+}
+
+MMMB_MD5 = {
+    'MMMB_ar': 'f3a18b6385f1d9701840aa42de27aead', 'MMMB_cn': '13ed82fa89730037292fcaa27f08f430',
+    'MMMB_en': '1cd781a71ec5a2983c090b84105d6a01', 'MMMB_pt': '548ea2b3bb2da991790386f0015d30d1',
+    'MMMB_ru': 'ce1cc8a0533425ab0d86b326ebfc2984', 'MMMB_tr': '0733739d43090327975294292bc5cd67'
+}
+
+MTL_MMBench_MD5 = {
+    'MMBench_dev_ar': '4271b4a0d0200e1a86380a878e0d64a4', 'MMBench_dev_cn': '2ed5135326fed02c8e51ea50dda8222f',
+    'MMBench_dev_en': 'd9ab776fc018b3d45785e9a5c23431c2', 'MMBench_dev_pt': '4ddfbcd27ef12444b908c03831cd0295',
+    'MMBench_dev_tr': '4fab39d501389d3d6cc90264bb708f11', 'MMBench_dev_ru': '5ba1171ff2e68f80637bf78349e402a5'
+}
+
+
 class ImageMCQDataset(ImageBaseDataset):
 
     TYPE = 'MCQ'
@@ -39,13 +70,24 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_VAL.tsv',
         'AesBench_TEST': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_TEST.tsv',
+        # Q-Bench1
+        'Q-Bench1_VAL': 'https://huggingface.co/datasets/zhangzicheng/qbench_tsv/resolve/main/Q-Bench1_VAL.tsv',
+        'Q-Bench1_TEST': 'https://huggingface.co/datasets/zhangzicheng/qbench_tsv/resolve/main/Q-Bench1_TEST.tsv',
+        # A-Bench
+        'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
+        'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
+        'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
+        'TaskMeAnything_v1_imageqa_random': (
+            'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
+            'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
+        )
     }
 
     DATASET_MD5 = {
@@ -78,14 +120,27 @@ class ImageMCQDataset(ImageBaseDataset):
         # AesBench
         'AesBench_VAL': '3edb0c319e9187aa0b97fe7a11700a8c',
         'AesBench_TEST': '58b1f7ba2cc32e1d68896d6ee716bbf8',
+        # Q-Bench1
+        'Q-Bench1_VAL': '837bdb6cd2da571713543462815187b7',
+        'Q-Bench1_TEST': '15e759bfd58c9d5f30b23a317d347153',
+        # A-Bench
+        'A-Bench_VAL': '218563ec50d34bb336c814143a5bb9c1',
+        'A-Bench_TEST': '567013fb033a20cf23f51d8e865bd16c',
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
+        'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
+        'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889'
     }
+
+    DATASET_URL.update(MMMB_URLS)
+    DATASET_URL.update(MTL_MMBench_URLS)
+    DATASET_MD5.update(MMMB_MD5)
+    DATASET_MD5.update(MTL_MMBench_MD5)
 
     def build_prompt(self, line):
 
@@ -197,7 +252,7 @@ class ImageMCQDataset(ImageBaseDataset):
         dump(acc, score_file)
 
         if dataset == 'AesBench_VAL':
-            warnings.info('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
+            warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
         return acc
@@ -242,6 +297,98 @@ class MMMUDataset(ImageMCQDataset):
         msgs = super().build_prompt(line)
         msgs = self.split_MMMU(msgs)
         return msgs
+
+
+class GMAIMMBenchDataset(ImageMCQDataset):
+
+    DATASET_URL = {
+        'GMAI_mm_bench_VAL': 'https://huggingface.co/datasets/OpenGVLab/GMAI-MMBench/blob/main/GMAI_mm_bench_VAL.tsv'
+    }
+
+    DATASET_MD5 = {
+        'GMAI_mm_bench_VAL': '254bd581627866f1c499d3d6b4422324'
+    }
+
+    def report_acc_by_groups(self, df, group_column):
+        res = defaultdict(list)
+
+        # Check for the 'split' column
+        if 'split' in df:
+            splits = list(set(df['split']))
+            res['split'] = splits
+        else:
+            df['split'] = ['none'] * len(df)
+            res['split'] = ['none']
+
+        res['Overall'] = [np.mean(df[df['split'] == sp]['hit']) for sp in res['split']]
+
+        if group_column not in df:
+            raise ValueError(f"Column '{group_column}' not found in dataframe.")
+
+        abilities = list(set(df[group_column]))
+        abilities = ['None' if isinstance(ab, float) and pd.isna(ab) else ab for ab in abilities]
+        abilities.sort()
+
+        for ab in abilities:
+            ab_name = ab
+            sub_df = df[df[group_column] == ab]
+            res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
+
+        return pd.DataFrame(res)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+
+        # load split
+        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+
+        acc = report_acc(data)
+
+        for group_col in ['clinical vqa task', 'department', 'perceptual granularity']:
+            acc_grouped = self.report_acc_by_groups(data, group_col)
+            score_file_grouped = eval_file.replace(f'.{suffix}', f'_{group_col}_acc.csv')
+            dump(acc_grouped, score_file_grouped)
+
+        return acc
 
 
 class CustomMCQDataset(ImageMCQDataset):

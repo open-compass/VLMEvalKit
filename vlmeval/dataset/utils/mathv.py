@@ -9,7 +9,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 def is_equal(asw: str, gt_asw: str) -> bool:
-    if type(asw) != str or type(gt_asw) != str:
+    if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
         print('Warning: input is not string')
         print(asw, gt_asw)
     asw = str(asw).lower().strip()
@@ -109,7 +109,7 @@ def post_check(line, prefetch=False):
             if prefetch:
                 return res
         else:
-            res = str(res)
+            res = str(response)
             ans = str(ans)
     except ValueError:
         pass

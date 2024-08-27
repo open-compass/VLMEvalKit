@@ -70,23 +70,25 @@ models = {
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
     '4.40.0': [
-        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B',
+        'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
-    'latest': ['paligemma-3b-mix-448'] + [x for x in llava_series if 'next' in x]
-    + list(chameleon_series) + list(ovis_series),
+    'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6'] + [x for x in llava_series if 'next' in x]
+    + list(chameleon_series) + list(ovis_series) + list(mantis_series),
     'api': list(api_models)
 }
 
 # SKIP_MODELS will be skipped in report_missing and run APIs
 SKIP_MODELS = [
-    'MiniGPT-4-v1-13B', 'instructblip_13b', 'MGM_7B', 'GPT4V_HIGH', 'GPT4V',
-    'flamingov2', 'MiniGPT-4-v1-7B', 'MiniGPT-4-v2', 'PandaGPT_13B',
+    'MGM_7B', 'GPT4V_HIGH', 'GPT4V', 'flamingov2', 'PandaGPT_13B',
     'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
+    'llava_v1_7b', 'sharegpt4v_7b', 'sharegpt4v_13b',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',
     'InternVL-Chat-V1-2', 'InternVL-Chat-V1-2-Plus', 'RekaCore',
-    'llava_next_72b', 'llava_next_110b', 'llava_next_qwen_32b',
-] + list(vila_series)
+    'llava_next_72b', 'llava_next_110b', 'MiniCPM-V', 'sharecaptioner', 'XComposer',
+    'VisualGLM_6b', 'idefics_9b_instruct', 'idefics_80b_instruct',
+    'mPLUG-Owl2', 'MMAlaya', 'OmniLMM_12B', 'emu2_chat', 'VXVERSE'
+] + list(minigpt4_series) + list(instructblip_series) + list(xtuner_series) + list(chameleon_series) + list(vila_series)
 
 LARGE_MODELS = [
     'idefics_80b_instruct', '360VL-70B', 'emu2_chat', 'InternVL2-76B',
@@ -261,60 +263,16 @@ def CHECK(val):
             CHECK(m)
 
 
-def decode_img_omni(tup):
-    root, im, p = tup
-    images = toliststr(im)
-    paths = toliststr(p)
-    if len(images) > 1 and len(paths) == 1:
-        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
-
-    assert len(images) == len(paths)
-    paths = [osp.join(root, p) for p in paths]
-    for p, im in zip(paths, images):
-        if osp.exists(p):
-            continue
-        if isinstance(im, str) and len(im) > 64:
-            decode_base64_to_image_file(im, p)
-    return paths
-
-
 def LOCALIZE(fname, new_fname=None):
-    base_name = osp.basename(fname)
-    dname = osp.splitext(base_name)[0]
-    data = load(fname)
     if new_fname is None:
         new_fname = fname.replace('.tsv', '_local.tsv')
 
-    indices = list(data['index'])
-    indices_str = [str(x) for x in indices]
-    images = list(data['image'])
-    image_map = {x: y for x, y in zip(indices_str, images)}
+    base_name = osp.basename(fname)
+    dname = osp.splitext(base_name)[0]
 
-    root = LMUDataRoot()
-    root = osp.join(root, 'images', dname)
-    os.makedirs(root, exist_ok=True)
-
-    if 'image_path' in data:
-        img_paths = list(data['image_path'])
-    else:
-        img_paths = []
-        for i in indices_str:
-            if len(image_map[i]) <= 64:
-                idx = image_map[i]
-                assert idx in image_map and len(image_map[idx]) > 64
-                img_paths.append(f'{idx}.jpg')
-            else:
-                img_paths.append(f'{i}.jpg')
-
-    tups = [(root, im, p) for p, im in zip(img_paths, images)]
-
-    pool = mp.Pool(32)
-    ret = pool.map(decode_img_omni, tups)
-    pool.close()
-    data.pop('image')
-    if 'image_path' not in data:
-        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
-    dump(data, new_fname)
+    data = load(fname)
+    data_new = localize_df(data, dname)
+    dump(data_new, new_fname)
     print(f'The localized version of data file is {new_fname}')
     return new_fname
 
@@ -356,10 +314,15 @@ def RUN(lvl, model):
         logger.info(f'Running {m} on {datasets}')
         exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
         if m not in models['api']:
-            env = '433'
+            env = None
+            env = 'latest' if m in models['latest'] else env
+            env = '433' if m in models['4.33.0'] else env
             env = '437' if m in models['4.37.0'] else env
             env = '440' if m in models['4.40.0'] else env
-            env = 'latest' if m in models['latest'] else env
+            if env is None:
+                # Not found, default to latest
+                env = 'latest'
+                logger.warning(f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
             pth = get_env(env)
             if pth is not None:
                 exe = osp.join(pth, 'bin', exe)
@@ -439,8 +402,12 @@ def cli():
         elif args[0].lower() == 'run':
             assert len(args) >= 2
             lvl = args[1]
-            model = args[2] if len(args) > 2 else 'all'
-            RUN(lvl, model)
+            if len(args) == 2:
+                model = 'all'
+                RUN(lvl, model)
+            else:
+                for model in args[2:]:
+                    RUN(lvl, model)
         elif args[0].lower() == 'eval':
             assert len(args) == 3
             dataset, data_file = args[1], args[2]

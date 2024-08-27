@@ -1,7 +1,7 @@
 import uuid
 from functools import partial
-from ..image_base import ImageBaseDataset
-from vlmeval.smp import *
+from .image_base import ImageBaseDataset
+from ..smp import *
 
 rouge = None
 nlp_en = None

@@ -146,7 +146,7 @@ class BaseModel:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             images = [x['value'] for x in message if x['type'] == 'image']
             if 'BLINK' == dataset:
-                image = concat_images(images, target_size=512)
+                image = concat_images_vlmeval(images, target_size=512)
             else:
                 image = images[0]
         return prompt, image

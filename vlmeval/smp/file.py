@@ -9,6 +9,60 @@ import time
 import numpy as np
 import validators
 import mimetypes
+import multiprocessing as mp
+from .misc import toliststr
+from .vlm import decode_base64_to_image_file
+
+
+def decode_img_omni(tup):
+    root, im, p = tup
+    images = toliststr(im)
+    paths = toliststr(p)
+    if len(images) > 1 and len(paths) == 1:
+        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
+
+    assert len(images) == len(paths)
+    paths = [osp.join(root, p) for p in paths]
+    for p, im in zip(paths, images):
+        if osp.exists(p):
+            continue
+        if isinstance(im, str) and len(im) > 64:
+            decode_base64_to_image_file(im, p)
+    return paths
+
+
+def localize_df(data, dname, nproc=32):
+    assert 'image' in data
+    indices = list(data['index'])
+    indices_str = [str(x) for x in indices]
+    images = list(data['image'])
+    image_map = {x: y for x, y in zip(indices_str, images)}
+
+    root = LMUDataRoot()
+    root = osp.join(root, 'images', dname)
+    os.makedirs(root, exist_ok=True)
+
+    if 'image_path' in data:
+        img_paths = list(data['image_path'])
+    else:
+        img_paths = []
+        for i in indices_str:
+            if len(image_map[i]) <= 64:
+                idx = image_map[i]
+                assert idx in image_map and len(image_map[idx]) > 64
+                img_paths.append(f'{idx}.jpg')
+            else:
+                img_paths.append(f'{i}.jpg')
+
+    tups = [(root, im, p) for p, im in zip(img_paths, images)]
+
+    pool = mp.Pool(32)
+    ret = pool.map(decode_img_omni, tups)
+    pool.close()
+    data.pop('image')
+    if 'image_path' not in data:
+        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
+    return data
 
 
 def LMUDataRoot():
@@ -132,6 +186,10 @@ def download_file(url, filename=None):
 
     if filename is None:
         filename = url.split('/')[-1]
+
+    # If HF_ENDPOINT is set, replace huggingface.co with it
+    if 'huggingface.co' in url and os.environ.get('HF_ENDPOINT', '') != '':
+        url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'].split('://')[1])
 
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:

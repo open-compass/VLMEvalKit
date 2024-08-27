@@ -12,6 +12,7 @@ import torchvision.transforms as T
 import transformers
 
 from torchvision.transforms.functional import InterpolationMode
+import re
 
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -137,8 +138,21 @@ class InternVLChat(BaseModel):
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
+        # Regular expression to match the pattern 'Image' followed by a number, e.g. Image1
+        self.pattern = r'Image(\d+)'
+        # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
+        self.replacement = r'Image-\1'
+
+        # Convert InternVL2 response to dataset format
+        # e.g. Image1 -> Image-1
+
+        # Regular expression to match the pattern 'Image-' followed by a number
+        self.reverse_pattern = r'Image-(\d+)'
+        # Replacement pattern to remove the hyphen (Image-1 -> Image1)
+        self.reverse_replacement = r'Image\1'
+
         if listinstr(['InternVL2-Llama3-76B'], model_path):
-            device_map = split_model(model_path.split('/')[1])
+            device_map = split_model(model_path.split('/')[-1])
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
@@ -163,7 +177,12 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-        return True
+
+        if dataset is not None and listinstr(['MMDU'], dataset):
+            # For Multi-Turn we don't have custom prompt
+            return False
+        else:
+            return True
 
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
@@ -188,6 +207,20 @@ class InternVLChat(BaseModel):
 
         return prompt
 
+    def build_video_prompt(self, prompt, dataset=None, max_nframe=64):
+        for start in range(0, max_nframe, 8):
+            images_to_remove = ''.join([f'<image-{i}>' for i in range(start + 1, start + 9)])
+            prompt = prompt.replace(images_to_remove, '')
+        for i in range(max_nframe):
+            prompt = prompt.replace(f'<image-{i + 1}>', f'Frame{i + 1}')
+        if listinstr(['MMBench-Video'], dataset):
+            prompt = prompt.replace('\nAnswer:', '')
+            prompt += '\nAnswer the question using a single word or phrase.'
+        elif listinstr(['Video-MME'], dataset):
+            prompt = prompt.replace('\nAnswer:', '')
+            prompt += "\nAnswer with the option's letter from the given choices directly."
+        return prompt
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -208,7 +241,7 @@ class InternVLChat(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if 'MathVista' in dataset:
+            if listinstr(['MathVista', 'MathVision'], dataset):
                 prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']
@@ -231,6 +264,8 @@ class InternVLChat(BaseModel):
             self.max_num = 18
         elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
             self.max_num = 24
+        elif dataset is not None and listinstr(['MMBench-Video', 'Video-MME', 'Video'], dataset):
+            self.max_num = 1
         else:
             self.max_num = 6
 
@@ -251,6 +286,9 @@ class InternVLChat(BaseModel):
         image_num = len([x for x in message if x['type'] == 'image'])
         prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
 
+        if listinstr(['Video'], dataset):
+            prompt = self.build_video_prompt(prompt, dataset)
+
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             pixel_values_list = []
@@ -263,8 +301,12 @@ class InternVLChat(BaseModel):
         else:
             pixel_values = None
         with torch.no_grad():
-            response = self.model.chat(self.tokenizer, pixel_values=pixel_values,
-                                       question=prompt, generation_config=self.kwargs)
+            response = self.model.chat(
+                self.tokenizer,
+                pixel_values=pixel_values,
+                question=prompt,
+                generation_config=self.kwargs,
+                verbose=False)
         return response
 
     def generate_v2(self, message, dataset=None):
@@ -280,6 +322,9 @@ class InternVLChat(BaseModel):
                     prompt += f'<image-{image_idx}>'
                     image_idx += 1
             prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
+
+        if listinstr(['Video'], dataset):
+            prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
@@ -303,22 +348,19 @@ class InternVLChat(BaseModel):
             num_patches_list = []
 
         with torch.no_grad():
-            try:
-                response = self.model.chat(
-                    self.tokenizer,
-                    pixel_values=pixel_values,
-                    num_patches_list=num_patches_list,
-                    question=prompt,
-                    generation_config=self.kwargs
-                )
-            except torch.cuda.OutOfMemoryError:
-                response = 'A'
-                torch.cuda.empty_cache()
+            response = self.model.chat(
+                self.tokenizer,
+                pixel_values=pixel_values,
+                num_patches_list=num_patches_list,
+                question=prompt,
+                generation_config=self.kwargs,
+                verbose=False
+            )
         return response
 
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)
-        print(f'Generating with {self.version}')
+        print(f'InternVL model version: {self.version}')
         if self.version in ['V1.1', 'V1.2']:
             return self.generate_v1_2(message, dataset)
         elif self.version == 'V1.5':
@@ -327,3 +369,101 @@ class InternVLChat(BaseModel):
             return self.generate_v2(message, dataset)
         else:
             raise ValueError(f'Unsupported version: {self.version}')
+
+    def build_history(self, message):
+        # Global Variables
+        image_path = []
+        image_cnt = 0
+
+        def concat_tilist(tilist):
+            nonlocal image_cnt  # Declare image_cnt as nonlocal to modify it
+            prompt = ''
+            for item in tilist:
+                # Substitute the pattern in the text
+                if item['type'] == 'text':
+                    prompt += re.sub(self.pattern, self.replacement, item['value'])
+                elif item['type'] == 'image':
+                    image_cnt += 1
+                    prompt += '<image>\n'
+                    image_path.append(item['value'])
+            return prompt
+
+        # Only previous messages
+        assert len(message) % 2 == 0
+        history = []
+        for i in range(len(message) // 2):
+            m1, m2 = message[2 * i], message[2 * i + 1]
+            assert m1['role'] == 'user' and m2['role'] == 'assistant'
+            history.append((concat_tilist(m1['content']), concat_tilist(m2['content'])))
+
+        return history, image_path, image_cnt
+
+    def chat_inner_v2(self, message, dataset=None):
+
+        image_cnt = 0
+        if len(message) > 1:
+            history, image_path, image_cnt = self.build_history(message[:-1])
+        else:
+            history, image_path, image_cnt = None, [], 1
+        current_msg = message[-1]
+        question = ''
+
+        # If message is just text in the conversation
+        if len(current_msg['content']) == 1 and current_msg['content'][0]['type'] == 'text':
+            question = current_msg['content'][0]['value']
+            question = re.sub(self.pattern, self.replacement, question)  # Fix pattern as per InternVL
+        else:
+            for msg in current_msg['content']:
+                if msg['type'] == 'text':
+                    question += re.sub(self.pattern, self.replacement, msg['value'])
+                elif msg['type'] == 'image':
+                    image_cnt += 1
+                    question += '<image>\n'
+                    image_path.append(msg['value'])
+
+        if image_cnt > 1:
+            num_patches_list = []
+            pixel_values_list = []
+            for image_idx, file_name in enumerate(image_path):
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+                curr_pixel_values = load_image(
+                    file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                num_patches_list.append(curr_pixel_values.size(0))
+                pixel_values_list.append(curr_pixel_values)
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_cnt == 1:
+            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            pixel_values = load_image(
+                image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+            num_patches_list = [pixel_values.size(0)]
+        else:
+            pixel_values = None
+            num_patches_list = []
+
+        response, history = self.model.chat(
+            self.tokenizer,
+            pixel_values=pixel_values,
+            num_patches_list=num_patches_list,
+            question=question,
+            generation_config=self.kwargs,
+            history=history,
+            return_history=True
+        )
+
+        response = re.sub(self.reverse_pattern, self.reverse_replacement, response)
+
+        return response
+
+    def chat_inner(self, message, dataset=None):
+        self.set_max_num(dataset)
+
+        if self.version in ['V1.1', 'V1.2']:
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
+        elif self.version == 'V1.5':
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
+        elif self.version == 'V2.0':
+            kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
+            self.kwargs = kwargs_default
+            return self.chat_inner_v2(message, dataset)
+        else:
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')

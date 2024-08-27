@@ -3,7 +3,7 @@ import random as rd
 from abc import abstractmethod
 import os.path as osp
 import copy as cp
-from ..smp import get_logger, parse_file, concat_images
+from ..smp import get_logger, parse_file, concat_images_vlmeval
 
 
 class BaseAPI:
@@ -62,12 +62,22 @@ class BaseAPI:
         Returns:
             bool: If the API model is working, return True, else return False.
         """
-        retry = 3
+        self.old_timeout = None
+        if hasattr(self, 'timeout'):
+            self.old_timeout = self.timeout
+            self.timeout = 120
+
+        retry = 5
         while retry > 0:
             ret = self.generate('hello')
             if ret is not None and ret != '' and self.fail_msg not in ret:
+                if self.old_timeout is not None:
+                    self.timeout = self.old_timeout
                 return True
             retry -= 1
+
+        if self.old_timeout is not None:
+            self.timeout = self.old_timeout
         return False
 
     def check_content(self, msgs):
@@ -247,7 +257,9 @@ class BaseAPI:
         else:
             prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
             if dataset == 'BLINK':
-                image = concat_images([x['value'] for x in message if x['type'] == 'image'], target_size=512)
+                image = concat_images_vlmeval(
+                    [x['value'] for x in message if x['type'] == 'image'],
+                    target_size=512)
             else:
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
