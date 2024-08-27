@@ -49,7 +49,7 @@ class XGenMM(BaseModel):
                 content += msg['value']
             elif msg['type'] == 'image':
                 image = Image.open(msg['value']).convert('RGB')
-                images.append(self.image_processor([image], image_aspect_ratio='anyres')['pixel_values'].cuda())
+                images.append(self.image_processor([image], image_aspect_ratio='anyres')['pixel_values'].to('cuda'))
                 image_sizes.append(image.size)
                 content += '<image> '
 
@@ -57,10 +57,6 @@ class XGenMM(BaseModel):
         prompt = self.apply_prompt_template(content)
         language_inputs = self.tokenizer([prompt], return_tensors='pt').to('cuda')
         inputs.update(language_inputs)
-        # # Move prompt to cuda
-        # for name, value in inputs.items():
-        #     if isinstance(value, torch.Tensor):
-        #         inputs[name] = value.cuda()
 
         generation_args = {
             'max_new_tokens': 1024,
@@ -70,14 +66,14 @@ class XGenMM(BaseModel):
             'num_beams': 1
         }
         generation_args.update(self.kwargs)
-        # import pdb; pdb.set_trace()
+
         generate_ids = self.model.generate(
             **inputs, image_size=[image_sizes],
             pad_token_id=self.tokenizer.pad_token_id,
             **generation_args
         )
-        # pdb.set_trace()
+
         # remove input tokens
         response = self.tokenizer.decode(generate_ids[0], skip_special_tokens=True).split('<|end|>')[0]
-        # pdb.set_trace()
+
         return response
