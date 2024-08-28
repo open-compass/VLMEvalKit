@@ -400,7 +400,10 @@ class MMERealWorld(ImageMCQDataset):
         'MME-RealWorld':  'Select the best answer to the above multiple-choice question based on the image. Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
         'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
     }
-
+    @classmethod
+    def supported_datasets(cls):
+        return ['MME-RealWorld', 'MME-RealWorld-CN']
+    
     def load_data(self, dataset='MME-RealWorld', repo_id='yifanzhang114/MME-RealWorld-Base64'):
 
         def check_integrity(pth):
@@ -409,7 +412,7 @@ class MMERealWorld(ImageMCQDataset):
             if not os.path.exists(data_file):
                 return False
 
-            if md5(data_file) != self.MD5[dataset]:
+            if md5(data_file) != self.DATASET_MD5[dataset]:
                 return False
             return True
 
@@ -510,10 +513,11 @@ class MMERealWorld(ImageMCQDataset):
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
 
-                if extract_characters_regex(pred) == '':
+                extract_pred = extract_characters_regex(pred)
+                if extract_pred == '':
                     data.loc[idx, 'score'] = -1
                 else:
-                    data.loc[idx, 'score'] = int(extract_characters_regex(pred) == ans)
+                    data.loc[idx, 'score'] = int(extract_pred == ans)
 
             rejected = [x for x in data['score'] if x == -1]
 
