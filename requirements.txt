@@ -1,6 +1,9 @@
+decord
 gradio
 huggingface_hub
+imageio
 matplotlib
+moviepy
 numpy>=1.23.4
 omegaconf
 openai
@@ -9,6 +12,7 @@ openpyxl
 pandas
 pillow
 portalocker
+protobuf
 python-dotenv
 requests
 rich
@@ -24,7 +28,3 @@ transformers
 typing_extensions
 validators
 xlsxwriter
-decord
-imageio
-moviepy
-protobuf
