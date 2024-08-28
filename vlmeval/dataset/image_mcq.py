@@ -390,23 +390,16 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         return acc
 
-class MMERealWorld(ImageBaseDataset):
+class MMERealWorld(ImageMCQDataset):
 
-    MD5 = {
+    DATASET_MD5 = {
         'MME-RealWorld': '7d7cc66f7fe0f56ebc68fdddf2b447da',
         'MME-RealWorld-CN': 'cbec7caf59402a4167872abbdca1d6bd',
     }
-    SYS = {'MME-RealWorld':  'Select the best answer to the above multiple-choice question based on the image. Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
-           'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
+    SYS = {
+        'MME-RealWorld':  'Select the best answer to the above multiple-choice question based on the image. Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
+        'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
     }
-    TYPE = 'MCQ'
-
-    def __init__(self, dataset='MME-RealWorld'):
-        super().__init__(dataset=dataset)
-
-    @classmethod
-    def supported_datasets(cls):
-        return ['MME-RealWorld', 'MME-RealWorld-CN']
 
     def load_data(self, dataset='MME-RealWorld', repo_id='yifanzhang114/MME-RealWorld-Base64'):
 
