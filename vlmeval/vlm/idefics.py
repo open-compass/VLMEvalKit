@@ -64,14 +64,18 @@ class IDEFICS2(BaseModel):
     def __init__(self, model_path='HuggingFaceM4/idefics2-8b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
+        if 'Idefics3' in self.model_path.lower():
+            warnings.warn('Install transfomers from source: PR https://github.com/open-compass/VLMEvalKit/pull/379')
+            warnings.warn('Reference: https://huggingface.co/HuggingFaceM4/Idefics3-8B-Llama3')
         self.processor = AutoProcessor.from_pretrained(model_path)
-        self.model = AutoModelForVision2Seq.from_pretrained(
+        model = AutoModelForVision2Seq.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
             _attn_implementation='flash_attention_2',
-            device_map='cuda',
-        )
-        kwargs_default = {'max_new_tokens': 512}
+            device_map='cpu')
+        self.model = model.to('cuda')
+
+        kwargs_default = {'max_new_tokens': 1024}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(
