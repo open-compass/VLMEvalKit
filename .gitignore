@@ -160,3 +160,6 @@ images/
 scripts/*ttf
 .history
 cache_dir/*
+
+# Evaluation Outputs
+outputs/*
