@@ -114,10 +114,13 @@ class VideoChat2_HD(BaseModel):
         huggingface_hub.login(hf_token)
         videochat2_model_path = snapshot_download(repo_id=cfg.model.videochat2_model_path, repo_type='model')
         cfg.model.videochat2_model_path = osp.join(videochat2_model_path, 'videochat2_mistral_7b_stage2.pth')
+
         mistral_model_path = snapshot_download(repo_id=cfg.model.mistral_model_path, repo_type='model')
         cfg.model.mistral_model_path = mistral_model_path
-        vit_blip_model_path = os.path.join(LMUDataRoot(), 'models')
-        cfg.model.vit_blip_model_path = download_file(cfg.model.vit_blip_model_path, vit_blip_model_path)
+
+        vit_blip_model_path = snapshot_download(repo_id=cfg.model.vit_blip_model_path, repo_type='model')
+        cfg.model.vit_blip_model_path = osp.join(vit_blip_model_path, 'umt_l16_qformer.pth')
+
         model = VideoChat2_it_hd_mistral(config=cfg.model)
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM, inference_mode=False,
