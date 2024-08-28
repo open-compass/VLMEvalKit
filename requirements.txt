@@ -27,3 +27,4 @@ xlsxwriter
 decord
 imageio
 moviepy
+protobuf
