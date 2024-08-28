@@ -58,7 +58,7 @@ class StoppingCriteriaSub(StoppingCriteria):
 
 class VideoChat2_HD(BaseModel):
     INSTALL_REQ = True
-    INTERLEAVE = True
+    INTERLEAVE = False
     VIDEO_LLM = True
 
     def __init__(self, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B',
@@ -263,7 +263,7 @@ class VideoChat2_HD(BaseModel):
         mixed_embs = torch.cat(mixed_embs, dim=1)
         return mixed_embs
 
-    def answer(self, conv, model, img_list, do_sample=True, max_new_tokens=200, num_beams=1, min_length=1, top_p=0.9,
+    def answer(self, conv, model, img_list, do_sample=True, max_new_tokens=500, num_beams=1, min_length=1, top_p=0.9,
                repetition_penalty=1.0, length_penalty=1, temperature=1.0, answer_prompt=None, print_res=False):
         stop_words_ids = [
             torch.tensor([2]).to('cuda'),
@@ -300,7 +300,6 @@ class VideoChat2_HD(BaseModel):
         self, data_sample, system=' ',
         question_prompt='',  # add in the end of question
         answer_prompt=None,  # add in the begining of answer
-        return_prompt='',  # add in the begining of return message
         system_q=False,  # whether add question in the system prompt for QFormer
         print_res=True,
         system_llm=False
@@ -345,10 +344,8 @@ class VideoChat2_HD(BaseModel):
             img_list=video_list, max_new_tokens=100,
             answer_prompt=answer_prompt, print_res=print_res
         )[0]
-        # remove potential explanation
-        llm_message = return_prompt + llm_message.strip().split('\n')[0]
 
-        return llm_message[1]
+        return llm_message.strip()
 
     def qa_template(self, data):
         question = data.split('Answer:')[0].split('\n')[0] + '\n'
@@ -392,15 +389,16 @@ class VideoChat2_HD(BaseModel):
                 ' ',
                 question_prompt='\nOnly give the best option.',
                 answer_prompt='Best option:(',
-                return_prompt='(',
                 system_q=False,
                 print_res=False,
                 system_llm=True
             )
-            return pred_option
+            return_message = '(' + pred_option.split('\n')[0]
+            return return_message
 
         elif dataset == 'MVBench' or dataset == 'MVBench_MP4':
             _, video = self.message_to_promptvideo(message)
+
             torch_imgs = self.read_video(video)
             example = {
                 'subtitle': '',
@@ -412,12 +410,26 @@ class VideoChat2_HD(BaseModel):
                 message[0]['value'],
                 question_prompt='\nOnly give the best option.',
                 answer_prompt='Best option:(',
-                return_prompt='(',
                 system_q=False,
                 print_res=False,
                 system_llm=True
             )
-            return pred_option
+            return_message = '(' + pred_option.split('\n')[0]
+            return return_message
 
         else:
-            raise NotImplementedError
+            question, video = self.message_to_promptvideo(message)
+            torch_imgs = self.read_video(video)
+            example = {
+                'subtitle': '',
+                'video': torch_imgs,
+                'question': f'Question:{question}\nAnswer:'
+            }
+            pred_result = self.infer_data(
+                example,
+                ' ',
+                system_q=False,
+                print_res=False,
+                system_llm=False
+            )
+            return pred_result
