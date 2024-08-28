@@ -32,7 +32,7 @@ from .phi3_vision import Phi3Vision, Phi3_5Vision
 from .wemm import WeMM
 from .cambrian import Cambrian
 from .chameleon import Chameleon
-from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID
+from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID, VideoChat2_HD
 from .vila import VILA
 from .ovis import Ovis
 from .mantis import Mantis
