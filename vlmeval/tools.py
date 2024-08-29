@@ -45,7 +45,7 @@ dataset_levels = {
         ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv')
     ],
     'l2': [
-        ('MME', 'score.csv'), ('LLaVABench', 'score.csv'), ('RealWorldQA', 'acc.csv'),
+        ('MME', 'score.csv'), ('LLaVABench', 'gpt-4-turbo_score.csv'), ('RealWorldQA', 'acc.csv'),
         ('MMBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('CCBench', 'acc.csv'),
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
         ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
