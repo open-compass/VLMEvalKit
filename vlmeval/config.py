@@ -9,15 +9,17 @@ Yi_ROOT = None
 OmniLMM_ROOT = None
 Mini_Gemini_ROOT = None
 VXVERSE_ROOT = None
+VideoChat2_ROOT = None
 VideoChatGPT_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 video_models = {
-    'Video-LLaVA-7B': partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
-    'Video-LLaVA-7B-HF': partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf'),
+    'Video-LLaVA-7B':partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
+    'Video-LLaVA-7B-HF':partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf'),
+    'VideoChat2-HD':partial(VideoChat2_HD, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B', root=VideoChat2_ROOT, config_file='./vlmeval/vlm/video_llm/configs/videochat2_hd.json'),
     'Chat-UniVi': partial(Chatunivi, model_path="Chat-UniVi/Chat-UniVi"),
     'LLaMA-VID-7B': partial(LLaMAVID, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1'),
-    'Video-ChatGPT': partial(VideoChatGPT, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=VideoChatGPT_ROOT),
+    'Video-ChatGPT': partial(VideoChatGPT, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=VideoChatGPT_ROOT)
 }
 
 ungrouped = {
