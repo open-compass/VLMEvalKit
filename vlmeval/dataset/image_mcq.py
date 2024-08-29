@@ -381,11 +381,11 @@ class MUIRDataset(ImageMCQDataset):
 class GMAIMMBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {
-        'GMAI_mm_bench_VAL': 'https://huggingface.co/datasets/OpenGVLab/GMAI-MMBench/blob/main/GMAI_mm_bench_VAL.tsv'
+        'GMAI-MMBench_VAL': 'https://huggingface.co/datasets/VLMEval/GMAI-MMBench/resolve/main/GMAI-MMBench_VAL.tsv'
     }
 
     DATASET_MD5 = {
-        'GMAI_mm_bench_VAL': '254bd581627866f1c499d3d6b4422324'
+        'GMAI-MMBench_VAL': '254bd581627866f1c499d3d6b4422324'
     }
 
     def report_acc_by_groups(self, df, group_column):
