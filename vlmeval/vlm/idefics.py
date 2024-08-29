@@ -160,7 +160,7 @@ class IDEFICS2(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 # Swap hint and question
-                if 'Hint:' in instruction:
+                if instruction.startswith('Hint:'):
                     hint, question = instruction.split('\nQuestion:')
                     question, choices = question.split('\nChoices:')
                     instruction = (
@@ -246,12 +246,11 @@ class IDEFICS2(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         if dataset in [
-            'MMBench_DEV_EN',
-            'MMBench_TEST_EN',
-            'MMBench_DEV_CN',
-            'MMBench_TEST_CN',
-            'MMBench',
-            'MMBench_CN',
+            'MMBench_DEV_EN', 'MMBench_DEV_EN_V11',
+            'MMBench_TEST_EN', 'MMBench_TEST_EN_V11',
+            'MMBench_DEV_CN', 'MMBench_DEV_CN_V11',
+            'MMBench_TEST_CN', 'MMBench_TEST_CN_V11',
+            'MMBench', 'MMBench_V11', 'MMBench_CN', 'MMBench_CN_V11'
         ]:
             formatted_messages, formatted_images = self.build_prompt_mmbench(message)
         elif dataset in ['MMMU_DEV_VAL', 'MMMU_TEST']:

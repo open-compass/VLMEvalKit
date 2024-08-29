@@ -98,14 +98,14 @@ LARGE_MODELS = [
 
 
 def completed(m, d, suf):
-    score_file = f'{m}/{m}_{d}_{suf}'
+    score_file = f'outputs/{m}/{m}_{d}_{suf}'
     if osp.exists(score_file):
         return True
     if d == 'MMBench':
-        s1, s2 = f'{m}/{m}_MMBench_DEV_EN_{suf}', f'{m}/{m}_MMBench_TEST_EN_{suf}'
+        s1, s2 = f'outputs/{m}/{m}_MMBench_DEV_EN_{suf}', f'outputs/{m}/{m}_MMBench_TEST_EN_{suf}'
         return osp.exists(s1) and osp.exists(s2)
     elif d == 'MMBench_CN':
-        s1, s2 = f'{m}/{m}_MMBench_DEV_CN_{suf}', f'{m}/{m}_MMBench_TEST_CN_{suf}'
+        s1, s2 = f'outputs/{m}/{m}_MMBench_DEV_CN_{suf}', f'outputs/{m}/{m}_MMBench_TEST_CN_{suf}'
         return osp.exists(s1) and osp.exists(s2)
     return False
 
@@ -127,7 +127,7 @@ def MLIST(lvl, size='all'):
 def MISSING(lvl):
     from vlmeval.config import supported_VLM
     models = list(supported_VLM)
-    models = [m for m in models if m not in SKIP_MODELS and osp.exists(m)]
+    models = [m for m in models if m not in SKIP_MODELS and osp.exists(osp.join('outputs', m))]
     if lvl in dataset_levels.keys():
         data_list = dataset_levels[lvl]
     else:
@@ -312,29 +312,30 @@ def RUN(lvl, model):
     for m in groups:
         if m in SKIP_MODELS:
             continue
-        datasets = ' '.join(groups[m])
-        logger.info(f'Running {m} on {datasets}')
-        exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
-        if m not in models['api']:
-            env = None
-            env = 'latest' if m in models['latest'] else env
-            env = '433' if m in models['4.33.0'] else env
-            env = '437' if m in models['4.37.0'] else env
-            env = '440' if m in models['4.40.0'] else env
-            if env is None:
-                # Not found, default to latest
-                env = 'latest'
-                logger.warning(f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
-            pth = get_env(env)
-            if pth is not None:
-                exe = osp.join(pth, 'bin', exe)
-            else:
-                logger.warning(f'Cannot find the env path {env} for model {m}')
-        if exe.endswith('torchrun'):
-            cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {datasets}'
-        elif exe.endswith('python'):
-            cmd = f'{exe} {SCRIPT} --model {m} --data {datasets}'
-        os.system(cmd)
+        for dataset in groups[m]:
+            logger.info(f'Running {m} on {dataset}')
+            exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
+            if m not in models['api']:
+                env = None
+                env = 'latest' if m in models['latest'] else env
+                env = '433' if m in models['4.33.0'] else env
+                env = '437' if m in models['4.37.0'] else env
+                env = '440' if m in models['4.40.0'] else env
+                if env is None:
+                    # Not found, default to latest
+                    env = 'latest'
+                    logger.warning(
+                        f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
+                pth = get_env(env)
+                if pth is not None:
+                    exe = osp.join(pth, 'bin', exe)
+                else:
+                    logger.warning(f'Cannot find the env path {env} for model {m}')
+            if exe.endswith('torchrun'):
+                cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {dataset}'
+            elif exe.endswith('python'):
+                cmd = f'{exe} {SCRIPT} --model {m} --data {dataset}'
+            os.system(cmd)
 
 
 def EVAL(dataset_name, data_file):
