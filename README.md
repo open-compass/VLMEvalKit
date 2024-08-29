@@ -24,7 +24,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
-- **[2024-08-29]** We have supported [**MUIRBench**](https://muirbench.github.io), thanks to **amitbcp** 🔥🔥🔥
+- **[2024-08-29]** We have supported [**MUIRBench**](https://muirbench.github.io), thanks to **amitbcp**. Reference Performance: GPT-4o-MINI achieves 64.6% Overall accuracy  🔥🔥🔥
 - **[2024-08-28]** We have supported [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B)  🔥🔥🔥
 - **[2024-08-25]** We have supported [**MVBench**](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md) with its [**video**](https://huggingface.co/datasets/OpenGVLab/MVBench/tree/video) version 🔥🔥🔥
 - **[2024-08-25]** We have supported [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT), [**Chat-UniVi**](https://github.com/PKU-YuanGroup/Chat-UniVi) and [**LLaMA-VID**](https://github.com/dvlab-research/LLaMA-VID), thanks to [**Xiangyu Zhao**](https://github.com/PhoenixZ810)🔥🔥🔥
