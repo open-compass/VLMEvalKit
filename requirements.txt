@@ -24,3 +24,7 @@ transformers
 typing_extensions==4.7.1
 validators
 xlsxwriter
+decord
+imageio
+moviepy
+peft
