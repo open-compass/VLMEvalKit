@@ -146,10 +146,10 @@ def DATASET_TYPE(dataset):
         assert np.all([x == TYPES[0] for x in TYPES]), (dataset_list, TYPES)
         return TYPES[0]
 
-    dataset = build_dataset(dataset)
-    if dataset is not None:
-        return dataset.TYPE
-    return None
+    if 'openended' in dataset.lower():
+        return 'VQA'
+    warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as MCQ. ')
+    return 'MCQ'
 
 
 def build_dataset(dataset_name, **kwargs):
