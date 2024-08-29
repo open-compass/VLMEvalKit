@@ -10,6 +10,7 @@ from ...smp import isimg, listinstr, get_rank_and_world_size
 from ...dataset import DATASET_TYPE
 from huggingface_hub import snapshot_download
 
+
 class PLLaVA(BaseModel):
 
     INSTALL_REQ = True
@@ -32,10 +33,13 @@ class PLLaVA(BaseModel):
         self.use_lora = True
         self.lora_alpha = 4
         self.pooling_shape = (16, 12, 12)
-        self.RESOLUTION = 672 
+        self.RESOLUTION = 672
         # remind that, once the model goes larger (30B+) may cause the memory to be heavily used up. Even Tearing Nodes.
         weight_dir = snapshot_download(model_path)
-        self.model, self.processor = load_pllava(model_path, num_frames=self.nframe, use_lora=self.use_lora, weight_dir=weight_dir, lora_alpha=self.lora_alpha, pooling_shape=self.pooling_shape)
+        self.model, self.processor = load_pllava(
+            model_path, num_frames=self.nframe, use_lora=self.use_lora,
+            weight_dir=weight_dir, lora_alpha=self.lora_alpha, pooling_shape=self.pooling_shape
+        )
 
         #  position embedding
         self.model = self.model.to(torch.device(rank))
@@ -53,7 +57,6 @@ class PLLaVA(BaseModel):
             images_group.append(transforms(img))
         return images_group
 
-    
     def get_index(self, num_frames, num_segments):
         seg_size = float(num_frames - 1) / num_segments
         start = int(seg_size / 2)
@@ -61,7 +64,7 @@ class PLLaVA(BaseModel):
             start + int(np.round(seg_size * idx)) for idx in range(num_segments)
         ])
         return offsets
-    
+
     def generate_inner(self, message, dataset=None):
         from tasks.eval.model_utils import pllava_answer
         from tasks.eval.eval_utils import conv_templates
@@ -70,7 +73,7 @@ class PLLaVA(BaseModel):
 
         img_list = self.load_video(video, num_segments=self.nframe, resolution=self.RESOLUTION)
 
-        if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']: # MCQ dataset
+        if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']:  # MCQ dataset
             conv_mode = 'eval_mvbench'
         else:
             conv_mode = 'eval_videoqabench'
@@ -81,7 +84,10 @@ class PLLaVA(BaseModel):
             conv.assistant_response(message[-1]['value'])
         else:
             conv.user_query(question, is_mm=True)
-        llm_response, conv = pllava_answer(conv=conv, model=self.model, processor=self.processor, do_sample=False, img_list=img_list, max_new_tokens=256, print_res=False)
+        llm_response, conv = pllava_answer(
+            conv=conv, model=self.model, processor=self.processor,
+            do_sample=False, img_list=img_list, max_new_tokens=256, print_res=False
+        )
         if dataset in ['MVBench', 'MVBench_MP4']:
             llm_response = '(' + ''.join(llm_response.split(message[-1]['value'])[1:])
         return llm_response
