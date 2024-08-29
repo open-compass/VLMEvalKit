@@ -21,7 +21,9 @@ video_models = {
     'Chat-UniVi': partial(Chatunivi, model_path="Chat-UniVi/Chat-UniVi"),
     'LLaMA-VID-7B': partial(LLaMAVID, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1'),
     'Video-ChatGPT': partial(VideoChatGPT, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=VideoChatGPT_ROOT),
+    'PLLaVA-7B': partial(PLLaVA, model_path='ermu2001/pllava-7b', dir_root=PLLaVA_ROOT),
     'PLLaVA-13B': partial(PLLaVA, model_path='ermu2001/pllava-13b', dir_root=PLLaVA_ROOT),
+    'PLLaVA-34B': partial(PLLaVA, model_path='ermu2001/pllava-34b', dir_root=PLLaVA_ROOT),
 }
 
 ungrouped = {

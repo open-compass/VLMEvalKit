@@ -34,6 +34,7 @@ class PLLaVA(BaseModel):
         self.lora_alpha = 4
         self.pooling_shape = (16, 12, 12)
         self.RESOLUTION = 672
+        self.model_path = model_path
         # remind that, once the model goes larger (30B+) may cause the memory to be heavily used up. Even Tearing Nodes.
         weight_dir = snapshot_download(model_path)
         self.model, self.processor = load_pllava(
@@ -73,10 +74,16 @@ class PLLaVA(BaseModel):
 
         img_list = self.load_video(video, num_segments=self.nframe, resolution=self.RESOLUTION)
 
-        if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']:  # MCQ dataset
-            conv_mode = 'eval_mvbench'
+        if self.model_path == 'ermu2001/pllava-34b':  # using slightly different conversation mode for 34b model
+            if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']:  # MCQ dataset
+                conv_mode = 'eval_mvbench_llavanext'
+            else:  # VQA dataset
+                conv_mode = 'eval_videoqa_llavanext'
         else:
-            conv_mode = 'eval_videoqabench'
+            if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']:  # MCQ dataset
+                conv_mode = 'eval_mvbench'
+            else:  # VQA dataset
+                conv_mode = 'eval_videoqabench'
 
         conv = conv_templates[conv_mode].copy()
         if dataset in ['MVBench', 'MVBench_MP4']:
