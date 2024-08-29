@@ -3,7 +3,7 @@ import warnings
 from .image_base import img_root_map, ImageBaseDataset
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
-from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, GMAIMMBenchDataset
+from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, CustomVQADataset
@@ -111,7 +111,7 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, GMAIMMBenchDataset
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, GMAIMMBenchDataset
 ]
 
 VIDEO_DATASET = [
