@@ -300,6 +300,84 @@ class MMMUDataset(ImageMCQDataset):
         return msgs
 
 
+class MUIRDataset(ImageMCQDataset):
+
+    DATASET_URL = {
+        'MUIRBench': 'http://opencompass.openxxlab.com/utils/VLMEval/MUIRBench.tsv'
+    }
+
+    DATASET_MD5 = {
+        'MUIRBench': '2e5e6fd7699761b08a7cb3ab8c0c2ec8'
+    }
+
+    @staticmethod
+    def split_MUIR(msgs):
+        text, images = None, []
+
+        # Separate images and text from msgs
+        for s in msgs:
+            if s['type'] == 'image':
+                images.append(s['value'])
+            elif s['type'] == 'text':
+                assert text is None  # Ensure only one text entry is expected
+                text = s['value']
+
+        # Split text by <image> tags
+        text_segs = text.split('<image>')
+
+        # Initialize the segments list
+        segs = []
+
+        # Iterate through the text segments and images
+        for i, seg in enumerate(text_segs):
+            # Append the image if this is not the first segment and there are still images left
+            if i > 0 and i - 1 < len(images):
+                segs.append(dict(type='image', value=images[i - 1]))
+            # Append the text segment (if it's non-empty)
+            if len(seg) > 0:
+                segs.append(dict(type='text', value=seg))
+
+        return segs
+
+    def build_prompt(self, line):
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        # options_prompt = ''
+        options_prompt = '\n'.join([f'{key}. {item}' for key, item in options.items()])
+        # for key, item in options.items():
+        #     options_prompt += f'{key}. {item}\n'
+
+        prompt = ''
+
+        prompt += f'{question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += "\nAnswer with the option's letter from the given choices directly."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        msgs = self.split_MUIR(msgs)
+        return msgs
+
+
 class GMAIMMBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {

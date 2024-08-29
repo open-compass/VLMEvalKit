@@ -24,6 +24,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-08-29]** We have supported [**MUIRBench**](https://muirbench.github.io), thanks to **amitbcp**. Reference Performance: GPT-4o-MINI achieves 64.6% Overall accuracy  🔥🔥🔥
 - **[2024-08-28]** We have supported [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B)  🔥🔥🔥
 - **[2024-08-25]** We have supported [**MVBench**](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md) with its [**video**](https://huggingface.co/datasets/OpenGVLab/MVBench/tree/video) version 🔥🔥🔥
 - **[2024-08-25]** We have supported [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT), [**Chat-UniVi**](https://github.com/PKU-YuanGroup/Chat-UniVi) and [**LLaMA-VID**](https://github.com/dvlab-research/LLaMA-VID), thanks to [**Xiangyu Zhao**](https://github.com/PhoenixZ810)🔥🔥🔥
@@ -33,10 +34,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-08-09]** We have supported [**Hunyuan-Vision**](https://cloud.tencent.com/document/product/1729), evaluation results coming soon🔥🔥🔥
 - **[2024-08-08]** We created a HuggingFace Dataset: [**OpenVLMRecords**](https://huggingface.co/datasets/VLMEval/OpenVLMRecords) to keep all our evaluation records. You can find sample-level predictions of all evaluated benchmarks there🔥🔥🔥
 - **[2024-08-08]** We have supported [**MiniCPM-V 2.6**](https://huggingface.co/openbmb/MiniCPM-V-2_6), thanks to [**lihytotoro**](https://github.com/lihytotoro)🔥🔥🔥
-- **[2024-08-07]** We have supported two new multi-image understanding benchmarks: [**DUDE**](https://arxiv.org/abs/2305.08455) and [**SlideVQA**](https://arxiv.org/abs/2301.04883), thanks to [**mayubo2333**](https://github.com/mayubo2333/)🔥🔥🔥
-- **[2024-08-06]** We have supported [**TaskMeAnything ImageQA-Random Dataset**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random), thanks to [**weikaih04**](https://github.com/weikaih04)🔥🔥🔥
-- **[2024-08-05]** We have supported a new evaluation strategy for [**AI2D**](https://allenai.org/data/diagrams), which do not mask the corresponding areas when choices are uppercase letters. Instead, the area is annotated by a rectangle contour. Set the dataset name to `AI2D_TEST_NO_MASK` to evaluate under this setting (The leaderboard now is still using the previous setting)
-- **[2024-08-05]** We have supported [**Mantis**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2), thanks to [**BrenchCC**](https://github.com/BrenchCC)🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -69,7 +66,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**Q-Bench1**](https://github.com/Q-Future/Q-Bench)+ | Q-Bench1_[VAL/TEST] | MCQ | [**A-Bench**](https://github.com/Q-Future/A-Bench)+ | A-Bench_[VAL/TEST] | MCQ |
 | [**DUDE**](https://arxiv.org/abs/2305.08455)+ | DUDE | VQA (MTI) | [**SlideVQA**](https://arxiv.org/abs/2301.04883)+ | SLIDEVQA<br>SLIDEVQA_MINI | VQA (MTI) |
 | [**TaskMeAnything ImageQA Random**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random)+ | TaskMeAnything_v1_imageqa_random | MCQ  | [**MMMB and Multilingual MMBench**](https://sun-hailong.github.io/projects/Parrot/)+ | MMMB\_[ar/cn/en/pt/ru/tr]<br>MMBench_dev\_[ar/cn/en/pt/ru/tr]<br>MMMB<br>MTL_MMBench_DEV<br>PS: MMMB & MTL_MMBench_DEV <br>are **all-in-one** names for 6 langs | MCQ  |
-| [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ |  |  |  |
+| [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ | [**MuirBench**](https://muirbench.github.io) | MUIRBench | MCQ |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
