@@ -28,6 +28,17 @@ class Qwen2VLChat(BaseModel):
         ).eval()
         torch.cuda.empty_cache()
         self.kwargs = kwargs
+
+        default_eval_kwargs = dict(
+            max_new_tokens=2048,
+            do_sample=True,
+            top_p=0.001,
+            top_k=1,
+            temperature=0.01,
+            repetition_penalty=1.0,
+        )
+        for k, v in default_eval_kwargs.items():
+            self.kwargs.setdefault(k, v)
         warnings.warn(
             f"Following kwargs received: {self.kwargs}, will use as generation config. "
         )
