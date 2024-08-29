@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import torch
@@ -53,17 +54,28 @@ class Qwen2VLChat(BaseModel):
         content = []
         for s in message:
             if s["type"] == "image":
-                item = {
-                    "type": "image",
-                    "image": "file://" + s["value"],
-                }
-                if self.min_pixels is not None:
-                    item["min_pixels"] = self.min_pixels
-                if self.max_pixels is not None:
-                    item["max_pixels"] = self.max_pixels
+                image = str(s["value"])
+                prefixes = ["http://", "https://", "file://", "data:image"]
+                if any(image.startswith(prefix) for prefix in prefixes):
+                    pass
+                elif os.path.exists(image):
+                    image = "file://" + image
+                else:
+                    raise ValueError(f"Invalid image: {image}, {s}")
+
+                item = {"type": "image", "image": image}
+                min_pixels = s["min_pixels"] if "min_pixels" in s else self.min_pixels
+                if min_pixels is not None:
+                    item["min_pixels"] = min_pixels
+                max_pixels = s["max_pixels"] if "max_pixels" in s else self.max_pixels
+                if max_pixels is not None:
+                    item["max_pixels"] = max_pixels
                 content.append(item)
-            else:
+            elif s["type"] == "text":
                 content.append({"type": "text", "text": s["value"]})
+            else:
+                raise ValueError(f"Invalid message type: {s}")
+
         message = [{"role": "user", "content": content}]
         # print(f"\033[31m{message}\033[0m")
         text = self.processor.apply_chat_template([message], tokenize=False, add_generation_prompt=True)
