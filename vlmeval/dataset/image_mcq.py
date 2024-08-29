@@ -303,13 +303,11 @@ class MMMUDataset(ImageMCQDataset):
 class MUIRDataset(ImageMCQDataset):
 
     DATASET_URL = {
-        'MUIR': 'https://huggingface.co/datasets/amitbcp/muir_tsv/resolve/main/MUIR.tsv'
-
+        'MUIRBench': 'http://opencompass.openxxlab.com/utils/VLMEval/MUIRBench.tsv'
     }
 
     DATASET_MD5 = {
-        'MUIR': 'c376ed3c9f6ddd9209fe220e9e613ce5'
-
+        'MUIRBench': '2e5e6fd7699761b08a7cb3ab8c0c2ec8'
     }
 
     @staticmethod
