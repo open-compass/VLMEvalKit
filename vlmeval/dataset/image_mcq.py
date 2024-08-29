@@ -88,7 +88,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
             'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
         ),
-
+        'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv'
     }
 
     DATASET_MD5 = {
