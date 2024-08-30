@@ -189,21 +189,11 @@ class RBDash(BaseModel):
     
     def build_mme(self, line):
         question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
         prompt = question + "Answer the question using a single word or phrase."
         return prompt
 
     def build_hallusionbench(self, line):
         question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
         prompt = question + "\nAnswer the question using a single word or phrase."
         print(prompt)
         return prompt
