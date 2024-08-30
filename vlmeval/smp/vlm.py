@@ -84,14 +84,12 @@ def encode_image_to_base64(img, target_size=-1):
     # else, will set the max_size ot (target_size, target_size)
     if img.mode in ('RGBA', 'P'):
         img = img.convert('RGB')
-    tmp = osp.join('/tmp', str(uuid4()) + '.jpg')
     if target_size > 0:
         img.thumbnail((target_size, target_size))
-    img.save(tmp)
-    with open(tmp, 'rb') as image_file:
-        image_data = image_file.read()
+    img_buffer = io.BytesIO()
+    img.save(img_buffer, format='JPEG')
+    image_data = img_buffer.getvalue()
     ret = base64.b64encode(image_data).decode('utf-8')
-    os.remove(tmp)
     return ret
 
 

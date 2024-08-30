@@ -3,7 +3,7 @@ import warnings
 from .image_base import img_root_map, ImageBaseDataset
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
-from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, GMAIMMBenchDataset, HRBenchDataset
+from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, HRBenchDataset
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, CustomVQADataset
@@ -111,7 +111,7 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, GMAIMMBenchDataset, HRBenchDataset
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, GMAIMMBenchDataset, HRBenchDataset
 ]
 
 VIDEO_DATASET = [
@@ -146,10 +146,10 @@ def DATASET_TYPE(dataset):
         assert np.all([x == TYPES[0] for x in TYPES]), (dataset_list, TYPES)
         return TYPES[0]
 
-    dataset = build_dataset(dataset)
-    if dataset is not None:
-        return dataset.TYPE
-    return None
+    if 'openended' in dataset.lower():
+        return 'VQA'
+    warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as MCQ. ')
+    return 'MCQ'
 
 
 def build_dataset(dataset_name, **kwargs):
