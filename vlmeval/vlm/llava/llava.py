@@ -400,9 +400,8 @@ class LLaVA_OneVision(BaseModel):
             warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
 
         model_name = get_model_name_from_path(model_path)
-        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map=None)
-        model.cuda().eval()
-        model.tie_weights()
+        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map='auto')
+        model.eval()
 
         if 'llava' in model_path.lower():
             conv_mode = 'qwen_1_5'
