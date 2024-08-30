@@ -24,16 +24,17 @@
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
+
+- **[2024-08-29]** 支持了 [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361), 感谢 [**TousenKaname**](https://github.com/TousenKaname)。参考: GPT-4o-MINI 达到 42.2% 的平均准确率 🔥🔥🔥
+- **[2024-08-29]** 支持了 [**MUIRBench**](https://muirbench.github.io), 感谢 **amitbcp**。参考: GPT-4o-MINI 达到 64.6% 的平均准确率 🔥🔥🔥
+- **[2024-08-28]** 支持了 [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B)  🔥🔥🔥
+- **[2024-08-25]** 支持了 [**MVBench**](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md) 评测集的 [**视频**](https://huggingface.co/datasets/OpenGVLab/MVBench/tree/video) 版本 🔥🔥🔥
+- **[2024-08-25]** 支持了 [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT), [**Chat-UniVi**](https://github.com/PKU-YuanGroup/Chat-UniVi) 和 [**LLaMA-VID**](https://github.com/dvlab-research/LLaMA-VID) 三个视频理解大模型, 感谢 [**Xiangyu Zhao**](https://github.com/PhoenixZ810)🔥🔥🔥
 - **[2024-08-20]** 优化了 [**MMMB 和 Multilingual MMBench**](https://arxiv.org/abs/2406.02539) 的测试流程, 现在你可以使用数据集名 `MMMB` 和 `MTL_MMBench_DEV` 一次性得到 6 种语言上的评测结果
 - **[2024-08-19]** 支持了 [**Llama-3-MixSenseV1_1**](https://huggingface.co/Zero-Vision/Llama-3-MixSenseV1_1), 感谢 **Zero-Vision** 🔥🔥🔥
 - **[2024-08-12]** 支持了 [**MMMB 和 Multilingual MMBench**](https://arxiv.org/abs/2406.02539), 感谢 [**Hai-Long Sun**](https://github.com/sun-hailong)🔥🔥🔥
 - **[2024-08-09]** 支持了 [**Hunyuan-Vision**](https://cloud.tencent.com/document/product/1729)，评测结果将很快更新🔥🔥🔥
 - **[2024-08-08]** 创建了 HuggingFace 数据集 [**OpenVLMRecords**](https://huggingface.co/datasets/VLMEval/OpenVLMRecords) 用以维护全部原始评测记录。这个仓库提供了题目级的所有原始模型回答🔥🔥🔥
-- **[2024-08-08]** 支持了 [**MiniCPM-V 2.6**](https://huggingface.co/openbmb/MiniCPM-V-2_6), 感谢 [**lihytotoro**](https://github.com/lihytotoro)🔥🔥🔥
-- **[2024-08-07]** 支持了两个新的多图理解评测基准：[**DUDE**](https://arxiv.org/abs/2305.08455) 和 [**SlideVQA**](https://arxiv.org/abs/2301.04883), 感谢 [**mayubo2333**](https://github.com/mayubo2333/)🔥🔥🔥
-- **[2024-08-06]** 支持了 [**TaskMeAnything ImageQA-Random Dataset**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random), 感谢 [**weikaih04**](https://github.com/weikaih04)🔥🔥🔥
-- **[2024-08-05]** 我们为 [**AI2D**](https://allenai.org/data/diagrams) 支持了一种新的测试方式，在这种方式下，当选项是大写字母时，对应区域并不会被覆盖掉。相反，我们用矩形轮廓来标注对应区域。使用数据集名称 `AI2D_TEST_NO_MASK` 以在这种新设定下评测 (当前榜单上 AI2D 的性能仍使用旧设定得到)
-- **[2024-08-05]** 支持了 [**Mantis**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2), 感谢 [**BrenchCC**](https://github.com/BrenchCC)🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 ### 评测结果
