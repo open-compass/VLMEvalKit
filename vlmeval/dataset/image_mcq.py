@@ -390,7 +390,8 @@ class GMAIMMBenchDataset(ImageMCQDataset):
             dump(acc_grouped, score_file_grouped)
 
         return acc
-    
+
+
 class HRBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {
@@ -404,17 +405,17 @@ class HRBenchDataset(ImageMCQDataset):
     }
 
     def evaluate(self, eval_file, **judge_kwargs):
-        assert os.path.exists(eval_file), "{} does not exist!".format(eval_file)
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
         from .utils.multiple_choice import mcq_vanilla_eval
         from .utils.hrbench import report_acc_hrbench
         nproc = judge_kwargs.pop('nproc', 4)
-        
+
         suffix = eval_file.split('.')[-1]
-        model = judge_kwargs.get('model','extract_matching')
+        model = judge_kwargs.get('model', 'extract_matching')
         assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
-        
+
         if model == 'exact_matching':
             model = None
         elif gpt_key_set():
@@ -426,9 +427,9 @@ class HRBenchDataset(ImageMCQDataset):
         else:
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
-            
+
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
-        
+
         data = load(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
@@ -443,23 +444,23 @@ class HRBenchDataset(ImageMCQDataset):
             assert k in meta_q_map, (
                 f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
             )
-        
-        score_file = eval_file.replace(f'.{suffix}','_acc.csv')
-        
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+
         if osp.exists(score_file):
             acc = load(score_file)
             return acc
-        data = mcq_vanilla_eval(model,data,meta,nproc,result_file,self.dataset_name)
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
         dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
         data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        
+
         acc = report_acc_hrbench(data)
-        
+
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
-        dump(acc,score_file)
-        
+        dump(acc, score_file)
+
         return acc
-    
+
 
 class CustomMCQDataset(ImageMCQDataset):
 
