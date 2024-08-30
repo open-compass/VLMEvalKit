@@ -1,7 +1,7 @@
 {
     "model": {
       "model_cls": "VideoChat2_it_hd_mistral",
-      "vit_blip_model_path": "https://pjlab-gvm-data.oss-cn-shanghai.aliyuncs.com/videochat2/umt_l16_qformer.pth",
+      "vit_blip_model_path": "OpenGVLab/videochat2",
       "mistral_model_path": "mistralai/Mistral-7B-Instruct-v0.2",
       "videochat2_model_path": "OpenGVLab/VideoChat2_stage2_Mistral_7B",
       "freeze_vit": false,
