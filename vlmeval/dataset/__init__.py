@@ -110,7 +110,7 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, GMAIMMBenchDataset, MMNIAH
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, GMAIMMBenchDataset, MMNIAH
 ]
 
 VIDEO_DATASET = [
