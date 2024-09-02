@@ -414,6 +414,60 @@ class MTVQADataset(ImageBaseDataset):
         return msgs
 
 
+class TableVQABench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'TableVQABench': 'https://pai-aigc-photog.oss-cn-hangzhou.aliyuncs.com/mentor-vil/datasets/tablevqa-bench.tsv'
+    }
+    DATASET_MD5 = {'TableVQABench': '2550adc61bdc82d8e62f3b003de7c62d'}
+
+    from .utils.tablevqabench import FINTABNETQA_PROMPT, VTABFACT_PROMPT, VWTQ_PROMPT
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import pandas as pd
+        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        data = load(eval_file)
+        assert 'answer' in data and 'prediction' in data
+
+        data['prediction'] = data['prediction'].str.replace('^Answer: ', '', regex=True)
+        data_group = dict(tuple(data.groupby('split')))
+        eval_result = {'split': [], 'average_scores': []}
+        for split in ['fintabnetqa', 'vtabfact', 'vwtq', 'vwtq_syn']:
+            data_split = data_group[split].to_dict(orient='records')
+            if split == 'fintabnetqa':
+                split_eval_meta = evaluate_fintabnet(data_split, ['accuracy'])
+            elif split == 'vtabfact':
+                split_eval_meta = evaluate_tabfact(data_split, ['accuracy'])
+            elif split == 'vwtq' or split == 'vwtq_syn':
+                split_eval_meta = evaluate_wtq(data_split, ['accuracy'])
+            eval_result['split'].append(split)
+            eval_result['average_scores'].append(split_eval_meta['average_scores'])
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        eval_result = pd.DataFrame(eval_result)
+        dump(eval_result, result_file)
+
+        return eval_result
+
+    # TableVQABench adopts a custom prompt
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert sum([x['type'] == 'text' for x in msgs]) == 1
+        for item in msgs:
+            if item['type'] == 'text':
+                if line['split'] == 'fintabnetqa':
+                    item['value'] = self.FINTABNETQA_PROMPT.format_map({'question': item['value']})
+                elif line['split'] == 'vtabfact':
+                    item['value'] = self.VTABFACT_PROMPT.format_map({'question': item['value']})
+                elif line['split'] == 'vwtq_syn' or line['split'] == 'vwtq':
+                    item['value'] = self.VWTQ_PROMPT.format_map({'question': item['value']})
+        return msgs
+
+
 class CustomVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
 
