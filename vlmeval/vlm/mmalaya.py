@@ -306,7 +306,7 @@ class MMAlaya2(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['MathVista', 'MathVision'], dataset):
+            if listinstr(['MathVista', 'MathVision', 'MathVerse'], dataset):
                 prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']

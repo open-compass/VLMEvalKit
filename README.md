@@ -68,9 +68,9 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**DUDE**](https://arxiv.org/abs/2305.08455)+ | DUDE | VQA (MTI) | [**SlideVQA**](https://arxiv.org/abs/2301.04883)+ | SLIDEVQA<br>SLIDEVQA_MINI | VQA (MTI) |
 | [**TaskMeAnything ImageQA Random**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random)+ | TaskMeAnything_v1_imageqa_random | MCQ  | [**MMMB and Multilingual MMBench**](https://sun-hailong.github.io/projects/Parrot/)+ | MMMB\_[ar/cn/en/pt/ru/tr]<br>MMBench_dev\_[ar/cn/en/pt/ru/tr]<br>MMMB<br>MTL_MMBench_DEV<br>PS: MMMB & MTL_MMBench_DEV <br>are **all-in-one** names for 6 langs | MCQ  |
 | [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ | [**MuirBench**](https://muirbench.github.io) | MUIRBench | MCQ |
-| [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ |  |  |  |
+| [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**MathVerse**](https://mathverse-cuhk.github.io/)           | MathVerse_MINI<br>MathVerse_MINI_Vision_Only <br>MathVerse_MINI_Vision_Dominant<br>MathVerse_MINI_Vision_Intensive<br>MathVerse_MINI_Text_Lite<br>MathVerse_MINI_Text_Dominant | VQA |
 
-**\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
+d reasonable results under the zero-shot setting
 
 **\+** The evaluation results are not available yet
 
