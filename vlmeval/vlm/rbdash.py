@@ -47,7 +47,9 @@ class RBDash(BaseModel):
                 'Please follow the instructions of RBdash to put the ckpt file in the right place, '
                 'which can be found at https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#structure'
             )
-        tokenizer, model, image_processor, image_processor_aux, context_len = load_pretrained_model(model_path, None, model_name)
+        tokenizer, model, image_processor, image_processor_aux, context_len = load_pretrained_model(
+            model_path, None, model_name
+        )
         os.chdir(VLMEvalKit_path)
         self.model = model
         self.tokenizer = tokenizer
@@ -56,7 +58,7 @@ class RBDash(BaseModel):
         self.conv_mode = conv_mode
 
         if tokenizer.unk_token is None:
-            tokenizer.unk_token = "<|endoftext|>"
+            tokenizer.unk_token = '<|endoftext|>'
         tokenizer.pad_token = tokenizer.unk_token
 
         kwargs_default = dict(temperature=float(0.2), num_beams=1, top_p=None, max_new_tokens=128, use_cache=True)
@@ -76,18 +78,18 @@ class RBDash(BaseModel):
             )
 
         prompt, image = self.message_to_promptimg(message, dataset=dataset)
-        image = Image.open(image).convert("RGB")
+        image = Image.open(image).convert('RGB')
 
         if self.model.config.mm_use_im_start_end:
             prompt = (
                 DEFAULT_IM_START_TOKEN
                 + DEFAULT_IMAGE_TOKEN
                 + DEFAULT_IM_END_TOKEN
-                + "\n"
+                + '\n'
                 + prompt
             )
         else:
-            prompt = DEFAULT_IMAGE_TOKEN + "\n" + prompt
+            prompt = DEFAULT_IMAGE_TOKEN + '\n' + prompt
 
         conv = conv_templates[self.conv_mode].copy()
         conv.append_message(conv.roles[0], prompt)
@@ -102,10 +104,10 @@ class RBDash(BaseModel):
             self.image_processor.crop_size['height'] = self.model.config.image_size_aux
             self.image_processor.crop_size['width'] = self.model.config.image_size_aux
             self.image_processor.size['shortest_edge'] = self.model.config.image_size_aux
-            self.image_processor_aux.crop_size["height"] = self.model.config.image_size_aux
-            self.image_processor_aux.crop_size["width"] = self.model.config.image_size_aux
+            self.image_processor_aux.crop_size['height'] = self.model.config.image_size_aux
+            self.image_processor_aux.crop_size['width'] = self.model.config.image_size_aux
             self.image_processor_aux.size[
-                "shortest_edge"
+                'shortest_edge'
             ] = self.model.config.image_size_aux
         image_tensor = process_images([image], self.image_processor, self.model.config)[0]
         image_grid = getattr(self.model.config, 'image_grid', 1)
@@ -153,7 +155,7 @@ class RBDash(BaseModel):
                 )
                 raw_image = torch.cat([raw_image, global_image], dim=0)
             image_tensor = raw_image.contiguous()
-        
+
         images = image_tensor[None].to(dtype=self.model.dtype, device='cuda', non_blocking=True)
         if len(image_tensor_aux) > 0:
             images_aux = image_tensor_aux[None].to(dtype=self.model.dtype, device='cuda', non_blocking=True)
@@ -174,7 +176,7 @@ class RBDash(BaseModel):
 
         outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return outputs
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if 'mme' in dataset.lower():
@@ -186,26 +188,15 @@ class RBDash(BaseModel):
         elif 'mmbench' in dataset.lower():
             return True
         return False
-    
+
     def build_mme(self, line):
         question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
-        prompt = question + "Answer the question using a single word or phrase."
+        prompt = question + 'Answer the question using a single word or phrase.'
         return prompt
 
     def build_hallusionbench(self, line):
         question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
-        prompt = question + "\nAnswer the question using a single word or phrase."
-        print(prompt)
+        prompt = question + '\nAnswer the question using a single word or phrase.'
         return prompt
 
     def build_mmbench(self, line):
@@ -223,8 +214,7 @@ class RBDash(BaseModel):
             prompt += options_prompt
             prompt += "Answer with the option's letter from the given choices directly."
         else:
-            prompt += "Answer the question using a single word or phrase."
-        print(prompt)
+            prompt += 'Answer the question using a single word or phrase.'
         return prompt
 
     def build_mmmu(self, line):
@@ -246,9 +236,8 @@ class RBDash(BaseModel):
             prompt += options_prompt
             prompt += "\nAnswer with the option's letter from the given choices directly."
         else:
-            prompt += "Answer the question using a single word or phrase."
+            prompt += 'Answer the question using a single word or phrase.'
         return prompt
-        
 
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
