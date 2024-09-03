@@ -2,6 +2,7 @@ import pandas as pd
 from ...utils import can_infer, track_progress_rich
 from ...smp import *
 import numpy as np
+import re
 
 MMB_abbrs = {
     'coarse_perception': 'CP',
@@ -440,3 +441,90 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
         data_main.pop('GT')
 
     return data_main
+
+
+def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
+    if type(s) is dict:
+        s = ''
+    s = s.strip()
+    answer_prefixes = [
+        'The best answer is',
+        'The correct answer is',
+        'The answer is',
+        'The answer',
+        'The best option is'
+        'The correct option is',
+        'Best answer:'
+        'Best option:',
+    ]
+    for answer_prefix in answer_prefixes:
+        s = s.replace(answer_prefix, '')
+
+    if len(s.split()) > 10 and not re.search('[ABCDE]', s):
+        return ''
+    matches = re.search(r'[ABCDE]', s)
+    if matches is None:
+        for choice in choices:
+            if s.lower() in choice.lower():
+                return choice[1]
+        return ''
+    return matches[0]
+
+
+def get_dimension_rating(data_path):
+    TASKS = [
+        'Reasoning',
+        'Perception',
+    ]
+
+    SUBTASKS = [
+        'Monitoring',
+        'Autonomous_Driving',
+        'OCR with Complex Context',
+        'Diagram and Table',
+        'Remote Sensing',
+    ]
+    data = load(data_path)
+    results = {}
+    for task in TASKS:
+        results[f'{task}'] = {}
+        for subtask in SUBTASKS:
+            results[f'{task}'][f'{subtask}'] = {}
+
+    for i in range(len(data)):
+        question = data.iloc[i]
+        Task = question['category'].split('/')[0]
+        Subtask = question['category'].split('/')[1]
+        Category = question['l2-category']
+        if 'attribute' in Category.lower():
+            Category = Category.split('/')[0] + '/attribute'
+        if question['score'] >= 0:
+            cnt = question['score']
+            if Category not in results[Task][Subtask].keys():
+                results[Task][Subtask][f'{Category}'] = {'true': cnt, 'false': 1 - cnt}
+            else:
+                results[Task][Subtask][f'{Category}']['true'] += cnt
+                results[Task][Subtask][f'{Category}']['false'] += 1 - cnt
+
+    for task, tasks_values in results.items():
+        cnt_task, sum_task = 0, 0
+        for substask, subtask_value in tasks_values.items():
+            cnt_subtask, sum_subtask = 0, 0
+            for category, category_dict in subtask_value.items():
+                cnt_subtask += category_dict['true']
+                sum_subtask += category_dict['false'] + category_dict['true']
+                acc = category_dict['true'] / (category_dict['false'] + category_dict['true'])
+                results[task][substask][category] = acc
+            if sum_subtask == 0:
+                acc_subtasks = 0
+            else:
+                acc_subtasks = cnt_subtask / sum_subtask
+            cnt_task += cnt_subtask
+            sum_task += sum_subtask
+            results[task][substask]['Avg'] = acc_subtasks
+        if sum_task == 0:
+            acc_task = 0
+        else:
+            acc_task = cnt_task / sum_task
+        results[task]['Avg'] = acc_task
+    return results
