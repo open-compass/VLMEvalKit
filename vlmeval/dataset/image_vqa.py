@@ -497,6 +497,7 @@ class MMNIAH(ImageBaseDataset):
             'infer-choose': 0,
             'count-image': 0,
             'visual-reasoning': 0,
+            'total': 0,
         }
         MMNIAH_num = {
             'count-text': 0,
@@ -532,7 +533,7 @@ class MMNIAH(ImageBaseDataset):
             MMNIAH_num[category] += 1
             MMNIAH_num['total'] += 1
 
-        for category in ['find-image', 'count-text', 'find-text', 'infer-choose', 'count-image', 'visual-reasoning']:
+        for category in ['find-image', 'count-text', 'find-text', 'infer-choose', 'count-image', 'visual-reasoning', 'total']:
             if MMNIAH_num[category] != 0:
                 final_score_dict[category] = MMNIAH_score[category] / MMNIAH_num[category]
             else:
