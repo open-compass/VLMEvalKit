@@ -443,7 +443,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
     return data_main
 
 
-def extract_characters_regex(s, choices):
+def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
     if type(s) is dict:
         s = ''
     s = s.strip()
@@ -496,11 +496,8 @@ def get_dimension_rating(data_path):
         Task = question['category'].split('/')[0]
         Subtask = question['category'].split('/')[1]
         Category = question['l2-category']
-        text = question['output']
         if 'attribute' in Category.lower():
             Category = Category.split('/')[0] + '/attribute'
-        text = extract_characters_regex(text, question['Answer choices'])
-        # 检查 Ground Truth 和 text 是否相同
         if question['score'] >= 0:
             cnt = question['score']
             if Category not in results[Task][Subtask].keys():
@@ -508,4 +505,26 @@ def get_dimension_rating(data_path):
             else:
                 results[Task][Subtask][f'{Category}']['true'] += cnt
                 results[Task][Subtask][f'{Category}']['false'] += 1 - cnt
+
+    for task, tasks_values in results.items():
+        cnt_task, sum_task = 0, 0
+        for substask, subtask_value in tasks_values.items():
+            cnt_subtask, sum_subtask = 0, 0
+            for category, category_dict in subtask_value.items():
+                cnt_subtask += category_dict['true']
+                sum_subtask += category_dict['false'] + category_dict['true']
+                acc = category_dict['true'] / (category_dict['false'] + category_dict['true'])
+                results[task][substask][category] = acc
+            if sum_subtask == 0:
+                acc_subtasks = 0
+            else:
+                acc_subtasks = cnt_subtask / sum_subtask
+            cnt_task += cnt_subtask
+            sum_task += sum_subtask
+            results[task][substask]['Avg'] = acc_subtasks
+        if sum_task == 0:
+            acc_task = 0
+        else:
+            acc_task = cnt_task / sum_task
+        results[task]['Avg'] = acc_task
     return results
