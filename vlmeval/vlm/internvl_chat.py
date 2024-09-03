@@ -167,7 +167,8 @@ class InternVLChat(BaseModel):
                 model_path,
                 torch_dtype=torch.bfloat16,
                 trust_remote_code=True,
-                load_in_8bit=load_in_8bit).eval()
+                load_in_8bit=load_in_8bit,
+                max_length=1000).eval()
             if not load_in_8bit:
                 self.model = self.model.to(device)
 
@@ -251,6 +252,8 @@ class InternVLChat(BaseModel):
             else:
                 question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
+        # elif dataset is not None and DATASET_TYPE(dataset) == 'BBox':
+        #     prompt = 
         else:
             prompt = line['question']
         message = [dict(type='text', value=prompt)]

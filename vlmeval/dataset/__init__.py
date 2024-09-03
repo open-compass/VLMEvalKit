@@ -6,7 +6,8 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench, CustomVQADataset
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench, CustomVQADataset,
+    GodBench
 )
 
 from .vcr import VCRDataset
@@ -111,7 +112,8 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, GMAIMMBenchDataset
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, GMAIMMBenchDataset, 
+    GodBench
 ]
 
 VIDEO_DATASET = [
@@ -158,6 +160,13 @@ def build_dataset(dataset_name, **kwargs):
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
+
+
+    # if kwargs['is_local_data']:
+    #     data_file = kwargs['local_data_path']
+    #     return CustomLocalVQADataset(dataset=dataset_name, local_data_path=kwargs['local_data_path'])
+
+
 
     data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
     if not osp.exists(data_file):

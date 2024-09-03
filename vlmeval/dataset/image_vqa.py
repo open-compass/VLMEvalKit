@@ -485,3 +485,229 @@ class CustomVQADataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         raise NotImplementedError
+    
+
+# class CustomLocalVQADataset(ImageBaseDataset):
+#     TYPE = 'VQA'
+
+#     def __init__(self, dataset, local_data_path):
+#         self.local_data_path = local_data_path
+#         self.dataset = dataset
+#         super().__init__(dataset=self.local_data_path)
+
+#     def load_data(self, dataset):
+#         # data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
+
+#         # if file_size(data_path, 'GB') > 1:
+#         #     local_path = data_path.replace('.tsv', '_local.tsv')
+#         #     if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
+#         #         from ..tools import LOCALIZE
+
+#         #         LOCALIZE(data_path, local_path)
+#         #     data_path = local_path
+#         return load(self.local_data_path)
+
+#     def evaluate(self, eval_file, **judge_kwargs):
+#         raise NotImplementedError
+
+
+class GodBench(ImageBaseDataset):
+    TYPE = 'BBox'
+    DATASET_URL = {
+        'GodBench': 'https://opencompass.openxlab.space/utils/VLMEval/GodBench.tsv'
+    }
+    DATASET_MD5 = {'GodBench': None}
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+
+        # import logging
+        # import pathlib
+        import re
+        import string
+        # from typing import Union, List, Tuple, Optional
+
+        # import numpy as np
+        # import pandas as pd
+        # from scipy.optimize import linear_sum_assignment
+
+        # from selm_projects.base.evaluator import BaseEvaluator
+        # from selm_projects.idoc.prediction.ocr_resolver import parse_ocr_string
+        # from torch_framework.modeler import ExperimentalEvalPrediction
+
+
+        # logger = logging.getLogger(__name__)
+
+
+        def overlap_iou(r1, r2):
+            if r1 is None or r2 is None:
+                return 0
+            # determine the (x, y)-coordinates of the intersection rectangle
+            x_a = max(r1[0], r2[0])
+            y_a = max(r1[1], r2[1])
+            x_b = min(r1[2], r2[2])
+            y_b = min(r1[3], r2[3])
+
+            # compute the area of intersection rectangle
+            inter_area = max(0, x_b - x_a) * max(0, y_b - y_a)
+
+            # compute the area of both the prediction and ground-truth
+            # rectangles
+            box_a_area = (r1[2] - r1[0]) * (r1[3] - r1[1])
+            box_b_area = (r2[2] - r2[0]) * (r2[3] - r2[1])
+
+            # compute the intersection over union by taking the intersection
+            # area and dividing it by the sum of prediction + ground-truth
+            # areas - the intersection area
+            iou = inter_area / max(float(box_a_area + box_b_area - inter_area), 0.00001)
+
+            # return the intersection over union value
+            return iou
+
+
+        def normalize_text(s):
+            """Removing articles and punctuation, and standardizing whitespace are all typical text processing steps."""
+
+            def remove_articles(text):
+                regex = re.compile(r"\b(a|an|the)\b", re.UNICODE)
+                return re.sub(regex, " ", text)
+
+            def white_space_fix(text):
+                return " ".join(text.split())
+
+            def remove_punc(text):
+                exclude = set(string.punctuation)
+                return "".join(ch for ch in text if ch not in exclude)
+
+            def lower(text):
+                return text.lower()
+
+            return white_space_fix(remove_articles(remove_punc(lower(s))))
+
+
+        def exact_match(prediction, truth):
+            return int(normalize_text(prediction) == normalize_text(truth))
+
+
+        def compute_f1(prediction, truth):
+            pred_tokens = normalize_text(prediction).split()
+            truth_tokens = normalize_text(truth).split()
+
+            # if either the prediction or the truth is no-answer then f1 = 1 if they agree, 0 otherwise
+            if len(pred_tokens) == 0 or len(truth_tokens) == 0:
+                return int(pred_tokens == truth_tokens)
+
+            common_tokens = set(pred_tokens) & set(truth_tokens)
+
+            # if there are no common tokens then f1 = 0
+            if len(common_tokens) == 0:
+                return 0
+
+            prec = len(common_tokens) / len(pred_tokens)
+            rec = len(common_tokens) / len(truth_tokens)
+
+            return round(2 * (prec * rec) / (prec + rec), 2)
+
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+
+        def process_bbox(bbox_str: str):
+            bbox_str = bbox_str[1:-1]
+            bbox_str = bbox_str.split(', ')
+            bbox_xs = list(map(int, bbox_str))
+            return bbox_xs
+
+        identified_count = 0
+        total_iou = 0
+        total_exact_match = 0
+        total_f1 = 0
+
+        for i in tqdm(range(len(lines))):
+            line = lines[i]
+            prediction = str(line['prediction'])
+            true_answer = line['answer']
+            true_bbox = process_bbox(line['bbox'])
+            
+            pred_answer = None
+            pred_bbox = None
+            pred_answer_m = re.search(r' is "([^"]+)"', prediction)
+            if pred_answer_m:
+                pred_answer = pred_answer_m.group(1)
+            pred_bbox_m = re.search(r'\[\d+(?:[, ]+\d+){3}]', prediction)
+            if pred_bbox_m:
+                pred_bbox = process_bbox(pred_bbox_m.group(0))
+                # print(i, 'bbox ', pred_bbox)
+            if pred_answer and pred_bbox:
+                identified_count += 1
+                total_iou += overlap_iou(pred_bbox, true_bbox)
+                total_exact_match += exact_match(pred_answer, true_answer)
+                total_f1 += compute_f1(pred_answer, true_answer)
+
+        final_score_dict = {
+            'avg_EM': total_exact_match / identified_count,
+            'avg_F1': total_f1 / identified_count,
+            'avg_IOU': total_iou / identified_count 
+        }
+        final_score = pd.DataFrame([final_score_dict])
+        score_pth = eval_file.replace('.xlsx', '_score.csv')
+        dump(final_score, score_pth)
+        return final_score
+                
+
+    
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        task_type = line['task_type']
+
+        # print(line)
+
+        KIE_data = ['sroie_v2', 'docvqa']
+
+        if line['dataset_name'] in KIE_data:
+
+            prompt = \
+            f"The task type is {task_type} and the instruction for the task is as follows:\n\n\
+            ### Task\n\
+            {question}\n\n\
+            ### Requirements\n\
+            This task has two requirements:\n\
+            1. Please answer the question along with the positional bounding box of the answer.\n\
+            2. The output must be formatted as 'The text of the answer is \"{{answer}}\" and its corresponding position is [x0, y0, x1, y1].\n\
+            3. The position or bounding box of the text should be defined relative to the image's dimensions, scaled from 0 to 1000."
+
+        elif line['dataset_name'] == 'textocr':
+            prompt = \
+            f"The task type is $task$ and the instruction for the task is as follows:\n\n\
+            ### Task\n\
+            $question$\n\n\
+            ### Requirements\n\
+            This task has two requirements:\n\
+            1. Please answer the question along with the positional bounding box of the answer.\n\
+            2. The output must be formatted as 'The text of the answer is \"{{answer}}\" and its corresponding position is [x0, y0, x1, y1].'.\n\
+            3. The position or bounding box of the text should be defined relative to the image's dimensions, scaled from 0 to 1000. "
+        
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+    
+
+# class Sroie_v2:
+#     def evaluate():
+#         return None

@@ -35,6 +35,9 @@ def parse_args():
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Rerun: will remove all evaluation temp files
     parser.add_argument('--rerun', action='store_true')
+    parser.add_argument('--device', type=int, default=0)
+    # parser.add_argument('--is_local_data', action='store_true')
+    # parser.add_argument('--local_data_path', type=str)
     args = parser.parse_args()
     return args
 
@@ -53,6 +56,8 @@ def main():
             if hasattr(v, 'keywords') and 'verbose' in v.keywords:
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
+
+    torch.cuda.set_device(args.device)
 
     rank, world_size = get_rank_and_world_size()
     if world_size > 1:
@@ -74,6 +79,9 @@ def main():
                 dataset_kwargs['pack'] = args.pack
             if dataset_name == 'Video-MME':
                 dataset_kwargs['use_subtitle'] = args.use_subtitle
+            
+            # dataset_kwargs['is_local_data'] = args.is_local_data
+            # dataset_kwargs['local_data_path'] = args.local_data_path
 
             # If distributed, first build the dataset on the main process for doing preparation works
             if world_size > 1:

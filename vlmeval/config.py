@@ -91,6 +91,7 @@ minicpm_series = {
     'MiniCPM-V': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V'),
     'MiniCPM-V-2': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
+    'MiniCPM-Llama3-V-2_5-Finance': partial(MiniCPM_Llama3_V, model_path='/data/hh/34_minicpm'), # This is a local path
     'MiniCPM-V-2_6': partial(MiniCPM_V_2_6, model_path='openbmb/MiniCPM-V-2_6'),
 }
 
