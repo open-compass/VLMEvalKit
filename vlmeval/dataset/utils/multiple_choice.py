@@ -442,45 +442,47 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
 
     return data_main
 
+
 def extract_characters_regex(s, choices):
     if type(s) is dict:
         s = ''
     s = s.strip()
     answer_prefixes = [
-        "The best answer is",
-        "The correct answer is",
-        "The answer is",
-        "The answer",
-        "The best option is"
-        "The correct option is",
-        "Best answer:"
-        "Best option:",
+        'The best answer is',
+        'The correct answer is',
+        'The answer is',
+        'The answer',
+        'The best option is'
+        'The correct option is',
+        'Best answer:'
+        'Best option:',
     ]
     for answer_prefix in answer_prefixes:
-        s = s.replace(answer_prefix, "")
+        s = s.replace(answer_prefix, '')
 
-    if len(s.split()) > 10 and not re.search("[ABCDE]", s):
-        return ""
+    if len(s.split()) > 10 and not re.search('[ABCDE]', s):
+        return ''
     matches = re.search(r'[ABCDE]', s)
     if matches is None:
         for choice in choices:
             if s.lower() in choice.lower():
                 return choice[1]
-        return ""
+        return ''
     return matches[0]
+
 
 def get_dimension_rating(data_path):
     TASKS = [
-        "Reasoning",
-        "Perception",
+        'Reasoning',
+        'Perception',
     ]
 
     SUBTASKS = [
-        "Monitoring",
-        "Autonomous_Driving",
-        "OCR with Complex Context",
-        "Diagram and Table",
-        "Remote Sensing",
+        'Monitoring',
+        'Autonomous_Driving',
+        'OCR with Complex Context',
+        'Diagram and Table',
+        'Remote Sensing',
     ]
     data = load(data_path)
     results = {}
@@ -488,15 +490,13 @@ def get_dimension_rating(data_path):
         results[f'{task}'] = {}
         for subtask in SUBTASKS:
             results[f'{task}'][f'{subtask}'] = {}
-            
+
     for i in range(len(data)):
         question = data.iloc[i]
         Task = question['category'].split('/')[0]
         Subtask = question['category'].split('/')[1]
         Category = question['l2-category']
-        question_id = question["index"]
-        ground_truth = question["Ground truth"]
-        text = question["output"]
+        text = question['output']
         if 'attribute' in Category.lower():
             Category = Category.split('/')[0] + '/attribute'
         text = extract_characters_regex(text, question['Answer choices'])
@@ -504,9 +504,8 @@ def get_dimension_rating(data_path):
         if question['score'] >= 0:
             cnt = question['score']
             if Category not in results[Task][Subtask].keys():
-                results[Task][Subtask][f'{Category}'] = {'true': cnt, 'false': 1-cnt}
+                results[Task][Subtask][f'{Category}'] = {'true': cnt, 'false': 1 - cnt}
             else:
                 results[Task][Subtask][f'{Category}']['true'] += cnt
                 results[Task][Subtask][f'{Category}']['false'] += 1 - cnt
     return results
-

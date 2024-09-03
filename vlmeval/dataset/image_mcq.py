@@ -390,6 +390,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         return acc
 
+
 class MMERealWorld(ImageMCQDataset):
 
     DATASET_MD5 = {
@@ -397,7 +398,8 @@ class MMERealWorld(ImageMCQDataset):
         'MME-RealWorld-CN': 'cbec7caf59402a4167872abbdca1d6bd',
     }
     SYS = {
-        'MME-RealWorld':  'Select the best answer to the above multiple-choice question based on the image. Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
+        'MME-RealWorld': 'Select the best answer to the above multiple-choice question based on the image. \
+            Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
         'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
     }
 
@@ -417,7 +419,7 @@ class MMERealWorld(ImageMCQDataset):
             tsv_file = os.path.join(pth, f'{dataset}.tsv')
 
             if os.path.exists(tsv_file):
-                print(f"{tsv_file} already exists.")
+                print(f'{tsv_file} already exists.')
                 return
 
             json_dir = os.path.join(pth, dataset)
@@ -428,26 +430,26 @@ class MMERealWorld(ImageMCQDataset):
                 with open(os.path.join(json_dir, json_file), 'r') as f:
                     data = json.load(f)
                     for item in tqdm(data):
-                        choice_prompt = 'The choices are listed below:\n' if dataset=='MME-RealWorld' else '选项如下所示:\n'
+                        choice_prompt = 'The choices are listed below:\n' if dataset == 'MME-RealWorld' else '选项如下所示:\n'
                         data_list.append({
                             'index': item['index'],
                             'image': item['image'],
                             'question': item['question'],
-                            'multi-choice options':  choice_prompt + '\n'.join(item['multi-choice options']),
+                            'multi-choice options': choice_prompt + '\n'.join(item['multi-choice options']),
                             'answer': item['answer'],
                             'category': item['category'],
                             'l2-category': item['l2-category']
                         })
             df = pd.DataFrame(data_list)
             df.to_csv(tsv_file, sep='\t', index=False)
-            print(f"TSV file saved to {tsv_file}")
+            print(f'TSV file saved to {tsv_file}')
 
         # Check if dataset is cached and has integrity
         update_flag = False
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
-            print(f"Using cached dataset from {cache_path}")
+            print(f'Using cached dataset from {cache_path}')
         else:
             from huggingface_hub import snapshot_download
             # Download or find the dataset path
@@ -464,7 +466,7 @@ class MMERealWorld(ImageMCQDataset):
             data_path = local_path
         return load(data_path)
 
-     # Given one data record, return the built prompt (a multi-modal message), can override
+    # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -487,7 +489,6 @@ class MMERealWorld(ImageMCQDataset):
         msgs.append(dict(type='text', value=question))
         return msgs
 
-
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -499,7 +500,7 @@ class MMERealWorld(ImageMCQDataset):
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
-            
+
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -528,7 +529,8 @@ class MMERealWorld(ImageMCQDataset):
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
-    
+
+
 class CustomMCQDataset(ImageMCQDataset):
 
     def load_data(self, dataset):
