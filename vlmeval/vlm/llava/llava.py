@@ -386,7 +386,7 @@ class LLaVA_Next2(BaseModel):
 class LLaVA_OneVision(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
-
+    VIDEO_LLM = True
     DEFAULT_IMAGE_TOKEN = '<image>'
     IMAGE_TOKEN_INDEX = -200
 
@@ -406,6 +406,7 @@ class LLaVA_OneVision(BaseModel):
 
         if 'llava' in model_path.lower():
             conv_mode = 'qwen_1_5'
+        self.nframe = 16
         self.conv_template = conv_mode
         self.conv_templates = conv_templates
         self.tokenizer = tokenizer
@@ -414,7 +415,7 @@ class LLaVA_OneVision(BaseModel):
         self.tokenizer_image_token = tokenizer_image_token
         self.process_images = process_images  # Store process_images as a class attribute
 
-    def generate_inner(self, message, dataset=None):
+    def generate_inner_image(self, message, dataset=None):
         content, images = '', []
         image_sizes = []  # Store image sizes
 
@@ -453,3 +454,64 @@ class LLaVA_OneVision(BaseModel):
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
+
+    def generate_inner_video(self, message, dataset=None):
+        content, videos = '', []
+
+        for msg in message:
+            if msg['type'] == 'text':
+                content += msg['value']
+            else:
+                videos.append(msg['value'])
+                content += (self.DEFAULT_IMAGE_TOKEN + '\n')
+
+        if len(videos) > 1:
+            raise ValueError('LLaVA-OneVision does not support multiple videos as input.')
+        video_frames = self.load_video(videos[0], self.nframe)
+        image_tensors = []
+        frames = self.image_processor.preprocess(video_frames, return_tensors='pt')['pixel_values'].half().cuda()
+        image_tensors.append(frames)
+
+        conv = copy.deepcopy(self.conv_templates[self.conv_template])
+        conv.append_message(conv.roles[0], content)
+        conv.append_message(conv.roles[1], None)
+        prompt_question = conv.get_prompt()
+
+        input_ids = self.tokenizer_image_token(prompt_question,
+                                               self.tokenizer,
+                                               self.IMAGE_TOKEN_INDEX,
+                                               return_tensors='pt')
+        input_ids = input_ids.unsqueeze(0).cuda()
+        image_sizes = [frame.size for frame in video_frames]
+        modalities = ['video'] * len(video_frames)
+
+        # Pass image sizes along with other parameters
+        cont = self.model.generate(
+            input_ids,
+            images=image_tensors,
+            image_sizes=image_sizes,  # Pass the image sizes here
+            do_sample=False,
+            temperature=0,
+            max_new_tokens=4096,
+            modalities=modalities
+        )
+        text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
+        return text_outputs
+
+    def load_video(self, video_path, max_frames_num):
+        from decord import VideoReader, cpu
+        if type(video_path) == str:
+            vr = VideoReader(video_path, ctx=cpu(0))
+        else:
+            vr = VideoReader(video_path[0], ctx=cpu(0))
+        total_frame_num = len(vr)
+        uniform_sampled_frames = np.linspace(0, total_frame_num - 1, max_frames_num, dtype=int)
+        frame_idx = uniform_sampled_frames.tolist()
+        spare_frames = vr.get_batch(frame_idx).asnumpy()
+        return spare_frames  # (frames, height, width, channels)
+
+    def generate_inner(self, message, dataset=None):
+        if dataset in ['MMBench-Video', 'Video-MME', 'MVBench']:
+            return self.generate_inner_video(message, dataset)
+        else:
+            return self.generate_inner_image(message, dataset)
