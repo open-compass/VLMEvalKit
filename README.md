@@ -24,6 +24,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-09-03]** We have supported [**MME-RealWorld**](https://arxiv.org/abs/2408.13257), thanks to [**Yifan zhang**](https://github.com/yfzhang114).  🔥🔥🔥
 - **[2024-09-02]** We have supported [**TableVQABench**](https://arxiv.org/abs/2404.19205), thanks to [**hkunzhe**](https://github.com/hkunzhe).  🔥🔥🔥
 - **[2024-08-29]** We have supported [**PLLaVA**](https://arxiv.org/abs/2404.16994), including three different sizes (7B/13B/34B)  🔥🔥🔥
 - **[2024-08-29]** We have supported [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361), thanks to [**TousenKaname**](https://github.com/TousenKaname). Reference Performance: GPT-4o-MINI achieves 42.2% Overall accuracy 🔥🔥🔥
@@ -70,6 +71,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**TaskMeAnything ImageQA Random**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random)+ | TaskMeAnything_v1_imageqa_random | MCQ  | [**MMMB and Multilingual MMBench**](https://sun-hailong.github.io/projects/Parrot/)+ | MMMB\_[ar/cn/en/pt/ru/tr]<br>MMBench_dev\_[ar/cn/en/pt/ru/tr]<br>MMMB<br>MTL_MMBench_DEV<br>PS: MMMB & MTL_MMBench_DEV <br>are **all-in-one** names for 6 langs | MCQ  |
 | [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ | [**MuirBench**](https://muirbench.github.io) | MUIRBench | MCQ |
 | [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**TableVQABench**](https://arxiv.org/abs/2404.19205)+ | TableVQABench | VQA |
+| [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN] | MCQ |  |  |  |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
