@@ -18,14 +18,14 @@ class RBDash(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path, root=None, conv_mode='qwen', **kwargs):
+        from huggingface_hub import snapshot_download
         if root is None:
             warnings.warn('Please set `root` to RBDash code directory, \
                 which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" ')
             sys.exit(-1)
         warnings.warn('Please follow the instructions of RBDash to put the ckpt file in the right place, \
             which can be found at https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#structure')
-        assert model_path == 'RBDash-v1.2-72b', 'We only support RBDash-v1.2-72b for now'
-        self.model_path = model_path
+        assert model_path == 'RBDash-Team/RBDash-v1.2-72b', 'We only support RBDash-v1.2-72b for now'
         sys.path.append(root)
         try:
             from rbdash.model.builder import load_pretrained_model
@@ -39,7 +39,6 @@ class RBDash(BaseModel):
         os.chdir(root)
         warnings.warn('Please set `root` to RBdash code directory, \
             which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" ')
-        model_path = osp.join(root, 'models', 'RBDash-v1.2-72b')
         try:
             model_name = get_model_name_from_path(model_path)
         except:
@@ -47,8 +46,23 @@ class RBDash(BaseModel):
                 'Please follow the instructions of RBdash to put the ckpt file in the right place, '
                 'which can be found at https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#structure'
             )
+        download_model_path = snapshot_download(model_path)
+
+        internvit_local_dir = './model_zoo/OpenGVLab/InternViT-6B-448px-V1-5'
+        os.makedirs(internvit_local_dir, exist_ok=True)
+        snapshot_download('OpenGVLab/InternViT-6B-448px-V1-5', local_dir=internvit_local_dir)
+
+        convnext_local_dir = './model_zoo/OpenAI/openclip-convnext-large-d-320-laion2B-s29B-b131K-ft-soup'
+        os.makedirs(convnext_local_dir, exist_ok=True)
+        snapshot_download('laion/CLIP-convnext_large_d_320.laion2B-s29B-b131K-ft-soup', local_dir=convnext_local_dir)
+        preprocessor_url = 'https://huggingface.co/openai/clip-vit-large-patch14-336/blob/main/preprocessor_config.json'
+        download_file_path = osp.join(convnext_local_dir, 'preprocessor_config.json')
+        if not osp.exists(download_file_path):
+            print(f'download preprocessor to {download_file_path}')
+            download_file(preprocessor_url, download_file_path)
+
         tokenizer, model, image_processor, image_processor_aux, context_len = load_pretrained_model(
-            model_path, None, model_name
+            download_model_path, None, model_name, device_map='auto', device='cpu'
         )
         os.chdir(VLMEvalKit_path)
         self.model = model
