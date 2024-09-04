@@ -87,8 +87,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'TaskMeAnything_v1_imageqa_random': (
             'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
             'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
-        ),
-        'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv'
+        )
     }
 
     DATASET_MD5 = {
@@ -468,6 +467,151 @@ class GMAIMMBenchDataset(ImageMCQDataset):
             dump(acc_grouped, score_file_grouped)
 
         return acc
+
+
+class MMERealWorld(ImageMCQDataset):
+
+    DATASET_MD5 = {
+        'MME-RealWorld': '7d7cc66f7fe0f56ebc68fdddf2b447da',
+        'MME-RealWorld-CN': 'cbec7caf59402a4167872abbdca1d6bd',
+    }
+    SYS = {
+        'MME-RealWorld': 'Select the best answer to the above multiple-choice question based on the image. \
+            Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
+        'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
+    }
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['MME-RealWorld', 'MME-RealWorld-CN']
+
+    def load_data(self, dataset='MME-RealWorld', repo_id='yifanzhang114/MME-RealWorld-Base64'):
+
+        def check_integrity(pth):
+            data_file = osp.join(pth, f'{dataset}.tsv')
+
+            if not os.path.exists(data_file):
+                return False
+
+            if md5(data_file) != self.DATASET_MD5[dataset]:
+                return False
+            return True
+
+        def generate_tsv(pth):
+            tsv_file = os.path.join(pth, f'{dataset}.tsv')
+
+            if os.path.exists(tsv_file):
+                print(f'{tsv_file} already exists.')
+                return
+
+            json_dir = os.path.join(pth, dataset)
+            json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
+
+            data_list = []
+            for json_file in json_files:
+                with open(os.path.join(json_dir, json_file), 'r') as f:
+                    data = json.load(f)
+                    for item in tqdm(data):
+                        choice_prompt = 'The choices are listed below:\n' if dataset == 'MME-RealWorld' else '选项如下所示:\n'
+                        data_list.append({
+                            'index': item['index'],
+                            'image': item['image'],
+                            'question': item['question'],
+                            'multi-choice options': choice_prompt + '\n'.join(item['multi-choice options']),
+                            'answer': item['answer'],
+                            'category': item['category'],
+                            'l2-category': item['l2-category']
+                        })
+            df = pd.DataFrame(data_list)
+            df.to_csv(tsv_file, sep='\t', index=False)
+            print(f'TSV file saved to {tsv_file}')
+
+        # Check if dataset is cached and has integrity
+        update_flag = False
+        cache_path = get_cache_path(repo_id)
+        if cache_path is not None and check_integrity(cache_path):
+            dataset_path = cache_path
+            print(f'Using cached dataset from {cache_path}')
+        else:
+            from huggingface_hub import snapshot_download
+            # Download or find the dataset path
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            generate_tsv(dataset_path)
+            update_flag = True
+
+        data_path = os.path.join(dataset_path, f'{dataset}.tsv')
+        if file_size(data_path, 'GB') > 1:
+            local_path = data_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+                from vlmeval.tools import LOCALIZE
+                LOCALIZE(data_path, local_path)
+            data_path = local_path
+        return load(data_path)
+
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        choice_prompt = line['multi-choice options'] + '\n'
+        question += choice_prompt + self.SYS[self.dataset_name] + '\nThe best answer is:'
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import extract_characters_regex, get_dimension_rating
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        FAIL_MSG = 'Failed to obtain answer via API.'
+        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', '_rating.json')
+        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+
+        if not osp.exists(score_file):
+
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+
+            data = load(eval_file)
+            data_un = data[~pd.isna(data['prediction'])]
+
+            for idx in data['index']:
+                ans = data.loc[data['index'] == idx, 'answer'].values[0]
+                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+
+                extract_pred = extract_characters_regex(pred)
+                if extract_pred == '':
+                    data.loc[idx, 'score'] = -1
+                else:
+                    data.loc[idx, 'score'] = int(extract_pred == ans)
+
+            rejected = [x for x in data['score'] if x == -1]
+
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+                f'failed to obtain the score for another {len(rejected)} questions. '
+                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating
 
 
 class CustomMCQDataset(ImageMCQDataset):
