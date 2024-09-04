@@ -4,6 +4,8 @@ from ..smp import *
 
 
 def img_root_map(dataset):
+    if 'CRPE' in dataset:
+        return 'CRPE'
     if 'OCRVQA' in dataset:
         return 'OCRVQA'
     if 'COCO_VAL' == dataset:
