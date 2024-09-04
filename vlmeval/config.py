@@ -43,7 +43,7 @@ ungrouped = {
     'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1'),
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
-    'RBDash_72b': partial(RBDash, model_path='RBDash-v1.2-72b', root=RBDash_ROOT),
+    'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
 }
 
 api_models = {
