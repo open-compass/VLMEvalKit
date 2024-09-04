@@ -18,6 +18,7 @@ class ImageVQADataset(ImageBaseDataset):
         'InfoVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL.tsv',
         'InfoVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_TEST.tsv',
         'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
+        'GQA_TestDev_Balanced': 'https://opencompass.openxlab.space/utils/VLMEval/GQA_TestDev_Balanced.tsv',
     }
 
     DATASET_MD5 = {
@@ -29,6 +30,7 @@ class ImageVQADataset(ImageBaseDataset):
         'InfoVQA_VAL': '2342e9c225222f0ef4dec545ebb126fe',
         'InfoVQA_TEST': 'df535bf51b88dc9718252c34131a6227',
         'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
+        'GQA_TestDev_Balanced': 'fead7df22befc1ed3ca2b62ea26fa17b',
     }
 
     def build_prompt(self, line):
@@ -53,7 +55,7 @@ class ImageVQADataset(ImageBaseDataset):
             res = pool.map(partial(process_line, method='vqa_score'), lines)
         elif listinstr(['ChartQA'], dataset):
             res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
-        elif listinstr(['OCRVQA'], dataset):
+        elif listinstr(['OCRVQA', 'GQA'], dataset):
             res = pool.map(partial(process_line, method='accuracy'), lines)
         elif listinstr(['DocVQA', 'InfoVQA'], dataset):
             res = pool.map(partial(process_line, method='anls'), lines)
