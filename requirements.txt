@@ -1,5 +1,4 @@
 decord
-einops
 gradio
 huggingface_hub
 imageio
@@ -11,6 +10,7 @@ openai==1.3.5
 opencv-python>=4.4.0.46
 openpyxl
 pandas
+peft
 pillow
 portalocker
 protobuf
