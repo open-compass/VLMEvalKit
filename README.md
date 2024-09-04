@@ -24,6 +24,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-09-03]** We have supported [**RBDash**](https://huggingface.co/RBDash-Team/RBDash-v1.2-72b), thanks to [**anzhao920**](https://github.com/anzhao920) 🔥🔥🔥
 - **[2024-09-03]** In the previous 2 months, 7 new contributors have made 3+ major contributions to the project: [amitbcp](https://github.com/amitbcp), [czczup](https://github.com/czczup), [DseidLi](https://github.com/DseidLi), [mayubo233](https://github.com/mayubo233), [sun-hailong](https://github.com/sun-hailong), [PhoenixZ810](https://github.com/PhoenixZ810), [Cuiunbo](https://github.com/Cuiunbo). We will update the report accordingly in the coming weeks. Check [contributor list](/docs/en/advanced_guides/Contributors.md) for their detailed contributions 🔥🔥🔥
 - **[2024-09-03]** We have supported [**MME-RealWorld**](https://arxiv.org/abs/2408.13257), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
 - **[2024-09-02]** We have supported [**TableVQABench**](https://arxiv.org/abs/2404.19205), thanks to [**hkunzhe**](https://github.com/hkunzhe) 🔥🔥🔥
@@ -107,7 +108,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 | [**VILA1.5-[3B/8B/13B/40B]**](https://github.com/NVlabs/VILA/)🎞️ | [**Ovis1.5-[Llama3-8B/Gemma2-9B]**](https://github.com/AIDC-AI/Ovis) 🚅🎞️ | [**Mantis-8B-[siglip-llama3/clip-llama3/Idefics2/Fuyu]**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2) 🎞️ |
 | [**Llama-3-MixSenseV1_1**](https://huggingface.co/Zero-Vision/Llama-3-MixSenseV1_1)🚅 | [**Parrot-7B**](https://github.com/AIDC-AI/Parrot) 🚅  | [**OmChat-v2.0-13B-sinlge-beta**](https://huggingface.co/omlab/omchat-v2.0-13B-single-beta_hf)  🚅  | [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT) 🎬    |
 | [**Chat-UniVi**](https://github.com/PKU-YuanGroup/Chat-UniVi) 🎬 | [**LLaMA-VID-7B**](https://github.com/dvlab-research/LLaMA-VID) 🎬 | [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B) 🎬 | [**PLLaVA-[7B/13B/34B]**](https://huggingface.co/ermu2001/pllava-7b) 🎬 |
-|[**RBDash1.2-[72B]**](https://github.com/RBDash-Team/RBDash) 🚅🎞️ ||||
+|[**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️ ||||
 
 🎞️: Support multiple images as inputs.
 
