@@ -493,12 +493,10 @@ class CRPE(ImageBaseDataset):
         'CRPE_EXIST': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_EXIST.tsv',
         'CRPE_RELATION': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_RELATION.tsv'
     }
-    DATASET_MD5 = {'CRPE_EXIST': '30cf4d09698c0313e0e00c938571369f',
-                   'CRPE_RELATION': '6fd6bb7de15ce231c37bff8909831c41'
-    }
+    DATASET_MD5 = {
+        'CRPE_EXIST': '30cf4d09698c0313e0e00c938571369f',
+        'CRPE_RELATION': '6fd6bb7de15ce231c37bff8909831c41'}
 
-
-    # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.crpe import is_correct
@@ -546,15 +544,15 @@ class CRPE(ImageBaseDataset):
                 final_score_dict[category] = score[category] / num[category]
             else:
                 final_score_dict[category] = None
-        
+
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
         return final_score_dict
-    
+
     def build_prompt(self, line):
         ROOT = LMUDataRoot()
         msgs = super().build_prompt(line)
         for msg in msgs:
-            if msg["type"] == "image":
-                msg["value"] = osp.join(osp.join(ROOT, 'images', self.dataset_name), msg["value"])
+            if msg['type'] == 'image':
+                msg['value'] = osp.join(osp.join(ROOT, 'images', self.dataset_name), msg['value'])
         return msgs

@@ -6,7 +6,8 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench, CustomVQADataset, CRPE
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
+    CustomVQADataset, CRPE
 )
 
 from .vcr import VCRDataset
