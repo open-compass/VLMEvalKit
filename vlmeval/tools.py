@@ -116,6 +116,10 @@ def DLIST(lvl):
 
 
 def MLIST(lvl, size='all'):
+    if lvl == 'all':
+        from vlmeval.config import supported_VLM
+        return [x for x in supported_VLM]
+
     model_list = models[lvl]
     if size == 'small':
         model_list = [m for m in model_list if m not in LARGE_MODELS]
