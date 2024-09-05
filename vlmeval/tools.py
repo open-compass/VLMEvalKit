@@ -383,7 +383,7 @@ def cli():
             if len(args) > 2:
                 size = args[2].lower()
             lst = MLIST(args[1], size)
-            print(' '.join(lst))
+            print('\n'.join(lst))
         elif args[0].lower() == 'missing':
             assert len(args) >= 2
             missing_list = MISSING(args[1])
