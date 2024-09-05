@@ -12,6 +12,7 @@ VXVERSE_ROOT = None
 VideoChat2_ROOT = None
 VideoChatGPT_ROOT = None
 PLLaVA_ROOT = None
+RBDash_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 video_models = {
@@ -42,6 +43,7 @@ ungrouped = {
     'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1'),
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
+    'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
 }
 
 api_models = {
@@ -237,6 +239,11 @@ phi3_series = {
     'Phi-3.5-Vision': partial(Phi3_5Vision, model_path='microsoft/Phi-3.5-vision-instruct')
 }
 
+xgen_mm_series = {
+    'xgen-mm-phi3-interleave-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5'),
+    'xgen-mm-phi3-dpo-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -245,7 +252,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, mmalaya_series, phi3_series
+    mantis_series, mmalaya_series, phi3_series, xgen_mm_series
 ]
 
 for grp in model_groups:
