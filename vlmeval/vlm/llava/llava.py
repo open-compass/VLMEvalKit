@@ -407,6 +407,8 @@ class LLaVA_OneVision(BaseModel):
         if 'llava' in model_path.lower():
             conv_mode = 'qwen_1_5'
         self.nframe = 16
+        if '72b' in model_path.lower():
+            self.nframe = 32
         self.conv_template = conv_mode
         self.conv_templates = conv_templates
         self.tokenizer = tokenizer
@@ -450,7 +452,7 @@ class LLaVA_OneVision(BaseModel):
             image_sizes=image_sizes,  # Pass the image sizes here
             do_sample=False,
             temperature=0,
-            max_new_tokens=4096,
+            max_new_tokens=512,
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
@@ -492,7 +494,7 @@ class LLaVA_OneVision(BaseModel):
             image_sizes=image_sizes,  # Pass the image sizes here
             do_sample=False,
             temperature=0,
-            max_new_tokens=4096,
+            max_new_tokens=512,
             modalities=modalities
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
