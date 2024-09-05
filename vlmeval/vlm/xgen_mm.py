@@ -27,7 +27,7 @@ class XGenMM(BaseModel):
         tokenizer = model.update_special_tokens(tokenizer)
         tokenizer.eos_token = '<|end|>'
         tokenizer.padding_side = 'left'
-        
+
         image_processor = AutoImageProcessor.from_pretrained(model_path, trust_remote_code=True)
         self.model = model
         self.image_processor = image_processor
