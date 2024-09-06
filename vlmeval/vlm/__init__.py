@@ -41,3 +41,4 @@ from .parrot import Parrot
 from .omchat import OmChat
 from .rbdash import RBDash
 from .xgen_mm import XGenMM
+from .slime import SliME
