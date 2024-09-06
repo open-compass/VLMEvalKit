@@ -16,7 +16,7 @@ from .mplug_owl2 import mPLUG_Owl2
 from .omnilmm import OmniLMM12B
 from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
-from .qwen_vl import QwenVL, QwenVLChat
+from .qwen_vl import QwenVL, QwenVLChat, Qwen2VLChat
 from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5

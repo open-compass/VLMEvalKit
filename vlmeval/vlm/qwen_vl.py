@@ -5,7 +5,7 @@ import copy as cp
 from .base import BaseModel
 from ..smp import isimg, listinstr
 from ..dataset import DATASET_TYPE
-
+import transformers
 
 class QwenVL(BaseModel):
 
@@ -115,6 +115,98 @@ class QwenVLChat(BaseModel):
         return response
 
     def chat_inner(self, message, dataset=None):
+        assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
+        history = self.build_history(message[:-1])
+        vl_list = [
+            {'image': s['value']} if s['type'] == 'image' else {'text': s['value']}
+            for s in message[-1]['content']
+        ]
+        query = self.tokenizer.from_list_format(vl_list)
+        response, _ = self.model.chat(self.tokenizer, query=query, history=history, **self.kwargs)
+        return response
+
+
+
+class Qwen2VLChat(BaseModel):
+
+    INSTALL_REQ = False
+    INTERLEAVE = True
+
+    def __init__(self, model_path='Qwen/Qwen2-VL-7B-Instruct', **kwargs):
+        def version_cmp(v1, v2, op='eq'):
+            from packaging import version
+            import operator
+            op_func = getattr(operator, op)
+            return op_func(version.parse(v1), version.parse(v2))
+
+        from transformers import Qwen2VLForConditionalGeneration, AutoTokenizer, AutoProcessor
+        assert model_path is not None
+        assert version_cmp(transformers.__version__, '4.44.2', 'ge')
+        self.model_path = model_path
+        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                            model_path, torch_dtype="auto", device_map="auto"
+                        ).eval()
+        self.processor = AutoProcessor.from_pretrained(model_path)
+
+        torch.cuda.empty_cache()
+        self.kwargs = kwargs
+        warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
+
+    def build_history(self, message):
+
+        def concat_tilist(tilist):
+            image_cnt = 1
+            prompt = ''
+            for item in tilist:
+                if item['type'] == 'text':
+                    prompt += item['value']
+                elif item['type'] == 'image':
+                    prompt += f"Picture {image_cnt}: <img>{item['value']}</img>\n"
+                    image_cnt += 1
+            return prompt
+
+        assert len(message) % 2 == 0
+        hist = []
+        for i in range(len(message) // 2):
+            m1, m2 = message[2 * i], message[2 * i + 1]
+            assert m1['role'] == 'user' and m2['role'] == 'assistant'
+            hist.append((concat_tilist(m1['content']), concat_tilist(m2['content'])))
+        return hist
+
+    def generate_inner(self, message, dataset=None):
+        from qwen_vl_utils import process_vision_info
+        vl_list = [{"type": "image", 'image': s['value']} if s['type'] == 'image' else {"type": "text",'text': s['value']} for s in message]
+        messages = [
+                {
+                    "role": "user",
+                    "content": vl_list,
+                }
+            ]
+        text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to("cuda")
+
+        # Inference: Generation of the output
+        generated_ids = self.model.generate(**inputs, max_new_tokens=128)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        return output_text[0]
+
+    def chat_inner(self, message, dataset=None):
+        from qwen_vl_utils import process_vision_info
         assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
         history = self.build_history(message[:-1])
         vl_list = [
