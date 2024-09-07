@@ -22,17 +22,28 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   ```bash
   # The .env file, place it under $VLMEvalKit
   # API Keys of Proprietary VLMs
+  # QwenVL APIs
   DASHSCOPE_API_KEY=
+  # Gemini w. Google Cloud Backends
   GOOGLE_API_KEY=
+  # OpenAI API
   OPENAI_API_KEY=
   OPENAI_API_BASE=
+  # StepAI API
   STEPAI_API_KEY=
+  # REKA API
   REKA_API_KEY=
+  # GLMV API
   GLMV_API_KEY=
+  # CongRong API
   CW_API_BASE=
   CW_API_KEY=
+  # SenseChat-V API
   SENSECHAT_AK=
   SENSECHAT_SK=
+  # Hunyuan-Vision API
+  HUNYUAN_SECRET_KEY=
+  HUNYUAN_SECRET_ID=
   # You can also set a proxy for calling api models during the evaluation stage
   EVAL_PROXY=
   ```

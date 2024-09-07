@@ -18,6 +18,7 @@ class ImageVQADataset(ImageBaseDataset):
         'InfoVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL.tsv',
         'InfoVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_TEST.tsv',
         'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
+        'GQA_TestDev_Balanced': 'https://opencompass.openxlab.space/utils/VLMEval/GQA_TestDev_Balanced.tsv',
     }
 
     DATASET_MD5 = {
@@ -29,6 +30,7 @@ class ImageVQADataset(ImageBaseDataset):
         'InfoVQA_VAL': '2342e9c225222f0ef4dec545ebb126fe',
         'InfoVQA_TEST': 'df535bf51b88dc9718252c34131a6227',
         'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
+        'GQA_TestDev_Balanced': 'fead7df22befc1ed3ca2b62ea26fa17b',
     }
 
     def build_prompt(self, line):
@@ -53,7 +55,7 @@ class ImageVQADataset(ImageBaseDataset):
             res = pool.map(partial(process_line, method='vqa_score'), lines)
         elif listinstr(['ChartQA'], dataset):
             res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
-        elif listinstr(['OCRVQA'], dataset):
+        elif listinstr(['OCRVQA', 'GQA'], dataset):
             res = pool.map(partial(process_line, method='accuracy'), lines)
         elif listinstr(['DocVQA', 'InfoVQA'], dataset):
             res = pool.map(partial(process_line, method='anls'), lines)
@@ -411,6 +413,60 @@ class MTVQADataset(ImageBaseDataset):
         for item in msgs:
             if item['type'] == 'text':
                 item['value'] += '\nAnswer the question using a word or phrase in the language of the question.'
+        return msgs
+
+
+class TableVQABench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'TableVQABench': 'https://pai-aigc-photog.oss-cn-hangzhou.aliyuncs.com/mentor-vil/datasets/tablevqa-bench.tsv'
+    }
+    DATASET_MD5 = {'TableVQABench': '2550adc61bdc82d8e62f3b003de7c62d'}
+
+    from .utils.tablevqabench import FINTABNETQA_PROMPT, VTABFACT_PROMPT, VWTQ_PROMPT
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import pandas as pd
+        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        data = load(eval_file)
+        assert 'answer' in data and 'prediction' in data
+
+        data['prediction'] = data['prediction'].str.replace('^Answer: ', '', regex=True)
+        data_group = dict(tuple(data.groupby('split')))
+        eval_result = {'split': [], 'average_scores': []}
+        for split in ['fintabnetqa', 'vtabfact', 'vwtq', 'vwtq_syn']:
+            data_split = data_group[split].to_dict(orient='records')
+            if split == 'fintabnetqa':
+                split_eval_meta = evaluate_fintabnet(data_split, ['accuracy'])
+            elif split == 'vtabfact':
+                split_eval_meta = evaluate_tabfact(data_split, ['accuracy'])
+            elif split == 'vwtq' or split == 'vwtq_syn':
+                split_eval_meta = evaluate_wtq(data_split, ['accuracy'])
+            eval_result['split'].append(split)
+            eval_result['average_scores'].append(split_eval_meta['average_scores'])
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        eval_result = pd.DataFrame(eval_result)
+        dump(eval_result, result_file)
+
+        return eval_result
+
+    # TableVQABench adopts a custom prompt
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert sum([x['type'] == 'text' for x in msgs]) == 1
+        for item in msgs:
+            if item['type'] == 'text':
+                if line['split'] == 'fintabnetqa':
+                    item['value'] = self.FINTABNETQA_PROMPT.format_map({'question': item['value']})
+                elif line['split'] == 'vtabfact':
+                    item['value'] = self.VTABFACT_PROMPT.format_map({'question': item['value']})
+                elif line['split'] == 'vwtq_syn' or line['split'] == 'vwtq':
+                    item['value'] = self.VWTQ_PROMPT.format_map({'question': item['value']})
         return msgs
 
 

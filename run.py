@@ -20,7 +20,7 @@ def parse_args():
     parser.add_argument('--pack', action='store_true')
     parser.add_argument('--use-subtitle', action='store_true')
     # Work Dir
-    parser.add_argument('--work-dir', type=str, default='.', help='select the output directory')
+    parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
@@ -68,7 +68,7 @@ def main():
 
         for _, dataset_name in enumerate(args.data):
             dataset_kwargs = {}
-            if dataset_name == 'MMLongBench_DOC':
+            if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
                 dataset_kwargs['model'] = model_name
             if dataset_name == 'MMBench-Video':
                 dataset_kwargs['pack'] = args.pack
@@ -92,13 +92,15 @@ def main():
             if dataset_name in ['MMBench-Video']:
                 packstr = 'pack' if args.pack else 'nopack'
                 result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-            if dataset_name in ['Video-MME']:
+            elif dataset.MODALITY == 'VIDEO':
                 if args.pack:
-                    logger.info('Video-MME not support Pack Mode, directly change to unpack')
+                    logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                     args.pack = False
                 packstr = 'pack' if args.pack else 'nopack'
-                subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}_{subtitlestr}.xlsx'
+                result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                if dataset_name in ['Video-MME']:
+                    subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
+                    result_file = result_file.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
             if dataset.TYPE == 'MT':
                 result_file = result_file.replace('.xlsx', '.tsv')
@@ -155,7 +157,7 @@ def main():
                     judge_kwargs['model'] = 'chatgpt-0125'
                 elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4-turbo'
-                elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+                elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI'], dataset_name):
                     judge_kwargs['model'] = 'gpt-4o'
             if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
                 judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
