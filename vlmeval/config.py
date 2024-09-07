@@ -33,6 +33,7 @@ ungrouped = {
     'flamingov2': partial(OpenFlamingo, name='v2', mpt_pth='anas-awadalla/mpt-7b', ckpt_pth='openflamingo/OpenFlamingo-9B-vitl-mpt7b'),
     'VisualGLM_6b': partial(VisualGLM, model_path='THUDM/visualglm-6b'),
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
+    'mPLUG-Owl3': partial(mPLUG_Owl3, model_path='mPLUG/mPLUG-Owl3-7B-240728'),
     'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
     'OmniLMM_12B': partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B': partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
@@ -244,7 +245,7 @@ qwen2vl_series = {
     'Qwen2-VL-2B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=5120*28*28),
     'Qwen2-VL-2B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=5120*28*28),
 }
-  
+
 phi3_series = {
     'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
     'Phi-3.5-Vision': partial(Phi3_5Vision, model_path='microsoft/Phi-3.5-vision-instruct')
