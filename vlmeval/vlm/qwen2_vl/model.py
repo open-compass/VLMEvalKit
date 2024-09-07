@@ -8,6 +8,7 @@ import torch
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
 
+
 def ensure_image_url(image: str) -> str:
     prefixes = ['http://', 'https://', 'file://', 'data:image;']
     if any(image.startswith(prefix) for prefix in prefixes):
@@ -101,7 +102,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             **self.generate_kwargs,
         )
         generated_ids = [
-            output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+            output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
         ]
         out = self.processor.tokenizer.batch_decode(
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False

@@ -5,6 +5,7 @@ import os
 from vlmeval.api.base import BaseAPI
 from vlmeval.vlm.qwen2_vl.prompt import Qwen2VLPromptMixin
 
+
 def ensure_image_url(image: str) -> str:
     prefixes = ['http://', 'https://', 'file://', 'data:image;']
     if any(image.startswith(prefix) for prefix in prefixes):
@@ -49,9 +50,10 @@ class QwenVLAPI0809(Qwen2VLPromptMixin, BaseAPI):
         )
 
         key = os.environ.get('DASHSCOPE_API_KEY', None) if key is None else key
-        assert (
-            key is not None
-        ), 'Please set the API Key (obtain it here: https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start)'
+        assert key is not None, (
+            'Please set the API Key (obtain it here: '
+            'https://help.aliyun.com/zh/dashscope/developer-reference/vl-plus-quick-start)'
+        )
         dashscope.api_key = key
         super().__init__(use_custom_prompt=use_custom_prompt, **kwargs)
 

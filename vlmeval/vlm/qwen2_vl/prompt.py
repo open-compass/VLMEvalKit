@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 class Qwen2VLPromptMixin:
     """
     Mixin class for Qwen2VLChat to build custom prompt for different datasets.
