@@ -18,13 +18,7 @@ class mPLUG_Owl3(BaseModel):
             model_path,
             trust_remote_code=True
         )
-        from mplug_owl3_dsy import mPLUGOwl3Model
-        # self.model = mPLUGOwl3Model.from_pretrained(
-        #     model_path,
-        #     attn_implementation='flash_attention_2',
-        #     torch_dtype=torch.half,
-        #     # trust_remote_code=True
-        # )
+
         self.model = AutoModel.from_pretrained(
             model_path,
             attn_implementation='flash_attention_2',
@@ -115,10 +109,6 @@ class mPLUG_Owl3(BaseModel):
             {'role': 'assistant', 'content': ''}
         ]
 
-        self.logger.info(f'needed_messages: {needed_messages}')
-        self.logger.info(f'num_images: {num_images}')
-        self.logger.info(f'images: {images}')
-
         images = [self.preproc_image(fname) for fname in images]
 
         inputs = self.processor(needed_messages, images=images, videos=None)
@@ -131,5 +121,4 @@ class mPLUG_Owl3(BaseModel):
         })
 
         g = self.model.generate(**inputs)
-        print(g)
         return g[0]

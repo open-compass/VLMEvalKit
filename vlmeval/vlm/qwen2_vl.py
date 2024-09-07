@@ -25,7 +25,7 @@ class Qwen2VLChat(BaseModel):
         self.max_pixels = max_pixels
         self.processor = Qwen2VLProcessor.from_pretrained(model_path)
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_path, torch_dtype="auto", device_map="auto", attn_implementation="flash_attention_2"
+            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
         ).eval()
         torch.cuda.empty_cache()
         self.kwargs = kwargs
@@ -41,7 +41,7 @@ class Qwen2VLChat(BaseModel):
         for k, v in default_eval_kwargs.items():
             self.kwargs.setdefault(k, v)
         warnings.warn(
-            f"Following kwargs received: {self.kwargs}, will use as generation config. "
+            f'Following kwargs received: {self.kwargs}, will use as generation config. '
         )
 
     def generate_inner(self, message, dataset=None):
@@ -53,35 +53,35 @@ class Qwen2VLChat(BaseModel):
 
         content = []
         for s in message:
-            if s["type"] == "image":
-                image = str(s["value"])
-                prefixes = ["http://", "https://", "file://", "data:image"]
+            if s['type'] == 'image':
+                image = str(s['value'])
+                prefixes = ['http://', 'https://', 'file://', 'data:image']
                 if any(image.startswith(prefix) for prefix in prefixes):
                     pass
                 elif os.path.exists(image):
-                    image = "file://" + image
+                    image = 'file://' + image
                 else:
-                    raise ValueError(f"Invalid image: {image}, {s}")
+                    raise ValueError(f'Invalid image: {image}, {s}')
 
-                item = {"type": "image", "image": image}
-                min_pixels = s["min_pixels"] if "min_pixels" in s else self.min_pixels
+                item = {'type': 'image', 'image': image}
+                min_pixels = s['min_pixels'] if 'min_pixels' in s else self.min_pixels
                 if min_pixels is not None:
-                    item["min_pixels"] = min_pixels
-                max_pixels = s["max_pixels"] if "max_pixels" in s else self.max_pixels
+                    item['min_pixels'] = min_pixels
+                max_pixels = s['max_pixels'] if 'max_pixels' in s else self.max_pixels
                 if max_pixels is not None:
-                    item["max_pixels"] = max_pixels
+                    item['max_pixels'] = max_pixels
                 content.append(item)
-            elif s["type"] == "text":
-                content.append({"type": "text", "text": s["value"]})
+            elif s['type'] == 'text':
+                content.append({'type': 'text', 'text': s['value']})
             else:
-                raise ValueError(f"Invalid message type: {s}")
+                raise ValueError(f'Invalid message type: {s}')
 
-        message = [{"role": "user", "content": content}]
+        message = [{'role': 'user', 'content': content}]
         # print(f"\033[31m{message}\033[0m")
         text = self.processor.apply_chat_template([message], tokenize=False, add_generation_prompt=True)
         images, videos = process_vision_info([message])
-        inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors="pt")
-        inputs = inputs.to("cuda")
+        inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')
+        inputs = inputs.to('cuda')
 
         generated_ids = self.model.generate(
             **inputs,
@@ -99,10 +99,10 @@ class Qwen2VLChat(BaseModel):
         return response
 
     def use_custom_prompt(self, dataset: str):
-        return dataset in {"MMMU_DEV_VAL", "MMMU_TEST"}
+        return dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}
 
     def build_prompt(self, line, dataset: str):
-        assert dataset in {"MMMU_DEV_VAL", "MMMU_TEST"}
+        assert dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}
 
         # copy from ImageMCQDataset.build_prompt.
         # i.e. for MMMU dataset, not use `split_MMMU(msgs)`.
