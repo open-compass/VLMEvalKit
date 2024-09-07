@@ -8,7 +8,9 @@ from ..smp import *
 from ..dataset import DATASET_TYPE
 import copy
 
+
 class SliME(BaseModel):
+
     INSTALL_REQ = True
     INTERLEAVE = True
 
