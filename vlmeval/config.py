@@ -9,12 +9,22 @@ Yi_ROOT = None
 OmniLMM_ROOT = None
 Mini_Gemini_ROOT = None
 VXVERSE_ROOT = None
+VideoChat2_ROOT = None
+VideoChatGPT_ROOT = None
+PLLaVA_ROOT = None
+RBDash_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 video_models = {
     'Video-LLaVA-7B':partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
-    'Video-LLaVA-7B-HF':partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf')
-
+    'Video-LLaVA-7B-HF':partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf'),
+    'VideoChat2-HD':partial(VideoChat2_HD, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B', root=VideoChat2_ROOT, config_file='./vlmeval/vlm/video_llm/configs/videochat2_hd.json'),
+    'Chat-UniVi': partial(Chatunivi, model_path="Chat-UniVi/Chat-UniVi"),
+    'LLaMA-VID-7B': partial(LLaMAVID, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1'),
+    'Video-ChatGPT': partial(VideoChatGPT, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=VideoChatGPT_ROOT),
+    'PLLaVA-7B': partial(PLLaVA, model_path='ermu2001/pllava-7b', dir_root=PLLaVA_ROOT),
+    'PLLaVA-13B': partial(PLLaVA, model_path='ermu2001/pllava-13b', dir_root=PLLaVA_ROOT),
+    'PLLaVA-34B': partial(PLLaVA, model_path='ermu2001/pllava-34b', dir_root=PLLaVA_ROOT),
 }
 
 ungrouped = {
@@ -26,16 +36,17 @@ ungrouped = {
     'mPLUG-Owl3': partial(mPLUG_Owl3, model_path='mPLUG/mPLUG-Owl3-7B-240728'),
     'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat',),
     'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
+    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
     'OmniLMM_12B': partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B': partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-v1_1-Llama-3-8B-V'),
     'VXVERSE': partial(VXVERSE, model_name='XVERSE-V-13B', root=VXVERSE_ROOT),
     'paligemma-3b-mix-448': partial(PaliGemma, model_path='google/paligemma-3b-mix-448'),
     '360VL-70B': partial(QH_360VL, model_path='qihoo360/360VL-70B'),
-    'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
     'Llama-3-MixSenseV1_1': partial(LLama3Mixsense, model_path='Zero-Vision/Llama-3-MixSenseV1_1'),
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
+    'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
 }
 
 api_models = {
@@ -74,6 +85,11 @@ api_models = {
     # SenseChat-V
     'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
+}
+
+mmalaya_series = {
+    'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
+    'MMAlaya2': partial(MMAlaya2, model_path='DataCanvas/MMAlaya2'),
 }
 
 minicpm_series = {
@@ -164,6 +180,10 @@ idefics_series = {
     'idefics_9b_instruct': partial(IDEFICS, model_path='HuggingFaceM4/idefics-9b-instruct'),
     'idefics_80b_instruct': partial(IDEFICS, model_path='HuggingFaceM4/idefics-80b-instruct'),
     'idefics2_8b': partial(IDEFICS2, model_path='HuggingFaceM4/idefics2-8b'),
+
+    # Idefics3 follows Idefics2 Pattern
+    'Idefics3-8B-Llama3': partial(IDEFICS2, model_path='HuggingFaceM4/Idefics3-8B-Llama3'),
+
 }
 
 instructblip_series = {
@@ -217,6 +237,27 @@ mantis_series = {
     'Mantis-8B-Fuyu': partial(Mantis, model_path='TIGER-Lab/Mantis-8B-Fuyu')
 }
 
+qwen2vl_series = {
+    'Qwen2-VL-7B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-7B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-7B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-2B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-2B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-2B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=5120*28*28),
+    'Qwen2-VL-2B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=5120*28*28),
+}
+
+phi3_series = {
+    'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
+    'Phi-3.5-Vision': partial(Phi3_5Vision, model_path='microsoft/Phi-3.5-vision-instruct')
+}
+
+xgen_mm_series = {
+    'xgen-mm-phi3-interleave-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5'),
+    'xgen-mm-phi3-dpo-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -225,7 +266,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series,
+    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series
 ]
 
 for grp in model_groups:

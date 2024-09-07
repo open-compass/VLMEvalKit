@@ -145,7 +145,7 @@ def dump(data, f, **kwargs):
     return handlers[suffix](data, f, **kwargs)
 
 
-def load(f):
+def load(f, fmt=None):
     def load_pkl(pth):
         return pickle.load(open(pth, 'rb'))
 
@@ -170,6 +170,9 @@ def load(f):
         return pd.read_csv(f, sep='\t')
 
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
+    if fmt is not None:
+        return handlers[fmt](f)
+
     suffix = f.split('.')[-1]
     return handlers[suffix](f)
 

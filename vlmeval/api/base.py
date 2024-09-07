@@ -62,12 +62,22 @@ class BaseAPI:
         Returns:
             bool: If the API model is working, return True, else return False.
         """
-        retry = 3
+        self.old_timeout = None
+        if hasattr(self, 'timeout'):
+            self.old_timeout = self.timeout
+            self.timeout = 120
+
+        retry = 5
         while retry > 0:
             ret = self.generate('hello')
             if ret is not None and ret != '' and self.fail_msg not in ret:
+                if self.old_timeout is not None:
+                    self.timeout = self.old_timeout
                 return True
             retry -= 1
+
+        if self.old_timeout is not None:
+            self.timeout = self.old_timeout
         return False
 
     def check_content(self, msgs):
