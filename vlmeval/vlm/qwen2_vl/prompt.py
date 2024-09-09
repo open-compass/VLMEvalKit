@@ -33,7 +33,7 @@ class Qwen2VLPromptMixin:
             return True
         if dataset_type == 'MCQ':
             return True
-        if dataset_type == 'YORN' and dataset in {'HallusionBench', 'POPE'}:  # MME has it's own prompt
+        if dataset_type == 'Y/N' and dataset in {'HallusionBench', 'POPE'}:  # MME has it's own prompt
             return True
         if dataset_type == 'VQA' and dataset not in {'MMVet'}:  # MMVet VQA has it's own prompt
             return True
@@ -47,7 +47,7 @@ class Qwen2VLPromptMixin:
         dataset_type = DATASET_TYPE(dataset, default=None)
         if dataset_type == 'MCQ':
             return self._build_mcq_prompt(line, dataset)
-        if dataset_type == 'YORN':
+        if dataset_type == 'Y/N':
             return self._build_yorn_prompt(line, dataset)
         if dataset_type == 'VQA':
             return self._build_vqa_prompt(line, dataset)
