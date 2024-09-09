@@ -262,7 +262,8 @@ class InternVLChat(BaseModel):
             self.max_num = 12
         elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
             self.max_num = 18
-        elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
+        elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench',
+                                                'HRBench4K', 'HRBench8K'], dataset):
             self.max_num = 24
         elif dataset is not None and listinstr(['MMBench-Video', 'Video-MME', 'Video'], dataset):
             self.max_num = 1

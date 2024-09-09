@@ -614,6 +614,76 @@ class MMERealWorld(ImageMCQDataset):
         return rating
 
 
+class HRBenchDataset(ImageMCQDataset):
+
+    DATASET_URL = {
+        'HRBench4K': 'https://huggingface.co/datasets/DreamMr/HR-Bench/resolve/main/hr_bench_4k.tsv',
+        'HRBench8K': 'https://huggingface.co/datasets/DreamMr/HR-Bench/resolve/main/hr_bench_8k.tsv',
+    }
+
+    DATASET_MD5 = {
+        'HRBench4K': 'f6b041b03d49543494b8a56d2e35be65',
+        'HRBench8K': '274c9c7f89329b804a4723178a00219c',
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
+        from .utils.multiple_choice import mcq_vanilla_eval
+        from .utils.hrbench import report_acc_hrbench
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'extract_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+
+        acc = report_acc_hrbench(data)
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        return acc
+
+
 class CustomMCQDataset(ImageMCQDataset):
 
     def load_data(self, dataset):
