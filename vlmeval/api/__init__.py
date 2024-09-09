@@ -1,7 +1,7 @@
 from .gpt import OpenAIWrapper, GPT4V
 from .hf_chat_model import HFChatModel
 from .gemini import GeminiWrapper, GeminiProVision
-from .qwen_vl_api import QwenVLWrapper, QwenVLAPI
+from .qwen_vl_api import QwenVLWrapper, QwenVLAPI, Qwen2VLAPI
 from .qwen_api import QwenAPI
 from .claude import Claude_Wrapper, Claude3V
 from .reka import Reka
@@ -14,5 +14,5 @@ __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V',
     'GeminiProVision', 'QwenVLWrapper', 'QwenVLAPI', 'QwenAPI',
     'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI',
-    'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision'
+    'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI'
 ]

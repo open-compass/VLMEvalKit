@@ -134,7 +134,7 @@ for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
 
 
-def DATASET_TYPE(dataset):
+def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
             if hasattr(cls, 'TYPE'):
@@ -148,8 +148,8 @@ def DATASET_TYPE(dataset):
 
     if 'openended' in dataset.lower():
         return 'VQA'
-    warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as MCQ. ')
-    return 'MCQ'
+    warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as {default}. ')
+    return default
 
 
 def build_dataset(dataset_name, **kwargs):

@@ -28,6 +28,8 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
 
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
+    if hasattr(model, 'set_dump_image'):
+        model.set_dump_image(dataset.dump_image)
 
     lt, indices = len(data), list(data['index'])
 
