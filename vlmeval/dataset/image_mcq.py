@@ -613,7 +613,7 @@ class MMERealWorld(ImageMCQDataset):
         dump(rating, tgt_file)
         return rating
 
-      
+
 class HRBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {
