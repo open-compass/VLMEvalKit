@@ -256,6 +256,12 @@ xgen_mm_series = {
     'xgen-mm-phi3-dpo-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5'),
 }
 
+slime_series = {
+    'slime_8b': partial(SliME, model_path='yifanzhang114/SliME-Llama3-8B'),
+    'slime_7b': partial(SliME, model_path='yifanzhang114/SliME-vicuna-7B'),
+    'slime_13b': partial(SliME, model_path='yifanzhang114/SliME-vicuna-13B'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -264,7 +270,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series
+    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, slime_series
 ]
 
 for grp in model_groups:
