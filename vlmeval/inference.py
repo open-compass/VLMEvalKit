@@ -30,7 +30,18 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
     assert getattr(model, 'is_api', False)
 
     lt, indices = len(data), list(data['index'])
-    structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
+
+    structs = []
+    for i in range(lt):
+        item = data.iloc[i]
+        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+            assert hasattr(model, 'build_prompt')
+            struct = model.build_prompt(item, dataset=dataset_name)
+        else:
+            struct = dataset.build_prompt(item)
+        structs.append(struct)
+
+    # structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}
