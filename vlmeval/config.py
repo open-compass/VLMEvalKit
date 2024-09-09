@@ -233,17 +233,6 @@ mantis_series = {
     'Mantis-8B-Idefics2': partial(Mantis, model_path='TIGER-Lab/Mantis-8B-Idefics2'),
     'Mantis-8B-Fuyu': partial(Mantis, model_path='TIGER-Lab/Mantis-8B-Fuyu')
 }
-
-qwen2vl_series = {
-    'Qwen2-VL-7B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-7B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-7B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-2B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-2B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-2B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=5120*28*28),
-    'Qwen2-VL-2B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=5120*28*28),
-}
   
 phi3_series = {
     'Phi-3-Vision': partial(Phi3Vision, model_path='microsoft/Phi-3-vision-128k-instruct'),
