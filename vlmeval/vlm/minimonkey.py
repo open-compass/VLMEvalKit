@@ -1,5 +1,4 @@
 # encoding: utf-8
-
 import pprint
 
 import numpy as np
@@ -12,6 +11,7 @@ from transformers import AutoModel, AutoTokenizer
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
     transform = T.Compose([
@@ -21,6 +21,7 @@ def build_transform(input_size):
         T.Normalize(mean=MEAN, std=STD)
     ])
     return transform
+
 
 def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_size):
     best_ratio_diff = float('inf')
@@ -36,6 +37,7 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
             if area > 0.5 * image_size * image_size * ratio[0] * ratio[1]:
                 best_ratio = ratio
     return best_ratio
+
 
 def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
@@ -87,7 +89,7 @@ def dynamic_preprocess2(image, min_num=1, max_num=12, prior_aspect_ratio=None, i
     target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
     new_target_ratios = []
     for i in target_ratios:
-        if prior_aspect_ratio[0]%i[0] or prior_aspect_ratio[1]%i[1]:
+        if prior_aspect_ratio[0] % i[0] or prior_aspect_ratio[1] % i[1]:
             new_target_ratios.append(i)
         else:
             continue
@@ -118,25 +120,27 @@ def dynamic_preprocess2(image, min_num=1, max_num=12, prior_aspect_ratio=None, i
         processed_images.append(thumbnail_img)
     return processed_images
 
+
 def load_image(image, input_size=448, min_num=1, max_num=12):
     image = image.convert('RGB')
     transform = build_transform(input_size=input_size)
-    images, target_aspect_ratio = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True, min_num=min_num, max_num=max_num)
+    images, target_aspect_ratio = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True,
+                                                     min_num=min_num, max_num=max_num)
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values, target_aspect_ratio
 
+
 def load_image2(image, input_size=448, min_num=1, max_num=12, target_aspect_ratio=None):
     image = image.convert('RGB')
     transform = build_transform(input_size=input_size)
-    images = dynamic_preprocess2(image, image_size=input_size, use_thumbnail=True, min_num=min_num, max_num=max_num, prior_aspect_ratio=target_aspect_ratio)
+    images = dynamic_preprocess2(image, image_size=input_size, use_thumbnail=True, min_num=min_num, 
+                                 max_num=max_num, prior_aspect_ratio=target_aspect_ratio)
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
 
 
-#import torch
-#from transformers import AutoModelForCausalLM, AutoTokenizer
 import warnings
 from .base import BaseModel
 from ..dataset import DATASET_TYPE
@@ -182,7 +186,9 @@ class MiniMonkey(BaseModel):
 
         generation_config = dict(do_sample=False, max_new_tokens=512)
 
-        response, history = self.model.chat(self.tokenizer, pixel_values, target_aspect_ratio, prompt, generation_config, history=None, return_history=True)
+        response, history = self.model.chat(self.tokenizer, pixel_values, 
+                                            target_aspect_ratio, prompt, generation_config, 
+                                            history=None, return_history=True)
 
         return response
 
