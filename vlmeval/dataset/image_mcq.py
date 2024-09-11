@@ -472,13 +472,19 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 class MMERealWorld(ImageMCQDataset):
 
     DATASET_MD5 = {
-        'MME-RealWorld': '7d7cc66f7fe0f56ebc68fdddf2b447da',
-        'MME-RealWorld-CN': 'cbec7caf59402a4167872abbdca1d6bd',
+        'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
+        'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
     }
     SYS = {
-        'MME-RealWorld': 'Select the best answer to the above multiple-choice question based on the image. \
-            Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
-        'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
+        'MME-RealWorld': (
+            'Select the best answer to the above multiple-choice question based on the image. '
+            'Respond with only the letter (A, B, C, D, or E) of the correct option. \n'
+            'The best answer is:'
+        ),
+        'MME-RealWorld-CN': (
+            '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n'
+            '最佳答案为：'
+        ),
     }
 
     @classmethod
@@ -518,6 +524,11 @@ class MMERealWorld(ImageMCQDataset):
                             'image': item['image'],
                             'question': item['question'],
                             'multi-choice options': choice_prompt + '\n'.join(item['multi-choice options']),
+                            'A': item['multi-choice options'][0][4:],
+                            'B': item['multi-choice options'][1][4:],
+                            'C': item['multi-choice options'][2][4:],
+                            'D': item['multi-choice options'][3][4:],
+                            'E': item['multi-choice options'][4][4:],
                             'answer': item['answer'],
                             'category': item['category'],
                             'l2-category': item['l2-category']
@@ -561,7 +572,7 @@ class MMERealWorld(ImageMCQDataset):
         question = line['question']
 
         choice_prompt = line['multi-choice options'] + '\n'
-        question += choice_prompt + self.SYS[self.dataset_name] + '\nThe best answer is:'
+        question += ' ' + choice_prompt + self.SYS[self.dataset_name]
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -587,6 +598,7 @@ class MMERealWorld(ImageMCQDataset):
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
+            cnt_rejected = 0
             data_un = data[~pd.isna(data['prediction'])]
 
             for idx in data['index']:
@@ -595,16 +607,15 @@ class MMERealWorld(ImageMCQDataset):
 
                 extract_pred = extract_characters_regex(pred)
                 if extract_pred == '':
-                    data.loc[idx, 'score'] = -1
+                    cnt_rejected += 1
+                    data.loc[idx, 'score'] = 0
                 else:
                     data.loc[idx, 'score'] = int(extract_pred == ans)
 
-            rejected = [x for x in data['score'] if x == -1]
-
             print(
                 f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+                f'failed to obtain the score for another {cnt_rejected} questions. '
+                f'Those questions will be counted as 0 score in ALL rating.'
             )
 
             dump(data, score_file)
