@@ -471,7 +471,6 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
 class MMERealWorld(ImageMCQDataset):
 
-
     DATASET_MD5 = {
         'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
         'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
@@ -488,40 +487,31 @@ class MMERealWorld(ImageMCQDataset):
         ),
     }
 
-
     @classmethod
     def supported_datasets(cls):
         return ['MME-RealWorld', 'MME-RealWorld-CN']
 
-
     def load_data(self, dataset='MME-RealWorld', repo_id='yifanzhang114/MME-RealWorld-Base64'):
-
 
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset}.tsv')
 
-
             if not os.path.exists(data_file):
                 return False
-
 
             if md5(data_file) != self.DATASET_MD5[dataset]:
                 return False
             return True
 
-
         def generate_tsv(pth):
             tsv_file = os.path.join(pth, f'{dataset}.tsv')
-
 
             if os.path.exists(tsv_file):
                 print(f'{tsv_file} already exists.')
                 return
 
-
             json_dir = os.path.join(pth, dataset)
             json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
-
 
             data_list = []
             for json_file in json_files:
@@ -547,7 +537,6 @@ class MMERealWorld(ImageMCQDataset):
             df.to_csv(tsv_file, sep='\t', index=False)
             print(f'TSV file saved to {tsv_file}')
 
-
         # Check if dataset is cached and has integrity
         update_flag = False
         cache_path = get_cache_path(repo_id)
@@ -561,7 +550,6 @@ class MMERealWorld(ImageMCQDataset):
             generate_tsv(dataset_path)
             update_flag = True
 
-
         data_path = os.path.join(dataset_path, f'{dataset}.tsv')
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
@@ -571,25 +559,20 @@ class MMERealWorld(ImageMCQDataset):
             data_path = local_path
         return load(data_path)
 
-
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-
 
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line)
 
-
         question = line['question']
-
 
         choice_prompt = line['multi-choice options'] + '\n'
         question += ' ' + choice_prompt + self.SYS[self.dataset_name]
-
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -598,7 +581,6 @@ class MMERealWorld(ImageMCQDataset):
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=question))
         return msgs
-
 
     # It returns a dictionary
     @classmethod
@@ -610,23 +592,18 @@ class MMERealWorld(ImageMCQDataset):
         tgt_file = eval_file.replace('.xlsx', '_rating.json')
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
-
         if not osp.exists(score_file):
-
 
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
-
 
             data = load(eval_file)
             cnt_rejected = 0
             data_un = data[~pd.isna(data['prediction'])]
 
-
             for idx in data['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
-
 
                 extract_pred = extract_characters_regex(pred)
                 if extract_pred == '':
@@ -635,16 +612,13 @@ class MMERealWorld(ImageMCQDataset):
                 else:
                     data.loc[idx, 'score'] = int(extract_pred == ans)
 
-
             print(
                 f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
                 f'failed to obtain the score for another {cnt_rejected} questions. '
                 f'Those questions will be counted as 0 score in ALL rating.'
             )
 
-
             dump(data, score_file)
-
 
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
