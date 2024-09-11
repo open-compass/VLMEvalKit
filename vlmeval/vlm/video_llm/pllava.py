@@ -93,7 +93,7 @@ class PLLaVA(BaseModel):
             conv.user_query(question, is_mm=True)
         llm_response, conv = pllava_answer(
             conv=conv, model=self.model, processor=self.processor,
-            do_sample=False, img_list=img_list, max_new_tokens=256, print_res=False
+            do_sample=False, img_list=img_list, max_new_tokens=512, print_res=False
         )
         if dataset in ['MVBench', 'MVBench_MP4']:
             llm_response = '(' + ''.join(llm_response.split(message[-1]['value'])[1:])

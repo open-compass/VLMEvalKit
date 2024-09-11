@@ -341,6 +341,22 @@ Based on your observations, select the best option that accurately addresses the
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
+            model = judge_kwargs.get('model', 'exact_matching')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+            name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+            name_str = name_str_map[model] if model in name_str_map else model
+
+            if model == 'exact_matching':
+                model = None
+            elif gpt_key_set():
+                model = build_judge(**judge_kwargs)
+                if not model.working():
+                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                    warnings.warn(DEBUG_MESSAGE)
+                    model = None
+            else:
+                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -356,11 +372,20 @@ Based on your observations, select the best option that accurately addresses the
                     if c == ans:
                         answer_idx = id
                 ans = f"({chr(ord('A') + answer_idx)}) {ans}"
+                input_item = data.loc[data['index'] == idx].to_dict(orient='records')[0]
+                for id, option_content in enumerate(eval(input_item['candidates'])):
+                    input_item[chr(ord('A') + id)] = option_content
+                    if option_content == input_item['answer']:
+                        input_item['answer'] = chr(ord('A') + id)
 
                 if FAIL_MSG in pred:
                     data.loc[idx, 'score'] = -1
                 else:
-                    data.loc[idx, 'score'] = int(check_ans(pred, ans))
+                    data.loc[idx, 'score'] = int(check_ans_with_model(
+                        pred, ans, model, 
+                        input_item,
+                        'MVBench'
+                    ))
 
             rejected = [x for x in data['score'] if x == -1]
 
@@ -541,6 +566,22 @@ Based on your observations, select the best option that accurately addresses the
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
+            model = judge_kwargs.get('model', 'exact_matching')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+            name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+            name_str = name_str_map[model] if model in name_str_map else model
+
+            if model == 'exact_matching':
+                model = None
+            elif gpt_key_set():
+                model = build_judge(**judge_kwargs)
+                if not model.working():
+                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                    warnings.warn(DEBUG_MESSAGE)
+                    model = None
+            else:
+                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+                model = None
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
@@ -556,11 +597,20 @@ Based on your observations, select the best option that accurately addresses the
                     if c == ans:
                         answer_idx = id
                 ans = f"({chr(ord('A') + answer_idx)}) {ans}"
+                input_item = data.loc[data['index'] == idx].to_dict(orient='records')[0]
+                for id, option_content in enumerate(eval(input_item['candidates'])):
+                    input_item[chr(ord('A') + id)] = option_content
+                    if option_content == input_item['answer']:
+                        input_item['answer'] = chr(ord('A') + id)
 
                 if FAIL_MSG in pred:
                     data.loc[idx, 'score'] = -1
                 else:
-                    data.loc[idx, 'score'] = int(check_ans(pred, ans))
+                    data.loc[idx, 'score'] = int(check_ans_with_model(
+                        pred, ans, model, 
+                        input_item,
+                        'MVBench_MP4'
+                    ))
 
             rejected = [x for x in data['score'] if x == -1]
 

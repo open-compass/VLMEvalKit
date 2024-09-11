@@ -513,7 +513,7 @@ class LLaVA_OneVision(BaseModel):
         return spare_frames  # (frames, height, width, channels)
 
     def generate_inner(self, message, dataset=None):
-        if dataset in ['MMBench-Video', 'Video-MME', 'MVBench']:
+        if dataset in ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4']:
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)
