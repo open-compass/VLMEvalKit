@@ -223,8 +223,6 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
             assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
-            name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
-            name_str = name_str_map[model] if model in name_str_map else model
 
             if model == 'exact_matching':
                 model = None
@@ -249,8 +247,8 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
                 if extract_characters_regex(pred) == '':
                     extract_pred = extract_option(
-                        model, 
-                        data.loc[data['index'] == idx].to_dict(orient='records')[0], 
+                        model,
+                        data.loc[data['index'] == idx].to_dict(orient='records')[0],
                         'Video-MME'
                     )
                     data.loc[idx, 'score'] = int(extract_pred == ans)

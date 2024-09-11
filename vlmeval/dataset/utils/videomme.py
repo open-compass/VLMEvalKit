@@ -115,12 +115,13 @@ def get_dimension_rating(data_path):
 
     return duration_rating
 
+
 def extract_option(model, input_item, dataset_name):
     options = input_item['question'].split('\n')[1:]
     for id, option in enumerate(options):
         option_id = chr(ord('A') + id) + '.'
         if option.find(option_id) >= 0:
-            input_item[chr(ord('A') + id)] = option[option.find(option_id)+len(option_id):].strip('. \n')
+            input_item[chr(ord('A') + id)] = option[option.find(option_id) + len(option_id):].strip('. \n')
     return extract_answer_from_item(model, input_item, dataset_name)['opt']
 
 

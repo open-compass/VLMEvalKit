@@ -47,6 +47,7 @@ def check_ans(pred, gt):
 
     return flag
 
+
 def check_ans_with_model(pred, gt, model, item, dataset_name='MVBench'):
     flag = False
 
@@ -65,6 +66,7 @@ def check_ans_with_model(pred, gt, model, item, dataset_name='MVBench'):
         flag = True
 
     return flag
+
 
 def check_ans_advanced(pred, gt):
     number_table = {
@@ -87,8 +89,8 @@ def check_ans_advanced(pred, gt):
     gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
     if gt_content[-1] == '.':
         gt_content = gt_content[:-1]
-    
-    try:  # convert number to word
+
+    try:
         gt_content = number_table[int(gt_content.strip('. \n'))]
         print(gt_content)
     except:

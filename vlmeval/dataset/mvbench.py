@@ -343,8 +343,6 @@ Based on your observations, select the best option that accurately addresses the
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
             assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
-            name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
-            name_str = name_str_map[model] if model in name_str_map else model
 
             if model == 'exact_matching':
                 model = None
@@ -382,7 +380,7 @@ Based on your observations, select the best option that accurately addresses the
                     data.loc[idx, 'score'] = -1
                 else:
                     data.loc[idx, 'score'] = int(check_ans_with_model(
-                        pred, ans, model, 
+                        pred, ans, model,
                         input_item,
                         'MVBench'
                     ))
@@ -568,8 +566,6 @@ Based on your observations, select the best option that accurately addresses the
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
             assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
-            name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
-            name_str = name_str_map[model] if model in name_str_map else model
 
             if model == 'exact_matching':
                 model = None
@@ -607,7 +603,7 @@ Based on your observations, select the best option that accurately addresses the
                     data.loc[idx, 'score'] = -1
                 else:
                     data.loc[idx, 'score'] = int(check_ans_with_model(
-                        pred, ans, model, 
+                        pred, ans, model,
                         input_item,
                         'MVBench_MP4'
                     ))

@@ -137,7 +137,9 @@ class Chatunivi(BaseModel):
             for n, m in model.named_modules():
                 m = m.to(dtype=torch.bfloat16)
 
-        video_frames, slice_len = _get_rawvideo_dec(video, video_processor, max_frames=MAX_IMAGE_LENGTH, image_resolution=self.resolution)
+        video_frames, slice_len = _get_rawvideo_dec(
+            video, video_processor, max_frames=MAX_IMAGE_LENGTH, image_resolution=self.resolution
+        )
 
         if model.config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN * slice_len + DEFAULT_IM_END_TOKEN + '\n' + qs
