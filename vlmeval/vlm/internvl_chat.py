@@ -46,7 +46,7 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
     return best_ratio
 
 
-def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False):
+def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
 
@@ -85,7 +85,7 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
     return processed_images
 
 
-def load_image(image_file, input_size=448, max_num=6, upscale=False):
+def load_image(image_file, input_size=448, max_num=12, upscale=False):
     image = Image.open(image_file).convert('RGB')
     if upscale:
         image = image.resize((image.width * 2, image.height * 2), Image.BILINEAR)
@@ -177,8 +177,8 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-
-        if dataset is not None and listinstr(['MMDU'], dataset):
+        assert dataset is not None
+        if (listinstr(['MMDU'], dataset) or listinstr(['MME-RealWorld'], dataset)):
             # For Multi-Turn we don't have custom prompt
             return False
         else:
@@ -232,7 +232,7 @@ class InternVLChat(BaseModel):
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
 
-        if dataset is not None and listinstr(['MME'], dataset):
+        if dataset is not None and listinstr(['MME'], dataset) and not listinstr(['RealWorld'], dataset):
             question = line['question']
             prompt = question + ' Answer the question using a single word or phrase.'
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
@@ -258,7 +258,8 @@ class InternVLChat(BaseModel):
         return message
 
     def set_max_num(self, dataset):
-        if dataset is not None and listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL'], dataset):
+        assert dataset is not None
+        if listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             self.max_num = 12
         elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
             self.max_num = 18

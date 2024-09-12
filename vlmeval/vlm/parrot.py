@@ -59,6 +59,8 @@ class Parrot(BaseModel):
         self.count = 0
 
     def use_custom_prompt(self, dataset):
+        if dataset is not None and listinstr(['MME-RealWorld'], dataset):
+            return False
         if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False

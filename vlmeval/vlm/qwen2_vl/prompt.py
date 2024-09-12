@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 
+def listinstr(lst, s):
+    assert isinstance(lst, list)
+    for item in lst:
+        if item in s:
+            return True
+    return False
+
+
 class Qwen2VLPromptMixin:
     """
     Mixin class for Qwen2VLChat to build custom prompt for different datasets.
@@ -27,7 +35,7 @@ class Qwen2VLPromptMixin:
         from vlmeval.dataset import DATASET_TYPE
         dataset_type = DATASET_TYPE(dataset, default=None)
 
-        if not self._use_custom_prompt:
+        if not self._use_custom_prompt or listinstr(['MME-RealWorld'], dataset):
             return False
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True

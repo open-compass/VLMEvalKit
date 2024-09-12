@@ -145,6 +145,8 @@ class OmniLMM12B(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MME-RealWorld'], dataset):
+            return False
         if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False

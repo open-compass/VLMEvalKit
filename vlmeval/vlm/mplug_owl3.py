@@ -36,6 +36,8 @@ class mPLUG_Owl3(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MME-RealWorld'], dataset):
+            return False
         if listinstr(['MMMU'], dataset):
             return False
         if DATASET_TYPE(dataset) == 'MCQ' or dataset == 'MMVet':

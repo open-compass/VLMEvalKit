@@ -252,7 +252,8 @@ class MMAlaya2(BaseModel):
         )
 
     def use_custom_prompt(self, dataset):
-
+        if dataset is not None and listinstr(['MME-RealWorld'], dataset):
+            return False
         if dataset is not None and listinstr(['MMDU'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False

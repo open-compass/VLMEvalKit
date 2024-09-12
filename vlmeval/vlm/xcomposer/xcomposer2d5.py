@@ -128,7 +128,7 @@ class XComposer2d5(BaseModel):
         model.tokenizer = tokenizer
         self.model = model
         self.device = self.model.model.tok_embeddings.weight.device
-        self.model.hd_num = 36
+        self.model.hd_num = 25
         self.model.id_scale = self.id_scale
 
     def message_to_promptimg(self, message, dataset=None):
@@ -224,6 +224,8 @@ class XComposer2d5(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if dataset is not None and listinstr(['MME-RealWorld'], dataset):
+            return False
         if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'VQA':
             return True
         return False
