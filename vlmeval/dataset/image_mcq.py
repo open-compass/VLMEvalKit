@@ -608,9 +608,9 @@ class MMERealWorld(ImageMCQDataset):
                 extract_pred = extract_characters_regex(pred)
                 if extract_pred == '':
                     cnt_rejected += 1
-                    data.loc[idx, 'score'] = 0
+                    data.loc[data['index'] == idx, 'score'] = 0
                 else:
-                    data.loc[idx, 'score'] = int(extract_pred == ans)
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
 
             print(
                 f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '

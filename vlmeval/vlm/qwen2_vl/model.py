@@ -32,7 +32,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         top_k=1,
         temperature=0.01,
         repetition_penalty=1.0,
-        use_custom_prompt: bool = True,
+        use_custom_prompt: bool = False,
         system_prompt: str | None = None,
         verbose: bool = True,
     ):

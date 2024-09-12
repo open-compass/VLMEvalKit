@@ -29,6 +29,8 @@ class MiniCPM_V(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MME-RealWorld'], dataset):
+            return False
         if listinstr(['MMMU'], dataset):
             return True
         return False
@@ -112,6 +114,8 @@ class MiniCPM_Llama3_V(BaseModel):
         self.vqa_prompt = 'Answer the question using a single word or phrase.'
 
     def use_custom_prompt(self, dataset):
+        if dataset is not None and listinstr(['MME-RealWorld'], dataset):
+            return False
         if listinstr(['MCQ', 'VQA'], DATASET_TYPE(dataset)):
             return True
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
