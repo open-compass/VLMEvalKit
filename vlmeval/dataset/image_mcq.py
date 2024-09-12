@@ -470,7 +470,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
 
 class MMERealWorld(ImageMCQDataset):
-    
+
     TYPE = 'MMERealWorld'
 
     DATASET_MD5 = {
@@ -563,7 +563,7 @@ class MMERealWorld(ImageMCQDataset):
 
     def post_build(self, dataset):
         self.TYPE = 'MMERealWorld'
-    
+
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
         if isinstance(line, int):
