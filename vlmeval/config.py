@@ -260,9 +260,9 @@ qwen2vl_series = {
 }
 
 slime_series = {
-    'slime_8b': partial(SliME, model_path='yifanzhang114/SliME-Llama3-8B'),
-    'slime_7b': partial(SliME, model_path='yifanzhang114/SliME-vicuna-7B'),
-    'slime_13b': partial(SliME, model_path='yifanzhang114/SliME-vicuna-13B'),
+    'Slime-7B': partial(SliME, model_path='yifanzhang114/SliME-vicuna-7B'),
+    'Slime-8B': partial(SliME, model_path='yifanzhang114/SliME-Llama3-8B'),
+    'Slime-13B': partial(SliME, model_path='yifanzhang114/SliME-vicuna-13B'),
 }
 
 supported_VLM = {}
