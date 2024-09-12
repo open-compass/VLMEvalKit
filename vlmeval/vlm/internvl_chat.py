@@ -258,11 +258,8 @@ class InternVLChat(BaseModel):
         return message
 
     def set_max_num(self, dataset):
-        if (dataset is not None and
-            listinstr(
-                ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MME-RealWorld', 'MME-RealWorld-CN'],
-                dataset
-            )):
+        assert dataset is not None
+        if listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             self.max_num = 12
         elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
             self.max_num = 18
