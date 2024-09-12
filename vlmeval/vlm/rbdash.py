@@ -193,6 +193,9 @@ class RBDash(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+            # For Multi-Turn we don't have custom prompt
+            return False
         if 'mme' in dataset.lower():
             return True
         elif 'hallusionbench' in dataset.lower():
