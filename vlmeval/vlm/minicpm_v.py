@@ -414,7 +414,7 @@ class MiniCPM_V_2_6(BaseModel):
         return msgs
 
     def generate_inner(self, message, dataset=None):
-        if listinstr(['Video','MVBench'], dataset):
+        if listinstr(['Video', 'MVBench'], dataset):
             max_slice_nums = 1
             use_image_id = False
             max_inp_length = 2048 * 10
