@@ -177,8 +177,8 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-
-        if dataset is not None and listinstr(['MMDU'], dataset):
+        assert dataset is not None
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         else:
@@ -258,7 +258,10 @@ class InternVLChat(BaseModel):
         return message
 
     def set_max_num(self, dataset):
+        assert dataset is not None
         if dataset is not None and listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL'], dataset):
+            self.max_num = 12
+        elif dataset is not None and listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             self.max_num = 12
         elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
             self.max_num = 18

@@ -29,8 +29,9 @@ class MiniCPM_V(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMMU'], dataset):
-            return True
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+            # For Multi-Turn we don't have custom prompt
+            return False
         return False
 
     def build_prompt(self, line, dataset=None):

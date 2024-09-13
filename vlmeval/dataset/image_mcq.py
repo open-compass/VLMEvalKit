@@ -471,6 +471,8 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
 class MMERealWorld(ImageMCQDataset):
 
+    TYPE = 'MMERealWorld'
+
     DATASET_MD5 = {
         'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
         'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
@@ -559,6 +561,9 @@ class MMERealWorld(ImageMCQDataset):
             data_path = local_path
         return load(data_path)
 
+    def post_build(self, dataset):
+        self.TYPE = 'MMERealWorld'
+
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -608,9 +613,9 @@ class MMERealWorld(ImageMCQDataset):
                 extract_pred = extract_characters_regex(pred)
                 if extract_pred == '':
                     cnt_rejected += 1
-                    data.loc[idx, 'score'] = 0
+                    data.loc[data['index'] == idx, 'score'] = 0
                 else:
-                    data.loc[idx, 'score'] = int(extract_pred == ans)
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
 
             print(
                 f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
