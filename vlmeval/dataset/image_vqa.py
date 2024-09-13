@@ -496,8 +496,8 @@ class CRPE(ImageBaseDataset):
         'CRPE_RELATION': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_RELATION.tsv'
     }
     DATASET_MD5 = {
-        'CRPE_EXIST': '30cf4d09698c0313e0e00c938571369f',
-        'CRPE_RELATION': '6fd6bb7de15ce231c37bff8909831c41'}
+        'CRPE_EXIST': '315584e23ac1ff7f8719ed3b7ad90f08',
+        'CRPE_RELATION': 'bad7094cde0b572288f4b119c2d0c656'}
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
