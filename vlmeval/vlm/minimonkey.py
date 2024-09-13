@@ -1,4 +1,3 @@
-# encoding: utf-8
 import pprint
 
 import numpy as np
