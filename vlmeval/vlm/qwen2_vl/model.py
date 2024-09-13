@@ -59,7 +59,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         ).eval()
         torch.cuda.empty_cache()
 
-    def _prepare_content(self, inputs: list[dict[str, str]]) -> list[dict[str, str]]:
+    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """
@@ -67,10 +67,16 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         for s in inputs:
             if s['type'] == 'image':
                 item = {'type': 'image', 'image': ensure_image_url(s['value'])}
-                if self.min_pixels is not None:
-                    item['min_pixels'] = self.min_pixels
-                if self.max_pixels is not None:
-                    item['max_pixels'] = self.max_pixels
+                if dataset == 'OCRBench':
+                    item['min_pixels'] = 10 * 10 * 28 * 28
+                    warnings.warn(f"OCRBench dataset uses custom min_pixels={item['min_pixels']}")
+                    if self.max_pixels is not None:
+                        item['max_pixels'] = self.max_pixels
+                else:
+                    if self.min_pixels is not None:
+                        item['min_pixels'] = self.min_pixels
+                    if self.max_pixels is not None:
+                        item['max_pixels'] = self.max_pixels
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:
@@ -88,7 +94,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         messages = []
         if self.system_prompt is not None:
             messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message)})
+        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 

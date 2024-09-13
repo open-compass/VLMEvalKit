@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
@@ -58,7 +59,7 @@ class Qwen2VLAPI(Qwen2VLPromptMixin, BaseAPI):
         dashscope.api_key = key
         super().__init__(use_custom_prompt=use_custom_prompt, **kwargs)
 
-    def _prepare_content(self, inputs: list[dict[str, str]]) -> list[dict[str, str]]:
+    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """
@@ -66,10 +67,16 @@ class Qwen2VLAPI(Qwen2VLPromptMixin, BaseAPI):
         for s in inputs:
             if s['type'] == 'image':
                 item = {'type': 'image', 'image': ensure_image_url(s['value'])}
-                if self.min_pixels is not None:
-                    item['min_pixels'] = self.min_pixels
-                if self.max_pixels is not None:
-                    item['max_pixels'] = self.max_pixels
+                if dataset == 'OCRBench':
+                    item['min_pixels'] = 10 * 10 * 28 * 28
+                    warnings.warn(f"OCRBench dataset uses custom min_pixels={item['min_pixels']}")
+                    if self.max_pixels is not None:
+                        item['max_pixels'] = self.max_pixels
+                else:
+                    if self.min_pixels is not None:
+                        item['min_pixels'] = self.min_pixels
+                    if self.max_pixels is not None:
+                        item['max_pixels'] = self.max_pixels
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:
@@ -83,7 +90,9 @@ class Qwen2VLAPI(Qwen2VLPromptMixin, BaseAPI):
         messages = []
         if self.system_prompt is not None:
             messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(inputs)})
+        messages.append(
+            {'role': 'user', 'content': self._prepare_content(inputs, dataset=kwargs.get('dataset', None))}
+        )
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
