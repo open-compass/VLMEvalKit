@@ -134,7 +134,7 @@ def load_image(image, input_size=448, min_num=1, max_num=12):
 def load_image2(image, input_size=448, min_num=1, max_num=12, target_aspect_ratio=None):
     image = image.convert('RGB')
     transform = build_transform(input_size=input_size)
-    images = dynamic_preprocess2(image, image_size=input_size, use_thumbnail=True, min_num=min_num, 
+    images = dynamic_preprocess2(image, image_size=input_size, use_thumbnail=True, min_num=min_num,
                                  max_num=max_num, prior_aspect_ratio=target_aspect_ratio)
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
@@ -186,8 +186,8 @@ class MiniMonkey(BaseModel):
 
         generation_config = dict(do_sample=False, max_new_tokens=512)
 
-        response, history = self.model.chat(self.tokenizer, pixel_values, 
-                                            target_aspect_ratio, prompt, generation_config, 
+        response, history = self.model.chat(self.tokenizer, pixel_values,
+                                            target_aspect_ratio, prompt, generation_config,
                                             history=None, return_history=True)
 
         return response
