@@ -487,3 +487,74 @@ class CustomVQADataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         raise NotImplementedError
+
+
+class CRPE(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'CRPE_EXIST': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_EXIST.tsv',
+        'CRPE_RELATION': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_RELATION.tsv'
+    }
+    DATASET_MD5 = {
+        'CRPE_EXIST': '315584e23ac1ff7f8719ed3b7ad90f08',
+        'CRPE_RELATION': 'bad7094cde0b572288f4b119c2d0c656'}
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.crpe import is_correct
+        # find-image, count-text, find-text,
+        # infer-choose, count-image, visual-reasoning
+        score = {
+            'exist': 0,
+            'subject': 0,
+            'predicate': 0,
+            'object': 0,
+            'total': 0,
+        }
+        num = {
+            'exist': 0,
+            'subject': 0,
+            'predicate': 0,
+            'object': 0,
+            'total': 0,
+        }
+        final_score_dict = {
+            'exist': 0,
+            'subject': 0,
+            'predicate': 0,
+            'object': 0,
+            'total': 0,
+        }
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        for i in tqdm(range(len(lines))):
+            line = lines[i]
+            predict = str(line['prediction'])
+            answers = str(line['answer'])
+            # print("predict =", predict)
+            # print("answers =", answers)
+            category = line['category']
+            if is_correct(answers, predict):
+                score[category] += 1
+                score['total'] += 1
+            num[category] += 1
+            num['total'] += 1
+
+        for category in ['exist', 'subject', 'predicate', 'object', 'total']:
+            if num[category] != 0:
+                final_score_dict[category] = score[category] / num[category]
+            else:
+                final_score_dict[category] = None
+
+        score_pth = eval_file.replace('.xlsx', '_score.json')
+        dump(final_score_dict, score_pth)
+        return final_score_dict
+
+    def build_prompt(self, line):
+        ROOT = LMUDataRoot()
+        msgs = super().build_prompt(line)
+        for msg in msgs:
+            if msg['type'] == 'image':
+                msg['value'] = osp.join(osp.join(ROOT, 'images', self.dataset_name), msg['value'])
+        return msgs
