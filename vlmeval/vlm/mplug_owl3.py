@@ -38,19 +38,29 @@ class mPLUG_Owl3(BaseModel):
         assert dataset is not None
         if listinstr(['MMMU'], dataset):
             return False
-        if DATASET_TYPE(dataset) == 'MCQ' or dataset == 'MMVet':
+        if listinstr(['MCQ', 'Video-MCQ'], DATASET_TYPE(dataset)) or dataset == 'MMVet':
             return True
         return False
 
     # Currently same to mPLUG_Owl2
-    def build_prompt(self, line, dataset=None):
+    def build_prompt(self, line, dataset=None, num_frames=16, video_llm=False):
+        if not isinstance(dataset, str):
+            dataset_class = dataset
+            dataset = dataset_class.dataset_name
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
-        tgt_path = self.dump_image(line, dataset)
+        if dataset_class.MODALITY == 'VIDEO':
+            tgt_path = dataset_class.save_video_into_images(line, num_frames)
+            if type(line['candidates']) != list:
+                line['candidates'] = eval(line['candidates'])
+            for idx, c in enumerate(line['candidates']):
+                line[chr(ord('A') + idx)] = c
+        else:
+            tgt_path = self.dump_image(line, dataset)
         question = line['question']
         if dataset == 'MMVet':
             prompt = question + '\nAnswer the question directly. '
-        elif DATASET_TYPE(dataset) == 'MCQ':
+        elif listinstr(['MCQ', 'Video-MCQ'], DATASET_TYPE(dataset)):
             options = {
                 cand: line[cand]
                 for cand in string.ascii_uppercase
@@ -114,11 +124,20 @@ class mPLUG_Owl3(BaseModel):
         inputs = self.processor(needed_messages, images=images, videos=None)
 
         inputs.to('cuda')
-        inputs.update({
-            'tokenizer': self.tokenizer,
-            'max_new_tokens': 1024,
-            'decode_text': True,
-        })
+        if listinstr(['MVBench'], dataset):
+            inputs.update({
+                'tokenizer': self.tokenizer,
+                'max_new_tokens': 100,
+                'decode_text': True,
+                'do_sample': True,
+                'top_k': 1,
+            })
+        else:
+            inputs.update({
+                'tokenizer': self.tokenizer,
+                'max_new_tokens': 1024,
+                'decode_text': True,
+            })
 
         g = self.model.generate(**inputs)
         return g[0]

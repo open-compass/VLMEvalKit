@@ -29,7 +29,7 @@ the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
 """
 
-    TYPE = 'MCQ'
+    TYPE = 'Video-MCQ'
 
     def __init__(self, dataset='MVBench', pack=False):
         self.type_data_list = {
@@ -139,7 +139,7 @@ Based on your observations, select the best option that accurately addresses the
                 data_df.to_csv(data_file, sep='\t', index=False)
 
             def move_files(pth):
-                # special for mvbench
+                # special for mvbench/data0613 supplementary data
                 src_folder = os.path.join(pth, 'video/data0613')
                 for subdir in os.listdir(src_folder):
                     subdir_path = os.path.join(src_folder, subdir)
@@ -302,6 +302,20 @@ Based on your observations, select the best option that accurately addresses the
 
         return output_video_path
 
+    def save_video_into_images(self, line, num_frames):
+        bound = None
+        if line['bound']:
+            bound = (
+                line['start'],
+                line['end'],
+            )
+        video_path = os.path.join(line['prefix'], line['video'])
+        decord_method = self.decord_method[line['data_type']]
+        self.num_segments = num_frames if num_frames > 0 else self.nframe
+        torch_imgs = decord_method(video_path, bound)
+        img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+        return img_frame_paths
+
     def build_prompt(self, line, num_frames, video_llm):
         if isinstance(line, int):
             assert line < len(self)
@@ -314,17 +328,7 @@ Based on your observations, select the best option that accurately addresses the
             new_video_path = self.load_into_video_and_process(line)
             message.append(dict(type='video', value=new_video_path))
         else:
-            bound = None
-            if line['bound']:
-                bound = (
-                    line['start'],
-                    line['end'],
-                )
-            video_path = os.path.join(line['prefix'], line['video'])
-            decord_method = self.decord_method[line['data_type']]
-            self.num_segments = num_frames if num_frames > 0 else self.nframe
-            torch_imgs = decord_method(video_path, bound)
-            img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+            img_frame_paths = self.save_video_into_images(line, num_frames)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))
@@ -407,7 +411,7 @@ class MVBench_MP4(VideoBaseDataset):
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
 """
-    TYPE = 'MCQ'
+    TYPE = 'Video-MCQ'
 
     def __init__(self, dataset='MVBench_MP4', pack=False):
         super().__init__(dataset=dataset, pack=pack)
@@ -532,6 +536,13 @@ Based on your observations, select the best option that accurately addresses the
 
         return frame_paths
 
+    def save_video_into_images(self, line, num_frames):
+        video_path = os.path.join(self.data_root, line['prefix'], line['video'])
+        self.num_segments = num_frames if num_frames > 0 else self.nframe
+        torch_imgs = self.read_video(video_path)
+        img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+        return img_frame_paths
+
     def build_prompt(self, line, num_frames, video_llm):
         if isinstance(line, int):
             assert line < len(self)
@@ -544,10 +555,7 @@ Based on your observations, select the best option that accurately addresses the
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            video_path = os.path.join(self.data_root, line['prefix'], line['video'])
-            self.num_segments = num_frames if num_frames > 0 else self.nframe
-            torch_imgs = self.read_video(video_path)
-            img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+            img_frame_paths = self.save_video_into_images(line, num_frames)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))

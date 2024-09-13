@@ -414,6 +414,15 @@ class MiniCPM_V_2_6(BaseModel):
         return msgs
 
     def generate_inner(self, message, dataset=None):
+        if listinstr(['Video','MVBench'], dataset):
+            max_slice_nums = 1
+            use_image_id = False
+            max_inp_length = 2048 * 10
+        else:
+            max_slice_nums = None
+            use_image_id = True
+            max_inp_length = 8192
+
         max_new_tokens = 2048
         default_kwargs = dict(
             max_new_tokens=max_new_tokens,
@@ -449,7 +458,9 @@ class MiniCPM_V_2_6(BaseModel):
             msgs=msgs,
             context=None,
             tokenizer=self.tokenizer,
-            max_inp_length=8192,
+            max_inp_length=max_inp_length,
+            use_image_id=use_image_id,
+            max_slice_nums=max_slice_nums,
             **default_kwargs
         )
 
