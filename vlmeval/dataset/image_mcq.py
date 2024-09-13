@@ -471,14 +471,22 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
 class MMERealWorld(ImageMCQDataset):
 
+    TYPE = 'MMERealWorld'
+
     DATASET_MD5 = {
-        'MME-RealWorld': '7d7cc66f7fe0f56ebc68fdddf2b447da',
-        'MME-RealWorld-CN': 'cbec7caf59402a4167872abbdca1d6bd',
+        'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
+        'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
     }
     SYS = {
-        'MME-RealWorld': 'Select the best answer to the above multiple-choice question based on the image. \
-            Respond with only the letter (A, B, C, D, or E) of the correct option. \nThe best answer is:',
-        'MME-RealWorld-CN': '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n 最佳答案为：',
+        'MME-RealWorld': (
+            'Select the best answer to the above multiple-choice question based on the image. '
+            'Respond with only the letter (A, B, C, D, or E) of the correct option. \n'
+            'The best answer is:'
+        ),
+        'MME-RealWorld-CN': (
+            '根据图像选择上述多项选择题的最佳答案。只需回答正确选项的字母（A, B, C, D 或 E）。\n'
+            '最佳答案为：'
+        ),
     }
 
     @classmethod
@@ -518,6 +526,11 @@ class MMERealWorld(ImageMCQDataset):
                             'image': item['image'],
                             'question': item['question'],
                             'multi-choice options': choice_prompt + '\n'.join(item['multi-choice options']),
+                            'A': item['multi-choice options'][0][4:],
+                            'B': item['multi-choice options'][1][4:],
+                            'C': item['multi-choice options'][2][4:],
+                            'D': item['multi-choice options'][3][4:],
+                            'E': item['multi-choice options'][4][4:],
                             'answer': item['answer'],
                             'category': item['category'],
                             'l2-category': item['l2-category']
@@ -548,6 +561,9 @@ class MMERealWorld(ImageMCQDataset):
             data_path = local_path
         return load(data_path)
 
+    def post_build(self, dataset):
+        self.TYPE = 'MMERealWorld'
+
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -561,7 +577,7 @@ class MMERealWorld(ImageMCQDataset):
         question = line['question']
 
         choice_prompt = line['multi-choice options'] + '\n'
-        question += choice_prompt + self.SYS[self.dataset_name] + '\nThe best answer is:'
+        question += ' ' + choice_prompt + self.SYS[self.dataset_name]
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -587,6 +603,7 @@ class MMERealWorld(ImageMCQDataset):
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
+            cnt_rejected = 0
             data_un = data[~pd.isna(data['prediction'])]
 
             for idx in data['index']:
@@ -595,16 +612,15 @@ class MMERealWorld(ImageMCQDataset):
 
                 extract_pred = extract_characters_regex(pred)
                 if extract_pred == '':
-                    data.loc[idx, 'score'] = -1
+                    cnt_rejected += 1
+                    data.loc[data['index'] == idx, 'score'] = 0
                 else:
-                    data.loc[idx, 'score'] = int(extract_pred == ans)
-
-            rejected = [x for x in data['score'] if x == -1]
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
 
             print(
                 f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
+                f'failed to obtain the score for another {cnt_rejected} questions. '
+                f'Those questions will be counted as 0 score in ALL rating.'
             )
 
             dump(data, score_file)
@@ -612,6 +628,76 @@ class MMERealWorld(ImageMCQDataset):
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
+
+
+class HRBenchDataset(ImageMCQDataset):
+
+    DATASET_URL = {
+        'HRBench4K': 'https://huggingface.co/datasets/DreamMr/HR-Bench/resolve/main/hr_bench_4k.tsv',
+        'HRBench8K': 'https://huggingface.co/datasets/DreamMr/HR-Bench/resolve/main/hr_bench_8k.tsv',
+    }
+
+    DATASET_MD5 = {
+        'HRBench4K': 'f6b041b03d49543494b8a56d2e35be65',
+        'HRBench8K': '274c9c7f89329b804a4723178a00219c',
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
+        from .utils.multiple_choice import mcq_vanilla_eval
+        from .utils.hrbench import report_acc_hrbench
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'extract_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+
+        acc = report_acc_hrbench(data)
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        return acc
 
 
 class CustomMCQDataset(ImageMCQDataset):

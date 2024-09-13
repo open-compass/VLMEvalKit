@@ -28,9 +28,22 @@ def infer_data_api(work_dir, model_name, dataset, index_set=None, api_nproc=4, i
 
     model = supported_VLM[model_name]() if isinstance(model_name, str) else model_name
     assert getattr(model, 'is_api', False)
+    if hasattr(model, 'set_dump_image'):
+        model.set_dump_image(dataset.dump_image)
 
     lt, indices = len(data), list(data['index'])
-    structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
+
+    structs = []
+    for i in range(lt):
+        item = data.iloc[i]
+        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+            assert hasattr(model, 'build_prompt')
+            struct = model.build_prompt(item, dataset=dataset_name)
+        else:
+            struct = dataset.build_prompt(item)
+        structs.append(struct)
+
+    # structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
 
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
     res = {}

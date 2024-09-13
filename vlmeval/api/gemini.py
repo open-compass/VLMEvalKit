@@ -37,13 +37,13 @@ class GeminiWrapper(BaseAPI):
 
         assert backend in ['genai', 'vertex']
         if backend == 'genai':
-            assert model == 'gemini-1.0-pro'
+            # We have not evaluated Gemini-1.5 w. GenAI backend
+            assert key is not None  # Vertex does not require API Key
 
         self.backend = backend
         self.project_id = project_id
-
-        assert key is not None
         self.api_key = key
+
         if proxy is not None:
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)

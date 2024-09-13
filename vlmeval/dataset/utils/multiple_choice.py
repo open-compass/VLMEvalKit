@@ -486,6 +486,7 @@ def get_dimension_rating(data_path):
     ]
     data = load(data_path)
     results = {}
+    results['Overall'] = {}
     for task in TASKS:
         results[f'{task}'] = {}
         for subtask in SUBTASKS:
@@ -495,7 +496,7 @@ def get_dimension_rating(data_path):
         question = data.iloc[i]
         Task = question['category'].split('/')[0]
         Subtask = question['category'].split('/')[1]
-        Category = question['l2-category']
+        Category = question['l2-category'].lower()
         if 'attribute' in Category.lower():
             Category = Category.split('/')[0] + '/attribute'
         if question['score'] >= 0:
@@ -506,6 +507,7 @@ def get_dimension_rating(data_path):
                 results[Task][Subtask][f'{Category}']['true'] += cnt
                 results[Task][Subtask][f'{Category}']['false'] += 1 - cnt
 
+    sum_all, succ_all = 0, 0
     for task, tasks_values in results.items():
         cnt_task, sum_task = 0, 0
         for substask, subtask_value in tasks_values.items():
@@ -526,5 +528,8 @@ def get_dimension_rating(data_path):
             acc_task = 0
         else:
             acc_task = cnt_task / sum_task
+        succ_all += cnt_task
+        sum_all += sum_task
         results[task]['Avg'] = acc_task
+    results['Overall'] = succ_all / sum_all
     return results

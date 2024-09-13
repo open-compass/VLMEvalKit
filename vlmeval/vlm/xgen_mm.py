@@ -10,9 +10,9 @@ class XGenMM(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5', **kwargs):
+    def __init__(self, model_path='Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5', **kwargs):
         try:
-            from transformers import AutoModelForVision2Seq, AutoTokenizer, AutoImageProcessor, StoppingCriteria
+            from transformers import AutoModelForVision2Seq, AutoTokenizer, AutoImageProcessor
         except:
             warnings.warn('Please install the latest version transformers.')
             sys.exit(-1)
@@ -25,6 +25,7 @@ class XGenMM(BaseModel):
             model_path, trust_remote_code=True, use_fast=False, legacy=False
         )
         tokenizer = model.update_special_tokens(tokenizer)
+        tokenizer.eos_token = '<|end|>'
         tokenizer.padding_side = 'left'
         image_processor = AutoImageProcessor.from_pretrained(model_path, trust_remote_code=True)
         self.model = model
@@ -70,6 +71,7 @@ class XGenMM(BaseModel):
         generate_ids = self.model.generate(
             **inputs, image_size=[image_sizes],
             pad_token_id=self.tokenizer.pad_token_id,
+            eos_token_id=self.tokenizer.eos_token_id,
             **generation_args
         )
 

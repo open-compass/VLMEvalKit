@@ -45,6 +45,9 @@ def main():
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
 
+    if 'MMEVAL_ROOT' in os.environ:
+        args.work_dir = os.environ['MMEVAL_ROOT']
+
     if args.retry is not None:
         for k, v in supported_VLM.items():
             if hasattr(v, 'keywords') and 'retry' in v.keywords:
