@@ -56,7 +56,7 @@ class QwenVL(BaseModel):
         prompt = ''
         for s in message:
             if s['type'] == 'image':
-                prompt += f'<img>{s["value"]}</img>'
+                prompt += f'<img>{s['value']}</img>'
             elif s['type'] == 'text':
                 prompt += s['value']
         if dataset is not None and DATASET_TYPE(dataset) == 'VQA':

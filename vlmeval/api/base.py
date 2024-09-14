@@ -205,7 +205,7 @@ class BaseAPI:
         message = self.preproc_content(message)
         assert message is not None and self.check_content(message) == 'listdict'
         for item in message:
-            assert item['type'] in self.allowed_types, f'Invalid input type: {item["type"]}'
+            assert item['type'] in self.allowed_types, f'Invalid input type: {item['type']}'
 
         # merge kwargs
         kwargs = cp.deepcopy(self.default_kwargs)

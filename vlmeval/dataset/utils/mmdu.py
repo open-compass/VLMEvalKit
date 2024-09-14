@@ -115,7 +115,7 @@ def mmdu_score(model, line):
             else:
                 logs.append(
                     f'Following Dims are not in results of turn {j}: '
-                    f'{",".join([x for x in DIMS if x not in result_dict])}'
+                    f'{','.join([x for x in DIMS if x not in result_dict])}'
                 )
         except Exception as e:
             print({e})
