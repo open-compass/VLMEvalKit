@@ -29,7 +29,7 @@ def unwrap_hf_pkl(pth, suffix='.mp4'):
 
 class VideoMME(VideoBaseDataset):
 
-    MD5 = '1174c2e466ee30bf55cf64e73e36863e'
+    MD5 = '85bdd91f9b29a99354c23b97ab7c113c'
     SYS = ''
 
     FRAMES_TMPL_NOSUB = """
@@ -133,7 +133,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                 data_file['video'] = data_file['videoID']
                 data_file['video_path'] = data_file['videoID'].apply(lambda x: f'./video/{x}.mp4')
                 data_file['subtitle_path'] = data_file['videoID'].apply(lambda x: f'./subtitle/{x}.srt')
-                data_file['candidates'] = data_file['options']
+                data_file['candidates'] = data_file['options'].apply(lambda x: x.tolist())
 
                 data_file = data_file[['index', 'video', 'video_path', 'duration', 'domain', 'candidates',
                                        'sub_category', 'task_type', 'subtitle_path', 'question', 'answer']]
@@ -210,7 +210,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         text_prompt = self.FRAMES_TMPL_NOSUB if not self.use_subtitle else self.FRAMES_TMPL_SUB.format(subtitles)
         message.append(dict(type='text', value=text_prompt))
-        line['question'] += '\n' + '\n'.join(line['candidates'])
+        line['question'] += '\n' + '\n'.join(eval(line['candidates']))
         prompt = 'Question: {}\nAnswer: '.format(line['question'])
         message.append(dict(type='text', value=prompt))
         return message
