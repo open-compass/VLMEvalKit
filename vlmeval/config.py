@@ -59,8 +59,9 @@ api_models = {
     'GPT4o_20240806': partial(GPT4V, model='gpt-4o-2024-08-06', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GPT4o_MINI': partial(GPT4V, model='gpt-4o-mini-2024-07-18', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Gemini
-    'GeminiProVision': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),
+    'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),  # now GeminiPro1-0 is only supported by vertex backend
     'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
+    'GeminiFlash1-5': partial(GeminiProVision, model='gemini-1.5-flash', temperature=0, retry=10),
     # Qwen-VL
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
@@ -111,7 +112,8 @@ qwen_series = {
     'qwen_base': partial(QwenVL, model_path='Qwen/Qwen-VL'),
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'monkey': partial(Monkey, model_path='echo840/Monkey'),
-    'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat')
+    'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
+    'minimonkey': partial(MiniMonkey, model_path='mx262/MiniMonkey')
 }
 
 llava_series = {
