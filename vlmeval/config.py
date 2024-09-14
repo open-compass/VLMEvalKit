@@ -112,6 +112,7 @@ qwen_series = {
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'monkey': partial(Monkey, model_path='echo840/Monkey'),
     'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat')
+    'minimonkey': partial(MiniMonkey, model_path='mx262/MiniMonkey')
 }
 
 llava_series = {
