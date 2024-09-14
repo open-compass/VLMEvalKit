@@ -29,12 +29,3 @@ repos:
         args: ["--remove"]
       - id: mixed-line-ending
         args: ["--fix=lf"]
-ci:
-    autofix_commit_msg: |
-        [pre-commit.ci] auto fixes from pre-commit.com hooks
-    autofix_prs: true
-    autoupdate_branch: 'main'
-    autoupdate_commit_msg: '[pre-commit.ci] pre-commit hooks version autoupdate'
-    autoupdate_schedule: weekly
-    skip: []
-    submodules: false

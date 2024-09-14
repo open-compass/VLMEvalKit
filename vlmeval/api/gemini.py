@@ -78,7 +78,7 @@ class GeminiWrapper(BaseAPI):
                 model = genai.GenerativeModel('gemini-1.0-pro')
             else:
                 assert self.model in ['gemini-1.5-pro', 'gemini-1.5-flash']
-                genai.GenerativeModel(self.model)
+                model = genai.GenerativeModel(self.model)
 
             messages = self.build_msgs_genai(inputs)
             gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
