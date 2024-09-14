@@ -22,7 +22,7 @@ class GeminiWrapper(BaseAPI):
                  project_id='vlmeval',
                  **kwargs):
 
-        assert model in ['gemini-1.0-pro', 'gemini-1.5-pro']
+        assert model in ['gemini-1.0-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
 
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
@@ -73,7 +73,13 @@ class GeminiWrapper(BaseAPI):
             assert isinstance(inputs, list)
             pure_text = np.all([x['type'] == 'text' for x in inputs])
             genai.configure(api_key=self.api_key)
-            model = genai.GenerativeModel('gemini-pro') if pure_text else genai.GenerativeModel('gemini-pro-vision')
+
+            if pure_text and self.model == 'gemini-1.0-pro':
+                model = genai.GenerativeModel('gemini-1.0-pro')
+            else:
+                assert self.model in ['gemini-1.5-pro', 'gemini-1.5-flash']
+                genai.GenerativeModel(self.model)
+
             messages = self.build_msgs_genai(inputs)
             gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
             gen_config.update(kwargs)
@@ -92,7 +98,7 @@ class GeminiWrapper(BaseAPI):
             import vertexai
             from vertexai.generative_models import GenerativeModel
             vertexai.init(project=self.project_id, location='us-central1')
-            model_name = 'gemini-1.0-pro-vision' if self.model == 'gemini-1.0-pro' else 'gemini-1.5-pro'
+            model_name = 'gemini-1.0-pro-vision' if self.model == 'gemini-1.0-pro' else self.model
             model = GenerativeModel(model_name=model_name)
             messages = self.build_msgs_vertex(inputs)
             try:
