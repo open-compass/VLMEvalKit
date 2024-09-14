@@ -181,4 +181,6 @@ def infer_data_job(model, work_dir, model_name, dataset, verbose=False, api_npro
         dump(data, result_file)
         for i in range(world_size):
             os.remove(tmpl.format(i))
+    if world_size > 1:
+        dist.barrier()
     return model
