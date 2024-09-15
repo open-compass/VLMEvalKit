@@ -46,6 +46,7 @@ ungrouped = {
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
     'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
+    'Pixtral-12B': partial(Pixtral, model_path="mistralai/Pixtral-12B-2409")
 }
 
 api_models = {
