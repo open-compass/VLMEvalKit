@@ -219,6 +219,8 @@ def main():
 
                 if eval_proxy is not None:
                     proxy_set(old_proxy)
+    if world_size > 1:
+        dist.barrier()
 
 
 if __name__ == '__main__':
