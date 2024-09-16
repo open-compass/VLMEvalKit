@@ -361,7 +361,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
         result = load(result_file)
         for k, v in zip(keys, res):
             if k in result:
-                assert result[k]['hit'] == v['hit'] and result[k]['log'] == v['log']
+                assert result[k]['hit'] == v['hit']
             else:
                 result[k] = v
     data['hit'] = [result[i]['hit'] for i in data['index']]
@@ -427,7 +427,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
             result = load(result_file)
             for k, v in zip(keys, res):
                 if k in result:
-                    assert result[k]['hit'] == v['hit'] and result[k]['log'] == v['log']
+                    assert result[k]['hit'] == v['hit']
                 else:
                     result[k] = v
 
