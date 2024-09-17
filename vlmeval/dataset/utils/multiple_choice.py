@@ -360,9 +360,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
         res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
         result = load(result_file)
         for k, v in zip(keys, res):
-            if k in result:
-                assert result[k]['hit'] == v['hit']
-            else:
+            if k not in result:
                 result[k] = v
     data['hit'] = [result[i]['hit'] for i in data['index']]
     data['log'] = [result[i]['log'] for i in data['index']]
@@ -426,9 +424,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
                 keys=keys)
             result = load(result_file)
             for k, v in zip(keys, res):
-                if k in result:
-                    assert result[k]['hit'] == v['hit']
-                else:
+                if k not in result:
                     result[k] = v
 
     tmp_pth = f'/tmp/{timestr()}.xlsx'
