@@ -403,19 +403,20 @@ class LLaVA_OneVision(BaseModel):
         num_layers = 80 + 8
         num_layers_per_gpu = math.ceil(num_layers / num_gpus)
         num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-        num_layers_per_gpu[0] -= 2
-        num_layers_per_gpu[-1] -= 6
+        num_layers_per_gpu[0] -= 6
+        num_layers_per_gpu[-1] -= 2
         layer_cnt = 0
         for i, num_layer in enumerate(num_layers_per_gpu):
             for j in range(num_layer):
                 device_map[f'model.layers.{layer_cnt}'] = rank + world_size * i
                 layer_cnt += 1
         last_gpu = rank + world_size * (num_gpus - 1)
+        device_map['model.image_newline'] = rank
         device_map['model.embed_tokens'] = rank
-        device_map['model.norm'] = last_gpu
-        device_map['model.vision_tower'] = last_gpu
-        device_map['model.vision_resampler'] = last_gpu
-        device_map['model.mm_projector'] = last_gpu
+        device_map['model.norm'] = rank
+        device_map['model.vision_tower'] = rank
+        device_map['model.vision_resampler'] = rank
+        device_map['model.mm_projector'] = rank
         device_map['lm_head'] = last_gpu
         return device_map
 
