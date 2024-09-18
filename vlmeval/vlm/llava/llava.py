@@ -390,6 +390,36 @@ class LLaVA_OneVision(BaseModel):
     DEFAULT_IMAGE_TOKEN = '<image>'
     IMAGE_TOKEN_INDEX = -200
 
+    # This function is used to split InternVL2-Llama3-76B
+    def split_model(self, model_path):
+        import math
+        device_map = {}
+        num_gpus = torch.cuda.device_count()
+        rank, world_size = get_rank_and_world_size()
+        num_gpus = num_gpus // world_size
+        if '72b' not in model_path.lower():
+            return None
+        # embed_tokens, vision_tower, mm_projector, lm_head are treated as 2 layers
+        num_layers = 80 + 8
+        num_layers_per_gpu = math.ceil(num_layers / num_gpus)
+        num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+        num_layers_per_gpu[0] -= 6
+        num_layers_per_gpu[-1] -= 2
+        layer_cnt = 0
+        for i, num_layer in enumerate(num_layers_per_gpu):
+            for j in range(num_layer):
+                device_map[f'model.layers.{layer_cnt}'] = rank + world_size * i
+                layer_cnt += 1
+        last_gpu = rank + world_size * (num_gpus - 1)
+        device_map['model.image_newline'] = rank
+        device_map['model.embed_tokens'] = rank
+        device_map['model.norm'] = rank
+        device_map['model.vision_tower'] = rank
+        device_map['model.vision_resampler'] = rank
+        device_map['model.mm_projector'] = rank
+        device_map['lm_head'] = last_gpu
+        return device_map
+
     def __init__(self, model_path='lmms-lab/llava-onevision-qwen2-7b-si', **kwargs):
         assert model_path is not None
         try:
@@ -400,8 +430,15 @@ class LLaVA_OneVision(BaseModel):
             warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
 
         model_name = get_model_name_from_path(model_path)
-        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map=None)
-        model.cuda().eval()
+        device_map = self.split_model(model_path)
+        if device_map is None:
+            tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map='cpu')
+            model.cuda()
+        else:
+            tokenizer, model, image_processor, _ = load_pretrained_model(
+                model_path, None, model_name, device_map=device_map
+            )
+        model.eval()
         model.tie_weights()
 
         if 'llava' in model_path.lower():
