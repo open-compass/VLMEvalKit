@@ -350,7 +350,9 @@ class InternVLChat(BaseModel):
         else:
             pixel_values = None
             num_patches_list = []
-
+            
+        kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
+        self.kwargs = kwargs_default
         with torch.no_grad():
             response = self.model.chat(
                 self.tokenizer,
