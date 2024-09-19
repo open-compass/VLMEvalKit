@@ -181,10 +181,11 @@ class MiniCPM_Llama3_V(BaseModel):
         return msgs
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_TYPE(dataset) == 'MCQ':
-            max_new_tokens = 200
-        elif DATASET_TYPE(dataset) == 'Y/N':
-            max_new_tokens = 3
+        if dataset != None:
+            if DATASET_TYPE(dataset) == 'MCQ':
+                max_new_tokens = 200
+            elif DATASET_TYPE(dataset) == 'Y/N':
+                max_new_tokens = 3
         else:
             max_new_tokens = 1024
 
