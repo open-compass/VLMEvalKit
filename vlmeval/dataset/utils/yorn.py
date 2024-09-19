@@ -41,6 +41,7 @@ def AMBER_rating(data_file):
     ret = d2df(scores)
     return ret
 
+
 def MME_rating(data_file):
     data = load(data_file)
     stats = defaultdict(dict)
