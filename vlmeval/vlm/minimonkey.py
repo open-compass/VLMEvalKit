@@ -153,11 +153,11 @@ class MiniMonkey(BaseModel):
     def __init__(self, model_path='mx262/MiniMonkey', **kwargs):
         assert model_path is not None
         self.model_path = model_path
-
+        self.model_type = torch.bfloat16
         self.model = AutoModel.from_pretrained(
             self.model_path,
             low_cpu_mem_usage=True,
-            trust_remote_code=True).eval().cuda()
+            trust_remote_code=True).eval().to(self.model_type).cuda()
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True, use_fast=False)
 
         self.kwargs = kwargs
@@ -178,9 +178,9 @@ class MiniMonkey(BaseModel):
         image = Image.open(image_path).convert('RGB')
 
         pixel_values, target_aspect_ratio = load_image(image, min_num=4, max_num=12)
-        pixel_values = pixel_values.cuda()
+        pixel_values = pixel_values.cuda().to(self.model_type)
         pixel_values2 = load_image2(image, min_num=3, max_num=7, target_aspect_ratio=target_aspect_ratio)
-        pixel_values2 = pixel_values2.cuda()
+        pixel_values2 = pixel_values2.cuda().to(self.model_type)
         pixel_values = torch.cat([pixel_values2[:-1], pixel_values[:-1], pixel_values2[-1:]], 0)
 
         generation_config = dict(do_sample=False, max_new_tokens=512)
