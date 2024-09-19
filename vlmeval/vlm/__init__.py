@@ -5,6 +5,7 @@ torch.manual_seed(1234)
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu
+from .eagle_x import Eagle
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
 from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision
