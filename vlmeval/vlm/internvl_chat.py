@@ -222,7 +222,7 @@ class InternVLChat(BaseModel):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
         elif listinstr(['MVBench'], dataset):
-            prompt += "\nOnly give the best option."
+            prompt += '\nOnly give the best option.'
 
         return prompt
 
