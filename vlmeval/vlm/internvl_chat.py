@@ -327,15 +327,16 @@ class InternVLChat(BaseModel):
                     image_idx += 1
             prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video'], dataset):
-            prompt = self.build_video_prompt(prompt, dataset)
+        # if listinstr(['Video'], dataset):
+        #     prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+                upscale_flag = False
+                # upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
                     file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
@@ -343,7 +344,8 @@ class InternVLChat(BaseModel):
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            upscale_flag = False
+            # upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
                 image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
