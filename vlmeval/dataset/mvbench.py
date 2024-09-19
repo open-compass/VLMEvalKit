@@ -141,6 +141,8 @@ Based on your observations, select the best option that accurately addresses the
             def move_files(pth):
                 # special for mvbench/data0613 supplementary data
                 src_folder = os.path.join(pth, 'video/data0613')
+                if not os.path.exists(src_folder):
+                    return
                 for subdir in os.listdir(src_folder):
                     subdir_path = os.path.join(src_folder, subdir)
                     if os.path.isdir(subdir_path):
@@ -183,6 +185,10 @@ Based on your observations, select the best option that accurately addresses the
             Stack(),
             ToTorchFormatTensor(),
             GroupNormalize(input_mean, input_std)
+        ])
+        self.simple_transform = T.Compose([
+            Stack(),
+            ToTorchFormatTensor()
         ])
 
         return dict(root=dataset_path, data_file=data_file)
@@ -345,7 +351,7 @@ Based on your observations, select the best option that accurately addresses the
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
+            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
             assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
@@ -484,6 +490,10 @@ Based on your observations, select the best option that accurately addresses the
             ToTorchFormatTensor(),
             GroupNormalize(input_mean, input_std)
         ])
+        self.simple_transform = T.Compose([
+            Stack(),
+            ToTorchFormatTensor()
+        ])
 
         return dict(root=dataset_path, data_file=data_file)
 
@@ -572,7 +582,7 @@ Based on your observations, select the best option that accurately addresses the
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
-            model = judge_kwargs.get('model', 'exact_matching')
+            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
             assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
