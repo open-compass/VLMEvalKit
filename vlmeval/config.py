@@ -269,6 +269,16 @@ slime_series = {
     'Slime-13B': partial(SliME, model_path='yifanzhang114/SliME-vicuna-13B'),
 }
 
+eagle_series={
+    'Eagle-X4-8B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X4-8B-Plus'),
+    'Eagle-X4-13B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X4-13B-Plus'),
+    'Eagle-X5-7B': partial(Eagle, model_path='/NVEagle/Eagle-X5-7B'),
+    'Eagle-X5-13B': partial(Eagle, model_path='NVEagle/Eagle-X5-13B'),
+    'Eagle-X5-13B-Chat': partial(Eagle, model_path='NVEagle/Eagle-X5-13B-Chat'),
+    'Eagle-X5-34B-Chat': partial(Eagle, model_path='NVEagle/Eagle-X5-34B-Chat'),
+    'Eagle-X5-34B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X5-34B-Plus'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -278,7 +288,7 @@ model_groups = [
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series
+    slime_series, eagle_series
 ]
 
 for grp in model_groups:
