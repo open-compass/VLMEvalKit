@@ -223,8 +223,8 @@ def main():
                     if eval_proxy is not None:
                         proxy_set(old_proxy)
             except Exception as e:
-                logger.error(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
-                             'skipping this combination.')
+                logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
+                                 'skipping this combination.')
                 continue
 
     if world_size > 1:
