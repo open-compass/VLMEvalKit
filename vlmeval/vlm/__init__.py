@@ -13,6 +13,7 @@ from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6
 from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya, MMAlaya2
 from .monkey import Monkey, MonkeyChat
+from .moondream import Moondream1, Moondream2
 from .minimonkey import MiniMonkey
 from .mplug_owl2 import mPLUG_Owl2
 from .omnilmm import OmniLMM12B
