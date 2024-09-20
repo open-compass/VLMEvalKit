@@ -12,7 +12,7 @@ import copy
 class Moondream1(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
-    
+
     def __init__(self,
                  model_path='vikhyatk/moondream1',
                  **kwargs):
@@ -25,22 +25,25 @@ class Moondream1(BaseModel):
             please intall torchvision>=0.16.''')
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
-        self.model= AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16).to(torch.device('cuda'))
+        self.model = (
+            AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16)
+            .to(torch.device('cuda'))
+        )
         self.tokenizer = Tokenizer.from_pretrained(model_path)
 
         default_kwargs = dict(
             max_new_tokens=512,
         )
-        
+
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
-        
+
     def generate_inner(self, message, dataset=None):
         images = []
         prompt = ''
-        
+
         for s in message:
             if s['type'] == 'image':
                 images.append(s['value'])
@@ -52,7 +55,7 @@ class Moondream1(BaseModel):
 
         answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **kwargs)
         return answer
-        
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if listinstr(['MMMU'], dataset):
@@ -91,20 +94,20 @@ class Moondream1(BaseModel):
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
-        
+
 
 class Moondream2(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
 
     def __init__(self,
-                model_path='vikhyatk/moondream2',
-                **kwargs):
+                 model_path='vikhyatk/moondream2',
+                 **kwargs):
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
         except:
             warnings.warn('''Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
-            please intall torchvision>=0.16.''')  
+            please intall torchvision>=0.16.''')
         warnings.warn('''Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
         please intall torchvision>=0.16.''')
         assert osp.exists(model_path) or splitlen(model_path) == 2
@@ -116,20 +119,27 @@ class Moondream2(BaseModel):
         except ImportError:
             pass
         if flash_attn_flag:
-            self.model= AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16, attn_implementation="flash_attention_2").to(torch.device('cuda'))
+            self.model = (
+                AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16,
+                                                     attn_implementation='flash_attention_2')
+                .to(torch.device('cuda'))
+            )
         else:
-            self.model= AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16).to(torch.device('cuda'))
+            self.model = (
+                AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16)
+                .to(torch.device('cuda'))
+            )
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
-         
+
         default_kwargs = dict(
             max_new_tokens=512,
         )
-        
+
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
-         
+
     def generate_inner(self, message, dataset=None):
         images = []
         prompt = ''
@@ -138,12 +148,12 @@ class Moondream2(BaseModel):
                 images.append(s['value'])
             elif s['type'] == 'text':
                 prompt += s['value']
-                 
+
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
         answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **kwargs)
         return answer
-         
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if listinstr(['MMMU'], dataset):
