@@ -24,6 +24,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-09-20]** We have supported [**Eagle**](https://github.com/NVlabs/EAGLE), thanks to [**tackhwa**](https://github.com/tackhwa) 🔥🔥🔥
 - **[2024-09-19]** We have supported [**Ovis1.6-Gemma2-9B**](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-9B), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
 - **[2024-09-09]** We have supported [**HRBench**](https://arxiv.org/abs/2408.15556), thanks to [**DreamMr**](https://github.com/DreamMr) 🔥🔥🔥
 - **[2024-09-09]** We have supported [**SliME**](https://github.com/yfzhang114/SliME), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
@@ -110,7 +111,8 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 | [**VILA1.5-[3B/8B/13B/40B]**](https://github.com/NVlabs/VILA/)🎞️ | [**Ovis[1.5-Llama3-8B/1.5-Gemma2-9B/1.6-Gemma2-9B]**](https://github.com/AIDC-AI/Ovis) 🚅🎞️ | [**Mantis-8B-[siglip-llama3/clip-llama3/Idefics2/Fuyu]**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2) 🎞️ |
 | [**Llama-3-MixSenseV1_1**](https://huggingface.co/Zero-Vision/Llama-3-MixSenseV1_1)🚅 | [**Parrot-7B**](https://github.com/AIDC-AI/Parrot) 🚅         | [**OmChat-v2.0-13B-sinlge-beta**](https://huggingface.co/omlab/omchat-v2.0-13B-single-beta_hf)  🚅 | [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT) 🎬 |
 | [**Chat-UniVi-7B[-v1.5]**](https://github.com/PKU-YuanGroup/Chat-UniVi) 🎬 | [**LLaMA-VID-7B**](https://github.com/dvlab-research/LLaMA-VID) 🎬 | [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B) 🎬 | [**PLLaVA-[7B/13B/34B]**](https://huggingface.co/ermu2001/pllava-7b) 🎬 |
-| [**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️   |  [**xgen-mm-phi3-[interleave/dpo]-r-v1.5**](https://huggingface.co/Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5) 🚅🎞️    | [**Qwen2-VL-[2B/7B]**](https://github.com/QwenLM/Qwen2-VL)🚅🎞️   |[**slime_[7b/8b/13b]**](https://github.com/yfzhang114/SliME)🎞️     |
+| [**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️   |  [**xgen-mm-phi3-[interleave/dpo]-r-v1.5**](https://huggingface.co/Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5) 🚅🎞️    | [**Qwen2-VL-[2B/7B]**](https://github.com/QwenLM/Qwen2-VL)🚅🎞️   |[**slime_[7b/8b/13b]**](https://github.com/yfzhang114/SliME)🎞️     | 
+| [**Eagle-X4-[8B/13B]**](https://github.com/NVlabs/EAGLE)🚅🎞️, <br>[**Eagle-X5-[7B/13B/34B]**](https://github.com/NVlabs/EAGLE)🚅🎞️  |
 
 🎞️: Support multiple images as inputs.
 
