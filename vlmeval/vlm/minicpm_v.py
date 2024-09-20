@@ -292,7 +292,7 @@ class MiniCPM_V_2_6(BaseModel):
     def use_custom_prompt(self, dataset=None):
         if dataset is None:
             return False
-        if listinstr(['MCQ', 'VQA', 'Y/N'], DATASET_TYPE(dataset)):
+        if DATASET_TYPE(dataset) in ['MCQ', 'VQA', 'Y/N']:
             return True
         return False
 

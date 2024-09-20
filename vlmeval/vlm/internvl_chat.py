@@ -222,7 +222,7 @@ class InternVLChat(BaseModel):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
         elif listinstr(['MVBench'], dataset):
-            prompt += '\nOnly give the best option.'
+            prompt = prompt.replace('Best option:(', '')
 
         return prompt
 
@@ -331,7 +331,7 @@ class InternVLChat(BaseModel):
                     image_idx += 1
             prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video'], dataset):
+        if listinstr(['Video', 'MVBench'], dataset):
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
