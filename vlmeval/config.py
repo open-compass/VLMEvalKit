@@ -279,6 +279,11 @@ eagle_series={
     'Eagle-X5-34B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X5-34B-Plus'),
 }
 
+moondream_series={
+    'Moondream1': partial(Moondream1, model_path='vikhyatk/moondream1'),
+    'Moondream2': partial(Moondream2, model_path='vikhyatk/moondream2'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -288,7 +293,7 @@ model_groups = [
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series, eagle_series
+    slime_series, eagle_series, moondream_series
 ]
 
 for grp in model_groups:
