@@ -58,7 +58,7 @@ class VideoBaseDataset:
         vid = decord.VideoReader(vid_path)
         step_size = len(vid) / (num_frames + 1)
         indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-        images = [vid[i].numpy() for i in indices]
+        images = [vid[i].asnumpy() for i in indices]
         images = [Image.fromarray(arr) for arr in images]
         for im, pth in zip(images, frame_paths):
             if not osp.exists(pth):
@@ -68,7 +68,7 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video', 'Video-MME', 'MVBench']
+        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4']
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

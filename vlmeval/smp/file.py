@@ -190,10 +190,6 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
-    # If HF_ENDPOINT is set, replace huggingface.co with it
-    if 'huggingface.co' in url and os.environ.get('HF_ENDPOINT', '') != '':
-        url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'].split('://')[1])
-
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
             urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
@@ -202,7 +198,8 @@ def download_file(url, filename=None):
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
             try:
-                os.system(f'wget {url_new} -O {filename}')
+                download_file(url_new, filename)
+                return filename
             except:
                 raise Exception(f'Failed to download {url}')
         else:

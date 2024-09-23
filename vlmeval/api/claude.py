@@ -47,7 +47,7 @@ class Claude_Wrapper(BaseAPI):
         if has_images:
             content_list = []
             for msg in inputs:
-                if msg['type'] == 'text':
+                if msg['type'] == 'text' and msg['value'] != '':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     pth = msg['value']
