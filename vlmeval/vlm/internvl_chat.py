@@ -247,7 +247,7 @@ class InternVLChat(BaseModel):
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             question = line['question']
-            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet'], dataset):
+            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
                 prompt = question
             elif listinstr(['LLaVABench'], dataset):
                 prompt = question + '\nAnswer this question in detail.'

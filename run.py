@@ -157,7 +157,7 @@ def main():
                 if args.judge is not None:
                     judge_kwargs['model'] = args.judge
                 else:
-                    if dataset.TYPE in ['MCQ', 'Y/N']:
+                    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['MathVerse'], dataset_name):
                         judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'],
                                    dataset_name):

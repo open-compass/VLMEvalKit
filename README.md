@@ -73,8 +73,9 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ | [**MuirBench**](https://muirbench.github.io)+ | MUIRBench | MCQ |
 | [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**TableVQABench**](https://arxiv.org/abs/2404.19205)+ | TableVQABench | VQA |
 | [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN] | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
+| [**MathVerse**](https://mathverse-cuhk.github.io/)+ | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA |  |  |  |
 
-**\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
+d reasonable results under the zero-shot setting
 
 **\+** The evaluation results are not available yet
 

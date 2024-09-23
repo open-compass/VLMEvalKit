@@ -351,7 +351,7 @@ def EVAL(dataset_name, data_file):
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
-    if dataset.TYPE in ['MCQ', 'Y/N']:
+    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['MathVerse'], dataset_name):
         judge_kwargs['model'] = 'chatgpt-0125'
     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'
