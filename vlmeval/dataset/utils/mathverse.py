@@ -167,8 +167,7 @@ def get_acc_with_condition(res_pd, key, value):
     Calculate the accuracy of predictions with a specific condition
     """
     total_pd = res_pd[res_pd[key] == value]
-
-    correct_pd = total_pd[total_pd['score'] is True]
+    correct_pd = total_pd[total_pd['score']]
     acc = '{:.2f}'.format(len(correct_pd) / len(total_pd) * 100) if len(total_pd) > 0 else '0.00'
     return len(correct_pd), len(total_pd), acc
 
