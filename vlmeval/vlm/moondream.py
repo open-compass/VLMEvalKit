@@ -10,7 +10,7 @@ import copy
 
 
 class Moondream1(BaseModel):
-    INSTALL_REQ = True
+    INSTALL_REQ = False
     INTERLEAVE = False
 
     def __init__(self,
@@ -97,7 +97,7 @@ class Moondream1(BaseModel):
 
 
 class Moondream2(BaseModel):
-    INSTALL_REQ = True
+    INSTALL_REQ = False
     INTERLEAVE = False
 
     def __init__(self,
