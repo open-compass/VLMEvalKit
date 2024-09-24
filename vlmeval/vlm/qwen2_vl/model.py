@@ -55,8 +55,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.model_path = model_path
         self.processor = Qwen2VLProcessor.from_pretrained(model_path)
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
-        ).eval()
+            model_path, torch_dtype='auto', device='cpu', device_map='cpu', attn_implementation='flash_attention_2'
+        )
+        self.model.cuda().eval()
         torch.cuda.empty_cache()
 
     def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
