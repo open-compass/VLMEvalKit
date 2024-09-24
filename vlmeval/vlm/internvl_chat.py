@@ -270,7 +270,9 @@ class InternVLChat(BaseModel):
                            'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
-        if listinstr(res_1_datasets, dataset):
+        if dataset is None:
+            self.max_num = 6
+        elif listinstr(res_1_datasets, dataset):
             self.max_num = 1
         elif listinstr(res_12_datasets, dataset):
             self.max_num = 12
