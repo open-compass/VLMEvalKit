@@ -153,6 +153,7 @@ class InternVLChat(BaseModel):
 
         if listinstr(['InternVL2-Llama3-76B'], model_path):
             device_map = split_model(model_path.split('/')[-1])
+            self.device = 'cuda'
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
