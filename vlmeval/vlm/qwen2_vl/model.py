@@ -54,10 +54,17 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         assert model_path is not None
         self.model_path = model_path
         self.processor = Qwen2VLProcessor.from_pretrained(model_path)
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_path, torch_dtype='auto', device='cpu', device_map='cpu', attn_implementation='flash_attention_2'
-        )
-        self.model.cuda().eval()
+        if '72b' not in self.model_path.lower():
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
+            )
+            self.model.cuda().eval()
+        else:
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            )
+            self.model.cuda().eval()
+
         torch.cuda.empty_cache()
 
     def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
