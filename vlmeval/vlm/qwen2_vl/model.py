@@ -18,9 +18,19 @@ def ensure_image_url(image: str) -> str:
     raise ValueError(f'Invalid image: {image}')
 
 
+def ensure_video_url(video: str) -> str:
+    prefixes = ['http://', 'https://', 'file://', 'data:video;']
+    if any(video.startswith(prefix) for prefix in prefixes):
+        return video
+    if os.path.exists(video):
+        return 'file://' + video
+    raise ValueError(f'Invalid video: {video}')
+
+
 class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
+    VIDEO_LLM = True
 
     def __init__(
         self,
@@ -48,15 +58,24 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
+        self.fps = 2.0
 
         from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
 
         assert model_path is not None
         self.model_path = model_path
         self.processor = Qwen2VLProcessor.from_pretrained(model_path)
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
-        ).eval()
+        if '72b' not in self.model_path.lower():
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
+            )
+            self.model.cuda().eval()
+        else:
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            )
+            self.model.cuda().eval()
+
         torch.cuda.empty_cache()
 
     def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
@@ -77,6 +96,10 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                         item['min_pixels'] = self.min_pixels
                     if self.max_pixels is not None:
                         item['max_pixels'] = self.max_pixels
+            elif s['type'] == 'video':
+                item = {'type': 'video', 'video': ensure_video_url(s['value'])}
+                if self.fps is not None:
+                    item['fps'] = self.fps
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:

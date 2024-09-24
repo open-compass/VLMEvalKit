@@ -72,9 +72,11 @@ models = {
         'cogvlm-grounding-generalist', 'cogvlm-chat', 'cogvlm2-llama3-chat-19B',
         'mPLUG-Owl3'
     ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cambrian_series),
+    '4.36.2': ['Moondream1'],
     '4.40.0': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
+    '4.44.0': ['Moondream2'],
     'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6', 'glm-4v-9b'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),
     'api': list(api_models)
@@ -349,7 +351,7 @@ def EVAL(dataset_name, data_file):
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
-    if dataset.TYPE in ['MCQ', 'Y/N']:
+    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['MathVerse'], dataset_name):
         judge_kwargs['model'] = 'chatgpt-0125'
     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'

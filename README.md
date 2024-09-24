@@ -24,6 +24,10 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-09-23]** We have supported [**Moondream Series**](https://huggingface.co/vikhyatk), thanks to [**tackhwa**](https://github.com/tackhwa) 🔥🔥🔥
+- **[2024-09-23]** We have supported [**MathVerse**](https://github.com/ZrrSkywalker/MathVerse), thanks to [**CaraJ7**](https://github.com/CaraJ7) 🔥🔥🔥
+- **[2024-09-20]** We have supported [**AMBER**](https://github.com/junyangwang0410/AMBER), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
+- **[2024-09-20]** We have supported [**Eagle**](https://github.com/NVlabs/EAGLE), thanks to [**tackhwa**](https://github.com/tackhwa) 🔥🔥🔥
 - **[2024-09-19]** We have supported [**Ovis1.6-Gemma2-9B**](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-9B), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
 - **[2024-09-09]** We have supported [**HRBench**](https://arxiv.org/abs/2408.15556), thanks to [**DreamMr**](https://github.com/DreamMr) 🔥🔥🔥
 - **[2024-09-09]** We have supported [**SliME**](https://github.com/yfzhang114/SliME), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
@@ -34,9 +38,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-09-03]** In the previous 2 months, 7 new contributors have made 3+ major contributions to the project: [amitbcp](https://github.com/amitbcp), [czczup](https://github.com/czczup), [DseidLi](https://github.com/DseidLi), [mayubo233](https://github.com/mayubo233), [sun-hailong](https://github.com/sun-hailong), [PhoenixZ810](https://github.com/PhoenixZ810), [Cuiunbo](https://github.com/Cuiunbo). We will update the report accordingly in the coming weeks. Check [contributor list](/docs/en/advanced_guides/Contributors.md) for their detailed contributions 🔥🔥🔥
 - **[2024-09-03]** We have supported [**MME-RealWorld**](https://arxiv.org/abs/2408.13257), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
 - **[2024-09-02]** We have supported [**TableVQABench**](https://arxiv.org/abs/2404.19205), thanks to [**hkunzhe**](https://github.com/hkunzhe) 🔥🔥🔥
-- **[2024-08-29]** We have supported [**PLLaVA**](https://arxiv.org/abs/2404.16994), including three different sizes (7B/13B/34B)  🔥🔥🔥
-- **[2024-08-29]** We have supported [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361), thanks to [**TousenKaname**](https://github.com/TousenKaname). Reference Performance: GPT-4o-MINI achieves 42.2% Overall accuracy 🔥🔥🔥
-- **[2024-08-29]** We have supported [**MUIRBench**](https://muirbench.github.io), thanks to **amitbcp**. Reference Performance: GPT-4o-MINI achieves 64.6% Overall accuracy  🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -72,8 +73,9 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ | [**MuirBench**](https://muirbench.github.io)+ | MUIRBench | MCQ |
 | [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**TableVQABench**](https://arxiv.org/abs/2404.19205)+ | TableVQABench | VQA |
 | [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN] | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
+| [**MathVerse**](https://mathverse-cuhk.github.io/)+ | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA | [**AMBER**](https://github.com/junyangwang0410/AMBER)+ | AMBER | Y/N |
 
-**\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
+d reasonable results under the zero-shot setting
 
 **\+** The evaluation results are not available yet
 
@@ -111,6 +113,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Llama-3-MixSenseV1_1**](https://huggingface.co/Zero-Vision/Llama-3-MixSenseV1_1)🚅 | [**Parrot-7B**](https://github.com/AIDC-AI/Parrot) 🚅         | [**OmChat-v2.0-13B-sinlge-beta**](https://huggingface.co/omlab/omchat-v2.0-13B-single-beta_hf)  🚅 | [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT) 🎬 |
 | [**Chat-UniVi-7B[-v1.5]**](https://github.com/PKU-YuanGroup/Chat-UniVi) 🎬 | [**LLaMA-VID-7B**](https://github.com/dvlab-research/LLaMA-VID) 🎬 | [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B) 🎬 | [**PLLaVA-[7B/13B/34B]**](https://huggingface.co/ermu2001/pllava-7b) 🎬 |
 | [**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️   |  [**xgen-mm-phi3-[interleave/dpo]-r-v1.5**](https://huggingface.co/Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5) 🚅🎞️    | [**Qwen2-VL-[2B/7B]**](https://github.com/QwenLM/Qwen2-VL)🚅🎞️   |[**slime_[7b/8b/13b]**](https://github.com/yfzhang114/SliME)🎞️     |
+| [**Eagle-X4-[8B/13B]**](https://github.com/NVlabs/EAGLE)🚅🎞️, <br>[**Eagle-X5-[7B/13B/34B]**](https://github.com/NVlabs/EAGLE)🚅🎞️  | [**Moondream1-1.8B**](https://github.com/vikhyat/moondream)🚅, <br>[**Moondream2-1.8B**](https://github.com/vikhyat/moondream)🚅 |
 
 🎞️: Support multiple images as inputs.
 
@@ -123,9 +126,14 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 Note that some VLMs may not be able to run under certain transformer versions, we recommend the following settings to evaluate each VLM:
 
 - **Please use** `transformers==4.33.0` **for**: `Qwen series`, `Monkey series`, `InternLM-XComposer Series`, `mPLUG-Owl2`, `OpenFlamingo v2`, `IDEFICS series`, `VisualGLM`, `MMAlaya`, `ShareCaptioner`, `MiniGPT-4 series`, `InstructBLIP series`, `PandaGPT`, `VXVERSE`.
+- **Please use** `transformers==4.36.2` **for**: `Moondream1`.
 - **Please use** `transformers==4.37.0` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-[V1/V2]`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`, `Cambrian Series`, `VILA Series`, `Llama-3-MixSenseV1_1`, `Parrot-7B`, `PLLaVA Series`.
 - **Please use** `transformers==4.40.0` **for**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `360VL-70B`, `Phi-3-Vision`, `WeMM`.
 - **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`.
+- **Please use** `transformers==4.44.0` **for**: `Moondream2`.
+
+Note that some VLMs may not be able to run under certain torchvision versions, we recommend the following settings to evaluate each VLM:
+- **Please use** `torchvision>=0.16` **for**: `Moondream series`
 
 ```python
 # Demo
