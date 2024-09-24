@@ -1,6 +1,7 @@
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-import os, json
+import os
+import json
 
 
 def multimodal(images, text, url, key, temperature=0, max_tokens=1024, history=[]):
@@ -10,9 +11,9 @@ def multimodal(images, text, url, key, temperature=0, max_tokens=1024, history=[
             with open(image, 'rb') as f:
                 pic = base64.b64encode(f.read()).decode('utf-8')
             pics.append(pic)
-        data = {'images': pics, 'text': text, "key": key, "temperature": temperature, "max_new_tokens": max_tokens}
+        data = {'images': pics, 'text': text, 'key': key, 'temperature': temperature, 'max_new_tokens': max_tokens}
     else:
-        data = {'text': text, "key": key, "temperature": temperature, "max_new_tokens": max_tokens}
+        data = {'text': text, 'key': key, 'temperature': temperature, 'max_new_tokens': max_tokens}
     response = requests.post(url, json=data, headers={'Content-Type': 'application/json'})
     response = json.loads(response.text)
     return response
@@ -30,7 +31,7 @@ class BlueLMWrapper(BaseAPI):
                  system_prompt: str = None,
                  max_tokens: int = 1024,
                  key: str = None,
-                 url: str = "http://api-ai.vivo.com.cn/multimodal",
+                 url: str = 'http://api-ai.vivo.com.cn/multimodal',
                  **kwargs):
 
         self.model = model
@@ -59,7 +60,7 @@ class BlueLMWrapper(BaseAPI):
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             image = [x['value'] for x in message if x['type'] == 'image']
         else:
-            prompt = '\n'.join([x['value'] if x['type'] == 'text' else "<image>" for x in message])
+            prompt = '\n'.join([x['value'] if x['type'] == 'text' else '<image>' for x in message])
             if dataset == 'BLINK':
                 image = concat_images_vlmeval(
                     [x['value'] for x in message if x['type'] == 'image'],
@@ -67,30 +68,30 @@ class BlueLMWrapper(BaseAPI):
             else:
                 image = [x['value'] for x in message if x['type'] == 'image']
 
-        if dataset in ["MMBench_DEV_EN_V11", "MMBench_DEV_CN_V11", "MMBench_TEST_EN_V11", "MMBench_TEST_CN_V11",
-                       "AI2D_TEST", "AI2D_TEST_TO_MASK", "MMMU_DEV_VAL"]:
-            prompt = prompt.replace("Please select the correct answer from the options above.",
-                                    "Answer with the option’s letter from the given choices directly.")
-        elif dataset in ["ChartQA_TEST"]:
-            prompt = prompt.replace("Answer the question using a single word or phrase.",
-                                    "Answer the question using a single number or phrase.")
-        elif dataset in ["DocVQA_VAL", "DocVQA_TEST", ]:
-            prompt = prompt.replace("Answer the question using a single word or phrase.",
-                                    "Give the short answer directly.")
-        elif dataset in ["TextVQA_VAL", ]:
-            prompt = prompt.replace("Answer the question using a single word or phrase.",
-                                    "When the provided information is insufficient, respond with ’Unanswerable’.Answer the question using a single word or phrase.")
-        elif dataset in ["MTVQA_TEST", ]:
-            prompt = prompt.replace("\nAnswer the question using a word or phrase in the language of the question.", "")
-        elif dataset in ["MathVista_MINI"]:
-            if "Choices:" in prompt:
-                prompt = prompt.replace("Choices:", "Options:").replace("Hint:", "Context:")
-                prompt = prompt.replace("(A)", "A.").replace("(B)", "B.").replace("(C)", "C.").replace("(D)",
-                                                                                                       "D.").replace(
-                    "(E)", "E.").replace("(F)", "F.")
-                prompt += "\nAnswer with the option’s letter from the given choices directly."
+        if dataset in ['MMBench_DEV_EN_V11', 'MMBench_DEV_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_TEST_CN_V11',
+                       'AI2D_TEST', 'AI2D_TEST_TO_MASK', 'MMMU_DEV_VAL']:
+            prompt = prompt.replace('Please select the correct answer from the options above.',
+                                    'Answer with the option’s letter from the given choices directly.')
+        elif dataset in ['ChartQA_TEST']:
+            prompt = prompt.replace('Answer the question using a single word or phrase.',
+                                    'Answer the question using a single number or phrase.')
+        elif dataset in ['DocVQA_VAL', 'DocVQA_TEST', ]:
+            prompt = prompt.replace('Answer the question using a single word or phrase.',
+                                    'Give the short answer directly.')
+        elif dataset in ['TextVQA_VAL']:
+            prompt = prompt.replace('Answer the question using a single word or phrase.',
+                                    'When the provided information is insufficient, respond with ’Unanswerable’.'
+                                    'Answer the question using a single word or phrase.')
+        elif dataset in ['MTVQA_TEST']:
+            prompt = prompt.replace('\nAnswer the question using a word or phrase in the language of the question.', '')
+        elif dataset in ['MathVista_MINI']:
+            if 'Choices:' in prompt:
+                prompt = prompt.replace('Choices:', 'Options:').replace('Hint:', 'Context:')
+                for i in range(1, 7):  # replace A ~ F
+                    prompt = prompt.replace(f'({chr(64 + i)})', f'{chr(64 + i)}.')
+                prompt += '\nAnswer with the option’s letter from the given choices directly.'
             else:
-                prompt += "\nAnswer the question using a single word or phrase."
+                prompt += '\nAnswer the question using a single word or phrase.'
 
         return prompt, image
 
@@ -100,7 +101,7 @@ class BlueLMWrapper(BaseAPI):
         pure_text = np.all([x['type'] == 'text' for x in inputs])
         assert not pure_text
 
-        prompt, image_path = self.message_to_promptimg(inputs, kwargs["dataset"])
+        prompt, image_path = self.message_to_promptimg(inputs, kwargs['dataset'])
 
         try:
             response = multimodal(image_path, prompt, self.url, self.key, self.temperature, self.max_tokens)
