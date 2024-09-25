@@ -53,7 +53,7 @@ class Moondream1(BaseModel):
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
 
-        answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **kwargs)
+        answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **self.kwargs)
         return answer
 
     def use_custom_prompt(self, dataset):
@@ -151,7 +151,7 @@ class Moondream2(BaseModel):
 
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
-        answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **kwargs)
+        answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **self.kwargs)
         return answer
 
     def use_custom_prompt(self, dataset):
