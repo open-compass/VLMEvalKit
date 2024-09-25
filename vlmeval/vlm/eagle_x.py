@@ -29,8 +29,9 @@ class Eagle(BaseModel):
         assert osp.exists(model_path) or splitlen(model_path) == 2
         model_name = get_model_name_from_path(model_path)
         self.tokenizer, self.model, self.image_processor, self.context_len = (
-            load_pretrained_model(model_path, None, model_name, False, False)
+            load_pretrained_model(model_path, None, model_name, False, False, device='cpu')
         )
+        self.model.cuda().eval()
         self.conv_mode = 'vicuna_v1'
 
         default_kwargs = dict(
@@ -84,7 +85,7 @@ class Eagle(BaseModel):
         prompt = conv.get_prompt()
         images = [Image.open(s).convert('RGB') for s in images]
 
-        image_tensor = process_images(images, self.image_processor, self.model.config)[0]
+        image_tensor = process_images(images, self.image_processor, self.model.config)
         input_ids = tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt')
         input_ids = input_ids.to(device='cuda', non_blocking=True)
         image_tensor = image_tensor.to(dtype=torch.float16, device='cuda', non_blocking=True)
@@ -92,7 +93,7 @@ class Eagle(BaseModel):
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids.unsqueeze(0),
-                images=image_tensor.unsqueeze(0),
+                images=image_tensor,
                 image_sizes=[img.size for img in images],
                 **kwargs
             )
