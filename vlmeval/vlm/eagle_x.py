@@ -59,6 +59,7 @@ class Eagle(BaseModel):
             you can install it from "https://github.com/NVlabs/EAGLE.git"''')
             sys.exit(-1)
 
+        kwargs = {}
         if dataset is not None:
             kwargs = self.kwargs
 
