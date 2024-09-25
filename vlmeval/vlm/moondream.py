@@ -53,8 +53,10 @@ class Moondream1(BaseModel):
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
 
-        answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **self.kwargs)
-        return answer
+        prompt_wtmpl = prompt = f'<image>\n\n{chat_history}Question: {question}\n\nAnswer: '
+        answer = self.model.generate(enc_image, prompt_wtmpl, eos_text='<END>', tokenizer=tokenizer, **self.kwargs)[0]
+        cleaned_answer = re.sub('<$', '', re.sub('END$', '', answer)).strip()
+        return cleaned_answer
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -151,8 +153,11 @@ class Moondream2(BaseModel):
 
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
-        answer = self.model.answer_question(enc_image, prompt, self.tokenizer, **self.kwargs)
-        return answer
+
+        prompt_wtmpl = prompt = f'<image>\n\n{chat_history}Question: {question}\n\nAnswer: '
+        answer = self.model.generate(enc_image, prompt_wtmpl, eos_text='<END>', tokenizer=tokenizer, **self.kwargs)[0]
+        cleaned_answer = re.sub('<$', '', re.sub('END$', '', answer)).strip()
+        return cleaned_answer
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
