@@ -53,7 +53,7 @@ class Moondream1(BaseModel):
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
 
-        prompt_wtmpl = prompt = f'<image>\n\n{chat_history}Question: {question}\n\nAnswer: '
+        prompt_wtmpl = prompt = f'<image>\n\nQuestion: {question}\n\nAnswer: '
         answer = self.model.generate(enc_image, prompt_wtmpl, eos_text='<END>', tokenizer=tokenizer, **self.kwargs)[0]
         cleaned_answer = re.sub('<$', '', re.sub('END$', '', answer)).strip()
         return cleaned_answer
@@ -154,7 +154,7 @@ class Moondream2(BaseModel):
         images = [Image.open(s) for s in images]
         enc_image = self.model.encode_image(images[0])
 
-        prompt_wtmpl = prompt = f'<image>\n\n{chat_history}Question: {question}\n\nAnswer: '
+        prompt_wtmpl = prompt = f'<image>\n\nQuestion: {prompt}\n\nAnswer: '
         answer = self.model.generate(enc_image, prompt_wtmpl, eos_text='<END>', tokenizer=tokenizer, **self.kwargs)[0]
         cleaned_answer = re.sub('<$', '', re.sub('END$', '', answer)).strip()
         return cleaned_answer
