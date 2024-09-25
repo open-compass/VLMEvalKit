@@ -9,10 +9,12 @@ from .glm_vision import GLMVisionAPI
 from .cloudwalk import CWWrapper
 from .sensechat_vision import SenseChatVisionAPI
 from .hunyuan import HunyuanVision
+from .lmdeploy import LMDeployAPI
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V',
     'GeminiProVision', 'QwenVLWrapper', 'QwenVLAPI', 'QwenAPI',
     'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI',
-    'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI'
+    'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI',
+    'LMDeployAPI'
 ]

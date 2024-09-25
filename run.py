@@ -35,6 +35,8 @@ def parse_args():
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Rerun: will remove all evaluation temp files
     parser.add_argument('--rerun', action='store_true')
+    # Using LMDeploy
+    parser.add_argument('--use-lmdeploy-api', action='store_true', help='Using lmdeploy api.')
     args = parser.parse_args()
     return args
 
@@ -66,7 +68,12 @@ def main():
     for _, model_name in enumerate(args.model):
         model = None
 
-        pred_root = osp.join(args.work_dir, model_name)
+        if args.use_lmdeploy_api:
+            pred_root = osp.join(args.work_dir, 'lmdeploy', model_name)
+            from functools import partial
+            supported_VLM['lmdeploy'] = partial(supported_VLM['lmdeploy'], model_name=model_name)
+        else:
+            pred_root = osp.join(args.work_dir, model_name)
         os.makedirs(pred_root, exist_ok=True)
 
         for _, dataset_name in enumerate(args.data):
@@ -115,6 +122,8 @@ def main():
 
                 if model is None:
                     model = model_name  # which is only a name
+                    if args.use_lmdeploy_api:
+                        model = 'lmdeploy'
 
                 # Perform the Inference
                 if dataset.MODALITY == 'VIDEO':
