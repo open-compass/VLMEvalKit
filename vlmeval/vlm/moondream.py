@@ -1,4 +1,5 @@
 import torch
+import re
 from PIL import Image
 from abc import abstractproperty
 import sys
