@@ -29,6 +29,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-09-20]** We have supported [**AMBER**](https://github.com/junyangwang0410/AMBER), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
 - **[2024-09-20]** We have supported [**Eagle**](https://github.com/NVlabs/EAGLE), thanks to [**tackhwa**](https://github.com/tackhwa) 🔥🔥🔥
 - **[2024-09-19]** We have supported [**Ovis1.6-Gemma2-9B**](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-9B), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
+- **[2024-09-13]** We have supported [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE), thanks to [**ttguoguo3**](https://github.com/ttguoguo3) 🔥🔥🔥
 - **[2024-09-09]** We have supported [**HRBench**](https://arxiv.org/abs/2408.15556), thanks to [**DreamMr**](https://github.com/DreamMr) 🔥🔥🔥
 - **[2024-09-09]** We have supported [**SliME**](https://github.com/yfzhang114/SliME), thanks to [**Yifan zhang**](https://github.com/yfzhang114) 🔥🔥🔥
 - **[2024-09-07]** We have supported [**mPLUG-Owl3**](https://github.com/X-PLUG/mPLUG-Owl), thanks to [**SYuan03**](https://github.com/SYuan03) 🔥🔥🔥
@@ -74,6 +75,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**TableVQABench**](https://arxiv.org/abs/2404.19205)+ | TableVQABench | VQA |
 | [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN] | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
 | [**MathVerse**](https://mathverse-cuhk.github.io/)+ | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA | [**AMBER**](https://github.com/junyangwang0410/AMBER)+ | AMBER | Y/N |
+| [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+ | CRPE_[EXIST/RELATION] | VQA |  |  |  |
 
 d reasonable results under the zero-shot setting
 
