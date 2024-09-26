@@ -142,8 +142,10 @@ class Mantis(BaseModel):
             answer = answer.split('<|im_end|>')[0].strip()
         elif '<|eot_id|>' in answer:
             answer = answer.split('<|eot_id|>')[0].strip()
-        elif '<end_of_utterance>':
+        elif '<end_of_utterance>' in answer:
             answer = answer.split('<end_of_utterance>')[0].strip()
+        elif '|ENDOFTEXT|' in answer:
+            answer = answer.split('|ENDOFTEXT|')[0].strip()
         return answer
 
     def generate_inner(self, message, dataset=None):
@@ -174,7 +176,7 @@ class Mantis(BaseModel):
                 ]
             else:
                 conv = self.default_conv
-                terminators = None
+                terminators = [self.processor.tokenizer.eos_token_id]
 
             # Using EOT because end of *text* is more accurate for what we're doing than end of *sentence*
             if 'eos_token_id' not in self.kwargs:

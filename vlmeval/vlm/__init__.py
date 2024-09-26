@@ -5,6 +5,7 @@ torch.manual_seed(1234)
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu
+from .eagle_x import Eagle
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
 from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision
@@ -12,11 +13,14 @@ from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6
 from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya, MMAlaya2
 from .monkey import Monkey, MonkeyChat
+from .moondream import Moondream1, Moondream2
+from .minimonkey import MiniMonkey
 from .mplug_owl2 import mPLUG_Owl2
 from .omnilmm import OmniLMM12B
 from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
 from .qwen_vl import QwenVL, QwenVLChat
+from .qwen2_vl import Qwen2VLChat
 from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
@@ -32,10 +36,15 @@ from .phi3_vision import Phi3Vision, Phi3_5Vision
 from .wemm import WeMM
 from .cambrian import Cambrian
 from .chameleon import Chameleon
-from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID
+from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID, VideoChat2_HD, PLLaVA
 from .vila import VILA
-from .ovis import Ovis
+from .ovis import Ovis, Ovis1_6
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
 from .omchat import OmChat
+from .rbdash import RBDash
+from .xgen_mm import XGenMM
+from .slime import SliME
+from .mplug_owl3 import mPLUG_Owl3
+from .pixtral import Pixtral

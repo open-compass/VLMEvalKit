@@ -3,10 +3,13 @@ import warnings
 from .image_base import img_root_map, ImageBaseDataset
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
-from .image_mcq import ImageMCQDataset, MMMUDataset, CustomMCQDataset, GMAIMMBenchDataset
+from .image_mcq import (
+    ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset
+)
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, CustomVQADataset
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
+    CustomVQADataset, CRPE, MathVerse
 )
 
 from .vcr import VCRDataset
@@ -110,8 +113,9 @@ class ConcatDataset(ImageBaseDataset):
 # Add new supported dataset class here
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
-    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, GMAIMMBenchDataset
+    MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
+    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse
 ]
 
 VIDEO_DATASET = [
@@ -134,7 +138,7 @@ for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
 
 
-def DATASET_TYPE(dataset):
+def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
             if hasattr(cls, 'TYPE'):
@@ -146,10 +150,10 @@ def DATASET_TYPE(dataset):
         assert np.all([x == TYPES[0] for x in TYPES]), (dataset_list, TYPES)
         return TYPES[0]
 
-    dataset = build_dataset(dataset)
-    if dataset is not None:
-        return dataset.TYPE
-    return None
+    if 'openended' in dataset.lower():
+        return 'VQA'
+    warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as {default}. ')
+    return default
 
 
 def build_dataset(dataset_name, **kwargs):

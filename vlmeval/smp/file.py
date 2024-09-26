@@ -145,7 +145,7 @@ def dump(data, f, **kwargs):
     return handlers[suffix](data, f, **kwargs)
 
 
-def load(f):
+def load(f, fmt=None):
     def load_pkl(pth):
         return pickle.load(open(pth, 'rb'))
 
@@ -170,6 +170,9 @@ def load(f):
         return pd.read_csv(f, sep='\t')
 
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
+    if fmt is not None:
+        return handlers[fmt](f)
+
     suffix = f.split('.')[-1]
     return handlers[suffix](f)
 
@@ -187,10 +190,6 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
-    # If HF_ENDPOINT is set, replace huggingface.co with it
-    if 'huggingface.co' in url and os.environ.get('HF_ENDPOINT', '') != '':
-        url = url.replace('huggingface.co', os.environ['HF_ENDPOINT'].split('://')[1])
-
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
             urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
@@ -199,7 +198,8 @@ def download_file(url, filename=None):
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
             try:
-                os.system(f'wget {url_new} -O {filename}')
+                download_file(url_new, filename)
+                return filename
             except:
                 raise Exception(f'Failed to download {url}')
         else:
