@@ -4,6 +4,7 @@ import os.path as osp
 import sys
 from .base import BaseModel
 from ..smp import *
+from ..dataset import DATASET_TYPE
 
 
 class llama_vision(BaseModel):
@@ -24,6 +25,9 @@ class llama_vision(BaseModel):
             device_map='auto',
         )
         self.processor = AutoProcessor.from_pretrained(model_path)
+        kwargs_default = dict(do_sample=False, max_new_tokens=512, temperature=0.0, top_p=None, num_beams=1)
+        kwargs.update(kwargs_default)
+        print(f'Following kwargs received: {kwargs}, will use as generation config. ')
         self.kwargs = kwargs
 
     def generate_inner(self, message, dataset=None):
@@ -38,5 +42,9 @@ class llama_vision(BaseModel):
         ]
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
         inputs = self.processor(image, input_text, return_tensors='pt').to(self.model.device)
-        output = self.model.generate(**inputs, max_new_tokens=512)
+        if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'Y/N':
+            self.kwargs['max_new_tokens'] = 128
+        else:
+            self.kwargs['max_new_tokens'] = 512
+        output = self.model.generate(**inputs, **self.kwargs)
         return self.processor.decode(output[0][inputs['input_ids'].shape[1]:]).replace('<|eot_id|>', '')
