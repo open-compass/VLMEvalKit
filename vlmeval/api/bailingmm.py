@@ -5,7 +5,7 @@ from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp.vlm import encode_image_file_to_base64
 import time
 
-class BailingMMWrapper(BaseAPI):
+class bailingMMWrapper(BaseAPI):
 
     is_api: bool = True
 
@@ -21,10 +21,10 @@ class BailingMMWrapper(BaseAPI):
                  **kwargs):
 
         self.model = model
-        self.fail_msg = 'Failed to obtain answer via BailingMM API.'
+        self.fail_msg = 'Failed to obtain answer via bailingMM API.'
         if key is None:
             key = os.environ.get('BAILINGMM_API_KEY', None)
-        assert key is not None, ('Please set the API Key for BailingMM.')
+        assert key is not None, ('Please set the API Key for bailingMM.')
         self.key = key
         self.headers = {"Content-Type": "application/json"}
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
@@ -83,7 +83,7 @@ class BailingMMWrapper(BaseAPI):
             return -1, self.fail_msg, ''
 
 
-class BailingMMAPI(BailingMMWrapper):
+class bailingMMAPI(bailingMMWrapper):
 
     def generate(self, message, dataset=None):
-        return super(BailingMMAPI, self).generate(message, dataset=dataset)
+        return super(bailingMMAPI, self).generate(message, dataset=dataset)
