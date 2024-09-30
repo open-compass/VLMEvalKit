@@ -84,7 +84,7 @@ api_models = {
     # SenseChat-V
     'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
-    'BailingMM': partial(bailingMMAPI, model='bailingMM-mini', temperature=0, retry=10),
+    'bailingMM': partial(bailingMMAPI, model='bailingMM-mini', temperature=0, retry=10),
 }
 
 mmalaya_series = {
