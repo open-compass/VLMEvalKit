@@ -409,12 +409,10 @@ class GMAIMMBenchDataset(ImageMCQDataset):
         'GMAI_mm_bench_TEST_part_11': 'd08dc813f0eb6bbab63cae2a9d113c4b',
     }
 
-
     @classmethod
     def supported_datasets(cls):
         return ['GMAI-MMBench_VAL', 'GMAI-MMBench_TEST']
     
-
     def load_data(self, dataset):
         if dataset == 'GMAI-MMBench_VAL':
             data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
