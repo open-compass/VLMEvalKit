@@ -412,7 +412,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
     @classmethod
     def supported_datasets(cls):
         return ['GMAI-MMBench_VAL', 'GMAI-MMBench_TEST']
-    
+
     def load_data(self, dataset):
         if dataset == 'GMAI-MMBench_VAL':
             data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
@@ -425,7 +425,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
             return load(data_path)
         elif dataset == 'GMAI-MMBench_TEST':
             dfs = []
-            for part_num in range(1, 12): 
+            for part_num in range(1, 12):
                 part_name = f'GMAI_mm_bench_TEST_part_{part_num}'
                 url = self.DATASET_URL[part_name]
                 file_md5 = self.DATASET_MD5.get(part_name)
