@@ -522,8 +522,8 @@ class MMNIAH(ImageBaseDataset):
         lines = [data.iloc[i] for i in range(lt)]
         for i in tqdm(range(len(lines))):
             line = lines[i]
-            predict = str(line['prediction'])
-            answers = str(line['answer'])
+            predict = line['prediction']
+            answers = line['answer']
             # print("predict =", predict)
             # print("answers =", answers)
             category = line['category']
