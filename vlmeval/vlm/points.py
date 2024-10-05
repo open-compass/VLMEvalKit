@@ -18,17 +18,17 @@ class POINTS(BaseModel):
     series of multimodal models, known as WePOINTS.
 
     Args:
-        model_name_or_path (str): The path or the name (the unique huggingface id) of the model.
+        model_path (str): The path or the name (the unique huggingface id) of the model.
     """
 
-    def __init__(self, model_name_or_path: str, **kwargs) -> None:
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name_or_path,
+    def __init__(self, model_path: str, **kwargs) -> None:
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model = AutoModelForCausalLM.from_pretrained(model_path,
                                                           trust_remote_code=True,  # noqa
                                                           device_map='cuda'
                                                           ).to(torch.bfloat16)
         self.image_processor = CLIPImageProcessor.from_pretrained(
-            model_name_or_path)
+            model_path)
 
     def use_custom_prompt(self, dataset: str) -> bool:
         """Whether to use custom prompt for the dataset.
