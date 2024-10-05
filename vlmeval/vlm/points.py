@@ -14,8 +14,8 @@ class POINTS(BaseModel):
     """Official implementation of POINTS: Improving Your Vision-language Model with Affordable Strategies # noqa
 
     Paper link: https://arxiv.org/abs/2409.04828
-    POINTS is a vision-language model developed by researchers from WeChat AI. The existing model is the first version
-    of our series of multimodal models, called WePOINTS.
+    POINTS is a vision-language model developed by researchers at WeChat AI. This model represents the inaugural version in our
+    series of multimodal models, known as WePOINTS.
 
     Args:
         model_name_or_path (str): The path or the name (the unique huggingface id) of the model.
