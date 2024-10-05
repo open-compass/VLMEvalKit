@@ -16,9 +16,9 @@ RBDash_ROOT = None
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 video_models = {
-    'Video-LLaVA-7B':partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
-    'Video-LLaVA-7B-HF':partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf'),
-    'VideoChat2-HD':partial(VideoChat2_HD, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B', root=VideoChat2_ROOT, config_file='./vlmeval/vlm/video_llm/configs/videochat2_hd.json'),
+    'Video-LLaVA-7B': partial(VideoLLaVA, model_path='LanguageBind/Video-LLaVA-7B'),
+    'Video-LLaVA-7B-HF': partial(VideoLLaVA_HF, model_path='LanguageBind/Video-LLaVA-7B-hf'),
+    'VideoChat2-HD': partial(VideoChat2_HD, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B', root=VideoChat2_ROOT, config_file='./vlmeval/vlm/video_llm/configs/videochat2_hd.json'),
     'Chat-UniVi-7B': partial(Chatunivi, model_path="Chat-UniVi/Chat-UniVi"),
     'Chat-UniVi-7B-v1.5': partial(Chatunivi, model_path="Chat-UniVi/Chat-UniVi-7B-v1.5"),
     'LLaMA-VID-7B': partial(LLaMAVID, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1'),
@@ -60,7 +60,8 @@ api_models = {
     'GPT4o_20240806': partial(GPT4V, model='gpt-4o-2024-08-06', temperature=0, img_size=-1, img_detail='high', retry=10),
     'GPT4o_MINI': partial(GPT4V, model='gpt-4o-mini-2024-07-18', temperature=0, img_size=-1, img_detail='high', retry=10),
     # Gemini
-    'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),  # now GeminiPro1-0 is only supported by vertex backend
+    # now GeminiPro1-0 is only supported by vertex backend
+    'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),
     'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
     'GeminiFlash1-5': partial(GeminiProVision, model='gemini-1.5-flash', temperature=0, retry=10),
     # Qwen-VL
@@ -272,7 +273,7 @@ slime_series = {
     'Slime-13B': partial(SliME, model_path='yifanzhang114/SliME-vicuna-13B'),
 }
 
-eagle_series={
+eagle_series = {
     'Eagle-X4-8B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X4-8B-Plus'),
     'Eagle-X4-13B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X4-13B-Plus'),
     'Eagle-X5-7B': partial(Eagle, model_path='NVEagle/Eagle-X5-7B'),
@@ -282,12 +283,12 @@ eagle_series={
     'Eagle-X5-34B-Plus': partial(Eagle, model_path='NVEagle/Eagle-X5-34B-Plus'),
 }
 
-moondream_series={
+moondream_series = {
     'Moondream1': partial(Moondream1, model_path='vikhyatk/moondream1'),
     'Moondream2': partial(Moondream2, model_path='vikhyatk/moondream2'),
 }
 
-llama_series={
+llama_series = {
     'Llama-3.2-11B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct'),
     'Llama-3.2-90B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-90B-Vision-Instruct'),
 }
@@ -295,6 +296,11 @@ llama_series={
 kosmos_series={
     'Kosmos2': partial(Kosmos2, model_path='/root/kosmos-2-patch14-224')
 }
+
+points_series = {
+    'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='to_be_determined/POINTS-Yi-1.5-9B-Chat'),
+}
+
 
 supported_VLM = {}
 
@@ -305,7 +311,8 @@ model_groups = [
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series, eagle_series, moondream_series, llama_series, kosmos_series
+    slime_series, eagle_series, moondream_series, llama_series, kosmos_series,
+    points_series
 ]
 
 for grp in model_groups:
