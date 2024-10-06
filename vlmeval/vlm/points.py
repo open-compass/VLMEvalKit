@@ -22,7 +22,8 @@ class POINTS(BaseModel):
     """
 
     def __init__(self, model_path: str, **kwargs) -> None:
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_path, use_fast=False)
         self.model = AutoModelForCausalLM.from_pretrained(model_path,
                                                           trust_remote_code=True,  # noqa
                                                           device_map='cuda'
