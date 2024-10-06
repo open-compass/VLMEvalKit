@@ -1,5 +1,6 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import CLIPImageProcessor
+import transformers
 from PIL import Image
 import torch
 from .base import BaseModel
@@ -22,6 +23,8 @@ class POINTS(BaseModel):
     """
 
     def __init__(self, model_path: str, **kwargs) -> None:
+        version = transformers.__version__
+        assert version == '4.38.2', f'The version of transformers should be 4.38.2, but got {version}.'  # noqa
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path, use_fast=False)
         self.model = AutoModelForCausalLM.from_pretrained(model_path,
