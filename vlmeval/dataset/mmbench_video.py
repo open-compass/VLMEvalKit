@@ -57,7 +57,7 @@ Please analyze these images and provide the answer to the question about the vid
 Please directly reply with your response to the only question.
 """
 
-    TYPE = 'VQA'
+    TYPE = 'Video-VQA'
 
     def __init__(self, dataset='MMBench-Video', pack=False):
         super().__init__(dataset=dataset, pack=pack)

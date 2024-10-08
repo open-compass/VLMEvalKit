@@ -17,7 +17,7 @@ VLMEvalKit 上手路线
    :maxdepth: 1
    :caption: 开始你的第一步
 
-   get_started/Quickstart_zh-CN.md
+   get_started/Quickstart.md
 
 
 .. .. _教程:
@@ -32,7 +32,7 @@ VLMEvalKit 上手路线
    :maxdepth: 1
    :caption: 进阶教程
 
-   advanced_guides/Development_zh-CN.md
+   advanced_guides/Development.md
 
 .. .. _其他说明:
 .. .. toctree::

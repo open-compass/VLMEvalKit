@@ -12,6 +12,7 @@ import torchvision.transforms as T
 import transformers
 
 from torchvision.transforms.functional import InterpolationMode
+import re
 
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
@@ -137,8 +138,22 @@ class InternVLChat(BaseModel):
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
+        # Regular expression to match the pattern 'Image' followed by a number, e.g. Image1
+        self.pattern = r'Image(\d+)'
+        # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
+        self.replacement = r'Image-\1'
+
+        # Convert InternVL2 response to dataset format
+        # e.g. Image1 -> Image-1
+
+        # Regular expression to match the pattern 'Image-' followed by a number
+        self.reverse_pattern = r'Image-(\d+)'
+        # Replacement pattern to remove the hyphen (Image-1 -> Image1)
+        self.reverse_replacement = r'Image\1'
+
         if listinstr(['InternVL2-Llama3-76B'], model_path):
             device_map = split_model(model_path.split('/')[-1])
+            self.device = 'cuda'
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
@@ -159,11 +174,22 @@ class InternVLChat(BaseModel):
 
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
-        self.kwargs = kwargs
+        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-        return True
+        assert dataset is not None
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+            # For Multi-Turn we don't have custom prompt
+            return False
+        if listinstr(['MMBench-Video', 'Video-MME', 'MVBench', 'Video'], dataset):
+            # For Video benchmarks we don't have custom prompt at here
+            return False
+        else:
+            return True
 
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
@@ -188,18 +214,20 @@ class InternVLChat(BaseModel):
 
         return prompt
 
-    def build_video_prompt(self, prompt, dataset=None, max_nframe=64):
-        for start in range(0, max_nframe, 8):
-            images_to_remove = ''.join([f'<image-{i}>' for i in range(start + 1, start + 9)])
+    def build_video_prompt(self, prompt, dataset=None, max_frames=64):
+        for start in range(0, max_frames, 8):
+            images_to_remove = ''.join([f'<Image-{i}>' for i in range(start + 1, start + 9)])
             prompt = prompt.replace(images_to_remove, '')
-        for i in range(max_nframe):
-            prompt = prompt.replace(f'<image-{i + 1}>', f'Frame{i + 1}')
+        for i in range(max_frames):
+            prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
         if listinstr(['MMBench-Video'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
-            prompt += '\nAnswer the question using a single word or phrase.'
         elif listinstr(['Video-MME'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
+        elif listinstr(['MVBench'], dataset):
+            prompt = prompt.replace('Best option:(', '')
+
         return prompt
 
     def build_prompt(self, line, dataset=None):
@@ -213,24 +241,21 @@ class InternVLChat(BaseModel):
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
 
-        if dataset is not None and listinstr(['MME'], dataset):
+        if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
-            prompt = question + ' Answer the question using a single word or phrase.'
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):
-            question = line['question']
-            prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            if listinstr(['MME'], dataset):
+                prompt = question + ' Answer the question using a single word or phrase.'
+            elif listinstr(['HallusionBench'], dataset):
+                prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['MathVista', 'MathVision'], dataset):
-                prompt = line['question']
+            question = line['question']
+            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
+                prompt = question
             elif listinstr(['LLaVABench'], dataset):
-                question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
-            elif listinstr(['MMVet'], dataset):
-                prompt = line['question']
             else:
-                question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             prompt = line['question']
@@ -239,14 +264,20 @@ class InternVLChat(BaseModel):
         return message
 
     def set_max_num(self, dataset):
-        if dataset is not None and listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL'], dataset):
-            self.max_num = 12
-        elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
-            self.max_num = 18
-        elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
-            self.max_num = 24
-        elif dataset is not None and listinstr(['MMBench-Video', 'Video-MME', 'Video'], dataset):
+        assert dataset is not None
+        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
+        res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
+                           'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
+        res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
+        res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
+        if listinstr(res_1_datasets, dataset):
             self.max_num = 1
+        elif listinstr(res_12_datasets, dataset):
+            self.max_num = 12
+        elif listinstr(res_18_datasets, dataset):
+            self.max_num = 18
+        elif listinstr(res_24_datasets, dataset):
+            self.max_num = 24
         else:
             self.max_num = 6
 
@@ -274,11 +305,11 @@ class InternVLChat(BaseModel):
             image_path = [x['value'] for x in message if x['type'] == 'image']
             pixel_values_list = []
             for file_name in image_path:
-                pixel_values_list.append(load_image(file_name, max_num=self.max_num).cuda().to(torch.bfloat16))
+                pixel_values_list.append(load_image(file_name, max_num=self.max_num).to(self.device).to(torch.bfloat16))
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            pixel_values = load_image(image_path, max_num=self.max_num).cuda().to(torch.bfloat16)
+            pixel_values = load_image(image_path, max_num=self.max_num).to(self.device).to(torch.bfloat16)
         else:
             pixel_values = None
         with torch.no_grad():
@@ -300,11 +331,11 @@ class InternVLChat(BaseModel):
                 if x['type'] == 'text':
                     prompt += x['value']
                 elif x['type'] == 'image':
-                    prompt += f'<image-{image_idx}>'
+                    prompt += f'<Image-{image_idx}>'
                     image_idx += 1
-            prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
+            prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video'], dataset):
+        if listinstr(['Video', 'MVBench'], dataset):
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -314,7 +345,7 @@ class InternVLChat(BaseModel):
             for image_idx, file_name in enumerate(image_path):
                 upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
-                    file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                    file_name, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
@@ -322,7 +353,7 @@ class InternVLChat(BaseModel):
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
             upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
-                image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
@@ -350,3 +381,101 @@ class InternVLChat(BaseModel):
             return self.generate_v2(message, dataset)
         else:
             raise ValueError(f'Unsupported version: {self.version}')
+
+    def build_history(self, message):
+        # Global Variables
+        image_path = []
+        image_cnt = 0
+
+        def concat_tilist(tilist):
+            nonlocal image_cnt  # Declare image_cnt as nonlocal to modify it
+            prompt = ''
+            for item in tilist:
+                # Substitute the pattern in the text
+                if item['type'] == 'text':
+                    prompt += re.sub(self.pattern, self.replacement, item['value'])
+                elif item['type'] == 'image':
+                    image_cnt += 1
+                    prompt += '<image>\n'
+                    image_path.append(item['value'])
+            return prompt
+
+        # Only previous messages
+        assert len(message) % 2 == 0
+        history = []
+        for i in range(len(message) // 2):
+            m1, m2 = message[2 * i], message[2 * i + 1]
+            assert m1['role'] == 'user' and m2['role'] == 'assistant'
+            history.append((concat_tilist(m1['content']), concat_tilist(m2['content'])))
+
+        return history, image_path, image_cnt
+
+    def chat_inner_v2(self, message, dataset=None):
+
+        image_cnt = 0
+        if len(message) > 1:
+            history, image_path, image_cnt = self.build_history(message[:-1])
+        else:
+            history, image_path, image_cnt = None, [], 1
+        current_msg = message[-1]
+        question = ''
+
+        # If message is just text in the conversation
+        if len(current_msg['content']) == 1 and current_msg['content'][0]['type'] == 'text':
+            question = current_msg['content'][0]['value']
+            question = re.sub(self.pattern, self.replacement, question)  # Fix pattern as per InternVL
+        else:
+            for msg in current_msg['content']:
+                if msg['type'] == 'text':
+                    question += re.sub(self.pattern, self.replacement, msg['value'])
+                elif msg['type'] == 'image':
+                    image_cnt += 1
+                    question += '<image>\n'
+                    image_path.append(msg['value'])
+
+        if image_cnt > 1:
+            num_patches_list = []
+            pixel_values_list = []
+            for image_idx, file_name in enumerate(image_path):
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+                curr_pixel_values = load_image(
+                    file_name, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
+                num_patches_list.append(curr_pixel_values.size(0))
+                pixel_values_list.append(curr_pixel_values)
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_cnt == 1:
+            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            pixel_values = load_image(
+                image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
+            num_patches_list = [pixel_values.size(0)]
+        else:
+            pixel_values = None
+            num_patches_list = []
+
+        response, history = self.model.chat(
+            self.tokenizer,
+            pixel_values=pixel_values,
+            num_patches_list=num_patches_list,
+            question=question,
+            generation_config=self.kwargs,
+            history=history,
+            return_history=True
+        )
+
+        response = re.sub(self.reverse_pattern, self.reverse_replacement, response)
+
+        return response
+
+    def chat_inner(self, message, dataset=None):
+        self.set_max_num(dataset)
+
+        if self.version in ['V1.1', 'V1.2']:
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
+        elif self.version == 'V1.5':
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')
+        elif self.version == 'V2.0':
+            kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
+            self.kwargs = kwargs_default
+            return self.chat_inner_v2(message, dataset)
+        else:
+            raise ValueError(f'Unsupported version for Multi-Turn: {self.version}')

@@ -49,7 +49,8 @@ dataset_levels = {
         ('MMBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('CCBench', 'acc.csv'),
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
         ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
-        ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv')
+        ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv'), ('MTVQA_TEST', 'acc.json'),
+        ('Q-Bench1_VAL', 'acc.csv'), ('A-Bench_VAL', 'acc.csv')
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
@@ -68,11 +69,15 @@ models = {
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
-    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
+        'cogvlm-grounding-generalist', 'cogvlm-chat', 'cogvlm2-llama3-chat-19B',
+        'mPLUG-Owl3'
+    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cambrian_series),
+    '4.36.2': ['Moondream1'],
     '4.40.0': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
-    'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6'] + [x for x in llava_series if 'next' in x]
+    '4.44.0': ['Moondream2'],
+    'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6', 'glm-4v-9b'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),
     'api': list(api_models)
 }
@@ -96,14 +101,14 @@ LARGE_MODELS = [
 
 
 def completed(m, d, suf):
-    score_file = f'{m}/{m}_{d}_{suf}'
+    score_file = f'outputs/{m}/{m}_{d}_{suf}'
     if osp.exists(score_file):
         return True
     if d == 'MMBench':
-        s1, s2 = f'{m}/{m}_MMBench_DEV_EN_{suf}', f'{m}/{m}_MMBench_TEST_EN_{suf}'
+        s1, s2 = f'outputs/{m}/{m}_MMBench_DEV_EN_{suf}', f'outputs/{m}/{m}_MMBench_TEST_EN_{suf}'
         return osp.exists(s1) and osp.exists(s2)
     elif d == 'MMBench_CN':
-        s1, s2 = f'{m}/{m}_MMBench_DEV_CN_{suf}', f'{m}/{m}_MMBench_TEST_CN_{suf}'
+        s1, s2 = f'outputs/{m}/{m}_MMBench_DEV_CN_{suf}', f'outputs/{m}/{m}_MMBench_TEST_CN_{suf}'
         return osp.exists(s1) and osp.exists(s2)
     return False
 
@@ -114,6 +119,10 @@ def DLIST(lvl):
 
 
 def MLIST(lvl, size='all'):
+    if lvl == 'all':
+        from vlmeval.config import supported_VLM
+        return [x for x in supported_VLM]
+
     model_list = models[lvl]
     if size == 'small':
         model_list = [m for m in model_list if m not in LARGE_MODELS]
@@ -125,7 +134,7 @@ def MLIST(lvl, size='all'):
 def MISSING(lvl):
     from vlmeval.config import supported_VLM
     models = list(supported_VLM)
-    models = [m for m in models if m not in SKIP_MODELS and osp.exists(m)]
+    models = [m for m in models if m not in SKIP_MODELS and osp.exists(osp.join('outputs', m))]
     if lvl in dataset_levels.keys():
         data_list = dataset_levels[lvl]
     else:
@@ -263,60 +272,16 @@ def CHECK(val):
             CHECK(m)
 
 
-def decode_img_omni(tup):
-    root, im, p = tup
-    images = toliststr(im)
-    paths = toliststr(p)
-    if len(images) > 1 and len(paths) == 1:
-        paths = [osp.splitext(p)[0] + f'_{i}' + osp.splitext(p)[1] for i in range(len(images))]
-
-    assert len(images) == len(paths)
-    paths = [osp.join(root, p) for p in paths]
-    for p, im in zip(paths, images):
-        if osp.exists(p):
-            continue
-        if isinstance(im, str) and len(im) > 64:
-            decode_base64_to_image_file(im, p)
-    return paths
-
-
 def LOCALIZE(fname, new_fname=None):
-    base_name = osp.basename(fname)
-    dname = osp.splitext(base_name)[0]
-    data = load(fname)
     if new_fname is None:
         new_fname = fname.replace('.tsv', '_local.tsv')
 
-    indices = list(data['index'])
-    indices_str = [str(x) for x in indices]
-    images = list(data['image'])
-    image_map = {x: y for x, y in zip(indices_str, images)}
+    base_name = osp.basename(fname)
+    dname = osp.splitext(base_name)[0]
 
-    root = LMUDataRoot()
-    root = osp.join(root, 'images', dname)
-    os.makedirs(root, exist_ok=True)
-
-    if 'image_path' in data:
-        img_paths = list(data['image_path'])
-    else:
-        img_paths = []
-        for i in indices_str:
-            if len(image_map[i]) <= 64:
-                idx = image_map[i]
-                assert idx in image_map and len(image_map[idx]) > 64
-                img_paths.append(f'{idx}.jpg')
-            else:
-                img_paths.append(f'{i}.jpg')
-
-    tups = [(root, im, p) for p, im in zip(img_paths, images)]
-
-    pool = mp.Pool(32)
-    ret = pool.map(decode_img_omni, tups)
-    pool.close()
-    data.pop('image')
-    if 'image_path' not in data:
-        data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
-    dump(data, new_fname)
+    data = load(fname)
+    data_new = localize_df(data, dname)
+    dump(data_new, new_fname)
     print(f'The localized version of data file is {new_fname}')
     return new_fname
 
@@ -354,29 +319,30 @@ def RUN(lvl, model):
     for m in groups:
         if m in SKIP_MODELS:
             continue
-        datasets = ' '.join(groups[m])
-        logger.info(f'Running {m} on {datasets}')
-        exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
-        if m not in models['api']:
-            env = None
-            env = 'latest' if m in models['latest'] else env
-            env = '433' if m in models['4.33.0'] else env
-            env = '437' if m in models['4.37.0'] else env
-            env = '440' if m in models['4.40.0'] else env
-            if env is None:
-                # Not found, default to latest
-                env = 'latest'
-                logger.warning(f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
-            pth = get_env(env)
-            if pth is not None:
-                exe = osp.join(pth, 'bin', exe)
-            else:
-                logger.warning(f'Cannot find the env path {env} for model {m}')
-        if exe.endswith('torchrun'):
-            cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {datasets}'
-        elif exe.endswith('python'):
-            cmd = f'{exe} {SCRIPT} --model {m} --data {datasets}'
-        os.system(cmd)
+        for dataset in groups[m]:
+            logger.info(f'Running {m} on {dataset}')
+            exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
+            if m not in models['api']:
+                env = None
+                env = 'latest' if m in models['latest'] else env
+                env = '433' if m in models['4.33.0'] else env
+                env = '437' if m in models['4.37.0'] else env
+                env = '440' if m in models['4.40.0'] else env
+                if env is None:
+                    # Not found, default to latest
+                    env = 'latest'
+                    logger.warning(
+                        f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
+                pth = get_env(env)
+                if pth is not None:
+                    exe = osp.join(pth, 'bin', exe)
+                else:
+                    logger.warning(f'Cannot find the env path {env} for model {m}')
+            if exe.endswith('torchrun'):
+                cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {dataset}'
+            elif exe.endswith('python'):
+                cmd = f'{exe} {SCRIPT} --model {m} --data {dataset}'
+            os.system(cmd)
 
 
 def EVAL(dataset_name, data_file):
@@ -385,7 +351,7 @@ def EVAL(dataset_name, data_file):
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
-    if dataset.TYPE in ['MCQ', 'Y/N']:
+    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['MathVerse'], dataset_name):
         judge_kwargs['model'] = 'chatgpt-0125'
     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
         judge_kwargs['model'] = 'gpt-4-turbo'
@@ -420,7 +386,7 @@ def cli():
             if len(args) > 2:
                 size = args[2].lower()
             lst = MLIST(args[1], size)
-            print(' '.join(lst))
+            print('\n'.join(lst))
         elif args[0].lower() == 'missing':
             assert len(args) >= 2
             missing_list = MISSING(args[1])

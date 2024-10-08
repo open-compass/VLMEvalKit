@@ -82,7 +82,9 @@ language = 'cn'
 
 # The master toctree document.
 root_doc = 'index'
-
+html_context = {
+    'github_version': 'latest',
+}
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
