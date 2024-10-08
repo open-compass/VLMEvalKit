@@ -298,7 +298,7 @@ kosmos_series={
 }
 
 points_series = {
-    'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Yi-1.5-9B-Chat'),
+    'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Yi-1-5-9B-Chat'),
 }
 
 
