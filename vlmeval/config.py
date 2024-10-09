@@ -71,7 +71,7 @@ api_models = {
     'RekaFlash': partial(Reka, model='reka-flash-20240226'),
     'RekaCore': partial(Reka, model='reka-core-20240415'),
     # Step1V
-    'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10, img_detail='high'),
+    'Step1V': partial(GPT4V, model='step-1v-32k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10, img_size=-1, img_detail='high'),
     # Yi-Vision
     'Yi-Vision': partial(GPT4V, model='yi-vision', api_base="https://api.lingyiwanwu.com/v1/chat/completions", temperature=0, retry=10),
     # Claude
@@ -263,6 +263,7 @@ qwen2vl_series = {
     'Qwen2-VL-2B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-2B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-2B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=16384*28*28),
+    'XinYuan-VL-2B-Instruct': partial(Qwen2VLChat, model_path='thomas-yanxin/XinYuan-VL-2B', min_pixels=1280*28*28, max_pixels=16384*28*28),
 }
 
 slime_series = {
@@ -286,6 +287,11 @@ moondream_series={
     'Moondream2': partial(Moondream2, model_path='vikhyatk/moondream2'),
 }
 
+llama_series={
+    'Llama-3.2-11B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct'),
+    'Llama-3.2-90B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-90B-Vision-Instruct'),
+}
+
 kosmos_series={
     'Kosmos2': partial(Kosmos2, model_path='/root/kosmos-2-patch14-224')
 }
@@ -299,7 +305,7 @@ model_groups = [
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series, eagle_series, moondream_series, kosmos_series
+    slime_series, eagle_series, moondream_series, llama_series, kosmos_series
 ]
 
 for grp in model_groups:

@@ -189,6 +189,9 @@ def main():
                         logger.info(f'The results are saved in {result_file}. '
                                     f'Please send it to the AesBench Team via huangyipo@hotmail.com.')  # noqa: E501
                         continue
+                    elif dataset_name in ['DocVQA_TEST', 'InfoVQA_TEST', 'Q-Bench1_TEST', 'A-Bench_TEST']:
+                        logger.info(f'{dataset_name} is a test split without ground-truth. '
+                                    'Thus only the inference part is supported for those datasets. ')  # noqa: E501
 
                 if dataset_name in [
                     'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN',
