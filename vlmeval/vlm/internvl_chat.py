@@ -247,6 +247,8 @@ class InternVLChat(BaseModel):
                 prompt = question + ' Answer the question using a single word or phrase.'
             elif listinstr(['HallusionBench'], dataset):
                 prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            else:
+                prompt = line['question']
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
