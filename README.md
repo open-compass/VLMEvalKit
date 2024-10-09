@@ -83,7 +83,7 @@ d reasonable results under the zero-shot setting
 
 **\+** The evaluation results are not available yet
 
-**\-** Only inference is supported in VLMEvalKit
+**\-** Only inference is supported in VLMEvalKit (That includes the `TEST` splits of some benchmarks that do not include the ground truth answers).
 
 \* VLMEvalKit is integrated in its official repository.
 
