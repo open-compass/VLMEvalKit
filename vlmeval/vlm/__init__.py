@@ -8,6 +8,7 @@ from .emu import Emu
 from .eagle_x import Eagle
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
+from .kosmos import Kosmos2
 from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision
 from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6
 from .minigpt4 import MiniGPT4
