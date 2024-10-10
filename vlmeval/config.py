@@ -296,6 +296,10 @@ kosmos_series={
     'Kosmos2': partial(Kosmos2, model_path='/root/kosmos-2-patch14-224')
 }
 
+points_series = {
+    'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Yi-1-5-9B-Chat'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -305,7 +309,8 @@ model_groups = [
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series, eagle_series, moondream_series, llama_series, kosmos_series
+    slime_series, eagle_series, moondream_series, llama_series, kosmos_series,
+    points_series
 ]
 
 for grp in model_groups:
