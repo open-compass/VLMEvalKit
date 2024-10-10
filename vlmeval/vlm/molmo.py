@@ -6,6 +6,7 @@ from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
 
+
 class molmo(BaseModel):
 
     INSTALL_REQ = False
@@ -34,7 +35,6 @@ class molmo(BaseModel):
         self.kwargs = kwargs
         self.model_name = model_path
 
-
     def generate_inner(self, message, dataset=None):
         from transformers import GenerationConfig
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
@@ -60,7 +60,7 @@ class molmo(BaseModel):
             )
 
         # only get generated tokens; decode them to text
-        generated_tokens = output[0,inputs['input_ids'].size(1):]
+        generated_tokens = output[0, inputs['input_ids'].size(1):]
         generated_text = self.processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
         # print the generated text
