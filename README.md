@@ -141,7 +141,9 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
 
 **Torchvision Version Recommendation:**
+
 Note that some VLMs may not be able to run under certain torchvision versions, we recommend the following settings to evaluate each VLM:
+
 - **Please use** `torchvision>=0.16` **for**: `Moondream series`
 
 ```python
