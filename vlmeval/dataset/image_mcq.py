@@ -76,6 +76,9 @@ class ImageMCQDataset(ImageBaseDataset):
         # A-Bench
         'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
         'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
+        # R-Bench
+        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-dis.tsv',
+        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-ref.tsv',
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
@@ -126,6 +129,9 @@ class ImageMCQDataset(ImageBaseDataset):
         # A-Bench
         'A-Bench_VAL': '218563ec50d34bb336c814143a5bb9c1',
         'A-Bench_TEST': '567013fb033a20cf23f51d8e865bd16c',
+        # R-Bench
+        'R-Bench-Dis': 'd6e961dbfc43350688af2560226830b4',
+        'R-Bench-Ref': '270c1cb555acb523f3fdb178ed57021d',
         # Other Benchmarks
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
