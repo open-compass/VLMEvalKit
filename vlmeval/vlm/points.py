@@ -43,8 +43,7 @@ class POINTS(BaseModel):
         Returns:
             bool: Whether to use custom prompt for the dataset.
         """
-        assert dataset is not None
-        if DATASET_TYPE(dataset) == 'multi-choice':
+        if DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
@@ -105,14 +104,20 @@ class POINTS(BaseModel):
         if dataset == 'HallusionBench':
             prompt = prompt + \
                 ' Please answer yes or no. Answer the question using a single word or phrase.'  # noqa
-        if dataset == 'MMVet':
+        elif dataset == 'MMVet':
             prompt = prompt + ' Answer this question in detail.'
             catty = False
+        else:
+            # use default setting
+            pass
 
-        if listinstr(['MMBench', 'OCRBench'], dataset):
+        if dataset is None:
+            max_splits = 8
+        elif listinstr(['MMBench', 'OCRBench'], dataset):
             max_splits = 12
         else:
             max_splits = 8
+
         image = Image.open(image_path).convert('RGB')
         generation_config = {
             'max_new_tokens': 1024,
