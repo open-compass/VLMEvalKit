@@ -41,7 +41,7 @@ class OpenAIWrapper(BaseAPI):
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0,
-                 timeout: int = 6000,
+                 timeout: int = 60,
                  api_base: str = None,
                  max_tokens: int = 1024,
                  img_size: int = 512,
@@ -133,22 +133,17 @@ class OpenAIWrapper(BaseAPI):
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
         has_images = np.sum([x['type'] == 'image' for x in inputs])
-        img_counts = 0
         if has_images:
             content_list = []
             for msg in inputs:
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    if img_counts >= 250:  # for gpt-4o-mini
-                        continue
-
                     from PIL import Image
                     img = Image.open(msg['value'])
                     b64 = encode_image_to_base64(img, target_size=self.img_size)
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
-                    img_counts += 1
         else:
             assert all([x['type'] == 'text' for x in inputs])
             text = '\n'.join([x['value'] for x in inputs])
