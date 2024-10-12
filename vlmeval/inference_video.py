@@ -30,9 +30,10 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
                                     video_llm=getattr(model, 'VIDEO_LLM', False), fps=fps) for idx in indices]
 
     packstr = 'pack' if pack else 'nopack'
-    out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
-    if fps > 0:
-        out_file = out_file.replace('.pkl', f'_fps{fps}.pkl')
+    if nframe > 0:
+        out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
+    else:
+        out_file = f'{work_dir}/{model_name}_{dataset_name}_{fps}fps_{packstr}_supp.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
 
     structs = [s for i, s in zip(indices, structs) if i not in res or res[i] == FAIL_MSG]
@@ -85,10 +86,22 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
-        # adapt to model frame sample number first
-        nframe = getattr(model, 'nframe', 0) if getattr(model, 'nframe', 0) > 0 else nframe
-        # when using video-llm, build prompt returns video+question; otherwise, several frames+question
+        if getattr(model, 'nframe', 0) > 0:
+            if nframe > 0:
+                print(f'{model_name} is a video-llm model, nframe is set to {nframe}, not using default')
+                setattr(model, 'nframe', nframe)
+            else:
+                raise ValueError(f'nframe is not suitable for {model_name}')
+        if getattr(model, 'fps', 0) > 0:
+            if fps > 0:
+                print(f'{model_name} is a video-llm model, fps is set to {fps}, not using default')
+                setattr(model, 'fps', fps)
+            else:
+                raise ValueError(f'fps is not suitable for {model_name}')
+
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+            if nframe == 0:
+                raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
             struct = model.build_prompt(
                 dataset.data.iloc[sample_map[idx]], dataset=dataset,
                 num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False)
@@ -129,7 +142,10 @@ def infer_data_job_video(
     dataset_name = dataset.dataset_name
     packstr = 'pack' if pack else 'nopack'
     rank, world_size = get_rank_and_world_size()
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
+    if nframe > 0:
+        result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
+    else:
+        result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{fps}fps_{packstr}.xlsx')
     if dataset_name == 'Video-MME':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
@@ -139,7 +155,10 @@ def infer_data_job_video(
     if osp.exists(result_file):
         return model_name
 
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
+    if nframe > 0:
+        tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
+    else:
+        tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{fps}fps_{packstr}.pkl')
     if dataset_name == 'Video-MME':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
