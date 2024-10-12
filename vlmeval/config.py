@@ -72,7 +72,7 @@ api_models = {
     'RekaFlash': partial(Reka, model='reka-flash-20240226'),
     'RekaCore': partial(Reka, model='reka-core-20240415'),
     # Step1V
-    'Step1V': partial(GPT4V, model='step-1v-8k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10, img_detail='high'),
+    'Step1V': partial(GPT4V, model='step-1v-32k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10, img_size=-1, img_detail='high'),
     # Yi-Vision
     'Yi-Vision': partial(GPT4V, model='yi-vision', api_base="https://api.lingyiwanwu.com/v1/chat/completions", temperature=0, retry=10),
     # Claude
@@ -293,6 +293,19 @@ llama_series={
     'Llama-3.2-90B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-90B-Vision-Instruct'),
 }
 
+molmo_series={
+    'molmo-7B-D-0924': partial(molmo, model_path='allenai/Molmo-7B-D-0924'),
+    'molmo-7B-O-0924': partial(molmo, model_path='allenai/Molmo-7B-O-0924'),
+}
+
+kosmos_series={
+    'Kosmos2': partial(Kosmos2, model_path='/root/kosmos-2-patch14-224')
+}
+
+points_series = {
+    'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Yi-1-5-9B-Chat'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -302,7 +315,8 @@ model_groups = [
     deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series, eagle_series, moondream_series, llama_series
+    slime_series, eagle_series, moondream_series, llama_series, molmo_series, 
+    kosmos_series, points_series
 ]
 
 for grp in model_groups:
