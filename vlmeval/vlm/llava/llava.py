@@ -377,7 +377,7 @@ class LLaVA_Next2(BaseModel):
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
         stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
-        
+
         cont = self.model.generate(
             input_ids,
             images=image_tensor,
@@ -432,7 +432,7 @@ class LLaVA_OneVision(BaseModel):
         try:
             from llava.model.builder import load_pretrained_model
             from llava.conversation import conv_templates, SeparatorStyle
-            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token, KeywordsStoppingCriteria
+            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token, KeywordsStoppingCriteria  # noqa: E501
         except ImportError:
             warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
 
@@ -490,7 +490,7 @@ class LLaVA_OneVision(BaseModel):
                                                self.IMAGE_TOKEN_INDEX,
                                                return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
-        
+
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
         stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
@@ -537,7 +537,7 @@ class LLaVA_OneVision(BaseModel):
         input_ids = input_ids.unsqueeze(0).cuda()
         image_sizes = [frame.size for frame in video_frames]
         modalities = ['video'] * len(video_frames)
-        
+
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
         stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
