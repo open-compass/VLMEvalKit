@@ -327,8 +327,8 @@ class LLaVA_Next2(BaseModel):
         assert model_path is not None
         try:
             from llava.model.builder import load_pretrained_model
-            from llava.conversation import conv_templates
-            from llava.mm_utils import get_model_name_from_path, tokenizer_image_token
+            from llava.conversation import conv_templates, SeparatorStyle
+            from llava.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
         except:
             warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
 
@@ -347,6 +347,8 @@ class LLaVA_Next2(BaseModel):
         self.model = model
         self.image_processor = image_processor
         self.tokenizer_image_token = tokenizer_image_token
+        self.KeywordStoppingCriteria = KeywordsStoppingCriteria
+        self.SeparatorStyle = SeparatorStyle
 
     def generate_inner(self, message, dataset=None):
         content, images = '', []
@@ -372,12 +374,17 @@ class LLaVA_Next2(BaseModel):
         input_ids = image_tokenizer(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
+        stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         cont = self.model.generate(
             input_ids,
             images=image_tensor,
             do_sample=False,
             temperature=0,
             max_new_tokens=512,
+            stopping_criteria=[stopping_criteria]
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
@@ -424,8 +431,8 @@ class LLaVA_OneVision(BaseModel):
         assert model_path is not None
         try:
             from llava.model.builder import load_pretrained_model
-            from llava.conversation import conv_templates
-            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
+            from llava.conversation import conv_templates, SeparatorStyle
+            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token, KeywordsStoppingCriteria  # noqa: E501
         except ImportError:
             warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
 
@@ -453,6 +460,8 @@ class LLaVA_OneVision(BaseModel):
         self.image_processor = image_processor
         self.tokenizer_image_token = tokenizer_image_token
         self.process_images = process_images  # Store process_images as a class attribute
+        self.KeywordStoppingCriteria = KeywordsStoppingCriteria
+        self.SeparatorStyle = SeparatorStyle
 
     def generate_inner_image(self, message, dataset=None):
         content, images = '', []
@@ -482,6 +491,10 @@ class LLaVA_OneVision(BaseModel):
                                                return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
+        stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         # Pass image sizes along with other parameters
         cont = self.model.generate(
             input_ids,
@@ -490,6 +503,7 @@ class LLaVA_OneVision(BaseModel):
             do_sample=False,
             temperature=0,
             max_new_tokens=512,
+            stopping_criteria=[stopping_criteria]
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
@@ -524,6 +538,10 @@ class LLaVA_OneVision(BaseModel):
         image_sizes = [frame.size for frame in video_frames]
         modalities = ['video'] * len(video_frames)
 
+        stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         # Pass image sizes along with other parameters
         cont = self.model.generate(
             input_ids,
@@ -532,7 +550,8 @@ class LLaVA_OneVision(BaseModel):
             do_sample=False,
             temperature=0,
             max_new_tokens=512,
-            modalities=modalities
+            modalities=modalities,
+            stopping_criteria=[stopping_criteria]
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
