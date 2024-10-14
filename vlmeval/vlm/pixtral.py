@@ -18,7 +18,7 @@ class Pixtral(BaseModel):
             from mistral_inference.transformer import Transformer
             from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
         except ImportError as err:
-            warnings.warn('Please install `mistral-inference` and `mistral_common`')
+            logging.critical('Please install `mistral-inference` and `mistral_common`')
             raise err
 
         if get_cache_path(model_path) is None:
@@ -37,7 +37,7 @@ class Pixtral(BaseModel):
             from mistral_common.protocol.instruct.messages import UserMessage, TextChunk, ImageURLChunk
             from mistral_common.protocol.instruct.request import ChatCompletionRequest
         except ImportError as err:
-            warnings.warn('Please install `mistral-inference` and `mistral_common`')
+            logging.critical('Please install `mistral-inference` and `mistral_common`')
             raise err
 
         msg_new = []

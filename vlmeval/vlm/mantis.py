@@ -24,18 +24,18 @@ class Mantis(BaseModel):
             from mantis.models.mllava import LlavaForConditionalGeneration, MLlavaProcessor
             from mantis.models.mfuyu import MFuyuForCausalLM, MFuyuProcessor
             from mantis.models.conversation import conv_mllava_v1 as default_conv, conv_templates
-        except:
-            warnings.warn(
+        except Exception as e:
+            logging.critical(
                 "Mantis is not installed. Please install Mantis to use this model.Please use 'pip install "
                 "git+https://github.com/TIGER-AI-Lab/Mantis.git' to install"
             )
+            raise e
 
         try:
             from transformers import AutoModelForVision2Seq, AutoProcessor
         except Exception as e:
-            warnings.warn("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
-        except:
-            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git')
+            logging.critical(e)
+            logging.critical("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
 
         # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2".
         # Seems FA2 is not effective during inference:

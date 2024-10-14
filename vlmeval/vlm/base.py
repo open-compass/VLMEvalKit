@@ -125,7 +125,8 @@ class BaseModel:
         while len(messages):
             try:
                 return self.chat_inner(messages, dataset=dataset)
-            except:
+            except Exception as e:
+                logging.info(e)
                 messages = messages[1:]
                 while len(messages) and messages[0]['role'] != 'user':
                     messages = messages[1:]
@@ -162,6 +163,5 @@ class BaseModel:
                 video = [x['value'] for x in message if x['type'] == 'video'][0]
             return prompt, video
         else:
-            import sys
-            warnings.warn('Model does not support video input.')
-            sys.exit(-1)
+            logging.critical('Model does not support video input.')
+            raise NotImplementedError

@@ -143,7 +143,9 @@ class BaseAPI:
         while len(inputs):
             try:
                 return self.generate_inner(inputs, **kwargs)
-            except:
+            except Exception as e:
+                if self.verbose:
+                    self.logger.info(e)
                 inputs = inputs[1:]
                 while len(inputs) and inputs[0]['role'] != 'user':
                     inputs = inputs[1:]
@@ -179,12 +181,12 @@ class BaseAPI:
                     if not isinstance(log, str):
                         try:
                             log = log.text
-                        except:
-                            self.logger.warning(f'Failed to parse {log} as an http response. ')
+                        except Exception as e:
+                            self.logger.warning(f'Failed to parse {log} as an http response: {str(e)}. ')
                     self.logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    self.logger.error(f'An error occured during try {i}:')
+                    self.logger.error(f'An error occured during try {i}: ')
                     self.logger.error(err)
             # delay before each retry
             T = rd.random() * self.wait * 2
@@ -227,12 +229,12 @@ class BaseAPI:
                     if not isinstance(log, str):
                         try:
                             log = log.text
-                        except:
-                            self.logger.warning(f'Failed to parse {log} as an http response. ')
+                        except Exception as e:
+                            self.logger.warning(f'Failed to parse {log} as an http response: {str(e)}. ')
                     self.logger.info(f'RetCode: {ret_code}\nAnswer: {answer}\nLog: {log}')
             except Exception as err:
                 if self.verbose:
-                    self.logger.error(f'An error occured during try {i}:')
+                    self.logger.error(f'An error occured during try {i}: ')
                     self.logger.error(err)
             # delay before each retry
             T = rd.random() * self.wait * 2

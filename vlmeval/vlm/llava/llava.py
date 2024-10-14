@@ -20,11 +20,10 @@ class LLaVA(BaseModel):
         try:
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
-        except:
-            warnings.warn('Please install llava before using LLaVA')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install llava from https://github.com/haotian-liu/LLaVA')
+            raise err
 
-        warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
         assert osp.exists(model_path) or splitlen(model_path) == 2
         self.system_prompt = (
             'A chat between a curious human and an artificial intelligence assistant. '
@@ -47,16 +46,16 @@ class LLaVA(BaseModel):
                 device='cpu',
                 device_map='cpu'
             )
-        except:
+        except Exception as err:
             if 'ShareGPT4V' in model_path:
                 import llava
-                warnings.warn(
+                logging.critical(
                     'Please manually remove the encoder type check in '
                     f'{llava.__path__[0]}/model/multimodal_encoder/builder.py '
                     'Line 8 to use the ShareGPT4V model. ')
             else:
-                warnings.warn('Unknown error when loading LLaVA model.')
-            exit(-1)
+                logging.critical('Unknown error when loading LLaVA model.')
+            raise err
 
         self.model = self.model.cuda()
         self.conv_mode = 'llava_v1'
@@ -329,8 +328,9 @@ class LLaVA_Next2(BaseModel):
             from llava.model.builder import load_pretrained_model
             from llava.conversation import conv_templates, SeparatorStyle
             from llava.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
-        except:
-            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+        except Exception as err:
+            logging.critical('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+            raise err
 
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map=None)
@@ -433,8 +433,9 @@ class LLaVA_OneVision(BaseModel):
             from llava.model.builder import load_pretrained_model
             from llava.conversation import conv_templates, SeparatorStyle
             from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token, KeywordsStoppingCriteria  # noqa: E501
-        except ImportError:
-            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+        except Exception as err:
+            logging.critical('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+            raise err
 
         model_name = get_model_name_from_path(model_path)
         device_map = self.split_model(model_path)
@@ -558,7 +559,7 @@ class LLaVA_OneVision(BaseModel):
 
     def load_video(self, video_path, max_frames_num):
         from decord import VideoReader, cpu
-        if type(video_path) == str:
+        if type(video_path) is str:
             vr = VideoReader(video_path, ctx=cpu(0))
         else:
             vr = VideoReader(video_path[0], ctx=cpu(0))

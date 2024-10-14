@@ -19,11 +19,12 @@ class Moondream1(BaseModel):
                  **kwargs):
         try:
             from transformers import AutoModelForCausalLM, CodeGenTokenizerFast as Tokenizer
-        except:
-            warnings.warn('''Please install Transformers version 4.36.2 by running: "pip install transformers==4.36.2",
-            please intall torchvision>=0.16.''')
-        warnings.warn('''Please install Transformers version 4.36.2 by running: "pip install transformers==4.36.2",
-            please intall torchvision>=0.16.''')
+        except Exception as e:
+            logging.critical(
+                "Please install Transformers version 4.36.2 by running: 'pip install transformers==4.36.2', "
+                "please intall torchvision>=0.16.")
+            raise e
+
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.model = (
@@ -109,11 +110,11 @@ class Moondream2(BaseModel):
                  **kwargs):
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
-        except:
-            warnings.warn('''Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
+        except Exception as e:
+            logging.critical('''Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
             please intall torchvision>=0.16.''')
-        warnings.warn('''Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
-        please intall torchvision>=0.16.''')
+            raise e
+
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         flash_attn_flag = False

@@ -15,9 +15,9 @@ class llama_vision(BaseModel):
     def __init__(self, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct', **kwargs):
         try:
             from transformers import MllamaForConditionalGeneration, AutoProcessor
-        except:
-            warnings.warn('Please install transformers>=4.45.0 before using llama_vision.')
-            sys.exit(-1)
+        except Exception as e:
+            logging.critical('Please install transformers>=4.45.0 before using llama_vision.')
+            raise e
 
         self.model = MllamaForConditionalGeneration.from_pretrained(
             model_path,

@@ -244,7 +244,7 @@ class mPLUG_Owl3(BaseModel):
                 tgt_path = self.save_video_into_images(line, num_frames, dataset_class)
             else:
                 tgt_path = dataset_class.save_video_into_images(line, num_frames)
-            if type(line['candidates']) != list:
+            if type(line['candidates']) is not list:
                 line['candidates'] = eval(line['candidates'])
             for idx, c in enumerate(line['candidates']):
                 line[chr(ord('A') + idx)] = c

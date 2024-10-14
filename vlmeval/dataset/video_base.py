@@ -11,8 +11,9 @@ class VideoBaseDataset:
                  pack=False):
         try:
             import decord
-        except:
-            warnings.warn('Please install decord via `pip install decord`.')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical('Please install decord via `pip install decord`.')
 
         self.dataset_name = dataset
         ret = self.prepare_dataset(dataset)

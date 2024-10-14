@@ -5,6 +5,7 @@ import numpy as np
 import sys
 from PIL import Image
 import torchvision
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr, get_rank_and_world_size
 from ...dataset import DATASET_TYPE
@@ -21,12 +22,12 @@ class PLLaVA(BaseModel):
         sys.path.append(dir_root)
         try:
             from tasks.eval.model_utils import load_pllava
-        except:
-            warnings.warn(
+        except Exception as err:
+            logging.critical(
                 'Please first install requirements and set the root path to use PLLaVA. \
                 Follow the instructions at https://github.com/magic-research/PLLaVA.'
             )
-            sys.exit(-1)
+            raise err
 
         rank, world_size = get_rank_and_world_size()
         self.nframe = 16

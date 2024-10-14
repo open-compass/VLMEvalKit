@@ -51,7 +51,8 @@ class HFChatModel:
         try:
             context_window = self._get_context_length(model, model_path)
             return context_window
-        except:
+        except Exception as err:
+            self.logger.critical(err)
             self.logger.critical(
                 'Failed to extract context_window information from config / generation_config. '
                 'Please read the above code and check if the logic works for you model path'
@@ -67,9 +68,9 @@ class HFChatModel:
         if 'vicuna' in model_path.lower():
             try:
                 from fastchat.model import get_conversation_template
-            except:
+            except Exception as err:
                 self.logger.critical('Please install fastchat first to use vicuna. ')
-                sys.exit(-1)
+                raise err
 
         self.explicit_device = kwargs.pop('device', None)
 
@@ -112,8 +113,8 @@ class HFChatModel:
         try:
             model.generation_config = GenerationConfig.from_pretrained(
                 model_path, trust_remote_code=True, device_map=device)
-        except:
-            pass
+        except Exception as err:
+            self.logger.warning(err)
 
         torch.cuda.empty_cache()
         self.model = model

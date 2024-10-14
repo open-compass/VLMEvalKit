@@ -20,10 +20,10 @@ class Eagle(BaseModel):
             from eagle.model.builder import load_pretrained_model
             from eagle.utils import disable_torch_init
             from eagle.mm_utils import get_model_name_from_path
-        except:
-            warnings.warn('''Please install eagle before using Eagle,
+        except Exception as e:
+            logging.critical('''Please install eagle before using Eagle,
             you can install it from "https://github.com/NVlabs/EAGLE.git"''')
-            sys.exit(-1)
+            raise e
 
         warnings.warn('Please install the latest version of eagle from github before you evaluate the Eagle model.')
         assert osp.exists(model_path) or splitlen(model_path) == 2
@@ -55,10 +55,10 @@ class Eagle(BaseModel):
                                          DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
             from eagle.conversation import conv_templates, SeparatorStyle
             from eagle.mm_utils import tokenizer_image_token, process_images, KeywordsStoppingCriteria
-        except:
-            warnings.warn('''Please install eagle before using Eagle,
+        except Exception as e:
+            logging.critical('''Please install eagle before using Eagle,
             you can install it from "https://github.com/NVlabs/EAGLE.git"''')
-            sys.exit(-1)
+            raise e
 
         kwargs = {}
         if dataset is not None:

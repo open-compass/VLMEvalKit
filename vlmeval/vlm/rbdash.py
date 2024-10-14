@@ -20,9 +20,8 @@ class RBDash(BaseModel):
     def __init__(self, model_path, root=None, conv_mode='qwen', **kwargs):
         from huggingface_hub import snapshot_download
         if root is None:
-            warnings.warn('Please set `root` to RBDash code directory, \
+            raise ValueError('Please set `root` to RBDash code directory, \
                 which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" ')
-            sys.exit(-1)
         warnings.warn('Please follow the instructions of RBDash to put the ckpt file in the right place, \
             which can be found at https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#structure')
         assert model_path == 'RBDash-Team/RBDash-v1.2-72b', 'We only support RBDash-v1.2-72b for now'
@@ -30,22 +29,26 @@ class RBDash(BaseModel):
         try:
             from rbdash.model.builder import load_pretrained_model
             from rbdash.mm_utils import get_model_name_from_path
-        except:
-            raise ImportError(
+        except Exception as err:
+            logging.critical(
                 'Please first install RBdash and set the root path to use RBdash, '
                 'which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" '
             )
+            raise err
+
         VLMEvalKit_path = os.getcwd()
         os.chdir(root)
         warnings.warn('Please set `root` to RBdash code directory, \
             which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" ')
         try:
             model_name = get_model_name_from_path(model_path)
-        except:
-            raise ImportError(
+        except Exception as err:
+            logging.critical(
                 'Please follow the instructions of RBdash to put the ckpt file in the right place, '
                 'which can be found at https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#structure'
             )
+            raise err
+
         download_model_path = snapshot_download(model_path)
 
         internvit_local_dir = './model_zoo/OpenGVLab/InternViT-6B-448px-V1-5'
@@ -85,11 +88,12 @@ class RBDash(BaseModel):
                 DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
             from rbdash.conversation import conv_templates
             from rbdash.mm_utils import tokenizer_image_token, process_images
-        except:
-            raise ImportError(
+        except Exception as err:
+            logging.critical(
                 'Please first install RBdash and set the root path to use RBdash, '
                 'which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" '
             )
+            raise err
 
         prompt, image = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image).convert('RGB')

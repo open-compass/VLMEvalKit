@@ -4,6 +4,7 @@ import warnings
 import copy as cp
 import numpy as np
 import sys
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
@@ -20,12 +21,12 @@ class VideoChatGPT(BaseModel):
         sys.path.append(dir_root)
         try:
             from video_chatgpt.eval.model_utils import initialize_model
-        except:
-            warnings.warn(
+        except Exception as err:
+            logging.critical(
                 'Please first install requirements and set the root path to use Video-ChatGPT. \
                 Follow the instructions at https://github.com/mbzuai-oryx/Video-ChatGPT.'
             )
-            sys.exit(-1)
+            raise err
         base_model_path = snapshot_download('mmaaz60/LLaVA-7B-Lightening-v1-1')
         projection_path = snapshot_download(model_path)
         projection_name = 'video_chatgpt-7B.bin'

@@ -124,7 +124,7 @@ class OpenAIWrapper(BaseAPI):
                 self.api_base = api_base
             else:
                 self.logger.error('Unknown API Base. ')
-                sys.exit(-1)
+                raise NotImplementedError
 
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
@@ -200,8 +200,11 @@ class OpenAIWrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
-        except:
-            pass
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(err)
+                self.logger.error(response)
+
         return ret_code, answer, response
 
     def get_image_token_len(self, img_path, detail='low'):
@@ -228,7 +231,8 @@ class OpenAIWrapper(BaseAPI):
         import tiktoken
         try:
             enc = tiktoken.encoding_for_model(self.model)
-        except:
+        except Exception as err:
+            self.logger.warning(err)
             enc = tiktoken.encoding_for_model('gpt-4')
         assert isinstance(inputs, list)
         tot = 0

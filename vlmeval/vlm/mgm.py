@@ -4,7 +4,9 @@ import os.path as osp
 import os
 import warnings
 from .base import BaseModel
+from ..smp import *
 from PIL import Image
+
 '''
     Please follow the instructions to download ckpt.
     https://github.com/dvlab-research/MGM?tab=readme-ov-file#pretrained-weights
@@ -19,7 +21,7 @@ class Mini_Gemini(BaseModel):
         if root is None:
             warnings.warn('Please set `root` to Mini_Gemini code directory, \
                 which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" ')
-            sys.exit(-1)
+            raise ValueError
         warnings.warn('Please follow the instructions of Mini_Gemini to put the ckpt file in the right place, \
             which can be found at https://github.com/dvlab-research/MGM?tab=readme-ov-file#structure')
         assert model_path == 'YanweiLi/MGM-7B-HD', 'We only support MGM-7B-HD for now'
@@ -28,11 +30,13 @@ class Mini_Gemini(BaseModel):
         try:
             from mgm.model.builder import load_pretrained_model
             from mgm.mm_utils import get_model_name_from_path
-        except:
-            raise ImportError(
+        except Exception as e:
+            logging.critical(
                 'Please first install Mini_Gemini and set the root path to use Mini_Gemini, '
                 'which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" '
             )
+            raise e
+
         VLMEvalKit_path = os.getcwd()
         os.chdir(root)
         warnings.warn('Please set `root` to Mini_Gemini code directory, \
@@ -40,11 +44,13 @@ class Mini_Gemini(BaseModel):
         model_path = osp.join(root, 'work_dirs', 'MGM', 'MGM-7B-HD')
         try:
             model_name = get_model_name_from_path(model_path)
-        except:
-            raise ImportError(
+        except Exception as e:
+            logging.critical(
                 'Please follow the instructions of Mini_Gemini to put the ckpt file in the right place, '
                 'which can be found at https://github.com/dvlab-research/MGM?tab=readme-ov-file#structure'
             )
+            raise e
+
         tokenizer, model, image_processor, context_len = load_pretrained_model(model_path, None, model_name)
         os.chdir(VLMEvalKit_path)
         self.model = model
@@ -64,11 +70,12 @@ class Mini_Gemini(BaseModel):
                 DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
             from mgm.conversation import conv_templates
             from mgm.mm_utils import tokenizer_image_token, process_images
-        except:
-            raise ImportError(
+        except Exception as e:
+            logging.critical(
                 'Please first install Mini_Gemini and set the root path to use Mini_Gemini, '
                 'which is cloned from here: "https://github.com/dvlab-research/MGM?tab=readme-ov-file" '
             )
+            raise e
 
         prompt, image = self.message_to_promptimg(message, dataset=dataset)
         image = Image.open(image)

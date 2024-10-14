@@ -62,7 +62,7 @@ class CWWrapper(BaseAPI):
                     from PIL import Image
                     img = Image.open(msg['value'])
                     b64 = encode_image_to_base64(img, target_size=self.img_size)
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
+                    img_struct = dict(url=f"data:image/jpeg;base64,{b64}", detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
             input_msgs.append(dict(role='user', content=content_list))
         else:
@@ -99,6 +99,9 @@ class CWWrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
-        except:
-            pass
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(err)
+                self.logger.error(response)
+
         return ret_code, answer, response

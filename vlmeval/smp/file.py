@@ -193,14 +193,17 @@ def download_file(url, filename=None):
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
             urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
-    except:
+    except Exception as e:
+        import logging
+        logging.warning(e)
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
             try:
                 download_file(url_new, filename)
                 return filename
-            except:
+            except Exception as e:
+                logging.warning(e)
                 raise Exception(f'Failed to download {url}')
         else:
             raise Exception(f'Failed to download {url}')
