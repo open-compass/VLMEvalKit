@@ -97,8 +97,10 @@ class Claude_Wrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['data']['content'][0]['text'].strip()
-        except:
-            pass
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(err)
+                self.logger.error(response)
 
         return ret_code, answer, response
 

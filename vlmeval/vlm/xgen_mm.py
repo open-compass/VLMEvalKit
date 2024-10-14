@@ -13,8 +13,9 @@ class XGenMM(BaseModel):
     def __init__(self, model_path='Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5', **kwargs):
         try:
             from transformers import AutoModelForVision2Seq, AutoTokenizer, AutoImageProcessor
-        except:
-            warnings.warn('Please install the latest version transformers.')
+        except Exception as err:
+            logging.critical(err)
+            logging.critical('Please install the latest version transformers.')
             sys.exit(-1)
 
         model = AutoModelForVision2Seq.from_pretrained(

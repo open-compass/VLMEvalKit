@@ -4,6 +4,7 @@ import copy as cp
 import numpy as np
 import sys
 import os
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
@@ -91,8 +92,9 @@ class Chatunivi(BaseModel):
         assert model_path is not None
         try:
             from ChatUniVi.model.builder import load_pretrained_model
-        except:
-            warnings.warn('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
+        except Exception as err:
+            logging.critical(err)
+            logging.critical('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
             sys.exit(-1)
         model_name = 'ChatUniVi'
         tokenizer, model, processor, context_len = load_pretrained_model(model_path, None, model_name)

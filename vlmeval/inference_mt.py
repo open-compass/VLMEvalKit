@@ -29,8 +29,8 @@ def chat_mt(model, messages, dataset_name):
         try:
             resp = model.chat(utter_stack, dataset=dataset_name)
             utter_stack.append(dict(role='assistant', content=resp))
-        except:
-            resp = FAIL_MSG
+        except Exception as e:
+            resp = FAIL_MSG + str(e)
             utter_stack.append(dict(role='assistant', content=resp))
         predictions.append(resp)
     return predictions

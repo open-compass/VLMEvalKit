@@ -4,6 +4,7 @@ import copy as cp
 import numpy as np
 import sys
 import os
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr, load, dump, download_file
 from ...dataset import DATASET_TYPE
@@ -37,8 +38,9 @@ class LLaMAVID(BaseModel):
         try:
             from llamavid.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
-        except:
-            warnings.warn('Please install LLaMA-VID from https://github.com/dvlab-research/LLaMA-VID.')
+        except Exception as err:
+            logging.critical(err)
+            logging.critical('Please install LLaMA-VID from https://github.com/dvlab-research/LLaMA-VID.')
             sys.exit(-1)
 
         model_base = None

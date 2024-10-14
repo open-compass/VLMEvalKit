@@ -125,7 +125,8 @@ class BaseModel:
         while len(messages):
             try:
                 return self.chat_inner(messages, dataset=dataset)
-            except:
+            except Exception as e:
+                logging.info(e)
                 messages = messages[1:]
                 while len(messages) and messages[0]['role'] != 'user':
                     messages = messages[1:]

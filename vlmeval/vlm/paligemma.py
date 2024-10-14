@@ -12,8 +12,9 @@ class PaliGemma(BaseModel):
     def __init__(self, model_path='google/paligemma-3b-mix-448', **kwargs):
         try:
             from transformers import AutoProcessor, PaliGemmaForConditionalGeneration
-        except:
-            warnings.warn('Please install the latest version transformers.')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical('Please install the latest version transformers.')
             sys.exit(-1)
         model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_path,

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import sys
 import warnings
+import logging
 
 import torch
 
@@ -110,9 +112,10 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     def generate_inner(self, message, dataset=None):
         try:
             from qwen_vl_utils import process_vision_info
-        except ImportError:
-            warnings.warn("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            raise
+        except Exception as err:
+            logging.critical(err)
+            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
+            sys.exit(-1)
 
         messages = []
         if self.system_prompt is not None:

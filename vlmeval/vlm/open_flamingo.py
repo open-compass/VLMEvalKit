@@ -4,7 +4,7 @@ from PIL import Image
 import os.path as osp
 import warnings
 from .base import BaseModel
-from ..smp import splitlen, get_cache_path
+from ..smp import *
 from huggingface_hub import snapshot_download
 
 
@@ -54,8 +54,11 @@ class OpenFlamingo(BaseModel):
         self.mpt_pth = mpt_pth
         try:
             from open_flamingo import create_model_and_transforms
-        except:
-            raise ImportError('Please first install open_flamingo to use OpenFlamingo')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical('Please first install open_flamingo to use OpenFlamingo')
+            sys.exit(-1)
+
         model, image_processor, tokenizer = create_model_and_transforms(
             clip_vision_encoder_path='ViT-L-14',
             clip_vision_encoder_pretrained='openai',

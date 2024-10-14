@@ -24,8 +24,9 @@ class InstructBLIP(BaseModel):
             from lavis.models import load_preprocess
             from omegaconf import OmegaConf
             from lavis.common.registry import registry
-        except:
-            warnings.warn('Please install lavis before using InstructBLIP. ')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical('Please install lavis before using InstructBLIP. ')
             sys.exit(-1)
 
         assert name in self.config_map

@@ -13,9 +13,11 @@ class Phi3Vision(BaseModel):
     def __init__(self, model_path='microsoft/Phi-3-vision-128k-instruct', **kwargs):
         try:
             from transformers import AutoProcessor, AutoModelForCausalLM
-        except:
-            warnings.warn('Please install the latest version transformers.')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical('Please install the latest version transformers.')
             sys.exit(-1)
+
         model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto').eval()
         processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
@@ -109,8 +111,9 @@ class Phi3_5Vision(BaseModel):
     def __init__(self, model_path='microsoft/Phi-3.5-vision-instruct', **kwargs):
         try:
             from transformers import AutoProcessor, AutoModelForCausalLM
-        except:
-            warnings.warn('Please install the latest version transformers.')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical('Please install the latest version transformers.')
             sys.exit(-1)
         model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto',

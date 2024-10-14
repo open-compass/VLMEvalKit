@@ -75,8 +75,9 @@ def gen_table(models, datasets):
         for d in datasets:
             try:
                 res[m].update(get_score(m, d))
-            except:
-                pass
+            except Exception as e:
+                logging.warning(e)
+                logging.warning(f'Missing Results for Model {m} x Dataset {d}')
     keys = []
     for m in models:
         for d in res[m]:

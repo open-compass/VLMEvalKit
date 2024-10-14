@@ -13,7 +13,7 @@ from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
                           GenerationConfig, StoppingCriteriaList)
 
 from ..base import BaseModel
-from ...smp import cn_string, get_cache_path
+from ...smp import *
 from ...dataset import DATASET_TYPE
 
 
@@ -33,8 +33,9 @@ class LLaVA_XTuner(BaseModel):
         try:
             from peft import PeftModel
             from xtuner.utils import PROMPT_TEMPLATE, StopWordStoppingCriteria
-        except Exception:
-            warnings.warn(
+        except Exception as err:
+            logging.critical(err)
+            logging.critical(
                 'Please install xtuner with `pip install -U xtuner` before '
                 'using LLaVA_XTuner')
             sys.exit(-1)

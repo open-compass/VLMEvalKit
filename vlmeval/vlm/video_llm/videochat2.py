@@ -8,6 +8,7 @@ import os
 import requests
 import shutil
 import huggingface_hub
+import logging
 from transformers import StoppingCriteria, StoppingCriteriaList
 from huggingface_hub import snapshot_download
 from PIL import Image
@@ -79,11 +80,13 @@ class VideoChat2_HD(BaseModel):
             from utils.easydict import EasyDict
             from models import VideoChat2_it_hd_mistral
             from dataset.hd_utils import HD_transform_padding, HD_transform_no_padding
-        except:
-            raise ImportError(
+        except Exception as err:
+            logging.critical(err)
+            logging.critical(
                 'Please first install VideoChat2 and set the root path to use VideoChat2, '
                 'which is cloned from here: https://github.com/OpenGVLab/Ask-Anything '
             )
+            sys.exit(-1)
 
         cfg = Config.from_file(self.config_file)
 

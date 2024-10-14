@@ -19,11 +19,11 @@ class Kosmos2(BaseModel):
                  **kwargs):
         try:
             from transformers import AutoProcessor, Kosmos2ForConditionalGeneration
-        except:
-            warnings.warn('''Please install Transformers version 4.45.1 by running:
-            "pip install transformers==4.45.1"''')
-        warnings.warn('''Please install Transformers version 4.45.1 by running:
-        "pip install transformers==4.45.1"''')
+        except Exception as e:
+            logging.critical(e)
+            logging.critical("Please install Transformers version 4.45.1 by running: pip install transformers==4.45.1")
+            sys.exit(-1)
+
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.model = (

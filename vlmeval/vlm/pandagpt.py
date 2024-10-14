@@ -3,6 +3,7 @@ import torch
 import os.path as osp
 import warnings
 from .base import BaseModel
+from ..smp import *
 
 
 class PandaGPT(BaseModel):
@@ -20,11 +21,14 @@ class PandaGPT(BaseModel):
         sys.path.append(osp.join(root, 'code'))
         try:
             from model.openllama import OpenLLAMAPEFTModel
-        except:
-            raise ImportError(
+        except Exception as e:
+            logging.critical(e)
+            logging.critical(
                 'Please first install PandaGPT and set the root path to use PandaGPT, '
                 'which is cloned from here: https://github.com/yxuansu/PandaGPT. '
             )
+            sys.exit(-1)
+
         self.args = {
             'model': 'openllama_peft',
             'imagebind_ckpt_path': osp.join(root, 'pretrained_ckpt/imagebind_ckpt'),
