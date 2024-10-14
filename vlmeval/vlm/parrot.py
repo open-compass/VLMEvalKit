@@ -19,12 +19,11 @@ class Parrot(BaseModel):
             from parrot.model.conversation_formatter import ConversationFormatter
             from parrot.utils.mm_utils import process_images
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install Parrot before using Parrot')
             logging.critical('Please install Parrot from https://github.com/AIDC-AI/Parrot')
             logging.critical('Using `pip install -e . --no-deps` in the Parrot directory')
             logging.critical('Recommend to install transformers==4.39.0')
-            sys.exit(-1)
+            raise e
 
         self.process_images = process_images
         self.ConversationFormatter = ConversationFormatter
@@ -43,8 +42,8 @@ class Parrot(BaseModel):
             self.conversation_formatter = conversation_formatter
             self.image_processor = self.model.get_vision_tower().image_processor
         except Exception as e:
-            logging.critical(f'Error when loading Parrot model:\n{e}')
-            sys.exit(-1)
+            logging.critical('Error when loading Parrot model:')
+            raise e
 
         self.kwargs = dict(
             do_sample=False,

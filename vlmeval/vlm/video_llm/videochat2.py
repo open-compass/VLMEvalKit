@@ -70,9 +70,8 @@ class VideoChat2_HD(BaseModel):
         self.model_path = model_path
 
         if root is None:
-            warnings.warn('Please set `root` to Ask-Anything directory, \
+            raise ValueError('Please set `root` to Ask-Anything directory, \
                           which is cloned from here: https://github.com/OpenGVLab/Ask-Anything')
-            sys.exit(-1)
 
         sys.path.append(osp.join(root, 'video_chat2'))
         try:

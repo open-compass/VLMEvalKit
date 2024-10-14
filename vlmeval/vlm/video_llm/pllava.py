@@ -23,12 +23,11 @@ class PLLaVA(BaseModel):
         try:
             from tasks.eval.model_utils import load_pllava
         except Exception as err:
-            logging.critical(err)
             logging.critical(
                 'Please first install requirements and set the root path to use PLLaVA. \
                 Follow the instructions at https://github.com/magic-research/PLLaVA.'
             )
-            sys.exit(-1)
+            raise err
 
         rank, world_size = get_rank_and_world_size()
         self.nframe = 16

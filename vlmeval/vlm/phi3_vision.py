@@ -14,9 +14,8 @@ class Phi3Vision(BaseModel):
         try:
             from transformers import AutoProcessor, AutoModelForCausalLM
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install the latest version transformers.')
-            sys.exit(-1)
+            raise e
 
         model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto').eval()
@@ -112,9 +111,9 @@ class Phi3_5Vision(BaseModel):
         try:
             from transformers import AutoProcessor, AutoModelForCausalLM
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install the latest version transformers.')
-            sys.exit(-1)
+            raise e
+
         model = AutoModelForCausalLM.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto',
             _attn_implementation='flash_attention_2').eval()

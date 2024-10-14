@@ -32,11 +32,10 @@ class VideoLLaVA_HF(BaseModel):
         try:
             from transformers import VideoLlavaProcessor, VideoLlavaForConditionalGeneration
         except Exception as err:
-            logging.critical(err)
             logging.critical('Please install the latest version transformers. \
                           You can install by `pip install transformers==4.42.0` \
                           or `pip install --upgrade git+https://github.com/huggingface/transformers.git`.')
-            sys.exit(-1)
+            raise err
 
         assert model_path is not None
         self.model_path = model_path
@@ -95,9 +94,8 @@ class VideoLLaVA(BaseModel):
             from videollava.model.language_model.llava_llama import LlavaLlamaForCausalLM
             from videollava.train.train import smart_tokenizer_and_embedding_resize
         except Exception as err:
-            logging.critical(err)
             logging.critical('Please install Video-LLaVA from https://github.com/FangXinyu-0913/Video-LLaVA.')
-            sys.exit(-1)
+            raise err
 
         model_base = None
         model_name = model_path.split('/')[-1]

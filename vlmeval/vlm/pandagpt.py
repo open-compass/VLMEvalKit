@@ -13,8 +13,7 @@ class PandaGPT(BaseModel):
 
     def __init__(self, name, root=None, **kwargs):
         if root is None:
-            warnings.warn('Please set `root` to PandaGPT code directory, which is cloned from here: ')
-            sys.exit(-1)
+            raise ValueError('Please set `root` to PandaGPT code directory, which is cloned from here: ')
 
         assert name == 'PandaGPT_13B'
         self.name = name
@@ -22,12 +21,11 @@ class PandaGPT(BaseModel):
         try:
             from model.openllama import OpenLLAMAPEFTModel
         except Exception as e:
-            logging.critical(e)
             logging.critical(
                 'Please first install PandaGPT and set the root path to use PandaGPT, '
                 'which is cloned from here: https://github.com/yxuansu/PandaGPT. '
             )
-            sys.exit(-1)
+            raise e
 
         self.args = {
             'model': 'openllama_peft',

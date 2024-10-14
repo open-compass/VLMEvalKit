@@ -39,9 +39,8 @@ class LLaMAVID(BaseModel):
             from llamavid.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
         except Exception as err:
-            logging.critical(err)
             logging.critical('Please install LLaMA-VID from https://github.com/dvlab-research/LLaMA-VID.')
-            sys.exit(-1)
+            raise err
 
         model_base = None
         model_name = get_model_name_from_path(model_path)
