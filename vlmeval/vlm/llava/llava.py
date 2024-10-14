@@ -21,10 +21,9 @@ class LLaVA(BaseModel):
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
         except Exception as err:
-            logging.critical('Please install llava before using LLaVA')
+            logging.critical('Please install llava from https://github.com/haotian-liu/LLaVA')
             raise err
 
-        warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
         assert osp.exists(model_path) or splitlen(model_path) == 2
         self.system_prompt = (
             'A chat between a curious human and an artificial intelligence assistant. '
