@@ -20,11 +20,10 @@ class Moondream1(BaseModel):
         try:
             from transformers import AutoModelForCausalLM, CodeGenTokenizerFast as Tokenizer
         except Exception as e:
-            logging.critical(e)
             logging.critical(
                 "Please install Transformers version 4.36.2 by running: 'pip install transformers==4.36.2', "
                 "please intall torchvision>=0.16.")
-            sys.exit(-1)
+            raise e
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
@@ -112,10 +111,9 @@ class Moondream2(BaseModel):
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
         except Exception as e:
-            logging.critical(e)
             logging.critical('''Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
             please intall torchvision>=0.16.''')
-            sys.exit(-1)
+            raise e
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 

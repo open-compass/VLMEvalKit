@@ -17,9 +17,8 @@ class molmo(BaseModel):
             from transformers import AutoModelForCausalLM, AutoProcessor, GenerationConfig
             import einops
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install transformer and einops before using molmo.')
-            sys.exit(-1)
+            raise e
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path,

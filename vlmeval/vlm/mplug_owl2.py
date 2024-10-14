@@ -16,9 +16,8 @@ class mPLUG_Owl2(BaseModel):
             from mplug_owl2.model.builder import load_pretrained_model
             from mplug_owl2.mm_utils import get_model_name_from_path
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install mPLUG_Owl2 before using mPLUG_Owl2. ')
-            sys.exit(-1)
+            raise e
 
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, context_len = load_pretrained_model(

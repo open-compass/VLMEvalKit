@@ -13,9 +13,9 @@ class PaliGemma(BaseModel):
         try:
             from transformers import AutoProcessor, PaliGemmaForConditionalGeneration
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install the latest version transformers.')
-            sys.exit(-1)
+            raise e
+
         model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,

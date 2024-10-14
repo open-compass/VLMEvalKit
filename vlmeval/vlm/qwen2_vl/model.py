@@ -113,9 +113,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         try:
             from qwen_vl_utils import process_vision_info
         except Exception as err:
-            logging.critical(err)
             logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            sys.exit(-1)
+            raise err
 
         messages = []
         if self.system_prompt is not None:

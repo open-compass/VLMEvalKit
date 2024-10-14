@@ -34,11 +34,10 @@ class LLaVA_XTuner(BaseModel):
             from peft import PeftModel
             from xtuner.utils import PROMPT_TEMPLATE, StopWordStoppingCriteria
         except Exception as err:
-            logging.critical(err)
             logging.critical(
                 'Please install xtuner with `pip install -U xtuner` before '
                 'using LLaVA_XTuner')
-            sys.exit(-1)
+            raise err
 
         if not osp.isdir(llava_path):
             cache_path = get_cache_path(llava_path)

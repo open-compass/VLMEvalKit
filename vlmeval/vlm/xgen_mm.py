@@ -14,9 +14,8 @@ class XGenMM(BaseModel):
         try:
             from transformers import AutoModelForVision2Seq, AutoTokenizer, AutoImageProcessor
         except Exception as err:
-            logging.critical(err)
             logging.critical('Please install the latest version transformers.')
-            sys.exit(-1)
+            raise err
 
         model = AutoModelForVision2Seq.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto'

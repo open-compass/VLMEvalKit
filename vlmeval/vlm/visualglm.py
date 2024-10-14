@@ -12,9 +12,8 @@ class VisualGLM(BaseModel):
         try:
             import sat
         except Exception as err:
-            logging.critical(err)
             logging.critical('Please install SwissArmyTransformer to use VisualGLM')
-            sys.exit(-1)
+            raise err
 
         assert model_path is not None
         self.model_path = model_path
