@@ -124,7 +124,7 @@ class OpenAIWrapper(BaseAPI):
                 self.api_base = api_base
             else:
                 self.logger.error('Unknown API Base. ')
-                sys.exit(-1)
+                raise NotImplementedError
 
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 

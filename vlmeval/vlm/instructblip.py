@@ -25,9 +25,8 @@ class InstructBLIP(BaseModel):
             from omegaconf import OmegaConf
             from lavis.common.registry import registry
         except Exception as e:
-            logging.critical(e)
             logging.critical('Please install lavis before using InstructBLIP. ')
-            sys.exit(-1)
+            raise e
 
         assert name in self.config_map
         cfg_path = osp.join(config_root, self.config_map[name])

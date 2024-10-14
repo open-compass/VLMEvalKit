@@ -25,12 +25,11 @@ class Mantis(BaseModel):
             from mantis.models.mfuyu import MFuyuForCausalLM, MFuyuProcessor
             from mantis.models.conversation import conv_mllava_v1 as default_conv, conv_templates
         except Exception as e:
-            logging.critical(e)
             logging.critical(
                 "Mantis is not installed. Please install Mantis to use this model.Please use 'pip install "
                 "git+https://github.com/TIGER-AI-Lab/Mantis.git' to install"
             )
-            sys.exit(-1)
+            raise e
 
         try:
             from transformers import AutoModelForVision2Seq, AutoProcessor

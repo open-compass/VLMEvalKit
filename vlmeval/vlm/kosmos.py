@@ -20,9 +20,8 @@ class Kosmos2(BaseModel):
         try:
             from transformers import AutoProcessor, Kosmos2ForConditionalGeneration
         except Exception as e:
-            logging.critical(e)
             logging.critical("Please install Transformers version 4.45.1 by running: pip install transformers==4.45.1")
-            sys.exit(-1)
+            raise e
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 

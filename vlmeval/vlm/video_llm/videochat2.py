@@ -81,12 +81,11 @@ class VideoChat2_HD(BaseModel):
             from models import VideoChat2_it_hd_mistral
             from dataset.hd_utils import HD_transform_padding, HD_transform_no_padding
         except Exception as err:
-            logging.critical(err)
             logging.critical(
                 'Please first install VideoChat2 and set the root path to use VideoChat2, '
                 'which is cloned from here: https://github.com/OpenGVLab/Ask-Anything '
             )
-            sys.exit(-1)
+            raise err
 
         cfg = Config.from_file(self.config_file)
 

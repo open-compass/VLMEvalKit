@@ -15,10 +15,9 @@ class DeepSeekVL(BaseModel):
         try:
             import deepseek_vl
         except Exception as e:
-            logging.critical(e)
             logging.critical(
                 'Please first install deepseek_vl from source codes in: https://github.com/deepseek-ai/DeepSeek-VL')
-            sys.exit(-1)
+            raise e
 
     def __init__(self, model_path='deepseek-ai/deepseek-vl-1.3b-chat', **kwargs):
         self.check_install()

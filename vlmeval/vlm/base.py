@@ -163,6 +163,5 @@ class BaseModel:
                 video = [x['value'] for x in message if x['type'] == 'video'][0]
             return prompt, video
         else:
-            import sys
-            warnings.warn('Model does not support video input.')
-            sys.exit(-1)
+            logging.critical('Model does not support video input.')
+            raise NotImplementedError

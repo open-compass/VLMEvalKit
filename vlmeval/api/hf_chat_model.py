@@ -69,9 +69,8 @@ class HFChatModel:
             try:
                 from fastchat.model import get_conversation_template
             except Exception as err:
-                self.logger.critical(err)
                 self.logger.critical('Please install fastchat first to use vicuna. ')
-                sys.exit(-1)
+                raise err
 
         self.explicit_device = kwargs.pop('device', None)
 
