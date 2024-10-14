@@ -11,7 +11,6 @@ import requests
 import shutil
 import subprocess
 import warnings
-import logging
 import pandas as pd
 from collections import OrderedDict, defaultdict
 from multiprocessing import Pool, current_process
@@ -152,7 +151,11 @@ def run_command(cmd):
     return subprocess.check_output(cmd).decode()
 
 def load_env():
-    logger = logging.getLogger('LOAD_ENV')
+    import logging
+    logging.basicConfig(
+        format='[%(asctime)s] %(levelname)s - %(filename)s: %(funcName)s - %(lineno)d: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
+
     try:
         import vlmeval
     except ImportError:
