@@ -24,9 +24,12 @@ class POINTS(BaseModel):
 
     def __init__(self, model_path: str, **kwargs) -> None:
         version = transformers.__version__
-        assert version == '4.38.2', f'The version of transformers should be 4.38.2, but got {version}.'  # noqa
+        use_fast = True
+        if 'yi' in model_path.lower():
+            assert version == '4.38.2', f'The version of transformers for Yi-1.5 should be 4.38.2, but got {version}.'  # noqa
+            use_fast = False
         self.tokenizer = AutoTokenizer.from_pretrained(
-            model_path, use_fast=False)
+            model_path, use_fast=use_fast)
         self.model = AutoModelForCausalLM.from_pretrained(model_path,
                                                           trust_remote_code=True,  # noqa
                                                           device_map='cuda'
