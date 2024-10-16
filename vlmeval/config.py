@@ -298,7 +298,7 @@ molmo_series={
 }
 
 kosmos_series={
-    'Kosmos2': partial(Kosmos2, model_path='/root/kosmos-2-patch14-224')
+    'Kosmos2': partial(Kosmos2, model_path='microsoft/kosmos-2-patch14-224')
 }
 
 points_series = {
