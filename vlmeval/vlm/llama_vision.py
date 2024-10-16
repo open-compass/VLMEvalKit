@@ -38,6 +38,8 @@ class llama_vision(BaseModel):
 
         device_map['vision_model'] = rank
         device_map['language_model.model.embed_tokens'] = rank
+        device_map['language_model.model.rotary_emb'] = rank
+        device_map['language_model.model.norm'] = rank + world_size * (num_gpus - 1)
         device_map['language_model.lm_head'] = rank + world_size * (num_gpus - 1)
         device_map['multi_modal_projector'] = rank + world_size * (num_gpus - 1)
         return device_map
@@ -50,7 +52,7 @@ class llama_vision(BaseModel):
             raise e
 
         if '90b' in model_path.lower():
-            device_map = self.split_model
+            device_map = self.split_model()
             self.model = MllamaForConditionalGeneration.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
@@ -63,6 +65,7 @@ class llama_vision(BaseModel):
                 device_map='cpu',
             ).cuda().eval()
 
+        self.device = 'cuda'
         self.processor = AutoProcessor.from_pretrained(model_path)
         if 'Instruct' in model_path:
             kwargs_default = dict(do_sample=True, temperature=0.6, top_p=0.9)
@@ -179,7 +182,7 @@ class llama_vision(BaseModel):
             ]}
         ]
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
-        inputs = self.processor(image, input_text, return_tensors='pt').to(self.model.device)
+        inputs = self.processor(image, input_text, return_tensors='pt').to(self.device)
         if not self.use_custom_prompt(dataset):
             if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'Y/N':
                 self.kwargs['max_new_tokens'] = 128
