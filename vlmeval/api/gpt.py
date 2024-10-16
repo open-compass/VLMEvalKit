@@ -202,8 +202,8 @@ class OpenAIWrapper(BaseAPI):
             answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
-                self.logger.error(err)
-                self.logger.error(response)
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 
@@ -232,7 +232,7 @@ class OpenAIWrapper(BaseAPI):
         try:
             enc = tiktoken.encoding_for_model(self.model)
         except Exception as err:
-            self.logger.warning(err)
+            self.logger.warning(f'{type(err)}: {err}')
             enc = tiktoken.encoding_for_model('gpt-4')
         assert isinstance(inputs, list)
         tot = 0

@@ -52,7 +52,7 @@ class HFChatModel:
             context_window = self._get_context_length(model, model_path)
             return context_window
         except Exception as err:
-            self.logger.critical(err)
+            self.logger.critical(f'{type(err)}: {err}')
             self.logger.critical(
                 'Failed to extract context_window information from config / generation_config. '
                 'Please read the above code and check if the logic works for you model path'
@@ -114,7 +114,7 @@ class HFChatModel:
             model.generation_config = GenerationConfig.from_pretrained(
                 model_path, trust_remote_code=True, device_map=device)
         except Exception as err:
-            self.logger.warning(err)
+            self.logger.warning(f'{type(err)}: {err}')
 
         torch.cuda.empty_cache()
         self.model = model

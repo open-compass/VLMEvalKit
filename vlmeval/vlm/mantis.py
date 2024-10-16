@@ -34,7 +34,7 @@ class Mantis(BaseModel):
         try:
             from transformers import AutoModelForVision2Seq, AutoProcessor
         except Exception as e:
-            logging.critical(e)
+            logging.critical(f'{type(e)}: {e}')
             logging.critical("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
 
         # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2".

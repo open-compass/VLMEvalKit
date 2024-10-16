@@ -195,7 +195,7 @@ def download_file(url, filename=None):
             urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
     except Exception as e:
         import logging
-        logging.warning(e)
+        logging.warning(f'{type(e)}: {e}')
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
@@ -203,7 +203,7 @@ def download_file(url, filename=None):
                 download_file(url_new, filename)
                 return filename
             except Exception as e:
-                logging.warning(e)
+                logging.warning(f'{type(e)}: {e}')
                 raise Exception(f'Failed to download {url}')
         else:
             raise Exception(f'Failed to download {url}')

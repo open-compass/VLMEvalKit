@@ -99,8 +99,8 @@ class Claude_Wrapper(BaseAPI):
             answer = resp_struct['data']['content'][0]['text'].strip()
         except Exception as err:
             if self.verbose:
-                self.logger.error(err)
-                self.logger.error(response)
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 
