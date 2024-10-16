@@ -145,7 +145,7 @@ class BaseAPI:
                 return self.generate_inner(inputs, **kwargs)
             except Exception as e:
                 if self.verbose:
-                    self.logger.info(e)
+                    self.logger.info(f'{type(e)}: {e}')
                 inputs = inputs[1:]
                 while len(inputs) and inputs[0]['role'] != 'user':
                     inputs = inputs[1:]
@@ -187,7 +187,7 @@ class BaseAPI:
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'An error occured during try {i}: ')
-                    self.logger.error(err)
+                    self.logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
             time.sleep(T)
@@ -235,7 +235,7 @@ class BaseAPI:
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'An error occured during try {i}: ')
-                    self.logger.error(err)
+                    self.logger.error(f'{type(err)}: {err}')
             # delay before each retry
             T = rd.random() * self.wait * 2
             time.sleep(T)

@@ -198,7 +198,7 @@ def get_font():
         ff = urlopen(truetype_url)
         font = ImageFont.truetype(ff, size=40)
     except Exception as e:
-        logging.warning(e)
+        logging.warning(f'{type(e)}: {e}')
         logging.warning("Fail to download the font. Use the default one.")
         font = ImageFont.load_default(size=40)
     return font
@@ -462,7 +462,7 @@ class MMLongBench(ImageBaseDataset):
         try:
             import fitz
         except Exception as e:
-            logging.critical(e)
+            logging.critical(f'{type(e)}: {e}')
             logging.critical('Please use `pip install pymupdf` to parse PDF files.')
 
         line = origin_line.copy()

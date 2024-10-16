@@ -241,7 +241,7 @@ class SenseChatVisionWrapper(BaseAPI):
             if self.verbose:
                 self.logger.error('---------------------------ERROR---------------------------')
                 self.logger.error(response.json())
-                self.logger.error(err)
+                self.logger.error(f'{type(err)}: {err}')
                 self.logger.error('---------------------------request_id---------------------------' + request_id)
                 self.logger.error(
                     'api error' + response.json()['error']['message']

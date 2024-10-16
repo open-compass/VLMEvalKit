@@ -90,7 +90,7 @@ class DUDE(ImageBaseDataset):
         try:
             import fitz
         except Exception as e:
-            logging.critical(e)
+            logging.critical(f'{type(e)}: {e}')
             logging.critical('Please use `pip install pymupdf` to parse PDF files.')
 
         line = origin_line.copy()
