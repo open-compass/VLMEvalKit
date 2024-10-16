@@ -173,7 +173,7 @@ def load_env():
     for k, v in values.items():
         if v is not None and len(v):
             os.environ[k] = v
-    print(f'API Keys successfully loaded from {pth}')
+    logging.info(f'API Keys successfully loaded from {pth}')
 
 def pip_install_robust(package):
     import sys
