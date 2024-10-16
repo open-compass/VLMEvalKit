@@ -12,6 +12,36 @@ class llama_vision(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
+    # This function is used to split Llama-3.2-90B
+    def split_model(self):
+        import math
+        device_map = {}
+        num_gpus = torch.cuda.device_count()
+        rank, world_size = get_rank_and_world_size()
+        num_gpus = num_gpus // world_size
+
+        num_layers = 100
+        # GPU0: -5, GPU-1: -7
+        total_cost = num_layers + 5 + 7
+
+        # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
+        num_layers_per_gpu = total_cost // num_gpus
+        num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+        num_layers_per_gpu[0] -= 5
+        num_layers_per_gpu[-1] -= 7
+
+        layer_cnt = 0
+        for i, num_layer in enumerate(num_layers_per_gpu):
+            for j in range(num_layer):
+                device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
+                layer_cnt += 1
+
+        device_map['vision_model'] = rank
+        device_map['language_model.model.embed_tokens'] = rank
+        device_map['language_model.lm_head'] = rank + world_size * (num_gpus - 1)
+        device_map['multi_modal_projector'] = rank + world_size * (num_gpus - 1)
+        return device_map
+
     def __init__(self, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct', **kwargs):
         try:
             from transformers import MllamaForConditionalGeneration, AutoProcessor
@@ -19,11 +49,20 @@ class llama_vision(BaseModel):
             logging.critical('Please install transformers>=4.45.0 before using llama_vision.')
             raise e
 
-        self.model = MllamaForConditionalGeneration.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-            device_map='auto',
-        ).eval()
+        if '90b' in model_path.lower():
+            device_map = self.split_model
+            self.model = MllamaForConditionalGeneration.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                device_map=device_map,
+            ).eval()
+        else:
+            self.model = MllamaForConditionalGeneration.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                device_map='cpu',
+            ).cuda().eval()
+
         self.processor = AutoProcessor.from_pretrained(model_path)
         if 'Instruct' in model_path:
             kwargs_default = dict(do_sample=True, temperature=0.6, top_p=0.9)
@@ -35,7 +74,8 @@ class llama_vision(BaseModel):
         self.model_name = model_path
 
     def use_custom_prompt(self, dataset):
-        assert dataset is not None
+        if dataset is None:
+            return False
         if listinstr(['AI2D', 'MMMU', 'MathVista', 'ChartQA', 'DocVQA'], dataset):
             # For Certain dataset we use custom prompt
             return True
