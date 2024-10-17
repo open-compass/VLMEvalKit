@@ -52,3 +52,4 @@ from .pixtral import Pixtral
 from .llama_vision import llama_vision
 from .molmo import molmo
 from .points import POINTS
+from .nvlm import NVLM
