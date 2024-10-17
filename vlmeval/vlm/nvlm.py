@@ -141,7 +141,7 @@ class NVLM(BaseModel):
         logging.info(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
         pixel_values = load_image(image_path, max_num=6).to(torch.bfloat16).cuda()
         response = self.model.chat(self.tokenizer, pixel_values, prompt, self.kwargs)
