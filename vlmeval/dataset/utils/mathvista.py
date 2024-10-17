@@ -119,40 +119,6 @@ def MathVista_auxeval(model, line):
             return dict(log=log, res=res)
     log += 'All 5 retries failed.\n'
     return dict(log=log, res='')
-def MathVista_auxeval_model(model,tokenizer,line):
-    prompt = build_mathvista_gpt4_prompt(line)
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": prompt}
-    ]
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
-    )
-    model_inputs = tokenizer([text], return_tensors="pt").to('cuda')
-    log = ''
-    retry = 5
-    if post_check(line, prefetch=True):
-        res = post_check(line, prefetch=True)
-        return dict(log='Prefetch succeed', res=res)
-    for i in range(retry):
-        prediction = line['prediction']
-        generated_ids = model.generate(
-            **model_inputs,
-            max_new_tokens=512
-        )
-        generated_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)]
-
-        res = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
-
-        if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
-        else:
-            log += 'Succeed'
-            return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')    
 
 
 def MathVista_acc(result_file):
