@@ -17,6 +17,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 <a href="https://huggingface.co/spaces/opencompass/open_vlm_leaderboard">🤗 HF Leaderboard</a> •
 <a href="https://huggingface.co/datasets/VLMEval/OpenVLMRecords">🤗 Evaluation Records</a> •
+<a href="https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard">🤗 HF Video Leaderboard</a> •
 <a href="https://discord.gg/evDT4GZmxN">🔊 Discord</a> •
 <a href="https://www.arxiv.org/abs/2407.11691">📝 Report</a>
 </div>
