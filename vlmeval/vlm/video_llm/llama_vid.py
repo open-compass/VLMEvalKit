@@ -12,11 +12,11 @@ from decord import VideoReader, cpu
 from huggingface_hub import snapshot_download
 
 
-def load_video(video_path):
+def load_video(video_path, setting_fps):
     vr = VideoReader(video_path, ctx=cpu(0))
     total_frame_num = len(vr)
     fps = round(vr.get_avg_fps())
-    frame_idx = [i for i in range(0, total_frame_num, fps)]
+    frame_idx = [i for i in range(0, total_frame_num, int(fps / setting_fps))]
     spare_frames = vr.get_batch(frame_idx).asnumpy()
     return spare_frames
 
@@ -32,6 +32,7 @@ class LLaMAVID(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample 1 fps from the video
 
     def __init__(self, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1', **kwargs):
         assert model_path is not None
@@ -62,7 +63,7 @@ class LLaMAVID(BaseModel):
         self.processor = image_processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframe = 8
+        self.fps = 1
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from llamavid.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
@@ -84,7 +85,7 @@ class LLaMAVID(BaseModel):
 
         # Check if the video exists
         if os.path.exists(video):
-            video = load_video(video)
+            video = load_video(video, self.fps)
             video = video_processor.preprocess(video, return_tensors='pt')['pixel_values'].half().cuda()
             video = [video]
 

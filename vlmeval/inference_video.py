@@ -18,7 +18,7 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_dict={}, api_nproc=4):
+def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_dict={}, api_nproc=4, fps=-1):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
@@ -27,10 +27,13 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
 
     indices = list(samples_dict.keys())
     structs = [dataset.build_prompt(samples_dict[idx], num_frames=nframe,
-                                    video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
+                                    video_llm=getattr(model, 'VIDEO_LLM', False), fps=fps) for idx in indices]
 
     packstr = 'pack' if pack else 'nopack'
-    out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
+    if nframe > 0:
+        out_file = f'{work_dir}/{model_name}_{dataset_name}_{nframe}frame_{packstr}_supp.pkl'
+    else:
+        out_file = f'{work_dir}/{model_name}_{dataset_name}_{fps}fps_{packstr}_supp.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
 
     structs = [s for i, s in zip(indices, structs) if i not in res or res[i] == FAIL_MSG]
@@ -46,7 +49,7 @@ def infer_data_api(work_dir, model_name, dataset, nframe=8, pack=False, samples_
     return res
 
 
-def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, verbose=False, api_nproc=4):
+def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, verbose=False, api_nproc=4, fps=-1):
     res = load(out_file) if osp.exists(out_file) else {}
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
@@ -72,7 +75,8 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
             nframe=nframe,
             pack=pack,
             samples_dict={k: sample_map[k] for k in sample_indices_subrem},
-            api_nproc=api_nproc)
+            api_nproc=api_nproc,
+            fps=fps)
         for k in sample_indices_subrem:
             assert k in supp
         res.update(supp)
@@ -82,10 +86,22 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
-        # adapt to model frame sample number first
-        nframe = getattr(model, 'nframe', 0) if getattr(model, 'nframe', 0) > 0 else nframe
-        # when using video-llm, build prompt returns video+question; otherwise, several frames+question
+        if getattr(model, 'nframe', 0) > 0:
+            if nframe > 0:
+                print(f'{model_name} is a video-llm model, nframe is set to {nframe}, not using default')
+                setattr(model, 'nframe', nframe)
+            else:
+                raise ValueError(f'nframe is not suitable for {model_name}')
+        if getattr(model, 'fps', 0) > 0:
+            if fps > 0:
+                print(f'{model_name} is a video-llm model, fps is set to {fps}, not using default')
+                setattr(model, 'fps', fps)
+            else:
+                raise ValueError(f'fps is not suitable for {model_name}')
+
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+            if nframe == 0:
+                raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
             struct = model.build_prompt(
                 dataset.data.iloc[sample_map[idx]], dataset=dataset,
                 num_frames=nframe, video_llm=getattr(model, 'VIDEO_LLM', False)
@@ -93,7 +109,7 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
         else:
             struct = dataset.build_prompt(
                 sample_map[idx], num_frames=nframe,
-                video_llm=getattr(model, 'VIDEO_LLM', False)
+                video_llm=getattr(model, 'VIDEO_LLM', False), fps=fps
             )
         response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
@@ -120,24 +136,35 @@ def infer_data_job_video(
         pack=False,
         verbose=False,
         subtitle=False,
-        api_nproc=4):
+        api_nproc=4,
+        fps=-1):
 
     dataset_name = dataset.dataset_name
     packstr = 'pack' if pack else 'nopack'
     rank, world_size = get_rank_and_world_size()
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
+    if nframe > 0:
+        result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
+    else:
+        result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{fps}fps_{packstr}.xlsx')
     if dataset_name == 'Video-MME':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
-
+    if fps > 0:
+        result_file = result_file.replace('.xlsx', f'_fps{fps}.xlsx')
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model_name
 
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
+    if nframe > 0:
+        tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
+    else:
+        tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{fps}fps_{packstr}.pkl')
     if dataset_name == 'Video-MME':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
+
+    if fps > 0:
+        tmpl = tmpl.replace('.pkl', f'_fps{fps}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(
@@ -148,7 +175,8 @@ def infer_data_job_video(
         pack=pack,
         out_file=out_file,
         verbose=verbose,
-        api_nproc=api_nproc)
+        api_nproc=api_nproc,
+        fps=fps)
 
     if world_size > 1:
         dist.barrier()
