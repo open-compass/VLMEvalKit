@@ -20,18 +20,16 @@ class molmo(BaseModel):
             logging.critical('Please install transformer and einops before using molmo.')
             raise e
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            torch_dtype='auto',
-            device_map='auto'
-        )
-        self.processor = AutoProcessor.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            torch_dtype='auto',
-            device_map='auto'
-        )
+        if '72b' not in model_path.lower():
+            self.model = AutoModelForCausalLM.from_pretrained(
+                model_path,
+                trust_remote_code=True,
+                torch_dtype=torch.bfloat16,
+                device_map='cuda')
+        else:
+            raise NotImplementedError
+
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.bfloat16)
         self.kwargs = kwargs
         self.model_name = model_path
 
