@@ -21,9 +21,12 @@ class Pixtral(BaseModel):
             logging.critical('Please install `mistral-inference` and `mistral_common`')
             raise err
 
-        if get_cache_path(model_path) is None:
-            snapshot_download(repo_id=model_path)
-        cache_path = get_cache_path(self.model_path)
+        if os.path.exists(model_path):
+            cache_path = model_path
+        else:
+            if get_cache_path(model_path) is None:
+                snapshot_download(repo_id=model_path)
+            cache_path = get_cache_path(self.model_path)
 
         self.tokenizer = MistralTokenizer.from_file(f'{cache_path}/tekken.json')
         model = Transformer.from_folder(cache_path, device='cpu')
