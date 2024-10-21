@@ -431,3 +431,138 @@ class CustomVQADataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         raise NotImplementedError
+
+
+class MLLMJudgeDataset(ImageBaseDataset):
+    TYPE = 'MLLM_JUDGE'
+
+    # URLs for the datasets and their respective MD5 checksums
+    DATASET_URL = {
+        'MLLM_JUDGE_PAIR': (
+            'https://huggingface.co/datasets/shuaishuaicdp/MLLM-Judge/resolve/main/pair_data.tsv'
+        ),
+        'MLLM_JUDGE_BATCH': (
+            'https://huggingface.co/datasets/shuaishuaicdp/MLLM-Judge/resolve/main/batch_data.tsv'
+        ),
+        'MLLM_JUDGE_SCORE': (
+            'https://huggingface.co/datasets/shuaishuaicdp/MLLM-Judge/resolve/main/score_data.tsv'
+        ),
+    }
+
+    DATASET_MD5 = {
+        'MLLM_JUDGE_PAIR': '8ed72a76b8181c86c0aa8345dbe8b727',
+        'MLLM_JUDGE_BATCH': 'c61ff78bb4ecd9cdbd0f7b13233c4153',
+        'MLLM_JUDGE_SCORE': '9cec8ba438b331d4a77ea18e1c20e430',
+    }
+
+    # Updated instructions
+    score_instruction = """You will receive a single response from the AI assistant to user's instruction.
+    Use scores to show the quality of the response. Here is the detailed scoring rubric for evaluating
+    the quality of responses from AI assistants:
+    Poor (1): The response significantly deviates from the user's instruction and fails to address
+    the query effectively. It shows a lack of relevance, accuracy, and comprehensiveness. Creativity
+    and granularity are absent or poorly executed.
+    Fair (2): The response addresses the user's instruction partially, with evident shortcomings
+    in relevance, accuracy, or comprehensiveness. It lacks depth in creativity and granularity,
+    indicating a superficial understanding of the user's inquiry.
+    Average (3): The response adequately addresses the user's instruction, showing a fair level
+    of relevance, accuracy, and comprehensiveness. It reflects a basic level of creativity and
+    granularity but may lack sophistication or depth in fully capturing the user's inquiry.
+    Good (4): The response is well-aligned with the user's instruction, demonstrating a high degree
+    of relevance, accuracy, and comprehensiveness. It shows creativity and a nuanced understanding
+    of the topic, with detailed granularity that enhances the response quality.
+    Excellent (5): The response perfectly adheres to the user's instruction, excelling in relevance,
+    accuracy, comprehensiveness, creativity, and granularity. It provides an insightful, detailed,
+    and thorough answer, indicating a deep and nuanced understanding of the user's inquiry.
+    Use "[[1]]", "[[2]]", "[[3]]", "[[4]]", "[[5]]" to indicate your evaluate score in the key 'Judgement'."""
+
+    pair_instructions = """You will be presented with two responses from different assistants to the same user
+    instruction. Your task is to assess and compare these responses based on how effectively they
+    adhere to the user's original instruction and how aptly they address the user's inquiry.
+    Indicate your decision in the key 'Judgement', use "[[A]]" if assistant A prevails, "[[B]]" if assistant B does,
+    and "[[C]]" for a tie."""
+
+    batch_instruction = """You will be presented with several responses from different assistants to the same user
+    instruction. Your task is to assess and compare these responses based on how effectively they adhere to the user's
+    original instruction and how aptly they address the user's inquiry.
+    After your assessment and comparison, you should RANK the responses from best to worst as the following template.
+    If Assistant A is the best response, Assistant D is the worst response, you should output like [[A]], [[B]], [[C]],
+    [[D]]. Indicate your final rank in the key 'Judgement'. Your assessment should identify whether the assistant
+    effectively adheres to the user's instruction and addresses the user's inquiry.
+    In your evaluation, weigh factors such as relevance, accuracy, comprehensiveness, creativity, and the granularity
+    of the responses. Do not allow the length of the responses to influence your evaluation. Do not favor certain names
+    or position of the assistants. Be as objective as possible."""
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+
+        assert msgs[-1]['type'] == 'text'
+
+        if self.dataset_name == 'MLLM_JUDGE_PAIR':
+            msgs[-1]['value'] = self.pair_instructions + '\n' + msgs[-1]['value']
+        elif self.dataset_name == 'MLLM_JUDGE_BATCH':
+            msgs[-1]['value'] = self.batch_instruction + '\n' + msgs[-1]['value']
+        elif self.dataset_name == 'MLLM_JUDGE_SCORE':
+            msgs[-1]['value'] = self.score_instruction + '\n' + msgs[-1]['value']
+        return msgs
+
+    # Method to evaluate the model outputs
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        dataset = self.dataset_name
+        assert 'answer' in data and 'prediction' in data
+        # Choose the appropriate evaluation method based on the dataset type
+        if 'pair' in dataset.lower():
+            method = self.evaluate_pair
+        elif 'batch' in dataset.lower():
+            method = self.evaluate_batch
+        else:
+            method = self.evaluate_score
+
+        lt = len(data)
+        pool = mp.Pool(16)
+        # Process each row of data
+        lines = [data.iloc[i] for i in range(lt)]
+        res = pool.map(partial(method), lines)
+
+        hit = [r['correct'] for r in res]
+        ret = dict()
+        ret['Overall'] = np.mean(hit) * 100
+
+        # Save the evaluation results
+        ret_df = pd.DataFrame.from_dict(ret, orient='index', columns=['Accuracy'])
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_eval_results.csv')
+        dump(ret_df, result_file)
+        return ret_df
+
+    @staticmethod
+    def evaluate_pair(line):
+        prediction = line['prediction'].strip().upper()
+        correct_rank = line['answer'].strip().upper()
+
+        if len(prediction) != 4 or len(correct_rank) != 4:
+            result = {'correct': 0.0, 'error': 'Prediction or correct answer is not 1 characters'}
+        else:
+            result = {'correct': 1.0 if prediction == correct_rank else 0.0}
+        return result
+
+    @staticmethod
+    def evaluate_batch(line):
+        prediction = line['prediction'].strip().upper()
+        correct_rank = line['answer'].strip().upper()
+
+        if len(prediction) != 4 or len(correct_rank) != 4:
+            result = {'correct': 0.0, 'error': 'Prediction or correct rank is not 4 characters'}
+        else:
+            result = {'correct': 1.0 if prediction == correct_rank else 0.0}
+        return result
+
+    @staticmethod
+    def evaluate_score(line):
+        pred = line['prediction'].strip().lower()
+        human_score = int(line['answer'])
+
+        result = {'correct': 1.0 if human_score == pred else 0.0}
+        return result
