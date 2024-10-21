@@ -5,6 +5,7 @@ import warnings
 from .base import BaseModel
 from ..smp import *
 
+
 class Janus(BaseModel):
 
     INSTALL_REQ = True
