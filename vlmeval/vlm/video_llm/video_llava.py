@@ -3,6 +3,7 @@ import warnings
 import copy as cp
 import numpy as np
 import sys
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
@@ -30,11 +31,11 @@ class VideoLLaVA_HF(BaseModel):
     def __init__(self, model_path='LanguageBind/Video-LLaVA-7B-hf', **kwargs):
         try:
             from transformers import VideoLlavaProcessor, VideoLlavaForConditionalGeneration
-        except:
-            warnings.warn('Please install the latest version transformers. \
+        except Exception as err:
+            logging.critical('Please install the latest version transformers. \
                           You can install by `pip install transformers==4.42.0` \
                           or `pip install --upgrade git+https://github.com/huggingface/transformers.git`.')
-            sys.exit(-1)
+            raise err
 
         assert model_path is not None
         self.model_path = model_path
@@ -92,9 +93,9 @@ class VideoLLaVA(BaseModel):
             from videollava.model.builder import load_pretrained_model
             from videollava.model.language_model.llava_llama import LlavaLlamaForCausalLM
             from videollava.train.train import smart_tokenizer_and_embedding_resize
-        except:
-            warnings.warn('Please install Video-LLaVA from https://github.com/FangXinyu-0913/Video-LLaVA.')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install Video-LLaVA from https://github.com/FangXinyu-0913/Video-LLaVA.')
+            raise err
 
         model_base = None
         model_name = model_path.split('/')[-1]

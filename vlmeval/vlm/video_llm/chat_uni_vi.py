@@ -4,6 +4,7 @@ import copy as cp
 import numpy as np
 import sys
 import os
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
@@ -91,9 +92,10 @@ class Chatunivi(BaseModel):
         assert model_path is not None
         try:
             from ChatUniVi.model.builder import load_pretrained_model
-        except:
-            warnings.warn('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
+            raise err
+
         model_name = 'ChatUniVi'
         tokenizer, model, processor, context_len = load_pretrained_model(model_path, None, model_name)
         self.tokenizer = tokenizer
@@ -105,7 +107,10 @@ class Chatunivi(BaseModel):
         self.processor = image_processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframe = 8
+        self.nframe = 64
+        self.resolution = 224
+        if 'v1.5' in model_path:
+            self.resolution = 336
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from ChatUniVi.conversation import conv_templates, SeparatorStyle
@@ -134,7 +139,9 @@ class Chatunivi(BaseModel):
             for n, m in model.named_modules():
                 m = m.to(dtype=torch.bfloat16)
 
-        video_frames, slice_len = _get_rawvideo_dec(video, video_processor, max_frames=MAX_IMAGE_LENGTH)
+        video_frames, slice_len = _get_rawvideo_dec(
+            video, video_processor, max_frames=MAX_IMAGE_LENGTH, image_resolution=self.resolution
+        )
 
         if model.config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN * slice_len + DEFAULT_IM_END_TOKEN + '\n' + qs

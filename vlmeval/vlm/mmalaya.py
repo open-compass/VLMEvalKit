@@ -252,8 +252,8 @@ class MMAlaya2(BaseModel):
         )
 
     def use_custom_prompt(self, dataset):
-
-        if dataset is not None and listinstr(['MMDU'], dataset):
+        assert dataset is not None
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         else:
@@ -306,7 +306,7 @@ class MMAlaya2(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['MathVista', 'MathVision'], dataset):
+            if listinstr(['MathVista', 'MathVision', 'MathVerse'], dataset):
                 prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']
