@@ -139,7 +139,8 @@ class VinternChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-        assert dataset is not None
+        if dataset is None:
+            return False
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
@@ -228,7 +229,10 @@ class VinternChat(BaseModel):
         return message
 
     def set_max_num(self, dataset):
-        assert dataset is not None
+        if dataset is None:
+            self.max_num = 1
+            return
+
         res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
@@ -261,7 +265,7 @@ class VinternChat(BaseModel):
                     image_idx += 1
             prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video', 'MVBench'], dataset):
+        if dataset is not None and listinstr(['Video', 'MVBench'], dataset):
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -277,7 +281,7 @@ class VinternChat(BaseModel):
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
                 image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
@@ -362,7 +366,7 @@ class VinternChat(BaseModel):
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_cnt == 1:
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
                 image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
