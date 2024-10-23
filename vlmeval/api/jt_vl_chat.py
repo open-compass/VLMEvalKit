@@ -10,6 +10,7 @@ from vlmeval.dataset import img_root_map
 
 
 API_ENDPOINT = 'https://jiutian.10086.cn/kunlun/ingress/api/h3t-eeceff/92390745235a40a484d850be19e1f8b4/ai-5d7ae47ec93f4280953273c4001aafee/service-7544ea5ee3e841ad9d01e7af44acef7c/v1/chat/completions'  # noqa: E501
+APP_CODE = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI5ZGQwNmQ2ZjU4YTU0ZGY0OGEzNjRhMjQyNGMwODEyNSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg4MjkwNDA3OX0.k5t_T-955xWMndzBbx4WQQNAgm5DpMos9mHm7vkFipQ3yebCFMfyufpSxORSfEVpBaDS3Nly0dd8ygQYGnDgIQcC72vQ1xtkjCP49LNcqlceoET4rGc1zwRi76XLPSGFES4GcwvEmr7Ilth7XtqZNxcDF_Z7HyHyf1-zF0JIQETYSoxenqLU-gNteNfqRUnlyCgaKh03DscAbYvtoMUxEaFa2ZqyRSwekdHI_SPKCq9aC9G19yDPHTjeiwl1ubtyC5uMy5pERn_ClRsZS3Wyb-GmD5QQsFofrWvCiU_fVJuUiez39pYZvEP8awH0R9B7SkpQ4XOzj3fdytTPYy3g6g'  # noqa: E501
 
 
 class JTVLChatWrapper(BaseAPI):
@@ -20,7 +21,8 @@ class JTVLChatWrapper(BaseAPI):
                  model: str = 'jt-vl-chat',
                  retry: int = 5,
                  wait: int = 5,
-                 key: str = None,
+                 api_base: str = API_ENDPOINT,
+                 key: str = APP_CODE,
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0.7,
@@ -31,6 +33,7 @@ class JTVLChatWrapper(BaseAPI):
 
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.api_base = api_base
 
         if key is None:
             key = os.environ.get('JTVLChat_API_KEY', None)
@@ -189,7 +192,7 @@ class JTVLChatWrapper(BaseAPI):
 
         header_dict = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.key}
 
-        r = requests.post(API_ENDPOINT, headers=header_dict, data=json_data, timeout=3000)
+        r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000)
         try:
             assert r.status_code == 200
             r_json = r.json()
