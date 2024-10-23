@@ -7,7 +7,10 @@ from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.dataset import img_root_map
-from vlmeval.smp import *
+
+
+API_ENDPOINT = 'https://jiutian.10086.cn/kunlun/ingress/api/h3t-eeceff/92390745235a40a484d850be19e1f8b4/ai-5d7ae47ec93f4280953273c4001aafee/service-7544ea5ee3e841ad9d01e7af44acef7c/v1/chat/completions'  # noqa: E501
+
 
 class JTVLChatWrapper(BaseAPI):
     is_api: bool = True
@@ -29,11 +32,10 @@ class JTVLChatWrapper(BaseAPI):
         self.temperature = temperature
         self.max_tokens = max_tokens
 
-
         if key is None:
             key = os.environ.get('JTVLChat_API_KEY', None)
         assert key is not None, (
-            'Please set the API Key (which is also called app_code,obtain it here: https://github.com/jiutiancv/JT-VL-Chat)'
+            'Please set the API Key (also called app_code, obtain it here: https://github.com/jiutiancv/JT-VL-Chat)'
         )
 
         self.key = key
@@ -80,6 +82,7 @@ class JTVLChatWrapper(BaseAPI):
             return False
         else:
             return True
+
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
@@ -102,6 +105,7 @@ class JTVLChatWrapper(BaseAPI):
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
         return prompt
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -170,26 +174,29 @@ class JTVLChatWrapper(BaseAPI):
         prompt, image_path = self.message_to_promptimg(message=inputs, dataset=dataset)
         # print("prompt:",prompt)
         if image_path:
-            send_data = self.get_send_data(prompt=prompt, image_path=image_path, temperature=self.temperature,
-                     max_tokens=self.max_tokens)
+            send_data = self.get_send_data(
+                prompt=prompt,
+                image_path=image_path,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens)
         else:
-            send_data = self.get_send_data_no_image(prompt=prompt, temperature=self.temperature,
-                                    max_tokens=self.max_tokens)
-
-       
-        url_chat = 'https://jiutian.10086.cn/kunlun/ingress/api/h3t-eeceff/92390745235a40a484d850be19e1f8b4/ai-5d7ae47ec93f4280953273c4001aafee/service-7544ea5ee3e841ad9d01e7af44acef7c/v1/chat/completions'
+            send_data = self.get_send_data_no_image(
+                prompt=prompt,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens)
 
         json_data = json.dumps(send_data)
 
         header_dict = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.key}
 
-        r = requests.post(url_chat, headers=header_dict, data=json_data, timeout=3000)
+        r = requests.post(API_ENDPOINT, headers=header_dict, data=json_data, timeout=3000)
         try:
             assert r.status_code == 200
             r_json = r.json()
             output = r_json['choices'][0]['message']['content']
             if self.verbose:
                 self.logger.info(f'inputs: {inputs}\nanswer: {output}')
+
             return 0,output,'Succeeded! '
 
         except:
@@ -200,8 +207,6 @@ class JTVLChatWrapper(BaseAPI):
                 self.logger.error(error_con)
                 self.logger.error(f'The input messages are {inputs}.')
             return -1,error_msg,''
-
-
 
 
 class JTVLChatAPI(JTVLChatWrapper):
