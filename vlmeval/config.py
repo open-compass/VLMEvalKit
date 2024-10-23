@@ -206,7 +206,7 @@ deepseekvl_series = {
 
 
 janus_series = {
-    'janus_1.3b': partial(Janus, model_path='deepseek-ai/Janus-1.3B')
+    'Janus-1.3B': partial(Janus, model_path='deepseek-ai/Janus-1.3B')
 }
 
 cogvlm_series = {
