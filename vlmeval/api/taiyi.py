@@ -88,7 +88,7 @@ class TaiyiWrapper(BaseAPI):
             new_msgs = msgs
 
         return new_msgs
-    
+
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
@@ -111,13 +111,13 @@ class TaiyiWrapper(BaseAPI):
             prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
 
         return prompt
-    
+
     def build_yorn_prompt(self, line, dataset=None):
         if listinstr(['HallusionBench'], dataset):
             pre_prompt = 'Read the following question carefully, think and solve it step by step.\n\n'
         else:
             pre_prompt = ''
-        
+
         prompt = pre_prompt + line['question'] + ' Please answer yes or no as the final answer.'
 
         return prompt
@@ -141,7 +141,7 @@ class TaiyiWrapper(BaseAPI):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
-        
+
         if DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif DATASET_TYPE(dataset) == 'Y/N':
@@ -159,7 +159,7 @@ class TaiyiWrapper(BaseAPI):
             from .. import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
             message = self.image_first(message)
-            
+
         return message
 
     def generate_inner(self, inputs, **kwargs) -> str:
