@@ -54,3 +54,4 @@ from .llama_vision import llama_vision
 from .molmo import molmo
 from .points import POINTS
 from .nvlm import NVLM
+from .vintern_chat import VinternChat
