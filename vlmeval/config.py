@@ -200,6 +200,11 @@ deepseekvl_series = {
     'deepseek_vl_1.3b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-1.3b-chat'),
 }
 
+
+janus_series = {
+    'Janus-1.3B': partial(Janus, model_path='deepseek-ai/Janus-1.3B')
+}
+
 cogvlm_series = {
     'cogvlm-grounding-generalist': partial(CogVlm, model_path='THUDM/cogvlm-grounding-generalist-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat': partial(CogVlm, model_path='THUDM/cogvlm-chat-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
