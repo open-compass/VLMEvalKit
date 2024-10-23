@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument('--nframe', type=int, default=8)
     parser.add_argument('--pack', action='store_true')
     parser.add_argument('--use-subtitle', action='store_true')
+    parser.add_argument('--fps', type=float, default=-1)
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
@@ -35,6 +36,7 @@ def parse_args():
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Rerun: will remove all evaluation temp files
     parser.add_argument('--rerun', action='store_true')
+
     args = parser.parse_args()
     return args
 
@@ -93,15 +95,25 @@ def main():
                     continue
 
                 result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+                if args.fps > 0:  # For Video Dataset, set the fps for priority
+                    if dataset_name == 'MVBench':
+                        raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
+                    args.nframe = 0
                 if dataset_name in ['MMBench-Video']:
                     packstr = 'pack' if args.pack else 'nopack'
-                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                    if args.nframe > 0:
+                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                    else:
+                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
                 elif dataset.MODALITY == 'VIDEO':
                     if args.pack:
                         logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                         args.pack = False
                     packstr = 'pack' if args.pack else 'nopack'
-                    result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                    if args.nframe > 0:
+                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                    else:
+                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
                     if dataset_name in ['Video-MME']:
                         subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
                         result_file = result_file.replace('.xlsx', f'_{subtitlestr}.xlsx')
@@ -127,7 +139,8 @@ def main():
                         pack=args.pack,
                         verbose=args.verbose,
                         subtitle=args.use_subtitle,
-                        api_nproc=args.nproc)
+                        api_nproc=args.nproc,
+                        fps=args.fps)
                 elif dataset.TYPE == 'MT':
                     model = infer_data_job_mt(
                         model,
