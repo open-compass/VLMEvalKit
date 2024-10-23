@@ -324,7 +324,7 @@ nvlm_series = {
 }
 
 vintern_series = {
-    'Vintern-3B-beta': partial(VinternChat, model_path='5CD-AI/Vintern-3B-beta', version='V2.0'),
+    'Vintern-3B-beta': partial(VinternChat, model_path='5CD-AI/Vintern-3B-beta'),
 }
 
 supported_VLM = {}
