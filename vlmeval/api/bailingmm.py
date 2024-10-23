@@ -5,6 +5,7 @@ from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp.vlm import encode_image_file_to_base64
 import time
 
+
 class bailingMMWrapper(BaseAPI):
 
     is_api: bool = True
