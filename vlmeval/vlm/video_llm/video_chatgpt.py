@@ -15,6 +15,7 @@ class VideoChatGPT(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample a video in 100 frames
 
     def __init__(self, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=None, **kwargs):
         assert model_path is not None
@@ -41,7 +42,6 @@ class VideoChatGPT(BaseModel):
         self.context_len = video_token_len
         self.kwargs = kwargs
         self.vision_tower = vision_tower
-        self.nframe = 8
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from video_chatgpt.eval.model_utils import load_video

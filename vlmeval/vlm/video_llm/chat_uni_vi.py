@@ -87,6 +87,7 @@ class Chatunivi(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample 1 fps (maximum 64 frames) from the video
 
     def __init__(self, model_path='Chat-UniVi/Chat-UniVi', **kwargs):
         assert model_path is not None
@@ -107,7 +108,7 @@ class Chatunivi(BaseModel):
         self.processor = image_processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframe = 64
+        self.fps = 1
         self.resolution = 224
         if 'v1.5' in model_path:
             self.resolution = 336
@@ -140,7 +141,8 @@ class Chatunivi(BaseModel):
                 m = m.to(dtype=torch.bfloat16)
 
         video_frames, slice_len = _get_rawvideo_dec(
-            video, video_processor, max_frames=MAX_IMAGE_LENGTH, image_resolution=self.resolution
+            video, video_processor, max_frames=MAX_IMAGE_LENGTH,
+            image_resolution=self.resolution, video_framerate=self.fps
         )
 
         if model.config.mm_use_im_start_end:
