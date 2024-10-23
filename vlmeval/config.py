@@ -46,7 +46,7 @@ ungrouped = {
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
     'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
-    'Pixtral-12B': partial(Pixtral, model_path="mistralai/Pixtral-12B-2409")
+    'Pixtral-12B': partial(Pixtral, model_path='mistralai/Pixtral-12B-2409')
 }
 
 api_models = {
@@ -118,7 +118,7 @@ qwen_series = {
     'qwen_chat': partial(QwenVLChat, model_path='Qwen/Qwen-VL-Chat'),
     'monkey': partial(Monkey, model_path='echo840/Monkey'),
     'monkey-chat': partial(MonkeyChat, model_path='echo840/Monkey-Chat'),
-    'minimonkey': partial(MiniMonkey, model_path='mx262/MiniMokney')
+    'minimonkey': partial(MiniMonkey, model_path='mx262/MiniMonkey')
 }
 
 llava_series = {
@@ -142,7 +142,7 @@ llava_series = {
     'llava_onevision_qwen2_72b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-si'),
     'llava_onevision_qwen2_0.5b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-ov'),
     'llava_onevision_qwen2_7b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'),
-    'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov'),
+    'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov-sft'),
 }
 
 internvl_series = {
@@ -265,7 +265,7 @@ qwen2vl_series = {
     'Qwen2-VL-2B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-2B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-2B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=16384*28*28),
-    'XinYuan-VL-2B-Instruct': partial(Qwen2VLChat, model_path='thomas-yanxin/XinYuan-VL-2B', min_pixels=1280*28*28, max_pixels=16384*28*28),
+    'XinYuan-VL-2B-Instruct': partial(Qwen2VLChat, model_path='Cylingo/Xinyuan-VL-2B', min_pixels=1280*28*28, max_pixels=16384*28*28),
 }
 
 slime_series = {
