@@ -33,7 +33,14 @@ class Janus(BaseModel):
         self.model = model.to(torch.bfloat16).cuda().eval()
 
         torch.cuda.empty_cache()
-        default_kwargs = dict(max_new_tokens=512, do_sample=False, use_cache=True, output_logits=False, output_scores=False, return_dict_in_generate=False)
+        default_kwargs = dict(
+            max_new_tokens=512,
+            do_sample=False,
+            use_cache=True,
+            output_logits=False,
+            output_scores=False,
+            return_dict_in_generate=False)
+
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
@@ -65,7 +72,7 @@ class Janus(BaseModel):
         if not ('MMVet' in dataset):
             self.vl_chat_processor.system_prompt = ""
         else:
-            self.vl_chat_processor.system_prompt = "You are a helpful assistant. Please answer truthfully and write out your thinking step by step to be sure you get the right answer."
+            self.vl_chat_processor.system_prompt = "You are a helpful assistant. Please answer truthfully and write out your thinking step by step to be sure you get the right answer."  # noqa: E501
 
         conversation = self.prepare_inputs(message)
         from janus.utils.io import load_pil_images
@@ -127,4 +134,3 @@ class Janus(BaseModel):
         message = [dict(type='image', value=s) for s in tgt_path]
         message.extend([dict(type='text', value=prompt)])
         return message
-
