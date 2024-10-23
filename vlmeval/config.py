@@ -204,6 +204,11 @@ deepseekvl_series = {
     'deepseek_vl_1.3b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-1.3b-chat'),
 }
 
+
+janus_series = {
+    'janus_1.3b': partial(Janus, model_path='deepseek-ai/Janus-1.3B')
+}
+
 cogvlm_series = {
     'cogvlm-grounding-generalist': partial(CogVlm, model_path='THUDM/cogvlm-grounding-generalist-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
     'cogvlm-chat': partial(CogVlm, model_path='THUDM/cogvlm-chat-hf', tokenizer_name='lmsys/vicuna-7b-v1.5'),
@@ -322,7 +327,7 @@ model_groups = [
     ungrouped, api_models,
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
-    deepseekvl_series, minicpm_series, cogvlm_series, wemm_series,
+    deepseekvl_series, janus_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
     slime_series, eagle_series, moondream_series, llama_series, molmo_series, 
