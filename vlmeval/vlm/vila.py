@@ -22,12 +22,12 @@ class VILA(BaseModel):
             from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
             from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN # noqa E501
             from llava.conversation import conv_templates, SeparatorStyle
-        except:
-            warnings.warn('Please install VILA before using VILA')
-            warnings.warn('Please install VILA from https://github.com/NVlabs/VILA')
-            warnings.warn('Please install VLMEvalKit after installing VILA')
-            warnings.warn('VILA is supported only with transformers==4.36.2')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install VILA before using VILA')
+            logging.critical('Please install VILA from https://github.com/NVlabs/VILA')
+            logging.critical('Please install VLMEvalKit after installing VILA')
+            logging.critical('VILA is supported only with transformers==4.36.2')
+            raise err
 
         warnings.warn('Please install the latest version of VILA from GitHub before you evaluate the VILA model.')
         assert osp.exists(model_path) or len(model_path.split('/')) == 2
@@ -42,9 +42,9 @@ class VILA(BaseModel):
                 device='cpu',
                 device_map='cpu'
             )
-        except Exception as e:
-            warnings.warn(f'Error loading VILA model: {e}')
-            exit(-1)
+        except Exception as err:
+            logging.critical('Error loading VILA model: ')
+            raise err
 
         self.model = self.model.cuda()
         if '3b' in model_path:

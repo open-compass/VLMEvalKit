@@ -360,9 +360,7 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
         res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
         result = load(result_file)
         for k, v in zip(keys, res):
-            if k in result:
-                assert result[k]['hit'] == v['hit'] and result[k]['log'] == v['log']
-            else:
+            if k not in result:
                 result[k] = v
     data['hit'] = [result[i]['hit'] for i in data['index']]
     data['log'] = [result[i]['log'] for i in data['index']]
@@ -426,9 +424,7 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
                 keys=keys)
             result = load(result_file)
             for k, v in zip(keys, res):
-                if k in result:
-                    assert result[k]['hit'] == v['hit'] and result[k]['log'] == v['log']
-                else:
+                if k not in result:
                     result[k] = v
 
     tmp_pth = f'/tmp/{timestr()}.xlsx'
@@ -486,6 +482,7 @@ def get_dimension_rating(data_path):
     ]
     data = load(data_path)
     results = {}
+    results['Overall'] = {}
     for task in TASKS:
         results[f'{task}'] = {}
         for subtask in SUBTASKS:
@@ -495,7 +492,7 @@ def get_dimension_rating(data_path):
         question = data.iloc[i]
         Task = question['category'].split('/')[0]
         Subtask = question['category'].split('/')[1]
-        Category = question['l2-category']
+        Category = question['l2-category'].lower()
         if 'attribute' in Category.lower():
             Category = Category.split('/')[0] + '/attribute'
         if question['score'] >= 0:
@@ -506,6 +503,7 @@ def get_dimension_rating(data_path):
                 results[Task][Subtask][f'{Category}']['true'] += cnt
                 results[Task][Subtask][f'{Category}']['false'] += 1 - cnt
 
+    sum_all, succ_all = 0, 0
     for task, tasks_values in results.items():
         cnt_task, sum_task = 0, 0
         for substask, subtask_value in tasks_values.items():
@@ -526,5 +524,8 @@ def get_dimension_rating(data_path):
             acc_task = 0
         else:
             acc_task = cnt_task / sum_task
+        succ_all += cnt_task
+        sum_all += sum_task
         results[task]['Avg'] = acc_task
+    results['Overall'] = succ_all / sum_all
     return results

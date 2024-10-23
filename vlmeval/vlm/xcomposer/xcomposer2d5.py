@@ -202,7 +202,12 @@ class XComposer2d5(BaseModel):
                         need_bos=True, max_token=10)
         return out
 
+    def set_max_num(self, dataset):
+        if listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+            self.model.hd_num = 25
+
     def generate_inner(self, message, dataset=None):
+        self.set_max_num(dataset)
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
 
         with torch.cuda.amp.autocast():
@@ -216,6 +221,8 @@ class XComposer2d5(BaseModel):
             elif listinstr(['llava', 'mmvet'], dataset.lower()):
                 return self.generate_vanilla(image_path, prompt)
             elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
+                return self.generate_multichoice(image_path, prompt, dataset)
+            elif listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
                 return self.generate_multichoice(image_path, prompt, dataset)
             elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
                 return self.generate_vqa(image_path, prompt)

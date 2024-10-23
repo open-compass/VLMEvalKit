@@ -57,7 +57,7 @@ Please analyze these images and provide the answer to the question about the vid
 Please directly reply with your response to the only question.
 """
 
-    TYPE = 'VQA'
+    TYPE = 'Video-VQA'
 
     def __init__(self, dataset='MMBench-Video', pack=False):
         super().__init__(dataset=dataset, pack=pack)
@@ -66,7 +66,7 @@ Please directly reply with your response to the only question.
     def supported_datasets(cls):
         return ['MMBench-Video']
 
-    def prepare_dataset(self, dataset_name='MMBench-Video', repo_id='nebulae09/MMBench-Video'):
+    def prepare_dataset(self, dataset_name='MMBench-Video', repo_id='opencompass/MMBench-Video'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
             if md5(data_file) != self.MD5:

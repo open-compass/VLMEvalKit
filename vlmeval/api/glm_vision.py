@@ -91,7 +91,7 @@ class GLMVisionWrapper(BaseAPI):
             return 0, answer, 'Succeeded! '
         except Exception as err:
             if self.verbose:
-                self.logger.error(err)
+                self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(f'The input messages are {inputs}.')
             return -1, self.fail_msg, ''
 
