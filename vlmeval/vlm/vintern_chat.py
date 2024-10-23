@@ -240,13 +240,12 @@ class VinternChat(BaseModel):
         else:
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=3)
 
-            if listinstr(['MTVQA'], dataset) :
+            if listinstr(['MTVQA'], dataset):
                 kwargs_default["max_new_tokens"] = 256
 
-            if listinstr(['MMMU_DEV_VAL','MMMU_TEST'], dataset) :
+            if listinstr(['MMMU_DEV_VAL','MMMU_TEST'], dataset):
                 kwargs_default["num_beams"] = 1
 
-                
         self.kwargs = kwargs_default
 
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
@@ -283,15 +282,15 @@ class VinternChat(BaseModel):
         if listinstr(res_1_datasets, dataset):
             self.max_num = 1
         elif listinstr(res_12_datasets, dataset):
-            self.max_num = 6 #12
+            self.max_num = 6  # 12
         elif listinstr(res_18_datasets, dataset):
-            self.max_num = 6 #18
+            self.max_num = 6  # 18
         elif listinstr(res_24_datasets, dataset):
-            self.max_num = 6 #24
+            self.max_num = 6  # 24
         elif listinstr(["MME"], dataset):
-            self.max_num = 6 #24
+            self.max_num = 6  # 24
         else:
-            self.max_num = 6 #6
+            self.max_num = 6  # 6
 
     def generate_v1_2(self, message, dataset=None):
         self.INTERLEAVE = False
@@ -463,7 +462,7 @@ class VinternChat(BaseModel):
         else:
             pixel_values = None
             num_patches_list = []
-            
+
         response, history = self.model.chat(
             self.tokenizer,
             pixel_values=pixel_values,
