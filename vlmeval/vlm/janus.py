@@ -69,7 +69,7 @@ class Janus(BaseModel):
         return conversation
 
     def generate_inner(self, message, dataset=None):
-        if not ('MMVet' in dataset):
+        if not ('MMVet' in dataset) or dataset is None:
             self.vl_chat_processor.system_prompt = ""
         else:
             self.vl_chat_processor.system_prompt = "You are a helpful assistant. Please answer truthfully and write out your thinking step by step to be sure you get the right answer."  # noqa: E501
