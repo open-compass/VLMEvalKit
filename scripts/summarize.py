@@ -1,5 +1,5 @@
 from vlmeval.smp import *
-from vlmeval.dataset import dataset_URLs
+from vlmeval.dataset import SUPPORTED_DATASETS
 
 def get_score(model, dataset):
 
@@ -102,5 +102,5 @@ def gen_table(models, datasets):
 if __name__ == '__main__':
     args = parse_args()
     if args.data == []:
-        args.data = list(dataset_URLs)
+        args.data = list(SUPPORTED_DATASETS)
     gen_table(args.model, args.data)
