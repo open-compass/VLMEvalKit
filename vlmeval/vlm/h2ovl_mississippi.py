@@ -8,7 +8,6 @@ import pandas as pd
 import string
 
 
-
 class H2OVLChat(BaseModel):
 
     INSTALL_REQ = False
@@ -25,8 +24,7 @@ class H2OVLChat(BaseModel):
         self.model = AutoModel.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            trust_remote_code=True,
-            ).eval()
+            trust_remote_code=True).eval()
         self.model = self.model.to(device)
         self.image_size = self.model.config.vision_config.image_size
         self.kwargs = kwargs
@@ -94,10 +92,10 @@ class H2OVLChat(BaseModel):
         image_num = len([x for x in message if x['type'] == 'image'])
         question = ''
         image_files = [x['value'] for x in message if x['type'] == 'image']
-        
+
         if image_num == 1:
             question = '<image>\n' + '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-        
+
         elif image_num > 1:
             text_part = ' '.join([x['value'] for x in message if x['type'] == 'text'])
             image_part = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)])
@@ -105,19 +103,17 @@ class H2OVLChat(BaseModel):
 
         else:
             question = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-            image_files = None 
+            image_files = None
 
         response, history = self.model.chat(
             self.tokenizer,
             image_files=image_files,
             question=question,
             generation_config=self.kwargs,
-            max_tiles=6, 
-            history=None, 
-            return_history=True
-        )
-        
+            max_tiles=6,
+            history=None,
+            return_history=True)
         return response
 
     def generate_inner(self, message, dataset=None):
-            return self.generate(message, dataset)
+        return self.generate(message, dataset)
