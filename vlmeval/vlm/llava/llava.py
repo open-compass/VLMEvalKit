@@ -657,7 +657,7 @@ class LLaVA_OneVision(BaseModel):
         return text_outputs
 
     def generate_inner_video(self, message, dataset=None):
-        content, videos = "", []
+        content, text_content, visual_content, videos = "", "", "", []
 
         for msg in message:
             if msg["type"] == "text":
@@ -729,7 +729,7 @@ class LLaVA_OneVision(BaseModel):
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
 
-    def load_video(video_path, max_frames_num, fps=1, force_sample=False):
+    def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):
         from decord import VideoReader, cpu
         import numpy as np
 
