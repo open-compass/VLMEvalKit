@@ -55,3 +55,4 @@ from .molmo import molmo
 from .points import POINTS
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
+from .h2ovl_mississippi import H2OVLChat
