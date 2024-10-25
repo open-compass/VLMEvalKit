@@ -20,11 +20,10 @@ class LLaVA(BaseModel):
         try:
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
-        except:
-            warnings.warn('Please install llava before using LLaVA')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install llava from https://github.com/haotian-liu/LLaVA')
+            raise err
 
-        warnings.warn('Please install the latest version of llava from github before you evaluate the LLaVA model. ')
         assert osp.exists(model_path) or splitlen(model_path) == 2
         self.system_prompt = (
             'A chat between a curious human and an artificial intelligence assistant. '
@@ -47,16 +46,16 @@ class LLaVA(BaseModel):
                 device='cpu',
                 device_map='cpu'
             )
-        except:
+        except Exception as err:
             if 'ShareGPT4V' in model_path:
                 import llava
-                warnings.warn(
+                logging.critical(
                     'Please manually remove the encoder type check in '
                     f'{llava.__path__[0]}/model/multimodal_encoder/builder.py '
                     'Line 8 to use the ShareGPT4V model. ')
             else:
-                warnings.warn('Unknown error when loading LLaVA model.')
-            exit(-1)
+                logging.critical('Unknown error when loading LLaVA model.')
+            raise err
 
         self.model = self.model.cuda()
         self.conv_mode = 'llava_v1'
@@ -327,10 +326,11 @@ class LLaVA_Next2(BaseModel):
         assert model_path is not None
         try:
             from llava.model.builder import load_pretrained_model
-            from llava.conversation import conv_templates
-            from llava.mm_utils import get_model_name_from_path, tokenizer_image_token
-        except:
-            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+            from llava.conversation import conv_templates, SeparatorStyle
+            from llava.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
+        except Exception as err:
+            logging.critical('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+            raise err
 
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map=None)
@@ -347,6 +347,8 @@ class LLaVA_Next2(BaseModel):
         self.model = model
         self.image_processor = image_processor
         self.tokenizer_image_token = tokenizer_image_token
+        self.KeywordStoppingCriteria = KeywordsStoppingCriteria
+        self.SeparatorStyle = SeparatorStyle
 
     def generate_inner(self, message, dataset=None):
         content, images = '', []
@@ -372,12 +374,17 @@ class LLaVA_Next2(BaseModel):
         input_ids = image_tokenizer(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
+        stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         cont = self.model.generate(
             input_ids,
             images=image_tensor,
             do_sample=False,
             temperature=0,
             max_new_tokens=512,
+            stopping_criteria=[stopping_criteria]
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
@@ -424,10 +431,11 @@ class LLaVA_OneVision(BaseModel):
         assert model_path is not None
         try:
             from llava.model.builder import load_pretrained_model
-            from llava.conversation import conv_templates
-            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
-        except ImportError:
-            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+            from llava.conversation import conv_templates, SeparatorStyle
+            from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token, KeywordsStoppingCriteria  # noqa: E501
+        except Exception as err:
+            logging.critical('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`')
+            raise err
 
         model_name = get_model_name_from_path(model_path)
         device_map = self.split_model(model_path)
@@ -453,6 +461,8 @@ class LLaVA_OneVision(BaseModel):
         self.image_processor = image_processor
         self.tokenizer_image_token = tokenizer_image_token
         self.process_images = process_images  # Store process_images as a class attribute
+        self.KeywordStoppingCriteria = KeywordsStoppingCriteria
+        self.SeparatorStyle = SeparatorStyle
 
     def generate_inner_image(self, message, dataset=None):
         content, images = '', []
@@ -482,6 +492,10 @@ class LLaVA_OneVision(BaseModel):
                                                return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
+        stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         # Pass image sizes along with other parameters
         cont = self.model.generate(
             input_ids,
@@ -490,6 +504,7 @@ class LLaVA_OneVision(BaseModel):
             do_sample=False,
             temperature=0,
             max_new_tokens=512,
+            stopping_criteria=[stopping_criteria]
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
@@ -524,6 +539,10 @@ class LLaVA_OneVision(BaseModel):
         image_sizes = [frame.size for frame in video_frames]
         modalities = ['video'] * len(video_frames)
 
+        stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
+        keywords = [stop_str]
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
+
         # Pass image sizes along with other parameters
         cont = self.model.generate(
             input_ids,
@@ -532,14 +551,15 @@ class LLaVA_OneVision(BaseModel):
             do_sample=False,
             temperature=0,
             max_new_tokens=512,
-            modalities=modalities
+            modalities=modalities,
+            stopping_criteria=[stopping_criteria]
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
 
     def load_video(self, video_path, max_frames_num):
         from decord import VideoReader, cpu
-        if type(video_path) == str:
+        if type(video_path) is str:
             vr = VideoReader(video_path, ctx=cpu(0))
         else:
             vr = VideoReader(video_path[0], ctx=cpu(0))

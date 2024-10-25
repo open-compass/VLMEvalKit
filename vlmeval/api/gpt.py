@@ -64,6 +64,10 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('YI_API_KEY', '')
             if key is None:
                 key = env_key
+        elif 'internvl2-pro' in model:
+            env_key = os.environ.get('InternVL2_PRO_KEY', '')
+            if key is None:
+                key = env_key
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -124,7 +128,7 @@ class OpenAIWrapper(BaseAPI):
                 self.api_base = api_base
             else:
                 self.logger.error('Unknown API Base. ')
-                sys.exit(-1)
+                raise NotImplementedError
 
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
@@ -182,6 +186,8 @@ class OpenAIWrapper(BaseAPI):
         # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
+        elif 'internvl2-pro' in self.model:
+            headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
@@ -200,8 +206,11 @@ class OpenAIWrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
-        except:
-            pass
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
+
         return ret_code, answer, response
 
     def get_image_token_len(self, img_path, detail='low'):
@@ -228,7 +237,8 @@ class OpenAIWrapper(BaseAPI):
         import tiktoken
         try:
             enc = tiktoken.encoding_for_model(self.model)
-        except:
+        except Exception as err:
+            self.logger.warning(f'{type(err)}: {err}')
             enc = tiktoken.encoding_for_model('gpt-4')
         assert isinstance(inputs, list)
         tot = 0
