@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 import sys
 import warnings
+import math
 import logging
 
 import torch
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
+from ...smp import get_rank_and_world_size
 
 
 def ensure_image_url(image: str) -> str:
@@ -27,6 +29,34 @@ def ensure_video_url(video: str) -> str:
     if os.path.exists(video):
         return 'file://' + video
     raise ValueError(f'Invalid video: {video}')
+
+
+def split_model():
+    device_map = {}
+
+    total_gpus = torch.cuda.device_count()
+    rank, world_size = get_rank_and_world_size()
+    num_gpus = total_gpus // world_size
+    # + 8 is virtual layers for the memory of visual
+    num_layers = 80 + 8
+    num_layers_per_gpu = math.ceil(num_layers / num_gpus)
+    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+    num_layers_per_gpu[0] -= 6
+    num_layers_per_gpu[-1] -= 2
+    layer_cnt = 0
+
+    for i, num_layer in enumerate(num_layers_per_gpu):
+        for j in range(num_layer):
+            device_map[f'model.layers.{layer_cnt}'] = rank + i * world_size
+            layer_cnt += 1
+
+    last_gpu = rank + (num_gpus - 1) * world_size
+    device_map['visual'] = rank
+    device_map['model.embed_tokens'] = rank
+    device_map['model.norm'] = last_gpu
+    device_map['model.rotary_emb'] = last_gpu
+    device_map['lm_head'] = last_gpu
+    return device_map
 
 
 class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
@@ -74,9 +104,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             self.model.cuda().eval()
         else:
             self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+                model_path, torch_dtype='auto', device_map=split_model, attn_implementation='flash_attention_2'
             )
-            self.model.cuda().eval()
+            self.model.eval()
 
         torch.cuda.empty_cache()
 
