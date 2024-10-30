@@ -16,7 +16,7 @@ class Falcon2VLM(BaseModel):
         self.model_path = model_path
         self.processor = LlavaNextProcessor.from_pretrained(model_path, tokenizer_class='PreTrainedTokenizerFast')
         self.model = LlavaNextForConditionalGeneration.from_pretrained(
-            model_path, torch_dtype=torch.bfloat16, device='cuda').eval()
+            model_path, torch_dtype=torch.bfloat16, device_map='cuda').eval()
         default_kwargs = {'max_new_tokens': 512}
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
@@ -26,8 +26,9 @@ class Falcon2VLM(BaseModel):
         image = Image.open(image_path).convert('RGB')
 
         prompt = f'User:<image>\n{prompt} Falcon:'
-        inputs = self.processor(prompt, images=image, return_tensors='pt', padding=True)
+        inputs = self.processor(text=prompt, images=image, return_tensors='pt').to('cuda')
 
         output = self.model.generate(**inputs, **self.kwargs)
-
-        return self.processor.decode(output[0], skip_special_tokens=True).strip()
+        prompt_length = inputs['input_ids'].shape[1]
+        model_response = self.processor.decode(output[0][prompt_length:], skip_special_tokens=True).strip()
+        return model_response
