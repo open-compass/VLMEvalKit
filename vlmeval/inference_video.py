@@ -88,17 +88,20 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
             continue
         if getattr(model, 'nframe', 0) > 0:
             if nframe > 0:
-                print(f'{model_name} is a video-llm model, nframe is set to {nframe}, not using default')
-                setattr(model, 'nframe', nframe)
-            else:
-                raise ValueError(f'nframe is not suitable for {model_name}')
+                if getattr(model, 'nframe', 0) != nframe:
+                    print(f'{model_name} is a video-llm model, nframe is set to {nframe}, not using default')
+                    setattr(model, 'nframe', nframe)
+            elif getattr(model, 'fps', 0) == 0:
+                raise ValueError(f'fps is not suitable for {model_name}')
         if getattr(model, 'fps', 0) > 0:
             if fps > 0:
-                print(f'{model_name} is a video-llm model, fps is set to {fps}, not using default')
-                setattr(model, 'fps', fps)
-            else:
-                raise ValueError(f'fps is not suitable for {model_name}')
-
+                if getattr(model, 'fps', 0) != fps:
+                    print(f'{model_name} is a video-llm model, fps is set to {fps}, not using default')
+                    setattr(model, 'fps', fps)
+            elif getattr(model, 'nframe', 0) == 0:
+                raise ValueError(f'nframe is not suitable for {model_name}')
+        if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
+            dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             if nframe == 0:
                 raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')

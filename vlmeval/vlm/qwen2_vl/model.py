@@ -104,7 +104,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             self.model.cuda().eval()
         else:
             self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-                model_path, torch_dtype='auto', device_map=split_model, attn_implementation='flash_attention_2'
+                model_path, torch_dtype='auto', device_map=split_model(), attn_implementation='flash_attention_2'
             )
             self.model.eval()
 
