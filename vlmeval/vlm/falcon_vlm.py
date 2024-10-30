@@ -1,7 +1,5 @@
-from transformers import LlavaNextForConditionalGeneration, LlavaNextProcessor
 from PIL import Image
 import requests
-import torch
 
 from .base import BaseModel
 
@@ -12,6 +10,8 @@ class Falcon2VLM(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path='tiiuae/falcon-11B-vlm', **kwargs):
+        import torch
+        from transformers import LlavaNextForConditionalGeneration, LlavaNextProcessor
 
         self.model_path = model_path
         self.processor = LlavaNextProcessor.from_pretrained(model_path, tokenizer_class='PreTrainedTokenizerFast')
