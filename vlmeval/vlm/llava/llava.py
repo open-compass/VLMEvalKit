@@ -585,9 +585,12 @@ class LLaVA_OneVision(BaseModel):
 
         if "llava" in model_path.lower():
             conv_mode = "qwen_1_5"
-        self.nframe = 16
-        if "72b" in model_path.lower():
-            self.nframe = 32
+        if 'llava-video' in model_path.lower():
+            self.nframe = 64
+        else:
+            self.nframe = 16
+            if "72b" in model_path.lower():
+                self.nframe = 32
 
         if "video" in model_path.lower():
             self.force_sample = self.video_kwargs["force_sample"]

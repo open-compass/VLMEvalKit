@@ -322,7 +322,9 @@ Based on your observations, select the best option that accurately addresses the
         img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
         return img_frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm):
+    def build_prompt(self, line, num_frames, video_llm, fps):
+        if fps > 0:
+            raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
