@@ -21,6 +21,9 @@ from .mmbench_video import MMBenchVideo
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
+from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
+from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
+from .video_concat_dataset import ConcatVideoDataset
 from .utils import *
 from ..smp import *
 
@@ -119,7 +122,9 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4,
+    MLVU, MLVU_MCQ, MLVU_OpenEnded,
+    TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN
 ]
 
 TEXT_DATASET = [
@@ -130,7 +135,7 @@ CUSTOM_DATASET = [
     CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
 ]
 
-DATASET_COLLECTION = [ConcatDataset]
+DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
 DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION
 SUPPORTED_DATASETS = []
@@ -153,6 +158,26 @@ def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
     if 'openended' in dataset.lower():
         return 'VQA'
     warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as {default}. ')
+    return default
+
+
+def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
+    for cls in DATASET_CLASSES:
+        if dataset in cls.supported_datasets():
+            if hasattr(cls, 'MODALITY'):
+                return cls.MODALITY
+    # Have to add specific routine to handle ConcatDataset
+    if dataset in ConcatDataset.DATASET_SETS:
+        dataset_list = ConcatDataset.DATASET_SETS[dataset]
+        MODALITIES = [DATASET_MODALITY(dname) for dname in dataset_list]
+        assert np.all([x == MODALITIES[0] for x in MODALITIES]), (dataset_list, MODALITIES)
+        return MODALITIES[0]
+
+    if 'VIDEO' in dataset.lower():
+        return 'VIDEO'
+    elif 'IMAGE' in dataset.lower():
+        return 'IMAGE'
+    warnings.warn(f'Dataset {dataset} is a custom one, will treat modality as {default}. ')
     return default
 
 
