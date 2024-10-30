@@ -106,6 +106,7 @@ class VideoLLaVA(BaseModel):
         self.processor = processor
         self.context_len = context_len
         self.kwargs = kwargs
+        self.nframes = 8
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from videollava.conversation import conv_templates, SeparatorStyle
@@ -113,20 +114,27 @@ class VideoLLaVA(BaseModel):
         from videollava.constants import DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
         from videollava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
-        if model.config.mm_use_im_start_end:
-            qs = DEFAULT_VID_START_TOKEN + ''.join([DEFAULT_IMAGE_TOKEN] * 8) + DEFAULT_VID_END_TOKEN + '\n' + qs
+        if type(qs) is dict and 'user' in qs:
+            qs['user'] = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframes) + '\n' + qs['user']
         else:
-            qs = ''.join([DEFAULT_IMAGE_TOKEN] * 8) + '\n' + qs
+            qs = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframes) + '\n' + qs
 
         conv_mode = 'llava_v1'
         device = torch.device('cuda')
         conv = conv_templates[conv_mode].copy()
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        if type(qs) is dict and 'system' in qs:
+            conv.system = qs['system']
+        if type(qs) is dict and 'user' in qs:
+            conv.append_message(conv.roles[0], qs['user'])
+        else:
+            conv.append_message(conv.roles[0], qs)
+        if type(qs) is dict and 'assistant' in qs:
+            conv.append_message(conv.roles[1], qs['assistant'])
+        else:
+            conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt().strip('</s>')
 
         video_tensor = video_processor.preprocess(video, return_tensors='pt')['pixel_values'][0].half().to(device)
-
         input_ids = tokenizer_image_token(prompt, tokenizer,
                                           IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).to(device)
 
@@ -138,8 +146,8 @@ class VideoLLaVA(BaseModel):
             output_ids = model.generate(
                 input_ids,
                 images=[video_tensor],
-                do_sample=True,
-                temperature=0.2,
+                do_sample=False,
+                temperature=0.0,
                 max_new_tokens=1024,
                 use_cache=True,
                 stopping_criteria=[stopping_criteria])
@@ -156,6 +164,11 @@ class VideoLLaVA(BaseModel):
         return outputs
 
     def generate_inner(self, message, dataset=None):
-        question, video = self.message_to_promptvideo(message)
+        if self.nframes != 8:
+            raise Exception(f'Video-LLaVA only supported 8 frames to generate, you now set frame numbers to {self.nframes}')  # noqa
+        if listinstr(['MLVU', 'MVBench'], dataset):
+            question, video = self.message_to_promptvideo_withrole(message, dataset)
+        else:
+            question, video = self.message_to_promptvideo(message)
         response = self.get_model_output(self.model, self.processor['video'], self.tokenizer, video, question)
         return response

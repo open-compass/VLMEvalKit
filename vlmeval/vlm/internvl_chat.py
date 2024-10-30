@@ -4,7 +4,7 @@ import warnings
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 import pandas as pd
 import string
 import torch.distributed as dist
@@ -126,15 +126,29 @@ def split_model(model_name):
     return device_map
 
 
+def extract_answer(text):
+    match = re.search(r'(Final answer:|Answer:)\s*(.*)', text, re.IGNORECASE)
+    if match:
+        return match.group(2).strip()
+    return text
+
+
 class InternVLChat(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, version='V1.0', **kwargs):
+    def __init__(self,
+                 model_path='OpenGVLab/InternVL-Chat-V1-5',
+                 load_in_8bit=False,
+                 cot_prompt=False,
+                 version='V1.0',
+                 **kwargs):
+
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
 
+        self.cot_prompt = cot_prompt
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
@@ -185,7 +199,7 @@ class InternVLChat(BaseModel):
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
-        if listinstr(['MMBench-Video', 'Video-MME', 'MVBench', 'Video'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
             return False
         else:
@@ -248,7 +262,7 @@ class InternVLChat(BaseModel):
             elif listinstr(['HallusionBench'], dataset):
                 prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
             else:
-                prompt = line['question']
+                prompt = question
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
@@ -261,18 +275,50 @@ class InternVLChat(BaseModel):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             prompt = line['question']
+
+        if self.cot_prompt:
+            cot_prompt_with_final_answer = (
+                "Your task is to answer the question below. "
+                "Give step by step reasoning before you answer, and when you're ready to answer, "
+                "please use the format \"Final answer: ..\""
+                "\n\n"
+                "Question:"
+                "\n\n"
+                "{question}"
+            )
+            cot_prompt_wo_final_answer = (
+                "Your task is to answer the question below. "
+                "Give step by step reasoning. "
+                "\n\n"
+                "Question:"
+                "\n\n"
+                "{question}"
+            )
+
+            if listinstr(['LLaVABench'], dataset):
+                cot_prompt = cot_prompt_wo_final_answer
+            else:
+                cot_prompt = cot_prompt_with_final_answer
+
+            question_orig = line['question']
+            if listinstr(['MathVerse', 'MathVision'], dataset):
+                question_orig = question_orig.split('Question:', 1)[-1].strip()
+                question_orig = question_orig.replace('Choices:\n', '').strip()
+
+            prompt = cot_prompt.format(question=question_orig)
+
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
     def set_max_num(self, dataset):
         assert dataset is not None
-        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
+        # res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
-        if listinstr(res_1_datasets, dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             self.max_num = 1
         elif listinstr(res_12_datasets, dataset):
             self.max_num = 12
@@ -300,7 +346,7 @@ class InternVLChat(BaseModel):
         image_num = len([x for x in message if x['type'] == 'image'])
         prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
 
-        if listinstr(['Video'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -337,7 +383,7 @@ class InternVLChat(BaseModel):
                     image_idx += 1
             prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video', 'MVBench'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -370,6 +416,17 @@ class InternVLChat(BaseModel):
                 generation_config=self.kwargs,
                 verbose=False
             )
+
+        if (
+            self.cot_prompt
+            and dataset is not None
+            and (
+                DATASET_TYPE(dataset) in ['Y/N', 'MCQ']
+                or listinstr(['CRPE'], dataset)
+            )
+        ):
+            response = extract_answer(response).strip()
+
         return response
 
     def generate_inner(self, message, dataset=None):

@@ -5,7 +5,7 @@ import sys
 import os.path as osp
 from ..base import BaseModel
 from ...smp import *
-from ...dataset import DATASET_TYPE
+from ...dataset import DATASET_TYPE, DATASET_MODALITY
 import copy
 
 
@@ -757,7 +757,7 @@ class LLaVA_OneVision(BaseModel):
         return spare_frames, frame_time, video_time
 
     def generate_inner(self, message, dataset=None):
-        if dataset in ["MMBench-Video", "Video-MME", "MVBench", "MVBench_MP4"]:
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)

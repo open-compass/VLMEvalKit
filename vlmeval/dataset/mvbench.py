@@ -330,7 +330,7 @@ Based on your observations, select the best option that accurately addresses the
             line = self.data.iloc[line]
 
         question, answer = self.qa_template(line)
-        message = [dict(type='text', value=self.SYS)]
+        message = [dict(type='text', value=self.SYS, role='system')]
         message.append(dict(type='text', value=question))
         if video_llm:
             new_video_path = self.load_into_video_and_process(line)
@@ -340,7 +340,7 @@ Based on your observations, select the best option that accurately addresses the
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))
-        message.append(dict(type='text', value='Best option:('))
+        message.append(dict(type='text', value='Best option:(', role='assistant'))
         return message
 
     @classmethod
@@ -580,7 +580,7 @@ Based on your observations, select the best option that accurately addresses the
             line = self.data.iloc[line]
 
         question, answer = self.qa_template(line)
-        message = [dict(type='text', value=self.SYS)]
+        message = [dict(type='text', value=self.SYS, role='system')]
         message.append(dict(type='text', value=question))
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
         if video_llm:
@@ -590,7 +590,7 @@ Based on your observations, select the best option that accurately addresses the
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))
-        message.append(dict(type='text', value='Best option:('))
+        message.append(dict(type='text', value='Best option:(', role='assistant'))
         return message
 
     @classmethod
