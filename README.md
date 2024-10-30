@@ -122,7 +122,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Chat-UniVi-7B[-v1.5]**](https://github.com/PKU-YuanGroup/Chat-UniVi) 🎬 | [**LLaMA-VID-7B**](https://github.com/dvlab-research/LLaMA-VID) 🎬 | [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B) 🎬 | [**PLLaVA-[7B/13B/34B]**](https://huggingface.co/ermu2001/pllava-7b) 🎬 |
 | [**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️   |  [**xgen-mm-phi3-[interleave/dpo]-r-v1.5**](https://huggingface.co/Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5) 🚅🎞️    | [**Qwen2-VL-[2B/7B]**](https://github.com/QwenLM/Qwen2-VL)🚅🎞️   |[**slime_[7b/8b/13b]**](https://github.com/yfzhang114/SliME)🎞️     |
 | [**Eagle-X4-[8B/13B]**](https://github.com/NVlabs/EAGLE)🚅🎞️, <br>[**Eagle-X5-[7B/13B/34B]**](https://github.com/NVlabs/EAGLE)🚅🎞️  | [**Moondream1-1.8B**](https://github.com/vikhyat/moondream)🚅, <br>[**Moondream2-1.8B**](https://github.com/vikhyat/moondream)🚅 |[**XinYuan-VL-2B-Instruct**](https://huggingface.co/Cylingo/Xinyuan-VL-2B)🚅🎞️ |[**Llama-3.2-[11B/90B]-Vision-Instruct**](https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct)🚅 |
-| [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 |
+| [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 | [**H2OVL-Mississippi-[0.8B/2B]**](https://huggingface.co/h2oai/h2ovl-mississippi-2b)🚅🎞️ |
 
 
 🎞️: Support multiple images as inputs.
@@ -139,7 +139,7 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==4.36.2` **for**: `Moondream1`.
 - **Please use** `transformers==4.37.0` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-[V1/V2]`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`, `Cambrian Series`, `VILA Series`, `Llama-3-MixSenseV1_1`, `Parrot-7B`, `PLLaVA Series`.
 - **Please use** `transformers==4.40.0` **for**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `360VL-70B`, `Phi-3-Vision`, `WeMM`.
-- **Please use** `transformers==4.44.0` **for**: `Moondream2`.
+- **Please use** `transformers==4.44.0` **for**: `Moondream2`, `H2OVL series`.
 - **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
 
 **Torchvision Version Recommendation:**
