@@ -8,6 +8,7 @@ from .emu import Emu
 from .eagle_x import Eagle
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
+from .kosmos import Kosmos2
 from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision
 from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6
 from .minigpt4 import MiniGPT4
@@ -27,6 +28,7 @@ from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, X
 from .yi_vl import Yi_VL
 from .internvl_chat import InternVLChat
 from .deepseek_vl import DeepSeekVL
+from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
 from .vxverse import VXVERSE
@@ -48,3 +50,9 @@ from .xgen_mm import XGenMM
 from .slime import SliME
 from .mplug_owl3 import mPLUG_Owl3
 from .pixtral import Pixtral
+from .llama_vision import llama_vision
+from .molmo import molmo
+from .points import POINTS
+from .nvlm import NVLM
+from .vintern_chat import VinternChat
+from .falcon_vlm import Falcon2VLM

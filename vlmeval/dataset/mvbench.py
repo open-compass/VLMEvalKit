@@ -23,7 +23,7 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 
 class MVBench(VideoBaseDataset):
 
-    MD5 = 'ae2a2607e2f8618155709220c6e927a6'
+    MD5 = 'fd21d36522cdedd46d84dc46715ad832'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -123,7 +123,7 @@ Based on your observations, select the best option that accurately addresses the
                     for data in json_data:
                         self.data_list.append({
                             'task_type': k,
-                            'prefix': v[1].replace('your_data_path', os.path.join(dataset_path, 'video')),
+                            'prefix': v[1].replace('your_data_path', 'video'),
                             'data_type': v[2],
                             'bound': v[3],
                             'start': data['start'] if 'start' in data.keys() else None,
@@ -274,7 +274,7 @@ Based on your observations, select the best option that accurately addresses the
         return question, answer
 
     def load_into_video_and_process(self, line):
-        video_path = os.path.join(line['prefix'], line['video'])
+        video_path = os.path.join(self.data_root, line['prefix'], line['video'])
 
         if line['data_type'] in ['gif'] or os.path.splitext(video_path)[1] in ['.webm']:
             processed_video_path = video_path.replace(os.path.splitext(video_path)[1], '.mp4')
@@ -315,7 +315,7 @@ Based on your observations, select the best option that accurately addresses the
                 line['start'],
                 line['end'],
             )
-        video_path = os.path.join(line['prefix'], line['video'])
+        video_path = os.path.join(self.data_root, line['prefix'], line['video'])
         decord_method = self.decord_method[line['data_type']]
         self.num_segments = num_frames if num_frames > 0 else self.nframe
         torch_imgs = decord_method(video_path, bound)
@@ -510,7 +510,7 @@ Based on your observations, select the best option that accurately addresses the
         answer = f"({chr(ord('A') + answer_idx)}) {answer}"
         return question, answer
 
-    def get_index(self, max_frame):
+    def get_index_by_frame(self, max_frame):
         seg_size = float(max_frame) / self.num_segments
         frame_indices = np.array([
             int((seg_size / 2) + np.round(seg_size * idx))
@@ -518,21 +518,37 @@ Based on your observations, select the best option that accurately addresses the
         ])
         return frame_indices
 
-    def read_video(self, video_path, bound=None):
+    def get_index_by_fps(self, vid, fps):
+        total_frames = len(vid)
+        video_fps = vid.get_avg_fps()
+        total_duration = total_frames / video_fps
+        required_frames = int(total_duration * fps)
+        step_size = video_fps / fps
+        frame_indices = np.array([int(i * step_size) for i in range(required_frames)])
+        self.num_segments = len(frame_indices)
+        return frame_indices
+
+    def read_video(self, video_path, fps=-1):
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         max_frame = len(vr) - 1
 
         images_group = list()
-        frame_indices = self.get_index(max_frame)
+        if fps < 0:
+            frame_indices = self.get_index_by_frame(max_frame)
+        else:
+            frame_indices = self.get_index_by_fps(vr, fps)
+
         for frame_index in frame_indices:
             img = Image.fromarray(vr[frame_index].asnumpy())
             images_group.append(img)
         torch_imgs = self.transform(images_group)
         return torch_imgs
 
-    def save_video_frames(self, imgs, video_name, frames):
-
-        frame_paths = self.frame_paths(video_name, frames)
+    def save_video_frames(self, imgs, video_name, frames, fps):
+        if fps > 0:
+            frame_paths = self.frame_paths_fps(video_name, frames, fps)
+        else:
+            frame_paths = self.frame_paths(video_name, frames)
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
@@ -546,14 +562,17 @@ Based on your observations, select the best option that accurately addresses the
 
         return frame_paths
 
-    def save_video_into_images(self, line, num_frames):
+    def save_video_into_images(self, line, num_frames, fps=-1):
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
-        self.num_segments = num_frames if num_frames > 0 else self.nframe
-        torch_imgs = self.read_video(video_path)
-        img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
+        if fps <= 0:
+            self.num_segments = num_frames if num_frames > 0 else self.nframe
+        else:
+            self.num_segments = 0
+        torch_imgs = self.read_video(video_path, fps)
+        img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments, fps)
         return img_frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm):
+    def build_prompt(self, line, num_frames, video_llm, fps):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -565,7 +584,7 @@ Based on your observations, select the best option that accurately addresses the
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames)
+            img_frame_paths = self.save_video_into_images(line, num_frames, fps)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))

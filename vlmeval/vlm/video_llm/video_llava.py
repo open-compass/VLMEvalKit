@@ -3,6 +3,7 @@ import warnings
 import copy as cp
 import numpy as np
 import sys
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
@@ -26,15 +27,16 @@ class VideoLLaVA_HF(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample a video in 8 frames
 
     def __init__(self, model_path='LanguageBind/Video-LLaVA-7B-hf', **kwargs):
         try:
             from transformers import VideoLlavaProcessor, VideoLlavaForConditionalGeneration
-        except:
-            warnings.warn('Please install the latest version transformers. \
+        except Exception as err:
+            logging.critical('Please install the latest version transformers. \
                           You can install by `pip install transformers==4.42.0` \
                           or `pip install --upgrade git+https://github.com/huggingface/transformers.git`.')
-            sys.exit(-1)
+            raise err
 
         assert model_path is not None
         self.model_path = model_path
@@ -42,7 +44,6 @@ class VideoLLaVA_HF(BaseModel):
         self.model.eval().cuda()
         self.processor = VideoLlavaProcessor.from_pretrained(model_path)
         self.kwargs = kwargs
-        self.nframe = 8
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
@@ -81,6 +82,7 @@ class VideoLLaVA(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample a video in 8 frames
 
     def __init__(self, model_path='LanguageBind/Video-LLaVA-7B', **kwargs):
         assert model_path is not None
@@ -92,9 +94,9 @@ class VideoLLaVA(BaseModel):
             from videollava.model.builder import load_pretrained_model
             from videollava.model.language_model.llava_llama import LlavaLlamaForCausalLM
             from videollava.train.train import smart_tokenizer_and_embedding_resize
-        except:
-            warnings.warn('Please install Video-LLaVA from https://github.com/FangXinyu-0913/Video-LLaVA.')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install Video-LLaVA from https://github.com/FangXinyu-0913/Video-LLaVA.')
+            raise err
 
         model_base = None
         model_name = model_path.split('/')[-1]
@@ -104,7 +106,6 @@ class VideoLLaVA(BaseModel):
         self.processor = processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframe = 8
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from videollava.conversation import conv_templates, SeparatorStyle
