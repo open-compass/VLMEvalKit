@@ -163,7 +163,7 @@ class Chatunivi(BaseModel):
             conv.append_message(conv.roles[1], qs['assistant'])
         else:
             conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        prompt = conv.get_prompt().strip('</s>')
 
         input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(
             0).cuda()
