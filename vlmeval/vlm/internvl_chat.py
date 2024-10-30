@@ -138,7 +138,13 @@ class InternVLChat(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, cot_prompt=False, version='V1.0', **kwargs):
+    def __init__(self,
+                 model_path='OpenGVLab/InternVL-Chat-V1-5',
+                 load_in_8bit=False,
+                 cot_prompt=False,
+                 version='V1.0',
+                 **kwargs):
+
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
 
