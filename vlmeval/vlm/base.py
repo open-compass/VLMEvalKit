@@ -1,5 +1,5 @@
 from ..smp import *
-from ..dataset import img_root_map
+from ..dataset import img_root_map, DATASET_TYPE
 from abc import abstractmethod
 
 
@@ -162,6 +162,37 @@ class BaseModel:
                 prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
                 video = [x['value'] for x in message if x['type'] == 'video'][0]
             return prompt, video
+        else:
+            logging.critical('Model does not support video input.')
+            raise NotImplementedError
+
+    def message_to_promptvideo_withrole(self, message, dataset=None):
+        if self.VIDEO_LLM:
+            system, user, assistant, video_list = '', '', '', []
+            for msg in message:
+                if msg['type'] == 'text':
+                    if 'role' in msg and msg['role'] == 'system':
+                        system += msg['value']
+                    elif 'role' in msg and msg['role'] == 'assistant':
+                        assistant += msg['value']
+                    else:
+                        user += msg['value']
+                elif msg['type'] == 'video':
+                    video_list.append(msg['value'])
+            question = {
+                'system': system,
+                'user': user,
+                'assistant': assistant
+            }
+            if assistant == '':
+                if listinstr(['MCQ'], DATASET_TYPE(dataset)):
+                    question['assistant'] = 'Best Option: ('
+                else:
+                    del question['assistant']
+            if len(video_list) > 1:
+                print('VLMEvalKit only support single video as input, take first video as input')
+            video = video_list[0]
+            return question, video
         else:
             logging.critical('Model does not support video input.')
             raise NotImplementedError
