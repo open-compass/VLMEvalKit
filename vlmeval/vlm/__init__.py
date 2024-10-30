@@ -55,3 +55,4 @@ from .molmo import molmo
 from .points import POINTS
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
+from .falcon_vlm import Falcon2VLM

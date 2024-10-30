@@ -47,7 +47,8 @@ ungrouped = {
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
     'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
-    'Pixtral-12B': partial(Pixtral, model_path='mistralai/Pixtral-12B-2409')
+    'Pixtral-12B': partial(Pixtral, model_path='mistralai/Pixtral-12B-2409'),
+    'Falcon2-VLM-11B': partial(Falcon2VLM, model_path='tiiuae/falcon-11B-vlm')
 }
 
 api_models = {
@@ -80,6 +81,7 @@ api_models = {
     'Claude3V_Sonnet': partial(Claude3V, model='claude-3-sonnet-20240229', temperature=0, retry=10),
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10),
     'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10),
+    'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     # CongRong
@@ -148,6 +150,8 @@ llava_series = {
     'llava_onevision_qwen2_7b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'),
     'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov-sft'),
     'Aquila-VL-2B': partial(LLaVA_OneVision, model_path='BAAI/Aquila-VL-2B-llava-qwen'),
+    'llava_video_qwen2_7b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-7B-Qwen2'),
+    'llava_video_qwen2_72b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-72B-Qwen2'),
 }
 
 internvl_series = {
@@ -162,6 +166,7 @@ internvl_series = {
     'InternVL2-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-2B', version='V2.0'),
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
+    'InternVL2-8B-RPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-RPO', version='V2.0', cot_prompt=True),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
     'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
@@ -268,6 +273,7 @@ xgen_mm_series = {
 qwen2vl_series = {
     'Qwen-VL-Max-0809': partial(Qwen2VLAPI, model='qwen-vl-max-0809', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen-VL-Plus-0809': partial(Qwen2VLAPI, model='qwen-vl-plus-0809', min_pixels=1280*28*28, max_pixels=16384*28*28),
+    'Qwen2-VL-72B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-72B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=16384*28*28),
