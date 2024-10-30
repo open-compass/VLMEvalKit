@@ -27,7 +27,10 @@ class H2OVLChat(BaseModel):
             trust_remote_code=True).eval()
         self.model = self.model.to(device)
         self.image_size = self.model.config.vision_config.image_size
-        self.kwargs = kwargs
+
+        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
@@ -60,8 +63,6 @@ class H2OVLChat(BaseModel):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
-        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
-        self.kwargs = kwargs_default
 
         if dataset is not None and listinstr(['MME'], dataset):
             question = line['question']
@@ -88,7 +89,7 @@ class H2OVLChat(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
-    def generate(self, message, dataset=None):
+    def generate_inner(self, message, dataset=None):
         image_num = len([x for x in message if x['type'] == 'image'])
         question = ''
         image_files = [x['value'] for x in message if x['type'] == 'image']
@@ -114,6 +115,3 @@ class H2OVLChat(BaseModel):
             history=None,
             return_history=True)
         return response
-
-    def generate_inner(self, message, dataset=None):
-        return self.generate(message, dataset)
