@@ -246,6 +246,8 @@ def main():
             if world_size > 1:
                 dist.barrier()
 
+    dist.destroy_process_group()
+
 
 if __name__ == '__main__':
     load_env()
