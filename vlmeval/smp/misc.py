@@ -213,9 +213,10 @@ def extract_json_objects(text, decoder=JSONDecoder()):
 
 
 def get_gpu_memory():
+    import subprocess
     try:
         command = "nvidia-smi --query-gpu=memory.free --format=csv"
-        memory_free_info = sp.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
+        memory_free_info = subprocess.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
         memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
         return memory_free_values
     except Exception as e:
