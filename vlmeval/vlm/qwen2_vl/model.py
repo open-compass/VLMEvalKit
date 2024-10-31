@@ -10,7 +10,7 @@ import torch
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
-from ...smp import get_rank_and_world_size
+from ...smp import get_rank_and_world_size, get_gpu_memory
 
 
 def ensure_image_url(image: str) -> str:
@@ -93,11 +93,23 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.fps = 2.0
 
         from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
+        rank, world_size = get_rank_and_world_size()
 
         assert model_path is not None
         self.model_path = model_path
         self.processor = Qwen2VLProcessor.from_pretrained(model_path)
-        if '72b' not in self.model_path.lower():
+
+        gpu_mems = get_gpu_memory()
+        max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
+        assert max_gpu_mem > 0
+
+        # If only one process and GPU memory is less than 40GB
+        if world_size == 1 and max_gpu_mem < 40000:
+            # Will Use All GPUs to run one model
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            )
+        elif '72b' not in self.model_path.lower():
             self.model = Qwen2VLForConditionalGeneration.from_pretrained(
                 model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
             )
