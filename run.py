@@ -219,6 +219,7 @@ def main():
                 eval_proxy = os.environ.get('EVAL_PROXY', None)
                 old_proxy = os.environ.get('HTTP_PROXY', '')
 
+                dist.barrier()
                 if rank == 0 and args.mode == 'all':
                     if eval_proxy is not None:
                         proxy_set(eval_proxy)
