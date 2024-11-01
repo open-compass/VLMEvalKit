@@ -84,6 +84,7 @@ def dynamic_preprocess(image, min_num=5, max_num=6, image_size=448, use_thumbnai
         processed_images.append(thumbnail_img)
     return processed_images, target_aspect_ratio
 
+
 def dynamic_preprocess2(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False, prior_aspect_ratio=None):
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
@@ -97,7 +98,7 @@ def dynamic_preprocess2(image, min_num=1, max_num=6, image_size=448, use_thumbna
     new_target_ratios = []
     if prior_aspect_ratio is not None:
         for i in target_ratios:
-            if prior_aspect_ratio[0]%i[0] !=0 or prior_aspect_ratio[1]%i[1] !=0:
+            if prior_aspect_ratio[0] % i[0] != 0 or prior_aspect_ratio[1] % i[1] != 0:
                 new_target_ratios.append(i)
             else:
                 continue
@@ -129,18 +130,28 @@ def dynamic_preprocess2(image, min_num=1, max_num=6, image_size=448, use_thumbna
         processed_images.append(thumbnail_img)
     return processed_images
 
+
 def load_image(image_file, input_size=448, min_num=1, max_num=6):
     image = Image.open(image_file).convert('RGB')
     transform = build_transform(input_size=input_size)
-    images, target_aspect_ratio = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True, min_num=min_num, max_num=max_num)
+    images, target_aspect_ratio = dynamic_preprocess(
+        image, image_size=input_size, use_thumbnail=True, min_num=min_num, max_num=max_num)
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values, target_aspect_ratio
 
-def load_image2(image_file, input_size=448, target_aspect_ratio=(1,1), min_num=1, max_num=6):
+
+def load_image2(image_file, input_size=448, target_aspect_ratio=(1, 1), min_num=1, max_num=6):
     image = Image.open(image_file).convert('RGB')
     transform = build_transform(input_size=input_size)
-    images = dynamic_preprocess2(image, image_size=input_size, prior_aspect_ratio=target_aspect_ratio, use_thumbnail=True, min_num=min_num, max_num=max_num)
+    images = dynamic_preprocess2(
+        image,
+        image_size=input_size,
+        prior_aspect_ratio=target_aspect_ratio,
+        use_thumbnail=True,
+        min_num=min_num,
+        max_num=max_num)
+
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
@@ -176,6 +187,7 @@ def split_model(model_name):
     return device_map
 
 
+# To revert changes
 class MiniMonkey(BaseModel):
 
     INSTALL_REQ = False
@@ -335,7 +347,7 @@ class MiniMonkey(BaseModel):
             self.max_num = 12
             self.max_num2 = 6
             self.min_num = 5
-            self.min_num2 = 2 
+            self.min_num2 = 2
         elif dataset is not None and listinstr(['CCBench'], dataset):
             self.max_num = 24
             self.max_num2 = 8
@@ -346,7 +358,6 @@ class MiniMonkey(BaseModel):
             self.max_num2 = 7
             self.min_num = 4
             self.min_num2 = 3
-
 
     def generate_v2(self, message, dataset=None):
         image_num = len([x for x in message if x['type'] == 'image'])
@@ -370,23 +381,25 @@ class MiniMonkey(BaseModel):
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
-                curr_pixel_values, target_aspect_ratio = load_image(file_name, min_num=self.min_num, max_num=self.max_num)
+                curr_pixel_values, target_aspect_ratio = load_image(
+                    file_name, min_num=self.min_num, max_num=self.max_num)
                 curr_pixel_values = curr_pixel_values.cuda().to(torch.bfloat16)
-                curr_pixel_values2 = load_image2(file_name, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
+                curr_pixel_values2 = load_image2(
+                    file_name, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
                 curr_pixel_values2 = curr_pixel_values2.cuda().to(torch.bfloat16)
-                curr_pixel_values = torch.cat((curr_pixel_values[:-1],  curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
+                curr_pixel_values = torch.cat(
+                    (curr_pixel_values[:-1], curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values, target_aspect_ratio = load_image(image_path, min_num=self.min_num, max_num=self.max_num)
             pixel_values = pixel_values.cuda().to(torch.bfloat16)
-            pixel_values2 = load_image2(image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
+            pixel_values2 = load_image2(
+                image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
             pixel_values2 = pixel_values2.cuda().to(torch.bfloat16)
-            pixel_values = torch.cat((pixel_values[:-1],  pixel_values2[:-1], pixel_values[-1:]), 0)
+            pixel_values = torch.cat((pixel_values[:-1], pixel_values2[:-1], pixel_values[-1:]), 0)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
@@ -396,7 +409,7 @@ class MiniMonkey(BaseModel):
             response = self.model.chat(
                 self.tokenizer,
                 pixel_values=pixel_values,
-                target_aspect_ratio=(1,1),
+                target_aspect_ratio=(1, 1),
                 num_patches_list=num_patches_list,
                 question=prompt,
                 generation_config=self.kwargs,
@@ -463,21 +476,24 @@ class MiniMonkey(BaseModel):
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
-                curr_pixel_values, target_aspect_ratio = load_image(file_name, min_num=self.min_num, max_num=self.max_num)
+                curr_pixel_values, target_aspect_ratio = load_image(
+                    file_name, min_num=self.min_num, max_num=self.max_num)
                 curr_pixel_values = curr_pixel_values.cuda().to(torch.bfloat16)
-                curr_pixel_values2 = load_image2(file_name, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
+                curr_pixel_values2 = load_image2(
+                    file_name, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
                 curr_pixel_values2 = curr_pixel_values2.cuda().to(torch.bfloat16)
-                curr_pixel_values = torch.cat((curr_pixel_values[:-1],  curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
+                curr_pixel_values = torch.cat(
+                    (curr_pixel_values[:-1], curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_cnt == 1:
             pixel_values, target_aspect_ratio = load_image(image_path, min_num=self.min_num, max_num=self.max_num)
             pixel_values = pixel_values.cuda().to(torch.bfloat16)
-            pixel_values2 = load_image2(image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
+            pixel_values2 = load_image2(
+                image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
             pixel_values2 = pixel_values2.cuda().to(torch.bfloat16)
-            pixel_values = torch.cat((pixel_values[:-1],  pixel_values2[:-1], pixel_values[-1:]), 0)
+            pixel_values = torch.cat((pixel_values[:-1], pixel_values2[:-1], pixel_values[-1:]), 0)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
