@@ -222,3 +222,8 @@ def get_gpu_memory():
     except Exception as e:
         print(f'{type(e)}: {str(e)}')
         return []
+
+
+def auto_split_flag():
+    flag = os.environ.get('AUTO_SPLIT', '0')
+    return flag == '1'

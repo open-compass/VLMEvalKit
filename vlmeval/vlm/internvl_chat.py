@@ -104,12 +104,20 @@ def split_model(model_name):
     rank, world_size = get_rank_and_world_size()
     num_gpus = num_gpus // world_size
 
-    num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.2))
+    num_layers_map = {
+        'InternVL2-8B': 32,
+        'InternVL2-26B': 48,
+        'InternVL2-40B': 60,
+        'InternVL2-Llama3-76B': 80
+    }
+
+    if model_name not in num_layers_map:
+        return 'cuda'
+    num_layers = num_layers_map[model_name]
+    # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
+    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
     num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.8)
+    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
     layer_cnt = 0
     for i, num_layer in enumerate(num_layers_per_gpu):
         for j in range(num_layer):
@@ -164,10 +172,20 @@ class InternVLChat(BaseModel):
         self.reverse_pattern = r'Image-(\d+)'
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
+        self.device = 'cuda'
 
-        if listinstr(['InternVL2-Llama3-76B'], model_path):
+        if auto_split_flag() and listinstr(['InternVL2-8B', 'InternVL2-26B', 'InternVL2-40B'], model_path):
             device_map = split_model(model_path.split('/')[-1])
-            self.device = 'cuda'
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                load_in_8bit=load_in_8bit,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                device_map=device_map).eval()
+
+        elif listinstr(['InternVL2-Llama3-76B'], model_path):
+            device_map = split_model(model_path.split('/')[-1])
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
@@ -176,15 +194,13 @@ class InternVLChat(BaseModel):
                 low_cpu_mem_usage=True,
                 device_map=device_map).eval()
         else:
-            device = torch.cuda.current_device()
-            self.device = device
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
-                trust_remote_code=True,
-                load_in_8bit=load_in_8bit).eval()
+                load_in_8bit=load_in_8bit,
+                trust_remote_code=True).eval()
             if not load_in_8bit:
-                self.model = self.model.to(device)
+                self.model = self.model.to('cuda')
 
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
@@ -312,7 +328,9 @@ class InternVLChat(BaseModel):
         return message
 
     def set_max_num(self, dataset):
-        assert dataset is not None
+        if dataset is None:
+            self.max_num = 6
+            return None
         # res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
@@ -383,7 +401,7 @@ class InternVLChat(BaseModel):
                     image_idx += 1
             prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -399,7 +417,7 @@ class InternVLChat(BaseModel):
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
                 image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
