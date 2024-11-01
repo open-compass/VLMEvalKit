@@ -401,7 +401,7 @@ class InternVLChat(BaseModel):
                     image_idx += 1
             prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -417,7 +417,7 @@ class InternVLChat(BaseModel):
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
                 image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
