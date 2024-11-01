@@ -2,6 +2,7 @@ import torch
 
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
+from .aria import Aria
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu

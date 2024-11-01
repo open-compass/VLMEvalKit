@@ -329,6 +329,10 @@ vintern_series = {
     'Vintern-3B-beta': partial(VinternChat, model_path='5CD-AI/Vintern-3B-beta'),
 }
 
+aria_series = {
+    "Aria": partial(Aria, model_path='rhymes-ai/Aria')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -339,7 +343,7 @@ model_groups = [
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
     slime_series, eagle_series, moondream_series, llama_series, molmo_series, 
-    kosmos_series, points_series, nvlm_series, vintern_series
+    kosmos_series, points_series, nvlm_series, vintern_series, aria_series
 ]
 
 for grp in model_groups:
