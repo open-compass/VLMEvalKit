@@ -9,10 +9,17 @@ from .glm_vision import GLMVisionAPI
 from .cloudwalk import CWWrapper
 from .sensechat_vision import SenseChatVisionAPI
 from .hunyuan import HunyuanVision
+from .bailingmm import bailingMMAPI
+from .bluelm_v_api import BlueLMWrapper, BlueLM_V_API
+from .jt_vl_chat import JTVLChatAPI
+from .taiyi import TaiyiAPI
+
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V',
     'GeminiProVision', 'QwenVLWrapper', 'QwenVLAPI', 'QwenAPI',
     'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI',
-    'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI'
+    'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI',
+    'BlueLMWrapper', 'BlueLM_V_API', 'JTVLChatAPI', 'bailingMMAPI',
+    'TaiyiAPI'
 ]

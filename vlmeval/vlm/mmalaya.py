@@ -170,10 +170,10 @@ def split_model(model_name):
 
     num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
                   'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.2 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.8))
+    # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
+    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
     num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.2)
+    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
     layer_cnt = 0
     for i, num_layer in enumerate(num_layers_per_gpu):
         for j in range(num_layer):
@@ -252,8 +252,8 @@ class MMAlaya2(BaseModel):
         )
 
     def use_custom_prompt(self, dataset):
-
-        if dataset is not None and listinstr(['MMDU'], dataset):
+        assert dataset is not None
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         else:
@@ -306,7 +306,7 @@ class MMAlaya2(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['MathVista', 'MathVision'], dataset):
+            if listinstr(['MathVista', 'MathVision', 'MathVerse'], dataset):
                 prompt = line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']

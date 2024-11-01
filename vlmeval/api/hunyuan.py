@@ -46,9 +46,9 @@ class HunyuanWrapper(BaseAPI):
             from tencentcloud.common.profile.client_profile import ClientProfile
             from tencentcloud.common.profile.http_profile import HttpProfile
             from tencentcloud.hunyuan.v20230901 import hunyuan_client
-        except ImportError:
-            warnings.warn('Please install tencentcloud-sdk-python to use Hunyuan API. ')
-            exit(-1)
+        except ImportError as err:
+            self.logger.critical('Please install tencentcloud-sdk-python to use Hunyuan API. ')
+            raise err
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 

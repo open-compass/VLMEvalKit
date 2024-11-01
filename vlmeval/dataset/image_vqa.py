@@ -215,6 +215,111 @@ class MathVista(ImageBaseDataset):
         return score
 
 
+class MathVerse(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'MathVerse_MINI': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini.tsv', # noqa
+        'MathVerse_MINI_Vision_Only': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Only.tsv', # noqa
+        'MathVerse_MINI_Vision_Dominant': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Dominant.tsv', # noqa
+        'MathVerse_MINI_Vision_Intensive': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Intensive.tsv', # noqa
+        'MathVerse_MINI_Text_Lite': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Text_Lite.tsv', # noqa
+        'MathVerse_MINI_Text_Dominant': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Text_Dominant.tsv', # noqa
+    }
+    DATASET_MD5 = {
+        'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
+        'MathVerse_MINI_Vision_Only': '68a11d4680014ac881fa37adeadea3a4',
+        'MathVerse_MINI_Vision_Dominant': 'b8fb63852d261ab2aaefba29cc2414d3',
+        'MathVerse_MINI_Vision_Intensive': '01cbd35be202bb0c4873a4186a63bc19',
+        'MathVerse_MINI_Text_Lite': '19e4b13bdd30b89a03b2e358bcfefa04',
+        'MathVerse_MINI_Text_Dominant': '4f5cd2fa6630ea00bb11d6fde1f6fe6a',
+    }
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mathverse import MathVerse_auxeval_extract, MathVerse_auxeval_score, MathVerse_acc
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        # stage1: extract the answer
+        if not osp.exists(storage_extract):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MathVerse evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_extract):
+                ans = load(tmp_file_extract)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MathVerse_auxeval_extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_extract,
+                )
+                ans = load(tmp_file_extract)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_extract'] == v['log_extract'] and ans[k]['extract'] == v['extract']
+
+            data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+            data['log_extract'] = [ans[idx]['log_extract'] for idx in data['index']]
+            dump(data, storage_extract)
+
+        # stage2: score the answer
+        if not osp.exists(storage_score):
+            data = load(storage_extract)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MathVerse evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_score):
+                ans = load(tmp_file_score)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MathVerse_auxeval_score,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_score,
+                )
+                ans = load(tmp_file_score)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            dump(data, storage_score)
+
+        score = MathVerse_acc(storage_score)
+        score_pth = storage_score.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -487,3 +592,74 @@ class CustomVQADataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         raise NotImplementedError
+
+
+class CRPE(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'CRPE_EXIST': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_EXIST.tsv',
+        'CRPE_RELATION': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_RELATION.tsv'
+    }
+    DATASET_MD5 = {
+        'CRPE_EXIST': '315584e23ac1ff7f8719ed3b7ad90f08',
+        'CRPE_RELATION': 'bad7094cde0b572288f4b119c2d0c656'}
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.crpe import is_correct
+        # find-image, count-text, find-text,
+        # infer-choose, count-image, visual-reasoning
+        score = {
+            'exist': 0,
+            'subject': 0,
+            'predicate': 0,
+            'object': 0,
+            'total': 0,
+        }
+        num = {
+            'exist': 0,
+            'subject': 0,
+            'predicate': 0,
+            'object': 0,
+            'total': 0,
+        }
+        final_score_dict = {
+            'exist': 0,
+            'subject': 0,
+            'predicate': 0,
+            'object': 0,
+            'total': 0,
+        }
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        for i in tqdm(range(len(lines))):
+            line = lines[i]
+            predict = str(line['prediction'])
+            answers = str(line['answer'])
+            # print("predict =", predict)
+            # print("answers =", answers)
+            category = line['category']
+            if is_correct(answers, predict):
+                score[category] += 1
+                score['total'] += 1
+            num[category] += 1
+            num['total'] += 1
+
+        for category in ['exist', 'subject', 'predicate', 'object', 'total']:
+            if num[category] != 0:
+                final_score_dict[category] = score[category] / num[category]
+            else:
+                final_score_dict[category] = None
+
+        score_pth = eval_file.replace('.xlsx', '_score.json')
+        dump(final_score_dict, score_pth)
+        return final_score_dict
+
+    def build_prompt(self, line):
+        ROOT = LMUDataRoot()
+        msgs = super().build_prompt(line)
+        for msg in msgs:
+            if msg['type'] == 'image':
+                msg['value'] = osp.join(osp.join(ROOT, 'images', self.dataset_name), msg['value'])
+        return msgs

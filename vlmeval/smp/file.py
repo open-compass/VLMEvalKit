@@ -74,6 +74,17 @@ def LMUDataRoot():
     return root
 
 
+def HFCacheRoot():
+    cache_list = ['HUGGINGFACE_HUB_CACHE', 'HF_HOME']
+    for cache_name in cache_list:
+        if cache_name in os.environ and osp.exists(os.environ[cache_name]):
+            return os.environ[cache_name]
+    home = osp.expanduser('~')
+    root = osp.join(home, '.cache', 'huggingface', 'hub')
+    os.makedirs(root, exist_ok=True)
+    return root
+
+
 def MMBenchOfficialServer(dataset_name):
     root = LMUDataRoot()
 
@@ -193,14 +204,17 @@ def download_file(url, filename=None):
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
             urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
-    except:
+    except Exception as e:
+        import logging
+        logging.warning(f'{type(e)}: {e}')
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
             url_new = url.replace('huggingface.co', 'hf-mirror.com')
             try:
                 download_file(url_new, filename)
                 return filename
-            except:
+            except Exception as e:
+                logging.warning(f'{type(e)}: {e}')
                 raise Exception(f'Failed to download {url}')
         else:
             raise Exception(f'Failed to download {url}')

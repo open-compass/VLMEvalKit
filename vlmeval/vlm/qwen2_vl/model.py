@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import os
+import sys
 import warnings
+import math
+import logging
 
 import torch
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
+from ...smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag
 
 
 def ensure_image_url(image: str) -> str:
@@ -18,9 +22,47 @@ def ensure_image_url(image: str) -> str:
     raise ValueError(f'Invalid image: {image}')
 
 
+def ensure_video_url(video: str) -> str:
+    prefixes = ['http://', 'https://', 'file://', 'data:video;']
+    if any(video.startswith(prefix) for prefix in prefixes):
+        return video
+    if os.path.exists(video):
+        return 'file://' + video
+    raise ValueError(f'Invalid video: {video}')
+
+
+def split_model():
+    device_map = {}
+
+    total_gpus = torch.cuda.device_count()
+    rank, world_size = get_rank_and_world_size()
+    num_gpus = total_gpus // world_size
+    # + 8 is virtual layers for the memory of visual
+    num_layers = 80 + 8
+    num_layers_per_gpu = math.ceil(num_layers / num_gpus)
+    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+    num_layers_per_gpu[0] -= 6
+    num_layers_per_gpu[-1] -= 2
+    layer_cnt = 0
+
+    for i, num_layer in enumerate(num_layers_per_gpu):
+        for j in range(num_layer):
+            device_map[f'model.layers.{layer_cnt}'] = rank + i * world_size
+            layer_cnt += 1
+
+    last_gpu = rank + (num_gpus - 1) * world_size
+    device_map['visual'] = rank
+    device_map['model.embed_tokens'] = rank
+    device_map['model.norm'] = last_gpu
+    device_map['model.rotary_emb'] = last_gpu
+    device_map['lm_head'] = last_gpu
+    return device_map
+
+
 class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
+    VIDEO_LLM = True
 
     def __init__(
         self,
@@ -48,18 +90,40 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
+        self.fps = 2.0
 
         from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
+        rank, world_size = get_rank_and_world_size()
 
         assert model_path is not None
         self.model_path = model_path
         self.processor = Qwen2VLProcessor.from_pretrained(model_path)
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
-        ).eval()
+
+        gpu_mems = get_gpu_memory()
+        max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
+        assert max_gpu_mem > 0
+
+        # If only one process and GPU memory is less than 40GB
+        if auto_split_flag():
+            assert world_size == 1, 'Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL'
+            # Will Use All GPUs to run one model
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            )
+        elif '72b' not in self.model_path.lower():
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
+            )
+            self.model.cuda().eval()
+        else:
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map=split_model(), attn_implementation='flash_attention_2'
+            )
+            self.model.eval()
+
         torch.cuda.empty_cache()
 
-    def _prepare_content(self, inputs: list[dict[str, str]]) -> list[dict[str, str]]:
+    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """
@@ -67,10 +131,20 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         for s in inputs:
             if s['type'] == 'image':
                 item = {'type': 'image', 'image': ensure_image_url(s['value'])}
-                if self.min_pixels is not None:
-                    item['min_pixels'] = self.min_pixels
-                if self.max_pixels is not None:
-                    item['max_pixels'] = self.max_pixels
+                if dataset == 'OCRBench':
+                    item['min_pixels'] = 10 * 10 * 28 * 28
+                    warnings.warn(f"OCRBench dataset uses custom min_pixels={item['min_pixels']}")
+                    if self.max_pixels is not None:
+                        item['max_pixels'] = self.max_pixels
+                else:
+                    if self.min_pixels is not None:
+                        item['min_pixels'] = self.min_pixels
+                    if self.max_pixels is not None:
+                        item['max_pixels'] = self.max_pixels
+            elif s['type'] == 'video':
+                item = {'type': 'video', 'video': ensure_video_url(s['value'])}
+                if self.fps is not None:
+                    item['fps'] = self.fps
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:
@@ -81,14 +155,14 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     def generate_inner(self, message, dataset=None):
         try:
             from qwen_vl_utils import process_vision_info
-        except ImportError:
-            warnings.warn("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            raise
+        except Exception as err:
+            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
+            raise err
 
         messages = []
         if self.system_prompt is not None:
             messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message)})
+        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 

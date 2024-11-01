@@ -14,8 +14,9 @@ class Chameleon(BaseModel):
     def __init__(self, model_path='facebook/chameleon-7b', **kwargs):
         try:
             from transformers import ChameleonProcessor, ChameleonForConditionalGeneration
-        except:
-            warnings.warn('Please install the latest transformers.')
+        except Exception as e:
+            logging.critical('Please install the latest transformers.')
+            raise e
 
         processor = ChameleonProcessor.from_pretrained(model_path)
         model = ChameleonForConditionalGeneration.from_pretrained(model_path, torch_dtype=torch.bfloat16)
