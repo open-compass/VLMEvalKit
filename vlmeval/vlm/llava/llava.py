@@ -561,17 +561,30 @@ class LLaVA_OneVision(BaseModel):
                     "mm_spatial_pool_mode"
                 ]
 
+        rank, world_size = get_rank_and_world_size()
         model_name = get_model_name_from_path(model_path)
         device_map = self.split_model(model_path)
+
         if device_map is None:
-            tokenizer, model, image_processor, _ = load_pretrained_model(
-                model_path,
-                None,
-                model_name,
-                device_map="cpu",
-                overwrite_config=overwrite_config,
-            )
-            model.cuda()
+            if auto_split_flag():
+                assert world_size == 1, 'Only support world_size == 1 when AUTO_SPLIT set for non-72B LLaVA-OneVision'
+                logging.warning('Currently, we only support to split the non-72B model across all GPUs.')
+                tokenizer, model, image_processor, _ = load_pretrained_model(
+                    model_path,
+                    None,
+                    model_name,
+                    device_map="auto",
+                    overwrite_config=overwrite_config,
+                )
+            else:
+                tokenizer, model, image_processor, _ = load_pretrained_model(
+                    model_path,
+                    None,
+                    model_name,
+                    device_map="cpu",
+                    overwrite_config=overwrite_config,
+                )
+                model.cuda()
         else:
             tokenizer, model, image_processor, _ = load_pretrained_model(
                 model_path,
