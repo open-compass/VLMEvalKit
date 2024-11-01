@@ -1,7 +1,7 @@
 import warnings
 
 from .image_base import img_root_map, ImageBaseDataset
-from .image_caption import ImageCaptionDataset
+from .image_caption import ImageCaptionDataset, Mia_Bench
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset
@@ -9,7 +9,7 @@ from .image_mcq import (
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench
 )
 
 from .vcr import VCRDataset
@@ -118,7 +118,8 @@ IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
-    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse
+    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse,
+    OlympiadBench, Mia_Bench
 ]
 
 VIDEO_DATASET = [
