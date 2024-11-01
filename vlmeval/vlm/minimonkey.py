@@ -238,8 +238,9 @@ class MiniMonkey(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-
-        if dataset is not None and listinstr(['MMDU'], dataset):
+        if dataset is None:
+            return False
+        if listinstr(['MMDU'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         else:
@@ -315,6 +316,13 @@ class MiniMonkey(BaseModel):
         return message
 
     def set_max_num(self, dataset):
+        if dataset is None:
+            self.max_num = 12
+            self.max_num2 = 7
+            self.min_num = 4
+            self.min_num2 = 3
+            return
+
         if dataset is not None and listinstr(['ChartQA_TEST'], dataset):
             self.max_num = 12
             self.max_num2 = 3
@@ -373,7 +381,7 @@ class MiniMonkey(BaseModel):
                     image_idx += 1
             prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video'], dataset):
+        if dataset is not None and listinstr(['Video'], dataset):
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
