@@ -140,13 +140,14 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==4.37.0` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-[V1/V2]`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`, `Cambrian Series`, `VILA Series`, `Llama-3-MixSenseV1_1`, `Parrot-7B`, `PLLaVA Series`.
 - **Please use** `transformers==4.40.0` **for**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `360VL-70B`, `Phi-3-Vision`, `WeMM`.
 - **Please use** `transformers==4.44.0` **for**: `Moondream2`.
+- **Please use** `transformers==4.45.0` **for** `Aria`.
 - **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
 
 **Torchvision Version Recommendation:**
 
 Note that some VLMs may not be able to run under certain torchvision versions, we recommend the following settings to evaluate each VLM:
 
-- **Please use** `torchvision>=0.16` **for**: `Moondream series`
+- **Please use** `torchvision>=0.16` **for**: `Moondream series` and `Aria series`
 
 ```python
 # Demo
@@ -159,6 +160,9 @@ print(ret)  # The image features a red apple with a leaf on it.
 ret = model.generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
 print(ret)  # There are two apples in the provided images.
 ```
+
+**Flash-attn Version Recommendation:**
+- **Please use** `pip install flash-attn --no-build-isolation` **for**: `Aria series`
 
 ## 🏗️ QuickStart
 
