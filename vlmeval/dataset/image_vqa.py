@@ -674,27 +674,31 @@ class CRPE(ImageBaseDataset):
 class QSpatial(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'QSpatial_plus': '', 
+        'QSpatial_plus': '',
         'QSpatial_scannet': ''
     }
-    
+
     # NOTE: To evaluate Q-Spatial-ScanNet, you need to get the permission from ScanNet website
-    # Once you get the permission, you can use the helper code here to download and extract necessary images: https://github.com/andrewliao11/Q-Spatial-Bench-code?tab=readme-ov-file#for-qspatial_scannet
+    # Once you get the permission, you can use the helper code here to download and extract necessary images:
+    # https://github.com/andrewliao11/Q-Spatial-Bench-code?tab=readme-ov-file#for-qspatial_scannet
     qspatial_root = "TO_BE_REPLACED_WITH_THE_PATH_TO_QSPATIAL_DATASET"
+    url = "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/"
+
     def post_build(self, dataset):
         # Download the prompt templates from github
+
         links = [
-            "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/system_prompt.txt",
-            "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/spatial_prompt_single.txt",
-            "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/spatial_prompt_steps.txt",
-            "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/standard_prompt.txt", 
-            "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/zero_shot_prompt.txt"
+            self.url + "system_prompt.txt",
+            self.url + "spatial_prompt_single.txt",
+            self.url + "spatial_prompt_steps.txt",
+            self.url + "standard_prompt.txt",
+            self.url + "zero_shot_prompt.txt"
         ]
         with tempfile.TemporaryDirectory() as temp_dir:
             for link in links:
                 tgt_path = os.path.join(temp_dir, link.split("/")[-1])
                 os.system(f"wget {link} -O {tgt_path}")
-                
+
             self.system_prompt = open(os.path.join(temp_dir, "system_prompt.txt")).read()
             self._prompt_templates = dict(
                 spatial_prompt_single=open(os.path.join(temp_dir, "spatial_prompt_single.txt")).read(),
@@ -705,66 +709,64 @@ class QSpatial(ImageBaseDataset):
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
-        
+
         text_prompt_template = self._prompt_templates["standard_prompt"]
         env = SandboxedEnvironment()
         text_prompt = env.from_string(text_prompt_template).render(question=line["question"])
         tgt_path = self.dump_image(line)
-           
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
         else:
             msgs = [dict(type='image', value=tgt_path)]
-            
+
         msgs.append(dict(type='text', value=f"{self.system_prompt}\n{text_prompt}"))
         return msgs
-    
+
     # Given the dataset name, return the dataset as a pandas dataframe, can override
     def load_data(self, dataset):
         import io
         import pandas as pd
         from datasets import load_dataset
-            
+
         hf_dataset = load_dataset("andrewliao11/Q-Spatial-Bench", split=dataset)
         df = hf_dataset.to_pandas()
-    
+
         df.reset_index(drop=True, inplace=True)
         df['index'] = df.index
         df['answer'] = list(zip(df['answer_value'], df['answer_unit']))
         df = df[['index'] + [col for col in df.columns if col != 'index']]
-        
-        
+
         if dataset == "QSpatial_scannet":
             df = df.drop(columns=["image"])
             df["image"] = [Image.open(os.path.join(self.qspatial_root, image_path)) for image_path in df["image_path"]]
         else:
             df["image"] = [Image.open(io.BytesIO(image_dict["bytes"])) for image_dict in df["image"]]
-            
+
         df["image"] = [encode_image_to_base64(image) for image in df["image"]]
         return df
-    
+
     @classmethod
     def get_multiplier(self, unit):
-                
+
         unit = unit.lower()
         if unit in ["meters", "meter", "m", "metre", "metres"]:
             multiplier = 100
         elif unit in ["centimeters", "centimeter", "cm"]:
             multiplier = 1
         elif unit in ["feet", "foot", "ft"]:
-            multiplier =  30.48
+            multiplier = 30.48
         elif unit in ["inch", "inches", "in"]:
-            multiplier =  2.54
+            multiplier = 2.54
         elif unit in ["mm"]:
-            multiplier =  0.1
-        else: 
-            #raise ValueError(f"Unknown unit: {unit}")
+            multiplier = 0.1
+        else:
             print(f"Unknown unit: {unit}")
             multiplier = 0.
-            
+
         return multiplier
-    
+
     @classmethod
     def parse_string(self, input_str):
         # Regular expression to match the pattern (number or range, text)
@@ -772,23 +774,21 @@ class QSpatial(ImageBaseDataset):
         if match:
             number_part = match.group(1)
             text = match.group(2)
-            
+
             if '-' in number_part:
                 start, end = map(float, number_part.split('-'))
                 number = (start + end) / 2
             else:
                 number = float(number_part)
-            
+
             return number * self.get_multiplier(text)
         else:
             print(f"Unable to parse the input string {input_str}")
             return 0
-        
+
     @classmethod
     def parse_prediction(self, vlm_response):
-        #### Parse prediction
         # Value
-        
         pattern = r'scalar{([^}]*)}'
         str_inside_scalar_boxes = re.findall(pattern, vlm_response)[-1]
         scalar_list = re.findall(r'\d+\.?\d*', str_inside_scalar_boxes)
@@ -801,25 +801,25 @@ class QSpatial(ImageBaseDataset):
 
         pred_value_in_cms = parsed_scalar * self.get_multiplier(parsed_unit)
         return pred_value_in_cms
-    
+
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        
+
         data = load(eval_file)
         if "model" in judge_kwargs:
             from .utils.qspatial import QSpatial_auxeval
-            
+
             # extract using model
             model = judge_kwargs['model']
             suffix = eval_file.split('.')[-1]
             storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
             tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
             nproc = judge_kwargs.pop('nproc', 4)
-            
+
             if not osp.exists(storage):
                 model = build_judge(max_tokens=128, **judge_kwargs)
-                
+
                 assert model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
@@ -831,7 +831,7 @@ class QSpatial(ImageBaseDataset):
                     ans = load(tmp_file)
                 tups = [x for x, i in zip(tups, indices) if i not in ans]
                 indices = [i for i in indices if i not in ans]
-                
+
                 if len(indices):
                     new_results = track_progress_rich(
                         QSpatial_auxeval,
@@ -845,20 +845,20 @@ class QSpatial(ImageBaseDataset):
                     for k, v in zip(indices, new_results):
                         assert k in ans
                         assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
-                    
+
                 data['res'] = [ans[idx]['res'] for idx in data['index']]
                 data['log'] = [ans[idx]['log'] for idx in data['index']]
                 dump(data, storage)
-                
+
             data = load(storage)
-            
+
             pred_value_in_cms = []
             for res in data["res"]:
                 try:
                     pred_value_in_cms.append(self.parse_string(res))
                 except ValueError:
                     pred_value_in_cms.append(0.)
-                
+
             pred_value_in_cms = np.array(pred_value_in_cms) + 1e-8
         else:
             # regex parsing
@@ -870,38 +870,39 @@ class QSpatial(ImageBaseDataset):
                 except IndexError:
                     n_errors_in_parsing += 1
                     parsed_value = 1e-8
-                    
+
                 pred_value_in_cms.append(parsed_value)
-                
+
             print(f"Encounter {n_errors_in_parsing} errors in parsing")
             pred_value_in_cms = np.array(pred_value_in_cms) + 1e-8
-            
-        
+
         # Ground truth
         ground_truth_value_in_cms = []
         for answer in data["answer"]:
             value, unit = eval(answer)
             ground_truth_value_in_cms.append(value * self.get_multiplier(unit))
         ground_truth_value_in_cms = np.array(ground_truth_value_in_cms) + 1e-8
-        
-        
+
         # Calculate the score
-        delta_2 = np.stack([pred_value_in_cms / ground_truth_value_in_cms, ground_truth_value_in_cms / pred_value_in_cms]).max(0) < 2.
-        delta_1_point_5 =np.stack([pred_value_in_cms / ground_truth_value_in_cms, ground_truth_value_in_cms / pred_value_in_cms]).max(0) < 1.5
-        
+        pred_gt = pred_value_in_cms / ground_truth_value_in_cms
+        gt_pred = ground_truth_value_in_cms / pred_value_in_cms
+        delta_2 = np.stack([pred_gt, gt_pred]).max(0) < 2.
+        delta_1_point_5 = np.stack([pred_gt, gt_pred]).max(0) < 1.5
+
         data["eval_score_delta_2"] = delta_2
         data["eval_score_delta_1_point_5"] = delta_1_point_5
-        
+
         final_score_dict = {
             "delta_2": delta_2.mean(),
             "delta_1_point_5": delta_1_point_5.mean()
         }
         for question_type in set(data["question_type"]):
-            delta_2_per_question_type = data[data["question_type"] == question_type]["eval_score_delta_2"].mean()
-            delta_1_point_5_per_question_type = data[data["question_type"] == question_type]["eval_score_delta_1_point_5"].mean()
+            filtered_data = data[data["question_type"] == question_type]
+            delta_2_per_question_type = filtered_data["eval_score_delta_2"].mean()
+            delta_1_point_5_per_question_type = filtered_data["eval_score_delta_1_point_5"].mean()
             final_score_dict.update({f"{question_type}_delta_2": delta_2_per_question_type})
             final_score_dict.update({f"{question_type}_delta_1_point_5": delta_1_point_5_per_question_type})
-        
+
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
         return final_score_dict
