@@ -76,12 +76,12 @@ class PLLaVA(BaseModel):
         img_list = self.load_video(video, num_segments=self.nframe, resolution=self.RESOLUTION)
 
         if self.model_path == 'ermu2001/pllava-34b':  # using slightly different conversation mode for 34b model
-            if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']:  # MCQ dataset
+            if listinstr(['Video-MCQ'], DATASET_TYPE(dataset)):  # MCQ dataset
                 conv_mode = 'eval_mvbench_llavanext'
             else:  # VQA dataset
                 conv_mode = 'eval_videoqa_llavanext'
         else:
-            if dataset in ['Video-MME', 'MVBench', 'MVBench_MP4']:  # MCQ dataset
+            if listinstr(['Video-MCQ'], DATASET_TYPE(dataset)):  # MCQ dataset
                 conv_mode = 'eval_mvbench'
             else:  # VQA dataset
                 conv_mode = 'eval_videoqabench'

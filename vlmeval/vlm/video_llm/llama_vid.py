@@ -71,17 +71,30 @@ class LLaMAVID(BaseModel):
         from llamavid.conversation import conv_templates, SeparatorStyle
         from llava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
-        original_qs = cp.deepcopy(qs)
+        if type(qs) is dict:
+            original_qs = cp.deepcopy(qs['user'])
+        else:
+            original_qs = cp.deepcopy(qs)
         if model.config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + qs
+        elif type(qs) is dict and 'user' in qs:
+            qs['user'] = DEFAULT_IMAGE_TOKEN + '\n' + qs['user']
         else:
             qs = DEFAULT_IMAGE_TOKEN + '\n' + qs
 
         conv_mode = 'vicuna_v1'
         conv = conv_templates[conv_mode].copy()
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        if type(qs) is dict and 'system' in qs:
+            conv.system = qs['system']
+        if type(qs) is dict and 'user' in qs:
+            conv.append_message(conv.roles[0], qs['user'])
+        else:
+            conv.append_message(conv.roles[0], qs)
+        if type(qs) is dict and 'assistant' in qs:
+            conv.append_message(conv.roles[1], qs['assistant'])
+        else:
+            conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt().strip('</s>')
 
         # Check if the video exists
         if os.path.exists(video):
@@ -120,6 +133,9 @@ class LLaMAVID(BaseModel):
         return outputs
 
     def generate_inner(self, message, dataset=None):
-        question, video = self.message_to_promptvideo(message)
+        if listinstr(['MLVU', 'MVBench'], dataset):
+            question, video = self.message_to_promptvideo_withrole(message, dataset)
+        else:
+            question, video = self.message_to_promptvideo(message)
         response = self.get_model_output(self.model, self.processor, self.tokenizer, video, question)
         return response

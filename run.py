@@ -63,11 +63,10 @@ def main():
     if world_size > 1:
         local_rank = os.environ.get('LOCAL_RANK', 0)
         torch.cuda.set_device(int(local_rank))
-        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=10800))
+        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=3600))
 
     for _, model_name in enumerate(args.model):
         model = None
-
         pred_root = osp.join(args.work_dir, model_name)
         os.makedirs(pred_root, exist_ok=True)
 
@@ -83,19 +82,20 @@ def main():
 
                 # If distributed, first build the dataset on the main process for doing preparation works
                 if world_size > 1:
-                    dataset = build_dataset(dataset_name, **dataset_kwargs) if rank == 0 else None
+                    if rank == 0:
+                        dataset = build_dataset(dataset_name, **dataset_kwargs)
+                        assert dataset is not None
                     dist.barrier()
-                    dataset_list = [dataset]
-                    dist.broadcast_object_list(dataset_list, src=0)
-                    dataset = dataset_list[0]
-                else:
-                    dataset = build_dataset(dataset_name, **dataset_kwargs)
+
+                dataset = build_dataset(dataset_name, **dataset_kwargs)
                 if dataset is None:
                     logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                     continue
 
                 result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
-                if args.fps > 0:  # For Video Dataset, set the fps for priority
+
+                # Handling Video Datasets. For Video Dataset, set the fps for priority
+                if args.fps > 0:
                     if dataset_name == 'MVBench':
                         raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
                     args.nframe = 0
@@ -118,6 +118,7 @@ def main():
                         subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
                         result_file = result_file.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
+                # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
                     result_file = result_file.replace('.xlsx', '.tsv')
 
@@ -164,7 +165,9 @@ def main():
                 judge_kwargs = {
                     'nproc': args.nproc,
                     'verbose': args.verbose,
+                    'retry': 3
                 }
+
                 if args.retry is not None:
                     judge_kwargs['retry'] = args.retry
                 if args.judge is not None:
@@ -178,10 +181,6 @@ def main():
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI'],
                                    dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-                if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
-                    judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
-                if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
-                    judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
 
                 if rank == 0:
                     if dataset_name in ['MMMU_TEST']:
@@ -220,6 +219,9 @@ def main():
                 eval_proxy = os.environ.get('EVAL_PROXY', None)
                 old_proxy = os.environ.get('HTTP_PROXY', '')
 
+                if world_size > 1:
+                    dist.barrier()
+
                 if rank == 0 and args.mode == 'all':
                     if eval_proxy is not None:
                         proxy_set(eval_proxy)
@@ -238,13 +240,17 @@ def main():
 
                     if eval_proxy is not None:
                         proxy_set(old_proxy)
+
             except Exception as e:
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
                                  'skipping this combination.')
                 continue
 
+            if world_size > 1:
+                dist.barrier()
+
     if world_size > 1:
-        dist.barrier()
+        dist.destroy_process_group()
 
 
 if __name__ == '__main__':

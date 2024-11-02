@@ -7,7 +7,7 @@ from transformers import AutoModel, AutoTokenizer
 
 from .base import BaseModel
 from ..smp import *
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
 class MiniCPM_V(BaseModel):
@@ -415,7 +415,7 @@ class MiniCPM_V_2_6(BaseModel):
         return msgs
 
     def generate_inner(self, message, dataset=None):
-        if listinstr(['Video', 'MVBench'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             max_slice_nums = 1
             use_image_id = False
             max_inp_length = 2048 * 10

@@ -5,6 +5,7 @@ import csv
 import multiprocessing as mp
 import os
 import os.path as osp
+from pathlib import Path
 import copy as cp
 import random as rd
 import requests
@@ -20,6 +21,7 @@ import matplotlib.pyplot as plt
 from tabulate import tabulate
 from json import JSONDecoder
 from huggingface_hub import scan_cache_dir
+from huggingface_hub.utils._cache_manager import _scan_cached_repo
 from sty import fg, bg, ef, rs
 
 def process_punctuation(inText):
@@ -70,25 +72,16 @@ def bincount(lst):
         bins[item] += 1
     return bins
 
-def get_cache_path(repo_id, branch=None):
-    hf_cache_info = scan_cache_dir()
-    repos = list(hf_cache_info.repos)
-    repo = None
-    for r in repos:
-        if r.repo_id == repo_id:
-            repo = r
-            break
-    if repo is None:
-        return None
-    revs = list(repo.revisions)
+def get_cache_path(repo_id, branch='main', repo_type='datasets'):
+    from .file import HFCacheRoot
+    cache_path = HFCacheRoot()
+    org, repo_name = repo_id.split('/')
+    repo_path = Path(osp.join(cache_path, f'{repo_type}--{org}--{repo_name}/'))
+    hf_cache_info = _scan_cached_repo(repo_path=repo_path)
+    revs = {r.refs: r for r in hf_cache_info.revisions}
     if branch is not None:
-        revs = [r for r in revs if r.refs == frozenset({branch})]
-    rev2keep, last_modified = None, 0
-    for rev in revs:
-        if rev.last_modified > last_modified:
-            rev2keep, last_modified = rev, rev.last_modified
-    if rev2keep is None:
-        return None
+        revs = {refs: r for refs, r in revs.items() if branch in refs}
+    rev2keep = max(revs.values(), key=lambda r: r.last_modified)
     return str(rev2keep.snapshot_path)
 
 def proxy_set(s):
@@ -217,3 +210,20 @@ def extract_json_objects(text, decoder=JSONDecoder()):
             pos = match + index
         except ValueError:
             pos = match + 1
+
+
+def get_gpu_memory():
+    import subprocess
+    try:
+        command = "nvidia-smi --query-gpu=memory.free --format=csv"
+        memory_free_info = subprocess.check_output(command.split()).decode('ascii').split('\n')[:-1][1:]
+        memory_free_values = [int(x.split()[0]) for i, x in enumerate(memory_free_info)]
+        return memory_free_values
+    except Exception as e:
+        print(f'{type(e)}: {str(e)}')
+        return []
+
+
+def auto_split_flag():
+    flag = os.environ.get('AUTO_SPLIT', '0')
+    return flag == '1'
