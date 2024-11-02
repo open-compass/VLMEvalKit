@@ -5,6 +5,7 @@ import copy as cp
 from PIL import Image
 import pandas as pd
 import string
+import re
 from .base import BaseModel
 from ..smp import isimg, listinstr, cn_string
 from ..dataset import DATASET_TYPE, DATASET_MODALITY
@@ -46,13 +47,18 @@ class Aria(BaseModel):
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if DATASET_TYPE(dataset) == 'MCQ':
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+            # For Multi-Turn we don't have custom prompt
+            return False
+        if DATASET_MODALITY(dataset) == 'VIDEO':
+            # For Video benchmarks we don't have custom prompt at here
+            return False
+        else:
             return True
-        return False
-    
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -74,29 +80,48 @@ class Aria(BaseModel):
 
         if len(options):
             prompt += (
-                '\n请直接回答选项字母。' if cn_string(prompt) else
                 "\nAnswer with the option's letter from the given choices directly."
             )
         else:
-            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+            print(dataset)
+            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
+                prompt = prompt
+            elif listinstr(['LLaVABench', 'MMBench-Video'], dataset):
+                prompt += '\nAnswer this question in detail.'
+            elif listinstr(['DocVQA'], dataset):
+                prompt += '\nAnswer briefly and directly.'
+            else:
+                prompt += '\nAnswer the question using a single word or phrase.'
 
         message = [dict(type='image', value=s) for s in tgt_path]
         message.append(dict(type='text', value=prompt))
         return message
+    
+    def build_video_prompt(self, prompt, dataset=None):
+        if listinstr(['MMBench-Video'], dataset):
+            prompt = prompt.replace('\nAnswer:', '')
+        elif listinstr(['Video-MME'], dataset):
+            prompt = prompt.replace('\nAnswer:', '')
+            prompt += "\nAnswer with the option's letter from the given choices directly."
+        elif listinstr(['MVBench'], dataset):
+            prompt = prompt.replace('Best option:(', '')
 
     def adjust_kwargs(self, dataset):
         kwargs = cp.deepcopy(self.kwargs)
+        kwargs["temperature"] = 0.0
+        kwargs["do_sample"] = False
+
         if DATASET_MODALITY(dataset) == "VIDEO":
             kwargs["max_image_size"] = 490
         else:
             kwargs["max_image_size"] = 980
-            
+
         kwargs["split_image"] = False
-        
+
         if listinstr(['MMMU', 'MMStar', 'Math'], dataset):
             # These datasets may lead the model to work as a CoT-alike behaviour.
             # Allow to output longer.
-            kwargs['max_new_tokens'] = 1024
+            kwargs['max_new_tokens'] = 512
             return kwargs
         if DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             kwargs['max_new_tokens'] = 64
@@ -107,11 +132,11 @@ class Aria(BaseModel):
                 kwargs['max_new_tokens'] = 128
             elif listinstr(['TextVQA'], dataset):
                 kwargs['max_new_tokens'] = 32
-                
+
         if listinstr(['OCR', 'ChartQA', 'DocVQA', 'InfoVQA', 'TextVQA'], dataset):
             # OCR-related datasets that need to split image
             kwargs["split_image"] = True
-            
+
         return kwargs
 
     def generate_inner(self, message, dataset=None):
@@ -125,13 +150,24 @@ class Aria(BaseModel):
         
         prompt = '<|im_start|>user\n'
         images = []
+        last_message_modality = "text"
         for s in message:
             if s['type'] == 'image':
                 prompt += '<fim_prefix><|img|><fim_suffix>'
                 images.append(s['value'])
+                last_message_modality = "image"
             elif s['type'] == 'text':
-                prompt += s['value']
+                text = re.sub(r"<image \d+>", "", s["value"])
+                if last_message_modality == "image":
+                    prompt += "\n"
+                    last_message_modality = "text"
+                prompt += text
+                
+        if DATASET_MODALITY(dataset) == 'VIDEO':
+            prompt = self.build_video_prompt(prompt, dataset)
+            
         prompt += '<|im_end|>\n<|im_start|>assistant\n'
+        print(prompt, max_image_size, split_image)
         if images:
             images = [Image.open(s).convert('RGB') for s in images]
             encoded = self.processor(
