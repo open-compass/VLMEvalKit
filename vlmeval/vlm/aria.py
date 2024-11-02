@@ -7,7 +7,7 @@ import pandas as pd
 import string
 from .base import BaseModel
 from ..smp import isimg, listinstr, cn_string
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
 class Aria(BaseModel):
@@ -86,6 +86,18 @@ class Aria(BaseModel):
 
     def adjust_kwargs(self, dataset):
         kwargs = cp.deepcopy(self.kwargs)
+        if DATASET_MODALITY(dataset) == "VIDEO":
+            kwargs["max_image_size"] = 490
+        else:
+            kwargs["max_image_size"] = 980
+            
+        kwargs["split_image"] = False
+        
+        if listinstr(['MMMU', 'MMStar', 'Math'], dataset):
+            # These datasets may lead the model to work as a CoT-alike behaviour.
+            # Allow to output longer.
+            kwargs['max_new_tokens'] = 1024
+            return kwargs
         if DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
             kwargs['max_new_tokens'] = 64
         elif DATASET_TYPE(dataset) == 'Caption' and 'COCO' in dataset:
@@ -95,6 +107,11 @@ class Aria(BaseModel):
                 kwargs['max_new_tokens'] = 128
             elif listinstr(['TextVQA'], dataset):
                 kwargs['max_new_tokens'] = 32
+                
+        if listinstr(['OCR', 'ChartQA', 'DocVQA', 'InfoVQA', 'TextVQA'], dataset):
+            # OCR-related datasets that need to split image
+            kwargs["split_image"] = True
+            
         return kwargs
 
     def generate_inner(self, message, dataset=None):
@@ -102,6 +119,10 @@ class Aria(BaseModel):
             kwargs = self.adjust_kwargs(dataset)
         else:
             kwargs = self.kwargs
+            
+        max_image_size = kwargs.pop("max_image_size")
+        split_image = kwargs.pop("split_image")
+        
         prompt = '<|im_start|>user\n'
         images = []
         for s in message:
@@ -118,8 +139,8 @@ class Aria(BaseModel):
                 images=images,
                 return_tensors='pt',
                 padding='longest',
-                max_image_size=980,
-                split_image=True
+                max_image_size=max_image_size,
+                split_image=split_image,
             )
         else:
             encoded = self.processor(text=prompt, return_tensors='pt', padding='longest')
