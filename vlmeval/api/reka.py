@@ -50,8 +50,8 @@ class Reka_Wrapper(BaseAPI):
 
         try:
             return 0, response['text'], response
-        except:
-            return -1, self.fail_msg, response
+        except Exception as err:
+            return -1, self.fail_msg + str(err), response
 
 
 class Reka(Reka_Wrapper):

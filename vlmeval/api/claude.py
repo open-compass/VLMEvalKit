@@ -47,7 +47,7 @@ class Claude_Wrapper(BaseAPI):
         if has_images:
             content_list = []
             for msg in inputs:
-                if msg['type'] == 'text':
+                if msg['type'] == 'text' and msg['value'] != '':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     pth = msg['value']
@@ -97,8 +97,10 @@ class Claude_Wrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['data']['content'][0]['text'].strip()
-        except:
-            pass
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 

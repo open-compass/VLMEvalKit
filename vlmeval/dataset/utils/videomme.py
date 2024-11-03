@@ -98,19 +98,19 @@ def get_dimension_rating(data_path):
 
     for duration in DURATIONS + ['overall']:
 
-        overall_res_dur = f'{np.mean([x for x in sum(duration_rating[duration]["domain"].values(), []) if x >= 0]):.2f}'
+        overall_res_dur = f'{np.mean([x for x in sum(duration_rating[duration]["domain"].values(), []) if x >= 0]):.3f}'
         duration_rating[duration]['overall'] = overall_res_dur
 
         for domain in DOMAINS:
-            domain_res_dur = f'{np.mean([x for x in duration_rating[duration]["domain"][domain] if x >= 0]):.2f}'
+            domain_res_dur = f'{np.mean([x for x in duration_rating[duration]["domain"][domain] if x >= 0]):.3f}'
             duration_rating[duration]['domain'][domain] = domain_res_dur
 
         for sub_ctg in SUB_CATEGORIES:
-            sub_res_dur = f'{np.mean([x for x in duration_rating[duration]["sub_category"][sub_ctg] if x >= 0]):.2f}'
+            sub_res_dur = f'{np.mean([x for x in duration_rating[duration]["sub_category"][sub_ctg] if x >= 0]):.3f}'
             duration_rating[duration]['sub_category'][sub_ctg] = sub_res_dur
 
         for task_ctg in TASK_CATEGORIES:
-            task_res_dur = f'{np.mean([x for x in duration_rating[duration]["task_type"][task_ctg] if x >= 0]):.2f}'
+            task_res_dur = f'{np.mean([x for x in duration_rating[duration]["task_type"][task_ctg] if x >= 0]):.3f}'
             duration_rating[duration]['task_type'][task_ctg] = task_res_dur
 
     return duration_rating

@@ -4,7 +4,7 @@ from PIL import Image
 import os.path as osp
 import warnings
 from .base import BaseModel
-from ..smp import splitlen, get_cache_path
+from ..smp import *
 from huggingface_hub import snapshot_download
 
 
@@ -20,17 +20,16 @@ class OpenFlamingo(BaseModel):
                  **kwargs):
 
         if mpt_pth is None:
-            warnings.warn(
+            raise ValueError(
                 'Please set `mpt_pth` to the directory of MPT-7B, which is cloned from here: '
                 'https://huggingface.co/mosaicml/mpt-7b. '
             )
-            sys.exit(-1)
+            raise ValueError
         if ckpt_pth is None:
-            warnings.warn(
+            raise ValueError(
                 'Please set `ckpt_pth` to the openflamingo ckpt, which is the `checkpoint.pt` file downloaded '
                 'from: https://huggingface.co/openflamingo/OpenFlamingo-9B-vitl-mpt7b/tree/main. '
             )
-            sys.exit(-1)
         else:
             if osp.exists(ckpt_pth):
                 if ckpt_pth.endswith('checkpoint.pt'):
@@ -38,14 +37,14 @@ class OpenFlamingo(BaseModel):
                 elif osp.isdir(ckpt_pth):
                     ckpt_pth = osp.join(ckpt_pth, 'checkpoint.pt')
                     if not osp.exists(ckpt_pth):
-                        sys.exit(-1)
+                        raise ValueError(f'File {ckpt_pth} does not exist. ')
             elif splitlen(ckpt_pth, '/') == 2:
                 cache_path = get_cache_path(ckpt_pth)
                 if cache_path is None:
                     snapshot_download(ckpt_pth)
                 cache_path = get_cache_path(ckpt_pth)
                 if cache_path is None:
-                    sys.exit(-1)
+                    raise ValueError(f'Directory {cache_path} does not exist. ')
                 else:
                     ckpt_pth = osp.join(cache_path, 'checkpoint.pt')
 
@@ -54,8 +53,10 @@ class OpenFlamingo(BaseModel):
         self.mpt_pth = mpt_pth
         try:
             from open_flamingo import create_model_and_transforms
-        except:
-            raise ImportError('Please first install open_flamingo to use OpenFlamingo')
+        except Exception as e:
+            logging.critical('Please first install open_flamingo to use OpenFlamingo')
+            raise e
+
         model, image_processor, tokenizer = create_model_and_transforms(
             clip_vision_encoder_path='ViT-L-14',
             clip_vision_encoder_pretrained='openai',
