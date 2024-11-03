@@ -236,8 +236,9 @@ def evaluate_tempcompass_YorN(model, line):
     else:
         eval_result['match_success'] = False
         llm_output = model.generate(prompt)
-        rating = parse_llm_output(llm_output)
-        eval_result['chatgpt-response'], eval_result['rating'] = llm_output, rating  # noqa
+        result = llm_output_to_rating(llm_output)
+        eval_result['chatgpt-response'] = llm_output
+        eval_result['rating'] = result
     return eval_result
 
 
