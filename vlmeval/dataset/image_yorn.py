@@ -12,7 +12,7 @@ class ImageYORNDataset(ImageBaseDataset):
         'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
         'HallusionBench': 'https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv',
         'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
-        'AMBER': 'https://huggingface.co/datasets/yifanzhang114/LMM_Eval/resolve/main/AMBER.tsv',
+        'AMBER': 'https://huggingface.co/datasets/yifanzhang114/AMBER_base64/resolve/main/AMBER.tsv',
     }
 
     DATASET_MD5 = {
