@@ -274,7 +274,7 @@ class MiniMonkey(BaseModel):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
-        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
 
         if dataset is not None and listinstr(['MME'], dataset):
@@ -341,6 +341,11 @@ class MiniMonkey(BaseModel):
             self.max_num2 = 8
             self.min_num = 9
             self.min_num2 = 4
+        elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):
+            self.max_num = 12
+            self.max_num2 = 7
+            self.min_num = 5
+            self.min_num2 = 3
         else:
             self.max_num = 12
             self.max_num2 = 7
@@ -381,7 +386,6 @@ class MiniMonkey(BaseModel):
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values, target_aspect_ratio = load_image(image_path, min_num=self.min_num, max_num=self.max_num)
             pixel_values = pixel_values.cuda().to(torch.bfloat16)
             pixel_values2 = load_image2(image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
