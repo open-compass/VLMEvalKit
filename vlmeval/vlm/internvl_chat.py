@@ -293,7 +293,7 @@ class InternVLChat(BaseModel):
         else:
             prompt = line['question']
 
-        if self.cot_prompt:
+        if self.cot_prompt and not listinstr(['LLaVABench'], dataset):
             cot_prompt_with_final_answer = (
                 "Your task is to answer the question below. "
                 "Give step by step reasoning before you answer, and when you're ready to answer, "
@@ -312,7 +312,7 @@ class InternVLChat(BaseModel):
                 "{question}"
             )
 
-            if listinstr(['LLaVABench'], dataset):
+            if listinstr(['MMVet'], dataset):
                 cot_prompt = cot_prompt_wo_final_answer
             else:
                 cot_prompt = cot_prompt_with_final_answer
