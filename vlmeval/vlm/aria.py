@@ -100,12 +100,15 @@ class Aria(BaseModel):
     def build_video_prompt(self, prompt, dataset=None):
         if listinstr(['MMBench-Video'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
+            prompt = prompt.replace('Question: ', 'Please carefully check the video and then answer the following question with details:')
         elif listinstr(['Video-MME'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
         elif listinstr(['MVBench'], dataset):
             prompt = prompt.replace('Best option:(', '')
-
+        
+        return prompt
+    
     def adjust_kwargs(self, dataset):
         kwargs = cp.deepcopy(self.kwargs)
         kwargs["temperature"] = 0.0
@@ -162,6 +165,8 @@ class Aria(BaseModel):
                     prompt += "\n"
                     last_message_modality = "text"
                 prompt += text
+                
+        print(prompt)
                 
         if DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)

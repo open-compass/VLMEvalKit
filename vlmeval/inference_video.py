@@ -149,7 +149,7 @@ def infer_data_job_video(
         result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
     else:
         result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{fps}fps_{packstr}.xlsx')
-    if dataset_name == 'Video-MME':
+    if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
     if fps > 0:
@@ -162,9 +162,10 @@ def infer_data_job_video(
         tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
     else:
         tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{fps}fps_{packstr}.pkl')
-    if dataset_name == 'Video-MME':
+    if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
+        
 
     if fps > 0:
         tmpl = tmpl.replace('.pkl', f'_fps{fps}.pkl')
