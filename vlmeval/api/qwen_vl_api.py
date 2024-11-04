@@ -26,7 +26,7 @@ class Qwen2VLAPI(Qwen2VLPromptMixin, BaseAPI):
         key: str | None = None,
         min_pixels: int | None = None,
         max_pixels: int | None = None,
-        max_length=2048,
+        max_length=1024,
         top_p=0.001,
         top_k=1,
         temperature=0.01,
