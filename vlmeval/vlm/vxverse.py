@@ -40,6 +40,7 @@ class VXVERSE(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_name='XVERSE-V-13B', root=None, **kwargs):
+        from omegaconf import OmegaConf
 
         if root is None:
             warnings.warn('Please set root to the directory of vxverse.')

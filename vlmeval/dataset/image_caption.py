@@ -1,5 +1,7 @@
 import json
 
+import pandas as pd
+
 from .image_base import ImageBaseDataset
 from .utils.Mia_Bench import get_score_dict
 from ..smp import *
@@ -86,7 +88,7 @@ class Mia_Bench(ImageBaseDataset):
         'Mia-Bench': 'https://opencompass.openxlab.space/utils/VLMEval/Mia-Bench.tsv',
     }
     DATASET_MD5 = {
-        'Mia-Bench': '3d120e2704666ff32eacf166609c114a',
+        'Mia-Bench': '0b9de595f4dd40af18a69b94d89aba82',
     }
 
     @classmethod
@@ -109,10 +111,9 @@ class Mia_Bench(ImageBaseDataset):
 
         if not osp.exists(storage):
             data = load(eval_file)
-            data['score_raw'] = [_ for _ in range(len(data))]
-            # model = build_judge(max_tokens=128, **judge_kwargs)
-            # assert model.working(), ('MATH-Vision evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            score_raw = ['' for _ in range(len(data))]
 
+            #data['score_raw'] = ['' for _ in range(len(data))]
 
             for i in tqdm(range(len(data))):
                 line = data.loc[i]
@@ -123,7 +124,6 @@ class Mia_Bench(ImageBaseDataset):
                 # temp_file.write(image_res.content)
                 # imjs = json.load(temp_file)
 
-                breakpoint()
                 question = generate_prompt(line, response)
                 generated = False
 
@@ -138,19 +138,27 @@ class Mia_Bench(ImageBaseDataset):
                                     "content": [
                                         {"type": "text", "text": question},
                                         {"type": "image_url",
-                                         "image_url": image
+                                         "image_url": {"url": image}
                                          },
                                     ],
                                 }
                             ],
                             max_tokens=2000
                         )
-                        print(rev_response.choices[0].message.content.strip())
-                        #data['score_raw'][i] = response.choices[0].message.content.strip()
+                        #print(rev_response.choices[0].message.content.strip())
+                        score_raw[i] = rev_response.choices[0].message.content.strip()
+                        #data['score_raw'][i] = rev_response.choices[0].message.content.strip()
                         generated = True
                     except:
                         attempt -= 1
-            results = get_score_dict(data, 'score_raw')
-            results.to_csv(storage, index=False, encoding='gbk')
+            data['score_raw'] = score_raw
+            dump(data, storage)
 
+        goresult = load(storage)
+        results = get_score_dict(goresult, goresult['score_raw'])
+        result_pth = storage.replace('.xlsx', '_score.csv')
+        results_pd = pd.DataFrame.from_dict(list(results.items()))
+        dump(results_pd, result_pth)
+
+        return results
 

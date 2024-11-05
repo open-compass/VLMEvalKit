@@ -97,7 +97,7 @@ class MathJudger:
 			"^\\circ": "",
 			"%": "",
 		}
-		#self.pi = parse_latex("\\pi")
+		self.pi = parse_latex("\\pi")
 		self.precision = 1e-8
 
 	def split_by_comma(self, expr: str):
@@ -274,8 +274,8 @@ class MathJudger:
 		if expr1_sym == expr2_sym:
 			return True
 		else:
-			#expr1_sym = self.sympy_sub_pi(expr1_sym)
-			#expr2_sym = self.sympy_sub_pi(expr2_sym)
+			expr1_sym = self.sympy_sub_pi(expr1_sym)
+			expr2_sym = self.sympy_sub_pi(expr2_sym)
 			# 如果输入的表达式可以计算出具体数值的话，则将其进行数值计算的比较
 
 			if (expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol)) or (

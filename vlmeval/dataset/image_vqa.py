@@ -390,9 +390,13 @@ class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
     DATASET_URL = {
         'OlympiadBench': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
+        'OlympiadBench_EN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_EN.tsv',
+        'OlympiadBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_CN.tsv'
     }
     DATASET_MD5 = {
         'OlympiadBench': 'e42027524b4dac81e8c18ebd2abbe3ee',
+        'OlympiadBench_EN': 'e3e03b7307ed7cf5d606621dac94be19',
+        'OlympiadBench_CN': ''
     }
 
     def dump_image(self, line):

@@ -30,6 +30,7 @@ def generate_prompt(d, response):
 
 
 def process_rawscore(component_type, raw_score):
+
     first_sentence = raw_score.split('''.''')[0].split(''',''')
     score_dict = {}
     for i in range(len(first_sentence) - 1):
@@ -41,11 +42,13 @@ def process_rawscore(component_type, raw_score):
     score_dict['total_score'] = total_score
     return score_dict
 
-def get_score_dict(data, column_name):
+def get_score_dict(data, score_raw):
     cat_score_dict = {}
     for i in range(len(data)):
         try:
-            score_dict = process_rawscore(data['component_type'][i], data[column_name][i])
+            cmp = data['component_type'][i][2:-2]
+            cmp_list = cmp.split('\', \'')
+            score_dict = process_rawscore(cmp_list, score_raw[i])
             for key, val in score_dict.items():
                 if key not in cat_score_dict.keys():
                     cat_score_dict[key] = [val]
