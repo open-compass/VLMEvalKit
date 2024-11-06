@@ -87,15 +87,32 @@ class VILA(BaseModel):
                 images.append(image)
                 content += (self.DEFAULT_IMAGE_TOKEN + '\n')
 
-        image_tensor = self.process_images(
+        if images == []:
+            image_tensor = None
+        else:
+            image_tensor = self.process_images(
             images, self.image_processor,
             self.model.config).to(self.model.device, dtype=torch.float16)
-
+        
         # Support interleave text and image
         conv = self.conv_templates[self.conv_mode].copy()
         conv.append_message(conv.roles[0], content)
         conv.append_message(conv.roles[1], None)
         prompt = conv.get_prompt()
+
+        # print(f"prompt: {prompt}")
+        # Notice: The following code intends to fix the bug by unmatching num of <image> and images. Before use, please inspect if the behavior is as expected.
+        # 1. Count the number of <image> in prompt:str
+        # 2. Compare that number to the number of images
+        # 3 if number of <image> is larger than actual image numbers, replace the first few <image>\n until they are equal
+        image_token_count = prompt.count(self.DEFAULT_IMAGE_TOKEN)
+        actual_image_count = len(images)
+        if image_token_count > actual_image_count:
+                excess_images = image_token_count - actual_image_count
+                for _ in range(excess_images):
+                    prompt = prompt.replace(self.DEFAULT_IMAGE_TOKEN + '\n', '', 1)
+        ###############################################################################################
+        # print(f"after prompt fix: {prompt}")
 
         input_ids = self.tokenizer_image_token(prompt, self.tokenizer, self.IMAGE_TOKEN_INDEX,
                                                return_tensors='pt').unsqueeze(0).cuda()
