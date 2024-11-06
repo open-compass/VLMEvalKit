@@ -394,9 +394,9 @@ class OlympiadBench(ImageBaseDataset):
         'OlympiadBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_CN.tsv'
     }
     DATASET_MD5 = {
-        'OlympiadBench': 'e42027524b4dac81e8c18ebd2abbe3ee',
-        'OlympiadBench_EN': 'e3e03b7307ed7cf5d606621dac94be19',
-        'OlympiadBench_CN': ''
+        'OlympiadBench': 'bf7fb574076aef1ecfd1c7deeb860c4b',
+        'OlympiadBench_EN': '78e19e88a2d8d83e8559c41bade6cbc3',
+        'OlympiadBench_CN': 'ea01b16788955702c79650c701e5b623'
     }
 
     def dump_image(self, line):
@@ -517,8 +517,9 @@ class OlympiadBench(ImageBaseDataset):
             accuracy = {'acc':[acc]}
             accdf = pd.DataFrame(accuracy)
             accdf.to_csv(result_file, index=False, encoding='gbk')
-            return acc
-        return
+
+        accdz = pd.read_csv(result_file)
+        return accdz
 
 
 

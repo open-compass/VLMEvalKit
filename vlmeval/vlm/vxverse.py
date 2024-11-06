@@ -4,7 +4,7 @@ import os.path as osp
 import warnings
 from .base import BaseModel
 from transformers import StoppingCriteriaList
-from omegaconf import OmegaConf
+
 from PIL import Image
 from huggingface_hub import snapshot_download
 from vlmeval.smp import *
