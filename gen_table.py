@@ -70,7 +70,8 @@ def BUILD_L1_DF(results, fields):
     check_box['all'] = check_box['avg'] + fields
     type_map = defaultdict(lambda: 'number')
     type_map['Method'] = 'html'
-    type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
+    type_map['Language Model'] = type_map['Vision Model'] = 'html'
+    type_map['OpenSource'] = type_map['Verified'] = 'str'
     check_box['type_map'] = type_map
 
     df = generate_table(results, fields)
@@ -132,7 +133,8 @@ def BUILD_L2_DF(results, dataset):
     check_box['all'] = all_fields
     type_map = defaultdict(lambda: 'number')
     type_map['Method'] = 'html'
-    type_map['Language Model'] = type_map['Vision Model'] = type_map['OpenSource'] = type_map['Verified'] = 'str'
+    type_map['Language Model'] = type_map['Vision Model'] = 'html'
+    type_map['OpenSource'] = type_map['Verified'] = 'str'
     check_box['type_map'] = type_map
     return df, check_box
 
