@@ -99,7 +99,7 @@ qwen_series = {
 }
 
 llava_series = {
-    'llava_v1.5_7b': partial(LLaVA, model_path='liuhaotian/llava-v1.5-7b'),
+    'llava_v1.5_7b': partial(LLaVA, model_path='models/llava-v1.5-7b'),
     'llava_v1.5_13b': partial(LLaVA, model_path='liuhaotian/llava-v1.5-13b'),
     'llava_v1_7b': partial(LLaVA, model_path=LLAVA_V1_7B_MODEL_PTH),
     'sharegpt4v_7b': partial(LLaVA, model_path='Lin-Chen/ShareGPT4V-7B'),
@@ -113,29 +113,55 @@ llava_series = {
     'llava_next_110b': partial(LLaVA_Next, model_path='llava-hf/llava-next-110b-hf'),
     'llava_next_qwen_32b': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-qwen-32b'),
     'llava_next_interleave_7b': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-hf'),
-    'llava_next_interleave_7b_dpo': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-dpo-hf'),
-    'llava_onevision_qwen2_0.5b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-si'),
-    'llava_onevision_qwen2_7b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-si'),
-    'llava_onevision_qwen2_72b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-si'),
-    'llava_onevision_qwen2_0.5b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-ov'),
-    'llava_onevision_qwen2_7b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'),
-    'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov'),
+    'llava_next_interleave_7b_dpo': partial(
+        LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-dpo-hf'
+    ),
+    'llava_onevision_qwen2_0.5b_si': partial(
+        LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-si'
+    ),
+    'llava_onevision_qwen2_7b_si': partial(
+        LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-si'
+    ),
+    'llava_onevision_qwen2_72b_si': partial(
+        LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-si'
+    ),
+    'llava_onevision_qwen2_0.5b_ov': partial(
+        LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-ov'
+    ),
+    'llava_onevision_qwen2_7b_ov': partial(
+        LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'
+    ),
+    'llava_onevision_qwen2_72b_ov': partial(
+        LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov'
+    ),
 }
 
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
-    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'),
-    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='V1.5'),
-    'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5', version='V1.5'),
-    'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5', version='V1.5'),
+    'InternVL-Chat-V1-2-Plus': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'
+    ),
+    'InternVL-Chat-V1-5': partial(
+        InternVLChat,
+        model_path='/mnt/hwfile/opencompass/dhd/hub/models--OpenGVLab--InternVL-Chat-V1-5/snapshots/59ef538d26ac27398d7bc13cab28dae24297fd41',
+        version='V1.5',
+    ),
+    'Mini-InternVL-Chat-2B-V1-5': partial(
+        InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5', version='V1.5'
+    ),
+    'Mini-InternVL-Chat-4B-V1-5': partial(
+        InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5', version='V1.5'
+    ),
     # InternVL2 series
     'InternVL2-1B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-1B', version='V2.0'),
     'InternVL2-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-2B', version='V2.0'),
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
-    'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
+    'InternVL2-40B': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True
+    ),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
 }
 
@@ -162,7 +188,7 @@ minigpt4_series = {
 idefics_series = {
     'idefics_9b_instruct': partial(IDEFICS, model_path='HuggingFaceM4/idefics-9b-instruct'),
     'idefics_80b_instruct': partial(IDEFICS, model_path='HuggingFaceM4/idefics-80b-instruct'),
-    'idefics2_8b': partial(IDEFICS2, model_path='HuggingFaceM4/idefics2-8b'),
+    'idefics2_8b': partial(IDEFICS2, model_path='/cpfs01/shared/llmeval/dhd/hub/models--HuggingFaceM4--idefics2-8b/snapshots/a70c0c07c0baf322b09261bd6031ef68cc390039'),
 }
 
 instructblip_series = {

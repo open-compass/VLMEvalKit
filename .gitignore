@@ -159,3 +159,8 @@ images/
 
 scripts/*ttf
 cache_dir/*
+outputs
+models
+InternVL-Chat-V1-5
+llava_v1.5_7b
+.history

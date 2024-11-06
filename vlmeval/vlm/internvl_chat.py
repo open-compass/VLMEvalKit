@@ -105,7 +105,7 @@ def split_model(model_name):
     num_gpus = num_gpus // world_size
 
     num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
+                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80, '59ef538d26ac27398d7bc13cab28dae24297fd41':47}[model_name]
     # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
     num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.2))
     num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
@@ -151,8 +151,9 @@ class InternVLChat(BaseModel):
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
 
-        if listinstr(['InternVL2-Llama3-76B'], model_path):
+        if listinstr(['InternVL2-Llama3-76B', 'InternVL-Chat-V1-5'], model_path):
             device_map = split_model(model_path.split('/')[-1])
+            breakpoint()
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
@@ -178,7 +179,7 @@ class InternVLChat(BaseModel):
 
     def use_custom_prompt(self, dataset):
 
-        if dataset is not None and listinstr(['MMDU'], dataset):
+        if dataset is not None and listinstr(['MMDU', 'MM_NIAH_VAL'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         else:
