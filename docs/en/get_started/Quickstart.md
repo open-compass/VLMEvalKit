@@ -51,13 +51,7 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
 - Fill the blanks with your API keys (if necessary). Those API keys will be automatically loaded when doing the inference and evaluation.
 ## Step 1. Configuration
 
-**VLM Configuration**: All VLMs are configured in `vlmeval/config.py`, for some VLMs, you need to configure the code root (MiniGPT-4, PandaGPT, etc.) or the model_weight root (LLaVA-v1-7B, etc.) before conducting the evaluation. During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. For MiniGPT-4 and InstructBLIP, you also need to modify the config files in `vlmeval/vlm/misc` to configure LLM path and ckpt path.
-
-Following VLMs require the configuration step:
-
-**Code Preparation & Installation**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)).
-
-**Manual Weight Preparation & Configuration**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, PandaGPT-13B
+**VLM Configuration**: All VLMs are configured in `vlmeval/config.py`. Few legacy VLMs (like MiniGPT-4, LLaVA-v1-7B) requires additional configuration (configuring the code / model_weight root in the config file). During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. Make sure you can successfully infer with the VLM before starting the evaluation with the following command `vlmutil check {MODEL_NAME}`.
 
 ## Step 2. Evaluation
 
@@ -65,7 +59,7 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 
 **Arguments**
 
-- `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (defined in `vlmeval/utils/dataset_config.py`).
+- `--data (list[str])`: Set the dataset names that are supported in VLMEvalKit (names can be found in the codebase README).
 - `--model (list[str])`: Set the VLM names that are supported in VLMEvalKit (defined in `supported_VLM` in `vlmeval/config.py`).
 - `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
 - `--nproc (int, default to 4)`: The number of threads for OpenAI API calling.
@@ -95,7 +89,7 @@ torchrun --nproc-per-node=8 run.py --data MMBench_DEV_EN MME SEEDBench_IMG --mod
 torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 ```
 
-**Command for Evaluating Video Benchmarks **
+**Command for Evaluating Video Benchmarks**
 
 ```bash
 # When running with `python`, only one VLM instance is instantiated, and it might use multiple GPUs (depending on its default behavior).

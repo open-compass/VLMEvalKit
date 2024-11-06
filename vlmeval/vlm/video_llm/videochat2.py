@@ -399,7 +399,7 @@ class VideoChat2_HD(BaseModel):
             )
             return_message = '(' + pred_option.split('\n')[0]
             return return_message
-        elif listinstr(['MLVU', 'MVBench'], dataset):
+        elif listinstr(['MLVU', 'MVBench', 'TempCompass'], dataset):
             question, video = self.message_to_promptvideo_withrole(message, dataset)
             torch_imgs = self.read_video(video)
             example = {
@@ -409,6 +409,8 @@ class VideoChat2_HD(BaseModel):
             }
             if 'assistant' not in question:
                 question['assistant'] = None
+            if question['system'] == '':
+                question['system'] = ' '
             pred_option = self.infer_data(
                 example,
                 question['system'],

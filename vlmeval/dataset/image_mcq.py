@@ -91,7 +91,8 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
             'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
         ),
-        'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv'
+        'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv',
+        'WorldMedQA-V': 'https://opencompass.openxlab.space/utils/VLMEval/WorldMedQA-V.tsv',
     }
 
     DATASET_MD5 = {
@@ -141,7 +142,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': '92321028d2bc29040284b6674721e48f',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
-        'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889'
+        'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
+        'WorldMedQA-V': 'db504a238ac8b708f3a678882c23c3d5'
     }
 
     DATASET_URL.update(MMMB_URLS)
