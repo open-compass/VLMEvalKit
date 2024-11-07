@@ -710,7 +710,7 @@ class QSpatial(ImageBaseDataset):
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
 
-        text_prompt_template = self._prompt_templates["standard_prompt"]
+        text_prompt_template = self._prompt_templates["spatial_prompt_single"]
         env = SandboxedEnvironment()
         text_prompt = env.from_string(text_prompt_template).render(question=line["question"])
         tgt_path = self.dump_image(line)
