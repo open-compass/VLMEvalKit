@@ -93,6 +93,8 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
                     setattr(model, 'nframe', nframe)
             elif getattr(model, 'fps', 0) == 0:
                 raise ValueError(f'fps is not suitable for {model_name}')
+            else:
+                setattr(model, 'nframe', None)
         if getattr(model, 'fps', 0) > 0:
             if fps > 0:
                 if getattr(model, 'fps', 0) != fps:
@@ -100,6 +102,8 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
                     setattr(model, 'fps', fps)
             elif getattr(model, 'nframe', 0) == 0:
                 raise ValueError(f'nframe is not suitable for {model_name}')
+            else:
+                setattr(model, 'fps', None)
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):

@@ -63,8 +63,8 @@ class VideoLLaVA_HF(BaseModel):
         # Generate args -- deperecated
         generation_args = {
             'max_new_tokens': 1024,
-            'temperature': 0.2,
-            'do_sample': True,
+            'temperature': 0.0,
+            'do_sample': False,
         }
         generation_args.update(self.kwargs)
 
