@@ -83,7 +83,6 @@ class Aria(BaseModel):
                 "\nAnswer with the option's letter from the given choices directly."
             )
         else:
-            print(dataset)
             if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
                 prompt = prompt
             elif listinstr(['LLaVABench', 'MMBench-Video'], dataset):
@@ -96,19 +95,22 @@ class Aria(BaseModel):
         message = [dict(type='image', value=s) for s in tgt_path]
         message.append(dict(type='text', value=prompt))
         return message
-    
+
     def build_video_prompt(self, prompt, dataset=None):
         if listinstr(['MMBench-Video'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
-            prompt = prompt.replace('Question: ', 'Please carefully check the video and then answer the following question with details:')
+            prompt = prompt.replace(
+                'Question: ',
+                'Please carefully check the video and then answer the following question with details:'
+            )
         elif listinstr(['Video-MME'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
         elif listinstr(['MVBench'], dataset):
             prompt = prompt.replace('Best option:(', '')
-        
+
         return prompt
-    
+
     def adjust_kwargs(self, dataset):
         kwargs = cp.deepcopy(self.kwargs)
         kwargs["temperature"] = 0.0
@@ -147,10 +149,10 @@ class Aria(BaseModel):
             kwargs = self.adjust_kwargs(dataset)
         else:
             kwargs = self.kwargs
-            
+
         max_image_size = kwargs.pop("max_image_size")
         split_image = kwargs.pop("split_image")
-        
+
         prompt = '<|im_start|>user\n'
         images = []
         last_message_modality = "text"
@@ -165,14 +167,11 @@ class Aria(BaseModel):
                     prompt += "\n"
                     last_message_modality = "text"
                 prompt += text
-                
-        print(prompt)
-                
+
         if DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
-            
+
         prompt += '<|im_end|>\n<|im_start|>assistant\n'
-        print(prompt, max_image_size, split_image)
         if images:
             images = [Image.open(s).convert('RGB') for s in images]
             encoded = self.processor(
@@ -188,9 +187,7 @@ class Aria(BaseModel):
         encoded["pixel_values"] = encoded["pixel_values"].to(self.model.dtype)
         encoded = {k: v.to(self.model.device) for k, v in encoded.items()}
 
-        pred = self.model.generate(
-            **encoded,
-            **kwargs)
+        pred = self.model.generate(**encoded, **kwargs)
         answer = self.tokenizer.decode(pred[0][encoded['input_ids'].size(1):].cpu(), skip_special_tokens=True).strip()
         answer = answer.replace('<|im_end|>', '')
         return answer

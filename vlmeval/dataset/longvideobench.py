@@ -2,6 +2,7 @@ from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
+from glob import glob
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -60,7 +61,6 @@ def insert_subtitles_into_frames(
             if frame_timestamp <= subtitle_timestamp:
                 # print("frame:", frame_timestamp)
                 interleaved_list.append({"type": "image", "value": frame})
-
                 cur_i += 1
             else:
                 break
@@ -75,40 +75,16 @@ def insert_subtitles_into_frames(
                 covering_frames = True
                 break
 
-        # print("subtitle:", subtitle_timestamp)
         if covering_frames:
-            # print("subtitle:", subtitle_timestamp, start, end)
             interleaved_list.append({"type": "text", "value": subtitle_text + "\n"})
         else:
             pass
-            # print("leaving out subtitle:", start, end)
 
     for i, (frame, frame_timestamp) in enumerate(
         zip(frames[cur_i:], frame_timestamps[cur_i:])
     ):
-        # print(frame_timestamp)
         interleaved_list.append({"type": "image", "value": frame})
     return interleaved_list
-
-def unwrap_hf_pkl(pth, suffix='.mp4'):
-    base_dir = osp.join(pth, 'video_pkl/')
-    target_dir = osp.join(pth, 'video/')
-    pickle_files = [osp.join(base_dir, file) for file in os.listdir(base_dir)]
-    pickle_files.sort()
-
-    if not osp.exists(target_dir):
-        os.makedirs(target_dir, exist_ok=True)
-        for pickle_file in pickle_files:
-            with open(pickle_file, 'rb') as file:
-                video_data = pickle.load(file)
-            # For each video file in the pickle file, write its contents to a new mp4 file
-            for video_name, video_content in video_data.items():
-                output_path = osp.join(target_dir, f'{video_name}{suffix}')
-                with open(output_path, 'wb') as output_file:
-                    output_file.write(video_content)
-        print('The video file has been restored and stored from the pickle file.')
-    else:
-        print('The video file already exists.')
 
 
 class LongVideoBench(VideoBaseDataset):
@@ -128,8 +104,6 @@ class LongVideoBench(VideoBaseDataset):
         return ['LongVideoBench']
 
     def prepare_dataset(self, dataset_name='LongVideoBench', repo_id='longvideobench/LongVideoBench'):
-        
-        
 
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
@@ -146,43 +120,43 @@ class LongVideoBench(VideoBaseDataset):
                     print(video_pth, "is not found")
                     return False
             return True
-            
-        
-        try:
-            import glob
-            cache_path = glob.glob("/cpfs/data/user/teowu/teowu/datasets/longvideobench/")[0]
-            #cache_path = get_cache_path(repo_id)
-        except:
-            cache_path = None
-            
+
+        cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-            # download if not downloaded
-            if cache_path is None:
-                snapshot_download(repo_id=repo_id, repo_type='dataset')
+            def generate_tsv(pth):
+                data_file = osp.join(pth, f'{dataset_name}.tsv')
+                if osp.exists(data_file) and md5(data_file) == self.MD5:
+                    return
 
+                data_file = pd.read_json(osp.join(pth, 'lvb_val.json'))
+                data_file = data_file.assign(index=range(len(data_file)))
+                data_file['video'] = data_file['video_id']
+                data_file['video_path'] = data_file['video_path'].apply(lambda x: f'./videos/{x}')
+
+                data_file.to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep='\t', index=False)
+
+            snapshot_download(repo_id=repo_id, repo_type='dataset')
             print("All videos are downloaded for LongVideoBench")
-            # extract if not extracted
-            
-            if not glob.glob(osp.join(cache_path, "videos")):
-                tar_files = glob(osp.join(cache_path, "**/*.tar*"), recursive=True)
-                def untar_video_data(tar_file):
-                    import tarfile
 
+            if not glob(osp.join(cache_path, "videos")):
+                tar_files = glob(osp.join(cache_path, "**/*.tar*"), recursive=True)
+
+                def untar_video_data(tar_file, cache_dir):
+                    import tarfile
                     with tarfile.open(tar_file, "r") as tar_ref:
                         tar_ref.extractall(cache_dir)
-                        eval_logger.info(f"Extracted all files from {tar_file} to {cache_dir}")
+                        print(f"Extracted all files from {tar_file} to {cache_dir}")
 
                 def concat_tar_parts(tar_parts, output_tar):
                     with open(output_tar, "wb") as out_tar:
                         from tqdm import tqdm
-
                         for part in tqdm(sorted(tar_parts)):
                             with open(part, "rb") as part_file:
                                 out_tar.write(part_file.read())
-                    eval_logger.info(f"Concatenated parts {tar_parts} into {output_tar}")
-                    
+                    print(f"Concatenated parts {tar_parts} into {output_tar}")
+
                 tar_parts_dict = {}
 
                 # Group tar parts together
@@ -194,34 +168,20 @@ class LongVideoBench(VideoBaseDataset):
 
                 # Concatenate and untar split parts
                 for base_name, parts in tar_parts_dict.items():
-                    eval_logger.info(f"Extracting following tar files: {parts}")
+                    print(f"Extracting following tar files: {parts}")
                     output_tar = base_name + ".tar"
                     if not osp.exists(output_tar):
-                        eval_logger.info(f"Start concatenating tar files")
+                        print('Start concatenating tar files')
 
                         concat_tar_parts(parts, output_tar)
-                        eval_logger.info(f"Finish concatenating tar files")
+                        print('Finish concatenating tar files')
 
-                    if not osp.exists(osp.join(cache_dir, osp.basename(base_name))):
-                        untar_video_data(output_tar)
-                        
-            print("All videos are extracted for LongVideoBench")
-            
+                    if not osp.exists(osp.join(cache_path, osp.basename(base_name))):
+                        untar_video_data(output_tar, cache_path)
+
+            print('All videos are extracted for LongVideoBench')
+
             dataset_path = cache_path
-
-            def generate_tsv(pth):
-                
-                data_file = osp.join(pth, f'{dataset_name}.tsv')
-                if osp.exists(data_file) and md5(data_file) == self.MD5:
-                    return
-
-                data_file = pd.read_json(osp.join(pth, 'lvb_val.json'))
-                data_file = data_file.assign(index=range(len(data_file)))
-                data_file['video'] = data_file['video_id']
-                data_file['video_path'] = data_file['video_path'].apply(lambda x: f'./videos/{x}')
-
-                data_file.to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep='\t', index=False)
-                
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
@@ -281,21 +241,22 @@ class LongVideoBench(VideoBaseDataset):
 
                 frame_message = insert_subtitles_into_frames(
                     frames,
-                    [ind_/fps for ind_ in indices],
+                    [ind_ / fps for ind_ in indices],
                     subtitles,
                     line["starting_timestamp_for_subtitles"],
                     line["duration"]
                 )
-                    
+
                 message += frame_message
             else:
                 for im in frames:
                     message.append(dict(type='image', value=im))
 
-        line['question'] += '\n' + '\n'.join(["{}. {}".format(chr(ord("A")+i), cand) for i, cand in enumerate(eval(line['candidates']))])
+        line['question'] += '\n' + '\n'.join(
+            ["{}. {}".format(chr(ord("A") + i), cand) for i, cand in enumerate(eval(line['candidates']))]
+        )
         prompt = line["question"] + "\nAnswer with the option's letter from the given choices directly."
         message.append(dict(type='text', value=prompt))
-        print(message)
         return message
 
     # It returns a dictionary
@@ -332,7 +293,7 @@ class LongVideoBench(VideoBaseDataset):
 
             for idx in data['index']:
                 ans = data.loc[data['index'] == idx, 'correct_choice'].values[0]
-                ans = chr(ord("A")+ans)
+                ans = chr(ord("A") + ans)
                 pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
 
                 if extract_characters_regex(pred) == '':
