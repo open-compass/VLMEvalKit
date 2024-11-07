@@ -67,7 +67,11 @@ def main():
 
     for _, model_name in enumerate(args.model):
         model = None
-        pred_root = osp.join(args.work_dir, model_name)
+
+        eval_id = timencommit()
+        pred_root = osp.join(args.work_dir, model_name, eval_id)
+        pred_root_meta = osp.join(args.work_dir, model_name)
+
         os.makedirs(pred_root, exist_ok=True)
 
         for _, dataset_name in enumerate(args.data):
@@ -240,6 +244,11 @@ def main():
 
                     if eval_proxy is not None:
                         proxy_set(old_proxy)
+
+                files = os.listdir(pred_root)
+                files = [x for x in files if f'{model_name}_{dataset_name}' in x]
+                for f in files:
+                    os.symlink(osp.join(pred_root, f), osp.join(pred_root_meta, f))
 
             except Exception as e:
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
