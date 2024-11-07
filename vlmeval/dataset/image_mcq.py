@@ -783,19 +783,22 @@ class CustomMCQDataset(ImageMCQDataset):
 
 
 class NaturalBenchDataset(ImageMCQDataset):
-    
+
     DATASET_URL = {
-        'NaturalBenchDataset': 'https://huggingface.co/datasets/BaiqiL/NaturalBench/resolve/main/NaturalBenchDataset.tsv',
+        'NaturalBenchDataset': (
+            'https://huggingface.co/datasets/BaiqiL/'
+            'NaturalBench/resolve/main/NaturalBenchDataset.tsv'
+        ),
     }
     DATASET_MD5 = {
-        'NaturalBenchDataset': 'dbe25b044bc35696426381e9ba4fe930',
+        'NaturalBenchDataset':'dbe25b044bc35696426381e9ba4fe930',
     }
 
     def build_prompt(self, line):
         SUFFIX_FOR_VQA = {
             "yes_no": "Please answer Yes or No.",
             "multiple_choice": "Please output the letter corresponding to the correct option."
-        } 
+        }
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -805,7 +808,7 @@ class NaturalBenchDataset(ImageMCQDataset):
             tgt_path = self.dump_image(line)
 
         question = line['question']
-        prompt = f'{question} {SUFFIX_FOR_VQA[line["type"]]}' 
+        prompt = f'{question} {SUFFIX_FOR_VQA[line["type"]]}'
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
@@ -814,7 +817,7 @@ class NaturalBenchDataset(ImageMCQDataset):
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.naturalbench import extract_answer, get_scores
 
@@ -826,14 +829,14 @@ class NaturalBenchDataset(ImageMCQDataset):
         meta = self.data
         types = [str(x) for x in meta['type']]
         results = {}
-        assert len(predictions) == len(answers) == len(indexs) == len(types) == 1900*4
-        number_answered_samples = len(predictions)//4
+        assert len(predictions) == len(answers) == len(indexs) == len(types) == (1900 * 4)
+        number_answered_samples = len(predictions) // 4
         for i in range(number_answered_samples):
             results[i] = {
-                "q0_i0": extract_answer(predictions[i*4], types[i*4]),
-                "q0_i1": extract_answer(predictions[i*4+1], types[i*4+1]),
-                "q1_i0": extract_answer(predictions[i*4+2], types[i*4+2]),
-                "q1_i1": extract_answer(predictions[i*4+3], types[i*4+3])
+                "q0_i0": extract_answer(predictions[i * 4], types[i * 4]),
+                "q0_i1": extract_answer(predictions[i * 4 + 1], types[i * 4 + 1]),
+                "q1_i0": extract_answer(predictions[i * 4 + 2], types[i * 4 + 2]),
+                "q1_i1": extract_answer(predictions[i * 4 + 3], types[i * 4 + 3])
             }
 
         scores = get_scores(results)

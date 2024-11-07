@@ -10,8 +10,8 @@ def extract_answer(output_string, task_type="yes_no"):
     task_type (str): The type of task. Must be either "yes_no" or "multiple_choice".
 
     Returns:
-    int: 
-        1 if "yes" or "A" 
+    int:
+        1 if "yes" or "A"
         0 if "no" or "B"
         -1 if no relevant answer is found.
         Raises a ValueError if an unsupported task_type is provided.
@@ -23,10 +23,10 @@ def extract_answer(output_string, task_type="yes_no"):
         if match:
             return match.start()
         return -1
-    
+
     if task_type not in ["yes_no", "multiple_choice"]:
         raise ValueError(f"Task type {task_type} not supported. Must be 'yes_no' or 'multiple_choice'.")
-    
+
     if task_type == "yes_no":
         position_yes_and_a = find_word_position(output_string, "yes")
         position_no_and_b = find_word_position(output_string, "no")
@@ -42,6 +42,7 @@ def extract_answer(output_string, task_type="yes_no"):
     else:
         return 0 if position_yes_and_a == -1 else 1
 
+
 def get_scores(scores):
     """
     Calculate various scores based on the given results.
@@ -52,10 +53,10 @@ def get_scores(scores):
             - list: [[q0_i0 (1 or 0), q0_i1 (1 or 0), q1_i0 (1 or 0), q1_i1 (1 or 0)], ...]
 
     The keys "q0_i0", "q0_i1", "q1_i0", "q1_i1" represent combinations of questions and images:
-        - "q0_i0" means question_0 on image_0 
-        - "q0_i1" means question_0 on image_1 
-        - "q1_i0" means question_1 on image_0 
-        - "q1_i1" means question_1 on image_1 
+        - "q0_i0" means question_0 on image_0
+        - "q0_i1" means question_0 on image_1
+        - "q1_i0" means question_1 on image_0
+        - "q1_i1" means question_1 on image_1
 
     Returns:
         dict: A dictionary containing the calculated scores:
@@ -84,7 +85,7 @@ def get_scores(scores):
             if result[3] == 1.0 and result[1] == 0.0:
                 image_correct += 1
         return image_correct
-    
+
     def calculate_question_score(result):
         text_correct = 0
         if isinstance(result, dict):
@@ -118,9 +119,9 @@ def get_scores(scores):
         group_correct = 0
         if calculate_question_score(result) == 2 and calculate_image_score(result) == 2:
             group_correct += 1
-        
+
         return group_correct
-    
+
     if isinstance(scores, dict):
         for _, result in scores.items():
             question_score += calculate_question_score(result)
