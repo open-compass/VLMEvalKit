@@ -118,14 +118,50 @@ try:
 except ImportError:
     pass
 
-def timestr(second=True, minute=False):
-    s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')[2:]
-    if second:
+def timestr(granularity='second'):
+    s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    assert granularity in ['second', 'minute', 'hour', 'day']
+    if granularity == 'second':
         return s
-    elif minute:
+    elif granularity == 'minute':
         return s[:-2]
-    else:
+    elif granularity == 'hour':
         return s[:-4]
+    elif granularity == 'day':
+        return s[:-6]
+
+def _minimal_ext_cmd(cmd, cwd=None):
+    env = {}
+    for k in ['SYSTEMROOT', 'PATH', 'HOME']:
+        v = os.environ.get(k)
+        if v is not None:
+            env[k] = v
+    env['LANGUAGE'] = 'C'
+    env['LANG'] = 'C'
+    env['LC_ALL'] = 'C'
+    out = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env, cwd=cwd).communicate()[0]
+    return out
+
+def githash(fallback='unknown', digits=8):
+    if digits is not None and not isinstance(digits, int):
+        raise TypeError('digits must be None or an integer')
+    try:
+        import vlmeval
+    except ImportError as e:
+        import logging
+        logging.error(f'ImportError: {str(e)}')
+        return fallback
+    try:
+        out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'], cwd=vlmeval.__path__[0])
+        sha = out.strip().decode('ascii')
+        if digits is not None:
+            sha = sha[:digits]
+    except OSError:
+        sha = fallback
+    return sha
+
+def timencommit():
+    return f"T{timestr('day')}_G{githash(digits=8)}"
 
 def dict_merge(dct, merge_dct):
     for k, _ in merge_dct.items():
