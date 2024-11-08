@@ -220,7 +220,7 @@ class LongVideoBench(VideoBaseDataset):
         return frame_paths, indices, video_info
 
     def save_video_into_images(self, line, num_frames=8):
-        frame_paths, indices, video_info = self.save_video_frames(line['video'], num_frames)
+        frame_paths, indices, video_info = self.save_video_frames(line['video_path'], num_frames)
         return frame_paths
 
     def build_prompt(self, line, num_frames, video_llm, fps):
@@ -233,7 +233,7 @@ class LongVideoBench(VideoBaseDataset):
 
         message = [dict(type='text', value=self.SYS)]
         if video_llm:
-            message.append(dict(type='video', value=osp.join(self.data_root, 'video', line['video'] + '.mp4')))
+            message.append(dict(type='video', value=osp.join(self.data_root, line['video_path'])))
         else:
             if not self.use_subtitle:
                 with open(osp.join(self.data_root, "subtitles", line["subtitle_path"])) as f:
