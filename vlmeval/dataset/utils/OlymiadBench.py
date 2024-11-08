@@ -482,6 +482,9 @@ class MathJudger:
 
 def extract_answer(is_chinese, model_output, is_deepseek=False):
 	# deepseekmath has special answering format
+	if str(model_output) == 'nan':
+		model_output = 'nan'
+
 	if is_deepseek:
 		if is_chinese:
 			matches = re.findall('## 解题答案(.*)', model_output)

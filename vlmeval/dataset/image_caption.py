@@ -1,4 +1,5 @@
 import json
+import os
 
 import pandas as pd
 
@@ -97,8 +98,12 @@ class Mia_Bench(ImageBaseDataset):
         from openai import OpenAI
         import requests
         from io import BytesIO
-
-        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=os.environ.get("OPENAI_API_BASE"))
+        openai_base = os.environ.get("OPENAI_API_BASE")
+        if openai_base != None:
+            openai_base = openai_base[:openai_base.index('v1')+2]
+            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=openai_base)
+        else:
+            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
         if 'model' in judge_kwargs:
             model = judge_kwargs['model']

@@ -93,6 +93,20 @@ class ImageVQADataset(ImageBaseDataset):
         return ret
 
 
+class VizWiz(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'VizWiz': 'https://opencompass.openxlab.space/utils/VLMEval/VizWiz.tsv'
+    }
+    DATASET_MD5 = {
+
+    }
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        pass
+
+
 class OCRBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -486,25 +500,28 @@ class OlympiadBench(ImageBaseDataset):
             data = load(eval_file)
             scorez = []
 
-            for i in data.iterrows():
+            for i in tqdm(data.iterrows()):
                 line = i[1]
                 model_answer = line['prediction']
                 is_chinese = 'zh' in line['source']
                 model_answer = extract_answer(is_chinese, model_answer, is_deepseek=False)
                 answer_type = line['answer_type']
-                if 'Tuple' in answer_type:  # 目前可机评的数据中 没有 need_human_evaluate
-                    judge_result = judger.judge(model_answer, line['final_answer'][0])
+
+                final_answer = line['final_answer'][2:-2]
+
+                if str(answer_type) != 'nan' and 'Tuple' in answer_type:  # 目前可机评的数据中 没有 need_human_evaluate
+                    judge_result = judger.judge(model_answer, final_answer)
                 else:
                     if str(line['error']) != 'nan':
                         if ',' in line['error']:
                             precisions = line['error'].split(',')
                             precisions = [float(p) if p else 1e-8 for p in precisions]
-                            judge_result = judger.judge(model_answer, line['final_answer'][0], precisions)
+                            judge_result = judger.judge(model_answer, final_answer, precisions)
                         else:
                             precision = float(line['error'])
-                            judge_result = judger.judge(model_answer, line['final_answer'][0], precision)
+                            judge_result = judger.judge(model_answer, final_answer, precision)
                     else:
-                        judge_result = judger.judge(model_answer, line['final_answer'][0])
+                        judge_result = judger.judge(model_answer, final_answer)
                 #print(judge_result)
                 scorez.append(judge_result)
             full_num = len(scorez)
