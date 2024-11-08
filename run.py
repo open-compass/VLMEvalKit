@@ -78,16 +78,14 @@ def main():
         pred_root = osp.join(args.work_dir, model_name, eval_id)
         pred_root_meta = osp.join(args.work_dir, model_name)
 
-        if not osp.exists(pred_root):
-            last_pred_root = None
-            pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
-            if len(pred_roots):
-                pred_roots.sort()
-                last_pred_root = pred_roots[-1]
+        last_pred_root = None
+        prev_pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
+        if len(prev_pred_roots) and not args.reuse:
+            prev_pred_roots.sort()
+            last_pred_root = prev_pred_roots[-1]
 
+        if not osp.exists(pred_root):
             os.makedirs(pred_root, exist_ok=True)
-            if not args.reuse:
-                last_pred_root = None
 
         for _, dataset_name in enumerate(args.data):
             try:
@@ -146,7 +144,8 @@ def main():
                     logger.warning(
                         f'--reuse is set, will reuse the prediction file {result_file_base} in {last_pred_root}.')
                     prev_result_file = osp.join(last_pred_root, result_file_base)
-                    shutil.copy(prev_result_file, result_file)
+                    if prev_result_file != result_file:
+                        shutil.copy(prev_result_file, result_file)
                 if world_size > 1:
                     dist.barrier()
 
