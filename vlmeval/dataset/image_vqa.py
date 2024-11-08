@@ -94,17 +94,62 @@ class ImageVQADataset(ImageBaseDataset):
 
 
 class VizWiz(ImageBaseDataset):
-    TYPE = 'VQA'
+    TYPE = 'VQA_ex_prompt'
     DATASET_URL = {
         'VizWiz': 'https://opencompass.openxlab.space/utils/VLMEval/VizWiz.tsv'
     }
     DATASET_MD5 = {
-
+        'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'
     }
+
+    def build_prompt(self, line):
+
+        prompt_pre = "Please answer the following questions as accurately and briefly as possible:"
+        prompt_suf = "If you believe there is no connection between the problem and the image, please output \'unanswerable\'."
+
+        input = prompt_pre + '\n' + line['question'] + '\n' + prompt_suf
+
+        ret = [dict(type='text', value=input)]
+        tgt_path = self.dump_image(line)
+
+        ret.extend([dict(type='image', value=s) for s in tgt_path])
+
+        return ret
+
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        pass
+        from collections import Counter
+
+        suffix = eval_file.split('.')[-1]
+        name_str = 'score'
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.csv')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+            scorez = 0
+
+            for i in tqdm(range(len(data))):
+                line = data.loc[i]
+
+                line_answer = line['answers'][2:-2]
+                answer = line_answer.split('\', \'')
+
+                predict = line['prediction'].lower()
+                counter = Counter(answer)
+                count = counter.get(predict)
+                if count == None:
+                    count = 0
+                count = min(1, count)
+                scorez += count
+
+            score = {'score': [scorez]}
+            scdf = pd.DataFrame(score)
+            scdf.to_csv(result_file, index=False, encoding='gbk')
+
+        zresult = load(result_file)
+        return zresult
+
 
 
 class OCRBench(ImageBaseDataset):

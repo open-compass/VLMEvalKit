@@ -9,7 +9,7 @@ from .image_mcq import (
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse, OlympiadBench
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench, VizWiz
 )
 
 from .vcr import VCRDataset
@@ -119,7 +119,7 @@ IMAGE_DATASET = [
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse,
-    OlympiadBench, Mia_Bench
+    OlympiadBench, Mia_Bench, VizWiz
 ]
 
 VIDEO_DATASET = [
