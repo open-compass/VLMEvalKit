@@ -78,11 +78,9 @@ def main():
         pred_root = osp.join(args.work_dir, model_name, eval_id)
         pred_root_meta = osp.join(args.work_dir, model_name)
 
-        last_pred_root = None
         prev_pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
         if len(prev_pred_roots) and not args.reuse:
             prev_pred_roots.sort()
-            last_pred_root = prev_pred_roots[-1]
 
         if not osp.exists(pred_root):
             os.makedirs(pred_root, exist_ok=True)
@@ -140,12 +138,19 @@ def main():
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
                 result_file = osp.join(pred_root, result_file_base)
-                if last_pred_root is not None and osp.exists(osp.join(last_pred_root, result_file_base)) and rank == 0:
-                    logger.warning(
-                        f'--reuse is set, will reuse the prediction file {result_file_base} in {last_pred_root}.')
-                    prev_result_file = osp.join(last_pred_root, result_file_base)
-                    if prev_result_file != result_file:
-                        shutil.copy(prev_result_file, result_file)
+
+                if rank == 0 and len(prev_pred_roots):
+                    prev_result_file = None
+                    for root in prev_pred_roots[::-1]:
+                        if osp.exists(osp.join(root, result_file_base)):
+                            prev_result_file = osp.join(root, result_file_base)
+                            break
+                    if prev_result_file is not None:
+                        logger.warning(
+                            f'--reuse is set, will reuse the prediction file {prev_result_file}.')
+                        if prev_result_file != result_file:
+                            shutil.copy(prev_result_file, result_file)
+
                 if world_size > 1:
                     dist.barrier()
 
