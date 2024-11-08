@@ -272,8 +272,9 @@ def main():
                     files = os.listdir(pred_root)
                     files = [x for x in files if f'{model_name}_{dataset_name}' in x]
                     for f in files:
-                        file_addr = osp.join(pred_root, f)
-                        link_addr = osp.join(pred_root_meta, f)
+                        cwd = os.getcwd()
+                        file_addr = osp.join(cwd, pred_root, f)
+                        link_addr = osp.join(cwd, pred_root_meta, f)
                         if osp.exists(link_addr) or osp.islink(link_addr):
                             os.remove(link_addr)
                         os.symlink(file_addr, link_addr)
