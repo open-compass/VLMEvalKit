@@ -43,14 +43,16 @@ def parse_args():
 
 def main():
     logger = get_logger('RUN')
+    rank, world_size = get_rank_and_world_size()
 
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
 
-    if not args.reuse:
-        logger.warning('--reuse is not set, will start the evaluation from scratch')
-    else:
-        logger.warning('--reuse is set, will reuse the latest prediction files')
+    if rank == 0:
+        if not args.reuse:
+            logger.warning('--reuse is not set, will start the evaluation from scratch')
+        else:
+            logger.warning('--reuse is set, will reuse the latest prediction files')
 
     if 'MMEVAL_ROOT' in os.environ:
         args.work_dir = os.environ['MMEVAL_ROOT']
@@ -64,7 +66,6 @@ def main():
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
 
-    rank, world_size = get_rank_and_world_size()
     if world_size > 1:
         local_rank = os.environ.get('LOCAL_RANK', 0)
         torch.cuda.set_device(int(local_rank))
@@ -267,8 +268,11 @@ def main():
                 files = os.listdir(pred_root)
                 files = [x for x in files if f'{model_name}_{dataset_name}' in x]
                 for f in files:
-                    os.remove(osp.join(pred_root_meta, f))
-                    os.symlink(osp.join(pred_root, f), osp.join(pred_root_meta, f))
+                    file_addr = osp.join(pred_root, f)
+                    link_addr = osp.join(pred_root_meta, f)
+                    if osp.exists(link_addr):
+                        os.remove(link_addr)
+                    os.symlink(file_addr, link_addr)
 
             except Exception as e:
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
