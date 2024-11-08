@@ -141,11 +141,13 @@ def main():
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
                 result_file = osp.join(pred_root, result_file_base)
-                if last_pred_root is not None and osp.exists(osp.join(last_pred_root, result_file_base)):
+                if last_pred_root is not None and osp.exists(osp.join(last_pred_root, result_file_base)) and rank == 0:
                     logger.warning(
                         f'--reuse is set, will reuse the prediction file {result_file_base} in {last_pred_root}.')
                     prev_result_file = osp.join(last_pred_root, result_file_base)
                     shutil.copy(prev_result_file, result_file)
+                if world_size > 1:
+                    dist.barrier()
 
                 if model is None:
                     model = model_name  # which is only a name
