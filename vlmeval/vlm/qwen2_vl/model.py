@@ -91,6 +91,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.system_prompt = system_prompt
         self.verbose = verbose
         self.fps = 2.0
+        self.nframe = 64
 
         from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
         rank, world_size = get_rank_and_world_size()
@@ -145,6 +146,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 item = {'type': 'video', 'video': ensure_video_url(s['value'])}
                 if self.fps is not None:
                     item['fps'] = self.fps
+                elif self.nframe is not None:
+                    item['nframes'] = self.nframe
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:

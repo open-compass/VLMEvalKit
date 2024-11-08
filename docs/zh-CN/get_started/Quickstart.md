@@ -50,13 +50,7 @@ pip install -e .
 - 如果需要使用 API 在对应键值空白处填写上你的密钥。这些 API 密钥将在进行推理和评估时自动加载。
 ## 第1步 配置
 
-**VLM 配置**：所有 VLMs 都在 `vlmeval/config.py` 中配置。对于某些 VLMs，在进行评估之前，你需要配置代码根目录（如 MiniGPT-4、PandaGPT 等）或模型权重根目录（如 LLaVA-v1-7B 等）。在评估时，你应该使用 `vlmeval/config.py` 中 `supported_VLM` 指定的模型名称来选择 VLM。对于 MiniGPT-4 和 InstructBLIP，还需要修改 `vlmeval/vlm/misc` 中的配置文件来配置 LLM 路径和 ckpt 路径。
-
-**以下 VLMs 需要额外配置步骤**：
-
-**代码准备和安装**: InstructBLIP ([LAVIS](https://github.com/salesforce/LAVIS)), LLaVA ([LLaVA](https://github.com/haotian-liu/LLaVA)), MiniGPT-4 ([MiniGPT-4](https://github.com/Vision-CAIR/MiniGPT-4)), mPLUG-Owl2 ([mPLUG-Owl2](https://github.com/X-PLUG/mPLUG-Owl/tree/main/mPLUG-Owl2)), OpenFlamingo-v2 ([OpenFlamingo](https://github.com/mlfoundations/open_flamingo)), PandaGPT-13B ([PandaGPT](https://github.com/yxuansu/PandaGPT)), TransCore-M ([TransCore-M](https://github.com/PCIResearch/TransCore-M)).
-
-**手动权重文件准备与配置**: InstructBLIP, LLaVA-v1-7B, MiniGPT-4, PandaGPT-13B
+**VLM 配置**：所有 VLMs 都在 `vlmeval/config.py` 中配置。对于某些 VLMs（如 MiniGPT-4、LLaVA-v1-7B），需要额外的配置（在配置文件中配置代码 / 模型权重根目录）。在评估时，你应该使用 `vlmeval/config.py` 中 `supported_VLM` 指定的模型名称来选择 VLM。确保在开始评估之前，你可以成功使用 VLM 进行推理，使用以下命令 `vlmutil check {MODEL_NAME}`。
 
 ## 第2步 评测
 
@@ -64,7 +58,7 @@ pip install -e .
 
 **参数**
 
-- `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（在 `vlmeval/utils/dataset_config.py` 中定义）
+- `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（可以在代码库首页的 README 中找到支持的数据集列表）
 - `--model (list[str])`: 设置在 VLMEvalKit 中支持的 VLM 名称（在 `vlmeval/config.py` 中的 `supported_VLM` 中定义）
 - `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
 - `--nproc (int, 默认值为 4)`: 调用 API 的线程数
