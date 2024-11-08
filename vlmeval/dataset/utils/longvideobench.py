@@ -6,9 +6,16 @@ import re
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 DURATIONS = [15, 60, 600, 3600]
-TASK_CATEGORIES = ["S2E", "S2O", "S2A", "E2O", "O2E", "T2E", "T2O", "T2A", "E3E", "O3O", "SSS", "SOS", "SAA", "T3E", "T3O", "TOS", "TAA"]
+TASK_CATEGORIES = [
+    "S2E", "S2O", "S2A",
+    "E2O", "O2E", "T2E",
+    "T2O", "T2A", "E3E",
+    "O3O", "SSS", "SOS",
+    "SAA", "T3E", "T3O",
+    "TOS", "TAA"
+]
 
-    
+
 def get_dimension_rating(data_path):
     data = load(data_path)
     print(data.iloc[0])
@@ -30,13 +37,10 @@ def get_dimension_rating(data_path):
         duration_rating['overall']['question_category'][task_ctg].append(data.iloc[i]['score'])
 
     for duration in DURATIONS + ['overall']:
-
-        overall_res_dur = f'{np.mean([x for x in sum(duration_rating[duration]["question_category"].values(), []) if x >= 0]):.3f}'
+        overall_res_dur = f'{np.mean([x for x in sum(duration_rating[duration]["question_category"].values(), []) if x >= 0]):.3f}'  # noqa: E501
         duration_rating[duration]['overall'] = overall_res_dur
-
-
         for task_ctg in TASK_CATEGORIES:
-            task_res_dur = f'{np.mean([x for x in duration_rating[duration]["question_category"][task_ctg] if x >= 0]):.3f}'
+            task_res_dur = f'{np.mean([x for x in duration_rating[duration]["question_category"][task_ctg] if x >= 0]):.3f}'  # noqa: E501
             duration_rating[duration]['question_category'][task_ctg] = task_res_dur
 
     return duration_rating
@@ -67,7 +71,7 @@ def extract_characters_regex(s):
     ]
     for answer_prefix in answer_prefixes:
         s = s.replace(answer_prefix, '')
-        
+
     if len(s.split()) > 10 and not re.search('[ABCDE]', s):
         return ''
     matches = re.search(r'[ABCDE]', s)

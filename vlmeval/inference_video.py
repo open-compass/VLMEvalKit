@@ -167,7 +167,6 @@ def infer_data_job_video(
     if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
-        
 
     out_file = tmpl.format(rank)
 
