@@ -34,8 +34,8 @@ def parse_args():
     # Configuration for Resume
     # Ignore: will not rerun failed VLM inference
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
-    # Rerun: will remove all evaluation temp files
-    parser.add_argument('--rerun', action='store_true')
+    # Reuse: will reuse the existing prediction files
+    parser.add_argument('--reuse', action='store_true')
 
     args = parser.parse_args()
     return args
@@ -46,6 +46,11 @@ def main():
 
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
+
+    if not args.reuse:
+        logger.warning('--reuse is not set, will start the evaluation from scratch')
+    else:
+        logger.warning('--reuse is set, will reuse the latest prediction files')
 
     if 'MMEVAL_ROOT' in os.environ:
         args.work_dir = os.environ['MMEVAL_ROOT']
@@ -72,7 +77,16 @@ def main():
         pred_root = osp.join(args.work_dir, model_name, eval_id)
         pred_root_meta = osp.join(args.work_dir, model_name)
 
-        os.makedirs(pred_root, exist_ok=True)
+        if not osp.exists(pred_root):
+            last_pred_root = None
+            pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
+            if len(pred_roots):
+                pred_roots.sort()
+                last_pred_root = pred_roots[-1]
+
+            os.makedirs(pred_root, exist_ok=True)
+            if not args.reuse:
+                last_pred_root = None
 
         for _, dataset_name in enumerate(args.data):
             try:
@@ -96,7 +110,7 @@ def main():
                     logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                     continue
 
-                result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
+                result_file_base = f'{model_name}_{dataset_name}.xlsx'
 
                 # Handling Video Datasets. For Video Dataset, set the fps for priority
                 if args.fps > 0:
@@ -106,29 +120,32 @@ def main():
                 if dataset_name in ['MMBench-Video']:
                     packstr = 'pack' if args.pack else 'nopack'
                     if args.nframe > 0:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
                     else:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
                 elif dataset.MODALITY == 'VIDEO':
                     if args.pack:
                         logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                         args.pack = False
                     packstr = 'pack' if args.pack else 'nopack'
                     if args.nframe > 0:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
                     else:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
                     if dataset_name in ['Video-MME']:
                         subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                        result_file = result_file.replace('.xlsx', f'_{subtitlestr}.xlsx')
+                        result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
                 # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
-                    result_file = result_file.replace('.xlsx', '.tsv')
+                    result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
-                if osp.exists(result_file) and args.rerun:
-                    for keyword in ['openai', 'gpt', 'auxmatch']:
-                        os.system(f'rm {pred_root}/{model_name}_{dataset_name}_{keyword}*')
+                result_file = osp.join(pred_root, result_file_base)
+                if last_pred_root is not None and osp.exists(osp.join(last_pred_root, result_file_base)):
+                    logger.warning(
+                        f'--reuse is set, will reuse the prediction file {result_file_base} in {last_pred_root}.')
+                    prev_result_file = osp.join(last_pred_root, result_file_base)
+                    shutil.copy(prev_result_file, result_file)
 
                 if model is None:
                     model = model_name  # which is only a name
@@ -248,6 +265,7 @@ def main():
                 files = os.listdir(pred_root)
                 files = [x for x in files if f'{model_name}_{dataset_name}' in x]
                 for f in files:
+                    os.remove(osp.join(pred_root_meta, f))
                     os.symlink(osp.join(pred_root, f), osp.join(pred_root_meta, f))
 
             except Exception as e:
