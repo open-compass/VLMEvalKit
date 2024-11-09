@@ -23,6 +23,7 @@ from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
+from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
 from .utils import *
 from ..smp import *
@@ -122,7 +123,7 @@ IMAGE_DATASET = [
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4,
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, LongVideoBench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN
 ]

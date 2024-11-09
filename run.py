@@ -129,7 +129,7 @@ def main():
                         result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
                     else:
                         result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                    if dataset_name in ['Video-MME']:
+                    if dataset_name in ['Video-MME', 'LongVideoBench']:
                         subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
                         result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
