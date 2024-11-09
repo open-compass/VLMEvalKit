@@ -77,6 +77,7 @@ def main():
         eval_id = timencommit()
         pred_root = osp.join(args.work_dir, model_name, eval_id)
         pred_root_meta = osp.join(args.work_dir, model_name)
+        os.makedirs(pred_root_meta, exist_ok=True)
 
         prev_pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
         if len(prev_pred_roots) and not args.reuse:
