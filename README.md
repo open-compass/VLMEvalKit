@@ -25,6 +25,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model, thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** Supported **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**, the benchmark contains 1000+ Medical VQA problems, in languages of four countries: Brazil, Isarel, Japan, Spanish, as well as their English translations 🔥🔥🔥
 - **[2024-11-01]** Supported an `AUTO_SPLIT` flag (https://github.com/open-compass/VLMEvalKit/pull/566) for evaluation on low-profile GPUs. When set, the model will be automatically split into multiple GPUs (pipeline parallel) to reduce GPU memory usage (currently only support some VLMs: Qwen2-VL, Llama-3.2, LLaVA-OneVision, etc.) 🔥🔥🔥
 - **[2024-10-30]** Supported the evaluation of **[MLVU](https://github.com/JUNJIE99/MLVU)** and **[TempCompass](https://arxiv.org/abs/2403.00476v1)**. The two benchmarks will be soon incorporated into **[OpenVLM Video Leaderboard](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
@@ -126,7 +127,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 | [**H2OVL-Mississippi-[0.8B/2B]**](https://huggingface.co/h2oai/h2ovl-mississippi-2b)🚅🎞️ | **[Pixtral-12B](https://huggingface.co/mistralai/Pixtral-12B-2409)**🎞️ | **[Falcon2-VLM-11B](https://huggingface.co/tiiuae/falcon-11B-vlm)**🚅 |
 | **[MiniMonkey](https://huggingface.co/mx262/MiniMonkey)**🚅🎞️  | **[LLaVA-OneVision](https://huggingface.co/lmms-lab/llava-onevision-qwen2-72b-ov-sft)**🚅🎞️ | **[LLaVA-Video](https://huggingface.co/collections/lmms-lab/llava-video-661e86f5e8dabc3ff793c944)**🚅🎞️ | **[Aquila-VL-2B](https://huggingface.co/BAAI/Aquila-VL-2B-llava-qwen)**🚅🎞️ |
 | [**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ | **[InternVL2 Series](https://huggingface.co/OpenGVLab/InternVL2-8B)** 🚅🎞️ | **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**🚅🎞️ | **[molmoE-1B/molmo-7B/molmo-72B](https://huggingface.co/allenai/Molmo-7B-D-0924)**🚅 |
-| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ |                                                              |
+| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ |  **[Aria](https://huggingface.co/rhymes-ai/Aria)**🚅🎞️                                                       |
 
 
 🎞️: Support multiple images as inputs.
@@ -144,7 +145,7 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==4.37.0` **for**: `LLaVA series`, `ShareGPT4V series`, `TransCore-M`, `LLaVA (XTuner)`, `CogVLM Series`, `EMU2 Series`, `Yi-VL Series`, `MiniCPM-[V1/V2]`, `OmniLMM-12B`, `DeepSeek-VL series`, `InternVL series`, `Cambrian Series`, `VILA Series`, `Llama-3-MixSenseV1_1`, `Parrot-7B`, `PLLaVA Series`.
 - **Please use** `transformers==4.40.0` **for**: `IDEFICS2`, `Bunny-Llama3`, `MiniCPM-Llama3-V2.5`, `360VL-70B`, `Phi-3-Vision`, `WeMM`.
 - **Please use** `transformers==4.44.0` **for**: `Moondream2`, `H2OVL series`.
-- **Please use** `transformers==4.45.0` **for** `Aria`.
+- **Please use** `transformers==4.45.0` **for**: `Aria`.
 - **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
 
 **Torchvision Version Recommendation:**
@@ -152,6 +153,12 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 Note that some VLMs may not be able to run under certain torchvision versions, we recommend the following settings to evaluate each VLM:
 
 - **Please use** `torchvision>=0.16` **for**: `Moondream series` and `Aria`
+
+**Flash-attn Version Recommendation:**
+
+Note that some VLMs may not be able to run under certain flash-attention versions, we recommend the following settings to evaluate each VLM:
+
+- **Please use** `pip install flash-attn --no-build-isolation` **for**: `Aria`
 
 ```python
 # Demo
@@ -164,9 +171,6 @@ print(ret)  # The image features a red apple with a leaf on it.
 ret = model.generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
 print(ret)  # There are two apples in the provided images.
 ```
-
-**Flash-attn Version Recommendation:**
-- **Please use** `pip install flash-attn --no-build-isolation` **for**: `Aria`
 
 ## 🏗️ QuickStart
 
