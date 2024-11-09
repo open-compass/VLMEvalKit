@@ -3,7 +3,7 @@ import warnings
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
-
+import pandas as pd
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -780,3 +780,69 @@ class CustomMCQDataset(ImageMCQDataset):
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)
+
+
+class NaturalBenchDataset(ImageMCQDataset):
+
+    DATASET_URL = {
+        'NaturalBenchDataset': (
+            'https://huggingface.co/datasets/BaiqiL/'
+            'NaturalBench/resolve/main/NaturalBenchDataset.tsv'
+        ),
+    }
+    DATASET_MD5 = {
+        'NaturalBenchDataset':'dbe25b044bc35696426381e9ba4fe930',
+    }
+
+    def build_prompt(self, line):
+        SUFFIX_FOR_VQA = {
+            "yes_no": "Please answer Yes or No.",
+            "multiple_choice": "Please output the letter corresponding to the correct option."
+        }
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        prompt = f'{question} {SUFFIX_FOR_VQA[line["type"]]}'
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.naturalbench import extract_answer, get_scores
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answer']]
+        indexs = [str(x) for x in data['index']]
+        meta = self.data
+        types = [str(x) for x in meta['type']]
+        results = {}
+        assert len(predictions) == len(answers) == len(indexs) == len(types) == (1900 * 4)
+        number_answered_samples = len(predictions) // 4
+        for i in range(number_answered_samples):
+            results[i] = {
+                "q0_i0": extract_answer(predictions[i * 4], types[i * 4]),
+                "q0_i1": extract_answer(predictions[i * 4 + 1], types[i * 4 + 1]),
+                "q1_i0": extract_answer(predictions[i * 4 + 2], types[i * 4 + 2]),
+                "q1_i1": extract_answer(predictions[i * 4 + 3], types[i * 4 + 3])
+            }
+
+        scores = get_scores(results)
+        print(scores)
+        score_file = 'NaturalBench_acc.csv'
+        df = pd.DataFrame(list(scores.items()), columns=['Metric', 'Score'])
+        dump(df, score_file)
+
+        return scores
