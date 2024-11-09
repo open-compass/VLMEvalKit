@@ -147,13 +147,23 @@ class Chatunivi(BaseModel):
 
         if model.config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN * slice_len + DEFAULT_IM_END_TOKEN + '\n' + qs
+        if type(qs) is dict and 'user' in qs:
+            qs['user'] = DEFAULT_IMAGE_TOKEN * slice_len + '\n' + qs['user']
         else:
             qs = DEFAULT_IMAGE_TOKEN * slice_len + '\n' + qs
 
         conv = conv_templates['v1'].copy()
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        if type(qs) is dict and 'system' in qs:
+            conv.system = qs['system']
+        if type(qs) is dict and 'user' in qs:
+            conv.append_message(conv.roles[0], qs['user'])
+        else:
+            conv.append_message(conv.roles[0], qs)
+        if type(qs) is dict and 'assistant' in qs:
+            conv.append_message(conv.roles[1], qs['assistant'])
+        else:
+            conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt().strip('</s>')
 
         input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(
             0).cuda()
@@ -189,6 +199,9 @@ class Chatunivi(BaseModel):
         return outputs
 
     def generate_inner(self, message, dataset=None):
-        question, video = self.message_to_promptvideo(message)
+        if listinstr(['MLVU', 'MVBench'], dataset):
+            question, video = self.message_to_promptvideo_withrole(message, dataset)
+        else:
+            question, video = self.message_to_promptvideo(message)
         response = self.get_model_output(self.model, self.processor, self.tokenizer, video, question)
         return response

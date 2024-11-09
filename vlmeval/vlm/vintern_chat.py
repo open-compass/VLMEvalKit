@@ -4,7 +4,7 @@ import warnings
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 import pandas as pd
 import string
 import torch.distributed as dist
@@ -144,7 +144,7 @@ class VinternChat(BaseModel):
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
-        if listinstr(['MMBench-Video', 'Video-MME', 'MVBench', 'Video'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
             return False
         else:
@@ -233,12 +233,12 @@ class VinternChat(BaseModel):
             self.max_num = 1
             return
 
-        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
+        # res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
-        if listinstr(res_1_datasets, dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             self.max_num = 1
         elif listinstr(res_12_datasets, dataset):
             self.max_num = 6  # 12
@@ -265,7 +265,7 @@ class VinternChat(BaseModel):
                     image_idx += 1
             prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if dataset is not None and listinstr(['Video', 'MVBench'], dataset):
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:

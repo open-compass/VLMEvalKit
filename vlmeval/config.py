@@ -47,7 +47,8 @@ ungrouped = {
     'Parrot': partial(Parrot, model_path='AIDC-AI/Parrot-7B'),
     'OmChat': partial(OmChat, model_path='omlab/omchat-v2.0-13B-single-beta_hf'),
     'RBDash_72b': partial(RBDash, model_path='RBDash-Team/RBDash-v1.2-72b', root=RBDash_ROOT),
-    'Pixtral-12B': partial(Pixtral, model_path='mistralai/Pixtral-12B-2409')
+    'Pixtral-12B': partial(Pixtral, model_path='mistralai/Pixtral-12B-2409'),
+    'Falcon2-VLM-11B': partial(Falcon2VLM, model_path='tiiuae/falcon-11B-vlm')
 }
 
 api_models = {
@@ -149,6 +150,8 @@ llava_series = {
     'llava_onevision_qwen2_7b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'),
     'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov-sft'),
     'Aquila-VL-2B': partial(LLaVA_OneVision, model_path='BAAI/Aquila-VL-2B-llava-qwen'),
+    'llava_video_qwen2_7b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-7B-Qwen2'),
+    'llava_video_qwen2_72b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-72B-Qwen2'),
 }
 
 internvl_series = {
@@ -163,6 +166,7 @@ internvl_series = {
     'InternVL2-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-2B', version='V2.0'),
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
+    'InternVL2-8B-RPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-RPO', version='V2.0', cot_prompt=True),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
     'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
@@ -331,6 +335,15 @@ vintern_series = {
     'Vintern-3B-beta': partial(VinternChat, model_path='5CD-AI/Vintern-3B-beta'),
 }
 
+aria_series = {
+    "Aria": partial(Aria, model_path='rhymes-ai/Aria')
+}
+
+h2ovl_series = {
+    'h2ovl-mississippi-2b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-2b'),
+    'h2ovl-mississippi-1b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-800m'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -340,9 +353,10 @@ model_groups = [
     deepseekvl_series, janus_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
-    slime_series, eagle_series, moondream_series, llama_series, molmo_series, 
-    kosmos_series, points_series, nvlm_series, vintern_series
+    slime_series, eagle_series, moondream_series, llama_series, molmo_series,
+    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series
 ]
 
 for grp in model_groups:
     supported_VLM.update(grp)
+
