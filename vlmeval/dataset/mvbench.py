@@ -151,15 +151,15 @@ Based on your observations, select the best option that accurately addresses the
                             if os.path.isdir(subsubdir_path):
                                 for item in os.listdir(subsubdir_path):
                                     item_path = os.path.join(subsubdir_path, item)
-                                    target_folder = os.path.join(pth, 'video', subdir, subsubdir, item)
+                                    target_folder = os.path.join(pth, 'video', subdir, subsubdir)
                                     if not os.path.exists(target_folder):
                                         shutil.move(item_path, os.path.join(target_folder, item))
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             huggingface_hub.login(hf_token)
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-            move_files(dataset_path)
             unzip_hf_zip(dataset_path)
+            move_files(dataset_path)
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
