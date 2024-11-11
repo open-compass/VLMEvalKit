@@ -81,7 +81,7 @@ def HFCacheRoot():
             if os.environ[cache_name].split('/')[-1] == 'hub':
                 return os.environ[cache_name]
             else:
-                return os.environ[cache_name] + '/hub'
+                return osp.join(os.environ[cache_name], 'hub')
     home = osp.expanduser('~')
     root = osp.join(home, '.cache', 'huggingface', 'hub')
     os.makedirs(root, exist_ok=True)

@@ -73,16 +73,21 @@ def bincount(lst):
     return bins
 
 def get_cache_path(repo_id, branch='main', repo_type='datasets'):
-    from .file import HFCacheRoot
-    cache_path = HFCacheRoot()
-    org, repo_name = repo_id.split('/')
-    repo_path = Path(osp.join(cache_path, f'{repo_type}--{org}--{repo_name}/'))
-    hf_cache_info = _scan_cached_repo(repo_path=repo_path)
-    revs = {r.refs: r for r in hf_cache_info.revisions}
-    if branch is not None:
-        revs = {refs: r for refs, r in revs.items() if branch in refs}
-    rev2keep = max(revs.values(), key=lambda r: r.last_modified)
-    return str(rev2keep.snapshot_path)
+    try:
+        from .file import HFCacheRoot
+        cache_path = HFCacheRoot()
+        org, repo_name = repo_id.split('/')
+        repo_path = Path(osp.join(cache_path, f'{repo_type}--{org}--{repo_name}/'))
+        hf_cache_info = _scan_cached_repo(repo_path=repo_path)
+        revs = {r.refs: r for r in hf_cache_info.revisions}
+        if branch is not None:
+            revs = {refs: r for refs, r in revs.items() if branch in refs}
+        rev2keep = max(revs.values(), key=lambda r: r.last_modified)
+        return str(rev2keep.snapshot_path)
+    except Exception as e:
+        import logging
+        logging.warning(f'{type(e)}: {e}')
+        return None
 
 def proxy_set(s):
     import os
