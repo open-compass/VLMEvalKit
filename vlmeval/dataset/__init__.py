@@ -4,7 +4,8 @@ from .image_base import img_root_map, ImageBaseDataset
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
-    ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset
+    ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
+    NaturalBenchDataset
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -23,6 +24,7 @@ from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
+from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
 from .utils import *
 from ..smp import *
@@ -118,11 +120,11 @@ IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
-    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse
+    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset
 ]
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4,
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, LongVideoBench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN
 ]

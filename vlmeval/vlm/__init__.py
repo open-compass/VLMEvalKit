@@ -2,6 +2,7 @@ import torch
 
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
+from .aria import Aria
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu
@@ -55,4 +56,5 @@ from .molmo import molmo
 from .points import POINTS
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
+from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM

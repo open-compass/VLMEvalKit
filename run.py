@@ -34,8 +34,8 @@ def parse_args():
     # Configuration for Resume
     # Ignore: will not rerun failed VLM inference
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
-    # Rerun: will remove all evaluation temp files
-    parser.add_argument('--rerun', action='store_true')
+    # Reuse: will reuse the existing prediction files
+    parser.add_argument('--reuse', action='store_true')
 
     args = parser.parse_args()
     return args
@@ -43,9 +43,16 @@ def parse_args():
 
 def main():
     logger = get_logger('RUN')
+    rank, world_size = get_rank_and_world_size()
 
     args = parse_args()
     assert len(args.data), '--data should be a list of data files'
+
+    if rank == 0:
+        if not args.reuse:
+            logger.warning('--reuse is not set, will start the evaluation from scratch')
+        else:
+            logger.warning('--reuse is set, will reuse the latest prediction files')
 
     if 'MMEVAL_ROOT' in os.environ:
         args.work_dir = os.environ['MMEVAL_ROOT']
@@ -59,17 +66,25 @@ def main():
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
 
-    rank, world_size = get_rank_and_world_size()
     if world_size > 1:
         local_rank = os.environ.get('LOCAL_RANK', 0)
         torch.cuda.set_device(int(local_rank))
-        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=10800))
+        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=3600))
 
     for _, model_name in enumerate(args.model):
         model = None
 
-        pred_root = osp.join(args.work_dir, model_name)
-        os.makedirs(pred_root, exist_ok=True)
+        eval_id = timencommit()
+        pred_root = osp.join(args.work_dir, model_name, eval_id)
+        pred_root_meta = osp.join(args.work_dir, model_name)
+        os.makedirs(pred_root_meta, exist_ok=True)
+
+        prev_pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
+        if len(prev_pred_roots) and not args.reuse:
+            prev_pred_roots.sort()
+
+        if not osp.exists(pred_root):
+            os.makedirs(pred_root, exist_ok=True)
 
         for _, dataset_name in enumerate(args.data):
             try:
@@ -83,47 +98,62 @@ def main():
 
                 # If distributed, first build the dataset on the main process for doing preparation works
                 if world_size > 1:
-                    dataset = build_dataset(dataset_name, **dataset_kwargs) if rank == 0 else None
+                    if rank == 0:
+                        dataset = build_dataset(dataset_name, **dataset_kwargs)
+                        assert dataset is not None
                     dist.barrier()
-                    dataset_list = [dataset]
-                    dist.broadcast_object_list(dataset_list, src=0)
-                    dataset = dataset_list[0]
-                else:
-                    dataset = build_dataset(dataset_name, **dataset_kwargs)
+
+                dataset = build_dataset(dataset_name, **dataset_kwargs)
                 if dataset is None:
                     logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                     continue
 
-                result_file = f'{pred_root}/{model_name}_{dataset_name}.xlsx'
-                if args.fps > 0:  # For Video Dataset, set the fps for priority
+                result_file_base = f'{model_name}_{dataset_name}.xlsx'
+
+                # Handling Video Datasets. For Video Dataset, set the fps for priority
+                if args.fps > 0:
                     if dataset_name == 'MVBench':
                         raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
                     args.nframe = 0
                 if dataset_name in ['MMBench-Video']:
                     packstr = 'pack' if args.pack else 'nopack'
                     if args.nframe > 0:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
                     else:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
                 elif dataset.MODALITY == 'VIDEO':
                     if args.pack:
                         logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
                         args.pack = False
                     packstr = 'pack' if args.pack else 'nopack'
                     if args.nframe > 0:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                        result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
                     else:
-                        result_file = f'{pred_root}/{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                    if dataset_name in ['Video-MME']:
+                        result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
+                    if dataset_name in ['Video-MME', 'LongVideoBench']:
                         subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                        result_file = result_file.replace('.xlsx', f'_{subtitlestr}.xlsx')
+                        result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
+                # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
-                    result_file = result_file.replace('.xlsx', '.tsv')
+                    result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
-                if osp.exists(result_file) and args.rerun:
-                    for keyword in ['openai', 'gpt', 'auxmatch']:
-                        os.system(f'rm {pred_root}/{model_name}_{dataset_name}_{keyword}*')
+                result_file = osp.join(pred_root, result_file_base)
+
+                if rank == 0 and len(prev_pred_roots):
+                    prev_result_file = None
+                    for root in prev_pred_roots[::-1]:
+                        if osp.exists(osp.join(root, result_file_base)):
+                            prev_result_file = osp.join(root, result_file_base)
+                            break
+                    if prev_result_file is not None:
+                        logger.warning(
+                            f'--reuse is set, will reuse the prediction file {prev_result_file}.')
+                        if prev_result_file != result_file:
+                            shutil.copy(prev_result_file, result_file)
+
+                if world_size > 1:
+                    dist.barrier()
 
                 if model is None:
                     model = model_name  # which is only a name
@@ -164,7 +194,9 @@ def main():
                 judge_kwargs = {
                     'nproc': args.nproc,
                     'verbose': args.verbose,
+                    'retry': 3
                 }
+
                 if args.retry is not None:
                     judge_kwargs['retry'] = args.retry
                 if args.judge is not None:
@@ -178,10 +210,6 @@ def main():
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI'],
                                    dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-                if 'OPENAI_API_KEY_JUDGE' in os.environ and len(os.environ['OPENAI_API_KEY_JUDGE']):
-                    judge_kwargs['key'] = os.environ['OPENAI_API_KEY_JUDGE']
-                if 'OPENAI_API_BASE_JUDGE' in os.environ and len(os.environ['OPENAI_API_BASE_JUDGE']):
-                    judge_kwargs['api_base'] = os.environ['OPENAI_API_BASE_JUDGE']
 
                 if rank == 0:
                     if dataset_name in ['MMMU_TEST']:
@@ -220,6 +248,9 @@ def main():
                 eval_proxy = os.environ.get('EVAL_PROXY', None)
                 old_proxy = os.environ.get('HTTP_PROXY', '')
 
+                if world_size > 1:
+                    dist.barrier()
+
                 if rank == 0 and args.mode == 'all':
                     if eval_proxy is not None:
                         proxy_set(eval_proxy)
@@ -238,13 +269,27 @@ def main():
 
                     if eval_proxy is not None:
                         proxy_set(old_proxy)
+
+                    files = os.listdir(pred_root)
+                    files = [x for x in files if f'{model_name}_{dataset_name}' in x]
+                    for f in files:
+                        cwd = os.getcwd()
+                        file_addr = osp.join(cwd, pred_root, f)
+                        link_addr = osp.join(cwd, pred_root_meta, f)
+                        if osp.exists(link_addr) or osp.islink(link_addr):
+                            os.remove(link_addr)
+                        os.symlink(file_addr, link_addr)
+
             except Exception as e:
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
                                  'skipping this combination.')
                 continue
 
+            if world_size > 1:
+                dist.barrier()
+
     if world_size > 1:
-        dist.barrier()
+        dist.destroy_process_group()
 
 
 if __name__ == '__main__':

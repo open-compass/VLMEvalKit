@@ -51,7 +51,17 @@ class llama_vision(BaseModel):
             logging.critical('Please install transformers>=4.45.0 before using llama_vision.')
             raise e
 
-        if '90b' in model_path.lower():
+        rank, world_size = get_rank_and_world_size()
+
+        if '11b' in model_path.lower() and auto_split_flag():
+            assert world_size == 1, 'We only support world_size == 1 when AUTO_SPLIT is set for Llama-3.2-11B'
+            logging.warning('Currently, we only support to split the 11B model across all GPUs.')
+            self.model = MllamaForConditionalGeneration.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                device_map='auto',
+            ).eval()
+        elif '90b' in model_path.lower():
             device_map = self.split_model()
             self.model = MllamaForConditionalGeneration.from_pretrained(
                 model_path,

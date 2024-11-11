@@ -76,7 +76,7 @@ class VideoBaseDataset:
             indices = [int(i * step_size) for i in range(required_frames)]
 
             # 提取帧并保存
-            frame_paths = self.frame_paths_fps(video, len(indices), fps)
+            frame_paths = self.frame_paths_fps(video, len(izhendices), fps)
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
@@ -107,7 +107,7 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4']
+        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4', 'LongVideoBench']
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

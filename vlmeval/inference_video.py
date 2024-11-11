@@ -93,6 +93,8 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
                     setattr(model, 'nframe', nframe)
             elif getattr(model, 'fps', 0) == 0:
                 raise ValueError(f'fps is not suitable for {model_name}')
+            else:
+                setattr(model, 'nframe', None)
         if getattr(model, 'fps', 0) > 0:
             if fps > 0:
                 if getattr(model, 'fps', 0) != fps:
@@ -100,6 +102,8 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
                     setattr(model, 'fps', fps)
             elif getattr(model, 'nframe', 0) == 0:
                 raise ValueError(f'nframe is not suitable for {model_name}')
+            else:
+                setattr(model, 'fps', None)
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
@@ -149,11 +153,9 @@ def infer_data_job_video(
         result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{nframe}frame_{packstr}.xlsx')
     else:
         result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{fps}fps_{packstr}.xlsx')
-    if dataset_name == 'Video-MME':
+    if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
-    if fps > 0:
-        result_file = result_file.replace('.xlsx', f'_fps{fps}.xlsx')
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model_name
@@ -162,12 +164,10 @@ def infer_data_job_video(
         tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{nframe}frame_{packstr}.pkl')
     else:
         tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{fps}fps_{packstr}.pkl')
-    if dataset_name == 'Video-MME':
+    if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
 
-    if fps > 0:
-        tmpl = tmpl.replace('.pkl', f'_fps{fps}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(
