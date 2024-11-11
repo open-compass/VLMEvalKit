@@ -121,18 +121,19 @@ Based on your observations, select the best option that accurately addresses the
                     with open(os.path.join(json_data_dir, v[0]), 'r') as f:
                         json_data = json.load(f)
                     for data in json_data:
-                        self.data_list.append({
-                            'task_type': k,
-                            'prefix': v[1].replace('your_data_path', 'video'),
-                            'data_type': v[2],
-                            'bound': v[3],
-                            'start': data['start'] if 'start' in data.keys() else None,
-                            'end': data['end'] if 'end' in data.keys() else None,
-                            'video': data['video'],
-                            'question': data['question'],
-                            'answer': data['answer'],
-                            'candidates': data['candidates']
-                        })
+                        if os.path.exists(os.path.join(dataset_path, v[1].replace('your_data_path', 'video'), data['video'])):
+                            self.data_list.append({
+                                'task_type': k,
+                                'prefix': v[1].replace('your_data_path', 'video'),
+                                'data_type': v[2],
+                                'bound': v[3],
+                                'start': data['start'] if 'start' in data.keys() else None,
+                                'end': data['end'] if 'end' in data.keys() else None,
+                                'video': data['video'],
+                                'question': data['question'],
+                                'answer': data['answer'],
+                                'candidates': data['candidates']
+                            })
 
                 data_df = pd.DataFrame(self.data_list)
                 data_df = data_df.assign(index=range(len(data_df)))
