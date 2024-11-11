@@ -1,7 +1,7 @@
 import warnings
 
 from .image_base import img_root_map, ImageBaseDataset
-from .image_caption import ImageCaptionDataset, Mia_Bench
+from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
@@ -24,6 +24,7 @@ from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
+from .miabench import MIABench
 from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
 from .utils import *
@@ -121,7 +122,7 @@ IMAGE_DATASET = [
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
-    OlympiadBench, Mia_Bench, VizWiz
+    OlympiadBench, VizWiz, MIABench
 ]
 
 VIDEO_DATASET = [

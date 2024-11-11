@@ -298,6 +298,7 @@ def parse_file(s):
         mime = mimetypes.types_map.get(suffix, 'unknown')
         return (mime, s)
     elif s.startswith('data:image/'):
+        # To be compatible with OPENAI base64 format
         content = s[11:]
         mime = content.split(';')[0]
         content = ';'.join(content.split(';')[1:])
