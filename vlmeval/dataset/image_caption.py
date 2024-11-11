@@ -4,9 +4,7 @@ import os
 import pandas as pd
 
 from .image_base import ImageBaseDataset
-from .utils.Mia_Bench import get_score_dict
 from ..smp import *
-from .utils import build_judge, DEBUG_MESSAGE
 
 
 class COCO_Caption_Scorer():
@@ -80,90 +78,3 @@ class ImageCaptionDataset(ImageBaseDataset):
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(coco_caption_score_dict, score_pth)
         return coco_caption_score_dict
-
-
-class Mia_Bench(ImageBaseDataset):
-    TYPE = 'Caption'
-
-    DATASET_URL = {
-        'Mia-Bench': 'https://opencompass.openxlab.space/utils/VLMEval/Mia-Bench.tsv',
-    }
-    DATASET_MD5 = {
-        'Mia-Bench': '0b9de595f4dd40af18a69b94d89aba82',
-    }
-
-    @classmethod
-    def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.Mia_Bench import generate_prompt
-        from openai import OpenAI
-        import requests
-        from io import BytesIO
-        openai_base = os.environ.get("OPENAI_API_BASE")
-        if openai_base != None:
-            openai_base = openai_base[:openai_base.index('v1')+2]
-            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=openai_base)
-        else:
-            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
-        if 'model' in judge_kwargs:
-            model = judge_kwargs['model']
-        else:
-            model = os.path.basename(os.environ.get('LOCAL_LLM'))
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
-        nproc = judge_kwargs.pop('nproc', 4)
-
-        if not osp.exists(storage):
-            data = load(eval_file)
-            score_raw = ['' for _ in range(len(data))]
-
-            #data['score_raw'] = ['' for _ in range(len(data))]
-
-            for i in tqdm(range(len(data))):
-                line = data.loc[i]
-                response = line['prediction']
-                image = line['image_url']
-                # image_res = requests.get(image)
-                # temp_file = BytesIO()
-                # temp_file.write(image_res.content)
-                # imjs = json.load(temp_file)
-
-                question = generate_prompt(line, response)
-                generated = False
-
-                attempt = 5
-                while attempt > 0 and generated == False:
-                    try:
-                        rev_response = client.chat.completions.create(
-                            model=model,
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {"type": "text", "text": question},
-                                        {"type": "image_url",
-                                         "image_url": {"url": image}
-                                         },
-                                    ],
-                                }
-                            ],
-                            max_tokens=2000
-                        )
-                        #print(rev_response.choices[0].message.content.strip())
-                        score_raw[i] = rev_response.choices[0].message.content.strip()
-                        #data['score_raw'][i] = rev_response.choices[0].message.content.strip()
-                        generated = True
-                    except:
-                        attempt -= 1
-            data['score_raw'] = score_raw
-            dump(data, storage)
-
-        goresult = load(storage)
-        results = get_score_dict(goresult, goresult['score_raw'])
-        result_pth = storage.replace('.xlsx', '_score.csv')
-        results_pd = pd.DataFrame.from_dict(list(results.items()))
-        dump(results_pd, result_pth)
-
-        return results
-
