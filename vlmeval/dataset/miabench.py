@@ -8,86 +8,51 @@ from ..smp import *
 from .utils import build_judge, DEBUG_MESSAGE
 
 
-def generate_prompt(d, response):
-    instruction = d['question']
-    weight = d['component_weight'] * 1
-    weight = [int(i) for i in weight[1:-1].split(', ')]
+def generate_prompt(d):
+    question = d['question']
+    weights = eval(d['component_weight'])
+    components = eval(d['componnets'])
+    num_of_component = int(d['num_of_component'])
+    response = d['prediction']
 
-    for i in range(len(weight)):
-        weight[i] = str(weight[i])
-    if d['num_of_component'] == 1:
+    if num_of_component == 1:
+        components = f"The first component is: '{components[0]}'. "
+        score = f"The first component is worth: {weights[0]} scores. "
+    elif num_of_component == 2:
+        components = f"The first component is: '{components[0]}', and the second component is '{components[1]}'. "
+        score = f"The first and second component is each worth {weights[0]} and {weights[1]} scores. "
+    elif num_of_component == 3:
         components = (
-            "The first component is: '"
-            f"{d['componnets'][0]}"
-            "'"
-        )
-        score = (
-            "The first component is worth: "
-            f"{weight[0]} scores."
-        )
-    elif d['num_of_component'] == 2:
-        components = (
-            "The first component is: '"
-            f"{d['componnets'][0]}"
-            "', and the second component is "
-            f"{d['componnets'][1]}"
-            "'"
-        )
-        score = (
-            "The first and second component is each worth "
-            f"{weight[0]} and {weight[1]} scores."
-        )
-    elif d['num_of_component'] == 3:
-        components = (
-            "The first component is: '"
-            f"{d['componnets'][0]}"
-            "', and the second component is "
-            f"{d['componnets'][1]}"
-            "', and the third component is "
-            f"{d['componnets'][2]}"
-            "'"
+            f"The first component is: '{components[0]}', and the second component is '{components[1]}', "
+            f"and the third component is '{components[2]}'. "
         )
         score = (
             "The first, second, and third component is each worth "
-            f"{weight[0]}, {weight[1]}, and {weight[2]} scores."
+            f"{weights[0]}, {weights[1]}, and {weights[2]} scores."
         )
-    elif d['num_of_component'] == 4:
+    elif num_of_component == 4:
         components = (
-            "The first component is: '"
-            f"{d['componnets'][0]}"
-            "', and the second component is "
-            f"{d['componnets'][1]}"
-            "', and the third component is "
-            f"{d['componnets'][2]}"
-            "', and the fourth component is "
-            f"{d['componnets'][3]}"
-            "'"
+            f"The first component is: '{components[0]}', and the second component is '{components[1]}', "
+            f"and the third component is '{components[2]}', and the fourth component is '{components[3]}'. "
         )
         score = (
             "The first, second, third, and fourth component is each worth "
-            f"{weight[0]}, {weight[1]}, {weight[2]}, and {weight[3]} scores."
+            f"{weights[0]}, {weights[1]}, {weights[2]}, and {weights[3]} scores."
         )
-    elif d['num_of_component'] == 5:
+    elif num_of_component == 5:
         components = (
-            "The first component is: '"
-            f"{d['componnets'][0]}"
-            ", and the second component is "
-            f"{d['componnets'][1]}"
-            ", and the third component is "
-            f"{d['componnets'][2]}"
-            ", and the fourth component is "
-            f"{d['componnets'][3]}"
-            ", and the fifth component is "
-            f"{d['componnets'][4]}"
-            "'"
+            f"The first component is: '{components[0]}', and the second component is '{components[1]}', "
+            f"and the third component is '{components[2]}', and the fourth component is '{components[3]}', "
+            f"and the fifth component is '{components[4]}'. "
         )
         score = (
             "The first, second, third, fourth, and fifth component is each worth "
-            f"{weight[0]}, {weight[1]}, {weight[2]}, {weight[3]}, and {weight[4]} scores."
+            f"{weights[0]}, {weights[1]}, {weights[2]}, {weights[3]}, and {weights[4]} scores."
         )
+
     return (
         "Here is an instruction for a multimodal LLM: '"
-        f"{instruction}"
+        f"{question}"
         "'. You need to grade if the response from the model follows each component of the instruction. "
         f"{components}"
         "The response is: '"
@@ -134,7 +99,7 @@ def get_score_dict(data, score_raw):
 
 
 class MIABench(ImageBaseDataset):
-    TYPE = 'Caption'
+    TYPE = 'VQA'
 
     DATASET_URL = {
         'MIA-Bench': 'https://opencompass.openxlab.space/utils/VLMEval/MIA-Bench.tsv',
@@ -145,61 +110,47 @@ class MIABench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.Mia_Bench import generate_prompt
-        from openai import OpenAI
-        import requests
-        from io import BytesIO
-        openai_base = os.environ.get("OPENAI_API_BASE")
-        if openai_base is not None:
-            openai_base = openai_base[:openai_base.index('v1') + 2]
-            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=openai_base)
-        else:
-            client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        judge_name = judge_kwargs.pop('model', 'gpt-4o')
 
-        if 'model' in judge_kwargs:
-            model = judge_kwargs['model']
-        else:
-            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        model = build_judge(model=judge_name, **judge_kwargs)
         suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')  # noqa: F841
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')  # noqa: F841
+
+        storage = eval_file.replace(f'.{suffix}', f'_{judge_name}.xlsx')  # noqa: F841
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{judge_name}.pkl')  # noqa: F841
         nproc = judge_kwargs.pop('nproc', 4)  # noqa: F841
 
         if not osp.exists(storage):
             data = load(eval_file)
-            score_raw = ['' for _ in range(len(data))]
+            num_samples = len(data)
+            lines = [data.loc[i] for i in range(num_samples)]
+            prompts = [generate_prompt(line) for line in lines]
+            img_map = {x: y for x, y in zip(self.data['index'], self.data['image'])}
+            image_b64 = [img_map[idx] for idx in data['index']]
+            indices = list(data['index'])
+            mm_messages = [
+                [dict(type='text', value=prompt), dict(type='image', value=f'data:image/jpeg;base64,{b64}')]
+                for prompt, b64 in zip(prompts, image_b64)
+            ]
 
-            for i in tqdm(range(len(data))):
-                line = data.loc[i]
-                response = line['prediction']
-                image = line['image_url']
+            res = {}
+            if osp.exists(tmp_file):
+                res = load(tmp_file)
 
-                question = generate_prompt(line, response)
-                generated = False
+            jobs = {k: v for k, v in zip(indices, mm_messages) if k not in res}
+            job_keys = list(jobs.keys())
+            job_vals = [jobs[k] for k in job_keys]
 
-                attempt = 5
-                while attempt > 0 and not generated:
-                    try:
-                        rev_response = client.chat.completions.create(
-                            model=model,
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": [
-                                        {"type": "text", "text": question},
-                                        {"type": "image_url",
-                                         "image_url": {"url": image}
-                                         },
-                                    ],
-                                }
-                            ],
-                            max_tokens=2000
-                        )
-                        score_raw[i] = rev_response.choices[0].message.content.strip()
-                        generated = True
-                    except:
-                        attempt -= 1
-            data['score_raw'] = score_raw
+            resps = track_progress_rich(
+                model.generate,
+                job_vals,
+                nproc=nproc,
+                chunksize=nproc,
+                keys=job_keys,
+                save=tmp_file,
+            )
+            for k, resp in zip(job_keys, resps):
+                res[k] = resp
+            data['score_raw'] = [res[idx] for idx in indices]
             dump(data, storage)
 
         goresult = load(storage)
