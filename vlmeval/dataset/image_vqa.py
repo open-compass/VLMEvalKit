@@ -104,11 +104,9 @@ class VizWiz(ImageBaseDataset):
 
     def build_prompt(self, line):
 
-        prompt_pre = "Please answer the following questions as accurately and briefly as possible:"
-        prompt_suf = (
-            "If you believe there is no connection between the problem and the image, please output "
-            "\'unanswerable\'."
-        )
+        prompt_pre = "Please answer the following question as accurately and concisely as possible:"
+        prompt_suf = ("If you think the correlation between the question above and the image is insufficient, "
+                      "please output \'unanswerable\'.")
 
         input = prompt_pre + '\n' + line['question'] + '\n' + prompt_suf
 
@@ -120,36 +118,33 @@ class VizWiz(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from collections import Counter
+        from .utils.vqa_eval import hit_calculate, process_line
 
         suffix = eval_file.split('.')[-1]
-        name_str = 'score'
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.csv')
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
 
         if not osp.exists(result_file):
             data = load(eval_file)
-            scorez = 0
+            assert 'answers' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answers']]
 
-            for i in tqdm(range(len(data))):
-                line = data.loc[i]
+            lt = len(data)
+            pool = mp.Pool(16)
+            lines = [data.iloc[i] for i in range(lt)]
+            res = pool.map(process_line, lines)
 
-                line_answer = line['answers'][2:-2]
-                answer = line_answer.split('\', \'')
+            hit = hit_calculate(res, 'VizWiz')
+            ret = dict()
 
-                predict = line['prediction'].lower()
-                counter = Counter(answer)
-                count = counter.get(predict)
-                if count is None:
-                    count = 0
-                count = min(1, count)
-                scorez += count
+            ret['Overall'] = np.mean(hit) * 100
+            ret = d2df(ret)
+            ret.round(2)
 
-            score = {'score': [scorez]}
-            scdf = pd.DataFrame(score)
-            scdf.to_csv(result_file, index=False, encoding='gbk')
+            dump(ret, result_file)
 
-        zresult = load(result_file)
-        return zresult
+        retz = pd.read_csv(result_file)
+        return retz
 
 
 class OCRBench(ImageBaseDataset):
@@ -570,7 +565,7 @@ class OlympiadBench(ImageBaseDataset):
 
                 final_answer = line['final_answer'][2:-2]
 
-                if str(answer_type) != 'nan' and 'Tuple' in answer_type:  # 目前可机评的数据中 没有 need_human_evaluate
+                if str(answer_type) != 'nan' and 'Tuple' in answer_type:
                     judge_result = judger.judge(model_answer, final_answer)
                 else:
                     if str(line['error']) != 'nan':
