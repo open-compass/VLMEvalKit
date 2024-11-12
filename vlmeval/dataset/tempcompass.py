@@ -98,7 +98,7 @@ class TempCompass_MCQ(VideoBaseDataset):
                 for task_name in self.type_data_list.keys():
                     if not osp.exists(osp.join(pth, f'{task_name}.json')):
                         data = pd.read_parquet(osp.join(pth, task_name, 'test-00000-of-00001.parquet'))
-                        data.to_json(f'{task_name}.json', orient='records', lines=False)
+                        data.to_json(osp.join(pth, f'{task_name}.json'), orient='records', lines=False)
 
             def unzip_videos(pth):
                 import zipfile
@@ -288,7 +288,7 @@ class TempCompass_Captioning(VideoBaseDataset):
                 for task_name in self.type_data_list.keys():
                     if not osp.exists(osp.join(pth, f'{task_name}.json')):
                         data = pd.read_parquet(osp.join(pth, task_name, 'test-00000-of-00001.parquet'))
-                        data.to_json(f'{task_name}.json', orient='records', lines=False)
+                        data.to_json(osp.join(pth, f'{task_name}.json'), orient='records', lines=False)
 
             def unzip_videos(pth):
                 import zipfile
@@ -478,7 +478,7 @@ class TempCompass_YorN(VideoBaseDataset):
                 for task_name in self.type_data_list.keys():
                     if not osp.exists(osp.join(pth, f'{task_name}.json')):
                         data = pd.read_parquet(osp.join(pth, task_name, 'test-00000-of-00001.parquet'))
-                        data.to_json(f'{task_name}.json', orient='records', lines=False)
+                        data.to_json(osp.join(pth, f'{task_name}.json'), orient='records', lines=False)
 
             def unzip_videos(pth):
                 import zipfile
