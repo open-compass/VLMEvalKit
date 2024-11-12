@@ -105,17 +105,18 @@ class VizWiz(ImageBaseDataset):
     def build_prompt(self, line):
 
         prompt_pre = "Please answer the following questions as accurately and briefly as possible:"
-        prompt_suf = "If you believe there is no connection between the problem and the image, please output \'unanswerable\'."
+        prompt_suf = (
+            "If you believe there is no connection between the problem and the image, please output "
+            "\'unanswerable\'."
+        )
 
         input = prompt_pre + '\n' + line['question'] + '\n' + prompt_suf
 
         ret = [dict(type='text', value=input)]
         tgt_path = self.dump_image(line)
-
         ret.extend([dict(type='image', value=s) for s in tgt_path])
 
         return ret
-
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -138,7 +139,7 @@ class VizWiz(ImageBaseDataset):
                 predict = line['prediction'].lower()
                 counter = Counter(answer)
                 count = counter.get(predict)
-                if count == None:
+                if count is None:
                     count = 0
                 count = min(1, count)
                 scorez += count
@@ -149,7 +150,6 @@ class VizWiz(ImageBaseDataset):
 
         zresult = load(result_file)
         return zresult
-
 
 
 class OCRBench(ImageBaseDataset):
@@ -444,7 +444,6 @@ class MathVision(ImageBaseDataset):
         return score
 
 
-
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
     DATASET_URL = {
@@ -486,7 +485,10 @@ class OlympiadBench(ImageBaseDataset):
         if self.is_chinese:
             subject_content = '数学' if self.is_math else '物理'
             if self.is_theorem_proving:
-                prompt = f'以下是中国{subject_content}竞赛中的证明题。请根据题目的要求，运用逻辑推理及常用定理证明题目中的命题。证明过程中使用的变量和公式请使用LaTeX格式表示。'
+                prompt = (
+                    f"以下是中国{subject_content}竞赛中的证明题。请根据题目的要求，运用逻辑推理及常用定理证明题目中的命题。"
+                    "证明过程中使用的变量和公式请使用LaTeX格式表示。"
+                )
             else:
                 answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=True,
                                                         multiple_answer=line['is_multiple_answer'])
@@ -498,11 +500,20 @@ class OlympiadBench(ImageBaseDataset):
                 if line['unit']:
                     multiple_answer_text += '(单位)'
                     unit_text = '，注意答案的单位不要放在\\boxed{}中'
-                prompt = f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”显式给出结果{unit_text}。'
+                prompt = (
+                    f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。'
+                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”'
+                    f'显式给出结果{unit_text}。'
+                )
         else:
             subject_content = 'Math' if self.is_math else 'Physics'
             if self.is_theorem_proving:
-                prompt = f'The following is a theorem proving problem from an International {subject_content} competition. Please use logical reasoning and common theorems to prove the proposition in the problem according to the given requirements. Please use LaTeX format to represent the variables and formulas used in the proof.'
+                prompt = (
+                    f'The following is a theorem proving problem from an International {subject_content} competition. '
+                    'Please use logical reasoning and common theorems to prove the proposition in the problem '
+                    'according to the given requirements. '
+                    'Please use LaTeX format to represent the variables and formulas used in the proof.'
+                )
             else:
                 if line['is_multiple_answer']:
                     multiple_answer_text = '\\boxed{multiple answers connected with commas}'
@@ -514,7 +525,13 @@ class OlympiadBench(ImageBaseDataset):
                     unit_text = ', note that the unit of the answer should not be included in \\boxed{}'
                 answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=False,
                                                         multiple_answer=line['is_multiple_answer'])
-                prompt = f'The following is an open-ended problem from an International {subject_content} competition. {answer_type_text}Please calculate the answer according to the given requirements and the information provided. Please use LaTeX format to represent the variables and formulas used in the solution process and results. Please end your solution with "So the final answer is {multiple_answer_text}." and give the result explicitly{unit_text}.'
+                prompt = (
+                    f'The following is an open-ended problem from an International {subject_content} competition. '
+                    f'{answer_type_text}Please calculate the answer according to the given requirements and '
+                    'the information provided. Please use LaTeX format to represent the variables and formulas '
+                    'used in the solution process and results. Please end your solution with "So the final answer '
+                    f'is {multiple_answer_text}." and give the result explicitly{unit_text}.'
+                )
 
         if self.is_math:
             input = make_input(prompt, line['question'])
@@ -523,7 +540,6 @@ class OlympiadBench(ImageBaseDataset):
                 input = make_input(prompt, line['context'] + '\n' + line['question'])
             else:
                 input = make_input(prompt, line['question'])
-
 
         ret = [dict(type='text', value=input)]
         tgt_path = self.dump_image(line)
@@ -567,12 +583,11 @@ class OlympiadBench(ImageBaseDataset):
                             judge_result = judger.judge(model_answer, final_answer, precision)
                     else:
                         judge_result = judger.judge(model_answer, final_answer)
-                #print(judge_result)
                 scorez.append(judge_result)
             full_num = len(scorez)
             correct_num = 0
             for i in scorez:
-                if i == True:
+                if i:
                     correct_num += 1
             acc = correct_num / full_num
 
@@ -582,7 +597,6 @@ class OlympiadBench(ImageBaseDataset):
 
         accdz = pd.read_csv(result_file)
         return accdz
-
 
 
 class LLaVABench(ImageBaseDataset):

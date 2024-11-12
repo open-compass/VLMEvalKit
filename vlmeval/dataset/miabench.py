@@ -6,12 +6,13 @@ import pandas as pd
 from .image_base import ImageBaseDataset
 from ..smp import *
 from .utils import build_judge, DEBUG_MESSAGE
+from ..utils import track_progress_rich
 
 
 def generate_prompt(d):
     question = d['question']
     weights = eval(d['component_weight'])
-    components = eval(d['componnets'])
+    components = eval(d['components'])
     num_of_component = int(d['num_of_component'])
     response = d['prediction']
 
@@ -124,11 +125,15 @@ class MIABench(ImageBaseDataset):
             num_samples = len(data)
             lines = [data.loc[i] for i in range(num_samples)]
             prompts = [generate_prompt(line) for line in lines]
-            img_map = {x: y for x, y in zip(self.data['index'], self.data['image'])}
+            org_data = MIABench('MIA-Bench').data
+            img_map = {x: y for x, y in zip(org_data['index'], org_data['image'])}
             image_b64 = [img_map[idx] for idx in data['index']]
             indices = list(data['index'])
             mm_messages = [
-                [dict(type='text', value=prompt), dict(type='image', value=f'data:image/jpeg;base64,{b64}')]
+                dict(message=[
+                    dict(type='text', value=prompt),
+                    dict(type='image', value=f'data:image/jpeg;base64,{b64}')
+                ])
                 for prompt, b64 in zip(prompts, image_b64)
             ]
 

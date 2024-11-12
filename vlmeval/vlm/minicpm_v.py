@@ -113,7 +113,7 @@ class MiniCPM_Llama3_V(BaseModel):
         self.vqa_prompt = 'Answer the question using a single word or phrase.'
 
     def use_custom_prompt(self, dataset):
-        if listinstr(['MCQ', 'VQA'], DATASET_TYPE(dataset)):
+        if listinstr(['MCQ'], DATASET_TYPE(dataset)) or DATASET_TYPE(dataset) == 'VQA':
             return True
         elif dataset is not None and listinstr(['HallusionBench'], dataset):
             return True
