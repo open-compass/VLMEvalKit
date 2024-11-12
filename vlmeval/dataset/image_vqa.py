@@ -476,7 +476,7 @@ class OlympiadBench(ImageBaseDataset):
 
     def build_prompt(self, line):
 
-        from .utils.OlymiadBench import get_answer_type_text, make_input
+        from .utils.olympiadbench import get_answer_type_text, make_input
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
@@ -550,7 +550,7 @@ class OlympiadBench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.OlymiadBench import MathJudger, extract_answer
+        from .utils.olympiadbench import MathJudger, extract_answer
         judger = MathJudger()
 
         suffix = eval_file.split('.')[-1]
