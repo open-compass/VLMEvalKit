@@ -153,13 +153,14 @@ Based on your observations, select the best option that accurately addresses the
                                     item_path = os.path.join(subsubdir_path, item)
                                     target_folder = os.path.join(pth, 'video', subdir, subsubdir, item)
                                     if not os.path.exists(target_folder):
-                                        shutil.move(item_path, os.path.join(target_folder, item))
+                                        shutil.move(item_path, target_folder)
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             huggingface_hub.login(hf_token)
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             move_files(dataset_path)
             unzip_hf_zip(dataset_path)
+            print(f'NTURGB-D zip file is removed according to MVBench, you can view it at https://huggingface.co/datasets/OpenGVLab/MVBench for detailed reason.')
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
