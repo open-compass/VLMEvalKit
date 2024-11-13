@@ -115,24 +115,33 @@ Based on your observations, select the best option that accurately addresses the
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
                 if os.path.exists(data_file) and md5(data_file) == self.MD5:
                     return
-                json_data_dir = os.path.join(dataset_path, 'json')
+                json_data_dir = os.path.join(pth, 'json')
                 self.data_list = []
                 for k, v in self.type_data_list.items():
                     with open(os.path.join(json_data_dir, v[0]), 'r') as f:
                         json_data = json.load(f)
                     for data in json_data:
-                        self.data_list.append({
-                            'task_type': k,
-                            'prefix': v[1].replace('your_data_path', 'video'),
-                            'data_type': v[2],
-                            'bound': v[3],
-                            'start': data['start'] if 'start' in data.keys() else None,
-                            'end': data['end'] if 'end' in data.keys() else None,
-                            'video': data['video'],
-                            'question': data['question'],
-                            'answer': data['answer'],
-                            'candidates': data['candidates']
-                        })
+                        if os.path.exists(os.path.join(pth, v[1].replace('your_data_path', 'video'), data['video'])):
+                            self.data_list.append({
+                                'task_type': k,
+                                'prefix': v[1].replace('your_data_path', 'video'),
+                                'data_type': v[2],
+                                'bound': v[3],
+                                'start': data['start'] if 'start' in data.keys() else None,
+                                'end': data['end'] if 'end' in data.keys() else None,
+                                'video': data['video'],
+                                'question': data['question'],
+                                'answer': data['answer'],
+                                'candidates': data['candidates']
+                            })
+                        else:
+                            print(
+                                'NTURGB-D zip file is removed according to MVBench, you can view it at '
+                                'https://huggingface.co/datasets/OpenGVLab/MVBench for detailed reason.'
+                            )
+                            raise Exception(
+                                f"{os.path.join(v[1].replace('your_data_path', 'video'), data['video'])} does not exist"
+                            )
 
                 data_df = pd.DataFrame(self.data_list)
                 data_df = data_df.assign(index=range(len(data_df)))
@@ -151,19 +160,15 @@ Based on your observations, select the best option that accurately addresses the
                             if os.path.isdir(subsubdir_path):
                                 for item in os.listdir(subsubdir_path):
                                     item_path = os.path.join(subsubdir_path, item)
-                                    target_folder = os.path.join(pth, 'video', subdir, subsubdir, item)
+                                    target_folder = os.path.join(pth, 'video', subdir, subsubdir)
                                     if not os.path.exists(target_folder):
                                         shutil.move(item_path, target_folder)
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             huggingface_hub.login(hf_token)
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-            move_files(dataset_path)
             unzip_hf_zip(dataset_path)
-            print(
-                'NTURGB-D zip file is removed according to MVBench, '
-                'you can view it at https://huggingface.co/datasets/OpenGVLab/MVBench for detailed reason.'
-            )
+            move_files(dataset_path)
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
