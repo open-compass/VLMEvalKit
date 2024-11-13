@@ -86,7 +86,7 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
-        if getattr(model, 'nframe') is not None and getattr(model, 'nframe', 0) > 0:
+        if getattr(model, 'nframe', None) is not None and getattr(model, 'nframe', 0) > 0:
             if nframe > 0:
                 if getattr(model, 'nframe', 0) != nframe:
                     print(f'{model_name} is a video-llm model, nframe is set to {nframe}, not using default')
@@ -95,7 +95,7 @@ def infer_data(model_name, work_dir, dataset, out_file, nframe=8, pack=False, ve
                 raise ValueError(f'fps is not suitable for {model_name}')
             else:
                 setattr(model, 'nframe', None)
-        if getattr(model, 'fps') is not None and getattr(model, 'fps', 0) > 0:
+        if getattr(model, 'fps', None) is not None and getattr(model, 'fps', 0) > 0:
             if fps > 0:
                 if getattr(model, 'fps', 0) != fps:
                     print(f'{model_name} is a video-llm model, fps is set to {fps}, not using default')
