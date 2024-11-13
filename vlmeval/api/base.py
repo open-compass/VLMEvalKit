@@ -199,11 +199,11 @@ class BaseAPI:
         new_message = []
 
         for data in message:
-            if 'role' in data and data['role'] == 'system':
+            assert isinstance(data, dict)
+            role = data.pop('role', 'user')
+            if role == 'system':
                 system_prompt += data['value'] + '\n'
             else:
-                if 'role' in data:
-                    del data['role']
                 new_message.append(data)
 
         if system_prompt != '':
@@ -222,7 +222,9 @@ class BaseAPI:
         Returns:
             str: The generated answer of the Failed Message if failed to obtain answer.
         """
-        message = self.preprocess_message_with_role(message)
+        if self.check_content(message) == 'listdict':
+            message = self.preprocess_message_with_role(message)
+
         assert self.check_content(message) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {message}'
         message = self.preproc_content(message)
         assert message is not None and self.check_content(message) == 'listdict'
