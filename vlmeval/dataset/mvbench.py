@@ -135,6 +135,10 @@ Based on your observations, select the best option that accurately addresses the
                                 'candidates': data['candidates']
                             })
                         else:
+                            print(
+                                'NTURGB-D zip file is removed according to MVBench, you can view it at '
+                                'https://huggingface.co/datasets/OpenGVLab/MVBench for detailed reason.'
+                            )
                             raise Exception(
                                 f"{os.path.join(v[1].replace('your_data_path', 'video'), data['video'])} does not exist"
                             )
@@ -165,10 +169,6 @@ Based on your observations, select the best option that accurately addresses the
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unzip_hf_zip(dataset_path)
             move_files(dataset_path)
-            print(
-                'NTURGB-D zip file is removed according to MVBench, '
-                'you can view it at https://huggingface.co/datasets/OpenGVLab/MVBench for detailed reason.'
-            )
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
