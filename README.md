@@ -26,7 +26,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 ## 🆕 News
 - **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
-- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model, thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
+- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model. And **[LongVideoBench](https://longvideobench.github.io/)**, a benchmark for long-context interleaved video-language understanding. thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** Supported **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**, the benchmark contains 1000+ Medical VQA problems, in languages of four countries: Brazil, Isarel, Japan, Spanish, as well as their English translations 🔥🔥🔥
 - **[2024-11-01]** Supported an `AUTO_SPLIT` flag (https://github.com/open-compass/VLMEvalKit/pull/566) for evaluation on low-profile GPUs. When set, the model will be automatically split into multiple GPUs (pipeline parallel) to reduce GPU memory usage (currently only support some VLMs: Qwen2-VL, Llama-3.2, LLaVA-OneVision, etc.) 🔥🔥🔥
 - **[2024-10-30]** Supported the evaluation of **[MLVU](https://github.com/JUNJIE99/MLVU)** and **[TempCompass](https://arxiv.org/abs/2403.00476v1)**. The two benchmarks will be soon incorporated into **[OpenVLM Video Leaderboard](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
