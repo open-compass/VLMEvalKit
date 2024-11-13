@@ -332,6 +332,7 @@ nvlm_series = {
 
 vintern_series = {
     'Vintern-3B-beta': partial(VinternChat, model_path='5CD-AI/Vintern-3B-beta'),
+    'Vintern-1B-v2': partial(VinternChat, model_path='5CD-AI/Vintern-1B-v2'),
 }
 
 aria_series = {
