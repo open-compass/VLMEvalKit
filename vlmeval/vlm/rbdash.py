@@ -263,7 +263,7 @@ class RBDash(BaseModel):
         else:
             prompt += 'Answer the question using a single word or phrase.'
         return prompt
-    
+
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
