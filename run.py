@@ -112,7 +112,7 @@ def main():
 
                 # Handling Video Datasets. For Video Dataset, set the fps for priority
                 if args.fps > 0:
-                    if dataset_name == 'MVBench':
+                    if dataset_name in ['MVBench', 'MVTamperBench']:
                         raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
                     args.nframe = 0
                 if dataset_name in ['MMBench-Video']:

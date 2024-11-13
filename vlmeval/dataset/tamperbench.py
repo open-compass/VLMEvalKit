@@ -22,7 +22,7 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 
 class MVTamperBench(VideoBaseDataset):
 
-    MD5 = 'fd21d36522cdedd46d84dc46715ad832' ## SRIKANT: To update later
+    MD5 = 'b69664652c8336ade976cf4245515b5b'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -33,9 +33,9 @@ Based on your observations, select the best option that accurately addresses the
     def __init__(self, dataset='MVTamperBench', pack=False):
         self.type_data_list = {
             'Action Sequence': ('action_sequence.json',
-                                'your_data_path/star/Charades_v1_480/', 'video', True),  # has start & end
+                                'your_data_path/star/Charades_v1_480/', 'video', False),  # has start & end
             'Action Prediction': ('action_prediction.json',
-                                  'your_data_path/star/Charades_v1_480/', 'video', True),  # has start & end
+                                  'your_data_path/star/Charades_v1_480/', 'video', False),  # has start & end
             'Action Antonym': ('action_antonym.json',
                                'your_data_path/ssv2_video/', 'video', False),
             'Fine-grained Action': ('fine_grained_action.json',
@@ -45,13 +45,13 @@ Based on your observations, select the best option that accurately addresses the
             'Object Existence': ('object_existence.json',
                                  'your_data_path/clevrer/video_validation/', 'video', False),
             'Object Interaction': ('object_interaction.json',
-                                   'your_data_path/star/Charades_v1_480/', 'video', True),  # has start & end
+                                   'your_data_path/star/Charades_v1_480/', 'video', False),  # has start & end
             'Object Shuffle': ('object_shuffle.json',
                                'your_data_path/perception/videos/', 'video', False),
             'Moving Direction': ('moving_direction.json',
                                  'your_data_path/clevrer/video_validation/', 'video', False),
             'Action Localization': ('action_localization.json',
-                                    'your_data_path/sta/sta_video/', 'video', True),   # has start & end
+                                    'your_data_path/sta/sta_video/', 'video', False),   # has start & end
             'Scene Transition': ('scene_transition.json',
                                  'your_data_path/scene_qa/video/', 'video', False),
             'Action Count': ('action_count.json',
@@ -69,7 +69,7 @@ Based on your observations, select the best option that accurately addresses the
             'Egocentric Navigation': ('egocentric_navigation.json',
                                       'your_data_path/vlnqa/', 'video', False),
             'Episodic Reasoning': ('episodic_reasoning.json',
-                                   'your_data_path/tvqa/frames_fps3_hq/', 'video', True),  # has start & end
+                                   'your_data_path/tvqa/frames_fps3_hq/', 'video', False),  # has start & end
             'Counterfactual Inference': ('counterfactual_inference.json',
                                          'your_data_path/clevrer/video_validation/', 'video', False),
         }
@@ -79,7 +79,7 @@ Based on your observations, select the best option that accurately addresses the
     def supported_datasets(cls):
         return ['MVTamperBench']
 
-    def prepare_dataset(self, dataset_name='MVTamperBench', repo_id='OpenGVLab/MVTamperBench'):
+    def prepare_dataset(self, dataset_name='MVTamperBench', repo_id='Srikant86/MVTamperBenchSample'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
@@ -121,47 +121,30 @@ Based on your observations, select the best option that accurately addresses the
                     with open(os.path.join(json_data_dir, v[0]), 'r') as f:
                         json_data = json.load(f)
                     for data in json_data:
-                        self.data_list.append({
-                            'task_type': k,
-                            'prefix': v[1].replace('your_data_path', 'video'),
-                            'data_type': v[2],
-                            'bound': v[3],
-                            'start': data['start'] if 'start' in data.keys() else None,
-                            'end': data['end'] if 'end' in data.keys() else None,
-                            'video': data['video'],
-                            'question': data['question'],
-                            'answer': data['answer'],
-                            'candidates': data['candidates'],
-                            'tamper_type': data['tamper_type'],
-                        })
+                        if os.path.exists(os.path.join(dataset_path, v[1].replace('your_data_path', 'video'), data['video'])):
+                            self.data_list.append({
+                                'task_type': k,
+                                'prefix': v[1].replace('your_data_path', 'video'),
+                                'data_type': v[2],
+                                'bound': v[3],
+                                'start': data['start'] if 'start' in data.keys() else None,
+                                'end': data['end'] if 'end' in data.keys() else None,
+                                'video': data['video'],
+                                'question': data['question'],
+                                'answer': data['answer'],
+                                'candidates': data['candidates'],
+                                'tamper_type': data['tamper_type'],
+                            })
 
                 data_df = pd.DataFrame(self.data_list)
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            # def move_files(pth): # Srikant: To do for large zip file
-            #     # special for mvbench/data0613 supplementary data
-            #     src_folder = os.path.join(pth, 'video/data0613')
-            #     if not os.path.exists(src_folder):
-            #         return
-            #     for subdir in os.listdir(src_folder):
-            #         subdir_path = os.path.join(src_folder, subdir)
-            #         if os.path.isdir(subdir_path):
-            #             for subsubdir in os.listdir(subdir_path):
-            #                 subsubdir_path = os.path.join(subdir_path, subsubdir)
-            #                 if os.path.isdir(subsubdir_path):
-            #                     for item in os.listdir(subsubdir_path):
-            #                         item_path = os.path.join(subsubdir_path, item)
-            #                         target_folder = os.path.join(pth, 'video', subdir, subsubdir)
-            #                         if not os.path.exists(target_folder):
-            #                             shutil.move(item_path, os.path.join(target_folder, item))
-
             # hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             # huggingface_hub.login(hf_token)
             # dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            dataset_path = '/home/srikapan/workspace/research/tamper_bench/VLMEvalKit/MVTamperBenchSample'
             # unzip_hf_zip(dataset_path)
-            # move_files(dataset_path)
-            dataset_path = '/mnt/shared/srikapan/MVTamperBench/MVBench'
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
