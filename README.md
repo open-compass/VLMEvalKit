@@ -93,9 +93,9 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 
 | Dataset                                              | Dataset Names (for run.py) | Task | Dataset | Dataset Names (for run.py) | Task |
 | ---------------------------------------------------- | -------------------------- | ---- | ------- | -------------------------- | ---- |
-| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  | [**Video-MME**](https://video-mme.github.io/)        |    Video-MME                        | MCQ     |
-| [**MVBench**](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md)| MVBench/MVBench_MP4              | MCQ  | **[MLVU](https://github.com/JUNJIE99/MLVU)** | MLVU | MCQ & VQA |
-| **[TempCompass](https://arxiv.org/abs/2403.00476)** | TempCompass | MCQ & Y/N & Caption |  |  |  |
+| **[MMBench-Video](https://mmbench-video.github.io)** | MMBench-Video              | VQA  | **[Video-MME](https://video-mme.github.io/)**        |    Video-MME                        | MCQ     |
+| **[MVBench](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md)**| MVBench/MVBench_MP4              | MCQ  | **[MLVU](https://github.com/JUNJIE99/MLVU)** | MLVU | MCQ & VQA |
+| **[TempCompass](https://arxiv.org/abs/2403.00476)** | TempCompass | MCQ & Y/N & Caption | **[LongVideoBench](https://longvideobench.github.io/)** | LongVideoBench | MCQ |
 
 ### Supported Models
 
