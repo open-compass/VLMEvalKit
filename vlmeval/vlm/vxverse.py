@@ -4,7 +4,7 @@ import os.path as osp
 import warnings
 from .base import BaseModel
 from transformers import StoppingCriteriaList
-from omegaconf import OmegaConf
+
 from PIL import Image
 from huggingface_hub import snapshot_download
 from vlmeval.smp import *
@@ -40,7 +40,7 @@ class VXVERSE(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_name='XVERSE-V-13B', root=None, **kwargs):
-
+        from omegaconf import OmegaConf
         if root is None:
             warnings.warn('Please set root to the directory of vxverse.')
 

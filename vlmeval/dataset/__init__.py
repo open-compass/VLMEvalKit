@@ -22,6 +22,7 @@ from .mmbench_video import MMBenchVideo
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
+from .miabench import MIABench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .longvideobench import LongVideoBench
@@ -120,7 +121,8 @@ IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
-    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset
+    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
+    MIABench
 ]
 
 VIDEO_DATASET = [
