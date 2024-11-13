@@ -140,11 +140,10 @@ Based on your observations, select the best option that accurately addresses the
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            # hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            # huggingface_hub.login(hf_token)
-            # dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-            dataset_path = '/home/srikapan/workspace/research/tamper_bench/VLMEvalKit/MVTamperBenchSample'
-            # unzip_hf_zip(dataset_path)
+            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+            huggingface_hub.login(hf_token)
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            unzip_hf_zip(dataset_path)
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
