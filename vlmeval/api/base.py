@@ -194,6 +194,25 @@ class BaseAPI:
 
         return self.fail_msg if answer in ['', None] else answer
 
+    def preprocess_message_with_role(self, message):
+        system_prompt = ''
+        new_message = []
+
+        for data in message:
+            if 'role' in data and data['role'] == 'system':
+                system_prompt += data['value'] + '\n'
+            else:
+                if 'role' in data:
+                    del data['role']
+                new_message.append(data)
+
+        if system_prompt != '':
+            if self.system_prompt is None:
+                self.system_prompt = system_prompt
+            else:
+                self.system_prompt += '\n' + system_prompt
+        return new_message
+
     def generate(self, message, **kwargs1):
         """The main function to generate the answer. Will call `generate_inner` with the preprocessed input messages.
 
@@ -203,6 +222,7 @@ class BaseAPI:
         Returns:
             str: The generated answer of the Failed Message if failed to obtain answer.
         """
+        message = self.preprocess_message_with_role(message)
         assert self.check_content(message) in ['str', 'dict', 'liststr', 'listdict'], f'Invalid input type: {message}'
         message = self.preproc_content(message)
         assert message is not None and self.check_content(message) == 'listdict'

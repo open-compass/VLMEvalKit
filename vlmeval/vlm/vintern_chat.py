@@ -4,7 +4,7 @@ import warnings
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 import pandas as pd
 import string
 import torch.distributed as dist
@@ -46,7 +46,7 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
     return best_ratio
 
 
-def dynamic_preprocess(image, min_num=5, max_num=6, image_size=448, use_thumbnail=False):
+def dynamic_preprocess(image, min_num=1, max_num=4, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
 
@@ -82,118 +82,26 @@ def dynamic_preprocess(image, min_num=5, max_num=6, image_size=448, use_thumbnai
     if use_thumbnail and len(processed_images) != 1:
         thumbnail_img = image.resize((image_size, image_size))
         processed_images.append(thumbnail_img)
-    return processed_images, target_aspect_ratio
-
-
-def dynamic_preprocess2(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False, prior_aspect_ratio=None):
-    orig_width, orig_height = image.size
-    aspect_ratio = orig_width / orig_height
-
-    # calculate the existing image aspect ratio
-    target_ratios = set(
-        (i, j) for n in range(min_num, max_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
-        i * j <= max_num and i * j >= min_num)
-    target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
-
-    new_target_ratios = []
-    if prior_aspect_ratio is not None:
-        for i in target_ratios:
-            if prior_aspect_ratio[0] % i[0] != 0 or prior_aspect_ratio[1] % i[1] != 0:
-                new_target_ratios.append(i)
-            else:
-                continue
-    # find the closest aspect ratio to the target
-    target_aspect_ratio = find_closest_aspect_ratio(
-        aspect_ratio, new_target_ratios, orig_width, orig_height, image_size)
-
-    # calculate the target width and height
-    target_width = image_size * target_aspect_ratio[0]
-    target_height = image_size * target_aspect_ratio[1]
-    blocks = target_aspect_ratio[0] * target_aspect_ratio[1]
-
-    # resize the image
-    resized_img = image.resize((target_width, target_height))
-    processed_images = []
-    for i in range(blocks):
-        box = (
-            (i % (target_width // image_size)) * image_size,
-            (i // (target_width // image_size)) * image_size,
-            ((i % (target_width // image_size)) + 1) * image_size,
-            ((i // (target_width // image_size)) + 1) * image_size
-        )
-        # split the image
-        split_img = resized_img.crop(box)
-        processed_images.append(split_img)
-    assert len(processed_images) == blocks
-    if use_thumbnail and len(processed_images) != 1:
-        thumbnail_img = image.resize((image_size, image_size))
-        processed_images.append(thumbnail_img)
     return processed_images
 
 
-def load_image(image_file, input_size=448, min_num=1, max_num=6):
+def load_image(image_file, input_size=448, max_num=6, upscale=False):
     image = Image.open(image_file).convert('RGB')
+    if upscale:
+        image = image.resize((image.width * 2, image.height * 2), Image.BILINEAR)
     transform = build_transform(input_size=input_size)
-    images, target_aspect_ratio = dynamic_preprocess(
-        image, image_size=input_size, use_thumbnail=True, min_num=min_num, max_num=max_num)
-    pixel_values = [transform(image) for image in images]
-    pixel_values = torch.stack(pixel_values)
-    return pixel_values, target_aspect_ratio
-
-
-def load_image2(image_file, input_size=448, target_aspect_ratio=(1, 1), min_num=1, max_num=6):
-    image = Image.open(image_file).convert('RGB')
-    transform = build_transform(input_size=input_size)
-    images = dynamic_preprocess2(
-        image,
-        image_size=input_size,
-        prior_aspect_ratio=target_aspect_ratio,
-        use_thumbnail=True,
-        min_num=min_num,
-        max_num=max_num)
-
+    images = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True, max_num=max_num)
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
 
 
-# This function is used to split InternVL2-Llama3-76B
-def split_model(model_name):
-    import math
-    device_map = {}
-    num_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    num_gpus = num_gpus // world_size
-
-    num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.2))
-    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.8)
-    layer_cnt = 0
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
-            layer_cnt += 1
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.tok_embeddings'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.output'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
-    return device_map
-
-
-# To revert changes
-class MiniMonkey(BaseModel):
+class VinternChat(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='mx262/MiniMokney', load_in_8bit=False, **kwargs):
+    def __init__(self, model_path='5CD-AI/Vintern-3B-beta', load_in_8bit=False, **kwargs):
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
 
@@ -213,35 +121,31 @@ class MiniMonkey(BaseModel):
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
 
-        if listinstr(['InternVL2-Llama3-76B'], model_path):
-            device_map = split_model(model_path.split('/')[-1])
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                device_map=device_map).eval()
-        else:
-            device = torch.cuda.current_device()
-            self.device = device
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                trust_remote_code=True,
-                load_in_8bit=load_in_8bit).eval()
-            if not load_in_8bit:
-                self.model = self.model.to(device)
+        device = torch.cuda.current_device()
+        self.device = device
+        self.model = AutoModel.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
+            load_in_8bit=load_in_8bit).eval()
+        if not load_in_8bit:
+            self.model = self.model.to(device)
 
         self.image_size = self.model.config.vision_config.image_size
-        self.kwargs = kwargs
+        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=3)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
         if dataset is None:
             return False
-        if listinstr(['MMDU'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
+            return False
+        if DATASET_MODALITY(dataset) == 'VIDEO':
+            # For Video benchmarks we don't have custom prompt at here
             return False
         else:
             return True
@@ -269,45 +173,54 @@ class MiniMonkey(BaseModel):
 
         return prompt
 
-    def build_video_prompt(self, prompt, dataset=None, max_nframe=64):
-        for start in range(0, max_nframe, 8):
-            images_to_remove = ''.join([f'<image-{i}>' for i in range(start + 1, start + 9)])
+    def build_video_prompt(self, prompt, dataset=None, max_frames=64):
+        for start in range(0, max_frames, 8):
+            images_to_remove = ''.join([f'<Image-{i}>' for i in range(start + 1, start + 9)])
             prompt = prompt.replace(images_to_remove, '')
-        for i in range(max_nframe):
-            prompt = prompt.replace(f'<image-{i + 1}>', f'Frame{i + 1}')
+        for i in range(max_frames):
+            prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
         if listinstr(['MMBench-Video'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
-            prompt += '\nAnswer the question using a single word or phrase.'
         elif listinstr(['Video-MME'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
+        elif listinstr(['MVBench'], dataset):
+            prompt = prompt.replace('Best option:(', '')
+
         return prompt
 
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
-        kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
+
+        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=3)
+
+        if listinstr(['MTVQA'], dataset):
+            kwargs_default["max_new_tokens"] = 256
+
+        if listinstr(['MMMU_DEV_VAL','MMMU_TEST'], dataset):
+            kwargs_default["num_beams"] = 1
+
         self.kwargs = kwargs_default
 
-        if dataset is not None and listinstr(['MME'], dataset):
+        if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
-            prompt = question + ' Answer the question using a single word or phrase.'
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):
-            question = line['question']
-            prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            if listinstr(['MME'], dataset):
+                prompt = question + ' Answer the question using a single word or phrase.'
+            elif listinstr(['HallusionBench'], dataset):
+                prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            else:
+                prompt = line['question']
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['MathVista', 'MathVision'], dataset):
-                prompt = line['question']
+            question = line['question']
+            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
+                prompt = question
             elif listinstr(['LLaVABench'], dataset):
-                question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
-            elif listinstr(['MMVet'], dataset):
-                prompt = line['question']
             else:
-                question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             prompt = line['question']
@@ -317,60 +230,26 @@ class MiniMonkey(BaseModel):
 
     def set_max_num(self, dataset):
         if dataset is None:
-            self.max_num = 12
-            self.max_num2 = 7
-            self.min_num = 4
-            self.min_num2 = 3
+            self.max_num = 1
             return
 
-        if dataset is not None and listinstr(['ChartQA_TEST'], dataset):
-            self.max_num = 12
-            self.max_num2 = 3
-        elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST', 'TextVQA_VAL'], dataset):
-            self.max_num = 23
-            self.max_num2 = 15
-            self.min_num = 14
-            self.min_num2 = 5
-        elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'SEEDBench_IMG'], dataset):
-            self.max_num = 23
-            self.max_num2 = 5
-            self.min_num = 15
-            self.min_num2 = 3
-        elif dataset is not None and listinstr(['OCRBench', 'POPE'], dataset):
-            self.max_num = 24
-            self.max_num2 = 8
-            self.min_num = 9
-            self.min_num2 = 5
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):
-            self.max_num = 11
-            self.max_num2 = 6
-            self.min_num = 4
-            self.min_num2 = 2
-        elif dataset is not None and listinstr(['MME'], dataset):
-            self.max_num = 11
-            self.max_num2 = 6
-            self.min_num = 5
-            self.min_num2 = 2
-        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):
-            self.max_num = 12
-            self.max_num2 = 6
-            self.min_num = 5
-            self.min_num2 = 2
-        elif dataset is not None and listinstr(['CCBench'], dataset):
-            self.max_num = 24
-            self.max_num2 = 8
-            self.min_num = 9
-            self.min_num2 = 4
-        elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):
-            self.max_num = 12
-            self.max_num2 = 7
-            self.min_num = 5
-            self.min_num2 = 3
+        # res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
+        res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
+                           'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
+        res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
+        res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
+        if DATASET_MODALITY(dataset) == 'VIDEO':
+            self.max_num = 1
+        elif listinstr(res_12_datasets, dataset):
+            self.max_num = 6  # 12
+        elif listinstr(res_18_datasets, dataset):
+            self.max_num = 6  # 18
+        elif listinstr(res_24_datasets, dataset):
+            self.max_num = 6  # 24
+        elif listinstr(["MME"], dataset):
+            self.max_num = 6  # 24
         else:
-            self.max_num = 12
-            self.max_num2 = 7
-            self.min_num = 4
-            self.min_num2 = 3
+            self.max_num = 6  # 6
 
     def generate_v2(self, message, dataset=None):
         image_num = len([x for x in message if x['type'] == 'image'])
@@ -382,11 +261,11 @@ class MiniMonkey(BaseModel):
                 if x['type'] == 'text':
                     prompt += x['value']
                 elif x['type'] == 'image':
-                    prompt += f'<image-{image_idx}>'
+                    prompt += f'<Image-{image_idx}>'
                     image_idx += 1
-            prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
+            prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if dataset is not None and listinstr(['Video'], dataset):
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -394,25 +273,17 @@ class MiniMonkey(BaseModel):
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                curr_pixel_values, target_aspect_ratio = load_image(
-                    file_name, min_num=self.min_num, max_num=self.max_num)
-                curr_pixel_values = curr_pixel_values.cuda().to(torch.bfloat16)
-                curr_pixel_values2 = load_image2(
-                    file_name, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
-                curr_pixel_values2 = curr_pixel_values2.cuda().to(torch.bfloat16)
-                curr_pixel_values = torch.cat(
-                    (curr_pixel_values[:-1], curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+                curr_pixel_values = load_image(
+                    file_name, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            pixel_values, target_aspect_ratio = load_image(image_path, min_num=self.min_num, max_num=self.max_num)
-            pixel_values = pixel_values.cuda().to(torch.bfloat16)
-            pixel_values2 = load_image2(
-                image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
-            pixel_values2 = pixel_values2.cuda().to(torch.bfloat16)
-            pixel_values = torch.cat((pixel_values[:-1], pixel_values2[:-1], pixel_values[-1:]), 0)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+            pixel_values = load_image(
+                image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
@@ -422,7 +293,6 @@ class MiniMonkey(BaseModel):
             response = self.model.chat(
                 self.tokenizer,
                 pixel_values=pixel_values,
-                target_aspect_ratio=(1, 1),
                 num_patches_list=num_patches_list,
                 question=prompt,
                 generation_config=self.kwargs,
@@ -489,24 +359,16 @@ class MiniMonkey(BaseModel):
             num_patches_list = []
             pixel_values_list = []
             for image_idx, file_name in enumerate(image_path):
-                curr_pixel_values, target_aspect_ratio = load_image(
-                    file_name, min_num=self.min_num, max_num=self.max_num)
-                curr_pixel_values = curr_pixel_values.cuda().to(torch.bfloat16)
-                curr_pixel_values2 = load_image2(
-                    file_name, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
-                curr_pixel_values2 = curr_pixel_values2.cuda().to(torch.bfloat16)
-                curr_pixel_values = torch.cat(
-                    (curr_pixel_values[:-1], curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
+                upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+                curr_pixel_values = load_image(
+                    file_name, max_num=1, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_cnt == 1:
-            pixel_values, target_aspect_ratio = load_image(image_path, min_num=self.min_num, max_num=self.max_num)
-            pixel_values = pixel_values.cuda().to(torch.bfloat16)
-            pixel_values2 = load_image2(
-                image_path, target_aspect_ratio=target_aspect_ratio, min_num=self.min_num2, max_num=self.max_num2)
-            pixel_values2 = pixel_values2.cuda().to(torch.bfloat16)
-            pixel_values = torch.cat((pixel_values[:-1], pixel_values2[:-1], pixel_values[-1:]), 0)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
+            pixel_values = load_image(
+                image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
@@ -515,7 +377,6 @@ class MiniMonkey(BaseModel):
         response, history = self.model.chat(
             self.tokenizer,
             pixel_values=pixel_values,
-            target_aspect_ratio=target_aspect_ratio,
             num_patches_list=num_patches_list,
             question=question,
             generation_config=self.kwargs,
@@ -529,6 +390,6 @@ class MiniMonkey(BaseModel):
 
     def chat_inner(self, message, dataset=None):
         self.set_max_num(dataset)
-        kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, max_new_tokens=512, top_p=None, num_beams=3)
         self.kwargs = kwargs_default
         return self.chat_inner_v2(message, dataset)

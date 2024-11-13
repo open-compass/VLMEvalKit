@@ -64,6 +64,10 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('YI_API_KEY', '')
             if key is None:
                 key = env_key
+        elif 'internvl2-pro' in model:
+            env_key = os.environ.get('InternVL2_PRO_KEY', '')
+            if key is None:
+                key = env_key
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -182,6 +186,8 @@ class OpenAIWrapper(BaseAPI):
         # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
+        elif 'internvl2-pro' in self.model:
+            headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(

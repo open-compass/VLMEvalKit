@@ -27,35 +27,25 @@ class Moondream1(BaseModel):
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
-        self.model = (
-            AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16)
-            .to(torch.device('cuda'))
-        )
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            torch_dtype=torch.float16,
+            device_map='cuda')
         self.tokenizer = Tokenizer.from_pretrained(model_path)
 
-        default_kwargs = dict(
-            max_new_tokens=512,
-        )
-
+        default_kwargs = dict(max_new_tokens=512)
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
+
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
-        images = []
-        prompt = ''
+        prompt, img = self.message_to_promptimg(message)
+        enc_image = self.model.encode_image(Image.open(img))
 
-        for s in message:
-            if s['type'] == 'image':
-                images.append(s['value'])
-            elif s['type'] == 'text':
-                prompt += s['value']
-
-        images = [Image.open(s) for s in images]
-        enc_image = self.model.encode_image(images[0])
-
-        prompt_wtmpl = prompt = f'<image>\n\nQuestion: {prompt}\n\nAnswer: '
+        prompt_wtmpl = f'<image>\n\nQuestion: {prompt}\n\nAnswer:'
         answer = self.model.generate(
             enc_image, prompt_wtmpl, eos_text='<END>', tokenizer=self.tokenizer, **self.kwargs)[0]
         cleaned_answer = re.sub('<$', '', re.sub('END$', '', answer)).strip()
@@ -106,7 +96,8 @@ class Moondream2(BaseModel):
     INTERLEAVE = False
 
     def __init__(self,
-                 model_path='vikhyatk/moondream2',
+                 model_path="vikhyatk/moondream2",
+                 revision="2024-08-26",
                  **kwargs):
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -117,50 +108,29 @@ class Moondream2(BaseModel):
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
-        flash_attn_flag = False
-        try:
-            import flash_attn
-            flash_attn_flag = True
-        except ImportError:
-            pass
-        if flash_attn_flag:
-            self.model = (
-                AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16,
-                                                     attn_implementation='flash_attention_2')
-                .to(torch.device('cuda'))
-            )
-        else:
-            self.model = (
-                AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.float16)
-                .to(torch.device('cuda'))
-            )
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            torch_dtype=torch.float16,
+            device_map='cuda',
+            revision=revision)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-        default_kwargs = dict(
-            max_new_tokens=512,
-        )
-
+        default_kwargs = dict(max_new_tokens=512)
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
+
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
-        images = []
-        prompt = ''
-        for s in message:
-            if s['type'] == 'image':
-                images.append(s['value'])
-            elif s['type'] == 'text':
-                prompt += s['value']
+        prompt, img = self.message_to_promptimg(message)
+        enc_image = self.model.encode_image(Image.open(img))
 
-        images = [Image.open(s) for s in images]
-        enc_image = self.model.encode_image(images[0])
-
-        prompt_wtmpl = prompt = f'<image>\n\nQuestion: {prompt}\n\nAnswer: '
+        prompt_wtmpl = f'<image>\n\nQuestion: {prompt}\n\nAnswer:'
         answer = self.model.generate(
-            enc_image, prompt_wtmpl, eos_text='<END>', tokenizer=self.tokenizer, **self.kwargs)[0]
-        cleaned_answer = re.sub('<$', '', re.sub('END$', '', answer)).strip()
+            enc_image, prompt_wtmpl, tokenizer=self.tokenizer, **self.kwargs)[0]
+        cleaned_answer = answer.strip()
         return cleaned_answer
 
     def use_custom_prompt(self, dataset):

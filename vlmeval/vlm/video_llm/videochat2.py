@@ -399,28 +399,28 @@ class VideoChat2_HD(BaseModel):
             )
             return_message = '(' + pred_option.split('\n')[0]
             return return_message
-
-        elif dataset == 'MVBench' or dataset == 'MVBench_MP4':
-            _, video = self.message_to_promptvideo(message)
-
+        elif listinstr(['MLVU', 'MVBench', 'TempCompass'], dataset):
+            question, video = self.message_to_promptvideo_withrole(message, dataset)
             torch_imgs = self.read_video(video)
             example = {
                 'subtitle': '',
                 'video': torch_imgs,
-                'question': message[1]['value']
+                'question': question['user']
             }
+            if 'assistant' not in question:
+                question['assistant'] = None
+            if question['system'] == '':
+                question['system'] = ' '
             pred_option = self.infer_data(
                 example,
-                message[0]['value'],
-                question_prompt='\nOnly give the best option.',
-                answer_prompt='Best option:(',
+                question['system'],
+                answer_prompt=question['assistant'],
                 system_q=False,
                 print_res=False,
                 system_llm=True
             )
             return_message = '(' + pred_option.split('\n')[0]
             return return_message
-
         else:
             question, video = self.message_to_promptvideo(message)
             torch_imgs = self.read_video(video)

@@ -2,6 +2,7 @@ import torch
 
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
+from .aria import Aria
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu
@@ -28,6 +29,7 @@ from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, X
 from .yi_vl import Yi_VL
 from .internvl_chat import InternVLChat
 from .deepseek_vl import DeepSeekVL
+from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
 from .vxverse import VXVERSE
@@ -52,3 +54,7 @@ from .pixtral import Pixtral
 from .llama_vision import llama_vision
 from .molmo import molmo
 from .points import POINTS
+from .nvlm import NVLM
+from .vintern_chat import VinternChat
+from .h2ovl_mississippi import H2OVLChat
+from .falcon_vlm import Falcon2VLM
