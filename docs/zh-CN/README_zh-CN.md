@@ -25,6 +25,8 @@
 
 ## 🆕 更新
 
+- **[2024-11-13]** 支持 **[MIA-Bench](https://arxiv.org/abs/2407.01509)**，一个多模态指令跟随基准 🔥🔥🔥
+- **[2024-11-08]** 支持 **[Aria](https://arxiv.org/abs/2410.05993)**，一个多模态原生 MoE 模型，感谢 **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** 支持 **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**，该基准包含 1000 多个医学 VQA 问题，涵盖巴西、以色列、日本、西班牙等四个国家的语言，以及它们的英文翻译 🔥🔥🔥
 - **[2024-11-01]** 支持 `AUTO_SPLIT` 标志 (https://github.com/open-compass/VLMEvalKit/pull/566)，用于在低配置 GPU 上进行评估。设置后，模型将自动拆分到多个 GPU（流水线并行）以减少 GPU 内存使用（目前仅支持部分 VLMs：Qwen2-VL、Llama-3.2、LLaVA-OneVision 等） 🔥🔥🔥
 - **[2024-10-30]** 支持评估 **[MLVU](https://github.com/JUNJIE99/MLVU)** 和 **[TempCompass](https://arxiv.org/abs/2403.00476v1)**。这两个基准将很快被纳入 **[OpenVLM 视频排行榜](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
@@ -33,8 +35,6 @@
 - **[2024-10-30]** 支持 **[LLaVA-Video](https://github.com/open-compass/VLMEvalKit/pull/549)**，感谢 **[ZhangYuanhan-AI](https://github.com/ZhangYuanhan-AI)** 🔥🔥🔥
 - **[2024-10-23]** 支持 **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**，一个小规模 VLM，能够进行图像生成和理解，感谢 **[hills-code](https://github.com/hills-code)** 🔥🔥🔥
 - **[2024-10-22]** 支持 **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**，一个在 1000 万+ 越南语 QA 对上微调的越南 VLM，感谢 **[Khang-9966](https://github.com/Khang-9966)** 🔥🔥🔥
-- **[2024-10-22]** 支持 **[Ovis1.6-Llama3.2-3B](https://huggingface.co/AIDC-AI/Ovis1.6-Llama3.2-3B)**，感谢 **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
-- **[2024-10-22]** 支持 **[JT-VL-Chat](https://github.com/jiutiancv/JT-VL-Chat)**，一个由中国移动开发的 API VLM，感谢 **[jiutiancv](https://github.com/jiutiancv)** 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 
@@ -73,7 +73,7 @@
   | [**MathVerse**](https://mathverse-cuhk.github.io/)+          | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA       | [**AMBER**](https://github.com/junyangwang0410/AMBER)+       | AMBER                                                        | Y/N            |
   | [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+  | CRPE_[EXIST/RELATION]                                        | VQA       | **[MMSearch](https://mmsearch.github.io/)**$$^1$$            | -                                                            | **-**          |
   | **[R-Bench](https://arxiv.org/abs/2410.05474)**+             | R-Bench-[Dis/Ref]                                            | MCQ       | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+    | WorldMedQA-V                                                 | MCQ            |
-  | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced                                         | VQA       |                                                              |                                                              |                |
+  | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
@@ -122,7 +122,7 @@ $$^1$$ VLMEvalKit 在评测集的官方代码库中被使用
 | [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 | [**H2OVL-Mississippi-[0.8B/2B]**](https://huggingface.co/h2oai/h2ovl-mississippi-2b)🚅🎞️ | **[Pixtral-12B](https://huggingface.co/mistralai/Pixtral-12B-2409)**🎞️ | **[Falcon2-VLM-11B](https://huggingface.co/tiiuae/falcon-11B-vlm)**🚅 |
 | **[MiniMonkey](https://huggingface.co/mx262/MiniMonkey)**🚅🎞️  | **[LLaVA-OneVision](https://huggingface.co/lmms-lab/llava-onevision-qwen2-72b-ov-sft)**🚅🎞️ | **[LLaVA-Video](https://huggingface.co/collections/lmms-lab/llava-video-661e86f5e8dabc3ff793c944)**🚅🎞️ | **[Aquila-VL-2B](https://huggingface.co/BAAI/Aquila-VL-2B-llava-qwen)**🚅🎞️ |
 | [**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ | **[InternVL2 Series](https://huggingface.co/OpenGVLab/InternVL2-8B)** 🚅🎞️ | **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**🚅🎞️ | **[molmoE-1B/molmo-7B/molmo-72B](https://huggingface.co/allenai/Molmo-7B-D-0924)**🚅 |
-| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ |                                                              |
+| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ | **[Aria](https://huggingface.co/rhymes-ai/Aria)**🚅🎞️ |
 
 🎞️ 表示支持多图片输入。
 

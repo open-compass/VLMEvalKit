@@ -94,7 +94,6 @@ api_models = {
     "BlueLM_V": partial(BlueLM_V_API, model='BlueLM-VL-v3.0', temperature=0, retry=10),
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
-    # Taiyi
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
 }
 
@@ -333,6 +332,7 @@ nvlm_series = {
 
 vintern_series = {
     'Vintern-3B-beta': partial(VinternChat, model_path='5CD-AI/Vintern-3B-beta'),
+    'Vintern-1B-v2': partial(VinternChat, model_path='5CD-AI/Vintern-1B-v2'),
 }
 
 aria_series = {
