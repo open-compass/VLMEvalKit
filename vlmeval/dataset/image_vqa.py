@@ -1,5 +1,7 @@
 from functools import partial
 
+import pandas as pd
+
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
@@ -494,8 +496,10 @@ class OlympiadBench(ImageBaseDataset):
         judger = MathJudger()
 
         suffix = eval_file.split('.')[-1]
-        name_str = 'score'
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.csv')
+        name_str1 = 'judge'
+        name_str2 = 'score'
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str1}_result.xlsx')
+        score_file = eval_file.replace(f'.{suffix}', f'_{name_str2}_result.csv')
 
         if not osp.exists(result_file):
             data = load(eval_file)
@@ -524,18 +528,75 @@ class OlympiadBench(ImageBaseDataset):
                     else:
                         judge_result = judger.judge(model_answer, final_answer)
                 scorez.append(judge_result)
-            full_num = len(scorez)
-            correct_num = 0
-            for i in scorez:
-                if i:
-                    correct_num += 1
-            acc = 100 * correct_num / full_num
 
-            accuracy = {'acc':[acc]}
-            accdf = pd.DataFrame(accuracy)
-            accdf.to_csv(result_file, index=False, encoding='gbk')
+            data['score'] = scorez
+            dump(data, result_file)
 
-        accdz = pd.read_csv(result_file)
+        judge_file = load(result_file)
+
+        if not osp.exists(score_file):
+            name_list = ['OE_MM_maths_en_COMP', 'OE_MM_maths_zh_CEE', 'OE_MM_maths_zh_COMP', 'OE_MM_physics_en_COMP',
+                         'OE_MM_physics_zh_CEE','OE_TO_maths_en_COMP', 'OE_TO_maths_zh_CEE', 'OE_TO_maths_zh_COMP',
+                         'OE_TO_physics_en_COMP', 'OE_TO_physics_zh_CEE']
+
+            sample_list = [[] for _ in range(len(name_list))]
+            for i in judge_file.iterrows():
+                line = i[1]
+                for j in range(len(name_list)):
+                    if line['source'] == name_list[j]:
+                        sample_list[j].append(line['score'])
+
+            acc_dict = {}
+            correct_list = []
+
+            # fine-grained
+            for i in range(len(name_list)):
+                correct_num = 0
+                for j in sample_list[i]:
+                    if j:
+                        correct_num += 1
+                correct_list.append(correct_num)
+                acc = 100 * correct_num / len(sample_list[i])
+                acc_dict[name_list[i]] = [acc]
+
+            # 4 grained
+            labela = ['zh', 'en']
+            labelb = ['maths', 'physics']
+
+            grain_list = [[x,y] for x in labela for y in labelb]
+            for j in grain_list:
+                dict_name = j[0] + "_" + j[1]
+                correct_num = 0
+                full_num = 0
+                for i in range(len(name_list)):
+                    if all(k in name_list[i] for k in j):
+                        correct_num += correct_list[i]
+                        full_num += len(sample_list[i])
+                acc = 100 * correct_num / full_num
+                acc_dict[dict_name] = [acc]
+
+            # 2 grained
+            grain_list = ['maths', 'physics']
+            for j in grain_list:
+                dict_name = j
+                correct_num = 0
+                full_num = 0
+                for i in range(len(name_list)):
+                    if j in name_list[i]:
+                        correct_num += correct_list[i]
+                        full_num += len(sample_list[i])
+                acc = 100 * correct_num / full_num
+                acc_dict[dict_name] = [acc]
+
+            # AVG
+            correct_num = sum(correct_list)
+            acc = 100 * correct_num / len(judge_file)
+            acc_dict['AVG'] = [acc]
+
+            acc_pd = pd.DataFrame(acc_dict)
+            acc_pd.to_csv(score_file, index=False, encoding='gbk')
+
+        accdz = pd.read_csv(score_file)
         return accdz
 
 
