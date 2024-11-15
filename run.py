@@ -193,10 +193,11 @@ def main():
                         ignore_failed=args.ignore)
 
                 # Set the judge kwargs first before evaluation or dumping
+
                 judge_kwargs = {
                     'nproc': args.nproc,
                     'verbose': args.verbose,
-                    'retry': 3
+                    'retry': args.retry if args.retry is not None else 3
                 }
 
                 if args.retry is not None:

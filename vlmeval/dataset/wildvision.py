@@ -75,7 +75,7 @@ def WildVision_auxeval(model, line):
         dict(type='image', value=img)
     ]
 
-    retry = 3
+    retry = 2
     while retry:
         resp = model.generate(messages)
         score, try_again = get_score(resp)
@@ -102,6 +102,27 @@ class WildVision(ImageBaseDataset):
         'B>A': -1,
         'B>>A': -2
     }
+
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        # WildVision adopts text first
+        msgs = [dict(type='text', value=question)] + msgs
+        return msgs
 
     @classmethod
     def gen_eval_base(self, eval_file, b64_map):
@@ -133,6 +154,8 @@ class WildVision(ImageBaseDataset):
 
             judge_kwargs['system_prompt'] = SYSTEM_PROMPT
             judge_kwargs['temperature'] = 0
+            judge_kwargs['img_detail'] = 'high'
+            judge_kwargs['timeout'] = 300
             model = build_judge(max_tokens=4096, **judge_kwargs)
 
             assert model.working(), ('WildVision evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
@@ -169,9 +192,12 @@ class WildVision(ImageBaseDataset):
         scores = defaultdict(lambda: 0)
         for i in range(lt):
             item = data.iloc[i]
-            score = self.score_map[item['score']]
-            if 'rev' in item['index']:
-                score = -score
+            if item['score'] not in self.score_map:
+                score = 0
+            else:
+                score = self.score_map[item['score']]
+                if '_rev' in item['index']:
+                    score = -score
             scores[score] += 1
         name_map = {
             2: 'Much Better',
