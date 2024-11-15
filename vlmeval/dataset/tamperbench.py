@@ -22,7 +22,7 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 
 class MVTamperBench(VideoBaseDataset):
 
-    MD5 = 'b69664652c8336ade976cf4245515b5b'
+    MD5 = '5bcb215d612d413aaac23f442e753895'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -79,7 +79,7 @@ Based on your observations, select the best option that accurately addresses the
     def supported_datasets(cls):
         return ['MVTamperBench']
 
-    def prepare_dataset(self, dataset_name='MVTamperBench', repo_id='Srikant86/MVTamperBenchSample'):
+    def prepare_dataset(self, dataset_name='MVTamperBench', repo_id='Srikant86/MVTamperBench'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
