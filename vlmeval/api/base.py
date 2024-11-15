@@ -3,7 +3,7 @@ import random as rd
 from abc import abstractmethod
 import os.path as osp
 import copy as cp
-from ..smp import get_logger, parse_file, concat_images_vlmeval
+from ..smp import get_logger, parse_file, concat_images_vlmeval, LMUDataRoot, md5, decode_base64_to_image_file
 
 
 class BaseAPI:
@@ -118,6 +118,15 @@ class BaseAPI:
         elif self.check_content(inputs) == 'liststr':
             res = []
             for s in inputs:
+                if s.startswith('data:image/'):
+                    body = s[11:].split(';')
+                    mime = body[0]
+                    if mime in ['jpeg', 'png', 'jpg']:
+                        b64 = body[1].split('base64,')[1]
+                        tmp_name = osp.join(LMUDataRoot(), f'{md5(b64)}.{mime}')
+                        decode_base64_to_image_file(b64, tmp_name)
+                        res.append(dict(type='image', value=tmp_name))
+                        continue
                 mime, pth = parse_file(s)
                 if mime is None or mime == 'unknown':
                     res.append(dict(type='text', value=s))
@@ -127,6 +136,16 @@ class BaseAPI:
         elif self.check_content(inputs) == 'listdict':
             for item in inputs:
                 assert 'type' in item and 'value' in item
+                if item['type'] == 'image' and item['value'].startswith('data:image/'):
+                    body = item['value'][11:].split(';')
+                    mime = body[0]
+                    assert mime in ['jpeg', 'png', 'jpg']
+                    b64 = body[1].split('base64,')[1]
+                    tmp_name = osp.join(LMUDataRoot(), f'{md5(b64)}.{mime}')
+                    decode_base64_to_image_file(b64, tmp_name)
+                    item['value'] = tmp_name
+                    continue
+
                 mime, s = parse_file(item['value'])
                 if mime is None:
                     assert item['type'] == 'text', item['value']

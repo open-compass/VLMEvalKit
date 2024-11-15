@@ -166,6 +166,9 @@ def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
 
 
 def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
+    if dataset is None:
+        warnings.warn(f'Dataset is not specified, will treat modality as {default}. ')
+        return default
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
             if hasattr(cls, 'MODALITY'):

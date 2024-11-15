@@ -250,7 +250,7 @@ class TempCompass_MCQ(VideoBaseDataset):
 
 class TempCompass_Captioning(VideoBaseDataset):
 
-    MD5 = 'fa5fd83383fe1faabc9fb5dc944266de'
+    MD5 = '35be9bf2581ea7767f02e9a8f37ae1ab'
     TYPE = 'Video-VQA'
 
     def __init__(self, dataset='TempCompass_Captioning'):
@@ -311,7 +311,7 @@ class TempCompass_Captioning(VideoBaseDataset):
                             'prefix': v[1],
                             'suffix': v[2],
                             'video': data['video_id'],
-                            'question': data['question'].split('\n')[0],
+                            'question': data['question'],
                             'answer': data['answer'],
                             'dim': data['dim'],
                             'mc_question': data['mc_question'],
