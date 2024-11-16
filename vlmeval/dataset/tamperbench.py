@@ -22,7 +22,7 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 
 class MVTamperBench(VideoBaseDataset):
 
-    MD5 = '5bcb215d612d413aaac23f442e753895'
+    MD5 = '12a8bac1b4452c5c7974c31f8e76e882'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -157,6 +157,8 @@ Based on your observations, select the best option that accurately addresses the
                                         shutil.move(item_path, os.path.join(target_folder, item))
 
                 src_folder = os.path.join(pth, 'video/perception')
+                if not os.path.exists(src_folder):
+                    return
                 for subdir in os.listdir(src_folder):
                     subdir_path = os.path.join(src_folder, subdir)
                     if os.path.isdir(subdir_path):
@@ -170,7 +172,6 @@ Based on your observations, select the best option that accurately addresses the
                                     target_folder = os.path.join(pth, 'video/perception', subdir)
                                     if not os.path.exists(os.path.join(target_folder, item)):
                                         shutil.move(item_path, target_folder)
-                                os.rmdir(subsubdir_path)
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             huggingface_hub.login(hf_token)
