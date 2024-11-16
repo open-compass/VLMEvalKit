@@ -96,11 +96,11 @@ class WildVision(ImageBaseDataset):
     DATASET_MD5 = {'WildVision': 'b38f80156d49411c594772866b0d0b52'}
 
     score_map = {
-        'A>>B': 2,
-        'A>B': 1,
+        'A>>B': -2,
+        'A>B': -1,
         'A=B': 0,
-        'B>A': -1,
-        'B>>A': -2
+        'B>A': 1,
+        'B>>A': 2
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -127,14 +127,15 @@ class WildVision(ImageBaseDataset):
     @classmethod
     def gen_eval_base(self, eval_file, b64_map):
         data = load(eval_file)
-        data['A'] = data.pop('prediction')
-        data['B'] = data.pop('claude3_sonnet')
+        data['B'] = data.pop('prediction')
+        data['A'] = data.pop('claude3_sonnet')
         data['image'] = [b64_map[x] for x in data['index']]
-        rev = cp.deepcopy(data)
-        rev['A'] = data['B']
-        rev['B'] = data['A']
-        rev['index'] = [x + '_rev' for x in data['index']]
-        return pd.concat([data, rev], ignore_index=True)
+        return data
+        # rev = cp.deepcopy(data)
+        # rev['A'] = data['B']
+        # rev['B'] = data['A']
+        # rev['index'] = [x + '_rev' for x in data['index']]
+        # return pd.concat([data, rev], ignore_index=True)
 
     # It returns a DataFrame
     @classmethod
