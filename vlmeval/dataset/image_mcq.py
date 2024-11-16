@@ -624,7 +624,7 @@ class MMERealWorld(ImageMCQDataset):
 
         # Check if dataset is cached and has integrity
         if dataset == "MME-RealWorld-Lite":
-            url = 'https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Base64/blob/main/mme_realworld_lite.tsv'
+            url = 'https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Base64/resolve/main/mme_realworld_lite.tsv'  # noqa: E501
             file_md5 = (
                 self.DATASET_MD5[dataset] if dataset in self.DATASET_MD5 else None
             )
