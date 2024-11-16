@@ -76,7 +76,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         repetition_penalty=1.0,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
-        verbose: bool = True,
+        verbose: bool = False,
     ):
         super().__init__(use_custom_prompt=use_custom_prompt)
         self.min_pixels = min_pixels
