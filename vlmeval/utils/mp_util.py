@@ -32,7 +32,7 @@ def track_progress_rich(
         raise TypeError(
             f'tasks must be an iterable object, but got {type(tasks)}')
     assert nproc > 0, 'nproc must be a positive number'
-    res = load(save)
+    res = load(save) if save is not None else {}
     results = []
 
     with ThreadPoolExecutor(max_workers=nproc) as executor:
