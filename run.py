@@ -207,7 +207,8 @@ def main():
                     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'],
                                    dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI'],
+                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI',
+                                    'MIA-Bench'],
                                    dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
 

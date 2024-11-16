@@ -23,6 +23,7 @@ from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
 from .tamperbench import MVTamperBench
+from .miabench import MIABench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .longvideobench import LongVideoBench
@@ -121,7 +122,8 @@ IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
-    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset
+    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
+    MIABench
 ]
 
 VIDEO_DATASET = [
@@ -165,6 +167,9 @@ def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
 
 
 def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
+    if dataset is None:
+        warnings.warn(f'Dataset is not specified, will treat modality as {default}. ')
+        return default
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
             if hasattr(cls, 'MODALITY'):

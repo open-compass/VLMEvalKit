@@ -156,6 +156,17 @@ class Aria(BaseModel):
         prompt = '<|im_start|>user\n'
         images = []
         last_message_modality = "text"
+
+        if listinstr(['MLVU', 'TempCompass'], dataset):  # re-arrange the data
+            new_message = []
+            for s in message:
+                if s['type'] == 'image':
+                    new_message.append(s)
+            for s in message:
+                if s['type'] == 'text':
+                    new_message.append(s)
+            message = new_message
+
         for s in message:
             if s['type'] == 'image':
                 prompt += '<fim_prefix><|img|><fim_suffix>'

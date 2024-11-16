@@ -140,6 +140,27 @@ class JTVLChatWrapper(BaseAPI):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
+    def message_to_promptimg(self, message, dataset=None):
+        assert not self.INTERLEAVE
+        model_name = self.__class__.__name__
+        import warnings
+        warnings.warn(
+            f'Model {model_name} does not support interleaved input. '
+            'Will use the first image and aggregated texts as prompt. ')
+        num_images = len([x for x in message if x['type'] == 'image'])
+        if num_images == 0:
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+            image = None
+        else:
+            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+            if dataset == 'BLINK':
+                image = concat_images_vlmeval(
+                    [x['value'] for x in message if x['type'] == 'image'],
+                    target_size=512)
+            else:
+                image = [x['value'] for x in message if x['type'] == 'image'][0]
+        return prompt, image
+
     def get_send_data(self,prompt, image_path, temperature, max_tokens):
         image = ''
         with open(image_path, 'rb') as f:
