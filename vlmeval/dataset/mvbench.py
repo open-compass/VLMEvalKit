@@ -153,7 +153,7 @@ Based on your observations, select the best option that accurately addresses the
                                 for item in os.listdir(subsubdir_path):
                                     item_path = os.path.join(subsubdir_path, item)
                                     target_folder = os.path.join(pth, 'video', subdir, subsubdir)
-                                    if not os.path.exists(target_folder):
+                                    if not os.path.exists(os.path.join(target_folder, item)):
                                         shutil.move(item_path, os.path.join(target_folder, item))
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
