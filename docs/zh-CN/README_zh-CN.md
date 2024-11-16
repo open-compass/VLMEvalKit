@@ -25,6 +25,7 @@
 
 ## 🆕 更新
 
+- **[2024-11-16]** 支持 **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**，一个基于多模态竞技场数据的主观多模态基准 🔥🔥🔥
 - **[2024-11-13]** 支持 **[MIA-Bench](https://arxiv.org/abs/2407.01509)**，一个多模态指令跟随基准 🔥🔥🔥
 - **[2024-11-08]** 支持 **[Aria](https://arxiv.org/abs/2410.05993)**，一个多模态原生 MoE 模型，感谢 **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** 支持 **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**，该基准包含 1000 多个医学 VQA 问题，涵盖巴西、以色列、日本、西班牙等四个国家的语言，以及它们的英文翻译 🔥🔥🔥
@@ -34,7 +35,6 @@
 - **[2024-10-30]** 支持 **[H2OVL](https://huggingface.co/h2oai/h2ovl-mississippi-800m)**，感谢 **[smg478](https://github.com/smg478)**。该模型是一个轻量级 VLM，具有两种规模：800M 和 2B 🔥🔥🔥
 - **[2024-10-30]** 支持 **[LLaVA-Video](https://github.com/open-compass/VLMEvalKit/pull/549)**，感谢 **[ZhangYuanhan-AI](https://github.com/ZhangYuanhan-AI)** 🔥🔥🔥
 - **[2024-10-23]** 支持 **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**，一个小规模 VLM，能够进行图像生成和理解，感谢 **[hills-code](https://github.com/hills-code)** 🔥🔥🔥
-- **[2024-10-22]** 支持 **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**，一个在 1000 万+ 越南语 QA 对上微调的越南 VLM，感谢 **[Khang-9966](https://github.com/Khang-9966)** 🔥🔥🔥
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 
@@ -74,6 +74,7 @@
   | [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+  | CRPE_[EXIST/RELATION]                                        | VQA       | **[MMSearch](https://mmsearch.github.io/)**$$^1$$            | -                                                            | **-**          |
   | **[R-Bench](https://arxiv.org/abs/2410.05474)**+             | R-Bench-[Dis/Ref]                                            | MCQ       | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+    | WorldMedQA-V                                                 | MCQ            |
   | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
+  | **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA |  |  |  |
 
 **\*** 我们只提供了部分模型上的测试结果，剩余模型无法在 zero-shot 设定下测试出合理的精度
 
