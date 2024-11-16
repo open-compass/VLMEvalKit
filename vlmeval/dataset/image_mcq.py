@@ -543,10 +543,16 @@ class MMERealWorld(ImageMCQDataset):
 
     DATASET_MD5 = {
         'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
+        'MME-RealWorld-Lite': '4c17057d7d3b6c4a0d4397c3dae0881c',
         'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
     }
     SYS = {
         'MME-RealWorld': (
+            'Select the best answer to the above multiple-choice question based on the image. '
+            'Respond with only the letter (A, B, C, D, or E) of the correct option. \n'
+            'The best answer is:'
+        ),
+        'MME-RealWorld-Lite': (
             'Select the best answer to the above multiple-choice question based on the image. '
             'Respond with only the letter (A, B, C, D, or E) of the correct option. \n'
             'The best answer is:'
@@ -559,12 +565,14 @@ class MMERealWorld(ImageMCQDataset):
 
     @classmethod
     def supported_datasets(cls):
-        return ['MME-RealWorld', 'MME-RealWorld-CN']
+        return ['MME-RealWorld', 'MME-RealWorld-CN', 'MME-RealWorld-Lite',]
 
-    def load_data(self, dataset='MME-RealWorld', repo_id='yifanzhang114/MME-RealWorld-Base64'):
+    def load_data(
+        self, dataset="MME-RealWorld", repo_id="yifanzhang114/MME-RealWorld-Base64"
+    ):
 
         def check_integrity(pth):
-            data_file = osp.join(pth, f'{dataset}.tsv')
+            data_file = osp.join(pth, f"{dataset}.tsv")
 
             if not os.path.exists(data_file):
                 return False
@@ -574,57 +582,89 @@ class MMERealWorld(ImageMCQDataset):
             return True
 
         def generate_tsv(pth):
-            tsv_file = os.path.join(pth, f'{dataset}.tsv')
+            tsv_file = os.path.join(pth, f"{dataset}.tsv")
 
             if os.path.exists(tsv_file):
-                print(f'{tsv_file} already exists.')
+                print(f"{tsv_file} already exists.")
                 return
 
             json_dir = os.path.join(pth, dataset)
-            json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
+            json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
 
             data_list = []
             for json_file in json_files:
-                with open(os.path.join(json_dir, json_file), 'r') as f:
+                with open(os.path.join(json_dir, json_file), "r") as f:
                     data = json.load(f)
                     for item in tqdm(data):
-                        choice_prompt = 'The choices are listed below:\n' if dataset == 'MME-RealWorld' else '选项如下所示:\n'
-                        data_list.append({
-                            'index': item['index'],
-                            'image': item['image'],
-                            'question': item['question'],
-                            'multi-choice options': choice_prompt + '\n'.join(item['multi-choice options']),
-                            'A': item['multi-choice options'][0][4:],
-                            'B': item['multi-choice options'][1][4:],
-                            'C': item['multi-choice options'][2][4:],
-                            'D': item['multi-choice options'][3][4:],
-                            'E': item['multi-choice options'][4][4:],
-                            'answer': item['answer'],
-                            'category': item['category'],
-                            'l2-category': item['l2-category']
-                        })
+                        choice_prompt = (
+                            "The choices are listed below:\n"
+                            if dataset in ["MME-RealWorld", "MME-RealWorld-Lite"]
+                            else "选项如下所示:\n"
+                        )
+                        data_list.append(
+                            {
+                                "index": item["index"],
+                                "image": item["image"],
+                                "question": item["question"],
+                                "multi-choice options": choice_prompt
+                                + "\n".join(item["multi-choice options"]),
+                                "A": item["multi-choice options"][0][4:],
+                                "B": item["multi-choice options"][1][4:],
+                                "C": item["multi-choice options"][2][4:],
+                                "D": item["multi-choice options"][3][4:],
+                                "E": item["multi-choice options"][4][4:],
+                                "answer": item["answer"],
+                                "category": item["category"],
+                                "l2-category": item["l2-category"],
+                            }
+                        )
             df = pd.DataFrame(data_list)
-            df.to_csv(tsv_file, sep='\t', index=False)
-            print(f'TSV file saved to {tsv_file}')
+            df.to_csv(tsv_file, sep="\t", index=False)
+            print(f"TSV file saved to {tsv_file}")
 
         # Check if dataset is cached and has integrity
+        if dataset == "MME-RealWorld-Lite":
+            url = 'https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Base64/blob/main/mme_realworld_lite.tsv'
+            file_md5 = (
+                self.DATASET_MD5[dataset] if dataset in self.DATASET_MD5 else None
+            )
+            datas = self.prepare_tsv(url, file_md5)
+            choice_prompt = "The choices are listed below:\n"
+            for index, item in datas.iterrows():
+                options = eval(item["multi-choice options"])
+                datas.loc[index, "multi-choice options"] = choice_prompt + "\n".join(
+                    options
+                )
+                datas.loc[index, "A"] = options[0][4:]
+                datas.loc[index, "B"] = options[1][4:]
+                datas.loc[index, "C"] = options[2][4:]
+                datas.loc[index, "D"] = options[3][4:]
+                datas.loc[index, "E"] = options[4][4:]
+            return datas
+
         update_flag = False
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
-            print(f'Using cached dataset from {cache_path}')
+            print(f"Using cached dataset from {cache_path}")
         else:
             from huggingface_hub import snapshot_download
+
             # Download or find the dataset path
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
             generate_tsv(dataset_path)
             update_flag = True
 
-        data_path = os.path.join(dataset_path, f'{dataset}.tsv')
-        if file_size(data_path, 'GB') > 1:
-            local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+        data_path = os.path.join(dataset_path, f"{dataset}.tsv")
+        if file_size(data_path, "GB") > 1:
+            local_path = data_path.replace(".tsv", "_local.tsv")
+            if (
+                not osp.exists(local_path)
+                or os.environ.get("FORCE_LOCAL", None)
+                or update_flag
+            ):
                 from vlmeval.tools import LOCALIZE
+
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)
