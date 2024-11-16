@@ -69,9 +69,8 @@ If the prediction is correct, respond "Correct". If the prediction is incorrect,
 def eval_rule_caption_matching(line):
     # Determine whether the video llm output is correct, based on word matching rules
     video_llm_output = line['prediction']
-    question = line['question']
     answer = line['answer']
-    option_strs = question.split("\n")[1:]  # complete option strings
+    option_strs = eval(line['candidates'])  # complete option strings
     option_sents = [opt.split(': ')[1] for opt in option_strs]    # option sentence
     # option index, e.g., Sentence A, Caption A, Option 1
     option_inds = [opt.split(': ')[0] for opt in option_strs] + [opt.split(': ')[0].replace('Sentence ', '').replace('Option ', '').replace('Caption ', '') for opt in option_strs]  # noqa
@@ -180,6 +179,7 @@ def evaluate_tempcompass_mcq(model, line):
         "answer": line['answer'],
         "prediction": line['prediction'],
         "task_type": line['task_type'],
+        "candidates": line['candidates'],
         "match_success": True
     }
     result = eval_rules_dict[line['task_type']](line)
