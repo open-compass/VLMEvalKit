@@ -22,7 +22,7 @@ moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 
 class MVTamperBench(VideoBaseDataset):
 
-    MD5 = '5bcb215d612d413aaac23f442e753895'
+    MD5 = '12a8bac1b4452c5c7974c31f8e76e882'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -69,7 +69,7 @@ Based on your observations, select the best option that accurately addresses the
             'Egocentric Navigation': ('egocentric_navigation.json',
                                       'your_data_path/vlnqa/', 'video', False),
             'Episodic Reasoning': ('episodic_reasoning.json',
-                                   'your_data_path/tvqa/frames_fps3_hq/', 'video', False),  # has start & end
+                                   'your_data_path/tvqa/frames_fps3/', 'video', False),  # has start & end
             'Counterfactual Inference': ('counterfactual_inference.json',
                                          'your_data_path/clevrer/video_validation/', 'video', False),
         }
@@ -94,9 +94,8 @@ Based on your observations, select the best option that accurately addresses the
                 if not osp.exists(osp.join(pth, item['prefix'], item['video'])):
                     return False
             return True
-        ## SRIKANT: To update later
-        # cache_path = get_cache_path(repo_id, branch='main')
-        cache_path = None
+
+        cache_path = get_cache_path(repo_id, branch='main')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
@@ -121,29 +120,64 @@ Based on your observations, select the best option that accurately addresses the
                     with open(os.path.join(json_data_dir, v[0]), 'r') as f:
                         json_data = json.load(f)
                     for data in json_data:
-                        if os.path.exists(os.path.join(dataset_path, v[1].replace('your_data_path', 'video'), data['video'])):
-                            self.data_list.append({
-                                'task_type': k,
-                                'prefix': v[1].replace('your_data_path', 'video'),
-                                'data_type': v[2],
-                                'bound': v[3],
-                                'start': data['start'] if 'start' in data.keys() else None,
-                                'end': data['end'] if 'end' in data.keys() else None,
-                                'video': data['video'],
-                                'question': data['question'],
-                                'answer': data['answer'],
-                                'candidates': data['candidates'],
-                                'tamper_type': data['tamper_type'],
-                            })
+                            if os.path.exists(os.path.join(dataset_path, v[1].replace('your_data_path', 'video'), data['video'])):
+                                self.data_list.append({
+                                    'task_type': k,
+                                    'prefix': v[1].replace('your_data_path', 'video'),
+                                    'data_type': v[2],
+                                    'bound': v[3],
+                                    'start': data['start'] if 'start' in data.keys() else None,
+                                    'end': data['end'] if 'end' in data.keys() else None,
+                                    'video': data['video'],
+                                    'question': data['question'],
+                                    'answer': data['answer'],
+                                    'candidates': data['candidates'],
+                                    'tamper_type': data['tamper_type'],
+                                })
 
                 data_df = pd.DataFrame(self.data_list)
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
+            def move_files(pth):
+                # special for mvbench/data0613 supplementary data
+                src_folder = os.path.join(pth, 'video/data0613')
+                if not os.path.exists(src_folder):
+                    return
+                for subdir in os.listdir(src_folder):
+                    subdir_path = os.path.join(src_folder, subdir)
+                    if os.path.isdir(subdir_path):
+                        for subsubdir in os.listdir(subdir_path):
+                            subsubdir_path = os.path.join(subdir_path, subsubdir)
+                            if os.path.isdir(subsubdir_path):
+                                for item in os.listdir(subsubdir_path):
+                                    item_path = os.path.join(subsubdir_path, item)
+                                    target_folder = os.path.join(pth, 'video', subdir, subsubdir)
+                                    if not os.path.exists(os.path.join(target_folder, item)):
+                                        shutil.move(item_path, os.path.join(target_folder, item))
+
+                src_folder = os.path.join(pth, 'video/perception')
+                if not os.path.exists(src_folder):
+                    return
+                for subdir in os.listdir(src_folder):
+                    subdir_path = os.path.join(src_folder, subdir)
+                    if os.path.isdir(subdir_path):
+                        for subsubdir in os.listdir(subdir_path):
+                            subsubdir_path = os.path.join(subdir_path, subsubdir)
+                            if os.path.isdir(subsubdir_path):
+                                if not os.path.exists(src_folder):
+                                    return
+                                for item in os.listdir(subsubdir_path):
+                                    item_path = os.path.join(subsubdir_path, item)
+                                    target_folder = os.path.join(pth, 'video/perception', subdir)
+                                    if not os.path.exists(os.path.join(target_folder, item)):
+                                        shutil.move(item_path, target_folder)
+
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
             huggingface_hub.login(hf_token)
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unzip_hf_zip(dataset_path)
+            move_files(dataset_path)
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
