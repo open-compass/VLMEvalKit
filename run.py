@@ -214,30 +214,29 @@ def main():
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
-
-                # Handling Video Datasets. For Video Dataset, set the fps for priority
-                if args.fps > 0:
-                    if dataset_name == 'MVBench':
-                        raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
-                    args.nframe = 0
-                if dataset_name in ['MMBench-Video']:
-                    packstr = 'pack' if args.pack else 'nopack'
-                    if args.nframe > 0:
-                        result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-                    else:
-                        result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                elif dataset.MODALITY == 'VIDEO':
-                    if args.pack:
-                        logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
-                        args.pack = False
-                    packstr = 'pack' if args.pack else 'nopack'
-                    if args.nframe > 0:
-                        result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-                    else:
-                        result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                    if dataset_name in ['Video-MME', 'LongVideoBench']:
-                        subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                        result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
+                    # Handling Video Datasets. For Video Dataset, set the fps for priority
+                    if args.fps > 0:
+                        if dataset_name == 'MVBench':
+                            raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
+                        args.nframe = 0
+                    if dataset_name in ['MMBench-Video']:
+                        packstr = 'pack' if args.pack else 'nopack'
+                        if args.nframe > 0:
+                            result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                        else:
+                            result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
+                    elif dataset.MODALITY == 'VIDEO':
+                        if args.pack:
+                            logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
+                            args.pack = False
+                        packstr = 'pack' if args.pack else 'nopack'
+                        if args.nframe > 0:
+                            result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
+                        else:
+                            result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
+                        if dataset_name in ['Video-MME', 'LongVideoBench']:
+                            subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
+                            result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
                 # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
