@@ -96,7 +96,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     When launching with `--config`, args for video datasets, such as `--nframe`, `--pack`, `--use-subtitle`, `--fps`, \
         and args for API VLMs, such as `--retry`, `--verbose`, will be ignored.
 """
-    parser = argparse.ArgumentParser(description=help_msg)
+    parser = argparse.ArgumentParser(description=help_msg, formatter_class=argparse.RawTextHelpFormatter)
     # Essential Args, Setting the Names of Datasets and Models
     parser.add_argument('--data', type=str, nargs='+', help='Names of Datasets')
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
