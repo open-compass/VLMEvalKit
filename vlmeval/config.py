@@ -1,4 +1,3 @@
-from vlmeval.api.bailingmm import bailingMMAPI
 from vlmeval.vlm import *
 from vlmeval.api import *
 from functools import partial

@@ -115,8 +115,11 @@ def completed(m, d, suf):
 
 
 def DLIST(lvl):
-    lst = [x[0] for x in dataset_levels[lvl]]
-    return lst
+    if lvl in dataset_levels.keys():
+        return [x[0] for x in dataset_levels[lvl]]
+    else:
+        from vlmeval.dataset import SUPPORTED_DATASETS
+        return SUPPORTED_DATASETS
 
 
 def MLIST(lvl, size='all'):
