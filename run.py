@@ -10,9 +10,10 @@ from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
-def build_model_from_config(config):
+def build_model_from_config(cfg):
     import vlmeval.api
     import vlmeval.vlm
+    config = cp.deepcopy(cfg)
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
@@ -23,8 +24,9 @@ def build_model_from_config(config):
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
 
 
-def build_dataset_from_config(config):
+def build_dataset_from_config(cfg):
     import vlmeval.dataset
+    config = cp.deepcopy(cfg)
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.dataset, cls_name):
