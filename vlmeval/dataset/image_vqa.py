@@ -1,5 +1,7 @@
 from functools import partial
 
+import pandas as pd
+
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
@@ -382,6 +384,220 @@ class MathVision(ImageBaseDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
+
+
+class OlympiadBench(ImageBaseDataset):
+    TYPE = 'VQA_ex_prompt'
+    DATASET_URL = {
+        'OlympiadBench': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
+        'OlympiadBench_EN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_EN.tsv',
+        'OlympiadBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_CN.tsv'
+    }
+    DATASET_MD5 = {
+        'OlympiadBench': '9735ae0f0299eae1e7d07f5a7feab914',
+        'OlympiadBench_EN': '5c68e100d394351fc7049f29d4d4efed',
+        'OlympiadBench_CN': 'ea01b16788955702c79650c701e5b623'
+    }
+
+    def dump_image(self, line):
+        os.makedirs(self.img_root, exist_ok=True)
+
+        tgt_path_z = []
+        if isinstance(line['image'], list):
+            for i in range(len(line['image'])):
+                tgt_path = osp.join(self.img_root, f"{line['index']}--{i+1}.jpg")
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'][i], tgt_path)
+                tgt_path_z.append(tgt_path)
+        else:
+            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            if not read_ok(tgt_path):
+                decode_base64_to_image_file(line['image'], tgt_path)
+            tgt_path_z.append(tgt_path)
+        return tgt_path_z
+
+    def build_prompt(self, line):
+
+        from .utils.olympiadbench import get_answer_type_text, make_input
+
+        self.is_chinese = 'zh' in line['source']
+        self.is_math = 'maths' in line['source']
+        self.is_theorem_proving = 'TP' in line['source']
+
+        if self.is_chinese:
+            subject_content = '数学' if self.is_math else '物理'
+            if self.is_theorem_proving:
+                prompt = (
+                    f"以下是中国{subject_content}竞赛中的证明题。请根据题目的要求，运用逻辑推理及常用定理证明题目中的命题。"
+                    "证明过程中使用的变量和公式请使用LaTeX格式表示。"
+                )
+            else:
+                answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=True,
+                                                        multiple_answer=line['is_multiple_answer'])
+                if line['is_multiple_answer']:
+                    multiple_answer_text = '\\boxed{用英文逗号连接的多个答案}'
+                else:
+                    multiple_answer_text = '\\boxed{答案}'
+                unit_text = ''
+                if line['unit']:
+                    multiple_answer_text += '(单位)'
+                    unit_text = '，注意答案的单位不要放在\\boxed{}中'
+                prompt = (
+                    f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。'
+                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”'
+                    f'显式给出结果{unit_text}。'
+                )
+        else:
+            subject_content = 'Math' if self.is_math else 'Physics'
+            if self.is_theorem_proving:
+                prompt = (
+                    f'The following is a theorem proving problem from an International {subject_content} competition. '
+                    'Please use logical reasoning and common theorems to prove the proposition in the problem '
+                    'according to the given requirements. '
+                    'Please use LaTeX format to represent the variables and formulas used in the proof.'
+                )
+            else:
+                if line['is_multiple_answer']:
+                    multiple_answer_text = '\\boxed{multiple answers connected with commas}'
+                else:
+                    multiple_answer_text = '\\boxed{answer}'
+                unit_text = ''
+                if line['unit']:
+                    multiple_answer_text += '(unit)'
+                    unit_text = ', note that the unit of the answer should not be included in \\boxed{}'
+                answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=False,
+                                                        multiple_answer=line['is_multiple_answer'])
+                prompt = (
+                    f'The following is an open-ended problem from an International {subject_content} competition. '
+                    f'{answer_type_text}Please calculate the answer according to the given requirements and '
+                    'the information provided. Please use LaTeX format to represent the variables and formulas '
+                    'used in the solution process and results. Please end your solution with "So the final answer '
+                    f'is {multiple_answer_text}." and give the result explicitly{unit_text}.'
+                )
+
+        if self.is_math:
+            input = make_input(prompt, line['question'])
+        else:
+            if 'context' in line.keys() and str(line['context']) != 'nan':  # cannot be null
+                input = make_input(prompt, line['context'] + '\n' + line['question'])
+            else:
+                input = make_input(prompt, line['question'])
+
+        ret = [dict(type='text', value=input)]
+        tgt_path = self.dump_image(line)
+
+        ret.extend([dict(type='image', value=s) for s in tgt_path])
+
+        return ret
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.olympiadbench import MathJudger, extract_answer
+        judger = MathJudger()
+
+        suffix = eval_file.split('.')[-1]
+        name_str1 = 'judge'
+        name_str2 = 'score'
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str1}_result.xlsx')
+        score_file = eval_file.replace(f'.{suffix}', f'_{name_str2}_result.csv')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+            scorez = []
+
+            for i in tqdm(data.iterrows()):
+                line = i[1]
+                model_answer = line['prediction']
+                is_chinese = 'zh' in line['source']
+                model_answer = extract_answer(is_chinese, model_answer, is_deepseek=False)
+                answer_type = line['answer_type']
+
+                final_answer = line['final_answer'][2:-2]
+
+                if str(answer_type) != 'nan' and 'Tuple' in answer_type:
+                    judge_result = judger.judge(model_answer, final_answer)
+                else:
+                    if str(line['error']) != 'nan':
+                        if ',' in line['error']:
+                            precisions = line['error'].split(',')
+                            precisions = [float(p) if p else 1e-8 for p in precisions]
+                            judge_result = judger.judge(model_answer, final_answer, precisions)
+                        else:
+                            precision = float(line['error'])
+                            judge_result = judger.judge(model_answer, final_answer, precision)
+                    else:
+                        judge_result = judger.judge(model_answer, final_answer)
+                scorez.append(judge_result)
+
+            data['score'] = scorez
+            dump(data, result_file)
+
+        judge_file = load(result_file)
+
+        if not osp.exists(score_file):
+            name_list = ['OE_MM_maths_en_COMP', 'OE_MM_maths_zh_CEE', 'OE_MM_maths_zh_COMP', 'OE_MM_physics_en_COMP',
+                         'OE_MM_physics_zh_CEE','OE_TO_maths_en_COMP', 'OE_TO_maths_zh_CEE', 'OE_TO_maths_zh_COMP',
+                         'OE_TO_physics_en_COMP', 'OE_TO_physics_zh_CEE']
+
+            sample_list = [[] for _ in range(len(name_list))]
+            for i in judge_file.iterrows():
+                line = i[1]
+                for j in range(len(name_list)):
+                    if line['source'] == name_list[j]:
+                        sample_list[j].append(line['score'])
+
+            acc_dict = {}
+            correct_list = []
+
+            # fine-grained
+            for i in range(len(name_list)):
+                correct_num = 0
+                for j in sample_list[i]:
+                    if j:
+                        correct_num += 1
+                correct_list.append(correct_num)
+                acc = 100 * correct_num / len(sample_list[i])
+                acc_dict[name_list[i]] = [acc]
+
+            # 4 grained
+            labela = ['zh', 'en']
+            labelb = ['maths', 'physics']
+
+            grain_list = [[x,y] for x in labela for y in labelb]
+            for j in grain_list:
+                dict_name = j[0] + "_" + j[1]
+                correct_num = 0
+                full_num = 0
+                for i in range(len(name_list)):
+                    if all(k in name_list[i] for k in j):
+                        correct_num += correct_list[i]
+                        full_num += len(sample_list[i])
+                acc = 100 * correct_num / full_num
+                acc_dict[dict_name] = [acc]
+
+            # 2 grained
+            grain_list = ['maths', 'physics']
+            for j in grain_list:
+                dict_name = j
+                correct_num = 0
+                full_num = 0
+                for i in range(len(name_list)):
+                    if j in name_list[i]:
+                        correct_num += correct_list[i]
+                        full_num += len(sample_list[i])
+                acc = 100 * correct_num / full_num
+                acc_dict[dict_name] = [acc]
+
+            # AVG
+            correct_num = sum(correct_list)
+            acc = 100 * correct_num / len(judge_file)
+            acc_dict['AVG'] = [acc]
+
+            acc_pd = pd.DataFrame(acc_dict)
+            acc_pd.to_csv(score_file, index=False, encoding='gbk')
+
+        accdz = pd.read_csv(score_file)
+        return accdz
 
 
 class LLaVABench(ImageBaseDataset):

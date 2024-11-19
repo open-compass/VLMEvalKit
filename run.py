@@ -80,7 +80,7 @@ def main():
         os.makedirs(pred_root_meta, exist_ok=True)
 
         prev_pred_roots = ls(osp.join(args.work_dir, model_name), mode='dir')
-        if len(prev_pred_roots) and not args.reuse:
+        if len(prev_pred_roots) and args.reuse:
             prev_pred_roots.sort()
 
         if not osp.exists(pred_root):
@@ -146,6 +146,8 @@ def main():
                         if osp.exists(osp.join(root, result_file_base)):
                             prev_result_file = osp.join(root, result_file_base)
                             break
+                    if not args.reuse:
+                        prev_result_file = None
                     if prev_result_file is not None:
                         logger.warning(
                             f'--reuse is set, will reuse the prediction file {prev_result_file}.')
@@ -191,10 +193,11 @@ def main():
                         ignore_failed=args.ignore)
 
                 # Set the judge kwargs first before evaluation or dumping
+
                 judge_kwargs = {
                     'nproc': args.nproc,
                     'verbose': args.verbose,
-                    'retry': 3
+                    'retry': args.retry if args.retry is not None else 3
                 }
 
                 if args.retry is not None:
@@ -207,10 +210,11 @@ def main():
                     elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'],
                                    dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI',
-                                    'MIA-Bench'],
-                                   dataset_name):
+                    elif listinstr([
+                        'MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'
+                    ], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+                logger.info(judge_kwargs)
 
                 if rank == 0:
                     if dataset_name in ['MMMU_TEST']:

@@ -10,8 +10,10 @@ from .image_mcq import (
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench
 )
+
+from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
 from .mmlongbench import MMLongBench
@@ -19,7 +21,6 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 
 from .mmbench_video import MMBenchVideo
-from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
 from .tamperbench import MVTamperBench
@@ -28,6 +29,9 @@ from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
+
+from .miabench import MIABench
+from .wildvision import WildVision
 from .utils import *
 from ..smp import *
 
@@ -123,7 +127,7 @@ IMAGE_DATASET = [
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
-    MIABench
+    MIABench, OlympiadBench, WildVision
 ]
 
 VIDEO_DATASET = [
