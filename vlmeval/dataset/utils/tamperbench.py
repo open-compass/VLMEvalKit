@@ -6,6 +6,7 @@ import random
 import numbers
 import math
 import torch
+import re
 
 def get_dimension_rating(data_path, category_type='task_type'):
     data = load(data_path)
@@ -32,6 +33,10 @@ def get_dimension_rating(data_path, category_type='task_type'):
 def check_ans(pred, gt):
     flag = False
 
+    match = re.match(r'^\\answer\{(A|B)\}', pred)
+    if match:
+        pred = match.group(1)
+    pred = pred.replace('Answer:', '')
     pred_list = pred.lower().split(' ')
     pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
     gt_list = gt.lower().split(' ')
@@ -42,6 +47,8 @@ def check_ans(pred, gt):
     if pred_option.replace('.', '') in gt_option:
         flag = True
     elif gt_option in pred_option:
+        flag = True
+    elif gt in pred:
         flag = True
 
     return flag
