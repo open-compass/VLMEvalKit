@@ -174,8 +174,8 @@ Based on your observations, select the best option that accurately addresses the
                                         shutil.move(item_path, target_folder)
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            huggingface_hub.login(hf_token)
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            #huggingface_hub.login(hf_token)
+            #dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unzip_hf_zip(dataset_path)
             move_files(dataset_path)
             generate_tsv(dataset_path)
