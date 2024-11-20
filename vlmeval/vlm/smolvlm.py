@@ -153,31 +153,26 @@ class SmolVLM(BaseModel):
         }
 
         prompt, images, img_counter = 'User: Question: ', [], 1
-        # for msg in message:
-        #     if msg['type'] == 'image':
-        #         img = load_image(msg['value'])
-        #         images.append(img)
-        #         # prompt += f'<image {img_counter}>:{text_splitted_images}\n'
-        #         prompt += f'<image {img_counter}>\n'
-        #         img_counter += 1
-        # img_counter = 1
+        for msg in message:
+            if msg['type'] == 'image':
+                prompt += f'<image {img_counter}>:<image>\n'
+                img_counter += 1
+        img_counter = 1
 
         for msg in message:
             if msg['type'] == 'image':
                 img = load_image(msg['value'])
                 images.append(img)
-                prompt += f' <image {img_counter}>:<image>'
+                prompt += f' <image {img_counter}> '
                 img_counter += 1
             elif msg['type'] == 'text':
                 instruction = msg['value'].strip()
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 prompt += instruction.strip()
-        
         prompt += '<end_of_utterance>\nAssistant:'
         if 'A.' in prompt and 'B.' in prompt:
             prompt += ' Answer:'
-        
         return prompt, images
 
     def build_prompt_mathvista(self, message):
