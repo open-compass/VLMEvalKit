@@ -150,7 +150,7 @@ def main():
                             break
                         elif commit_id in root and len(ls(root)) and root != pred_root:
                             for existing_data_file in ls(root):
-                                if '.pkl' in existing_data_file:
+                                if '.pkl' in existing_data_file and dataset_name in existing_data_file:
                                     file_name = os.path.basename(existing_data_file)
                                     if file_name not in prev_pkl_file_name_list:
                                         prev_pkl_file_list.append(existing_data_file)
