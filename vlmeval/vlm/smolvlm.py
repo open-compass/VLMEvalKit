@@ -14,7 +14,7 @@ class SmolVLM(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
 
-    def __init__(self, model_path='HuggingFaceTB/SmolVLM_converted_4', **kwargs):
+    def __init__(self, model_path='HuggingFaceTB/SmolVLM-Instruct', **kwargs):
         assert osp.exists(model_path) or splitlen(model_path) == 2
         
         self.processor = AutoProcessor.from_pretrained(model_path)

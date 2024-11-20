@@ -202,7 +202,7 @@ idefics_series = {
 }
 
 smolvlm_series = {
-    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM_converted_4')
+    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct')
 }
 
 instructblip_series = {
