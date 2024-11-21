@@ -165,9 +165,6 @@ def githash(fallback='unknown', digits=8):
         sha = fallback
     return sha
 
-def timencommit():
-    return f"T{timestr('day')}_G{githash(digits=8)}"
-
 def dict_merge(dct, merge_dct):
     for k, _ in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict) and isinstance(merge_dct[k], dict)):  #noqa
