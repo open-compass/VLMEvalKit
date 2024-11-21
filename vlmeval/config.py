@@ -201,6 +201,10 @@ idefics_series = {
 
 }
 
+smolvlm_series = {
+    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct')
+}
+
 instructblip_series = {
     'instructblip_7b': partial(InstructBLIP, name='instructblip_7b'),
     'instructblip_13b': partial(InstructBLIP, name='instructblip_13b'),
@@ -354,7 +358,8 @@ model_groups = [
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
-    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series
+    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
+    smolvlm_series
 ]
 
 for grp in model_groups:
