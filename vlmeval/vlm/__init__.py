@@ -58,3 +58,4 @@ from .nvlm import NVLM
 from .vintern_chat import VinternChat
 from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
+from .smolvlm import SmolVLM

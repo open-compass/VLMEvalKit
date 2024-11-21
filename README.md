@@ -25,17 +25,16 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
-- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model, thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
+- **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
+- **[2024-11-16]** Supported **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**, a new multimodal benchmark comprising olympiad-level math and physics questions 🔥🔥🔥
+- **[2024-11-16]** Supported **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**, a new subjective multimodal benchmark derived from multi-modal arena data 🔥🔥🔥
+- **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
+- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model. And **[LongVideoBench](https://longvideobench.github.io/)**, a benchmark for long-context interleaved video-language understanding. thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** Supported **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**, the benchmark contains 1000+ Medical VQA problems, in languages of four countries: Brazil, Isarel, Japan, Spanish, as well as their English translations 🔥🔥🔥
 - **[2024-11-01]** Supported an `AUTO_SPLIT` flag (https://github.com/open-compass/VLMEvalKit/pull/566) for evaluation on low-profile GPUs. When set, the model will be automatically split into multiple GPUs (pipeline parallel) to reduce GPU memory usage (currently only support some VLMs: Qwen2-VL, Llama-3.2, LLaVA-OneVision, etc.) 🔥🔥🔥
 - **[2024-10-30]** Supported the evaluation of **[MLVU](https://github.com/JUNJIE99/MLVU)** and **[TempCompass](https://arxiv.org/abs/2403.00476v1)**. The two benchmarks will be soon incorporated into **[OpenVLM Video Leaderboard](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
 - **[2024-10-30]** Supported **[Falcon2-VLM](https://huggingface.co/tiiuae/falcon-11B-vlm)** 🔥🔥🔥
 - **[2024-10-30]** Supported **[H2OVL](https://huggingface.co/h2oai/h2ovl-mississippi-800m)**, thanks to **[smg478](https://github.com/smg478)**. The model is a light-weight VLM features two sizes: 800M and 2B 🔥🔥🔥
-- **[2024-10-30]** Supported **[LLaVA-Video](https://github.com/open-compass/VLMEvalKit/pull/549)**, thanks to **[ZhangYuanhan-AI](https://github.com/ZhangYuanhan-AI)** 🔥🔥🔥
-- **[2024-10-23]** Supported **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**, a small-scale VLM that is capable of both image generation and understanding, thanks to **[hills-code](https://github.com/hills-code)** 🔥🔥🔥
-- **[2024-10-22]** Supported **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**, a Vietnamese VLM finetuned on 10M+ Vietnamese QA pairs, thanks to **[Khang-9966](https://github.com/Khang-9966)** 🔥🔥🔥
-- **[2024-10-22]** Supported **[Ovis1.6-Llama3.2-3B](https://huggingface.co/AIDC-AI/Ovis1.6-Llama3.2-3B)**, thanks to **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
-- **[2024-10-22]** Supported **[JT-VL-Chat](https://github.com/jiutiancv/JT-VL-Chat)**, an API VLM developed by China Mobile, thanks to **[jiutiancv](https://github.com/jiutiancv)** 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -74,11 +73,13 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**TaskMeAnything ImageQA Random**](https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random)+ | TaskMeAnything_v1_imageqa_random | MCQ  | [**MMMB and Multilingual MMBench**](https://sun-hailong.github.io/projects/Parrot/)+ | MMMB\_[ar/cn/en/pt/ru/tr]<br>MMBench_dev\_[ar/cn/en/pt/ru/tr]<br>MMMB<br>MTL_MMBench_DEV<br>PS: MMMB & MTL_MMBench_DEV <br>are **all-in-one** names for 6 langs | MCQ  |
 | [**A-OKVQA**](https://arxiv.org/abs/2206.01718)+ | A-OKVQA | MCQ | [**MuirBench**](https://muirbench.github.io)+ | MUIRBench | MCQ |
 | [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**TableVQABench**](https://arxiv.org/abs/2404.19205)+ | TableVQABench | VQA |
-| [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN] | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
+| [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN]<br/>[MME-RealWorld-Lite](https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Lite) | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
 | [**MathVerse**](https://mathverse-cuhk.github.io/)+ | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA | [**AMBER**](https://github.com/junyangwang0410/AMBER)+ | AMBER | Y/N |
 | [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+ | CRPE_[EXIST/RELATION] | VQA | **[MMSearch](https://mmsearch.github.io/)**$$^1$$ | - | **-** |
 | **[R-Bench](https://arxiv.org/abs/2410.05474)**+ | R-Bench-[Dis/Ref] | MCQ | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+ | WorldMedQA-V | MCQ |
-| **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA |  |  |  |
+| **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
+| **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
+| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA |  |  |  |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
@@ -94,9 +95,9 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 
 | Dataset                                              | Dataset Names (for run.py) | Task | Dataset | Dataset Names (for run.py) | Task |
 | ---------------------------------------------------- | -------------------------- | ---- | ------- | -------------------------- | ---- |
-| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  | [**Video-MME**](https://video-mme.github.io/)        |    Video-MME                        | MCQ     |
-| [**MVBench**](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md)| MVBench/MVBench_MP4              | MCQ  | **[MLVU](https://github.com/JUNJIE99/MLVU)** | MLVU | MCQ & VQA |
-| **[TempCompass](https://arxiv.org/abs/2403.00476)** | TempCompass | MCQ & Y/N & Caption |  |  |  |
+| **[MMBench-Video](https://mmbench-video.github.io)** | MMBench-Video              | VQA  | **[Video-MME](https://video-mme.github.io/)**        |    Video-MME                        | MCQ     |
+| **[MVBench](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md)**| MVBench/MVBench_MP4              | MCQ  | **[MLVU](https://github.com/JUNJIE99/MLVU)** | MLVU | MCQ & VQA |
+| **[TempCompass](https://arxiv.org/abs/2403.00476)** | TempCompass | MCQ & Y/N & Caption | **[LongVideoBench](https://longvideobench.github.io/)** | LongVideoBench | MCQ |
 
 ### Supported Models
 
@@ -127,7 +128,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 | [**H2OVL-Mississippi-[0.8B/2B]**](https://huggingface.co/h2oai/h2ovl-mississippi-2b)🚅🎞️ | **[Pixtral-12B](https://huggingface.co/mistralai/Pixtral-12B-2409)**🎞️ | **[Falcon2-VLM-11B](https://huggingface.co/tiiuae/falcon-11B-vlm)**🚅 |
 | **[MiniMonkey](https://huggingface.co/mx262/MiniMonkey)**🚅🎞️  | **[LLaVA-OneVision](https://huggingface.co/lmms-lab/llava-onevision-qwen2-72b-ov-sft)**🚅🎞️ | **[LLaVA-Video](https://huggingface.co/collections/lmms-lab/llava-video-661e86f5e8dabc3ff793c944)**🚅🎞️ | **[Aquila-VL-2B](https://huggingface.co/BAAI/Aquila-VL-2B-llava-qwen)**🚅🎞️ |
 | [**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ | **[InternVL2 Series](https://huggingface.co/OpenGVLab/InternVL2-8B)** 🚅🎞️ | **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**🚅🎞️ | **[molmoE-1B/molmo-7B/molmo-72B](https://huggingface.co/allenai/Molmo-7B-D-0924)**🚅 |
-| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ |  **[Aria](https://huggingface.co/rhymes-ai/Aria)**🚅🎞️                                                       |
+| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ |  **[Aria](https://huggingface.co/rhymes-ai/Aria)**🚅🎞️ |
 
 
 🎞️: Support multiple images as inputs.

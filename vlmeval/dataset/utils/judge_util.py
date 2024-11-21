@@ -19,6 +19,7 @@ def build_judge(**kwargs):
             'chatgpt-1106': 'gpt-3.5-turbo-1106',
             'chatgpt-0125': 'gpt-3.5-turbo-0125',
             'gpt-4o': 'gpt-4o-2024-05-13',
+            'gpt-4o-0806': 'gpt-4o-2024-08-06',
             'gpt-4o-mini': 'gpt-4o-mini-2024-07-18',
         }
         model_version = model_map[model]
@@ -32,7 +33,7 @@ DEBUG_MESSAGE = """
 To debug the OpenAI API, you can try the following scripts in python:
 ```python
 from vlmeval.api import OpenAIWrapper
-model = OpenAIWrapper('gpt-4-1106-preview', verbose=True)
+model = OpenAIWrapper('gpt-4o', verbose=True)
 msgs = [dict(type='text', value='Hello!')]
 code, answer, resp = model.generate_inner(msgs)
 print(code, answer, resp)

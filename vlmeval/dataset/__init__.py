@@ -10,9 +10,10 @@ from .image_mcq import (
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse,
-    QSpatial
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial
 )
+
+from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
 from .mmlongbench import MMLongBench
@@ -20,13 +21,16 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 
 from .mmbench_video import MMBenchVideo
-from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
+
+from .miabench import MIABench
+from .wildvision import WildVision
+from .mmmath import MMMath
 from .utils import *
 from ..smp import *
 
@@ -121,8 +125,8 @@ IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
-    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse,
-    QSpatial, NaturalBenchDataset
+    GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
+    MIABench, OlympiadBench, WildVision, MMMath, QSpatial
 ]
 
 VIDEO_DATASET = [
@@ -166,6 +170,9 @@ def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
 
 
 def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
+    if dataset is None:
+        warnings.warn(f'Dataset is not specified, will treat modality as {default}. ')
+        return default
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
             if hasattr(cls, 'MODALITY'):

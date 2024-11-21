@@ -108,6 +108,8 @@ class Aria(BaseModel):
             prompt += "\nAnswer with the option's letter from the given choices directly."
         elif listinstr(['MVBench'], dataset):
             prompt = prompt.replace('Best option:(', '')
+            system_prompt = 'Carefully watch the video and pay attention to the cause and sequence of events, the detail and movement of objects, and the action and pose of persons. Based on your observations, select the best option that accurately addresses the question.\n'  # noqa: E501
+            prompt = prompt.replace(system_prompt, '')
 
         return prompt
 
@@ -156,6 +158,17 @@ class Aria(BaseModel):
         prompt = '<|im_start|>user\n'
         images = []
         last_message_modality = "text"
+
+        if listinstr(['MLVU', 'TempCompass', 'MVBench'], dataset):  # re-arrange the data
+            new_message = []
+            for s in message:
+                if s['type'] == 'image':
+                    new_message.append(s)
+            for s in message:
+                if s['type'] == 'text':
+                    new_message.append(s)
+            message = new_message
+
         for s in message:
             if s['type'] == 'image':
                 prompt += '<fim_prefix><|img|><fim_suffix>'
