@@ -9,8 +9,8 @@
 [English](/README.md) | 简体中文 | [日本語](/docs/ja/README_ja.md)
 
 <a href="https://rank.opencompass.org.cn/leaderboard-multimodal">🏆 OpenCompass 排行榜 </a> •
-<a href="#-datasets-models-and-evaluation-results">📊 数据集和模型 </a> •
 <a href="#%EF%B8%8F-quickstart">🏗️ 快速开始 </a> •
+<a href="#-datasets-models-and-evaluation-results">📊 数据集和模型 </a> •
 <a href="#%EF%B8%8F-development-guide">🛠️ 开发指南 </a> •
 <a href="#-the-goal-of-vlmevalkit">🎯 我们的目标 </a> •
 <a href="#%EF%B8%8F-citation">🖊️ 引用 </a>
@@ -25,6 +25,9 @@
 
 ## 🆕 更新
 
+- **[2024-11-21]** 集成了一个新的配置系统，以实现更灵活的评估设置。查看[文档](/docs/zh-CN/ConfigSystem.md)或运行`python run.py --help`了解更多详情 🔥🔥🔥
+- **[2024-11-21]** 支持 **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**，一个用于定量空间推理的多模态基准（例如，确定大小/距离），感谢 **[andrewliao11](https://github.com/andrewliao11)** 提供官方支持 🔥🔥🔥
+- **[2024-11-21]** 支持 **[MM-Math](https://github.com/kge-sun/mm-math)**，一个包含约6K初中多模态推理数学问题的新多模态数学基准。GPT-4o-20240806在该基准上达到了22.5%的准确率 🔥🔥🔥
 - **[2024-11-16]** 支持 **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**，一个多模态基准，包含奥林匹克级别的数学和物理问题 🔥🔥🔥
 - **[2024-11-16]** 支持 **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**，一个基于多模态竞技场数据的主观多模态基准 🔥🔥🔥
 - **[2024-11-13]** 支持 **[MIA-Bench](https://arxiv.org/abs/2407.01509)**，一个多模态指令跟随基准 🔥🔥🔥
@@ -32,9 +35,10 @@
 - **[2024-11-04]** 支持 **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**，该基准包含 1000 多个医学 VQA 问题，涵盖巴西、以色列、日本、西班牙等四个国家的语言，以及它们的英文翻译 🔥🔥🔥
 - **[2024-11-01]** 支持 `AUTO_SPLIT` 标志 (https://github.com/open-compass/VLMEvalKit/pull/566)，用于在低配置 GPU 上进行评估。设置后，模型将自动拆分到多个 GPU（流水线并行）以减少 GPU 内存使用（目前仅支持部分 VLMs：Qwen2-VL、Llama-3.2、LLaVA-OneVision 等） 🔥🔥🔥
 - **[2024-10-30]** 支持评估 **[MLVU](https://github.com/JUNJIE99/MLVU)** 和 **[TempCompass](https://arxiv.org/abs/2403.00476v1)**。这两个基准将很快被纳入 **[OpenVLM 视频排行榜](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
-- **[2024-10-30]** 支持 **[Falcon2-VLM](https://huggingface.co/tiiuae/falcon-11B-vlm)** 🔥🔥🔥
-- **[2024-10-30]** 支持 **[H2OVL](https://huggingface.co/h2oai/h2ovl-mississippi-800m)**，感谢 **[smg478](https://github.com/smg478)**。该模型是一个轻量级 VLM，具有两种规模：800M 和 2B 🔥🔥🔥
-- **[2024-10-30]** 支持 **[LLaVA-Video](https://github.com/open-compass/VLMEvalKit/pull/549)**，感谢 **[ZhangYuanhan-AI](https://github.com/ZhangYuanhan-AI)** 🔥🔥🔥
+
+## 🏗️ 快速开始 <a id="quickstart"></a>
+
+请参阅[**快速开始**](/docs/zh-CN/get_started/Quickstart.md)获取入门指南。
 
 ## 📊 评测结果，支持的数据集和模型 <a id="data-model-results"></a>
 
@@ -154,10 +158,6 @@ print(ret)  # 这张图片上有一个带叶子的红苹果
 ret = model.generate(['assets/apple.jpg', 'assets/apple.jpg', 'How many apples are there in the provided images? '])
 print(ret)  # 提供的图片中有两个苹果
 ```
-
-## 🏗️ 快速开始 <a id="quickstart"></a>
-
-请参阅[**快速开始**](/docs/zh-CN/get_started/Quickstart.md)获取入门指南。
 
 ## 🛠️ 开发指南 <a id="development"></a>
 
