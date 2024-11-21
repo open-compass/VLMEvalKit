@@ -52,7 +52,7 @@ def main():
         if not args.reuse:
             logger.warning('--reuse is not set, will start the evaluation from scratch')
         else:
-            logger.warning('--reuse is set, will reuse the latest prediction files')
+            logger.warning('--reuse is set, will reuse the latest prediction & temporary pickle files')
 
     if 'MMEVAL_ROOT' in os.environ:
         args.work_dir = os.environ['MMEVAL_ROOT']
@@ -73,8 +73,9 @@ def main():
 
     for _, model_name in enumerate(args.model):
         model = None
+        date, commit_id = timestr('day'), githash(digits=8)
+        eval_id = f"T{date}_G{commit_id}"
 
-        eval_id = timencommit()
         pred_root = osp.join(args.work_dir, model_name, eval_id)
         pred_root_meta = osp.join(args.work_dir, model_name)
         os.makedirs(pred_root_meta, exist_ok=True)
@@ -142,17 +143,32 @@ def main():
 
                 if rank == 0 and len(prev_pred_roots):
                     prev_result_file = None
+                    prev_pkl_file_list = []
                     for root in prev_pred_roots[::-1]:
                         if osp.exists(osp.join(root, result_file_base)):
                             prev_result_file = osp.join(root, result_file_base)
                             break
+                        elif commit_id in root and len(ls(root)) and root != pred_root:
+                            temp_files = ls(root, match=[dataset_name, '.pkl'])
+                            if len(temp_files):
+                                prev_pkl_file_list.extend(temp_files)
+                                break
                     if not args.reuse:
                         prev_result_file = None
+                        prev_pkl_file_list = []
                     if prev_result_file is not None:
                         logger.warning(
                             f'--reuse is set, will reuse the prediction file {prev_result_file}.')
                         if prev_result_file != result_file:
                             shutil.copy(prev_result_file, result_file)
+                    elif len(prev_pkl_file_list):
+                        for fname in prev_pkl_file_list:
+                            target_path = osp.join(pred_root, osp.basename(fname))
+                            if not osp.exists(target_path):
+                                shutil.copy(fname, target_path)
+                                logger.info(f'--reuse is set, will reuse the prediction pickle file {org_file_path}.')
+                            else:
+                                logger.warning(f'File already exists: {target_path}')
 
                 if world_size > 1:
                     dist.barrier()
