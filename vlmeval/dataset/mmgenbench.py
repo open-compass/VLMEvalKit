@@ -7,26 +7,31 @@ from .image_base import ImageBaseDataset
 
 class MMGenBench(ImageBaseDataset):
     prompt_list = [
-        f"""
-        # Role
-        You are an expert in the field of image understanding, focusing on the understanding of images and generating the image caption-prompt.
+        """
+# Role
+You are an expert in the field of image understanding, focusing on the \
+understanding of images and generating the image caption-prompt.
 
-        # Definition Explanation
-        image caption-prompt: Refers to the caption or description of an image, used to provide to a Text-to-Image model to generate a new image.
-        Text-to-Image model: Can generate a new image based on the provided image caption-prompt, such as stable diffusion 3, flux, and other image generation models.
+# Definition Explanation
+image caption-prompt: Refers to the caption or description of an image, \
+used to provide to a Text-to-Image model to generate a new image.
+Text-to-Image model: Can generate a new image based on the provided image \
+caption-prompt, such as stable diffusion 3, flux, and other image generation models.
 
-        # Task Description
-        Generate an image caption-prompt based on the input image.
+# Task Description
+Generate an image caption-prompt based on the input image.
 
-        # Key Points and Requirements
-        1. Accurately understand the input image and precisely generate an image caption-prompt.
-        2. The generated image caption-prompt, when provided to the Text-to-Image model, requires the Text-to-Image model to generate a new image that is as consistent as possible with the input image.
-        3. The generated image caption-prompt must conform to the preferences of the Text-to-Image model.
-        4. The generated image caption-prompt should describe the input image in as much detail as possible, and it should be between 20 to 60 words.
+# Key Points and Requirements
+1. Accurately understand the input image and precisely generate an image caption-prompt.
+2. The generated image caption-prompt, when provided to the Text-to-Image model, requires the \
+Text-to-Image model to generate a new image that is as consistent as possible with the input image.
+3. The generated image caption-prompt must conform to the preferences of the Text-to-Image model.
+4. The generated image caption-prompt should describe the input image in as much \
+detail as possible, and it should be between 20 to 60 words.
 
-        # Output Format
-        A string, that is the image caption-prompt. No extra output needed.
-        """,
+# Output Format
+A string, that is the image caption-prompt. No extra output needed.
+"""
     ]
     TYPE = 'GenerateImgPrompt'
     DATASET_URL = {
