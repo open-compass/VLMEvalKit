@@ -6,6 +6,7 @@ from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.inference_mt import infer_data_job_mt
+from vlmeval.prism_inference import prism_infer_data_job
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
@@ -122,6 +123,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
+
+    parser.add_argument('--prism', type=int, default=0)
+    parser.add_argument('--model2', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
     return args
@@ -281,6 +285,23 @@ def main():
                     model = model_name  # which is only a name
 
                 # Perform the Inference
+
+                if args.prism == 1:
+                    model2 = args.model2[0]
+                    model_name2 = model2
+                    model, model2 = prism_infer_data_job(
+                        model,
+                        model2,
+                        work_dir=pred_root,
+                        model_name_fronted=model_name,
+                        model_name_backend=model_name2,
+                        dataset=dataset,
+                        verbose=args.verbose,
+                        api_nproc=args.nproc,
+                        ignore_failed=args.ignore
+                    )
+
+
                 if dataset.MODALITY == 'VIDEO':
                     model = infer_data_job_video(
                         model,
