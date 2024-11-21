@@ -56,6 +56,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
     ```json
     {
+        "mode":{
+            "use_prism": 1
+        },
         "model": {
             "GPT4o_20240806_T00_HIGH": {
                 "class": "GPT4V",
@@ -123,9 +126,6 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
-
-    parser.add_argument('--prism', type=int, default=0)
-    parser.add_argument('--model2', type=str, nargs='+', required=True)
 
     args = parser.parse_args()
     return args
@@ -286,21 +286,20 @@ def main():
 
                 # Perform the Inference
 
-                if args.prism == 1:
-                    model2 = args.model2[0]
-                    model_name2 = model2
-                    model, model2 = prism_infer_data_job(
-                        model,
-                        model2,
-                        work_dir=pred_root,
-                        model_name_fronted=model_name,
-                        model_name_backend=model_name2,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.nproc,
-                        ignore_failed=args.ignore
-                    )
-
+                # if args.prism == 1:
+                #     model2 = args.model2[0]
+                #     model_name2 = model2
+                #     model, model2 = prism_infer_data_job(
+                #         model,
+                #         model2,
+                #         work_dir=pred_root,
+                #         model_name_fronted=model_name,
+                #         model_name_backend=model_name2,
+                #         dataset=dataset,
+                #         verbose=args.verbose,
+                #         api_nproc=args.nproc,
+                #         ignore_failed=args.ignore
+                #     )
 
                 if dataset.MODALITY == 'VIDEO':
                     model = infer_data_job_video(
