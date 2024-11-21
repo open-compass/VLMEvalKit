@@ -25,6 +25,7 @@ We always welcome users' PRs (Pull Requests) and Issues to improve VLMEvalKit!
    :caption: Advanced Tutorial
 
    Development.md
+   ConfigSystem.md
 
 .. _Other Notes:
 .. toctree::

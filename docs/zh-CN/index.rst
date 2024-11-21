@@ -33,6 +33,7 @@ VLMEvalKit 上手路线
    :caption: 进阶教程
 
    Development.md
+   ConfigSystem.md
 
 .. .. _其他说明:
 .. .. toctree::
