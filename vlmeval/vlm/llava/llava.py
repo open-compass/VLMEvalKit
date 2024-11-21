@@ -796,6 +796,7 @@ class LLaVA_OneVision_HF(BaseModel):
         self.video_kwargs = kwargs.get("video_kwargs", {})
         self.force_sample = self.video_kwargs.get("force_sample", False)
         self.nframe = kwargs.get("nframe", 8)
+        self.fps = 1
 
     def generate_inner_image(self, message, dataset=None):
         content, images = "", []
