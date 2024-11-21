@@ -25,6 +25,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
 - **[2024-11-16]** Supported **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**, a new multimodal benchmark comprising olympiad-level math and physics questions 🔥🔥🔥
 - **[2024-11-16]** Supported **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**, a new subjective multimodal benchmark derived from multi-modal arena data 🔥🔥🔥
 - **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
@@ -34,7 +35,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-10-30]** Supported the evaluation of **[MLVU](https://github.com/JUNJIE99/MLVU)** and **[TempCompass](https://arxiv.org/abs/2403.00476v1)**. The two benchmarks will be soon incorporated into **[OpenVLM Video Leaderboard](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
 - **[2024-10-30]** Supported **[Falcon2-VLM](https://huggingface.co/tiiuae/falcon-11B-vlm)** 🔥🔥🔥
 - **[2024-10-30]** Supported **[H2OVL](https://huggingface.co/h2oai/h2ovl-mississippi-800m)**, thanks to **[smg478](https://github.com/smg478)**. The model is a light-weight VLM features two sizes: 800M and 2B 🔥🔥🔥
-- **[2024-10-30]** Supported **[LLaVA-Video](https://github.com/open-compass/VLMEvalKit/pull/549)**, thanks to **[ZhangYuanhan-AI](https://github.com/ZhangYuanhan-AI)** 🔥🔥🔥
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -78,7 +78,8 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 | [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+ | CRPE_[EXIST/RELATION] | VQA | **[MMSearch](https://mmsearch.github.io/)**$$^1$$ | - | **-** |
 | **[R-Bench](https://arxiv.org/abs/2410.05474)**+ | R-Bench-[Dis/Ref] | MCQ | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+ | WorldMedQA-V | MCQ |
 | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
-| **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)** | OlympiadBench | VQA |
+| **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
+| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA |  |  |  |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
