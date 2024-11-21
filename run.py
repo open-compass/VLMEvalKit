@@ -230,7 +230,8 @@ def main():
                         'MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'
                     ], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-                logger.info(judge_kwargs)
+                if rank == 0:
+                    logger.info(judge_kwargs)
 
                 if rank == 0:
                     if dataset_name in ['MMMU_TEST']:
