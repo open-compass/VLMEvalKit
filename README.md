@@ -25,6 +25,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-11-22]** Supported **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)**, a multimodal math benchmark comprising of 501 SEED problems and 10 variants generated based on random seeds. The benchmark can be used to measure the robustness of MLLMs in multi-modal math solving 🔥🔥🔥
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
 - **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks **[andrewliao11](https://github.com/andrewliao11)**  for providing the official support 🔥🔥🔥
 - **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
@@ -34,7 +35,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model. And **[LongVideoBench](https://longvideobench.github.io/)**, a benchmark for long-context interleaved video-language understanding. thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** Supported **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**, the benchmark contains 1000+ Medical VQA problems, in languages of four countries: Brazil, Isarel, Japan, Spanish, as well as their English translations 🔥🔥🔥
 - **[2024-11-01]** Supported an `AUTO_SPLIT` flag (https://github.com/open-compass/VLMEvalKit/pull/566) for evaluation on low-profile GPUs. When set, the model will be automatically split into multiple GPUs (pipeline parallel) to reduce GPU memory usage (currently only support some VLMs: Qwen2-VL, Llama-3.2, LLaVA-OneVision, etc.) 🔥🔥🔥
-- **[2024-10-30]** Supported the evaluation of **[MLVU](https://github.com/JUNJIE99/MLVU)** and **[TempCompass](https://arxiv.org/abs/2403.00476v1)**. The two benchmarks will be soon incorporated into **[OpenVLM Video Leaderboard](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
 
 ## 🏗️ QuickStart
 
@@ -83,7 +83,7 @@ See [[QuickStart](/docs/en/get_started/Quickstart.md) | [快速开始](/docs/zh-
 | **[R-Bench](https://arxiv.org/abs/2410.05474)**+ | R-Bench-[Dis/Ref] | MCQ | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+ | WorldMedQA-V | MCQ |
 | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
 | **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
-| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA |  |  |  |
+| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA | **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)** | DynaMath | VQA |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 

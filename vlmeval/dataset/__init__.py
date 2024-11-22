@@ -31,6 +31,7 @@ from .video_concat_dataset import ConcatVideoDataset
 from .miabench import MIABench
 from .wildvision import WildVision
 from .mmmath import MMMath
+from .dynamath import Dynamath
 from .utils import *
 from ..smp import *
 
@@ -126,7 +127,7 @@ IMAGE_DATASET = [
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
-    MIABench, OlympiadBench, WildVision, MMMath, QSpatial
+    MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath
 ]
 
 VIDEO_DATASET = [
