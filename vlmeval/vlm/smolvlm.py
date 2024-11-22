@@ -4,8 +4,6 @@ import warnings
 from .base import BaseModel
 from ..smp import splitlen
 from PIL import Image
-from transformers.image_utils import load_image
-from transformers import AutoProcessor, Idefics3ForConditionalGeneration
 
 import os
 import math
@@ -16,6 +14,7 @@ class SmolVLM(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='HuggingFaceTB/SmolVLM-Instruct', **kwargs):
+        from transformers import AutoProcessor, Idefics3ForConditionalGeneration
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.processor = AutoProcessor.from_pretrained(model_path)
@@ -63,6 +62,7 @@ class SmolVLM(BaseModel):
         return generated_text.strip()
 
     def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False):
+        from transformers.image_utils import load_image
         prompt, images = 'User:', []
         for msg in message:
             if msg['type'] == 'image':
@@ -79,6 +79,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_puremcq(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             '\nOptions:': '\nChoices:',
             'Please select the correct answer from the options above.': 'Answer with the letter.',
@@ -99,6 +100,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_mt(self, message):
+        from transformers.image_utils import load_image
         prompt, images = '', []
         for msg in message:
             if msg['role'] == 'user':
@@ -115,6 +117,7 @@ class SmolVLM(BaseModel):
         return prompt + 'Assistant: '
 
     def build_prompt_mmbench(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             '\nOptions:': '\nChoices:',
             'Please select the correct answer from the options above.': 'Answer with a letter.',
@@ -142,6 +145,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_mmmu(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             'Question:': '',
             'Please select the correct answer from the options above.': 'Answer with the letter.',
@@ -172,6 +176,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_mathvista(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             '(A) ': 'A. ',
             '(B) ': 'B. ',
