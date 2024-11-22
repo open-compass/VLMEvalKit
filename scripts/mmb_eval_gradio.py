@@ -1,5 +1,5 @@
 from vlmeval.smp import *
-from vlmeval.evaluate.multiple_choice import multiple_choice_eval
+from vlmeval.tools import EVAL
 import gradio as gr
 
 HEADER = """
@@ -47,10 +47,14 @@ def determine_dataset(eval_file):
     def cn_ratio(data):
         iscn = [cn_string(x) for x in data['question']]
         return np.mean(iscn)
-    if len(data) < 2500 and 'l2-category' not in data:
+    max_ind = np.max([int(x) for x in data['index'] if int(x) < 1e5])
+    if max_ind < 1000 and 'l2-category' not in data:
         return 'CCBench' if cn_ratio(data) > 0.5 else "Unknown" 
-    else:
+    elif max_ind < 3000 :
         return 'MMBench_CN' if cn_ratio(data) > 0.5 else "MMBench"
+    else:
+        return 'MMBench_CN_V11' if cn_ratio(data) > 0.5 else "MMBench_V11"
+
     
 def reformat_acc(acc):
     splits = set(acc['split'])
@@ -78,7 +82,7 @@ def evaluate(file):
     ret = f"Evaluation ID: {eval_id}\n"
     timestamp = datetime.datetime.now().strftime('%Y.%m.%d  %H:%M:%S')
     ret += f'Evaluation Timestamp: {timestamp}\n'
-    acc = multiple_choice_eval(eval_file, dataset=dataset, model='exact_matching')
+    acc = EVAL(dataset, eval_file)
     nacc = reformat_acc(acc).round(1)
     return ret, nacc
 

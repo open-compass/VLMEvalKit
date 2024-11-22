@@ -371,6 +371,7 @@ def EVAL(dataset_name, data_file):
         if len(eval_results) < len(eval_results.columns):
             eval_results = eval_results.T
         logger.info('\n' + tabulate(eval_results))
+    return eval_results
 
 
 def cli():
