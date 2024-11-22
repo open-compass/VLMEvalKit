@@ -142,7 +142,7 @@ def main():
 
     if rank == 0:
         if not args.reuse:
-            logger.warning('--reuse is not set, will start the evaluation from scratch')
+            logger.warning('--reuse is not set, will not reuse previous (before one day) temporary files')
         else:
             logger.warning('--reuse is set, will reuse the latest prediction & temporary pickle files')
 
@@ -270,7 +270,7 @@ def main():
                             target_path = osp.join(pred_root, osp.basename(fname))
                             if not osp.exists(target_path):
                                 shutil.copy(fname, target_path)
-                                logger.info(f'--reuse is set, will reuse the prediction pickle file {org_file_path}.')
+                                logger.info(f'--reuse is set, will reuse the prediction pickle file {fname}.')
                             else:
                                 logger.warning(f'File already exists: {target_path}')
 
