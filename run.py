@@ -6,7 +6,6 @@ from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.inference_mt import infer_data_job_mt
-from vlmeval.prism_inference import prism_infer_data_job
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 

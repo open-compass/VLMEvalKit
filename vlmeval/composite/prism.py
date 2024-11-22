@@ -33,6 +33,22 @@ mapping.update(gpt_version_map)
 
 #mapping.update(reasoning_mapping)
 
+prompt_human1 = 'Describe the fine-grained content of the image, including scenes, objects, relationships, instance location, and any text present.'
+prompt_human2 = 'Describe the fine-grained content of the image, including scenes, objects, relationships, instance location, background and any text present. Please skip generating statements for non-existent contents and describe all you see. '
+prompt_gpt1 = 'Given the image below, please provide a detailed description of what you see.'
+prompt_gpt2 = 'Analyze the image below and describe the main elements and their relationship.'
+prompt_cot = 'Describe the fine-grained content of the image, including scenes, objects, relationships, instance location, and any text present. Let\'s think step by step.'
+prompt_decompose = 'Decompose the image into several parts and describe the fine-grained content of the image part by part, including scenes, objects, relationships, instance location, and any text present.'
+
+genric_prompt_mapping = {
+    'generic':prompt_human1,
+    'human1':prompt_human1,
+    'gpt1':prompt_gpt1,
+    'gpt2':prompt_gpt2,
+    'human2':prompt_human2,
+    'cot': prompt_cot,
+    'decompose': prompt_decompose,
+}
 
 
 class Prism():
@@ -43,22 +59,22 @@ class Prism():
 
         self.model_name_fronted = self.config['model']['fronted']['model']
         self.model_name_backend = self.config['model']['backend']['model']
+        self.fronted_prompt_type = self.config['model']['fronted']['prompt_type']
 
         self.model_fronted = supported_VLM[self.model_name_fronted]() if isinstance(self.model_name_fronted, str) else None
         self.model_backend = Reasoning(model=self.model_name_backend)
 
 
     def set_dump_image(self, dump_image):
-        pass
+        if hasattr(self.model_fronted, 'set_dump_image'):
+            self.model_fronted.set_dump_image(dump_image)
 
     def generate(self, message, dataset=None):
-        breakpoint()
-        # pre process
-        if hasattr(self.model_fronted, 'set_dump_image'):
-            self.model_fronted.set_dump_image(dataset.dump_image)
 
         # struct prompt
         question = message[1]['value']
+        prompt_fronted = self.build_fronted_prompt()
+        message[1]['value'] = prompt_fronted
 
         #generate description
         is_api = getattr(self.model_fronted, 'is_api', False)
@@ -68,8 +84,7 @@ class Prism():
             response_fronted = self.model_fronted.generate(message=message, dataset=dataset)
 
         print(response_fronted)
-        response_backend = self.model_backend.generate(response_fronted, question)
-        print(response_backend)
+        response_backend = self.model_backend.generate(question, response_fronted)
 
         return response_backend
 
@@ -81,20 +96,19 @@ class Prism():
 
         return result
 
-    def use_custom_prompt(self, dataset):
+    def build_fronted_prompt(self):
 
-        pass
+        prompt = genric_prompt_mapping[self.fronted_prompt_type]
 
-    def build_prompt(self, line, dataset):
+        return prompt
 
-        pass
 
 
 class Reasoning:
     def __init__(self, model):
         self.model = LLMWrapper(model)
 
-    def generate(self, des, question):
+    def generate(self, question, des):
         prompt = build_infer_prompt_external(question, des)
         return self.model.generate(prompt)
 
