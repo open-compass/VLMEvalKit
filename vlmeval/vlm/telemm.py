@@ -51,7 +51,6 @@ class TeleMMAPI(BaseAPI):
         image_b64 = None
         for msg in msgs_raw:
             if msg['type'] == 'image' and not image_b64:
-                print(msg['value'])
                 image_b64 = encode_image_to_base64_PNG(msg['value'])
                 message['content'].append({
                     'image_url': {'url': image_b64},
