@@ -94,6 +94,8 @@ api_models = {
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
+    # TeleMM
+    'TeleMM': partial(TeleMM, model='TeleAI/TeleMM', frequency_penalty=0, retry=10)
 }
 
 mmalaya_series = {
