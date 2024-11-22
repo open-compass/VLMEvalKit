@@ -50,6 +50,11 @@ def parse_answer(answer, answer_type="multiple choice"):
         if len(answer) == 1:
             return True, answer.upper()
         else:
+            in_flag = [ch in answer.upper() for ch in 'ABCDE']
+            if sum(in_flag) == 1:
+                for ch in 'ABCDE':
+                    if ch in answer.upper():
+                        return True, ch
             return False, None
     else:
         return True, answer
@@ -76,8 +81,8 @@ def DynaMath_auxeval(model, line):
                 "should be formatted as three-digit floating-point numbers."
             )
         prompt = f"Free-form answer: {pred}\nInstruction: {inst}"
-        response = model.generate(prompt)
-        retry = 2
+        response = pred
+        retry = 3
         succeed, short_answer = parse_answer(response, line['answer_type'])
         while not succeed and retry > 0:
             response = model.generate(prompt)
