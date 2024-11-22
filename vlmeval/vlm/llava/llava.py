@@ -7,8 +7,6 @@ from ..base import BaseModel
 from ...smp import *
 from ...dataset import DATASET_TYPE, DATASET_MODALITY
 import copy
-from transformers import pipeline, AutoProcessor
-from transformers import LlavaOnevisionForConditionalGeneration
 import requests
 
 
@@ -787,6 +785,7 @@ class LLaVA_OneVision_HF(BaseModel):
     IMAGE_TOKEN_INDEX = -200
 
     def __init__(self, model_path="llava-hf/llava-onevision-qwen2-0.5b-ov-hf", **kwargs):
+        from transformers import AutoProcessor, LlavaOnevisionForConditionalGeneration
         assert model_path is not None, "Model path must be provided."
         self.model = LlavaOnevisionForConditionalGeneration.from_pretrained(
             model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
