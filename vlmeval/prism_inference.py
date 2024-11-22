@@ -3,7 +3,7 @@ import torch.distributed as dist
 from vlmeval.config import supported_VLM
 from vlmeval.utils import track_progress_rich
 from vlmeval.smp import *
-from vlmeval.api.prism_llm import Reasoning
+#from vlmeval.api.prism_llm import Reasoning
 
 import os
 

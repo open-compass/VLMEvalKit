@@ -1,3 +1,5 @@
+import torch
+import re
 from vlmeval.api import OpenAIWrapper
 
 
@@ -30,6 +32,54 @@ mapping.update(gpt_version_map)
 
 #mapping.update(reasoning_mapping)
 
+
+
+class Prism():
+
+    def __init__(self, supported_VLM, **kwargs):
+        self.supported_VLM = supported_VLM
+        self.config = kwargs
+
+        self.model_name_fronted = self.config['model']['fronted']['model']
+        self.model_name_backend = self.config['model']['backend']['model']
+
+        self.model_fronted = supported_VLM[self.model_name_fronted]() if isinstance(self.model_name_fronted, str) else None
+        self.model_backend = Reasoning(model=self.model_name_backend)
+
+
+    def set_dump_image(self, dump_image):
+        pass
+
+    def generate(self, message, dataset=None):
+
+        # struct prompt
+        question = message[1]['value']
+
+        #generate description
+        is_api = getattr(self.model_fronted, 'is_api', False)
+        if is_api:
+            response = self.fronted_api()
+        else:
+            response = self.model_fronted.generate(message=message, dataset=dataset)
+
+        print(response)
+
+
+
+        breakpoint()
+        pass
+
+    def fronted_api(self):
+
+        pass
+
+    def use_custom_prompt(self, dataset):
+
+        pass
+
+    def build_prompt(self, line, dataset):
+
+        pass
 
 
 class Reasoning:
@@ -97,5 +147,3 @@ class LLMWrapper:
         api_models = gpt_models.copy()
         #api_models.extend(list(reasoning_mapping.keys()))
         return api_models
-
-

@@ -14,9 +14,13 @@ from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_
 def build_model_from_config(cfg):
     import vlmeval.api
     import vlmeval.vlm
+    import vlmeval.composite
+
     config = cp.deepcopy(cfg)
     assert 'class' in config
     cls_name = config.pop('class')
+    if hasattr(vlmeval.composite, cls_name):
+        return getattr(vlmeval.composite, cls_name)(supported_VLM, **config)
     if hasattr(vlmeval.api, cls_name):
         return getattr(vlmeval.api, cls_name)(**config)
     elif hasattr(vlmeval.vlm, cls_name):
@@ -146,7 +150,7 @@ def main():
 
     if rank == 0:
         if not args.reuse:
-            logger.warning('--reuse is not set, will start the evaluation from scratch')
+            logger.warning('--reuse is not set, will not reuse previous (before one day) temporary files')
         else:
             logger.warning('--reuse is set, will reuse the latest prediction & temporary pickle files')
 
@@ -274,7 +278,7 @@ def main():
                             target_path = osp.join(pred_root, osp.basename(fname))
                             if not osp.exists(target_path):
                                 shutil.copy(fname, target_path)
-                                logger.info(f'--reuse is set, will reuse the prediction pickle file {org_file_path}.')
+                                logger.info(f'--reuse is set, will reuse the prediction pickle file {fname}.')
                             else:
                                 logger.warning(f'File already exists: {target_path}')
 
@@ -285,21 +289,6 @@ def main():
                     model = model_name  # which is only a name
 
                 # Perform the Inference
-
-                # if args.prism == 1:
-                #     model2 = args.model2[0]
-                #     model_name2 = model2
-                #     model, model2 = prism_infer_data_job(
-                #         model,
-                #         model2,
-                #         work_dir=pred_root,
-                #         model_name_fronted=model_name,
-                #         model_name_backend=model_name2,
-                #         dataset=dataset,
-                #         verbose=args.verbose,
-                #         api_nproc=args.nproc,
-                #         ignore_failed=args.ignore
-                #     )
 
                 if dataset.MODALITY == 'VIDEO':
                     model = infer_data_job_video(
