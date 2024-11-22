@@ -128,7 +128,7 @@ IMAGE_DATASET = [
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
-    MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath
+    MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench
 ]
 
 VIDEO_DATASET = [
@@ -142,7 +142,7 @@ TEXT_DATASET = [
 ]
 
 CUSTOM_DATASET = [
-    CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset, MMGenBench
+    CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
 ]
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]

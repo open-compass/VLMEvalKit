@@ -66,5 +66,4 @@ A string, that is the image caption-prompt. No extra output needed.
     def evaluate(self, eval_file, **judge_kwargs):
         warnings.warn('This evaluation method is not supported.\n')
         warnings.warn('Please refer to "https://github.com/lerogo/MMGenBench" for more evaluation information.\n')
-        warnings.warn('Please refer to "https://github.com/lerogo/MMGenBench" for more evaluation information.\n')
         return None
