@@ -129,16 +129,9 @@ class TeleMMAPI(BaseAPI):
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
-        if 'hallusionbench' in dataset.lower():
-            return True
-        elif 'mmmu' in dataset.lower():
+        if 'mmmu' in dataset.lower():
             return True
         return False
-
-    def build_hallusionbench(self, line):
-        question = line['question']
-        prompt = question + '\nAnswer the question using a single word or phrase.'
-        return prompt
 
     def build_mmmu(self, line):
         question = line['question']
@@ -164,9 +157,7 @@ class TeleMMAPI(BaseAPI):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
         tgt_path = self.dump_image(line, dataset)
-        if 'hallusionbench' in dataset.lower():
-            prompt = self.build_hallusionbench(line)
-        elif 'mmmu' in dataset.lower():
+        if 'mmmu' in dataset.lower():
             prompt = self.build_mmmu(line)
 
         ret = [dict(type='text', value=prompt)]
