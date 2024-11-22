@@ -27,6 +27,7 @@ from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
+from .mmgenbench import MMGenBench
 
 from .miabench import MIABench
 from .wildvision import WildVision
@@ -141,7 +142,7 @@ TEXT_DATASET = [
 ]
 
 CUSTOM_DATASET = [
-    CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
+    CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset, MMGenBench
 ]
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
