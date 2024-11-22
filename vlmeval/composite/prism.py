@@ -1,6 +1,7 @@
 import torch
 import re
 from vlmeval.api import OpenAIWrapper
+from vlmeval.utils import track_progress_rich
 
 
 # remap the gpt model name
@@ -51,6 +52,10 @@ class Prism():
         pass
 
     def generate(self, message, dataset=None):
+        breakpoint()
+        # pre process
+        if hasattr(self.model_fronted, 'set_dump_image'):
+            self.model_fronted.set_dump_image(dataset.dump_image)
 
         # struct prompt
         question = message[1]['value']
@@ -58,20 +63,23 @@ class Prism():
         #generate description
         is_api = getattr(self.model_fronted, 'is_api', False)
         if is_api:
-            response = self.fronted_api()
+            response_fronted = self.fronted_api(message)
         else:
-            response = self.model_fronted.generate(message=message, dataset=dataset)
+            response_fronted = self.model_fronted.generate(message=message, dataset=dataset)
 
-        print(response)
+        print(response_fronted)
+        response_backend = self.model_backend.generate(response_fronted, question)
+        print(response_backend)
+
+        return response_backend
 
 
+    def fronted_api(self, message):
 
-        breakpoint()
-        pass
+        gen_func =self.model_fronted.generate
+        result = track_progress_rich(gen_func, message)
 
-    def fronted_api(self):
-
-        pass
+        return result
 
     def use_custom_prompt(self, dataset):
 
