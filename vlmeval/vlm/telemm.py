@@ -5,7 +5,7 @@ from vlmeval.dataset import DATASET_TYPE
 
 url = 'https://api.siliconflow.cn/v1/chat/completions'
 headers = {
-    "Authorization": "Bearer sk-xyqjogjtjyrppdyzypmfpadeuyfudnljdmjquunmtvzvdefl",
+    "Authorization": 'Bearer {}',
     "Content-Type": "application/json"
 }
 
@@ -23,6 +23,7 @@ class TeleMMAPI(BaseAPI):
                  frequency_penalty: float=0,
                  n: int=1,
                  max_tokens: int = 300,
+                 key: str = None,
                  **kwargs):
         self.model = model
         self.stream = stream
@@ -32,6 +33,11 @@ class TeleMMAPI(BaseAPI):
         self.top_k = top_k
         self.frequency_penalty = frequency_penalty
         self.n = n
+        if key is not None:
+            self.key = key
+        else:
+            self.key = os.environ.get('SiliconFlow_API_KEY', '')
+        headers['Authorization'] = headers['Authorization'].format(self.key)
         super().__init__(**kwargs)
 
     @staticmethod
