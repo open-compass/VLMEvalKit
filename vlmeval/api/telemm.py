@@ -18,10 +18,10 @@ class TeleMMAPI(BaseAPI):
                  model: str = 'TeleAI/TeleMM',
                  stream: bool = False,
                  temperature: float = 0.7,
-                 top_p: float=0.95,
-                 top_k: float=50,
-                 frequency_penalty: float=0,
-                 n: int=1,
+                 top_p: float = 0.95,
+                 top_k: float = 50,
+                 frequency_penalty: float = 0,
+                 n: int = 1,
                  max_tokens: int = 300,
                  key: str = None,
                  **kwargs):
@@ -44,6 +44,7 @@ class TeleMMAPI(BaseAPI):
     def build_msgs(msgs_raw):
         messages = []
         message = {'role': 'user', 'content': []}
+
         def encode_image_to_base64_PNG(image_dir):
             image = Image.open(image_dir)
             from io import BytesIO
@@ -80,7 +81,7 @@ class TeleMMAPI(BaseAPI):
             temperature=self.temperature,
             top_p=self.top_p,
             top_k=self.top_k,
-            frequency_penalty = self.frequency_penalty,
+            frequency_penalty=self.frequency_penalty,
             n=self.n,
             **kwargs)
         response = requests.post(url, headers=headers, data=json.dumps(payload))
@@ -128,7 +129,7 @@ class TeleMMAPI(BaseAPI):
             assert 'image_path' in line
             tgt_path = toliststr(line['image_path'])
         return tgt_path
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
@@ -168,6 +169,7 @@ class TeleMMAPI(BaseAPI):
         ret = [dict(type='text', value=prompt)]
         ret.extend([dict(type='image', value=s) for s in tgt_path])
         return ret
+
 
 class TeleMM(TeleMMAPI):
     def generate(self, message, dataset=None):
