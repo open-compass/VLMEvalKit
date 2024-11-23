@@ -6,6 +6,7 @@ from .image_base import ImageBaseDataset
 
 
 class MMGenBench(ImageBaseDataset):
+
     prompt_list = [
         """
 # Role
@@ -47,11 +48,10 @@ A string, that is the image caption-prompt. No extra output needed.
         'MMGenBench-Domain': "5c10daf6e2c5f08bdfb0701aa6db86bb",
     }
 
-    warnings.warn('This dataset is for inference only and does not support direct output of evaluation results.\n')
-    warnings.warn('Please refer to "https://github.com/lerogo/MMGenBench" for more evaluation information.\n')
-
-    # def __init__(self, dataset='MMGenBench', skip_noimg=True):
-    #     super().__init__(dataset, skip_noimg)
+    def __init__(self, dataset='MMGenBench', **kwargs):
+        super().__init__(dataset, **kwargs)
+        warnings.warn('This dataset is for inference only and does not support direct output of evaluation results.\n')
+        warnings.warn('Please refer to "https://github.com/lerogo/MMGenBench" for more evaluation information.\n')
 
     def load_data(self, dataset):
         data = super().load_data(dataset)
