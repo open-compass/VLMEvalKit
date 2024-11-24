@@ -1,9 +1,17 @@
+import os
+import re
+import tempfile
 from functools import partial
+from jinja2.sandbox import SandboxedEnvironment
+from jinja2 import Template
+
+import pandas as pd
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..utils import track_progress_rich
+import ipdb
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -384,6 +392,220 @@ class MathVision(ImageBaseDataset):
         return score
 
 
+class OlympiadBench(ImageBaseDataset):
+    TYPE = 'VQA_ex_prompt'
+    DATASET_URL = {
+        'OlympiadBench': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
+        'OlympiadBench_EN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_EN.tsv',
+        'OlympiadBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_CN.tsv'
+    }
+    DATASET_MD5 = {
+        'OlympiadBench': '9735ae0f0299eae1e7d07f5a7feab914',
+        'OlympiadBench_EN': '5c68e100d394351fc7049f29d4d4efed',
+        'OlympiadBench_CN': 'ea01b16788955702c79650c701e5b623'
+    }
+
+    def dump_image(self, line):
+        os.makedirs(self.img_root, exist_ok=True)
+
+        tgt_path_z = []
+        if isinstance(line['image'], list):
+            for i in range(len(line['image'])):
+                tgt_path = osp.join(self.img_root, f"{line['index']}--{i+1}.jpg")
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'][i], tgt_path)
+                tgt_path_z.append(tgt_path)
+        else:
+            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            if not read_ok(tgt_path):
+                decode_base64_to_image_file(line['image'], tgt_path)
+            tgt_path_z.append(tgt_path)
+        return tgt_path_z
+
+    def build_prompt(self, line):
+
+        from .utils.olympiadbench import get_answer_type_text, make_input
+
+        self.is_chinese = 'zh' in line['source']
+        self.is_math = 'maths' in line['source']
+        self.is_theorem_proving = 'TP' in line['source']
+
+        if self.is_chinese:
+            subject_content = '数学' if self.is_math else '物理'
+            if self.is_theorem_proving:
+                prompt = (
+                    f"以下是中国{subject_content}竞赛中的证明题。请根据题目的要求，运用逻辑推理及常用定理证明题目中的命题。"
+                    "证明过程中使用的变量和公式请使用LaTeX格式表示。"
+                )
+            else:
+                answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=True,
+                                                        multiple_answer=line['is_multiple_answer'])
+                if line['is_multiple_answer']:
+                    multiple_answer_text = '\\boxed{用英文逗号连接的多个答案}'
+                else:
+                    multiple_answer_text = '\\boxed{答案}'
+                unit_text = ''
+                if line['unit']:
+                    multiple_answer_text += '(单位)'
+                    unit_text = '，注意答案的单位不要放在\\boxed{}中'
+                prompt = (
+                    f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。'
+                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”'
+                    f'显式给出结果{unit_text}。'
+                )
+        else:
+            subject_content = 'Math' if self.is_math else 'Physics'
+            if self.is_theorem_proving:
+                prompt = (
+                    f'The following is a theorem proving problem from an International {subject_content} competition. '
+                    'Please use logical reasoning and common theorems to prove the proposition in the problem '
+                    'according to the given requirements. '
+                    'Please use LaTeX format to represent the variables and formulas used in the proof.'
+                )
+            else:
+                if line['is_multiple_answer']:
+                    multiple_answer_text = '\\boxed{multiple answers connected with commas}'
+                else:
+                    multiple_answer_text = '\\boxed{answer}'
+                unit_text = ''
+                if line['unit']:
+                    multiple_answer_text += '(unit)'
+                    unit_text = ', note that the unit of the answer should not be included in \\boxed{}'
+                answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=False,
+                                                        multiple_answer=line['is_multiple_answer'])
+                prompt = (
+                    f'The following is an open-ended problem from an International {subject_content} competition. '
+                    f'{answer_type_text}Please calculate the answer according to the given requirements and '
+                    'the information provided. Please use LaTeX format to represent the variables and formulas '
+                    'used in the solution process and results. Please end your solution with "So the final answer '
+                    f'is {multiple_answer_text}." and give the result explicitly{unit_text}.'
+                )
+
+        if self.is_math:
+            input = make_input(prompt, line['question'])
+        else:
+            if 'context' in line.keys() and str(line['context']) != 'nan':  # cannot be null
+                input = make_input(prompt, line['context'] + '\n' + line['question'])
+            else:
+                input = make_input(prompt, line['question'])
+
+        ret = [dict(type='text', value=input)]
+        tgt_path = self.dump_image(line)
+
+        ret.extend([dict(type='image', value=s) for s in tgt_path])
+
+        return ret
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.olympiadbench import MathJudger, extract_answer
+        judger = MathJudger()
+
+        suffix = eval_file.split('.')[-1]
+        name_str1 = 'judge'
+        name_str2 = 'score'
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str1}_result.xlsx')
+        score_file = eval_file.replace(f'.{suffix}', f'_{name_str2}_result.csv')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+            scorez = []
+
+            for i in tqdm(data.iterrows()):
+                line = i[1]
+                model_answer = line['prediction']
+                is_chinese = 'zh' in line['source']
+                model_answer = extract_answer(is_chinese, model_answer, is_deepseek=False)
+                answer_type = line['answer_type']
+
+                final_answer = line['final_answer'][2:-2]
+
+                if str(answer_type) != 'nan' and 'Tuple' in answer_type:
+                    judge_result = judger.judge(model_answer, final_answer)
+                else:
+                    if str(line['error']) != 'nan':
+                        if ',' in line['error']:
+                            precisions = line['error'].split(',')
+                            precisions = [float(p) if p else 1e-8 for p in precisions]
+                            judge_result = judger.judge(model_answer, final_answer, precisions)
+                        else:
+                            precision = float(line['error'])
+                            judge_result = judger.judge(model_answer, final_answer, precision)
+                    else:
+                        judge_result = judger.judge(model_answer, final_answer)
+                scorez.append(judge_result)
+
+            data['score'] = scorez
+            dump(data, result_file)
+
+        judge_file = load(result_file)
+
+        if not osp.exists(score_file):
+            name_list = ['OE_MM_maths_en_COMP', 'OE_MM_maths_zh_CEE', 'OE_MM_maths_zh_COMP', 'OE_MM_physics_en_COMP',
+                         'OE_MM_physics_zh_CEE','OE_TO_maths_en_COMP', 'OE_TO_maths_zh_CEE', 'OE_TO_maths_zh_COMP',
+                         'OE_TO_physics_en_COMP', 'OE_TO_physics_zh_CEE']
+
+            sample_list = [[] for _ in range(len(name_list))]
+            for i in judge_file.iterrows():
+                line = i[1]
+                for j in range(len(name_list)):
+                    if line['source'] == name_list[j]:
+                        sample_list[j].append(line['score'])
+
+            acc_dict = {}
+            correct_list = []
+
+            # fine-grained
+            for i in range(len(name_list)):
+                correct_num = 0
+                for j in sample_list[i]:
+                    if j:
+                        correct_num += 1
+                correct_list.append(correct_num)
+                acc = 100 * correct_num / len(sample_list[i])
+                acc_dict[name_list[i]] = [acc]
+
+            # 4 grained
+            labela = ['zh', 'en']
+            labelb = ['maths', 'physics']
+
+            grain_list = [[x,y] for x in labela for y in labelb]
+            for j in grain_list:
+                dict_name = j[0] + "_" + j[1]
+                correct_num = 0
+                full_num = 0
+                for i in range(len(name_list)):
+                    if all(k in name_list[i] for k in j):
+                        correct_num += correct_list[i]
+                        full_num += len(sample_list[i])
+                acc = 100 * correct_num / full_num
+                acc_dict[dict_name] = [acc]
+
+            # 2 grained
+            grain_list = ['maths', 'physics']
+            for j in grain_list:
+                dict_name = j
+                correct_num = 0
+                full_num = 0
+                for i in range(len(name_list)):
+                    if j in name_list[i]:
+                        correct_num += correct_list[i]
+                        full_num += len(sample_list[i])
+                acc = 100 * correct_num / full_num
+                acc_dict[dict_name] = [acc]
+
+            # AVG
+            correct_num = sum(correct_list)
+            acc = 100 * correct_num / len(judge_file)
+            acc_dict['AVG'] = [acc]
+
+            acc_pd = pd.DataFrame(acc_dict)
+            acc_pd.to_csv(score_file, index=False, encoding='gbk')
+
+        accdz = pd.read_csv(score_file)
+        return accdz
+
+
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}
@@ -663,3 +885,240 @@ class CRPE(ImageBaseDataset):
             if msg['type'] == 'image':
                 msg['value'] = osp.join(osp.join(ROOT, 'images', self.dataset_name), msg['value'])
         return msgs
+
+
+class QSpatial(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'QSpatial_plus': '',
+        'QSpatial_scannet': ''
+    }
+
+    # NOTE: To evaluate Q-Spatial-ScanNet, you need to get the permission from ScanNet website
+    # Once you get the permission, you can use the helper code here to download and extract necessary images:
+    # https://github.com/andrewliao11/Q-Spatial-Bench-code?tab=readme-ov-file#for-qspatial_scannet
+    qspatial_root = "TO_BE_REPLACED_WITH_THE_PATH_TO_QSPATIAL_DATASET"
+    url = "https://raw.githubusercontent.com/andrewliao11/Q-Spatial-Bench-code/refs/heads/main/prompt_templates/"
+
+    def post_build(self, dataset):
+        # Download the prompt templates from github
+
+        links = [
+            self.url + "system_prompt.txt",
+            self.url + "spatial_prompt_single.txt",
+            self.url + "spatial_prompt_steps.txt",
+            self.url + "standard_prompt.txt",
+            self.url + "zero_shot_prompt.txt"
+        ]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            for link in links:
+                tgt_path = os.path.join(temp_dir, link.split("/")[-1])
+                os.system(f"wget {link} -O {tgt_path}")
+
+            self.system_prompt = open(os.path.join(temp_dir, "system_prompt.txt")).read()
+            self._prompt_templates = dict(
+                spatial_prompt_single=open(os.path.join(temp_dir, "spatial_prompt_single.txt")).read(),
+                spatial_prompt_steps=open(os.path.join(temp_dir, "spatial_prompt_steps.txt")).read(),
+                standard_prompt=open(os.path.join(temp_dir, "standard_prompt.txt")).read(),
+                zero_shot_prompt=open(os.path.join(temp_dir, "zero_shot_prompt.txt")).read(),
+            )
+
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+
+        text_prompt_template = self._prompt_templates["spatial_prompt_single"]
+        env = SandboxedEnvironment()
+        text_prompt = env.from_string(text_prompt_template).render(question=line["question"])
+        tgt_path = self.dump_image(line)
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+
+        msgs.append(dict(type='text', value=f"{self.system_prompt}\n{text_prompt}"))
+        return msgs
+
+    # Given the dataset name, return the dataset as a pandas dataframe, can override
+    def load_data(self, dataset):
+        import io
+        import pandas as pd
+        from datasets import load_dataset
+
+        hf_dataset = load_dataset("andrewliao11/Q-Spatial-Bench", split=dataset)
+        df = hf_dataset.to_pandas()
+
+        df.reset_index(drop=True, inplace=True)
+        df['index'] = df.index
+        df['answer'] = list(zip(df['answer_value'], df['answer_unit']))
+        df = df[['index'] + [col for col in df.columns if col != 'index']]
+
+        if dataset == "QSpatial_scannet":
+            df = df.drop(columns=["image"])
+            df["image"] = [Image.open(os.path.join(self.qspatial_root, image_path)) for image_path in df["image_path"]]
+        else:
+            df["image"] = [Image.open(io.BytesIO(image_dict["bytes"])) for image_dict in df["image"]]
+
+        df["image"] = [encode_image_to_base64(image) for image in df["image"]]
+        return df
+
+    @classmethod
+    def get_multiplier(self, unit):
+
+        unit = unit.lower()
+        if unit in ["meters", "meter", "m", "metre", "metres"]:
+            multiplier = 100
+        elif unit in ["centimeters", "centimeter", "cm"]:
+            multiplier = 1
+        elif unit in ["feet", "foot", "ft"]:
+            multiplier = 30.48
+        elif unit in ["inch", "inches", "in"]:
+            multiplier = 2.54
+        elif unit in ["mm"]:
+            multiplier = 0.1
+        else:
+            print(f"Unknown unit: {unit}")
+            multiplier = 0.
+
+        return multiplier
+
+    @classmethod
+    def parse_string(self, input_str):
+        # Regular expression to match the pattern (number or range, text)
+        match = re.match(r'\(([\d.-]+), (.+)\)', input_str)
+        if match:
+            number_part = match.group(1)
+            text = match.group(2)
+
+            if '-' in number_part:
+                start, end = map(float, number_part.split('-'))
+                number = (start + end) / 2
+            else:
+                number = float(number_part)
+
+            return number * self.get_multiplier(text)
+        else:
+            print(f"Unable to parse the input string {input_str}")
+            return 0
+
+    @classmethod
+    def parse_prediction(self, vlm_response):
+        # Value
+        pattern = r'scalar{([^}]*)}'
+        str_inside_scalar_boxes = re.findall(pattern, vlm_response)[-1]
+        scalar_list = re.findall(r'\d+\.?\d*', str_inside_scalar_boxes)
+        parsed_scalar = np.array(scalar_list).astype(float).mean()
+
+        # Unit
+        pattern = r'distance_unit{([^}]*)}'
+        str_inside_unit_boxes = re.findall(pattern, vlm_response)
+        parsed_unit = str_inside_unit_boxes[-1]
+
+        pred_value_in_cms = parsed_scalar * self.get_multiplier(parsed_unit)
+        return pred_value_in_cms
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+
+        data = load(eval_file)
+        if "model" in judge_kwargs:
+            from .utils.qspatial import QSpatial_auxeval
+
+            # extract using model
+            model = judge_kwargs['model']
+            suffix = eval_file.split('.')[-1]
+            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            nproc = judge_kwargs.pop('nproc', 4)
+
+            if not osp.exists(storage):
+                model = build_judge(max_tokens=128, **judge_kwargs)
+
+                assert model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
+
+                ans = {}
+                if osp.exists(tmp_file):
+                    ans = load(tmp_file)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
+
+                if len(indices):
+                    new_results = track_progress_rich(
+                        QSpatial_auxeval,
+                        tups,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=indices,
+                        save=tmp_file,
+                    )
+                    ans = load(tmp_file)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+                data['res'] = [ans[idx]['res'] for idx in data['index']]
+                data['log'] = [ans[idx]['log'] for idx in data['index']]
+                dump(data, storage)
+
+            data = load(storage)
+
+            pred_value_in_cms = []
+            for res in data["res"]:
+                try:
+                    pred_value_in_cms.append(self.parse_string(res))
+                except ValueError:
+                    pred_value_in_cms.append(0.)
+
+            pred_value_in_cms = np.array(pred_value_in_cms) + 1e-8
+        else:
+            # regex parsing
+            pred_value_in_cms = []
+            n_errors_in_parsing = 0
+            for pred in data["prediction"]:
+                try:
+                    parsed_value = self.parse_prediction(pred)
+                except IndexError:
+                    n_errors_in_parsing += 1
+                    parsed_value = 1e-8
+
+                pred_value_in_cms.append(parsed_value)
+
+            print(f"Encounter {n_errors_in_parsing} errors in parsing")
+            pred_value_in_cms = np.array(pred_value_in_cms) + 1e-8
+
+        # Ground truth
+        ground_truth_value_in_cms = []
+        for answer in data["answer"]:
+            value, unit = eval(answer)
+            ground_truth_value_in_cms.append(value * self.get_multiplier(unit))
+        ground_truth_value_in_cms = np.array(ground_truth_value_in_cms) + 1e-8
+
+        # Calculate the score
+        pred_gt = pred_value_in_cms / ground_truth_value_in_cms
+        gt_pred = ground_truth_value_in_cms / pred_value_in_cms
+        delta_2 = np.stack([pred_gt, gt_pred]).max(0) < 2.
+        delta_1_point_5 = np.stack([pred_gt, gt_pred]).max(0) < 1.5
+
+        data["eval_score_delta_2"] = delta_2
+        data["eval_score_delta_1_point_5"] = delta_1_point_5
+
+        final_score_dict = {
+            "delta_2": delta_2.mean(),
+            "delta_1_point_5": delta_1_point_5.mean()
+        }
+        for question_type in set(data["question_type"]):
+            filtered_data = data[data["question_type"] == question_type]
+            delta_2_per_question_type = filtered_data["eval_score_delta_2"].mean()
+            delta_1_point_5_per_question_type = filtered_data["eval_score_delta_1_point_5"].mean()
+            final_score_dict.update({f"{question_type}_delta_2": delta_2_per_question_type})
+            final_score_dict.update({f"{question_type}_delta_1_point_5": delta_1_point_5_per_question_type})
+
+        score_pth = eval_file.replace('.xlsx', '_score.json')
+        dump(final_score_dict, score_pth)
+        return final_score_dict

@@ -24,7 +24,7 @@ class RBDash(BaseModel):
                 which is cloned from here: "https://github.com/RBDash-Team/RBDash?tab=readme-ov-file" ')
         warnings.warn('Please follow the instructions of RBDash to put the ckpt file in the right place, \
             which can be found at https://github.com/RBDash-Team/RBDash?tab=readme-ov-file#structure')
-        assert model_path == 'RBDash-Team/RBDash-v1.2-72b', 'We only support RBDash-v1.2-72b for now'
+        assert model_path == 'RBDash-Team/RBDash-v1.5', 'We only support RBDash-v1.5 for now'
         sys.path.append(root)
         try:
             from rbdash.model.builder import load_pretrained_model
@@ -227,10 +227,14 @@ class RBDash(BaseModel):
             for cand in string.ascii_uppercase
             if cand in line and not pd.isna(line[cand])
         }
-        options_prompt = ''
+        options_prompt = 'Options:\n'
         for key, item in options.items():
             options_prompt += f'{key}. {item}\n'
-        prompt = f'{question}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
             prompt += "Answer with the option's letter from the given choices directly."
@@ -245,17 +249,17 @@ class RBDash(BaseModel):
             for cand in string.ascii_uppercase
             if cand in line and not pd.isna(line[cand])
         }
-        options_prompt = ''
+        options_prompt = 'Options:\n'
         for key, item in options.items():
             options_prompt += f'({key}) {item}\n'
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         prompt = ''
         if hint is not None:
             prompt += f'Hint: {hint}\n'
-        prompt += f'{question}\n'
+        prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
-            prompt += "\nAnswer with the option's letter from the given choices directly."
+            prompt += "Answer with the option's letter from the given choices directly."
         else:
             prompt += 'Answer the question using a single word or phrase.'
         return prompt

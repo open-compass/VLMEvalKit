@@ -300,6 +300,18 @@ def parse_file(s):
         suffix = osp.splitext(s)[1].lower()
         mime = mimetypes.types_map.get(suffix, 'unknown')
         return (mime, s)
+    elif s.startswith('data:image/'):
+        # To be compatible with OPENAI base64 format
+        content = s[11:]
+        mime = content.split(';')[0]
+        content = ';'.join(content.split(';')[1:])
+        dname = osp.join(LMUDataRoot(), 'files')
+        assert content.startswith('base64,')
+        b64 = content[7:]
+        os.makedirs(dname, exist_ok=True)
+        tgt = osp.join(dname, md5(b64) + '.png')
+        decode_base64_to_image_file(b64, tgt)
+        return parse_file(tgt)
     elif validators.url(s):
         suffix = osp.splitext(s)[1].lower()
         if suffix in mimetypes.types_map:
