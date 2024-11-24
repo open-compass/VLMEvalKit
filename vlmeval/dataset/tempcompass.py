@@ -130,7 +130,7 @@ class TempCompass_MCQ(VideoBaseDataset):
                 data_df = pd.DataFrame(self.data_list)
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
-                
+
             if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)

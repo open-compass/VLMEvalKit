@@ -139,7 +139,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                                        'sub_category', 'task_type', 'subtitle_path', 'question', 'answer']]
 
                 data_file.to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep='\t', index=False)
-            
+
             if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)

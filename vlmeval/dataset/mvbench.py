@@ -98,7 +98,7 @@ Based on your observations, select the best option that accurately addresses the
 
         if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
             repo_id = 'modelscope/MVBench'
-            
+
         cache_path = get_cache_path(repo_id, branch='main')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
@@ -466,7 +466,7 @@ Based on your observations, select the best option that accurately addresses the
 
         if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
             repo_id = 'modelscope/MVBench'
-            
+
         cache_path = get_cache_path(repo_id, branch='video')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
