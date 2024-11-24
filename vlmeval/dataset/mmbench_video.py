@@ -81,7 +81,7 @@ Please directly reply with your response to the only question.
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:

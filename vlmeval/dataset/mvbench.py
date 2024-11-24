@@ -96,7 +96,7 @@ Based on your observations, select the best option that accurately addresses the
                     return False
             return True
 
-        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
             repo_id = 'modelscope/MVBench'
 
         cache_path = get_cache_path(repo_id, branch='main')
@@ -171,7 +171,7 @@ Based on your observations, select the best option that accurately addresses the
                                     except Exception as e:
                                         print(f"Error moving {item_path} to {target_path}: {e}")
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id, revision='master')
             else:
@@ -464,7 +464,7 @@ Based on your observations, select the best option that accurately addresses the
                     return False
             return True
 
-        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
             repo_id = 'modelscope/MVBench'
 
         cache_path = get_cache_path(repo_id, branch='video')
@@ -493,7 +493,7 @@ Based on your observations, select the best option that accurately addresses the
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id, revision='video')
             else:

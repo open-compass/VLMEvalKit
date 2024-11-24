@@ -131,7 +131,7 @@ class TempCompass_MCQ(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
@@ -326,7 +326,7 @@ class TempCompass_Captioning(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
@@ -518,7 +518,7 @@ class TempCompass_YorN(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:

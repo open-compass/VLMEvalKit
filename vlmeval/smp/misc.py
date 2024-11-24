@@ -74,7 +74,7 @@ def bincount(lst):
 
 def get_cache_path(repo_id, branch='main', repo_type='datasets'):
     try:
-        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False')=='True':
+        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
             from modelscope.hub.file_download import create_temporary_directory_and_cache
             if repo_type == 'datasets':
                 repo_type = 'dataset'
