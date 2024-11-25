@@ -13,7 +13,6 @@ from ..smp import *
 from ..utils import track_progress_rich
 
 
-
 class ImageVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
 

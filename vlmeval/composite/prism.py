@@ -31,14 +31,20 @@ gpt_version_map = {
 mapping = {}
 mapping.update(gpt_version_map)
 
-#mapping.update(reasoning_mapping)
+# mapping.update(reasoning_mapping)
 
-prompt_human1 = 'Describe the fine-grained content of the image, including scenes, objects, relationships, instance location, and any text present.'
-prompt_human2 = 'Describe the fine-grained content of the image, including scenes, objects, relationships, instance location, background and any text present. Please skip generating statements for non-existent contents and describe all you see. '
+prompt_human1 = ('Describe the fine-grained content of the image, including scenes, objects,'
+                 ' relationships, instance location, and any text present.')
+prompt_human2 = ('Describe the fine-grained content of the image, including scenes, objects, '
+                 'relationships, instance location, background and any text present. Please skip '
+                 'generating statements for non-existent contents and describe all you see. ')
 prompt_gpt1 = 'Given the image below, please provide a detailed description of what you see.'
 prompt_gpt2 = 'Analyze the image below and describe the main elements and their relationship.'
-prompt_cot = 'Describe the fine-grained content of the image, including scenes, objects, relationships, instance location, and any text present. Let\'s think step by step.'
-prompt_decompose = 'Decompose the image into several parts and describe the fine-grained content of the image part by part, including scenes, objects, relationships, instance location, and any text present.'
+prompt_cot = ('Describe the fine-grained content of the image, including scenes, objects, relationships,'
+              ' instance location, and any text present. Let\'s think step by step.')
+prompt_decompose = ('Decompose the image into several parts and describe the fine-grained content of the '
+                    'image part by part, including scenes, objects, relationships, instance location, and'
+                    ' any text present.')
 
 genric_prompt_mapping = {
     'generic':prompt_human1,
@@ -61,9 +67,9 @@ class Prism():
         self.model_name_backend = self.config['model']['backend']['model']
         self.fronted_prompt_type = self.config['model']['fronted']['prompt_type']
 
-        self.model_fronted = supported_VLM[self.model_name_fronted]() if isinstance(self.model_name_fronted, str) else None
+        self.model_fronted = supported_VLM[self.model_name_fronted]() if (
+            isinstance(self.model_name_fronted, str)) else None
         self.model_backend = Reasoning(model=self.model_name_backend)
-
 
     def set_dump_image(self, dump_image):
         if hasattr(self.model_fronted, 'set_dump_image'):
@@ -76,7 +82,7 @@ class Prism():
         prompt_fronted = self.build_fronted_prompt()
         message[1]['value'] = prompt_fronted
 
-        #generate description
+        # generate description
         is_api = getattr(self.model_fronted, 'is_api', False)
         if is_api:
             response_fronted = self.fronted_api(message)
@@ -88,10 +94,9 @@ class Prism():
 
         return response_backend
 
-
     def fronted_api(self, message):
 
-        gen_func =self.model_fronted.generate
+        gen_func = self.model_fronted.generate
         result = track_progress_rich(gen_func, message)
 
         return result
@@ -101,7 +106,6 @@ class Prism():
         prompt = genric_prompt_mapping[self.fronted_prompt_type]
 
         return prompt
-
 
 
 class Reasoning:
@@ -121,7 +125,8 @@ def build_infer_prompt_external(question, des):
     if not des.endswith('\n'):
         des += '\n'
     description = 'Description: ' + des
-    role = 'You are an excellent text-based reasoning expert. You are required to answer the question based on the detailed description of the image.\n\n'
+    role = ('You are an excellent text-based reasoning expert. You are required to answer the question'
+            ' based on the detailed description of the image.\n\n')
 
     prompt = role + description + question
     return prompt
@@ -138,7 +143,6 @@ class LLMWrapper:
         # self.PORT = 8080
         # self.vllm_api_base = f'http://localhost:{self.PORT}/v1/chat/completions'
 
-
         if model_name.endswith('-2048'):
             model_name = model_name.replace('-2048', '')
             max_tokens = 2048
@@ -146,14 +150,16 @@ class LLMWrapper:
         if model_name in gpt_version_map:
             gpt_version = gpt_version_map[model_name]
             model = OpenAIWrapper(gpt_version, max_tokens=max_tokens, verbose=verbose, retry=retry)
+
         # elif reasoning_mapping[model_name] == 'vllm':
         #     model = OpenAIWrapper(model_name, api_base=self.vllm_api_base, max_tokens=max_tokens,
         #                           system_prompt='You are a helpful assistant.', verbose=verbose, retry=retry,
         #                           stop=stop_tokens[model_name])
         # elif reasoning_mapping[model_name] == 'deepseek':
         #     deepseek_key = os.environ['DEEPSEEK_API_KEY']
-        #     model = OpenAIWrapper(model_name, api_base=self.deepseek_api_base, key=deepseek_key, max_tokens=max_tokens,
-        #                           system_prompt='You are a helpful assistant.', verbose=verbose, retry=retry)
+        #     model = OpenAIWrapper(model_name, api_base=self.deepseek_api_base, key=deepseek_key,
+        #     max_tokens=max_tokens, system_prompt='You are a helpful assistant.', verbose=verbose, retry=retry)
+
         else:
             print('Unknown API model for inference')
 
@@ -167,5 +173,5 @@ class LLMWrapper:
     def api_models():
         gpt_models = list(gpt_version_map.keys())
         api_models = gpt_models.copy()
-        #api_models.extend(list(reasoning_mapping.keys()))
+        # api_models.extend(list(reasoning_mapping.keys()))
         return api_models
