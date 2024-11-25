@@ -100,6 +100,46 @@ class ImageVQADataset(ImageBaseDataset):
         return ret
 
 
+class VizWiz(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'VizWiz': 'https://opencompass.openxlab.space/utils/VLMEval/VizWiz.tsv'
+    }
+    DATASET_MD5 = {
+        'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'
+    }
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vqa_eval import hit_calculate, process_line
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+            assert 'answers' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answers']]
+
+            lt = len(data)
+            pool = mp.Pool(16)
+            lines = [data.iloc[i] for i in range(lt)]
+            res = pool.map(process_line, lines)
+
+            hit = hit_calculate(res, 'VizWiz')
+            ret = dict()
+
+            ret['Overall'] = np.mean(hit) * 100
+            ret = d2df(ret)
+            ret.round(2)
+
+            dump(ret, result_file)
+
+        retz = pd.read_csv(result_file)
+        return retz
+
+
 class OCRBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
