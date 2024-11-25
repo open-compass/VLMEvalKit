@@ -194,7 +194,7 @@ class llama_vision(BaseModel):
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
         inputs = self.processor(image, input_text, return_tensors='pt').to(self.device)
         if not self.use_custom_prompt(dataset):
-            if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'Y/N':
+            if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
                 self.kwargs['max_new_tokens'] = 128
             else:
                 self.kwargs['max_new_tokens'] = 512
