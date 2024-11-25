@@ -27,6 +27,8 @@ class llama_vision(BaseModel):
         # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
         num_layers_per_gpu = total_cost // num_gpus
         num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+        # The total number of GPUs might be odd
+        num_layers_per_gpu[-1] = total_cost - sum(num_layers_per_gpu[:-1])
         num_layers_per_gpu[0] -= 5
         num_layers_per_gpu[-1] -= 7
 
