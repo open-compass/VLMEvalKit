@@ -82,29 +82,31 @@ class Prism():
         prompt_fronted = self.build_fronted_prompt()
         message[1]['value'] = prompt_fronted
 
-        # generate description
+        # generate fronted
         is_api = getattr(self.model_fronted, 'is_api', False)
         if is_api:
-            response_fronted = self.fronted_api(message)
+            response_fronted = self.fronted_api(message=message, dataset=dataset)
         else:
             response_fronted = self.model_fronted.generate(message=message, dataset=dataset)
 
-        print(response_fronted)
+        print("----fronted output----\n" + response_fronted + "\n----backend output----")
+
+        # generate backend
         response_backend = self.model_backend.generate(question, response_fronted)
 
         return response_backend
 
-    def fronted_api(self, message):
-
-        gen_func = self.model_fronted.generate
-        result = track_progress_rich(gen_func, message)
-
+    def fronted_api(self, message, dataset=None):
+        result = self.model_fronted.generate(message)
+        # gen_func = self.model_fronted.generate
+        # struct = {}
+        # struct['message'] = message
+        # struct['dataset'] = dataset
+        # result = track_progress_rich(gen_func, [struct])
         return result
 
     def build_fronted_prompt(self):
-
         prompt = genric_prompt_mapping[self.fronted_prompt_type]
-
         return prompt
 
 
