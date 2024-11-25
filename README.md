@@ -38,7 +38,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 ## 🏗️ QuickStart
 
-See [[QuickStart](/docs/en/get_started/Quickstart.md) | [快速开始](/docs/zh-CN/get_started/Quickstart.md)] for a quick start guide.
+See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstart.md)] for a quick start guide.
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -181,7 +181,7 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🛠️ Development Guide
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/advanced_guides/Development.md) | [开发指南](/docs/zh-CN/advanced_guides/Development.md)].
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/Development.md) | [开发指南](/docs/zh-CN/Development.md)].
 
 **Call for contributions**
 
@@ -190,7 +190,7 @@ To promote the contribution from the community and share the corresponding credi
 - All Contributions will be acknowledged in the report.
 - Contributors with 3 or more major contributions (implementing an MLLM, benchmark, or major feature) can join the author list of [VLMEvalKit Technical Report](https://www.arxiv.org/abs/2407.11691) on ArXiv. Eligible contributors can create an issue or dm kennyutc in [VLMEvalKit Discord Channel](https://discord.com/invite/evDT4GZmxN).
 
-Here is a [contributor list](/docs/en/advanced_guides/Contributors.md) we curated based on the records.
+Here is a [contributor list](/docs/en/Contributors.md) we curated based on the records.
 
 ## 🎯 The Goal of VLMEvalKit
 
