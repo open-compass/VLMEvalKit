@@ -131,7 +131,11 @@ class TempCompass_MCQ(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             read_parquet(dataset_path)
             unzip_videos(dataset_path)
             generate_tsv(dataset_path)
@@ -322,7 +326,11 @@ class TempCompass_Captioning(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             read_parquet(dataset_path)
             unzip_videos(dataset_path)
             generate_tsv(dataset_path)
@@ -510,7 +518,11 @@ class TempCompass_YorN(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             read_parquet(dataset_path)
             unzip_videos(dataset_path)
             generate_tsv(dataset_path)
