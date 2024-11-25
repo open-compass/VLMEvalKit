@@ -25,6 +25,8 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from **[modelscope](https://www.modelscope.cn)** 🔥🔥🔥
+- **[2024-11-25]** Supported **[VizWiz](https://vizwiz.org/tasks/vqa/)** benchmark 🔥🔥🔥
 - **[2024-11-22]** Supported the inference of **[MMGenBench](https://mmgenbench.alsoai.com)**, thanks **[lerogo](https://github.com/lerogo)** 🔥🔥🔥
 - **[2024-11-22]** Supported **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)**, a multimodal math benchmark comprising of 501 SEED problems and 10 variants generated based on random seeds. The benchmark can be used to measure the robustness of MLLMs in multi-modal math solving 🔥🔥🔥
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
@@ -33,8 +35,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-11-16]** Supported **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**, a new multimodal benchmark comprising olympiad-level math and physics questions 🔥🔥🔥
 - **[2024-11-16]** Supported **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**, a new subjective multimodal benchmark derived from multi-modal arena data 🔥🔥🔥
 - **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
-- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model. And **[LongVideoBench](https://longvideobench.github.io/)**, a benchmark for long-context interleaved video-language understanding. thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
-- **[2024-11-04]** Supported **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**, the benchmark contains 1000+ Medical VQA problems, in languages of four countries: Brazil, Isarel, Japan, Spanish, as well as their English translations 🔥🔥🔥
 
 ## 🏗️ QuickStart
 
@@ -84,7 +84,8 @@ See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstar
 | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
 | **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
 | **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA | **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)** | DynaMath | VQA |
-| **[MMGenBench](https://mmgenbench.alsoai.com/)**- | MMGenBench-Test<br>MMGenBench-Domain | - |  |  |  |
+| **[MMGenBench](https://mmgenbench.alsoai.com/)**- | MMGenBench-Test<br>MMGenBench-Domain | - | **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**+ | QSpatial_[plus/scannet] | VQA |
+| **[VizWiz](https://vizwiz.org/tasks/vqa/)**+ | VizWiz | VQA |   |   |   |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
