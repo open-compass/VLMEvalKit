@@ -121,7 +121,7 @@ class LongVideoBench(VideoBaseDataset):
                     return False
             return True
 
-        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
+        if modelscope_flag_set():
             repo_id = "AI-ModelScope/LongVideoBench"
 
         cache_path = get_cache_path(repo_id)
@@ -140,7 +140,7 @@ class LongVideoBench(VideoBaseDataset):
 
                 data_file.to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
+            if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
                 dataset_snapshot_download(dataset_id=repo_id)
             else:

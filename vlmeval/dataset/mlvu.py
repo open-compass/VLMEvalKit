@@ -95,7 +95,7 @@ class MLVU_MCQ(VideoBaseDataset):
                     return False
             return True
 
-        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
+        if modelscope_flag_set():
             repo_id = "AI-ModelScope/MLVU"
 
         cache_path = get_cache_path(repo_id)
@@ -126,7 +126,7 @@ class MLVU_MCQ(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
+            if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
@@ -306,7 +306,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
                     return False
             return True
 
-        if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
+        if modelscope_flag_set():
             repo_id = "AI-ModelScope/MLVU"
 
         cache_path = get_cache_path(repo_id)
@@ -337,7 +337,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            if os.environ.get('VLMEVALKIT_USE_MODELSCOPE', 'False') == 'True':
+            if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
