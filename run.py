@@ -59,9 +59,6 @@ You can launch the evaluation by setting either --data and --model or --config.
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
     ```json
     {
-        "mode":{
-            "use_prism": 1
-        },
         "model": {
             "GPT4o_20240806_T00_HIGH": {
                 "class": "GPT4V",
