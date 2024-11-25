@@ -96,6 +96,9 @@ Based on your observations, select the best option that accurately addresses the
                     return False
             return True
 
+        if modelscope_flag_set():
+            repo_id = 'modelscope/MVBench'
+
         cache_path = get_cache_path(repo_id, branch='main')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
@@ -148,7 +151,6 @@ Based on your observations, select the best option that accurately addresses the
                 data_df.to_csv(data_file, sep='\t', index=False)
 
             def move_files(pth):
-                # special for mvbench/data0613 supplementary data
                 src_folder = os.path.join(pth, 'video/data0613')
                 if not os.path.exists(src_folder):
                     return
@@ -162,11 +164,20 @@ Based on your observations, select the best option that accurately addresses the
                                     item_path = os.path.join(subsubdir_path, item)
                                     target_folder = os.path.join(pth, 'video', subdir, subsubdir)
                                     if not os.path.exists(target_folder):
-                                        shutil.move(item_path, target_folder)
+                                        os.makedirs(target_folder)
+                                    target_path = os.path.join(target_folder, item)
+                                    try:
+                                        shutil.move(item_path, target_path)
+                                    except Exception as e:
+                                        print(f"Error moving {item_path} to {target_path}: {e}")
 
-            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            huggingface_hub.login(hf_token)
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id, revision='master')
+            else:
+                hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+                huggingface_hub.login(hf_token)
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unzip_hf_zip(dataset_path)
             move_files(dataset_path)
             generate_tsv(dataset_path)
@@ -423,7 +434,7 @@ Based on your observations, select the best option that accurately addresses the
 
 class MVBench_MP4(VideoBaseDataset):
 
-    MP4_MD5 = '7b4608045347904c28c153015a7a2b6b'
+    MP4_MD5 = '5c8c6f8b7972c2de65a629590f7c42f5'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -453,13 +464,16 @@ Based on your observations, select the best option that accurately addresses the
                     return False
             return True
 
+        if modelscope_flag_set():
+            repo_id = 'modelscope/MVBench'
+
         cache_path = get_cache_path(repo_id, branch='video')
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
             def generate_tsv(pth):
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
-                if os.path.exists(data_file) and md5(data_file) == self.MD5:
+                if os.path.exists(data_file) and md5(data_file) == self.MP4_MD5:
                     return
                 json_data_path = os.path.join(dataset_path, 'test.json')
                 json_data = load(json_data_path)
@@ -479,9 +493,13 @@ Based on your observations, select the best option that accurately addresses the
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            huggingface_hub.login(hf_token)
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset', revision='video')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id, revision='video')
+            else:
+                hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+                huggingface_hub.login(hf_token)
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset', revision='video')
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')

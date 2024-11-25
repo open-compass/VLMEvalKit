@@ -322,6 +322,18 @@ class InternVLChat(BaseModel):
                 question_orig = question_orig.split('Question:', 1)[-1].strip()
                 question_orig = question_orig.replace('Choices:\n', '').strip()
 
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = ''
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+
+            if options_prompt.strip():
+                question_orig = f'{question_orig}\n{options_prompt}'
+
             prompt = cot_prompt.format(question=question_orig)
 
         message = [dict(type='text', value=prompt)]

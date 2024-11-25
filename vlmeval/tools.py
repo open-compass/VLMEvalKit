@@ -115,8 +115,11 @@ def completed(m, d, suf):
 
 
 def DLIST(lvl):
-    lst = [x[0] for x in dataset_levels[lvl]]
-    return lst
+    if lvl in dataset_levels.keys():
+        return [x[0] for x in dataset_levels[lvl]]
+    else:
+        from vlmeval.dataset import SUPPORTED_DATASETS
+        return SUPPORTED_DATASETS
 
 
 def MLIST(lvl, size='all'):
@@ -365,9 +368,9 @@ def EVAL(dataset_name, data_file):
     if isinstance(eval_results, dict):
         logger.info('\n' + json.dumps(eval_results, indent=4))
     elif isinstance(eval_results, pd.DataFrame):
-        if len(eval_results) < len(eval_results.columns):
-            eval_results = eval_results.T
-        logger.info('\n' + tabulate(eval_results))
+        logger.info('\n' + (tabulate(eval_results.T)
+                            if len(eval_results) < len(eval_results.columns) else eval_results))
+    return eval_results
 
 
 def cli():

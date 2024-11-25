@@ -76,7 +76,7 @@ class VideoBaseDataset:
             indices = [int(i * step_size) for i in range(required_frames)]
 
             # 提取帧并保存
-            frame_paths = self.frame_paths_fps(video, len(izhendices), fps)
+            frame_paths = self.frame_paths_fps(video, len(indices), fps)
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
