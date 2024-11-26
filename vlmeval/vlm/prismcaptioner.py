@@ -17,7 +17,6 @@ from vlmeval.vlm.base import BaseModel
 from vlmeval.smp import cn_string, get_cache_path
 from vlmeval.dataset import DATASET_TYPE
 
-from torchsummary import summary
 
 class LLaVA_XTuner_Wrapper(BaseModel):
     INSTALL_REQ = True
