@@ -25,7 +25,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
-- **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to **[runninglsy](https://github.com/runninglsy)**
+- **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
 - **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from **[modelscope](https://www.modelscope.cn)** 🔥🔥🔥
 - **[2024-11-25]** Supported **[VizWiz](https://vizwiz.org/tasks/vqa/)** benchmark 🔥🔥🔥
 - **[2024-11-22]** Supported the inference of **[MMGenBench](https://mmgenbench.alsoai.com)**, thanks **[lerogo](https://github.com/lerogo)** 🔥🔥🔥
