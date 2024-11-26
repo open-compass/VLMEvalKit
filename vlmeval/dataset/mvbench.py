@@ -191,22 +191,10 @@ Based on your observations, select the best option that accurately addresses the
         }
 
         self.nframe = 8
-        self.resolution = 224
         self.frame_fps = 3
 
         # transform
-        crop_size = self.resolution
-        scale_size = self.resolution
-        input_mean = [0.48145466, 0.4578275, 0.40821073]
-        input_std = [0.26862954, 0.26130258, 0.27577711]
         self.transform = T.Compose([
-            GroupScale(int(scale_size), interpolation=InterpolationMode.BICUBIC),
-            GroupCenterCrop(crop_size),
-            Stack(),
-            ToTorchFormatTensor(),
-            GroupNormalize(input_mean, input_std)
-        ])
-        self.simple_transform = T.Compose([
             Stack(),
             ToTorchFormatTensor()
         ])
@@ -505,21 +493,9 @@ Based on your observations, select the best option that accurately addresses the
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
         self.nframe = 8
-        self.resolution = 224
 
         # transform
-        crop_size = self.resolution
-        scale_size = self.resolution
-        input_mean = [0.48145466, 0.4578275, 0.40821073]
-        input_std = [0.26862954, 0.26130258, 0.27577711]
         self.transform = T.Compose([
-            GroupScale(int(scale_size), interpolation=InterpolationMode.BICUBIC),
-            GroupCenterCrop(crop_size),
-            Stack(),
-            ToTorchFormatTensor(),
-            GroupNormalize(input_mean, input_std)
-        ])
-        self.simple_transform = T.Compose([
             Stack(),
             ToTorchFormatTensor()
         ])
