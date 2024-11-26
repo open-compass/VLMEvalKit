@@ -2,6 +2,7 @@ import torch
 import re
 from vlmeval.api import OpenAIWrapper
 from vlmeval.utils import track_progress_rich
+import os
 
 
 # remap the gpt model name
@@ -18,9 +19,9 @@ gpt_version_map = {
 
 # # map the model name to the api type
 # reasoning_mapping = {
-#     'llama3-70b-chat':'vllm',
-#     'Mixtral-8x22B-chat':'vllm',
-#     'deepseek-chat':'deepseek',
+#     'llama3-70b-chat':'silicon',
+#     'Mixtral-8x22B-chat':'silicon',
+#     'deepseek-ai/DeepSeek-V2-Chat':'silicon',
 # }
 #
 # # stop_tokens for deploying vllm
@@ -145,6 +146,8 @@ class LLMWrapper:
         # self.PORT = 8080
         # self.vllm_api_base = f'http://localhost:{self.PORT}/v1/chat/completions'
 
+        self.prism_llm_api_base = os.environ['PRISM_LLM_API_BASE']
+
         if model_name.endswith('-2048'):
             model_name = model_name.replace('-2048', '')
             max_tokens = 2048
@@ -152,18 +155,24 @@ class LLMWrapper:
         if model_name in gpt_version_map:
             gpt_version = gpt_version_map[model_name]
             model = OpenAIWrapper(gpt_version, max_tokens=max_tokens, verbose=verbose, retry=retry)
+        else:
+            # use your api
+            api_key = os.environ['PRISM_LLM_API_KEY']
+            model = OpenAIWrapper(model_name, api_base=self.prism_llm_api_base, key=api_key,
+                                  max_tokens=max_tokens, system_prompt='You are a helpful assistant.',
+                                  verbose=verbose, retry=retry)
 
         # elif reasoning_mapping[model_name] == 'vllm':
         #     model = OpenAIWrapper(model_name, api_base=self.vllm_api_base, max_tokens=max_tokens,
         #                           system_prompt='You are a helpful assistant.', verbose=verbose, retry=retry,
         #                           stop=stop_tokens[model_name])
         # elif reasoning_mapping[model_name] == 'deepseek':
-        #     deepseek_key = os.environ['DEEPSEEK_API_KEY']
+        #     deepseek_key = os.environ['SILICON_API_KEY']
         #     model = OpenAIWrapper(model_name, api_base=self.deepseek_api_base, key=deepseek_key,
         #     max_tokens=max_tokens, system_prompt='You are a helpful assistant.', verbose=verbose, retry=retry)
-
-        else:
-            print('Unknown API model for inference')
+        #
+        # else:
+        #     print('Unknown API model for inference')
 
         self.model = model
 
