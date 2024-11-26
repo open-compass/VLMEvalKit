@@ -17,6 +17,7 @@ from vlmeval.vlm.base import BaseModel
 from vlmeval.smp import cn_string, get_cache_path
 from vlmeval.dataset import DATASET_TYPE
 
+from torchsummary import summary
 
 class LLaVA_XTuner_Wrapper(BaseModel):
     INSTALL_REQ = True
@@ -30,8 +31,8 @@ class LLaVA_XTuner_Wrapper(BaseModel):
                  prompt_template=None,
                  stop_words=[],
                  torch_dtype=torch.float16,
-                 vision_encoder_type=SiglipImageProcessor,
-                 image_processor_type=SiglipVisionModel):
+                 vision_encoder_type=SiglipVisionModel,
+                 image_processor_type=SiglipImageProcessor):
 
         from peft import PeftModel
         from xtuner.utils import PROMPT_TEMPLATE, StopWordStoppingCriteria

@@ -5,7 +5,6 @@ from .base import BaseModel
 from ..smp import splitlen
 from PIL import Image
 from transformers.image_utils import load_image
-from transformers import AutoProcessor, Idefics3ForConditionalGeneration
 
 import os
 import math
@@ -16,6 +15,7 @@ class SmolVLM(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='HuggingFaceTB/SmolVLM-Instruct', **kwargs):
+        from transformers import AutoProcessor, Idefics3ForConditionalGeneration
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.processor = AutoProcessor.from_pretrained(model_path)
