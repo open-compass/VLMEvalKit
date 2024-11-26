@@ -169,6 +169,13 @@ def main():
 
     for _, model_name in enumerate(args.model):
         model = None
+        if use_config:
+            model = build_model_from_config(cfg['model'][model_name])
+        if model_name == 'Prism':
+            fronted_name = cfg['model']['Prism']['model']['fronted']['model']
+            backend_name = cfg['model']['Prism']['model']['backend']['model']
+            model_name = model_name + '_' + fronted_name + '_' + backend_name
+
         date, commit_id = timestr('day'), githash(digits=8)
         eval_id = f"T{date}_G{commit_id}"
 
@@ -182,9 +189,6 @@ def main():
 
         if not osp.exists(pred_root):
             os.makedirs(pred_root, exist_ok=True)
-
-        if use_config:
-            model = build_model_from_config(cfg['model'][model_name])
 
         for _, dataset_name in enumerate(args.data):
             try:
