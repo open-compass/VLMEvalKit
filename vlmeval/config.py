@@ -94,6 +94,8 @@ api_models = {
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
+    # TeleMM
+    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', stream=False, temperature=0.7, top_p=0.95, top_k=50, frequency_penalty=0, n=1, max_tokens=300, retry=10)
 }
 
 mmalaya_series = {
@@ -141,6 +143,10 @@ llava_series = {
     'llava_next_qwen_32b': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-qwen-32b'),
     'llava_next_interleave_7b': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-hf'),
     'llava_next_interleave_7b_dpo': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-dpo-hf'),
+    'llava-onevision-qwen2-0.5b-ov-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-0.5b-ov-hf'),
+    'llava-onevision-qwen2-0.5b-si-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-0.5b-si-hf'),
+    'llava-onevision-qwen2-7b-ov-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-7b-ov-hf'),
+    'llava-onevision-qwen2-7b-si-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-7b-si-hf'),
     'llava_onevision_qwen2_0.5b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-si'),
     'llava_onevision_qwen2_7b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-si'),
     'llava_onevision_qwen2_72b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-si'),
@@ -164,7 +170,8 @@ internvl_series = {
     'InternVL2-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-2B', version='V2.0'),
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
-    'InternVL2-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0', cot_prompt=True),
+    'InternVL2-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0'),
+    'InternVL2-8B-MPO-CoT': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0', cot_prompt=True),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
     'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
@@ -201,7 +208,9 @@ idefics_series = {
 }
 
 smolvlm_series = {
-    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct')
+    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
+    'SmolVLM-DPO': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct-DPO'),
+    'SmolVLM-Synthetic': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
 }
 
 instructblip_series = {
@@ -252,7 +261,8 @@ ovis_series = {
     'Ovis1.5-Llama3-8B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Llama3-8B'),
     'Ovis1.5-Gemma2-9B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Gemma2-9B'),
     'Ovis1.6-Gemma2-9B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Gemma2-9B'),
-    'Ovis1.6-Llama3.2-3B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Llama3.2-3B')
+    'Ovis1.6-Llama3.2-3B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Llama3.2-3B'),
+    'Ovis1.6-Gemma2-27B': partial(Ovis1_6_Plus, model_path='AIDC-AI/Ovis1.6-Gemma2-27B')
 }
 
 mantis_series = {

@@ -25,20 +25,21 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+- **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
+- **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from **[modelscope](https://www.modelscope.cn)** 🔥🔥🔥
+- **[2024-11-25]** Supported **[VizWiz](https://vizwiz.org/tasks/vqa/)** benchmark 🔥🔥🔥
+- **[2024-11-22]** Supported the inference of **[MMGenBench](https://mmgenbench.alsoai.com)**, thanks **[lerogo](https://github.com/lerogo)** 🔥🔥🔥
+- **[2024-11-22]** Supported **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)**, a multimodal math benchmark comprising of 501 SEED problems and 10 variants generated based on random seeds. The benchmark can be used to measure the robustness of MLLMs in multi-modal math solving 🔥🔥🔥
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
 - **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks **[andrewliao11](https://github.com/andrewliao11)**  for providing the official support 🔥🔥🔥
 - **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
 - **[2024-11-16]** Supported **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**, a new multimodal benchmark comprising olympiad-level math and physics questions 🔥🔥🔥
 - **[2024-11-16]** Supported **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**, a new subjective multimodal benchmark derived from multi-modal arena data 🔥🔥🔥
 - **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
-- **[2024-11-08]** Supported **[Aria](https://arxiv.org/abs/2410.05993)**, a multimodal native MoE model. And **[LongVideoBench](https://longvideobench.github.io/)**, a benchmark for long-context interleaved video-language understanding. thanks to **[teowu](https://github.com/teowu)** 🔥🔥🔥
-- **[2024-11-04]** Supported **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**, the benchmark contains 1000+ Medical VQA problems, in languages of four countries: Brazil, Isarel, Japan, Spanish, as well as their English translations 🔥🔥🔥
-- **[2024-11-01]** Supported an `AUTO_SPLIT` flag (https://github.com/open-compass/VLMEvalKit/pull/566) for evaluation on low-profile GPUs. When set, the model will be automatically split into multiple GPUs (pipeline parallel) to reduce GPU memory usage (currently only support some VLMs: Qwen2-VL, Llama-3.2, LLaVA-OneVision, etc.) 🔥🔥🔥
-- **[2024-10-30]** Supported the evaluation of **[MLVU](https://github.com/JUNJIE99/MLVU)** and **[TempCompass](https://arxiv.org/abs/2403.00476v1)**. The two benchmarks will be soon incorporated into **[OpenVLM Video Leaderboard](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
 
 ## 🏗️ QuickStart
 
-See [[QuickStart](/docs/en/get_started/Quickstart.md) | [快速开始](/docs/zh-CN/get_started/Quickstart.md)] for a quick start guide.
+See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstart.md)] for a quick start guide.
 
 ## 📊 Datasets, Models, and Evaluation Results
 
@@ -83,7 +84,9 @@ See [[QuickStart](/docs/en/get_started/Quickstart.md) | [快速开始](/docs/zh-
 | **[R-Bench](https://arxiv.org/abs/2410.05474)**+ | R-Bench-[Dis/Ref] | MCQ | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+ | WorldMedQA-V | MCQ |
 | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
 | **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
-| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA |  |  |  |
+| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA | **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)** | DynaMath | VQA |
+| **[MMGenBench](https://mmgenbench.alsoai.com/)**- | MMGenBench-Test<br>MMGenBench-Domain | - | **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**+ | QSpatial_[plus/scannet] | VQA |
+| **[VizWiz](https://vizwiz.org/tasks/vqa/)**+ | VizWiz | VQA |   |   |   |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
@@ -111,6 +114,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- |
 | [**Reka-[Edge / Flash / Core]**](https://www.reka.ai)🚅       | [**Qwen-VL-[Plus / Max]**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅<br>[**Qwen-VL-[Plus / Max]-0809**](https://huggingface.co/spaces/Qwen/Qwen-VL-Max) 🎞️🚅 | [**Claude3-[Haiku / Sonnet / Opus]**](https://www.anthropic.com/news/claude-3-family) 🎞️🚅 | [**GLM-4v**](https://open.bigmodel.cn/dev/howuse/glm4v) 🚅    | [**CongRong**](https://mllm.cloudwalk.com/web) 🎞️🚅 |
 | [**Claude3.5-Sonnet (20240620, 20241022)**](https://www.anthropic.com/news/claude-3-5-sonnet) 🎞️🚅 | [**GPT-4o-Mini**](https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/) 🎞️🚅 | [**Yi-Vision**](https://platform.lingyiwanwu.com)🎞️🚅          | [**Hunyuan-Vision**](https://cloud.tencent.com/document/product/1729)🎞️🚅 | [**BlueLM-V**](https://developers.vivo.com/) 🎞️🚅   |
+| [**TeleMM**](https://cloud.siliconflow.cn/playground/chat/17885302607)🎞️🚅                                                 |
 
 **Supported PyTorch / HF Models**
 
@@ -124,7 +128,7 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**DeepSeek-VL**](https://github.com/deepseek-ai/DeepSeek-VL/tree/main)🎞️ | [**LLaVA-NeXT**](https://llava-vl.github.io/blog/2024-01-30-llava-next/)🚅🎞️ | [**Bunny-Llama3**](https://huggingface.co/BAAI/Bunny-v1_1-Llama-3-8B-V)🚅 | [**XVERSE-V-13B**](https://github.com/xverse-ai/XVERSE-V-13B/blob/main/vxverse/models/vxverse.py) |
 | [**PaliGemma-3B**](https://huggingface.co/google/paligemma-3b-pt-448) 🚅 | [**360VL-70B**](https://huggingface.co/qihoo360/360VL-70B) 🚅 | [**Phi-3-Vision**](https://huggingface.co/microsoft/Phi-3-vision-128k-instruct)🚅🎞️<br>[**Phi-3.5-Vision**](https://huggingface.co/microsoft/Phi-3.5-vision-instruct)🚅🎞️ | [**WeMM**](https://github.com/scenarios/WeMM)🚅               |
 | [**GLM-4v-9B**](https://huggingface.co/THUDM/glm-4v-9b) 🚅    | [**Cambrian-[8B/13B/34B]**](https://cambrian-mllm.github.io/) | [**LLaVA-Next-[Qwen-32B]**](https://huggingface.co/lmms-lab/llava-next-qwen-32b) 🎞️ | [**Chameleon-[7B/30B]**](https://huggingface.co/facebook/chameleon-7b)🚅🎞️ |
-| [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 | [**VILA1.5-[3B/8B/13B/40B]**](https://github.com/NVlabs/VILA/)🎞️ | [**Ovis[1.5-Llama3-8B/1.5-Gemma2-9B/1.6-Gemma2-9B/1.6-Llama3.2-3B]**](https://github.com/AIDC-AI/Ovis) 🚅🎞️ | [**Mantis-8B-[siglip-llama3/clip-llama3/Idefics2/Fuyu]**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2) 🎞️ |
+| [**Video-LLaVA-7B-[HF]**](https://github.com/PKU-YuanGroup/Video-LLaVA) 🎬 | [**VILA1.5-[3B/8B/13B/40B]**](https://github.com/NVlabs/VILA/)🎞️ | [**Ovis[1.5-Llama3-8B/1.5-Gemma2-9B/1.6-Gemma2-9B/1.6-Llama3.2-3B/1.6-Gemma2-27B]**](https://github.com/AIDC-AI/Ovis) 🚅🎞️ | [**Mantis-8B-[siglip-llama3/clip-llama3/Idefics2/Fuyu]**](https://huggingface.co/TIGER-Lab/Mantis-8B-Idefics2) 🎞️ |
 | [**Llama-3-MixSenseV1_1**](https://huggingface.co/Zero-Vision/Llama-3-MixSenseV1_1)🚅 | [**Parrot-7B**](https://github.com/AIDC-AI/Parrot) 🚅         | [**OmChat-v2.0-13B-sinlge-beta**](https://huggingface.co/omlab/omchat-v2.0-13B-single-beta_hf)  🚅 | [**Video-ChatGPT**](https://github.com/mbzuai-oryx/Video-ChatGPT) 🎬 |
 | [**Chat-UniVi-7B[-v1.5]**](https://github.com/PKU-YuanGroup/Chat-UniVi) 🎬 | [**LLaMA-VID-7B**](https://github.com/dvlab-research/LLaMA-VID) 🎬 | [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B) 🎬 | [**PLLaVA-[7B/13B/34B]**](https://huggingface.co/ermu2001/pllava-7b) 🎬 |
 | [**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️   | [**xgen-mm-phi3-[interleave/dpo]-r-v1.5**](https://huggingface.co/Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5) 🚅🎞️ | [**Qwen2-VL-[2B/7B/72B]**](https://github.com/QwenLM/Qwen2-VL)🚅🎞️ | [**slime_[7b/8b/13b]**](https://github.com/yfzhang114/SliME)🎞️ |
@@ -179,7 +183,7 @@ print(ret)  # There are two apples in the provided images.
 
 ## 🛠️ Development Guide
 
-To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/advanced_guides/Development.md) | [开发指南](/docs/zh-CN/advanced_guides/Development.md)].
+To develop custom benchmarks, VLMs, or simply contribute other codes to **VLMEvalKit**, please refer to [[Development_Guide](/docs/en/Development.md) | [开发指南](/docs/zh-CN/Development.md)].
 
 **Call for contributions**
 
@@ -188,7 +192,7 @@ To promote the contribution from the community and share the corresponding credi
 - All Contributions will be acknowledged in the report.
 - Contributors with 3 or more major contributions (implementing an MLLM, benchmark, or major feature) can join the author list of [VLMEvalKit Technical Report](https://www.arxiv.org/abs/2407.11691) on ArXiv. Eligible contributors can create an issue or dm kennyutc in [VLMEvalKit Discord Channel](https://discord.com/invite/evDT4GZmxN).
 
-Here is a [contributor list](/docs/en/advanced_guides/Contributors.md) we curated based on the records.
+Here is a [contributor list](/docs/en/Contributors.md) we curated based on the records.
 
 ## 🎯 The Goal of VLMEvalKit
 
