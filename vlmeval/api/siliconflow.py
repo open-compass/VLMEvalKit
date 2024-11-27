@@ -3,42 +3,48 @@ from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import img_root_map
 from vlmeval.dataset import DATASET_TYPE
 
-url = 'https://api.siliconflow.cn/v1/chat/completions'
-headers = {
-    "Authorization": 'Bearer {}',
-    "Content-Type": "application/json"
-}
+API_BASE = 'https://api.siliconflow.cn/v1/chat/completions'
 
 
-class TeleMMAPI(BaseAPI):
+class SiliconFlowAPI(BaseAPI):
 
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'TeleAI/TeleMM',
-                 stream: bool = False,
-                 temperature: float = 0.7,
-                 top_p: float = 0.95,
-                 top_k: float = 50,
-                 frequency_penalty: float = 0,
-                 n: int = 1,
-                 max_tokens: int = 300,
+                 model: str = 'deepseek-ai/DeepSeek-V2.5',
+                 retry: int = 5,
+                 wait: int = 5,
                  key: str = None,
+                 api_base: str = API_BASE,
+                 verbose: bool = True,
+                 system_prompt: str = None,
+                 timeout: int = 60,
                  **kwargs):
+
         self.model = model
-        self.stream = stream
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.top_p = top_p
-        self.top_k = top_k
-        self.frequency_penalty = frequency_penalty
-        self.n = n
+        self.api_base = api_base
+
+        default_kwargs = {
+            'stream': False,
+            'temperature': 0,
+            'frequency_penalty': 0,
+            'n': 1,
+            'max_tokens': 1024,
+        }
+        for k, v in default_kwargs.items():
+            if k not in kwargs:
+                kwargs[k] = default_kwargs[k]
         if key is not None:
             self.key = key
         else:
             self.key = os.environ.get('SiliconFlow_API_KEY', '')
+        headers = {
+            "Authorization": 'Bearer {}',
+            "Content-Type": "application/json"
+        }
         headers['Authorization'] = headers['Authorization'].format(self.key)
-        super().__init__(**kwargs)
+        self.headers = headers
+        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     @staticmethod
     def build_msgs(msgs_raw):
@@ -73,18 +79,15 @@ class TeleMMAPI(BaseAPI):
         return messages
 
     def generate_inner(self, inputs, **kwargs) -> str:
+        default_kwargs = self.default_kwargs
+        default_kwargs.update(kwargs)
+
         payload = dict(
             model=self.model,
             messages=self.build_msgs(msgs_raw=inputs),
-            stream=self.stream,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            top_p=self.top_p,
-            top_k=self.top_k,
-            frequency_penalty=self.frequency_penalty,
-            n=self.n,
-            **kwargs)
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
+            **default_kwargs)
+
+        response = requests.post(self.api_base, headers=self.headers, data=json.dumps(payload))
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
 
@@ -95,6 +98,17 @@ class TeleMMAPI(BaseAPI):
         except:
             pass
         return ret_code, answer, response
+
+
+class TeleMMAPI(SiliconFlowAPI):
+
+    is_api: bool = True
+
+    def __init__(self,
+                 model: str = 'TeleAI/TeleMM',
+                 key: str = None,
+                 **kwargs):
+        super().__init__(model=model, key=key, **kwargs)
 
     def dump_image(self, line, dataset):
         """Dump the image(s) of the input line to the corresponding dataset folder.
@@ -169,8 +183,3 @@ class TeleMMAPI(BaseAPI):
         ret = [dict(type='text', value=prompt)]
         ret.extend([dict(type='image', value=s) for s in tgt_path])
         return ret
-
-
-class TeleMM(TeleMMAPI):
-    def generate(self, message, dataset=None):
-        return super(TeleMMAPI, self).generate(message)

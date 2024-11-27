@@ -95,7 +95,7 @@ api_models = {
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
     # TeleMM
-    'TeleMM': partial(TeleMM, model='TeleAI/TeleMM', frequency_penalty=0, retry=10)
+    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', stream=False, temperature=0.7, top_p=0.95, top_k=50, frequency_penalty=0, n=1, max_tokens=300, retry=10)
 }
 
 mmalaya_series = {
@@ -208,7 +208,9 @@ idefics_series = {
 }
 
 smolvlm_series = {
-    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct')
+    'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
+    'SmolVLM-DPO': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct-DPO'),
+    'SmolVLM-Synthetic': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
 }
 
 instructblip_series = {
