@@ -4,7 +4,6 @@ import warnings
 from .base import BaseModel
 from ..smp import splitlen
 from PIL import Image
-from transformers.image_utils import load_image
 
 import os
 import math
@@ -16,6 +15,7 @@ class SmolVLM(BaseModel):
 
     def __init__(self, model_path='HuggingFaceTB/SmolVLM-Instruct', **kwargs):
         from transformers import AutoProcessor, Idefics3ForConditionalGeneration
+        from transformers.image_utils import load_image
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.processor = AutoProcessor.from_pretrained(model_path)
@@ -34,7 +34,8 @@ class SmolVLM(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         if dataset in ['MMBench_DEV_EN', 'MMBench_TEST_EN', 'MMBench_DEV_CN', 'MMBench_TEST_CN', 'MMBench',
-                       'MMBench_CN']:
+                       'MMBench_CN', 'MMBench_DEV_EN_V11', 'MMBench_DEV_CN_V11', 'MMBench_TEST_EN_V11',
+                       'MMBench_TEST_CN_V11', 'MMBench_V11', 'MMBench_CN_V11', 'CCBench']:
             formatted_messages, formatted_images = self.build_prompt_mmbench(message)
         elif dataset in ['MMMU_DEV_VAL', 'MMMU_TEST']:
             formatted_messages, formatted_images = self.build_prompt_mmmu(message)
@@ -63,6 +64,7 @@ class SmolVLM(BaseModel):
         return generated_text.strip()
 
     def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False):
+        from transformers.image_utils import load_image
         prompt, images = 'User:', []
         for msg in message:
             if msg['type'] == 'image':
@@ -79,6 +81,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_puremcq(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             '\nOptions:': '\nChoices:',
             'Please select the correct answer from the options above.': 'Answer with the letter.',
@@ -99,6 +102,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_mt(self, message):
+        from transformers.image_utils import load_image
         prompt, images = '', []
         for msg in message:
             if msg['role'] == 'user':
@@ -115,6 +119,7 @@ class SmolVLM(BaseModel):
         return prompt + 'Assistant: '
 
     def build_prompt_mmbench(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             '\nOptions:': '\nChoices:',
             'Please select the correct answer from the options above.': 'Answer with a letter.',
@@ -131,7 +136,7 @@ class SmolVLM(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 # Swap hint and question
-                if 'Hint:' in instruction:
+                if instruction.startswith('Hint:'):
                     hint, question = instruction.split('\nQuestion:')
                     question, choices = question.split('\nChoices:')
                     instruction = (
@@ -142,6 +147,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_mmmu(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             'Question:': '',
             'Please select the correct answer from the options above.': 'Answer with the letter.',
@@ -172,6 +178,7 @@ class SmolVLM(BaseModel):
         return prompt, images
 
     def build_prompt_mathvista(self, message):
+        from transformers.image_utils import load_image
         replace_mapping = {
             '(A) ': 'A. ',
             '(B) ': 'B. ',
