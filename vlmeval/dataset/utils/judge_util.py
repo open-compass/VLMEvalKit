@@ -1,11 +1,11 @@
 import os
-from ...api import OpenAIWrapper, SiliconFlowAPI
 from ...smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 
 def build_judge(**kwargs):
+    from ...api import OpenAIWrapper, SiliconFlowAPI
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
     load_env()
@@ -29,7 +29,7 @@ def build_judge(**kwargs):
     else:
         model_version = LOCAL_LLM
 
-    if model_version in ['qwen-7b', 'qwen-72b', 'deepseek']:
+    if model in ['qwen-7b', 'qwen-72b', 'deepseek']:
         model = SiliconFlowAPI(model_version, **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)

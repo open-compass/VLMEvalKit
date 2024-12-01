@@ -64,6 +64,8 @@ api_models = {
     'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),  # now GeminiPro1-0 is only supported by vertex backend
     'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
     'GeminiFlash1-5': partial(GeminiProVision, model='gemini-1.5-flash', temperature=0, retry=10),
+    'GeminiPro1-5-002': partial(GPT4V, model='gemini-1.5-pro-002', temperature=0, retry=10),  # Internal Use Only
+    'GeminiFlash1-5-002': partial(GPT4V, model='gemini-1.5-flash-002', temperature=0, retry=10),  # Internal Use Only
     # Qwen-VL
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
