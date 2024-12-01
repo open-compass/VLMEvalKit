@@ -239,8 +239,11 @@ class OpenAIWrapper(BaseAPI):
         try:
             enc = tiktoken.encoding_for_model(self.model)
         except Exception as err:
-            self.logger.warning(f'{type(err)}: {err}')
-            enc = tiktoken.encoding_for_model('gpt-4')
+            if 'gpt' in self.model.lower():
+                self.logger.warning(f'{type(err)}: {err}')
+                enc = tiktoken.encoding_for_model('gpt-4')
+            else:
+                return 0
         assert isinstance(inputs, list)
         tot = 0
         for item in inputs:
