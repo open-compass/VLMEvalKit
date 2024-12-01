@@ -6,7 +6,7 @@ def get_score(model, dataset):
     file_name = f'{model}/{model}_{dataset}'
     if listinstr([
         'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 
-        'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK'
+        'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK', 'VisOnlyQA-VLMEvalKit'
     ], dataset):
         file_name += '_acc.csv'
     elif listinstr(['MME', 'Hallusion', 'LLaVABench'], dataset):
@@ -59,6 +59,9 @@ def get_score(model, dataset):
         ret[dataset] = float(data['Relative Score (main)'])
     elif 'OCRBench' in dataset:
         ret[dataset] = data['Final Score']
+    elif dataset == 'VisOnlyQA-VLMEvalKit':
+        for n, a in zip(data['split'], data['Overall']):
+            ret[f'VisOnlyQA-VLMEvalKit_{n}'] = a * 100
      
     return ret
 
