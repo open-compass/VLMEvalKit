@@ -266,12 +266,12 @@ class MathVista(ImageBaseDataset):
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVerse_MINI': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini.tsv', # noqa
-        'MathVerse_MINI_Vision_Only': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Only.tsv', # noqa
-        'MathVerse_MINI_Vision_Dominant': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Dominant.tsv', # noqa
-        'MathVerse_MINI_Vision_Intensive': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Intensive.tsv', # noqa
-        'MathVerse_MINI_Text_Lite': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Text_Lite.tsv', # noqa
-        'MathVerse_MINI_Text_Dominant': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Text_Dominant.tsv', # noqa
+        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINI.tsv', # noqa
+        'MathVerse_MINI_Vision_Only': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
+        'MathVerse_MINI_Vision_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv', # noqa
+        'MathVerse_MINI_Vision_Intensive': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv', # noqa
+        'MathVerse_MINI_Text_Lite': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv', # noqa
+        'MathVerse_MINI_Text_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv', # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
