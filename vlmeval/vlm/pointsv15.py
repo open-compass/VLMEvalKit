@@ -1,10 +1,12 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import Qwen2VLImageProcessor
+from transformers import QuantoConfig
 import torch
 from .base import BaseModel
 from ..dataset import DATASET_TYPE
-from ..smp import cn_string, concat_images_vlmeval
+from ..smp import cn_string
 import pandas as pd
+import re
 import string
 from typing import List
 
@@ -20,15 +22,16 @@ class POINTSV15(BaseModel):
             of the model.
     """
 
-    INTERLEAVE = True
-
     def __init__(self, model_path: str, **kwargs) -> None:
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True)
+        quant_config = QuantoConfig(modules_to_not_convert=['vision_encoder'])
         self.model = AutoModelForCausalLM.from_pretrained(model_path,
                                                           trust_remote_code=True,  # noqa
-                                                          device_map='cuda'
-                                                          ).to(torch.bfloat16)
+                                                          device_map='cuda',
+                                                          torch_dtype=torch.bfloat16,
+                                                          quantization_config=quant_config
+                                                          )
         self.image_processor = Qwen2VLImageProcessor.from_pretrained(model_path) # noqa
 
     def use_custom_prompt(self, dataset: str) -> bool:
@@ -104,19 +107,6 @@ class POINTSV15(BaseModel):
         else:
             self.image_processor.min_pixels = 840 * 840
 
-    def message_to_promptimg(self, message, dataset=None):
-        num_images = len([x for x in message if x['type'] == 'image'])
-        if num_images == 0:
-            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-            image = None
-        else:
-            prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-            images = [x['value'] for x in message if x['type'] == 'image']
-            if 'BLINK' == dataset:
-                image = concat_images_vlmeval(images, target_size=512)
-                images = [image]
-        return prompt, images
-
     def construct_messages(self, prompt: str,
                            image_paths: List[str]) -> List[dict]:
         """Construct messages for the given prompt and image paths.
@@ -157,6 +147,7 @@ class POINTSV15(BaseModel):
         """
         self.set_image_processor(dataset)
         prompt, image_paths = self.message_to_promptimg(message)
+        image_paths = [image_paths]
         if dataset == 'HallusionBench':
             prompt = prompt + \
                 ' Please answer yes or no. Answer the question using a single word or phrase.'  # noqa
@@ -165,6 +156,8 @@ class POINTSV15(BaseModel):
         else:
             # use default setting
             pass
+        pattern = r'<image \d+>'
+        prompt = re.sub(pattern, '\n', prompt)
         messages = self.construct_messages(prompt, image_paths)
 
         generation_config = {
