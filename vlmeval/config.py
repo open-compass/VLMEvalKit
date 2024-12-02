@@ -175,6 +175,8 @@ internvl_series = {
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
     'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
+    # test mmniah
+    'InternVL-mmniah': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='mmniah'),
 }
 
 yivl_series = {
