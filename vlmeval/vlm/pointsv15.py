@@ -1,5 +1,4 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers import Qwen2VLImageProcessor
 from transformers import QuantoConfig
 import torch
 from .base import BaseModel
@@ -9,6 +8,10 @@ import pandas as pd
 import re
 import string
 from typing import List
+try:
+    from wepoints.utils.images import Qwen2ImageProcessorForPOINTSV15
+except ImportError:
+    print('Please install WePOINTS, and refer to https://github.com/WePOINTS/WePOINTS')
 
 
 class POINTSV15(BaseModel):
@@ -32,7 +35,7 @@ class POINTSV15(BaseModel):
                                                           torch_dtype=torch.bfloat16,
                                                           quantization_config=quant_config
                                                           )
-        self.image_processor = Qwen2VLImageProcessor.from_pretrained(model_path) # noqa
+        self.image_processor = Qwen2ImageProcessorForPOINTSV15.from_pretrained(model_path) # noqa
 
     def use_custom_prompt(self, dataset: str) -> bool:
         """Whether to use custom prompt for the dataset.
