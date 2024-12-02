@@ -96,9 +96,14 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     im_mask = torch.cat(im_mask, dim=1)
     im_mask = im_mask.bool()
 
-    outputs = model.generate(inputs_embeds=embeds, im_mask=im_mask,
-                             temperature=1.0, max_new_tokens=max_token, num_beams=beams,
-                             do_sample=False, repetition_penalty=1.0)
+    outputs = model.generate(
+        inputs_embeds=embeds, im_mask=im_mask,
+        eos_token_id=[
+            model.tokenizer.eos_token_id,
+            model.tokenizer.convert_tokens_to_ids(['[UNUSED_TOKEN_145]'])[0]
+        ],
+        temperature=1.0, max_new_tokens=max_token, num_beams=beams,
+        do_sample=False, repetition_penalty=1.0)
 
     output_token = outputs[0]
     if output_token[0] == 0 or output_token[0] == 1:
@@ -106,6 +111,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
     output_text = model.tokenizer.decode(
         output_token, add_special_tokens=False)
     output_text = output_text.split('[UNUSED_TOKEN_145]')[0].strip()
+    output_text = output_text.split('</s>')[0].strip()
     return output_text
 
 
@@ -160,7 +166,8 @@ class XComposer2d5(BaseModel):
                 im_prompt = ' '.join(im_prompt)
                 for i in range(len(image)):
                     prompt = prompt.replace(f'<image {i+1}>', f'Image{i+1} ')
-                if listinstr(['mmlongbench', 'dude', 'slidevqa'], dataset.lower()):     # fix bug for multi-image prompt
+                # fix bug for multi-image prompt
+                if dataset is not None and listinstr(['mmlongbench', 'dude', 'slidevqa'], dataset.lower()):
                     prompt = '[UNUSED_TOKEN_146]user\n' + im_prompt + re.sub(
                         re.escape('[UNUSED_TOKEN_146]user\n'), '', prompt
                     )
@@ -203,7 +210,7 @@ class XComposer2d5(BaseModel):
         return out
 
     def set_max_num(self, dataset):
-        if listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+        if dataset is not None and listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             self.model.hd_num = 25
 
     def generate_inner(self, message, dataset=None):
