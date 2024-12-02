@@ -174,7 +174,7 @@ def main():
         if model_name == 'Prism':
             fronted_name = cfg['model']['Prism']['model']['fronted']['model']
             backend_name = cfg['model']['Prism']['model']['backend']['model']
-            backend_name = backend_name.replace('/', '\\')
+            backend_name = backend_name.replace('/', '-')
             model_name = model_name + '_' + fronted_name + '_' + backend_name
 
         date, commit_id = timestr('day'), githash(digits=8)

@@ -1,6 +1,6 @@
 import torch
 import re
-from vlmeval.api import OpenAIWrapper
+from vlmeval.api import OpenAIWrapper, SiliconFlowAPI
 from vlmeval.utils import track_progress_rich
 import os
 
@@ -158,9 +158,11 @@ class LLMWrapper:
         else:
             # use your api
             api_key = os.environ['PRISM_LLM_API_KEY']
-            model = OpenAIWrapper(model_name, api_base=self.prism_llm_api_base, key=api_key,
-                                  max_tokens=max_tokens, system_prompt='You are a helpful assistant.',
-                                  verbose=verbose, retry=retry)
+            model = SiliconFlowAPI(model_name, api_base=self.prism_llm_api_base, key=api_key,
+                                   system_prompt='You are a helpful assistant.', verbose=verbose, retry=retry)
+            # model = OpenAIWrapper(model_name, api_base=self.prism_llm_api_base, key=api_key,
+            #                       max_tokens=max_tokens, system_prompt='You are a helpful assistant.',
+            #                       verbose=verbose, retry=retry)
 
         # elif reasoning_mapping[model_name] == 'vllm':
         #     model = OpenAIWrapper(model_name, api_base=self.vllm_api_base, max_tokens=max_tokens,
