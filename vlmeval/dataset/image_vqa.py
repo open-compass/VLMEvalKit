@@ -1176,7 +1176,7 @@ class MMNIAH(ImageBaseDataset):
              'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ad',
              'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ae']}
     DATASET_MD5 = {'MM_NIAH_VAL': '27e5a8c3cef7746cb38f89cd86c474c5',
-                   'MM_NIAH_TEST': '49b19b787b7b9f565380d47fd6888c74'}
+                   'MM_NIAH_TEST': 'a5b085d2019807a8360354918f95d345'}
 
     def prepare_tsv(self, url, file_md5=None):
         import os
