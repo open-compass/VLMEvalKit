@@ -266,7 +266,7 @@ class MathVista(ImageBaseDataset):
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINI.tsv', # noqa
+        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv', # noqa
         'MathVerse_MINI_Vision_Only': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
         'MathVerse_MINI_Vision_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv', # noqa
         'MathVerse_MINI_Vision_Intensive': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv', # noqa
@@ -363,7 +363,7 @@ class MathVerse(ImageBaseDataset):
             dump(data, storage_score)
 
         score = MathVerse_acc(storage_score)
-        score_pth = storage_score.replace('.xlsx', '_score.csv')
+        score_pth = storage_score.replace('.xlsx', '.csv')
         dump(score, score_pth)
         return score
 
