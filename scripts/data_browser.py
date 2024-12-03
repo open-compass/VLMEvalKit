@@ -14,7 +14,7 @@ import base64
 from PIL import Image
 from io import BytesIO
 from argparse import Namespace
-from llava import conversation as conversation_lib
+# from llava import conversation as conversation_lib
 from typing import Sequence
 from vlmeval import *
 from vlmeval.dataset import SUPPORTED_DATASETS, build_dataset

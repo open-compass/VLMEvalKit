@@ -381,7 +381,7 @@ Based on your observations, select the best option that accurately addresses the
             data = load(eval_file)
             data_un = data[~pd.isna(data['prediction'])]
 
-            for idx in data['index']:
+            for idx in data_un['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
                 options = eval(data.loc[data['index'] == idx, 'candidates'].values[0])
@@ -626,7 +626,7 @@ Based on your observations, select the best option that accurately addresses the
             data = load(eval_file)
             data_un = data[~pd.isna(data['prediction'])]
 
-            for idx in data['index']:
+            for idx in data_un['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
                 options = eval(data.loc[data['index'] == idx, 'candidates'].values[0])
