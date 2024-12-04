@@ -81,7 +81,11 @@ Please directly reply with your response to the only question.
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unwrap_hf_pkl(dataset_path)
         self.video_path = osp.join(dataset_path, 'video/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')

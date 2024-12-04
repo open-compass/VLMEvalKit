@@ -100,6 +100,46 @@ class ImageVQADataset(ImageBaseDataset):
         return ret
 
 
+class VizWiz(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'VizWiz': 'https://opencompass.openxlab.space/utils/VLMEval/VizWiz.tsv'
+    }
+    DATASET_MD5 = {
+        'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'
+    }
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vqa_eval import hit_calculate, process_line
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+            assert 'answers' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answers']]
+
+            lt = len(data)
+            pool = mp.Pool(16)
+            lines = [data.iloc[i] for i in range(lt)]
+            res = pool.map(process_line, lines)
+
+            hit = hit_calculate(res, 'VizWiz')
+            ret = dict()
+
+            ret['Overall'] = np.mean(hit) * 100
+            ret = d2df(ret)
+            ret.round(2)
+
+            dump(ret, result_file)
+
+        retz = pd.read_csv(result_file)
+        return retz
+
+
 class OCRBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -226,12 +266,12 @@ class MathVista(ImageBaseDataset):
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVerse_MINI': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini.tsv', # noqa
-        'MathVerse_MINI_Vision_Only': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Only.tsv', # noqa
-        'MathVerse_MINI_Vision_Dominant': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Dominant.tsv', # noqa
-        'MathVerse_MINI_Vision_Intensive': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Vision_Intensive.tsv', # noqa
-        'MathVerse_MINI_Text_Lite': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Text_Lite.tsv', # noqa
-        'MathVerse_MINI_Text_Dominant': 'https://huggingface.co/datasets/CaraJ/Mathverse_VLMEvalKit/resolve/main/testmini_Text_Dominant.tsv', # noqa
+        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINI.tsv', # noqa
+        'MathVerse_MINI_Vision_Only': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
+        'MathVerse_MINI_Vision_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv', # noqa
+        'MathVerse_MINI_Vision_Intensive': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv', # noqa
+        'MathVerse_MINI_Text_Lite': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv', # noqa
+        'MathVerse_MINI_Text_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv', # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
