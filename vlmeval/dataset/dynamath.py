@@ -70,6 +70,7 @@ def DynaMath_auxeval(model, line):
         short_answer = dj.get("short answer")
         assert short_answer is not None
         succeed, short_answer = parse_answer(short_answer, answer_type=line['anwser_type'])
+        assert succeed
     except:
         # Failed to parse the JSON, use an auxiliary LLM to get the short answer
         if line['answer_type'] == 'multiple choice':
