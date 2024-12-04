@@ -68,6 +68,7 @@ def DynaMath_auxeval(model, line):
     try:
         dj = json.loads(pred, strict=False)
         short_answer = dj.get("short answer")
+        assert short_answer is not None
         succeed = True
     except:
         # Failed to parse the JSON, use an auxiliary LLM to get the short answer
