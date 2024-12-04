@@ -93,7 +93,10 @@ class ImageMCQDataset(ImageBaseDataset):
         ),
         'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv',
         'WorldMedQA-V': 'https://opencompass.openxlab.space/utils/VLMEval/WorldMedQA-V.tsv',
-        'VisOnlyQA-VLMEvalKit': 'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/resolve/main/visonlyqa_vlmevalkit.tsv',
+        'VisOnlyQA-VLMEvalKit': (
+            'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
+            'resolve/main/visonlyqa_vlmevalkit.tsv'
+        ),
     }
 
     DATASET_MD5 = {
@@ -267,11 +270,11 @@ class ImageMCQDataset(ImageBaseDataset):
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
         if dataset == 'VisOnlyQA-VLMEvalKit':
-            warnings.warn('Note that the results on VisOnlyQA-VLMEvalKit are different from the results on the original VisOnlyQA. \
-                            VisOnlyQA-VLMEvalKit does not include the chemistry__shape_multi split and \
-                            uses a different evaluation prompt. Please explicitly specify the version of the dataset \
-                            when you report results.')
-        
+            warnings.warn('Note that the results on VisOnlyQA-VLMEvalKit are different from the results on \
+                           the original VisOnlyQA. VisOnlyQA-VLMEvalKit does not include the \
+                           chemistry__shape_multi split and uses a different evaluation prompt. Please \
+                           explicitly specify the version of the dataset when you report results.')
+
         return acc
 
 
