@@ -215,6 +215,8 @@ class AutoScoringJudge:
         exp1 = extract_expression(exp1)
         exp2 = extract_expression(exp2)
 
+        exp_too_long = len(exp1) > 300 or len(exp2) > 300
+
         expr1_sym = sympify(parse_latex(exp1))
         expr2_sym = sympify(parse_latex(exp2))
         if expr1_sym == expr2_sym:
@@ -232,18 +234,22 @@ class AutoScoringJudge:
                         print("These two numbers cannot be calculated by the current computer for: "
                               f"\"{str(expr1_sym)}\" and \"{str(expr2_sym)}\"")
                         return False
+                    if exp_too_long:
+                        print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                        return False
                     if abs(expr1_sym.evalf() - expr2_sym.evalf()) <= self.precision * 1.01:
                         return True
                     else:
                         return False
                 except:
                     return False
+            elif exp_too_long:
+                print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                return False
             else:
                 try:
                     simplified_expr = simplify(expr1_sym - expr2_sym)
-
                     num_value = simplified_expr.evalf()
-
                     return abs(num_value) < 1e-3
                 except:
                     return False
@@ -409,7 +415,7 @@ class MMMath(ImageBaseDataset):
 
         tups = [dict(expression1=x, expression2=y) for x, y in zip(data['answer'], data['prediction'])]
 
-        res = track_progress_rich(func, tups, nproc=32)
+        res = track_progress_rich(func, tups, nproc=16)
         data['hit'] = res
         dump(data, eval_file)
 
