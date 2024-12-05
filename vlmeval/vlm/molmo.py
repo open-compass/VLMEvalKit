@@ -1,8 +1,5 @@
 import torch
 from PIL import Image
-import re
-import os.path as osp
-import sys
 from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
@@ -16,28 +13,21 @@ TYPE_PROMPTS = {
 DATASET_PROMPTS = {
     'AI2D_TEST':'ai2_diagram:',
     'AI2D_TEST_NO_MASK':'ai2_diagram:',
-    
     'COCO_VAL':'coco_captioning:',
-
     'ChartQA_TEST':'chart_qa:',
     'ChartQA_VAL':'chart_qa:',
-
     'DocVQA_VAL':'doc_qa:',
     'DocVQA_TEST':'doc_qa:',
-
     'InfoVQA_TEST':'info_qa:',
     'InfoVQA_VAL':'info_qa:',
-
     'OCRVQA_TEST':'ocr_vqa:',
     'OCRVQA_TESTCORE':'ocr_vqa:',
-
     'ScienceQA_VAL':'science_qa:',
     'ScienceQA_TEST':'science_qa:',
-
     'TableVQABench':'tabwmp_da:',
-
     'TextVQA_VAL':'text_vqa:'
 }
+
 
 class molmo(BaseModel):
 
@@ -68,10 +58,9 @@ class molmo(BaseModel):
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True, torch_dtype=torch.bfloat16)
         self.kwargs = kwargs
         self.model_name = model_path
-
         # set default maximum number of crops to 36
         self.max_crops = kwargs.get('max_crops', 36)
-    
+
     def use_custom_prompt(self, dataset):
         if DATASET_TYPE(dataset) in ['Y/N', 'MCQ', 'VQA']:
             return True
@@ -89,13 +78,13 @@ class molmo(BaseModel):
         elif dataset in ['AI2D_TEST', 'AI2D_TEST_NO_MASK']:
             prompt = self.build_prompt_ai2d(line)
         elif dataset is not None and listinstr(list(DATASET_PROMPTS.keys()), dataset):
-            prefix = DATASET_PROMPTS[dataset] # rest of supervised datasets are in VQA format
+            prefix = DATASET_PROMPTS[dataset]  # rest of supervised datasets are in VQA format
             prompt = self.build_prompt_vqa(line, prefix)
         elif dataset is not None and listinstr(['MCQ'], DATASET_TYPE(dataset)):
             prompt = self.build_prompt_multiple_choice(line)
         else:
             prompt = self.build_prompt_vqa(line)
-    
+
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
 
@@ -104,20 +93,20 @@ class molmo(BaseModel):
             from .. import MMMUDataset
             message = MMMUDataset.split_MMMU(message)
         return message
-    
+
     def build_prompt_mathvista(self, line):
         if line['question_type'] == 'multi_choice':
             prompt = self.build_prompt_multiple_choice(line)
         else:
             prompt = self.build_prompt_vqa(line)
         return prompt
-    
+
     def build_prompt_ai2d(self, line):
         def option_is_abc(line):
             for cand in string.ascii_uppercase:
                 if cand in line and not pd.isna(line[cand]):
                     # check if option is single letter
-                    if not line[cand].strip().isalpha() or len(line[cand].strip()) > 1: 
+                    if not line[cand].strip().isalpha() or len(line[cand].strip()) > 1:
                         return False
             return True
 
@@ -135,20 +124,19 @@ class molmo(BaseModel):
         else:
             prompt = self.build_prompt_multiple_choice(line, prefix='ai2_diagram:')
         return prompt
-    
+
     def build_prompt_mcq_vqa(self, line):
         if line['question_type'] == 'multiple-choice':
             prompt = self.build_prompt_multiple_choice(line)
         else:
             prompt = self.build_prompt_vqa(line)
         return prompt
-    
+
     def build_prompt_multiple_choice(self, line, prefix=None):
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         if hint is not None:
             question = hint + '\n' + question
-
         options = {
             cand: line[cand]
             for cand in string.ascii_uppercase
@@ -162,7 +150,7 @@ class molmo(BaseModel):
             prompt = f"{prefix} {question}"
 
         return prompt
-    
+
     def build_prompt_vqa(self, line, prefix=None):
         question = line['question']
         if prefix is None:
@@ -206,7 +194,8 @@ class molmo(BaseModel):
 
         # AI2D: map direct answer to letter option
         if dataset in ['AI2D_TEST', 'AI2D_TEST_NO_MASK']:
-            if 'ai2_diagram_no_letter' in prompt: # 'ai2_diagram_no_letter: Which of the following is the magma chamber?\nK\nB\nC\nH'
+            # 'ai2_diagram_no_letter: Which of the following is the magma chamber?\nK\nB\nC\nH'
+            if 'ai2_diagram_no_letter' in prompt:
                 options = prompt.split('\n')[1:]
                 answer = options.index(generated_text)
                 generated_text = chr(answer + ord('A'))
