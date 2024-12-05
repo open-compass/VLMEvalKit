@@ -243,7 +243,7 @@ class InternVLChat(BaseModel):
                 low_cpu_mem_usage=True,
                 device_map=device_map).eval()
 
-        elif 'OpenGVLab/InternVL-Chat-V1-5' == model_path and version == "mmniah":
+        elif listinstr(['InternVL-Chat-V1-5'], model_path) and version == "mmniah":
             device_map = split_model_mmniah(model_path)
             self.model = AutoModel.from_pretrained(
                 model_path,
