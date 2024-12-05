@@ -177,7 +177,7 @@ class VQAEval:
         answer = answer.strip()
         answer = self.processPunctuation(answer)
         answer = self.processDigitArticle(answer)
-        if type(gt_answers) == list:
+        if isinstance(gt_answers, list):
             for i in range(len(gt_answers)):
                 gt_answers[i] = str(gt_answers[i])
                 gt_answers[i] = gt_answers[i].replace('\n', ' ')
@@ -205,7 +205,7 @@ class VQAEval:
         answer = answer.strip()
         answer = self.processPunctuation(answer)
         answer = self.processDigitArticle(answer)
-        assert type(gt_answers) == list
+        assert isinstance(gt_answers, list)
         for i in range(len(gt_answers)):
             gt_answers[i] = gt_answers[i].replace('\n', ' ')
             gt_answers[i] = gt_answers[i].replace('\t', ' ')
