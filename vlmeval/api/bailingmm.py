@@ -63,7 +63,7 @@ class bailingMMWrapper(BaseAPI):
 
         payload = {
             "structInput": messages,
-            "appToken": self.key,
+            "sk": self.key,
             "timeout": 180000
         }
         response = requests.post(service_url, headers=self.headers, json=payload)
