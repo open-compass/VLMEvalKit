@@ -134,6 +134,7 @@ def split_model(model_name):
     device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
     return device_map
 
+
 def load_image_mmniah(image_file, dynamic_image_size=True, input_size=448, max_num=6):
     image = Image.open(image_file).convert('RGB')
     transform = build_transform(input_size=input_size)
@@ -144,6 +145,7 @@ def load_image_mmniah(image_file, dynamic_image_size=True, input_size=448, max_n
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
+
 
 def split_model_mmniah(model_path):
     num_gpus_per_rank = 8
@@ -240,7 +242,7 @@ class InternVLChat(BaseModel):
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map=device_map).eval()
-            
+
         elif 'OpenGVLab/InternVL-Chat-V1-5' == model_path and version == "mmniah":
             device_map = split_model_mmniah(model_path)
             self.model = AutoModel.from_pretrained(
@@ -250,7 +252,7 @@ class InternVLChat(BaseModel):
                 use_flash_attn=True,
                 trust_remote_code=True,
                 device_map=device_map).eval()
-            
+
         else:
             self.model = AutoModel.from_pretrained(
                 model_path,
@@ -466,13 +468,15 @@ class InternVLChat(BaseModel):
             image_path = [x['value'] for x in message if x['type'] == 'image']
             pixel_values_list = []
             for file_name in image_path:
-                curr_pixel_values = load_image_mmniah(file_name, max_num=6, dynamic_image_size=False).to(self.device).to(torch.bfloat16)
+                curr_pixel_values = load_image_mmniah(file_name, max_num=6, dynamic_image_size=False)
+                curr_pixel_values = curr_pixel_values.to(self.device).to(torch.bfloat16)
                 pixel_values_list.append(curr_pixel_values)
                 num_patches_list.append(len(curr_pixel_values))
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            pixel_values = load_image_mmniah(image_path, max_num=6, dynamic_image_size=False).to(self.device).to(torch.bfloat16)
+            pixel_values = load_image_mmniah(image_path, max_num=6, dynamic_image_size=False)
+            pixel_values = pixel_values.to(self.device).to(torch.bfloat16)
             num_patches_list.append(len(pixel_values))
         else:
             pixel_values = None
