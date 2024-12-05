@@ -337,6 +337,8 @@ kosmos_series={
 points_series = {
     'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Yi-1-5-9B-Chat'),
     'POINTS-Qwen-2.5-7B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Qwen-2-5-7B-Chat'),
+    'POINTSV15-Qwen-2.5-7B-Chat': partial(POINTSV15, model_path='WePOINTS/POINTS-1-5-Qwen-2-5-7B-Chat'),
+
 }
 
 nvlm_series = {
