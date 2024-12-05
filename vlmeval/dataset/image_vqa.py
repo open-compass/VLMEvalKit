@@ -1264,7 +1264,8 @@ class MMNIAH(ImageBaseDataset):
             MMNIAH_num[category] += 1
             MMNIAH_num['total'] += 1
 
-        for category in ['find-image', 'count-text', 'find-text', 'infer-choose', 'count-image', 'visual-reasoning', 'total']:
+        for category in ['find-image', 'count-text', 'find-text',
+                         'infer-choose', 'count-image', 'visual-reasoning', 'total']:
             if MMNIAH_num[category] != 0:
                 final_score_dict[category] = MMNIAH_score[category] / MMNIAH_num[category]
             else:
@@ -1304,12 +1305,12 @@ class MMNIAH(ImageBaseDataset):
         question = '<start>' + question + '<end>'
         question = question.split('<image>')
         if choices_image:
-            for i in range(len(question)  - 5):
+            for i in range(len(question) - 5):
                 question[i] = question[i] + '\n<image>'
-            for i in range(len(question)  - 5, len(question)  - 1):
+            for i in range(len(question) - 5, len(question) - 1):
                 question[i] = question[i] + '<image>'
         else:
-            for i in range(len(question)  - 1):
+            for i in range(len(question) - 1):
                 question[i] = question[i] + '\n<image>'
         assert len(tgt_path) + 1 == len(question)
         context = []
@@ -1328,5 +1329,5 @@ class MMNIAH(ImageBaseDataset):
                 msgs.append(dict(type='image', value=osp.join(osp.join(ROOT, 'images', self.dataset_name), context[i])))
         for element in msgs:
             if element['value'] == '':
-                msgs.remove(element) 
+                msgs.remove(element)
         return msgs
