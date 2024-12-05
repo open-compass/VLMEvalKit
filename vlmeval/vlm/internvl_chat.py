@@ -135,6 +135,54 @@ def split_model(model_name):
     return device_map
 
 
+def load_image_mmniah(image_file, dynamic_image_size=True, input_size=448, max_num=6):
+    image = Image.open(image_file).convert('RGB')
+    transform = build_transform(input_size=input_size)
+    if dynamic_image_size:
+        images = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True, max_num=max_num)
+    else:
+        images = [image]
+    pixel_values = [transform(image) for image in images]
+    pixel_values = torch.stack(pixel_values)
+    return pixel_values
+
+
+def split_model_mmniah(model_path):
+    num_gpus_per_rank = 8
+    num_gpus = torch.cuda.device_count()
+    # rank = int(os.getenv('SLURM_PROCID', '0'))
+    # local_rank = rank % (num_gpus // num_gpus_per_rank)
+    # world_size = int(os.getenv('SLURM_NTASKS', '1'))
+    local_rank = 0
+    local_world_size = num_gpus // num_gpus_per_rank
+    visible_devices = [i for i in range(local_rank, num_gpus, local_world_size)]
+    device_map = {}
+    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    num_gpus_for_vit = 1
+    num_gpus_for_llm = len(visible_devices) - num_gpus_for_vit
+    num_layers = config.llm_config.num_hidden_layers
+    num_layers_per_gpu = num_layers // num_gpus_for_llm + 1
+    for i in range(num_layers):
+        device_idx = min(i // num_layers_per_gpu + num_gpus_for_vit, len(visible_devices) - 1)
+        device_map[f'language_model.model.layers.{i}'] = visible_devices[device_idx]
+    num_layers = config.vision_config.num_hidden_layers
+    num_layers_per_gpu = num_layers // num_gpus_for_vit + 1
+    for i in range(num_layers):
+        device_idx = min(i // num_layers_per_gpu, num_gpus_for_vit - 1)
+        device_map[f'vision_model.encoder.layers.{i}'] = visible_devices[device_idx]
+    device_map['vision_model.embeddings'] = visible_devices[0]
+    device_map['mlp1'] = visible_devices[num_gpus_for_vit - 1]
+    # InternLM2
+    device_map['language_model.model.tok_embeddings'] = visible_devices[num_gpus_for_vit]
+    device_map['language_model.model.norm'] = visible_devices[-1]
+    device_map['language_model.output'] = visible_devices[-1]
+    # Qwen2
+    device_map['language_model.model.embed_tokens'] = visible_devices[num_gpus_for_vit]
+    device_map['language_model.model.norm'] = visible_devices[-1]
+    device_map['language_model.lm_head'] = visible_devices[-1]
+    return device_map
+
+
 def extract_answer(text):
     match = re.search(r'(Final answer:|Answer:)\s*(.*)', text, re.IGNORECASE)
     if match:
@@ -194,6 +242,17 @@ class InternVLChat(BaseModel):
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map=device_map).eval()
+
+        elif listinstr(['InternVL-Chat-V1-5'], model_path) and version == "mmniah":
+            device_map = split_model_mmniah(model_path)
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                use_flash_attn=True,
+                trust_remote_code=True,
+                device_map=device_map).eval()
+
         else:
             self.model = AutoModel.from_pretrained(
                 model_path,
@@ -213,7 +272,7 @@ class InternVLChat(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', "NIAH"], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
@@ -400,6 +459,43 @@ class InternVLChat(BaseModel):
                 verbose=False)
         return response
 
+    def generate_mmniah(self, message, dataset=None):
+        self.tokenizer.model_max_length = 256000
+        image_num = len([x for x in message if x['type'] == 'image'])
+        prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+        num_patches_list = []
+        if image_num > 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image']
+            pixel_values_list = []
+            for file_name in image_path:
+                curr_pixel_values = load_image_mmniah(file_name, max_num=6, dynamic_image_size=False)
+                curr_pixel_values = curr_pixel_values.to(self.device).to(torch.bfloat16)
+                pixel_values_list.append(curr_pixel_values)
+                num_patches_list.append(len(curr_pixel_values))
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_num == 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image'][0]
+            pixel_values = load_image_mmniah(image_path, max_num=6, dynamic_image_size=False)
+            pixel_values = pixel_values.to(self.device).to(torch.bfloat16)
+            num_patches_list.append(len(pixel_values))
+        else:
+            pixel_values = None
+        with torch.no_grad():
+            response = self.model.chat(
+                self.tokenizer,
+                pixel_values=pixel_values,
+                question=prompt,
+                generation_config=dict(
+                    do_sample=False,
+                    num_beams=1,
+                    max_new_tokens=32,
+                ),
+                num_patches_list=num_patches_list,
+                history=None,
+                return_history=False,
+                verbose=False)
+        return response
+
     def generate_v2(self, message, dataset=None):
         image_num = len([x for x in message if x['type'] == 'image'])
         if image_num == 1:
@@ -469,6 +565,8 @@ class InternVLChat(BaseModel):
             return self.generate_v1_5(message, dataset)
         elif self.version == 'V2.0':
             return self.generate_v2(message, dataset)
+        elif self.version == 'mmniah':
+            return self.generate_mmniah(message, dataset)
         else:
             raise ValueError(f'Unsupported version: {self.version}')
 
