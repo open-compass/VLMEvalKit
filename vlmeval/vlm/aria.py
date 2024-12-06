@@ -1,5 +1,4 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoProcessor
 import warnings
 import copy as cp
 from PIL import Image
@@ -17,6 +16,7 @@ class Aria(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='rhymes-ai/Aria', **kwargs):
+        from transformers import AutoModelForCausalLM, AutoProcessor
         assert model_path is not None
         self.model_path = model_path
         processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)

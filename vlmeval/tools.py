@@ -1,4 +1,5 @@
 import sys
+from vlmeval.dataset import SUPPORTED_DATASETS
 from vlmeval.config import *
 from vlmeval.smp import *
 
@@ -349,18 +350,24 @@ def RUN(lvl, model):
             os.system(cmd)
 
 
-def EVAL(dataset_name, data_file):
+def EVAL(dataset_name, data_file, **kwargs):
     from vlmeval.dataset import build_dataset
     logger = get_logger('VLMEvalKit Tool-Eval')
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
-    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['MathVerse'], dataset_name):
-        judge_kwargs['model'] = 'chatgpt-0125'
-    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
-        judge_kwargs['model'] = 'gpt-4-turbo'
-    elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
-        judge_kwargs['model'] = 'gpt-4o'
+    if 'model' not in kwargs:
+        if dataset.TYPE in ['MCQ', 'Y/N']:
+            judge_kwargs['model'] = 'chatgpt-0125'
+        elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4-turbo'
+        elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o'
+        elif listinstr(['DynaMath', 'MathVerse', 'MathVista', 'MathVision'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-mini'
+    else:
+        judge_kwargs['model'] = kwargs['model']
+    judge_kwargs['nproc'] = kwargs.get('nproc', 4)
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:
         assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
@@ -368,9 +375,20 @@ def EVAL(dataset_name, data_file):
     if isinstance(eval_results, dict):
         logger.info('\n' + json.dumps(eval_results, indent=4))
     elif isinstance(eval_results, pd.DataFrame):
-        logger.info('\n' + (tabulate(eval_results.T)
-                            if len(eval_results) < len(eval_results.columns) else eval_results))
+        logger.info('\n')
+        logger.info(tabulate(eval_results.T) if len(eval_results) < len(eval_results.columns) else eval_results)
     return eval_results
+
+
+def parse_args_eval():
+    parser = argparse.ArgumentParser()
+    # Essential Args, Setting the Names of Datasets and Models
+    parser.add_argument('cmd', type=str)
+    parser.add_argument('data_file', type=str)
+    parser.add_argument('--judge', type=str, default=None)
+    parser.add_argument('--nproc', type=int, default=4)
+    args = parser.parse_args()
+    return args
 
 
 def cli():
@@ -423,9 +441,23 @@ def cli():
                 for model in args[2:]:
                     RUN(lvl, model)
         elif args[0].lower() == 'eval':
-            assert len(args) == 3
-            dataset, data_file = args[1], args[2]
-            EVAL(dataset, data_file)
+            args = parse_args_eval()
+            data_file = args.data_file
+
+            def extract_dataset(file_name):
+                fname = osp.splitext(file_name)[0].split('/')[-1]
+                parts = fname.split('_')
+                for i in range(len(parts)):
+                    if '_'.join(parts[i:]) in SUPPORTED_DATASETS:
+                        return '_'.join(parts[i:])
+                return None
+
+            dataset = extract_dataset(data_file)
+            assert dataset is not None, f'Cannot infer dataset name from {data_file}'
+            kwargs = {'nproc': args.nproc}
+            if args.judge is not None:
+                kwargs['model'] = args.judge
+            EVAL(dataset_name=dataset, data_file=data_file, **kwargs)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)

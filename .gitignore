@@ -165,4 +165,6 @@ cache_dir/*
 
 # Evaluation Outputs
 outputs/*
+demo.ipynb
+*json
 .vscode
