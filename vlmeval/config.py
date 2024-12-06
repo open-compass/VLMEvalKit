@@ -85,7 +85,7 @@ api_models = {
     'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10, verbose=False),
     # GLM4V
-    'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
+    'GLM4V_PLUS': partial(GLMVisionAPI, model='cogvlm-evaluation-241203', temperature=0, retry=10),
     # CongRong
     'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10),
     # SenseChat-V
@@ -178,6 +178,8 @@ internvl_series = {
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
     'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
+    # test mmniah
+    'InternVL-mmniah': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='mmniah'),
 }
 
 yivl_series = {
@@ -341,6 +343,8 @@ kosmos_series={
 points_series = {
     'POINTS-Yi-1.5-9B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Yi-1-5-9B-Chat'),
     'POINTS-Qwen-2.5-7B-Chat': partial(POINTS, model_path='WePOINTS/POINTS-Qwen-2-5-7B-Chat'),
+    'POINTSV15-Qwen-2.5-7B-Chat': partial(POINTSV15, model_path='WePOINTS/POINTS-1-5-Qwen-2-5-7B-Chat'),
+
 }
 
 nvlm_series = {

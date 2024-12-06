@@ -13,12 +13,9 @@ import cv2
 import zipfile
 import os
 import glob
-from moviepy.editor import VideoFileClip, ImageSequenceClip
-import moviepy.config_defaults
 from .utils.mvbench import *
 
 FAIL_MSG = 'Failed to obtain answer via API.'
-moviepy.config_defaults.LOGGER_LEVEL = logging.CRITICAL + 1
 
 
 class MVBench(VideoBaseDataset):
@@ -282,6 +279,12 @@ Based on your observations, select the best option that accurately addresses the
         return question, answer
 
     def load_into_video_and_process(self, line):
+        try:
+            from moviepy.editor import VideoFileClip, ImageSequenceClip
+        except:
+            raise ImportError(
+                'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
+            )
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
 
         if line['data_type'] in ['gif'] or os.path.splitext(video_path)[1] in ['.webm']:
@@ -381,7 +384,7 @@ Based on your observations, select the best option that accurately addresses the
             data = load(eval_file)
             data_un = data[~pd.isna(data['prediction'])]
 
-            for idx in data['index']:
+            for idx in data_un['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
                 options = eval(data.loc[data['index'] == idx, 'candidates'].values[0])
@@ -626,7 +629,7 @@ Based on your observations, select the best option that accurately addresses the
             data = load(eval_file)
             data_un = data[~pd.isna(data['prediction'])]
 
-            for idx in data['index']:
+            for idx in data_un['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
                 options = eval(data.loc[data['index'] == idx, 'candidates'].values[0])

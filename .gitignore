@@ -167,3 +167,4 @@ cache_dir/*
 outputs/*
 demo.ipynb
 *json
+.vscode

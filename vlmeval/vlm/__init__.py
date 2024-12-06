@@ -54,6 +54,7 @@ from .pixtral import Pixtral
 from .llama_vision import llama_vision
 from .molmo import molmo
 from .points import POINTS
+from .pointsv15 import POINTSV15
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
 from .h2ovl_mississippi import H2OVLChat
