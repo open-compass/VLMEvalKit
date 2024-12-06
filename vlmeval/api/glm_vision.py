@@ -1,3 +1,6 @@
+import requests
+requests.packages.urllib3.disable_warnings()
+
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
@@ -15,19 +18,16 @@ class GLMVisionWrapper(BaseAPI):
                  key: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 4096,
                  proxy: str = None,
                  **kwargs):
 
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
         self.default_params = {
-            'top_p': 0.6,
-            'top_k': 2,
-            'temperature': 0.8,
-            'repetition_penalty': 1.0,
+            'top_k': 1,
             'best_of': 1,
-            'do_sample': True,
+            'do_sample': False,
             'stream': False,
             'max_tokens': max_tokens,
             "skip_moderation": True
