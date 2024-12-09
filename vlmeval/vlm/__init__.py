@@ -27,7 +27,7 @@ from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
 from .yi_vl import Yi_VL
-from .internvl_chat import InternVLChat
+from .internvl import InternVLChat
 from .deepseek_vl import DeepSeekVL
 from .janus import Janus
 from .mgm import Mini_Gemini
