@@ -136,7 +136,7 @@ class InternVLChat(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
 
         if self.use_mpo_prompt:
-            message = build_mpo_prompt(message, dataset)
+            message = build_mpo_prompt(message, line, dataset)
         return message
 
     def set_max_num(self, dataset):
@@ -240,7 +240,7 @@ class InternVLChat(BaseModel):
             )
 
         if self.use_mpo_prompt:
-            response = mpo_post_processing(response)
+            response = mpo_post_processing(response, dataset)
         return response
 
     def generate_inner(self, message, dataset=None):

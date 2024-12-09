@@ -316,7 +316,7 @@ mpo_prompt_without_final_answer = (
 )
 
 
-def mpo_post_processing(dataset):
+def mpo_post_processing(response, dataset):
 
     def extract_answer(text):
         match = re.search(r'(Final answer:|Answer:)\s*(.*)', text, re.IGNORECASE)
@@ -329,7 +329,7 @@ def mpo_post_processing(dataset):
     return response
 
 
-def build_mpo_prompt(message, dataset):
+def build_mpo_prompt(message, line, dataset):
     if not listinstr(['LLaVABench'], dataset):
 
         if listinstr(['MMVet'], dataset):
