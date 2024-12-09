@@ -2,7 +2,7 @@ import torch
 import os.path as osp
 import warnings
 from .base import BaseModel
-from ..smp import splitlen
+from ..smp import splitlen, listinstr
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from transformers.image_utils import load_image
@@ -64,14 +64,18 @@ class IDEFICS2(BaseModel):
     def __init__(self, model_path='HuggingFaceM4/idefics2-8b', **kwargs):
         assert model_path is not None
         self.model_path = model_path
+        if 'Idefics3' in self.model_path.lower():
+            warnings.warn('Install transfomers from source: PR https://github.com/open-compass/VLMEvalKit/pull/379')
+            warnings.warn('Reference: https://huggingface.co/HuggingFaceM4/Idefics3-8B-Llama3')
         self.processor = AutoProcessor.from_pretrained(model_path)
-        self.model = AutoModelForVision2Seq.from_pretrained(
+        model = AutoModelForVision2Seq.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
             _attn_implementation='flash_attention_2',
-            device_map='cuda',
-        )
-        kwargs_default = {'max_new_tokens': 512}
+            device_map='cpu')
+        self.model = model.to('cuda')
+
+        kwargs_default = {'max_new_tokens': 1024}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(
@@ -86,7 +90,16 @@ class IDEFICS2(BaseModel):
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
         return inputs
 
-    def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False):
+    def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False, change_the_img_place=False):
+        if change_the_img_place:
+            new_message = []
+            for s in message:
+                if s['type'] == 'image':
+                    new_message.append(s)
+            for s in message:
+                if s['type'] == 'text':
+                    new_message.append(s)
+            message = new_message
         prompt, images = 'User:', []
         for msg in message:
             if msg['type'] == 'image':
@@ -156,7 +169,7 @@ class IDEFICS2(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 # Swap hint and question
-                if 'Hint:' in instruction:
+                if instruction.startswith('Hint:'):
                     hint, question = instruction.split('\nQuestion:')
                     question, choices = question.split('\nChoices:')
                     instruction = (
@@ -242,12 +255,11 @@ class IDEFICS2(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         if dataset in [
-            'MMBench_DEV_EN',
-            'MMBench_TEST_EN',
-            'MMBench_DEV_CN',
-            'MMBench_TEST_CN',
-            'MMBench',
-            'MMBench_CN',
+            'MMBench_DEV_EN', 'MMBench_DEV_EN_V11',
+            'MMBench_TEST_EN', 'MMBench_TEST_EN_V11',
+            'MMBench_DEV_CN', 'MMBench_DEV_CN_V11',
+            'MMBench_TEST_CN', 'MMBench_TEST_CN_V11',
+            'MMBench', 'MMBench_V11', 'MMBench_CN', 'MMBench_CN_V11'
         ]:
             formatted_messages, formatted_images = self.build_prompt_mmbench(message)
         elif dataset in ['MMMU_DEV_VAL', 'MMMU_TEST']:
@@ -281,6 +293,8 @@ class IDEFICS2(BaseModel):
             'ScienceQA_TEST',
         ]:
             formatted_messages, formatted_images = self.build_prompt_puremcq(message)
+        elif listinstr(['MLVU','TempCompass','MVBench'], dataset):
+            formatted_messages, formatted_images = self.build_prompt_default(message, change_the_img_place=True)
         else:
             formatted_messages, formatted_images = self.build_prompt_default(message)
 

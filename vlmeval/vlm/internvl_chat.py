@@ -4,7 +4,7 @@ import warnings
 from PIL import Image
 from .base import BaseModel
 from ..smp import *
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 import pandas as pd
 import string
 import torch.distributed as dist
@@ -104,12 +104,20 @@ def split_model(model_name):
     rank, world_size = get_rank_and_world_size()
     num_gpus = num_gpus // world_size
 
-    num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80, '59ef538d26ac27398d7bc13cab28dae24297fd41':47}[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.2))
+    num_layers_map = {
+        'InternVL2-8B': 32,
+        'InternVL2-26B': 48,
+        'InternVL2-40B': 60,
+        'InternVL2-Llama3-76B': 80
+    }
+
+    if model_name not in num_layers_map:
+        return 'cuda'
+    num_layers = num_layers_map[model_name]
+    # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
+    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
     num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.8)
+    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
     layer_cnt = 0
     for i, num_layer in enumerate(num_layers_per_gpu):
         for j in range(num_layer):
@@ -122,8 +130,64 @@ def split_model(model_name):
     device_map['language_model.output'] = rank
     device_map['language_model.model.norm'] = rank
     device_map['language_model.lm_head'] = rank
+    device_map['language_model.model.rotary_emb'] = rank
     device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
     return device_map
+
+
+def load_image_mmniah(image_file, dynamic_image_size=True, input_size=448, max_num=6):
+    image = Image.open(image_file).convert('RGB')
+    transform = build_transform(input_size=input_size)
+    if dynamic_image_size:
+        images = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True, max_num=max_num)
+    else:
+        images = [image]
+    pixel_values = [transform(image) for image in images]
+    pixel_values = torch.stack(pixel_values)
+    return pixel_values
+
+
+def split_model_mmniah(model_path):
+    num_gpus_per_rank = 8
+    num_gpus = torch.cuda.device_count()
+    # rank = int(os.getenv('SLURM_PROCID', '0'))
+    # local_rank = rank % (num_gpus // num_gpus_per_rank)
+    # world_size = int(os.getenv('SLURM_NTASKS', '1'))
+    local_rank = 0
+    local_world_size = num_gpus // num_gpus_per_rank
+    visible_devices = [i for i in range(local_rank, num_gpus, local_world_size)]
+    device_map = {}
+    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    num_gpus_for_vit = 1
+    num_gpus_for_llm = len(visible_devices) - num_gpus_for_vit
+    num_layers = config.llm_config.num_hidden_layers
+    num_layers_per_gpu = num_layers // num_gpus_for_llm + 1
+    for i in range(num_layers):
+        device_idx = min(i // num_layers_per_gpu + num_gpus_for_vit, len(visible_devices) - 1)
+        device_map[f'language_model.model.layers.{i}'] = visible_devices[device_idx]
+    num_layers = config.vision_config.num_hidden_layers
+    num_layers_per_gpu = num_layers // num_gpus_for_vit + 1
+    for i in range(num_layers):
+        device_idx = min(i // num_layers_per_gpu, num_gpus_for_vit - 1)
+        device_map[f'vision_model.encoder.layers.{i}'] = visible_devices[device_idx]
+    device_map['vision_model.embeddings'] = visible_devices[0]
+    device_map['mlp1'] = visible_devices[num_gpus_for_vit - 1]
+    # InternLM2
+    device_map['language_model.model.tok_embeddings'] = visible_devices[num_gpus_for_vit]
+    device_map['language_model.model.norm'] = visible_devices[-1]
+    device_map['language_model.output'] = visible_devices[-1]
+    # Qwen2
+    device_map['language_model.model.embed_tokens'] = visible_devices[num_gpus_for_vit]
+    device_map['language_model.model.norm'] = visible_devices[-1]
+    device_map['language_model.lm_head'] = visible_devices[-1]
+    return device_map
+
+
+def extract_answer(text):
+    match = re.search(r'(Final answer:|Answer:)\s*(.*)', text, re.IGNORECASE)
+    if match:
+        return match.group(2).strip()
+    return text
 
 
 class InternVLChat(BaseModel):
@@ -131,10 +195,17 @@ class InternVLChat(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='OpenGVLab/InternVL-Chat-V1-5', load_in_8bit=False, version='V1.0', **kwargs):
+    def __init__(self,
+                 model_path='OpenGVLab/InternVL-Chat-V1-5',
+                 load_in_8bit=False,
+                 cot_prompt=False,
+                 version='V1.0',
+                 **kwargs):
+
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
 
+        self.cot_prompt = cot_prompt
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
@@ -150,8 +221,19 @@ class InternVLChat(BaseModel):
         self.reverse_pattern = r'Image-(\d+)'
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
+        self.device = 'cuda'
 
-        if listinstr(['InternVL2-Llama3-76B', 'InternVL-Chat-V1-5'], model_path):
+        if auto_split_flag() and listinstr(['InternVL2-8B', 'InternVL2-26B', 'InternVL2-40B'], model_path):
+            device_map = split_model(model_path.split('/')[-1])
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                load_in_8bit=load_in_8bit,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                device_map=device_map).eval()
+
+        elif listinstr(['InternVL2-Llama3-76B'], model_path):
             device_map = split_model(model_path.split('/')[-1])
             breakpoint()
             self.model = AutoModel.from_pretrained(
@@ -161,26 +243,41 @@ class InternVLChat(BaseModel):
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map=device_map).eval()
-        else:
-            device = torch.cuda.current_device()
-            self.device = device
+
+        elif listinstr(['InternVL-Chat-V1-5'], model_path) and version == "mmniah":
+            device_map = split_model_mmniah(model_path)
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                use_flash_attn=True,
                 trust_remote_code=True,
-                load_in_8bit=load_in_8bit).eval()
+                device_map=device_map).eval()
+
+        else:
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                torch_dtype=torch.bfloat16,
+                load_in_8bit=load_in_8bit,
+                trust_remote_code=True).eval()
             if not load_in_8bit:
-                self.model = self.model.to(device)
+                self.model = self.model.to('cuda')
 
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
-        self.kwargs = kwargs
+        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default.update(kwargs)
+        self.kwargs = kwargs_default
+
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
-
-        if dataset is not None and listinstr(['MMDU', 'MM_NIAH_VAL'], dataset):
+        assert dataset is not None
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', "NIAH"], dataset):
             # For Multi-Turn we don't have custom prompt
+            return False
+        if DATASET_MODALITY(dataset) == 'VIDEO':
+            # For Video benchmarks we don't have custom prompt at here
             return False
         else:
             return True
@@ -208,18 +305,20 @@ class InternVLChat(BaseModel):
 
         return prompt
 
-    def build_video_prompt(self, prompt, dataset=None, max_nframe=64):
-        for start in range(0, max_nframe, 8):
-            images_to_remove = ''.join([f'<image-{i}>' for i in range(start + 1, start + 9)])
+    def build_video_prompt(self, prompt, dataset=None, max_frames=64):
+        for start in range(0, max_frames, 8):
+            images_to_remove = ''.join([f'<Image-{i}>' for i in range(start + 1, start + 9)])
             prompt = prompt.replace(images_to_remove, '')
-        for i in range(max_nframe):
-            prompt = prompt.replace(f'<image-{i + 1}>', f'Frame{i + 1}')
+        for i in range(max_frames):
+            prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
         if listinstr(['MMBench-Video'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
-            prompt += '\nAnswer the question using a single word or phrase.'
         elif listinstr(['Video-MME'], dataset):
             prompt = prompt.replace('\nAnswer:', '')
             prompt += "\nAnswer with the option's letter from the given choices directly."
+        elif listinstr(['MVBench'], dataset):
+            prompt = prompt.replace('Best option:(', '')
+
         return prompt
 
     def build_prompt(self, line, dataset=None):
@@ -233,40 +332,91 @@ class InternVLChat(BaseModel):
             kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
         self.kwargs = kwargs_default
 
-        if dataset is not None and listinstr(['MME'], dataset):
+        if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
-            prompt = question + ' Answer the question using a single word or phrase.'
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):
-            question = line['question']
-            prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            if listinstr(['MME'], dataset):
+                prompt = question + ' Answer the question using a single word or phrase.'
+            elif listinstr(['HallusionBench'], dataset):
+                prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            else:
+                prompt = question
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
-            if listinstr(['MathVista', 'MathVision'], dataset):
-                prompt = line['question']
+            question = line['question']
+            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
+                prompt = question
             elif listinstr(['LLaVABench'], dataset):
-                question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
-            elif listinstr(['MMVet'], dataset):
-                prompt = line['question']
             else:
-                question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             prompt = line['question']
+
+        if self.cot_prompt and not listinstr(['LLaVABench'], dataset):
+            cot_prompt_with_final_answer = (
+                "Your task is to answer the question below. "
+                "Give step by step reasoning before you answer, and when you're ready to answer, "
+                "please use the format \"Final answer: ..\""
+                "\n\n"
+                "Question:"
+                "\n\n"
+                "{question}"
+            )
+            cot_prompt_wo_final_answer = (
+                "Your task is to answer the question below. "
+                "Give step by step reasoning. "
+                "\n\n"
+                "Question:"
+                "\n\n"
+                "{question}"
+            )
+
+            if listinstr(['MMVet'], dataset):
+                cot_prompt = cot_prompt_wo_final_answer
+            else:
+                cot_prompt = cot_prompt_with_final_answer
+
+            question_orig = line['question']
+            if listinstr(['MathVerse', 'MathVision'], dataset):
+                question_orig = question_orig.split('Question:', 1)[-1].strip()
+                question_orig = question_orig.replace('Choices:\n', '').strip()
+
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = ''
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+
+            if options_prompt.strip():
+                question_orig = f'{question_orig}\n{options_prompt}'
+
+            prompt = cot_prompt.format(question=question_orig)
+
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
     def set_max_num(self, dataset):
-        if dataset is not None and listinstr(['ChartQA_TEST', 'MMMU_DEV_VAL'], dataset):
-            self.max_num = 12
-        elif dataset is not None and listinstr(['DocVQA_VAL', 'DocVQA_TEST'], dataset):
-            self.max_num = 18
-        elif dataset is not None and listinstr(['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench'], dataset):
-            self.max_num = 24
-        elif dataset is not None and listinstr(['MMBench-Video', 'Video-MME', 'Video'], dataset):
+        if dataset is None:
+            self.max_num = 6
+            return None
+        # res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
+        res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
+                           'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
+        res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
+        res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             self.max_num = 1
+        elif listinstr(res_12_datasets, dataset):
+            self.max_num = 12
+        elif listinstr(res_18_datasets, dataset):
+            self.max_num = 18
+        elif listinstr(res_24_datasets, dataset):
+            self.max_num = 24
         else:
             self.max_num = 6
 
@@ -287,18 +437,18 @@ class InternVLChat(BaseModel):
         image_num = len([x for x in message if x['type'] == 'image'])
         prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
 
-        if listinstr(['Video'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             pixel_values_list = []
             for file_name in image_path:
-                pixel_values_list.append(load_image(file_name, max_num=self.max_num).cuda().to(torch.bfloat16))
+                pixel_values_list.append(load_image(file_name, max_num=self.max_num).to(self.device).to(torch.bfloat16))
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            pixel_values = load_image(image_path, max_num=self.max_num).cuda().to(torch.bfloat16)
+            pixel_values = load_image(image_path, max_num=self.max_num).to(self.device).to(torch.bfloat16)
         else:
             pixel_values = None
         with torch.no_grad():
@@ -307,6 +457,43 @@ class InternVLChat(BaseModel):
                 pixel_values=pixel_values,
                 question=prompt,
                 generation_config=self.kwargs,
+                verbose=False)
+        return response
+
+    def generate_mmniah(self, message, dataset=None):
+        self.tokenizer.model_max_length = 256000
+        image_num = len([x for x in message if x['type'] == 'image'])
+        prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+        num_patches_list = []
+        if image_num > 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image']
+            pixel_values_list = []
+            for file_name in image_path:
+                curr_pixel_values = load_image_mmniah(file_name, max_num=6, dynamic_image_size=False)
+                curr_pixel_values = curr_pixel_values.to(self.device).to(torch.bfloat16)
+                pixel_values_list.append(curr_pixel_values)
+                num_patches_list.append(len(curr_pixel_values))
+            pixel_values = torch.cat(pixel_values_list, dim=0)
+        elif image_num == 1:
+            image_path = [x['value'] for x in message if x['type'] == 'image'][0]
+            pixel_values = load_image_mmniah(image_path, max_num=6, dynamic_image_size=False)
+            pixel_values = pixel_values.to(self.device).to(torch.bfloat16)
+            num_patches_list.append(len(pixel_values))
+        else:
+            pixel_values = None
+        with torch.no_grad():
+            response = self.model.chat(
+                self.tokenizer,
+                pixel_values=pixel_values,
+                question=prompt,
+                generation_config=dict(
+                    do_sample=False,
+                    num_beams=1,
+                    max_new_tokens=32,
+                ),
+                num_patches_list=num_patches_list,
+                history=None,
+                return_history=False,
                 verbose=False)
         return response
 
@@ -320,11 +507,11 @@ class InternVLChat(BaseModel):
                 if x['type'] == 'text':
                     prompt += x['value']
                 elif x['type'] == 'image':
-                    prompt += f'<image-{image_idx}>'
+                    prompt += f'<Image-{image_idx}>'
                     image_idx += 1
-            prompt = ' '.join([f'<image-{i + 1}>: <image>' for i in range(image_num)]) + '\n' + prompt
+            prompt = '\n'.join([f'Image-{i + 1}: <image>' for i in range(image_num)]) + '\n' + prompt
 
-        if listinstr(['Video'], dataset):
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             prompt = self.build_video_prompt(prompt, dataset)
 
         if image_num > 1:
@@ -334,15 +521,15 @@ class InternVLChat(BaseModel):
             for image_idx, file_name in enumerate(image_path):
                 upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
-                    file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                    file_name, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
-            upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
+            upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
-                image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
@@ -357,6 +544,17 @@ class InternVLChat(BaseModel):
                 generation_config=self.kwargs,
                 verbose=False
             )
+
+        if (
+            self.cot_prompt
+            and dataset is not None
+            and (
+                DATASET_TYPE(dataset) in ['Y/N', 'MCQ']
+                or listinstr(['CRPE'], dataset)
+            )
+        ):
+            response = extract_answer(response).strip()
+
         return response
 
     def generate_inner(self, message, dataset=None):
@@ -368,6 +566,8 @@ class InternVLChat(BaseModel):
             return self.generate_v1_5(message, dataset)
         elif self.version == 'V2.0':
             return self.generate_v2(message, dataset)
+        elif self.version == 'mmniah':
+            return self.generate_mmniah(message, dataset)
         else:
             raise ValueError(f'Unsupported version: {self.version}')
 
@@ -428,14 +628,14 @@ class InternVLChat(BaseModel):
             for image_idx, file_name in enumerate(image_path):
                 upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
-                    file_name, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                    file_name, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_cnt == 1:
             upscale_flag = listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
-                image_path, max_num=self.max_num, upscale=upscale_flag).cuda().to(torch.bfloat16)
+                image_path, max_num=self.max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None

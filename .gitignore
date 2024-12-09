@@ -27,6 +27,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.vscode/
+.gradio/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -158,6 +160,7 @@ cython_debug/
 images/
 
 scripts/*ttf
+.history
 cache_dir/*
 outputs
 models

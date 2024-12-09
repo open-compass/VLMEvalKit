@@ -1,4 +1,6 @@
-# 🛠️ How to implement a new Benchmark / VLM in VLMEvalKit?
+# Develop new Benchmark / MLLM
+
+>  🛠️ How to implement a new Benchmark / VLM in VLMEvalKit?
 
 ## Implement a new benchmark
 

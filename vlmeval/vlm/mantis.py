@@ -24,18 +24,18 @@ class Mantis(BaseModel):
             from mantis.models.mllava import LlavaForConditionalGeneration, MLlavaProcessor
             from mantis.models.mfuyu import MFuyuForCausalLM, MFuyuProcessor
             from mantis.models.conversation import conv_mllava_v1 as default_conv, conv_templates
-        except:
-            warnings.warn(
+        except Exception as e:
+            logging.critical(
                 "Mantis is not installed. Please install Mantis to use this model.Please use 'pip install "
                 "git+https://github.com/TIGER-AI-Lab/Mantis.git' to install"
             )
+            raise e
 
         try:
             from transformers import AutoModelForVision2Seq, AutoProcessor
         except Exception as e:
-            warnings.warn("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
-        except:
-            warnings.warn('Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git')
+            logging.critical(f'{type(e)}: {e}')
+            logging.critical("Upgrade transformers to use Mantis's idefics model.\nError: %s" % e)
 
         # inference implementation for attention, can be "sdpa", "eager", "flash_attention_2".
         # Seems FA2 is not effective during inference:
@@ -142,8 +142,10 @@ class Mantis(BaseModel):
             answer = answer.split('<|im_end|>')[0].strip()
         elif '<|eot_id|>' in answer:
             answer = answer.split('<|eot_id|>')[0].strip()
-        elif '<end_of_utterance>':
+        elif '<end_of_utterance>' in answer:
             answer = answer.split('<end_of_utterance>')[0].strip()
+        elif '|ENDOFTEXT|' in answer:
+            answer = answer.split('|ENDOFTEXT|')[0].strip()
         return answer
 
     def generate_inner(self, message, dataset=None):
@@ -174,7 +176,7 @@ class Mantis(BaseModel):
                 ]
             else:
                 conv = self.default_conv
-                terminators = None
+                terminators = [self.processor.tokenizer.eos_token_id]
 
             # Using EOT because end of *text* is more accurate for what we're doing than end of *sentence*
             if 'eos_token_id' not in self.kwargs:

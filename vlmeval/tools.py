@@ -1,4 +1,5 @@
 import sys
+from vlmeval.dataset import SUPPORTED_DATASETS
 from vlmeval.config import *
 from vlmeval.smp import *
 
@@ -49,7 +50,8 @@ dataset_levels = {
         ('MMBench', 'acc.csv'), ('MMBench_CN', 'acc.csv'), ('CCBench', 'acc.csv'),
         ('SEEDBench_IMG', 'acc.csv'), ('COCO_VAL', 'score.json'), ('POPE', 'score.csv'),
         ('ScienceQA_VAL', 'acc.csv'), ('ScienceQA_TEST', 'acc.csv'), ('MMT-Bench_VAL', 'acc.csv'),
-        ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv')
+        ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv'), ('MTVQA_TEST', 'acc.json'),
+        ('Q-Bench1_VAL', 'acc.csv'), ('A-Bench_VAL', 'acc.csv'), ('R-Bench-Dis', 'acc.csv')
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
@@ -68,11 +70,16 @@ models = {
     ] + list(idefics_series) + list(minigpt4_series) + list(instructblip_series),
     '4.37.0': [x for x in llava_series if 'next' not in x] + list(internvl_series) + [
         'TransCore_M', 'emu2_chat', 'MiniCPM-V', 'MiniCPM-V-2', 'OmniLMM_12B',
-    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(cogvlm_series) + list(cambrian_series),
+        'cogvlm-grounding-generalist', 'cogvlm-chat', 'cogvlm2-llama3-chat-19B',
+        'mPLUG-Owl3'
+    ] + list(xtuner_series) + list(yivl_series) + list(deepseekvl_series) + list(janus_series) + list(cambrian_series),
+    '4.36.2': ['Moondream1'],
     '4.40.0': [
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
-    'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6'] + [x for x in llava_series if 'next' in x]
+    '4.44.0': ['Moondream2'],
+    '4.45.0': ['Aria'],
+    'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6', 'glm-4v-9b'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),
     'api': list(api_models)
 }
@@ -96,24 +103,31 @@ LARGE_MODELS = [
 
 
 def completed(m, d, suf):
-    score_file = f'{m}/{m}_{d}_{suf}'
+    score_file = f'outputs/{m}/{m}_{d}_{suf}'
     if osp.exists(score_file):
         return True
     if d == 'MMBench':
-        s1, s2 = f'{m}/{m}_MMBench_DEV_EN_{suf}', f'{m}/{m}_MMBench_TEST_EN_{suf}'
+        s1, s2 = f'outputs/{m}/{m}_MMBench_DEV_EN_{suf}', f'outputs/{m}/{m}_MMBench_TEST_EN_{suf}'
         return osp.exists(s1) and osp.exists(s2)
     elif d == 'MMBench_CN':
-        s1, s2 = f'{m}/{m}_MMBench_DEV_CN_{suf}', f'{m}/{m}_MMBench_TEST_CN_{suf}'
+        s1, s2 = f'outputs/{m}/{m}_MMBench_DEV_CN_{suf}', f'outputs/{m}/{m}_MMBench_TEST_CN_{suf}'
         return osp.exists(s1) and osp.exists(s2)
     return False
 
 
 def DLIST(lvl):
-    lst = [x[0] for x in dataset_levels[lvl]]
-    return lst
+    if lvl in dataset_levels.keys():
+        return [x[0] for x in dataset_levels[lvl]]
+    else:
+        from vlmeval.dataset import SUPPORTED_DATASETS
+        return SUPPORTED_DATASETS
 
 
 def MLIST(lvl, size='all'):
+    if lvl == 'all':
+        from vlmeval.config import supported_VLM
+        return [x for x in supported_VLM]
+
     model_list = models[lvl]
     if size == 'small':
         model_list = [m for m in model_list if m not in LARGE_MODELS]
@@ -125,7 +139,7 @@ def MLIST(lvl, size='all'):
 def MISSING(lvl):
     from vlmeval.config import supported_VLM
     models = list(supported_VLM)
-    models = [m for m in models if m not in SKIP_MODELS and osp.exists(m)]
+    models = [m for m in models if m not in SKIP_MODELS and osp.exists(osp.join('outputs', m))]
     if lvl in dataset_levels.keys():
         data_list = dataset_levels[lvl]
     else:
@@ -310,43 +324,50 @@ def RUN(lvl, model):
     for m in groups:
         if m in SKIP_MODELS:
             continue
-        datasets = ' '.join(groups[m])
-        logger.info(f'Running {m} on {datasets}')
-        exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
-        if m not in models['api']:
-            env = None
-            env = 'latest' if m in models['latest'] else env
-            env = '433' if m in models['4.33.0'] else env
-            env = '437' if m in models['4.37.0'] else env
-            env = '440' if m in models['4.40.0'] else env
-            if env is None:
-                # Not found, default to latest
-                env = 'latest'
-                logger.warning(f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
-            pth = get_env(env)
-            if pth is not None:
-                exe = osp.join(pth, 'bin', exe)
-            else:
-                logger.warning(f'Cannot find the env path {env} for model {m}')
-        if exe.endswith('torchrun'):
-            cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {datasets}'
-        elif exe.endswith('python'):
-            cmd = f'{exe} {SCRIPT} --model {m} --data {datasets}'
-        os.system(cmd)
+        for dataset in groups[m]:
+            logger.info(f'Running {m} on {dataset}')
+            exe = 'python' if m in LARGE_MODELS or m in models['api'] else 'torchrun'
+            if m not in models['api']:
+                env = None
+                env = 'latest' if m in models['latest'] else env
+                env = '433' if m in models['4.33.0'] else env
+                env = '437' if m in models['4.37.0'] else env
+                env = '440' if m in models['4.40.0'] else env
+                if env is None:
+                    # Not found, default to latest
+                    env = 'latest'
+                    logger.warning(
+                        f"Model {m} does not have a specific environment configuration. Defaulting to 'latest'.")
+                pth = get_env(env)
+                if pth is not None:
+                    exe = osp.join(pth, 'bin', exe)
+                else:
+                    logger.warning(f'Cannot find the env path {env} for model {m}')
+            if exe.endswith('torchrun'):
+                cmd = f'{exe} --nproc-per-node={NGPU} {SCRIPT} --model {m} --data {dataset}'
+            elif exe.endswith('python'):
+                cmd = f'{exe} {SCRIPT} --model {m} --data {dataset}'
+            os.system(cmd)
 
 
-def EVAL(dataset_name, data_file):
+def EVAL(dataset_name, data_file, **kwargs):
     from vlmeval.dataset import build_dataset
     logger = get_logger('VLMEvalKit Tool-Eval')
     dataset = build_dataset(dataset_name)
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
-    if dataset.TYPE in ['MCQ', 'Y/N']:
-        judge_kwargs['model'] = 'chatgpt-0125'
-    elif listinstr(['MMVet', 'MathVista', 'LLaVABench', 'MMBench-Video', 'MathVision'], dataset_name):
-        judge_kwargs['model'] = 'gpt-4-turbo'
-    elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
-        judge_kwargs['model'] = 'gpt-4o'
+    if 'model' not in kwargs:
+        if dataset.TYPE in ['MCQ', 'Y/N']:
+            judge_kwargs['model'] = 'chatgpt-0125'
+        elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4-turbo'
+        elif listinstr(['MMLongBench', 'MMDU'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o'
+        elif listinstr(['DynaMath', 'MathVerse', 'MathVista', 'MathVision'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-mini'
+    else:
+        judge_kwargs['model'] = kwargs['model']
+    judge_kwargs['nproc'] = kwargs.get('nproc', 4)
     eval_results = dataset.evaluate(data_file, **judge_kwargs)
     if eval_results is not None:
         assert isinstance(eval_results, dict) or isinstance(eval_results, pd.DataFrame)
@@ -354,9 +375,20 @@ def EVAL(dataset_name, data_file):
     if isinstance(eval_results, dict):
         logger.info('\n' + json.dumps(eval_results, indent=4))
     elif isinstance(eval_results, pd.DataFrame):
-        if len(eval_results) < len(eval_results.columns):
-            eval_results = eval_results.T
-        logger.info('\n' + tabulate(eval_results))
+        logger.info('\n')
+        logger.info(tabulate(eval_results.T) if len(eval_results) < len(eval_results.columns) else eval_results)
+    return eval_results
+
+
+def parse_args_eval():
+    parser = argparse.ArgumentParser()
+    # Essential Args, Setting the Names of Datasets and Models
+    parser.add_argument('cmd', type=str)
+    parser.add_argument('data_file', type=str)
+    parser.add_argument('--judge', type=str, default=None)
+    parser.add_argument('--nproc', type=int, default=4)
+    args = parser.parse_args()
+    return args
 
 
 def cli():
@@ -376,7 +408,7 @@ def cli():
             if len(args) > 2:
                 size = args[2].lower()
             lst = MLIST(args[1], size)
-            print(' '.join(lst))
+            print('\n'.join(lst))
         elif args[0].lower() == 'missing':
             assert len(args) >= 2
             missing_list = MISSING(args[1])
@@ -409,9 +441,23 @@ def cli():
                 for model in args[2:]:
                     RUN(lvl, model)
         elif args[0].lower() == 'eval':
-            assert len(args) == 3
-            dataset, data_file = args[1], args[2]
-            EVAL(dataset, data_file)
+            args = parse_args_eval()
+            data_file = args.data_file
+
+            def extract_dataset(file_name):
+                fname = osp.splitext(file_name)[0].split('/')[-1]
+                parts = fname.split('_')
+                for i in range(len(parts)):
+                    if '_'.join(parts[i:]) in SUPPORTED_DATASETS:
+                        return '_'.join(parts[i:])
+                return None
+
+            dataset = extract_dataset(data_file)
+            assert dataset is not None, f'Cannot infer dataset name from {data_file}'
+            kwargs = {'nproc': args.nproc}
+            if args.judge is not None:
+                kwargs['model'] = args.judge
+            EVAL(dataset_name=dataset, data_file=data_file, **kwargs)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
