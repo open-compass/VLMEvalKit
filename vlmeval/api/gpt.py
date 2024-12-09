@@ -56,7 +56,7 @@ class OpenAIWrapper(BaseAPI):
         self.temperature = temperature
         self.use_azure = use_azure
 
-        if 'step-1v' in model:
+        if 'step' in model:
             env_key = os.environ.get('STEPAI_API_KEY', '')
             if key is None:
                 key = env_key
