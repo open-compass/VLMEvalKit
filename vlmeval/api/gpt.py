@@ -68,6 +68,10 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('InternVL2_PRO_KEY', '')
             if key is None:
                 key = env_key
+        elif 'abab' in model:
+            env_key = os.environ.get('MiniMax_API_KEY', '')
+            if key is None:
+                key = env_key
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
