@@ -33,7 +33,7 @@ def track_progress_rich(
             f'tasks must be an iterable object, but got {type(tasks)}')
     assert nproc > 0, 'nproc must be a positive number'
     res = load(save) if save is not None else {}
-    results = []
+    results = [None for _ in range(len(tasks))]
 
     with ThreadPoolExecutor(max_workers=nproc) as executor:
         futures = []
@@ -47,13 +47,18 @@ def track_progress_rich(
                 future = executor.submit(func, *inputs)
             futures.append(future)
 
-        for i, future in enumerate(tqdm(futures)):
-            tmp = future.result()
-            if keys is not None:
-                res[keys[i]] = tmp
-                if i % 10 == 0 and save is not None:
-                    dump(res, save)
-            results.append(tmp)
+        unfinished = set(range(len(futures)))
+        while len(unfinished):
+            new_finished = set()
+            for idx in unfinished:
+                if futures[idx].done():
+                    results[idx] = futures[idx].result()
+                    unfinished.remove(idx)
+                    new_finished.add(idx)
+                    if keys is not None:
+                        res[keys[idx]] = results[idx]
+            if len(new_finished) and save is not None:
+                dump(res, save)
 
     if save is not None:
         dump(res, save)
