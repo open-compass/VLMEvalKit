@@ -48,6 +48,7 @@ def track_progress_rich(
             futures.append(future)
 
         unfinished = set(range(len(futures)))
+        pbar = tqdm(total=len(unfinished))
         while len(unfinished):
             new_finished = set()
             for idx in unfinished:
@@ -59,6 +60,8 @@ def track_progress_rich(
                         res[keys[idx]] = results[idx]
             if len(new_finished) and save is not None:
                 dump(res, save)
+                pbar.update(len(new_finished))
+        pbar.close()
 
     if save is not None:
         dump(res, save)
