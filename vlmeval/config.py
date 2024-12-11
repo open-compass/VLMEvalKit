@@ -378,6 +378,10 @@ h2ovl_series = {
     'h2ovl-mississippi-1b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-800m'),
 }
 
+xhs_series = {
+    'xdg_vlm': partial(XDGAPI, model='xdg_b1.5_s2.1_20241210', do_sample=False),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -389,7 +393,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series
+    smolvlm_series, xhs_series
 ]
 
 for grp in model_groups:
