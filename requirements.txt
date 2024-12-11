@@ -1,4 +1,5 @@
-decord
+decord; platform_machine != 'arm64'
+eva-decord; platform_machine == 'arm64'
 gradio
 huggingface_hub
 imageio
