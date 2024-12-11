@@ -2,8 +2,6 @@ import os
 import re
 import tempfile
 from functools import partial
-from jinja2.sandbox import SandboxedEnvironment
-from jinja2 import Template
 
 import pandas as pd
 
@@ -11,7 +9,6 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..utils import track_progress_rich
-import ipdb
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -451,7 +448,7 @@ class OlympiadBench(ImageBaseDataset):
         tgt_path_z = []
         if isinstance(line['image'], list):
             for i in range(len(line['image'])):
-                tgt_path = osp.join(self.img_root, f"{line['index']}--{i+1}.jpg")
+                tgt_path = osp.join(self.img_root, f"{line['index']}--{i + 1}.jpg")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'][i], tgt_path)
                 tgt_path_z.append(tgt_path)
@@ -965,7 +962,7 @@ class QSpatial(ImageBaseDataset):
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
-
+        from jinja2.sandbox import SandboxedEnvironment
         text_prompt_template = self._prompt_templates["spatial_prompt_single"]
         env = SandboxedEnvironment()
         text_prompt = env.from_string(text_prompt_template).render(question=line["question"])
