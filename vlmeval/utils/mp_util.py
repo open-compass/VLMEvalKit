@@ -6,6 +6,7 @@ from rich.progress import (BarColumn, MofNCompleteColumn, Progress, Task,
                            TaskProgressColumn, TextColumn, TimeRemainingColumn)
 from rich.text import Text
 import os.path as osp
+import time
 import portalocker
 from ..smp import load, dump
 
@@ -47,20 +48,21 @@ def track_progress_rich(
                 future = executor.submit(func, *inputs)
             futures.append(future)
 
-        unfinished = set(range(len(futures)))
+        unfinished = set(range(len(tasks)))
         pbar = tqdm(total=len(unfinished))
         while len(unfinished):
             new_finished = set()
             for idx in unfinished:
                 if futures[idx].done():
                     results[idx] = futures[idx].result()
-                    unfinished.remove(idx)
                     new_finished.add(idx)
                     if keys is not None:
                         res[keys[idx]] = results[idx]
             if len(new_finished) and save is not None:
                 dump(res, save)
                 pbar.update(len(new_finished))
+                for k in new_finished:
+                    unfinished.remove(k)
         pbar.close()
 
     if save is not None:
