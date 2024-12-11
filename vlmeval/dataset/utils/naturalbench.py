@@ -60,15 +60,15 @@ def get_scores(scores):
 
     Returns:
         dict: A dictionary containing the calculated scores:
-            - 'question_score': Average question score
-            - 'image_score': Average image score
-            - 'binary_score': Average binary VQA score
-            - 'group_score': Average group score
+            - 'Q_Acc': Average question score
+            - 'I_Acc': Average image score
+            - 'Acc': Average binary VQA score
+            - 'G_Acc': Average group score
     """
-    question_score = 0.0
-    image_score = 0.0
-    binary_score = 0.0
-    group = 0.0
+    Q_Acc = 0.0
+    I_Acc = 0.0
+    Acc = 0.0
+    G_Acc = 0.0
 
     num_samples = len(scores)
 
@@ -124,22 +124,22 @@ def get_scores(scores):
 
     if isinstance(scores, dict):
         for _, result in scores.items():
-            question_score += calculate_question_score(result)
-            image_score += calculate_image_score(result)
-            binary_score += calculate_binary_score(result)
-            group += calculate_group(result)
+            Q_Acc += calculate_question_score(result)
+            I_Acc += calculate_image_score(result)
+            Acc += calculate_binary_score(result)
+            G_Acc += calculate_group(result)
     else:
         for result in scores:
-            question_score += calculate_question_score(result)
-            image_score += calculate_image_score(result)
-            binary_score += calculate_binary_score(result)
-            group += calculate_group(result)
+            Q_Acc += calculate_question_score(result)
+            I_Acc += calculate_image_score(result)
+            Acc += calculate_binary_score(result)
+            G_Acc += calculate_group(result)
 
     results = {
-        'question_score': question_score / float(num_samples * 2),
-        'image_score': image_score / float(num_samples * 2),
-        'binary_score': binary_score / float(num_samples * 4),
-        'group_score': group / num_samples
+        'Q_Acc': Q_Acc / float(num_samples * 2),
+        'I_Acc': I_Acc / float(num_samples * 2),
+        'Acc': Acc / float(num_samples * 4),
+        'G_Acc': G_Acc / num_samples
     }
 
     return results
