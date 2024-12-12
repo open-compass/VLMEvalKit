@@ -85,7 +85,7 @@ class XDGAPI(BaseAPI, XDGPromptMixin):
                  verbose: bool = True,
                  temperature: float = 0.0,
                  system_prompt: str = None,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 2048,
                  proxy: str = None,
                  use_custom_prompt=True,
                  **kwargs):
