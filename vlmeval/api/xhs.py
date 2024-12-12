@@ -146,7 +146,7 @@ class XDGAPI(BaseAPI, XDGPromptMixin):
 
         assert not pure_text
         messages = self.build_msgs(inputs)
-        gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
+        gen_config = dict(max_tokens=self.max_tokens, temperature=self.temperature)
         gen_config.update(kwargs)
         
         payload = self._make_payload(messages, gen_config)
