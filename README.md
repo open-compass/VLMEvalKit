@@ -220,14 +220,12 @@ If you find this work helpful, please consider to **star🌟** this repo. Thanks
 If you use VLMEvalKit in your research or wish to refer to published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@misc{duan2024vlmevalkit,
-      title={VLMEvalKit: An Open-Source Toolkit for Evaluating Large Multi-Modality Models},
-      author={Haodong Duan and Junming Yang and Yuxuan Qiao and Xinyu Fang and Lin Chen and Yuan Liu and Xiaoyi Dong and Yuhang Zang and Pan Zhang and Jiaqi Wang and Dahua Lin and Kai Chen},
-      year={2024},
-      eprint={2407.11691},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2407.11691},
+@inproceedings{duan2024vlmevalkit,
+  title={Vlmevalkit: An open-source toolkit for evaluating large multi-modality models},
+  author={Duan, Haodong and Yang, Junming and Qiao, Yuxuan and Fang, Xinyu and Chen, Lin and Liu, Yuan and Dong, Xiaoyi and Zang, Yuhang and Zhang, Pan and Wang, Jiaqi and others},
+  booktitle={Proceedings of the 32nd ACM International Conference on Multimedia},
+  pages={11198--11201},
+  year={2024}
 }
 ```
 
