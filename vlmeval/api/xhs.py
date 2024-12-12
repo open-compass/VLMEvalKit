@@ -6,6 +6,22 @@ from ..vlm.qwen2_vl import Qwen2VLPromptMixin
 DEFAULT_URL="http://1781574661016173.ap-southeast-1.pai-eas.aliyuncs.com/api/predict/deploy_services/v1/chat/completions"
 
 class XDGPromptMixin(Qwen2VLPromptMixin):
+
+    def build_prompt(self, line, dataset: str) -> list[dict[str, str]]:
+        from vlmeval.dataset import DATASET_TYPE
+        if dataset in {'OCRBench'}:
+            return self._build_ocrbench_prompt(line, dataset)
+        if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
+            return self._build_mmmu_prompt(line, dataset)
+        dataset_type = DATASET_TYPE(dataset, default=None)
+        if dataset_type == 'MCQ':
+            return self._build_mcq_prompt(line, dataset)
+        if dataset_type == 'Y/N':
+            return self._build_yorn_prompt(line, dataset)
+        if dataset_type == 'VQA':
+            return self._build_vqa_prompt(line, dataset)
+        raise ValueError(f'Unsupported dataset: {dataset}')
+
     def _build_mmmu_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for MMMU dataset: keep all images at beginning."""
         import string, re
@@ -17,7 +33,10 @@ class XDGPromptMixin(Qwen2VLPromptMixin):
         options_prompt = 'Options:\n'
         for key, item in options.items():
             options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
         prompt += f'Question: {question}\n'
         prompt = re.sub(r"<image \d+>", "", prompt)
         if len(options):
@@ -37,6 +56,21 @@ class XDGPromptMixin(Qwen2VLPromptMixin):
         msgs.append(dict(type='text', value=prompt))
         return msgs
 
+    def _build_ocrbench_prompt(self, line, dataset: str) -> list[dict[str, str]]:
+        """change the prompt for VQA dataset:"""
+        VQA_PROMPT = '\nPlease try to answer the question with short words or phrases if possible.'
+
+        tgt_path = self.dump_image(line, dataset)
+        question = line['question']
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += VQA_PROMPT
+        return msgs
 
 class XDGAPI(BaseAPI, XDGPromptMixin):
     """Class for 小红书公司 VLM-XDG(小地瓜) API"""
