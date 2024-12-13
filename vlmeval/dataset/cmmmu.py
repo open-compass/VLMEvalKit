@@ -1,4 +1,7 @@
 from .image_base import ImageBaseDataset
+import re
+import random
+from collections import Counter
 
 
 class CMMMU(ImageBaseDataset):
@@ -11,7 +14,7 @@ class CMMMU(ImageBaseDataset):
         'CMMMU_TEST': '521afc0f3bf341e6654327792781644d',
     }
 
-    @staticmethod
+    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
         pass
