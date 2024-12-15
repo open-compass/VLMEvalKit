@@ -305,7 +305,7 @@ class XComposer2d5(BaseModel):
         return out
 
     def set_max_num(self, dataset):
-        if listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+        if dataset is not None and listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             self.model.hd_num = 25
 
     def generate_inner(self, message, dataset=None):
