@@ -145,6 +145,8 @@ def infer_data_job_video(
         pack=False,
         verbose=False,
         subtitle=False,
+        subtitle_time=False,
+        frame_time=False,
         api_nproc=4,
         fps=-1):
 
@@ -169,6 +171,11 @@ def infer_data_job_video(
     if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
         subtitle_str = 'subs' if subtitle else 'nosubs'
         tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
+    elif dataset_name in ['CG-Bench_MCQ_Grounding', 'CG-Bench_OpenEnded', 'CG-Bench_MCQ_Grounding_Mini', 'CG-Bench_OpenEnded_Mini']:
+        subtitle_str = 'subs' if subtitle else 'nosubs'
+        subtitle_time_str = 'subt' if subtitle_time else 'nosubt'
+        frame_time_str = 'ft' if frame_time else 'noft'
+        tmpl = tmpl.replace('.pkl', f'_{subtitle_str}_{subtitle_time_str}_{frame_time_str}.pkl')
 
     out_file = tmpl.format(rank)
 

@@ -106,6 +106,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--pack', action='store_true')
     parser.add_argument('--use-subtitle', action='store_true')
     parser.add_argument('--fps', type=float, default=-1)
+    # CG-Bench
+    parser.add_argument('--use-subtitle-time', action='store_true')
+    parser.add_argument('--use-frame-time', action='store_true')
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
@@ -203,6 +206,11 @@ def main():
                         dataset_kwargs['pack'] = args.pack
                     if dataset_name == 'Video-MME':
                         dataset_kwargs['use_subtitle'] = args.use_subtitle
+                    # CG-Bench
+                    if dataset_name in ['CG-Bench_MCQ_Grounding', 'CG-Bench_OpenEnded', 'CG-Bench_MCQ_Grounding_Mini', 'CG-Bench_OpenEnded_Mini']:
+                        dataset_kwargs['use_subtitle'] = args.use_subtitle
+                        dataset_kwargs['use_subtitle_time'] = args.use_subtitle_time
+                        dataset_kwargs['use_frame_time'] = args.use_frame_time
 
                     # If distributed, first build the dataset on the main process for doing preparation works
                     if world_size > 1:
@@ -237,7 +245,11 @@ def main():
                         if dataset_name in ['Video-MME', 'LongVideoBench']:
                             subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
                             result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
-
+                        if dataset_name in ['CG-Bench_MCQ_Grounding', 'CG-Bench_OpenEnded', 'CG-Bench_MCQ_Grounding_Mini', 'CG-Bench_OpenEnded_Mini']:
+                            subtitle_str = 'subs' if args.use_subtitle else 'nosubs'
+                            subtitle_time_str = 'subt' if args.use_subtitle_time else 'nosubt'
+                            frame_time_str = 'ft' if args.use_frame_time else 'noft'
+                            tmpl = tmpl.replace('.pkl', f'_{subtitle_str}_{subtitle_time_str}_{frame_time_str}.pkl')
                 # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
@@ -291,6 +303,8 @@ def main():
                         pack=args.pack,
                         verbose=args.verbose,
                         subtitle=args.use_subtitle,
+                        subtitle_time=args.use_subtitle_time,
+                        frame_time=args.use_frame_time,
                         api_nproc=args.nproc,
                         fps=args.fps)
                 elif dataset.TYPE == 'MT':
@@ -334,6 +348,10 @@ def main():
                         'MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'
                     ], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr([
+                        'CG-Bench_OpenEnded', 'CG-Bench_OpenEnded_Mini'
+                    ], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o-0806'
                 if rank == 0:
                     logger.info(judge_kwargs)
 
