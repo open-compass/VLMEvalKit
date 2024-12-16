@@ -1,7 +1,10 @@
 from .image_base import ImageBaseDataset
-import re
 import random
 from collections import Counter
+import os
+import re
+import tempfile
+from ..smp import *
 
 
 def get_multi_choice_prediction(response, all_choices, index2ans):
@@ -190,14 +193,34 @@ def get_TF_prediction(response):
 
 
 class CMMMU(ImageBaseDataset):
+    TYPE = 'VQA'
 
     DATASET_URL = {
         'CMMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/CMMMU_TEST.tsv',
+        'CMMMU_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/CMMMU_VAL.tsv'
     }
 
     DATASET_MD5 = {
         'CMMMU_TEST': '521afc0f3bf341e6654327792781644d',
+        'CMMMU_VAL': 'b4727e2fce2415bf646379e60c11a726'
     }
+
+    def dump_image(self, line):
+        os.makedirs(self.img_root, exist_ok=True)
+
+        tgt_path_z = []
+        if isinstance(line['image'], list):
+            for i in range(len(line['image'])):
+                tgt_path = osp.join(self.img_root, f"{line['index']}--{i + 1}.jpg")
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'][i], tgt_path)
+                tgt_path_z.append(tgt_path)
+        else:
+            tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+            if not read_ok(tgt_path):
+                decode_base64_to_image_file(line['image'], tgt_path)
+            tgt_path_z.append(tgt_path)
+        return tgt_path_z
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
