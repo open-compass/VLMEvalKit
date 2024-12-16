@@ -229,4 +229,34 @@ class CMMMU(ImageBaseDataset):
 
     def build_prompt(self, line):
 
-        pass
+        if line['type'] == '选择':
+            tgt_path = self.dump_image(line)
+            question = line['question']
+            options_prompt = 'Options:\n'
+
+            for i in [['A', '1'], ['B', '2'], ['C', '3'], ['D', '4']]:
+                options_prompt += i[0] + '. ' + line['option' + i[1]] + '\n'
+
+            prompt = (f'Question: {question}\n' + options_prompt + 'Please select the correct answer '
+                                                                   'from the options above. \n')
+
+            msgs = []
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+            msgs.append(dict(type='text', value=prompt))
+
+            return msgs
+
+        elif line['type'] == '判断':
+            msgs = super().build_prompt(line)
+            assert msgs[-1]['type'] == 'text'
+            msgs[-1]['value'] += '\nPlease answer Yes or No using Chinese language.'
+            return msgs
+
+        else:
+            msgs = super().build_prompt(line)
+            assert msgs[-1]['type'] == 'text'
+            msgs[-1]['value'] += '\nAnswer the question using a single word or phrase.'
+            return msgs
