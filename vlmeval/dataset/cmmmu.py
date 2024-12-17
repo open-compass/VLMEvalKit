@@ -196,12 +196,10 @@ class CMMMU(ImageBaseDataset):
     TYPE = 'VQA'
 
     DATASET_URL = {
-        'CMMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/CMMMU_TEST.tsv',
         'CMMMU_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/CMMMU_VAL.tsv'
     }
 
     DATASET_MD5 = {
-        'CMMMU_TEST': 'e1ef02a748c885197dbeca20b2ae25f4',
         'CMMMU_VAL': 'b4727e2fce2415bf646379e60c11a726'
     }
 
