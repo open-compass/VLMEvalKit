@@ -329,8 +329,8 @@ class CMMMU(ImageBaseDataset):
             for i in [['A', '1'], ['B', '2'], ['C', '3'], ['D', '4']]:
                 options_prompt += i[0] + '. ' + line['option' + i[1]] + '\n'
 
-            prompt = (f'Question: {question}\n' + options_prompt + 'Please select the correct answer '
-                                                                   'from the options above. \n')
+            prompt = (f'问题: {question}\n' + options_prompt
+                      + '请回答上述多项选择题，并选出正确选项。这些题目可能包括单选和多选题型。如果所提供的信息不足以确定一个明确的答案，那么请根据可用的数据和你的判断来选择最可能正确的选项。')
 
             msgs = []
             if isinstance(tgt_path, list):
@@ -344,11 +344,11 @@ class CMMMU(ImageBaseDataset):
         elif line['type'] == '判断':
             msgs = super().build_prompt(line)
             assert msgs[-1]['type'] == 'text'
-            msgs[-1]['value'] += '\nPlease answer Yes or No using Chinese language.'
+            msgs[-1]['value'] += '\n请回答上述判断题，并根据题目描述和所给的信息来判断问题中陈述的对错。如果信息不完整或不足以作出绝对判断，请运用你的逻辑推理和现有信息来做出最可能的判断。'
             return msgs
 
         else:
             msgs = super().build_prompt(line)
             assert msgs[-1]['type'] == 'text'
-            msgs[-1]['value'] += '\nAnswer the question using a single word or phrase.'
+            msgs[-1]['value'] += '\n请回答以下填空题，并根据题目的要求和所提供的信息来给出最恰当的答案。如果信息不足以确切回答，那么请依据现有的数据和你的推理能力来填写最合理的答案。'
             return msgs
