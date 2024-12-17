@@ -201,7 +201,7 @@ class CMMMU(ImageBaseDataset):
     }
 
     DATASET_MD5 = {
-        'CMMMU_TEST': '521afc0f3bf341e6654327792781644d',
+        'CMMMU_TEST': 'e1ef02a748c885197dbeca20b2ae25f4',
         'CMMMU_VAL': 'b4727e2fce2415bf646379e60c11a726'
     }
 
