@@ -205,8 +205,8 @@ class TeleMMAPI(SiliconFlowAPI):
                     prompt += " Please answer yes or no directly, without any unnecessary explanation."
                 elif dataset == "OCRBench":
                     prompt = (
-                        prompt
-                        + """\nExtract the text from the image intactly and answer the question concisely and clearly if possible."""
+                        prompt + "\nExtract the text from the image intactly and "
+                        + "answer the question concisely and clearly if possible."
                     )
 
                 elif (
@@ -217,7 +217,8 @@ class TeleMMAPI(SiliconFlowAPI):
                 ):
                     prompt = prompt.replace(
                         "Please select the correct answer from the options above. \n",
-                        "Please select the correct option from the above choices based on the input image and question. The final output should only be one option, such as 'A'",
+                        "Please select the correct option from the above choices based on the "
+                        + "input image and question. The final output should only be one option, such as 'A'",
                     )
                 elif dataset == "MMBench_TEST_CN_V11":
                     prompt = prompt.replace(
