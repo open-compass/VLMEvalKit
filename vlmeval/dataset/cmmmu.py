@@ -225,10 +225,105 @@ class CMMMU(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
-        pass
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+            assert 'answer' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answer']]
+
+            correct_count = 0
+            correct_category = {
+                '技术与工程': [0, 0],
+                '科学': [0, 0],
+                '健康与医学': [0, 0],
+                '商业': [0, 0],
+                '艺术与设计': [0, 0],
+                '人文社会科学': [0, 0],
+            }
+
+            for i in tqdm(data.iterrows()):
+                line = i[1]
+                correct_category[line['category']][0] += 1
+
+                # Options
+                if line['type'] == '选择':
+                    index2ans = {
+                        'A': line['option1'],
+                        'B': line['option2'],
+                        'C': line['option3'],
+                        'D': line['option4']
+                    }
+                    fact_option = get_multi_choice_prediction(line['prediction'], ['A', 'B', 'C', 'D'], index2ans)
+                    if fact_option == line['answer']:
+                        correct_count += 1
+                        correct_category[line['category']][1] += 1
+
+                # Binary
+                elif line['type'] == '判断':
+                    positive_keywords = ['正确', '对', '准确', '肯定', '对的']
+                    negative_keywords = ['不对', '错误', '不正确', '不准确', '不合适', '否定', '错的', '错']
+                    ambiguous_keywords = ['对错', '是否正确', '否正确', '或者', '是否', '正确性', '对不']
+
+                    def judge_similarity(pred_list, positive_keywords, negative_keywords):
+                        positive_count = 0
+                        negative_count = 0
+
+                        for pred in pred_list:
+                            if any(pos_word in pred for pos_word in positive_keywords):
+                                positive_count += 1
+                            elif any(neg_word in pred for neg_word in negative_keywords):
+                                negative_count += 1
+
+                        if positive_count > negative_count:
+                            return "对"
+                        elif negative_count > positive_count:
+                            return "错"
+                        else:
+                            return random.choice(['对', '错'])
+
+                    answer = get_TF_prediction(line['prediction'])
+                    answer = [word for word in answer if not any(ambiguous in word for ambiguous in ambiguous_keywords)]
+                    fact_answer = judge_similarity(answer, positive_keywords, negative_keywords)
+                    if fact_answer == line['answer']:
+                        correct_count += 1
+                        correct_category[line['category']][1] += 1
+
+                # Fill the Blank
+                else:
+                    norm_answers = normalize_str(line['answer'], line['answer'])
+                    predicted_answer = get_fill_blank_prediction(line['prediction'], line['answer'])
+
+                    for pred in predicted_answer:
+                        # already normalized
+                        if isinstance(pred, str):  # if it's a string, then find if ans in the pred_i
+                            for norm_ans in norm_answers:
+                                # only see if the string answer in the string pred
+                                # print(norm_ans, pred)
+                                if isinstance(norm_ans, str) and norm_ans in pred:
+                                    correct_count += 1
+                                    correct_category[line['category']][1] += 1
+                        else:  # it's a number
+                            if pred in norm_answers:
+                                correct_count += 1
+                                correct_category[line['category']][1] += 1
+
+            accuracyz = {}
+            accuracyz['总准确率'] = correct_count / len(data)
+            for i in correct_category.keys():
+                accuracyz[i] = correct_category[i][1] / correct_category[i][0]
+
+            accuracyz = d2df(accuracyz)
+            accuracyz.round(10)
+            dump(accuracyz, result_file)
+
+            breakpoint()
+        result = pd.read_csv(result_file)
+        return result
 
     def build_prompt(self, line):
-
         if line['type'] == '选择':
             tgt_path = self.dump_image(line)
             question = line['question']
