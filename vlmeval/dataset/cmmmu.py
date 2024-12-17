@@ -350,5 +350,5 @@ class CMMMU(ImageBaseDataset):
         else:
             msgs = super().build_prompt(line)
             assert msgs[-1]['type'] == 'text'
-            msgs[-1]['value'] += '\n请回答以下填空题，并根据题目的要求和所提供的信息来给出最恰当的答案。如果信息不足以确切回答，那么请依据现有的数据和你的推理能力来填写最合理的答案。'
+            msgs[-1]['value'] += '\n请回答上述填空题，并根据题目的要求和所提供的信息来给出最恰当的答案。如果信息不足以确切回答，那么请依据现有的数据和你的推理能力来填写最合理的答案。'
             return msgs
