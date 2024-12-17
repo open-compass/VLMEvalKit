@@ -319,7 +319,6 @@ class CMMMU(ImageBaseDataset):
             accuracyz.round(10)
             dump(accuracyz, result_file)
 
-            breakpoint()
         result = pd.read_csv(result_file)
         return result
 
