@@ -28,6 +28,7 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 > We have presented a [**comprehensive survey**](https://arxiv.org/pdf/2411.15296) on the evaluation of large multi-modality models, jointly with [**MME Team**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models) and [**LMMs-Lab**](https://lmms-lab.github.io) 🔥🔥🔥
 
+- **[2024-12-11]** Supported **[NaturalBench](https://huggingface.co/datasets/BaiqiL/NaturalBench)**, a vision-centric VQA benchmark (NeurIPS'24) that challenges vision-language models with simple questions about natural imagery.
 - **[2024-12-02]** Supported [VisOnlyQA](https://github.com/psunlpgroup/VisOnlyQA/), a benchmark for evaluating the visual perception capabilities 🔥🔥🔥
 - **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
 - **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from **[modelscope](https://www.modelscope.cn)** 🔥🔥🔥
@@ -37,9 +38,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
 - **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks **[andrewliao11](https://github.com/andrewliao11)**  for providing the official support 🔥🔥🔥
 - **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
-- **[2024-11-16]** Supported **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**, a new multimodal benchmark comprising olympiad-level math and physics questions 🔥🔥🔥
-- **[2024-11-16]** Supported **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**, a new subjective multimodal benchmark derived from multi-modal arena data 🔥🔥🔥
-- **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
 
 ## 🏗️ QuickStart
 
