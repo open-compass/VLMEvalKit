@@ -65,7 +65,6 @@ api_models = {
     'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),  # now GeminiPro1-0 is only supported by vertex backend
     'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
     'GeminiFlash1-5': partial(GeminiProVision, model='gemini-1.5-flash', temperature=0, retry=10),
-    'GeminiFlash2-0': partial(GeminiProVision, model='gemini-2.0-flash-exp', temperature=0, retry=10),
     'GeminiPro1-5-002': partial(GPT4V, model='gemini-1.5-pro-002', temperature=0, retry=10),  # Internal Use Only
     'GeminiFlash1-5-002': partial(GPT4V, model='gemini-1.5-flash-002', temperature=0, retry=10),  # Internal Use Only
     # Qwen-VL
@@ -104,7 +103,7 @@ api_models = {
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
     # TeleMM
-    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', stream=False, temperature=0.7, top_p=0.95, top_k=50, frequency_penalty=0, n=1, max_tokens=300, retry=10)
+    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', temperature=0, retry=20)
 }
 
 mmalaya_series = {
