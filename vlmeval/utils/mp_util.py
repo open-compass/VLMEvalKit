@@ -63,7 +63,7 @@ def track_progress_rich(
                 pbar.update(len(new_finished))
                 for k in new_finished:
                     unfinished.remove(k)
-            time.sleep(2)
+            time.sleep(0.1)
         pbar.close()
 
     if save is not None:

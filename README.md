@@ -25,6 +25,9 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
 ## 🆕 News
+
+> We have presented a [**comprehensive survey**](https://arxiv.org/pdf/2411.15296) on the evaluation of large multi-modality models, jointly with [**MME Team**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models) and [**LMMs-Lab**](https://lmms-lab.github.io) 🔥🔥🔥
+
 - **[2024-12-11]** Supported **[NaturalBench](https://huggingface.co/datasets/BaiqiL/NaturalBench)**, a vision-centric VQA benchmark (NeurIPS'24) that challenges vision-language models with simple questions about natural imagery.
 - **[2024-12-02]** Supported [VisOnlyQA](https://github.com/psunlpgroup/VisOnlyQA/), a benchmark for evaluating the visual perception capabilities 🔥🔥🔥
 - **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
@@ -35,9 +38,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
 - **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks **[andrewliao11](https://github.com/andrewliao11)**  for providing the official support 🔥🔥🔥
 - **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
-- **[2024-11-16]** Supported **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**, a new multimodal benchmark comprising olympiad-level math and physics questions 🔥🔥🔥
-- **[2024-11-16]** Supported **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**, a new subjective multimodal benchmark derived from multi-modal arena data 🔥🔥🔥
-- **[2024-11-13]** Supported **[MIA-Bench](https://arxiv.org/abs/2407.01509)**, a multimodal instruction-following benchmark 🔥🔥🔥
 
 ## 🏗️ QuickStart
 
@@ -218,14 +218,12 @@ If you find this work helpful, please consider to **star🌟** this repo. Thanks
 If you use VLMEvalKit in your research or wish to refer to published OpenSource evaluation results, please use the following BibTeX entry and the BibTex entry corresponding to the specific VLM / benchmark you used.
 
 ```bib
-@misc{duan2024vlmevalkit,
-      title={VLMEvalKit: An Open-Source Toolkit for Evaluating Large Multi-Modality Models},
-      author={Haodong Duan and Junming Yang and Yuxuan Qiao and Xinyu Fang and Lin Chen and Yuan Liu and Xiaoyi Dong and Yuhang Zang and Pan Zhang and Jiaqi Wang and Dahua Lin and Kai Chen},
-      year={2024},
-      eprint={2407.11691},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2407.11691},
+@inproceedings{duan2024vlmevalkit,
+  title={Vlmevalkit: An open-source toolkit for evaluating large multi-modality models},
+  author={Duan, Haodong and Yang, Junming and Qiao, Yuxuan and Fang, Xinyu and Chen, Lin and Liu, Yuan and Dong, Xiaoyi and Zang, Yuhang and Zhang, Pan and Wang, Jiaqi and others},
+  booktitle={Proceedings of the 32nd ACM International Conference on Multimedia},
+  pages={11198--11201},
+  year={2024}
 }
 ```
 
