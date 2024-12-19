@@ -16,9 +16,9 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class TempCompass(ConcatVideoDataset):
-    def __init__(self, dataset='TempCompass'):
+    def __init__(self, dataset='TempCompass', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['TempCompass_MCQ', 'TempCompass_Captioning', 'TempCompass_YorN']
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -62,12 +62,12 @@ class TempCompass_MCQ(VideoBaseDataset):
     MD5 = '7efbb9e6d9dabacd22daf274852691dd'
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='TempCompass_MCQ'):
+    def __init__(self, dataset='TempCompass_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
             'multi-choice': ('multi-choice.json', './videos', '.mp4'),
             'caption_matching': ('caption_matching.json', './videos', '.mp4'),
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -148,24 +148,24 @@ class TempCompass_MCQ(VideoBaseDataset):
         answer = data['answer']
         return question, answer
 
-    def save_video_frames(self, line, num_frames=8, fps=-1):
+    def save_video_frames(self, line):
         vid_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if num_frames > 0 and fps < 0:
-            step_size = len(vid) / (num_frames + 1)
-            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-            frame_paths = self.frame_paths(line['video'], num_frames)
-        elif fps > 0:
+        if self.nframe > 0 and self.fps < 0:
+            step_size = len(vid) / (self.nframe + 1)
+            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+            frame_paths = self.frame_paths(line['video'])
+        elif self.fps > 0:
             # not constrained by num_frames, get frames by fps
             total_duration = video_info['n_frames'] / video_info['fps']
-            required_frames = int(total_duration * fps)
-            step_size = video_info['fps'] / fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_info['fps'] / self.fps
             indices = [int(i * step_size) for i in range(required_frames)]
-            frame_paths = self.frame_paths_fps(line['video'], len(indices), fps)
+            frame_paths = self.frame_paths_fps(line['video'], len(indices))
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
@@ -178,11 +178,11 @@ class TempCompass_MCQ(VideoBaseDataset):
 
         return frame_paths
 
-    def save_video_into_images(self, line, num_frames, fps):
-        frame_paths = self.save_video_frames(line, num_frames, fps)
+    def save_video_into_images(self, line):
+        frame_paths = self.save_video_frames(line)
         return frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm, fps=-1):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -194,7 +194,7 @@ class TempCompass_MCQ(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames, fps)
+            img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nPlease directly give the best option:'))
@@ -257,11 +257,11 @@ class TempCompass_Captioning(VideoBaseDataset):
     MD5 = '35be9bf2581ea7767f02e9a8f37ae1ab'
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='TempCompass_Captioning'):
+    def __init__(self, dataset='TempCompass_Captioning', nframe=0, fps=-1):
         self.type_data_list = {
             'captioning': ('captioning.json', './videos', '.mp4'),
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -343,24 +343,24 @@ class TempCompass_Captioning(VideoBaseDataset):
         answer = data['answer']
         return question, answer
 
-    def save_video_frames(self, line, num_frames=8, fps=-1):
+    def save_video_frames(self, line):
         vid_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if num_frames > 0 and fps < 0:
-            step_size = len(vid) / (num_frames + 1)
-            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-            frame_paths = self.frame_paths(line['video'], num_frames)
-        elif fps > 0:
+        if self.nframe > 0 and self.fps < 0:
+            step_size = len(vid) / (self.nframe + 1)
+            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+            frame_paths = self.frame_paths(line['video'])
+        elif self.fps > 0:
             # not constrained by num_frames, get frames by fps
             total_duration = video_info['n_frames'] / video_info['fps']
-            required_frames = int(total_duration * fps)
-            step_size = video_info['fps'] / fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_info['fps'] / self.fps
             indices = [int(i * step_size) for i in range(required_frames)]
-            frame_paths = self.frame_paths_fps(line['video'], len(indices), fps)
+            frame_paths = self.frame_paths_fps(line['video'], len(indices))
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
@@ -373,11 +373,11 @@ class TempCompass_Captioning(VideoBaseDataset):
 
         return frame_paths
 
-    def save_video_into_images(self, line, num_frames, fps):
-        frame_paths = self.save_video_frames(line, num_frames, fps)
+    def save_video_into_images(self, line):
+        frame_paths = self.save_video_frames(line)
         return frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm, fps=-1):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -389,7 +389,7 @@ class TempCompass_Captioning(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames, fps)
+            img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         return message
@@ -451,11 +451,11 @@ class TempCompass_YorN(VideoBaseDataset):
     MD5 = 'c72c046d7fa0e82c8cd7462f2e844ea8'
     TYPE = 'Video-Y/N'
 
-    def __init__(self, dataset='TempCompass_YorN'):
+    def __init__(self, dataset='TempCompass_YorN', nframe=0, fps=-1):
         self.type_data_list = {
             'yes_no': ('yes_no.json', './videos', '.mp4'),
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -535,24 +535,24 @@ class TempCompass_YorN(VideoBaseDataset):
         answer = data['answer']
         return question, answer
 
-    def save_video_frames(self, line, num_frames=8, fps=-1):
+    def save_video_frames(self, line):
         vid_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if num_frames > 0 and fps < 0:
-            step_size = len(vid) / (num_frames + 1)
-            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-            frame_paths = self.frame_paths(line['video'], num_frames)
-        elif fps > 0:
+        if self.nframe > 0 and self.fps < 0:
+            step_size = len(vid) / (self.nframe + 1)
+            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+            frame_paths = self.frame_paths(line['video'])
+        elif self.fps > 0:
             # not constrained by num_frames, get frames by fps
             total_duration = video_info['n_frames'] / video_info['fps']
-            required_frames = int(total_duration * fps)
-            step_size = video_info['fps'] / fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_info['fps'] / self.fps
             indices = [int(i * step_size) for i in range(required_frames)]
-            frame_paths = self.frame_paths_fps(line['video'], len(indices), fps)
+            frame_paths = self.frame_paths_fps(line['video'], len(indices))
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
@@ -565,11 +565,11 @@ class TempCompass_YorN(VideoBaseDataset):
 
         return frame_paths
 
-    def save_video_into_images(self, line, num_frames, fps):
-        frame_paths = self.save_video_frames(line, num_frames, fps)
+    def save_video_into_images(self, line):
+        frame_paths = self.save_video_frames(line)
         return frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm, fps=-1):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -581,7 +581,7 @@ class TempCompass_YorN(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames, fps)
+            img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nPlease answer yes or no:'))
