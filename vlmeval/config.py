@@ -379,6 +379,23 @@ h2ovl_series = {
     'h2ovl-mississippi-1b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-800m'),
 }
 
+prismcationer_series = {
+    'prismcaptioner-7b': partial(
+        LLaVA_XTuner_Wrapper,
+        llm_path='internlm/internlm2-chat-7b',
+        llava_path='Yuxuan-Qiao/PrismCaptioner-7B',
+        visual_select_layer=-2,
+        prompt_template='internlm2_chat',
+        visual_encoder_path='google/siglip-so400m-patch14-384'),
+    'prismcaptioner-2b': partial(
+        LLaVA_XTuner_Wrapper,
+        llm_path='internlm/internlm2-chat-1_8b',
+        llava_path='Yuxuan-Qiao/PrismCaptioner-2B',
+        visual_select_layer=-2,
+        prompt_template='internlm2_chat',
+        visual_encoder_path='google/siglip-so400m-patch14-384'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -390,7 +407,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series
+    smolvlm_series, prismcationer_series
 ]
 
 for grp in model_groups:
