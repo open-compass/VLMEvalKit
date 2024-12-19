@@ -2,6 +2,7 @@ import torch
 import torch.distributed as dist
 
 from vlmeval.config import supported_VLM
+from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
@@ -26,16 +27,22 @@ def build_model_from_config(cfg, model_name):
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
 
 
-def build_dataset_from_config(cfg):
+def build_dataset_from_config(cfg, dataset_name):
     import vlmeval.dataset
     import inspect
-    config = cp.deepcopy(cfg)
+    config = cp.deepcopy(cfg[dataset_name])
+    if config == {}:
+        return supported_video_datasets[dataset_name]()
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.dataset, cls_name):
         cls = getattr(vlmeval.dataset, cls_name)
         sig = inspect.signature(cls.__init__)
         valid_params = {k: v for k, v in config.items() if k in sig.parameters}
+        if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
+            raise ValueError('fps and nframe should not be set at the same time')
+        if valid_params.get('fps', 0) <= 0 and valid_params.get('nframe', 0) <= 0:
+            raise ValueError('fps and nframe should be set at least one valid value')
         return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
@@ -190,9 +197,9 @@ def main():
                 if use_config:
                     if world_size > 1:
                         if rank == 0:
-                            dataset = build_dataset_from_config(cfg['data'][dataset_name])
+                            dataset = build_dataset_from_config(cfg['data'], dataset_name)
                         dist.barrier()
-                    dataset = build_dataset_from_config(cfg['data'][dataset_name])
+                    dataset = build_dataset_from_config(cfg['data'], dataset_name)
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
@@ -200,10 +207,6 @@ def main():
                     dataset_kwargs = {}
                     if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
                         dataset_kwargs['model'] = model_name
-                    if dataset_name == 'MMBench-Video':
-                        dataset_kwargs['pack'] = args.pack
-                    if dataset_name == 'Video-MME':
-                        dataset_kwargs['use_subtitle'] = args.use_subtitle
 
                     # If distributed, first build the dataset on the main process for doing preparation works
                     if world_size > 1:
@@ -215,29 +218,6 @@ def main():
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
-                    # Handling Video Datasets. For Video Dataset, set the fps for priority
-                    if args.fps > 0:
-                        if dataset_name == 'MVBench':
-                            raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
-                        args.nframe = 0
-                    if dataset_name in ['MMBench-Video']:
-                        packstr = 'pack' if args.pack else 'nopack'
-                        if args.nframe > 0:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-                        else:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                    elif dataset.MODALITY == 'VIDEO':
-                        if args.pack:
-                            logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
-                            args.pack = False
-                        packstr = 'pack' if args.pack else 'nopack'
-                        if args.nframe > 0:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-                        else:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                        if dataset_name in ['Video-MME', 'LongVideoBench']:
-                            subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                            result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
                 # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':

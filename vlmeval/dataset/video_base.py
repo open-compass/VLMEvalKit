@@ -37,6 +37,10 @@ class VideoBaseDataset:
         self.pack = pack
         self.nframe = nframe
         self.fps = fps
+        if self.fps > 0 and self.nframe > 0:
+            raise ValueError('fps and nframe should not be set at the same time')
+        if self.fps <= 0 and self.nframe <= 0:
+            raise ValueError('fps and nframe should be set at least one valid value')
 
     def __len__(self):
         return len(self.videos) if self.pack else len(self.data)
@@ -81,7 +85,7 @@ class VideoBaseDataset:
             indices = [int(i * step_size) for i in range(required_frames)]
 
             # 提取帧并保存
-            frame_paths = self.frame_paths_fps(video, len(indices), self.fps)
+            frame_paths = self.frame_paths_fps(video, len(indices))
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
