@@ -1,4 +1,4 @@
-<div align="center">
+![image](https://github.com/user-attachments/assets/f9fca181-5191-4c40-ab0e-3f3a7e297ada)<div align="center">
 
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
 
@@ -30,13 +30,13 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 - **[2024-12-11]** Supported **[NaturalBench](https://huggingface.co/datasets/BaiqiL/NaturalBench)**, a vision-centric VQA benchmark (NeurIPS'24) that challenges vision-language models with simple questions about natural imagery.
 - **[2024-12-02]** Supported [VisOnlyQA](https://github.com/psunlpgroup/VisOnlyQA/), a benchmark for evaluating the visual perception capabilities 🔥🔥🔥
-- **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to **[runninglsy](https://github.com/runninglsy)** 🔥🔥🔥
-- **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from **[modelscope](https://www.modelscope.cn)** 🔥🔥🔥
+- **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
+- **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from [**modelscope**](https://www.modelscope.cn) 🔥🔥🔥
 - **[2024-11-25]** Supported **[VizWiz](https://vizwiz.org/tasks/vqa/)** benchmark 🔥🔥🔥
-- **[2024-11-22]** Supported the inference of **[MMGenBench](https://mmgenbench.alsoai.com)**, thanks **[lerogo](https://github.com/lerogo)** 🔥🔥🔥
+- **[2024-11-22]** Supported the inference of **[MMGenBench](https://mmgenbench.alsoai.com)**, thanks [**lerogo**](https://github.com/lerogo) 🔥🔥🔥
 - **[2024-11-22]** Supported **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)**, a multimodal math benchmark comprising of 501 SEED problems and 10 variants generated based on random seeds. The benchmark can be used to measure the robustness of MLLMs in multi-modal math solving 🔥🔥🔥
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
-- **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks **[andrewliao11](https://github.com/andrewliao11)**  for providing the official support 🔥🔥🔥
+- **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks [**andrewliao11**](https://github.com/andrewliao11)  for providing the official support 🔥🔥🔥
 - **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
 
 ## 🏗️ QuickStart
@@ -82,7 +82,7 @@ See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstar
 | [**GMAI-MMBench**](https://huggingface.co/papers/2408.03361)+ | GMAI-MMBench_VAL | MCQ | [**TableVQABench**](https://arxiv.org/abs/2404.19205)+ | TableVQABench | VQA |
 | [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN]<br/>[MME-RealWorld-Lite](https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Lite) | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
 | [**MathVerse**](https://mathverse-cuhk.github.io/)+ | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA | [**AMBER**](https://github.com/junyangwang0410/AMBER)+ | AMBER | Y/N |
-| [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+ | CRPE_[EXIST/RELATION] | VQA | **[MMSearch](https://mmsearch.github.io/)**$$^1$$ | - | **-** |
+| [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+ | CRPE_[EXIST/RELATION] | VQA | [**MMSearch**](https://mmsearch.github.io/)$$^1$$ | - | **-** |
 | **[R-Bench](https://arxiv.org/abs/2410.05474)**+ | R-Bench-[Dis/Ref] | MCQ | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+ | WorldMedQA-V | MCQ |
 | **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
 | **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
@@ -135,10 +135,10 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 | [**Chat-UniVi-7B[-v1.5]**](https://github.com/PKU-YuanGroup/Chat-UniVi) 🎬 | [**LLaMA-VID-7B**](https://github.com/dvlab-research/LLaMA-VID) 🎬 | [**VideoChat2-HD**](https://huggingface.co/OpenGVLab/VideoChat2_HD_stage4_Mistral_7B) 🎬 | [**PLLaVA-[7B/13B/34B]**](https://huggingface.co/ermu2001/pllava-7b) 🎬 |
 | [**RBDash_72b**](https://github.com/RBDash-Team/RBDash) 🚅🎞️   | [**xgen-mm-phi3-[interleave/dpo]-r-v1.5**](https://huggingface.co/Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5) 🚅🎞️ | [**Qwen2-VL-[2B/7B/72B]**](https://github.com/QwenLM/Qwen2-VL)🚅🎞️ | [**slime_[7b/8b/13b]**](https://github.com/yfzhang114/SliME)🎞️ |
 | [**Eagle-X4-[8B/13B]**](https://github.com/NVlabs/EAGLE)🚅🎞️, <br>[**Eagle-X5-[7B/13B/34B]**](https://github.com/NVlabs/EAGLE)🚅🎞️ | [**Moondream1**](https://github.com/vikhyat/moondream)🚅, <br>[**Moondream2**](https://github.com/vikhyat/moondream)🚅 | [**XinYuan-VL-2B-Instruct**](https://huggingface.co/Cylingo/Xinyuan-VL-2B)🚅🎞️ | [**Llama-3.2-[11B/90B]-Vision-Instruct**](https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct)🚅 |
-| [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 | [**H2OVL-Mississippi-[0.8B/2B]**](https://huggingface.co/h2oai/h2ovl-mississippi-2b)🚅🎞️ | **[Pixtral-12B](https://huggingface.co/mistralai/Pixtral-12B-2409)**🎞️ | **[Falcon2-VLM-11B](https://huggingface.co/tiiuae/falcon-11B-vlm)**🚅 |
-| **[MiniMonkey](https://huggingface.co/mx262/MiniMonkey)**🚅🎞️  | **[LLaVA-OneVision](https://huggingface.co/lmms-lab/llava-onevision-qwen2-72b-ov-sft)**🚅🎞️ | **[LLaVA-Video](https://huggingface.co/collections/lmms-lab/llava-video-661e86f5e8dabc3ff793c944)**🚅🎞️ | **[Aquila-VL-2B](https://huggingface.co/BAAI/Aquila-VL-2B-llava-qwen)**🚅🎞️ |
-| [**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ | **[InternVL2 Series](https://huggingface.co/OpenGVLab/InternVL2-8B)** 🚅🎞️ | **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**🚅🎞️ | **[molmoE-1B/molmo-7B/molmo-72B](https://huggingface.co/allenai/Molmo-7B-D-0924)**🚅 |
-| **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ |  **[Aria](https://huggingface.co/rhymes-ai/Aria)**🚅🎞️ |
+| [**Kosmos2**](https://huggingface.co/microsoft/kosmos-2-patch14-224)🚅 | [**H2OVL-Mississippi-[0.8B/2B]**](https://huggingface.co/h2oai/h2ovl-mississippi-2b)🚅🎞️ | [**Pixtral-12B**](https://huggingface.co/mistralai/Pixtral-12B-2409)🎞️ | [**Falcon2-VLM-11B**](https://huggingface.co/tiiuae/falcon-11B-vlm)🚅 |
+| [**MiniMonkey**](https://huggingface.co/mx262/MiniMonkey)🚅🎞️  | [**LLaVA-OneVision**](https://huggingface.co/lmms-lab/llava-onevision-qwen2-72b-ov-sft)🚅🎞️ | [**LLaVA-Video**](https://huggingface.co/collections/lmms-lab/llava-video-661e86f5e8dabc3ff793c944)🚅🎞️ | [**Aquila-VL-2B**](https://huggingface.co/BAAI/Aquila-VL-2B-llava-qwen)🚅🎞️ |
+| [**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ | [**InternVL2 Series**](https://huggingface.co/OpenGVLab/InternVL2-8B) 🚅🎞️ | [**Janus-1.3B**](https://huggingface.co/deepseek-ai/Janus-1.3B)🚅🎞️ | [**molmoE-1B/molmo-7B/molmo-72B**](https://huggingface.co/allenai/Molmo-7B-D-0924)🚅 |
+| [**Points-[Yi-1.5-9B/Qwen-2.5-7B]**](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)🚅 | [**NVLM**](https://huggingface.co/nvidia/NVLM-D-72B)🚅        | [**VIntern**](https://huggingface.co/5CD-AI/Vintern-3B-beta)🚅🎞️ |  [**Aria**](https://huggingface.co/rhymes-ai/Aria)🚅🎞️ |
 
 
 🎞️: Support multiple images as inputs.
