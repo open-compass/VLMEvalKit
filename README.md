@@ -1,5 +1,3 @@
-![image](https://github.com/user-attachments/assets/f9fca181-5191-4c40-ab0e-3f3a7e297ada)<div align="center">
-
 ![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
 
 <b>A Toolkit for Evaluating Large Vision-Language Models. </b>
