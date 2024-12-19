@@ -26,11 +26,15 @@ def build_model_from_config(cfg):
 
 def build_dataset_from_config(cfg):
     import vlmeval.dataset
+    import inspect
     config = cp.deepcopy(cfg)
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.dataset, cls_name):
-        return getattr(vlmeval.dataset, cls_name)(**config)
+        cls = getattr(vlmeval.dataset, cls_name)
+        sig = inspect.signature(cls.__init__)
+        valid_params = {k: v for k, v in config.items() if k in sig.parameters}
+        return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
 
@@ -101,11 +105,6 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--data', type=str, nargs='+', help='Names of Datasets')
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
-    # Args that only apply to Video Dataset
-    parser.add_argument('--nframe', type=int, default=8)
-    parser.add_argument('--pack', action='store_true')
-    parser.add_argument('--use-subtitle', action='store_true')
-    parser.add_argument('--fps', type=float, default=-1)
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
@@ -287,12 +286,8 @@ def main():
                         work_dir=pred_root,
                         model_name=model_name,
                         dataset=dataset,
-                        nframe=args.nframe,
-                        pack=args.pack,
                         verbose=args.verbose,
-                        subtitle=args.use_subtitle,
-                        api_nproc=args.nproc,
-                        fps=args.fps)
+                        api_nproc=args.nproc)
                 elif dataset.TYPE == 'MT':
                     model = infer_data_job_mt(
                         model,
