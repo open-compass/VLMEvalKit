@@ -10,10 +10,12 @@ from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
-def build_model_from_config(cfg):
+def build_model_from_config(cfg, model_name):
     import vlmeval.api
     import vlmeval.vlm
-    config = cp.deepcopy(cfg)
+    config = cp.deepcopy(cfg[model_name])
+    if config == {}:
+        return supported_VLM[model_name]()
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
@@ -179,7 +181,7 @@ def main():
             os.makedirs(pred_root, exist_ok=True)
 
         if use_config:
-            model = build_model_from_config(cfg['model'][model_name])
+            model = build_model_from_config(cfg['model'], model_name)
 
         for _, dataset_name in enumerate(args.data):
             try:
