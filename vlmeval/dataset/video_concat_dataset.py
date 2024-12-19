@@ -15,8 +15,8 @@ class ConcatVideoDataset(VideoBaseDataset):
         # The name of the compliation
         self.dataset_name = dataset
         self.datasets = datasets
-        self.nframe = kwargs['nframe']
-        self.fps = kwargs['fps']
+        self.nframe = kwargs.get('nframe', 0)
+        self.fps = kwargs.get('fps', -1)
         for dname in datasets:
             dataset = build_dataset(dname, **kwargs)
             assert dataset is not None, dataset

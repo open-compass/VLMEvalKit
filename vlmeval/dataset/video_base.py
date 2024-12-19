@@ -9,7 +9,7 @@ class VideoBaseDataset:
     def __init__(self,
                  dataset='MMBench-Video',
                  pack=False,
-                 nframe=8,
+                 nframe=0,
                  fps=-1):
         try:
             import decord

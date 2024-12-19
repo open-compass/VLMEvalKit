@@ -16,7 +16,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class TempCompass(ConcatVideoDataset):
-    def __init__(self, dataset='TempCompass', nframe=8, fps=-1):
+    def __init__(self, dataset='TempCompass', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['TempCompass_MCQ', 'TempCompass_Captioning', 'TempCompass_YorN']
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
@@ -62,7 +62,7 @@ class TempCompass_MCQ(VideoBaseDataset):
     MD5 = '7efbb9e6d9dabacd22daf274852691dd'
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='TempCompass_MCQ', nframe=8, fps=-1):
+    def __init__(self, dataset='TempCompass_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
             'multi-choice': ('multi-choice.json', './videos', '.mp4'),
             'caption_matching': ('caption_matching.json', './videos', '.mp4'),
@@ -257,7 +257,7 @@ class TempCompass_Captioning(VideoBaseDataset):
     MD5 = '35be9bf2581ea7767f02e9a8f37ae1ab'
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='TempCompass_Captioning', nframe=8, fps=-1):
+    def __init__(self, dataset='TempCompass_Captioning', nframe=0, fps=-1):
         self.type_data_list = {
             'captioning': ('captioning.json', './videos', '.mp4'),
         }
@@ -451,7 +451,7 @@ class TempCompass_YorN(VideoBaseDataset):
     MD5 = 'c72c046d7fa0e82c8cd7462f2e844ea8'
     TYPE = 'Video-Y/N'
 
-    def __init__(self, dataset='TempCompass_YorN', nframe=8, fps=-1):
+    def __init__(self, dataset='TempCompass_YorN', nframe=0, fps=-1):
         self.type_data_list = {
             'yes_no': ('yes_no.json', './videos', '.mp4'),
         }

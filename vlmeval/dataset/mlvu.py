@@ -21,13 +21,13 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class MLVU(ConcatVideoDataset):
-    def __init__(self, dataset='MLVU'):
+    def __init__(self, dataset='MLVU', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['MLVU_MCQ', 'MLVU_OpenEnded']
         self.type_data_dict = {
             'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning'],
             'G-Avg':['sub_scene', 'summary']
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -63,7 +63,7 @@ class MLVU_MCQ(VideoBaseDataset):
     SYS = BASE_SYS + 'Based on your observations, select the best option that accurately addresses the question.'
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='MLVU_MCQ'):
+    def __init__(self, dataset='MLVU_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
             'plotQA': ('1_plotQA.json', './MLVU/video/1_plotQA', 'MCQ'),
             'needle': ('2_needle.json', './MLVU/video/2_needle', 'MCQ'),
@@ -73,7 +73,7 @@ class MLVU_MCQ(VideoBaseDataset):
             'anomaly_reco': ('6_anomaly_reco.json', './MLVU/video/6_anomaly_reco', 'MCQ'),
             'topic_reasoning': ('7_topic_reasoning.json', './MLVU/video/7_topic_reasoning', 'MCQ'),
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -279,12 +279,12 @@ class MLVU_OpenEnded(VideoBaseDataset):
     SYS = BASE_SYS + 'Based on your observations, answer the given questions.'
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='MLVU_OpenEnded'):
+    def __init__(self, dataset='MLVU_OpenEnded', nframe=0, fps=-1):
         self.type_data_list = {
             'sub_scene': ('8_sub_scene.json', './MLVU/video/8_sub_scene', 'VQA'),
             'summary': ('9_summary.json', './MLVU/video/9_summary', 'VQA')
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):

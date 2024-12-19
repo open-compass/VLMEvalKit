@@ -28,7 +28,7 @@ Based on your observations, select the best option that accurately addresses the
 
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='MVBench', pack=False, nframe=8, fps=-1):
+    def __init__(self, dataset='MVBench', pack=False, nframe=0, fps=-1):
         self.type_data_list = {
             'Action Sequence': ('action_sequence.json',
                                 'your_data_path/star/Charades_v1_480/', 'video', True),  # has start & end
@@ -432,7 +432,7 @@ Based on your observations, select the best option that accurately addresses the
 """
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='MVBench_MP4', pack=False, nframe=8, fps=-1):
+    def __init__(self, dataset='MVBench_MP4', pack=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     @classmethod

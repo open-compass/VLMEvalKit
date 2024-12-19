@@ -59,7 +59,7 @@ Please directly reply with your response to the only question.
 
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='MMBench-Video', pack=False, nframe=8, fps=-1):
+    def __init__(self, dataset='MMBench-Video', pack=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     @classmethod

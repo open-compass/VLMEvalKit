@@ -94,7 +94,7 @@ class LongVideoBench(VideoBaseDataset):
 
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='LongVideoBench', use_subtitle=False, nframe=8, fps=-1):
+    def __init__(self, dataset='LongVideoBench', use_subtitle=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
         self.use_subtitle = use_subtitle
         self.dataset_name = dataset
