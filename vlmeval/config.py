@@ -196,6 +196,10 @@ internvl_series = {
     'InternVL2_5-78B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-78B', version='V2.0'),
 }
 
+sail_series = {
+    'SAIL-VL-2B': partial(SailVL, model_path='BytedanceDouyinContent/SAIL-VL-2B')
+}
+
 yivl_series = {
     'Yi_VL_6B': partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
     'Yi_VL_34B': partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
