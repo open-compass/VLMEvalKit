@@ -26,16 +26,16 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 > We have presented a [**comprehensive survey**](https://arxiv.org/pdf/2411.15296) on the evaluation of large multi-modality models, jointly with [**MME Team**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models) and [**LMMs-Lab**](https://lmms-lab.github.io) 🔥🔥🔥
 
-- **[2024-12-11]** Supported **[NaturalBench](https://huggingface.co/datasets/BaiqiL/NaturalBench)**, a vision-centric VQA benchmark (NeurIPS'24) that challenges vision-language models with simple questions about natural imagery.
-- **[2024-12-02]** Supported [VisOnlyQA](https://github.com/psunlpgroup/VisOnlyQA/), a benchmark for evaluating the visual perception capabilities 🔥🔥🔥
-- **[2024-11-26]** Supported [Ovis1.6-Gemma2-27B](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
+- **[2024-12-11]** Supported [**NaturalBench**](https://huggingface.co/datasets/BaiqiL/NaturalBench), a vision-centric VQA benchmark (NeurIPS'24) that challenges vision-language models with simple questions about natural imagery.
+- **[2024-12-02]** Supported [**VisOnlyQA**](https://github.com/psunlpgroup/VisOnlyQA/), a benchmark for evaluating the visual perception capabilities 🔥🔥🔥
+- **[2024-11-26]** Supported [**Ovis1.6-Gemma2-27B**](https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-27B), thanks to [**runninglsy**](https://github.com/runninglsy) 🔥🔥🔥
 - **[2024-11-25]** Create a new flag `VLMEVALKIT_USE_MODELSCOPE`. By setting this environment variable, you can download the video benchmarks supported from [**modelscope**](https://www.modelscope.cn) 🔥🔥🔥
-- **[2024-11-25]** Supported **[VizWiz](https://vizwiz.org/tasks/vqa/)** benchmark 🔥🔥🔥
-- **[2024-11-22]** Supported the inference of **[MMGenBench](https://mmgenbench.alsoai.com)**, thanks [**lerogo**](https://github.com/lerogo) 🔥🔥🔥
-- **[2024-11-22]** Supported **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)**, a multimodal math benchmark comprising of 501 SEED problems and 10 variants generated based on random seeds. The benchmark can be used to measure the robustness of MLLMs in multi-modal math solving 🔥🔥🔥
+- **[2024-11-25]** Supported [**VizWiz**](https://vizwiz.org/tasks/vqa/) benchmark 🔥🔥🔥
+- **[2024-11-22]** Supported the inference of [**MMGenBench**](https://mmgenbench.alsoai.com), thanks [**lerogo**](https://github.com/lerogo) 🔥🔥🔥
+- **[2024-11-22]** Supported [**Dynamath**](https://huggingface.co/datasets/DynaMath/DynaMath_Sample), a multimodal math benchmark comprising of 501 SEED problems and 10 variants generated based on random seeds. The benchmark can be used to measure the robustness of MLLMs in multi-modal math solving 🔥🔥🔥
 - **[2024-11-21]** Integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
-- **[2024-11-21]** Supported **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**, a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks [**andrewliao11**](https://github.com/andrewliao11)  for providing the official support 🔥🔥🔥
-- **[2024-11-21]** Supported **[MM-Math](https://github.com/kge-sun/mm-math)**, a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
+- **[2024-11-21]** Supported [**QSpatial**](https://andrewliao11.github.io/spatial_prompt/), a multimodal benchmark for Quantitative Spatial Reasoning (determine the size / distance, e.g.), thanks [**andrewliao11**](https://github.com/andrewliao11)  for providing the official support 🔥🔥🔥
+- **[2024-11-21]** Supported [**MM-Math**](https://github.com/kge-sun/mm-math), a new multimodal math benchmark comprising of ~6K middle school multi-modal reasoning math problems. GPT-4o-20240806 achieces 22.5% accuracy on this benchmark 🔥🔥🔥
 
 ## 🏗️ QuickStart
 
@@ -47,7 +47,7 @@ See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstar
 
 **The performance numbers on our official multi-modal leaderboards can be downloaded from here!**
 
-**[OpenVLM Leaderboard](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard)**: **[Download All DETAILED Results](http://opencompass.openxlab.space/assets/OpenVLM.json)**.
+[**OpenVLM Leaderboard**](https://huggingface.co/spaces/opencompass/open_vlm_leaderboard): [**Download All DETAILED Results**](http://opencompass.openxlab.space/assets/OpenVLM.json).
 
 ### Supported Benchmarks
 
@@ -81,12 +81,12 @@ See [[QuickStart](/docs/en/Quickstart.md) | [快速开始](/docs/zh-CN/Quickstar
 | [**MME-RealWorld**](https://arxiv.org/abs/2408.13257)+ | MME-RealWorld[-CN]<br/>[MME-RealWorld-Lite](https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Lite) | MCQ | [**HRBench**](https://arxiv.org/abs/2408.15556)+ | HRBench[4K/8K] | MCQ |
 | [**MathVerse**](https://mathverse-cuhk.github.io/)+ | MathVerse_MINI<br/>MathVerse_MINI_Vision_Only <br/>MathVerse_MINI_Vision_Dominant<br/>MathVerse_MINI_Vision_Intensive<br/>MathVerse_MINI_Text_Lite<br/>MathVerse_MINI_Text_Dominant | VQA | [**AMBER**](https://github.com/junyangwang0410/AMBER)+ | AMBER | Y/N |
 | [**CRPE**](https://huggingface.co/datasets/OpenGVLab/CRPE)+ | CRPE_[EXIST/RELATION] | VQA | [**MMSearch**](https://mmsearch.github.io/)$$^1$$ | - | **-** |
-| **[R-Bench](https://arxiv.org/abs/2410.05474)**+ | R-Bench-[Dis/Ref] | MCQ | **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**+ | WorldMedQA-V | MCQ |
-| **[GQA](https://cs.stanford.edu/people/dorarad/gqa/about.html)**+ | GQA_TestDev_Balanced | VQA | **[MIA-Bench](https://arxiv.org/abs/2407.01509)**+ | MIA-Bench | VQA |
-| **[WildVision](https://huggingface.co/datasets/WildVision/wildvision-bench)**+ | WildVision | VQA | **[OlympiadBench](https://github.com/OpenBMB/OlympiadBench)**+ | OlympiadBench | VQA |
-| **[MM-Math](https://github.com/kge-sun/mm-math)**+ | MM-Math | VQA | **[Dynamath](https://huggingface.co/datasets/DynaMath/DynaMath_Sample)** | DynaMath | VQA |
-| **[MMGenBench](https://mmgenbench.alsoai.com/)**- | MMGenBench-Test<br>MMGenBench-Domain | - | **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**+ | QSpatial_[plus/scannet] | VQA |
-| **[VizWiz](https://vizwiz.org/tasks/vqa/)**+ | VizWiz | VQA | **[VisOnlyQA](https://github.com/psunlpgroup/VisOnlyQA/)**+ | VisOnlyQA-VLMEvalKit | MCQ |
+| [**R-Bench**](https://arxiv.org/abs/2410.05474)+ | R-Bench-[Dis/Ref] | MCQ | [**WorldMedQA-V**](https://www.arxiv.org/abs/2410.12722)+ | WorldMedQA-V | MCQ |
+| [**GQA**](https://cs.stanford.edu/people/dorarad/gqa/about.html)+ | GQA_TestDev_Balanced | VQA | [**MIA-Bench**](https://arxiv.org/abs/2407.01509)+ | MIA-Bench | VQA |
+| [**WildVision**](https://huggingface.co/datasets/WildVision/wildvision-bench)+ | WildVision | VQA | [**OlympiadBench**](https://github.com/OpenBMB/OlympiadBench)+ | OlympiadBench | VQA |
+| [**MM-Math**](https://github.com/kge-sun/mm-math)+ | MM-Math | VQA | [**Dynamath**](https://huggingface.co/datasets/DynaMath/DynaMath_Sample) | DynaMath | VQA |
+| [**MMGenBench**](https://mmgenbench.alsoai.com/)- | MMGenBench-Test<br>MMGenBench-Domain | - | [**QSpatial**](https://andrewliao11.github.io/spatial_prompt/)+ | QSpatial_[plus/scannet] | VQA |
+| [**VizWiz**](https://vizwiz.org/tasks/vqa/)+ | VizWiz | VQA | [**VisOnlyQA**](https://github.com/psunlpgroup/VisOnlyQA/)+ | VisOnlyQA-VLMEvalKit | MCQ |
 
 **\*** We only provide a subset of the evaluation results, since some VLMs do not yield reasonable results under the zero-shot setting
 
@@ -102,9 +102,9 @@ VLMEvalKit will use a **judge LLM** to extract answer from the output if you set
 
 | Dataset                                              | Dataset Names (for run.py) | Task | Dataset | Dataset Names (for run.py) | Task |
 | ---------------------------------------------------- | -------------------------- | ---- | ------- | -------------------------- | ---- |
-| **[MMBench-Video](https://mmbench-video.github.io)** | MMBench-Video              | VQA  | **[Video-MME](https://video-mme.github.io/)**        |    Video-MME                        | MCQ     |
-| **[MVBench](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md)**| MVBench/MVBench_MP4              | MCQ  | **[MLVU](https://github.com/JUNJIE99/MLVU)** | MLVU | MCQ & VQA |
-| **[TempCompass](https://arxiv.org/abs/2403.00476)** | TempCompass | MCQ & Y/N & Caption | **[LongVideoBench](https://longvideobench.github.io/)** | LongVideoBench | MCQ |
+| [**MMBench-Video**](https://mmbench-video.github.io) | MMBench-Video              | VQA  | [**Video-MME**](https://video-mme.github.io/)        |    Video-MME                        | MCQ     |
+| [**MVBench**](https://github.com/OpenGVLab/Ask-Anything/blob/main/video_chat2/MVBENCH.md) | MVBench/MVBench_MP4              | MCQ  | [**MLVU**](https://github.com/JUNJIE99/MLVU) | MLVU | MCQ & VQA |
+| [**TempCompass**](https://arxiv.org/abs/2403.00476) | TempCompass | MCQ & Y/N & Caption | [**LongVideoBench**](https://longvideobench.github.io/) | LongVideoBench | MCQ |
 
 ### Supported Models
 
