@@ -174,7 +174,7 @@ class TeleMMAPI(SiliconFlowAPI):
         return tgt_path
 
     def _prepare_content(
-        self, inputs: list[dict[str, str]], dataset: str | None = None
+        self, inputs: list[dict[str, str]], dataset: str = None
     ) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
