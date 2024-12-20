@@ -128,6 +128,8 @@ $$^1$$ VLMEvalKit 在评测集的官方代码库中被使用
 | **[MiniMonkey](https://huggingface.co/mx262/MiniMonkey)**🚅🎞️  | **[LLaVA-OneVision](https://huggingface.co/lmms-lab/llava-onevision-qwen2-72b-ov-sft)**🚅🎞️ | **[LLaVA-Video](https://huggingface.co/collections/lmms-lab/llava-video-661e86f5e8dabc3ff793c944)**🚅🎞️ | **[Aquila-VL-2B](https://huggingface.co/BAAI/Aquila-VL-2B-llava-qwen)**🚅🎞️ |
 | [**Mini-InternVL-Chat-[2B/4B]-V1-5**](https://github.com/OpenGVLab/InternVL)🚅🎞️ | **[InternVL2 Series](https://huggingface.co/OpenGVLab/InternVL2-8B)** 🚅🎞️ | **[Janus-1.3B](https://huggingface.co/deepseek-ai/Janus-1.3B)**🚅🎞️ | **[molmoE-1B/molmo-7B/molmo-72B](https://huggingface.co/allenai/Molmo-7B-D-0924)**🚅 |
 | **[Points-[Yi-1.5-9B/Qwen-2.5-7B]](https://huggingface.co/WePOINTS/POINTS-Yi-1-5-9B-Chat)**🚅 | **[NVLM](https://huggingface.co/nvidia/NVLM-D-72B)**🚅        | **[VIntern](https://huggingface.co/5CD-AI/Vintern-3B-beta)**🚅🎞️ | **[Aria](https://huggingface.co/rhymes-ai/Aria)**🚅🎞️ |
+| [**VARCO-VISION-14B**](https://huggingface.co/NCSOFT/VARCO-VISION-14B-HF)🚅                                                          |  |  |  |
+
 
 🎞️ 表示支持多图片输入。
 
