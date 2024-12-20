@@ -28,11 +28,11 @@ class ChatResponse(dict):
 from ..dataset import DATASET_TYPE
 
 
-class TaichuMLLMWrapper(BaseAPI):
+class TaichuVLWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'TaichuMLLM-2B',
+                 model: str = 'Taichu-VL-2B',
                  retry: int = 5,
                  wait: int = 5,
                  verbose: bool = True,
@@ -211,7 +211,7 @@ class TaichuMLLMWrapper(BaseAPI):
             return -1, '', ''
 
 
-class TaichuMLLM_API(TaichuMLLMWrapper):
+class TaichuVLAPI(TaichuVLWrapper):
 
     def generate(self, message, dataset=None):
-        return super(TaichuMLLM_API, self).generate(message, dataset=dataset)
+        return super(TaichuVLAPI, self).generate(message, dataset=dataset)

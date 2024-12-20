@@ -105,8 +105,8 @@ api_models = {
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
     # TeleMM
     'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', temperature=0, retry=10),
-    # TaichuMLLM
-    'TaichuMLLM-2B-API': partial(TaichuMLLM_API, model='TaichuMLLM-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
+    # Taichu-VL
+    'Taichu-VL-2B': partial(TaichuVLAPI, model='Taichu-VL-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
 }
 
 mmalaya_series = {
