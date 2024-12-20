@@ -73,8 +73,11 @@ class StepAPI_INT(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
-        except:
-            pass
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
+
         return ret_code, answer, response
 
 

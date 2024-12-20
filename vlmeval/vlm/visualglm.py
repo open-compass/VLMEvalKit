@@ -11,8 +11,10 @@ class VisualGLM(BaseModel):
     def __init__(self, model_path='THUDM/visualglm-6b', **kwargs):
         try:
             import sat
-        except:
-            warnings.warn('Please install SwissArmyTransformer to use VisualGLM')
+        except Exception as err:
+            logging.critical('Please install SwissArmyTransformer to use VisualGLM')
+            raise err
+
         assert model_path is not None
         self.model_path = model_path
 

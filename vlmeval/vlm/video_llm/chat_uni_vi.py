@@ -4,6 +4,7 @@ import copy as cp
 import numpy as np
 import sys
 import os
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
@@ -86,14 +87,16 @@ class Chatunivi(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample 1 fps (maximum 64 frames) from the video
 
     def __init__(self, model_path='Chat-UniVi/Chat-UniVi', **kwargs):
         assert model_path is not None
         try:
             from ChatUniVi.model.builder import load_pretrained_model
-        except:
-            warnings.warn('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install Chat-UniVi from https://github.com/PKU-YuanGroup/Chat-UniVi.git.')
+            raise err
+
         model_name = 'ChatUniVi'
         tokenizer, model, processor, context_len = load_pretrained_model(model_path, None, model_name)
         self.tokenizer = tokenizer
@@ -105,7 +108,7 @@ class Chatunivi(BaseModel):
         self.processor = image_processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframe = 64
+        self.fps = 1
         self.resolution = 224
         if 'v1.5' in model_path:
             self.resolution = 336
@@ -138,18 +141,29 @@ class Chatunivi(BaseModel):
                 m = m.to(dtype=torch.bfloat16)
 
         video_frames, slice_len = _get_rawvideo_dec(
-            video, video_processor, max_frames=MAX_IMAGE_LENGTH, image_resolution=self.resolution
+            video, video_processor, max_frames=MAX_IMAGE_LENGTH,
+            image_resolution=self.resolution, video_framerate=self.fps
         )
 
         if model.config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN * slice_len + DEFAULT_IM_END_TOKEN + '\n' + qs
+        if type(qs) is dict and 'user' in qs:
+            qs['user'] = DEFAULT_IMAGE_TOKEN * slice_len + '\n' + qs['user']
         else:
             qs = DEFAULT_IMAGE_TOKEN * slice_len + '\n' + qs
 
         conv = conv_templates['v1'].copy()
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        if type(qs) is dict and 'system' in qs:
+            conv.system = qs['system']
+        if type(qs) is dict and 'user' in qs:
+            conv.append_message(conv.roles[0], qs['user'])
+        else:
+            conv.append_message(conv.roles[0], qs)
+        if type(qs) is dict and 'assistant' in qs:
+            conv.append_message(conv.roles[1], qs['assistant'])
+        else:
+            conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt().strip('</s>')
 
         input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(
             0).cuda()
@@ -185,6 +199,9 @@ class Chatunivi(BaseModel):
         return outputs
 
     def generate_inner(self, message, dataset=None):
-        question, video = self.message_to_promptvideo(message)
+        if listinstr(['MLVU', 'MVBench'], dataset):
+            question, video = self.message_to_promptvideo_withrole(message, dataset)
+        else:
+            question, video = self.message_to_promptvideo(message)
         response = self.get_model_output(self.model, self.processor, self.tokenizer, video, question)
         return response

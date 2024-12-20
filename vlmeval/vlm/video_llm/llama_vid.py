@@ -4,6 +4,7 @@ import copy as cp
 import numpy as np
 import sys
 import os
+import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr, load, dump, download_file
 from ...dataset import DATASET_TYPE
@@ -11,11 +12,11 @@ from decord import VideoReader, cpu
 from huggingface_hub import snapshot_download
 
 
-def load_video(video_path):
+def load_video(video_path, setting_fps):
     vr = VideoReader(video_path, ctx=cpu(0))
     total_frame_num = len(vr)
     fps = round(vr.get_avg_fps())
-    frame_idx = [i for i in range(0, total_frame_num, fps)]
+    frame_idx = [i for i in range(0, total_frame_num, int(fps / setting_fps))]
     spare_frames = vr.get_batch(frame_idx).asnumpy()
     return spare_frames
 
@@ -31,15 +32,16 @@ class LLaMAVID(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
     VIDEO_LLM = True
+    # sample 1 fps from the video
 
     def __init__(self, model_path='YanweiLi/llama-vid-7b-full-224-video-fps-1', **kwargs):
         assert model_path is not None
         try:
             from llamavid.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
-        except:
-            warnings.warn('Please install LLaMA-VID from https://github.com/dvlab-research/LLaMA-VID.')
-            sys.exit(-1)
+        except Exception as err:
+            logging.critical('Please install LLaMA-VID from https://github.com/dvlab-research/LLaMA-VID.')
+            raise err
 
         model_base = None
         model_name = get_model_name_from_path(model_path)
@@ -61,7 +63,7 @@ class LLaMAVID(BaseModel):
         self.processor = image_processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframe = 8
+        self.fps = 1
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from llamavid.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
@@ -69,21 +71,34 @@ class LLaMAVID(BaseModel):
         from llamavid.conversation import conv_templates, SeparatorStyle
         from llava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
-        original_qs = cp.deepcopy(qs)
+        if type(qs) is dict:
+            original_qs = cp.deepcopy(qs['user'])
+        else:
+            original_qs = cp.deepcopy(qs)
         if model.config.mm_use_im_start_end:
             qs = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n' + qs
+        elif type(qs) is dict and 'user' in qs:
+            qs['user'] = DEFAULT_IMAGE_TOKEN + '\n' + qs['user']
         else:
             qs = DEFAULT_IMAGE_TOKEN + '\n' + qs
 
         conv_mode = 'vicuna_v1'
         conv = conv_templates[conv_mode].copy()
-        conv.append_message(conv.roles[0], qs)
-        conv.append_message(conv.roles[1], None)
-        prompt = conv.get_prompt()
+        if type(qs) is dict and 'system' in qs:
+            conv.system = qs['system']
+        if type(qs) is dict and 'user' in qs:
+            conv.append_message(conv.roles[0], qs['user'])
+        else:
+            conv.append_message(conv.roles[0], qs)
+        if type(qs) is dict and 'assistant' in qs:
+            conv.append_message(conv.roles[1], qs['assistant'])
+        else:
+            conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt().strip('</s>')
 
         # Check if the video exists
         if os.path.exists(video):
-            video = load_video(video)
+            video = load_video(video, self.fps)
             video = video_processor.preprocess(video, return_tensors='pt')['pixel_values'].half().cuda()
             video = [video]
 
@@ -118,6 +133,9 @@ class LLaMAVID(BaseModel):
         return outputs
 
     def generate_inner(self, message, dataset=None):
-        question, video = self.message_to_promptvideo(message)
+        if listinstr(['MLVU', 'MVBench'], dataset):
+            question, video = self.message_to_promptvideo_withrole(message, dataset)
+        else:
+            question, video = self.message_to_promptvideo(message)
         response = self.get_model_output(self.model, self.processor, self.tokenizer, video, question)
         return response
