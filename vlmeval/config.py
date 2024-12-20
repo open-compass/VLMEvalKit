@@ -196,6 +196,10 @@ internvl_series = {
     'InternVL2_5-78B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-78B', version='V2.0'),
 }
 
+sail_series = {
+    'SAIL-VL-2B': partial(SailVL, model_path='BytedanceDouyinContent/SAIL-VL-2B')
+}
+
 yivl_series = {
     'Yi_VL_6B': partial(Yi_VL, model_path='01-ai/Yi-VL-6B', root=Yi_ROOT),
     'Yi_VL_34B': partial(Yi_VL, model_path='01-ai/Yi-VL-34B', root=Yi_ROOT),
@@ -390,7 +394,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series
+    smolvlm_series, sail_series
 ]
 
 for grp in model_groups:
