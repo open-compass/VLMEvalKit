@@ -63,6 +63,8 @@ You can launch the evaluation by setting either --data and --model or --config.
         print(SUPPORTED_DATASETS)
         ```
         or you can check the output of the command `vlmutil dlist all` in the terminal.
+    To find all supported video dataset default settings, please refer to the \
+        `vlmeval/dataset/video_dataset_config.py` file.
 
 --config:
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
@@ -80,7 +82,8 @@ You can launch the evaluation by setting either --data and --model or --config.
                 "model": "gpt-4o-2024-08-06",
                 "temperature": 1.0,
                 "img_detail": "low"
-            }
+            },
+            "GPT4o_20241120": {}
         },
         "data": {
             "MME-RealWorld-Lite": {
@@ -90,6 +93,13 @@ You can launch the evaluation by setting either --data and --model or --config.
             "MMBench_DEV_EN_V11": {
                 "class": "ImageMCQDataset",
                 "dataset": "MMBench_DEV_EN_V11"
+            },
+            "MMBench_Video_8frame_nopack": {},
+            "Video-MME_16frame_subs": {
+                "class": "VideoMME",
+                "dataset": "Video-MME",
+                "nframe": 16,
+                "use_subtitle": true,
             }
         }
     }
@@ -98,16 +108,18 @@ You can launch the evaluation by setting either --data and --model or --config.
     For `model`, the key is the name of the model, and the value is a dictionary containing the following keys:
     - `class`: The class name of the model, which should be a class in `vlmeval.vlm` or `vlmeval.api`.
     - Other keys are specific to the model, please refer to the corresponding class.
+    - Tip: The defined model in the `supported_VLM` of `vlmeval/config.py` can be used as a shortcut.
     For `data`, the key is the name of the dataset (should be the same as the `dataset` field in most cases, \
         except for video datasets), and the value is a dictionary containing the following keys:
     - `class`: The class name of the dataset, which should be a class in `vlmeval.dataset`.
     - `dataset`: The name of the dataset, which should be a string that is accepted by the `dataset` argument of the \
         corresponding class.
     - Other keys are specific to the dataset, please refer to the corresponding class.
+    - Tip: The defined dataset in the `supported_video_datasets` of `vlmeval/dataset/video_dataset_config.py` \
+        can be used as a shortcut.
 
     The keys in the `model` and `data` fields will be used for naming the prediction files and evaluation results.
-    When launching with `--config`, args for video datasets, such as `--nframe`, `--pack`, `--use-subtitle`, `--fps`, \
-        and args for API VLMs, such as `--retry`, `--verbose`, will be ignored.
+    When launching with `--config`, args for API VLMs, such as `--retry`, `--verbose`, will be ignored.
 """
     parser = argparse.ArgumentParser(description=help_msg, formatter_class=argparse.RawTextHelpFormatter)
     # Essential Args, Setting the Names of Datasets and Models
