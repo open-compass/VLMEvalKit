@@ -140,14 +140,13 @@ def infer_data_job_video(
         api_nproc=4):
 
     dataset_name = dataset.dataset_name
-    packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
     rank, world_size = get_rank_and_world_size()
     result_file = osp.join(work_dir, result_file_name)
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model
 
-    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{osp.splitext(result_file_name)[0]}.pkl') 
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{osp.splitext(result_file_name)[0]}.pkl')
     out_file = tmpl.format(rank)
 
     model = infer_data(
