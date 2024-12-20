@@ -281,7 +281,7 @@ class SailVL(BaseModel):
     INTERLEAVE = True
 
     def __init__(self,
-                 model_path='SailVL/SailVL-2B',
+                 model_path='BytedanceDouyinContent/SAIL-VL-2B',
                  load_in_8bit=False,
                  **kwargs):
 
