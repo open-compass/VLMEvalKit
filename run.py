@@ -13,9 +13,13 @@ from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_
 def build_model_from_config(cfg):
     import vlmeval.api
     import vlmeval.vlm
+    import vlmeval.composite
+
     config = cp.deepcopy(cfg)
     assert 'class' in config
     cls_name = config.pop('class')
+    if hasattr(vlmeval.composite, cls_name):
+        return getattr(vlmeval.composite, cls_name)(supported_VLM, **config)
     if hasattr(vlmeval.api, cls_name):
         return getattr(vlmeval.api, cls_name)(**config)
     elif hasattr(vlmeval.vlm, cls_name):
@@ -165,6 +169,14 @@ def main():
 
     for _, model_name in enumerate(args.model):
         model = None
+        if use_config:
+            model = build_model_from_config(cfg['model'][model_name])
+        if model_name == 'Prism':
+            fronted_name = cfg['model']['Prism']['model']['fronted']['model']
+            backend_name = cfg['model']['Prism']['model']['backend']['model']
+            backend_name = backend_name.replace('/', '-')
+            model_name = model_name + '_' + fronted_name + '_' + backend_name
+
         date, commit_id = timestr('day'), githash(digits=8)
         eval_id = f"T{date}_G{commit_id}"
 
@@ -178,9 +190,6 @@ def main():
 
         if not osp.exists(pred_root):
             os.makedirs(pred_root, exist_ok=True)
-
-        if use_config:
-            model = build_model_from_config(cfg['model'][model_name])
 
         for _, dataset_name in enumerate(args.data):
             try:
@@ -281,6 +290,7 @@ def main():
                     model = model_name  # which is only a name
 
                 # Perform the Inference
+
                 if dataset.MODALITY == 'VIDEO':
                     model = infer_data_job_video(
                         model,
