@@ -80,6 +80,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         dump(res, out_file)
         return model
 
+    assert not getattr(dataset, 'pack', False), 'Current model not supported pack mode!'
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
@@ -134,31 +135,19 @@ def infer_data_job_video(
         work_dir,
         model_name,
         dataset,
+        result_file_name,
         verbose=False,
         api_nproc=4):
 
     dataset_name = dataset.dataset_name
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
     rank, world_size = get_rank_and_world_size()
-    if dataset.nframe > 0:
-        result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}.xlsx')
-    else:
-        result_file = osp.join(work_dir, f'{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}.xlsx')
-    if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
-        subtitle_str = 'subs' if getattr(dataset, 'subtitle', False) else 'nosubs'
-        result_file = result_file.replace('.xlsx', f'_{subtitle_str}.xlsx')
+    result_file = osp.join(work_dir, result_file_name)
     # Dump Predictions to Prev File if result file exists
     if osp.exists(result_file):
         return model
 
-    if dataset.nframe > 0:
-        tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{dataset.nframe}frame_{packstr}.pkl')
-    else:
-        tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}_{dataset.fps}fps_{packstr}.pkl')
-    if dataset_name == 'Video-MME' or dataset_name == 'LongVideoBench':
-        subtitle_str = 'subs' if getattr(dataset, 'subtitle', False) else 'nosubs'
-        tmpl = tmpl.replace('.pkl', f'_{subtitle_str}.pkl')
-
+    tmpl = osp.join(work_dir, '{}' + f'{world_size}_{osp.splitext(result_file_name)[0]}.pkl') 
     out_file = tmpl.format(rank)
 
     model = infer_data(

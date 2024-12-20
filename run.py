@@ -268,6 +268,7 @@ def main():
                         work_dir=pred_root,
                         model_name=model_name,
                         dataset=dataset,
+                        result_file_name=result_file_base,
                         verbose=args.verbose,
                         api_nproc=args.nproc)
                 elif dataset.TYPE == 'MT':
