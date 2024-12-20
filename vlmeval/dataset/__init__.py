@@ -35,6 +35,7 @@ from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
 from .utils import *
+from .video_dataset_config import *
 from ..smp import *
 
 
@@ -198,7 +199,9 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
 
 def build_dataset(dataset_name, **kwargs):
     for cls in DATASET_CLASSES:
-        if dataset_name in cls.supported_datasets():
+        if dataset_name in supported_video_datasets:
+            return supported_video_datasets[dataset_name](**kwargs)
+        elif dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
