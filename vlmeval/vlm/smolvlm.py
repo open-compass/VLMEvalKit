@@ -15,6 +15,7 @@ class SmolVLM(BaseModel):
 
     def __init__(self, model_path='HuggingFaceTB/SmolVLM-Instruct', **kwargs):
         from transformers import AutoProcessor, Idefics3ForConditionalGeneration
+        from transformers.image_utils import load_image
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.processor = AutoProcessor.from_pretrained(model_path)
