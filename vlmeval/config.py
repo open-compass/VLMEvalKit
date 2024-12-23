@@ -167,6 +167,11 @@ llava_series = {
     'llava_video_qwen2_72b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-72B-Qwen2'),
 }
 
+vita_series = {
+    'vita': partial(VITA, model_path='VITA-MLLM/VITA'),
+    'vita_qwen2': partial(VITAQwen2, model_path='VITA-MLLM/VITA-1.5'),
+}
+
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
