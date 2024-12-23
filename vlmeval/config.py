@@ -396,4 +396,3 @@ model_groups = [
 
 for grp in model_groups:
     supported_VLM.update(grp)
-
