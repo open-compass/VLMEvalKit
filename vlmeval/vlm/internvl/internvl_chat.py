@@ -40,7 +40,7 @@ class InternVLChat(BaseModel):
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.37.2', 'ge')
 
-        self.use_mpo_prompt = use_mpo_prompt
+        self.use_mpo_prompt = use_mpo_prompt and os.getenv('USE_COT') == '1'
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
 
