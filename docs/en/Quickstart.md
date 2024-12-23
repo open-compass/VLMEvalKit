@@ -44,6 +44,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   # Hunyuan-Vision API
   HUNYUAN_SECRET_KEY=
   HUNYUAN_SECRET_ID=
+  # LMDeploy API
+  LMDEPLOY_API_BASE=
   # You can also set a proxy for calling api models during the evaluation stage
   EVAL_PROXY=
   ```
@@ -146,3 +148,8 @@ CUDA_VISIBLE_DEVICES=1,2,3 torchrun --nproc-per-node=3 run.py --data HallusionBe
 ```
 - If the local judge LLM is not good enough in following the instructions, the evaluation may fail. Please report such failures (e.g., by issues).
 - It's possible to deploy the judge LLM in different ways, e.g., use a private LLM (not from HuggingFace) or use a quantized LLM. Please refer to the [LMDeploy doc](https://lmdeploy.readthedocs.io/en/latest/serving/api_server.html). You can use any other deployment framework if they support OpenAI API.
+
+
+### Using LMDeploy to Accelerate Evaluation and Inference
+
+You can refer this [doc](/docs/en/EvalByLMDeploy.md)

@@ -1,103 +1,95 @@
 # from http import HTTPStatus
 import os
 import requests
-from ..dataset import DATASET_TYPE
+from ..dataset import DATASET_TYPE, DATASET_MODALITY
 from vlmeval.api.base import BaseAPI
 from vlmeval.smp import *
 
 
 class InternVL2_PromptUtil:
 
-    pattern = r'Image(\d+)'
-    replacement = r'Image-\1'
-    reverse_pattern = r'Image-(\d+)'
-    reverse_replacement = r'Image\1'
+    def __init__(self, use_mpo_prompt=False):
+        self.use_mpo_prompt = use_mpo_prompt
 
     def dump_image(self, line, dataset):
         return self.dump_image_func(line)
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        assert DATASET_MODALITY(dataset) != 'VIDEO', 'not supported'
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
-        if listinstr(['MMBench-Video', 'Video-MME', 'MVBench', 'Video'], dataset):
+        if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
             return False
         else:
             return True
 
-    def build_multi_choice_prompt(self, line, dataset=None):
-        question = line['question']
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
-        if hint is not None:
-            question = hint + '\n' + question
-
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
-        for key, item in options.items():
-            question += f'\n{key}. {item}'
-        prompt = question
-
-        if len(options):
-            prompt += '\n请直接回答选项字母。' if cn_string(
-                prompt) else "\nAnswer with the option's letter from the given choices directly."
-        else:
-            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
-
-        return prompt
-
-    def build_video_prompt(self, prompt, dataset=None, max_frames=64):
-        for start in range(0, max_frames, 8):
-            images_to_remove = ''.join([f'<Image-{i}>' for i in range(start + 1, start + 9)])
-            prompt = prompt.replace(images_to_remove, '')
-        for i in range(max_frames):
-            prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
-        if listinstr(['MMBench-Video'], dataset):
-            prompt = prompt.replace('\nAnswer:', '')
-        elif listinstr(['Video-MME'], dataset):
-            prompt = prompt.replace('\nAnswer:', '')
-            prompt += "\nAnswer with the option's letter from the given choices directly."
-        elif listinstr(['MVBench'], dataset):
-            prompt = prompt.replace('Best option:(', '')
-        return prompt
-
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
+        from ..vlm.internvl.utils import (build_multi_choice_prompt,
+                                          build_mcq_cot_prompt,
+                                          build_qa_cot_prompt,
+                                          build_mpo_prompt,
+                                          reorganize_prompt)
+
         tgt_path = self.dump_image(line, dataset)
         max_num = self.get_max_num(dataset)
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
             if listinstr(['MME'], dataset):
                 prompt = question + ' Answer the question using a single word or phrase.'
-            elif listinstr(['HallusionBench'], dataset):
+            elif listinstr(['HallusionBench', 'AMBER'], dataset):
                 prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
+            else:
+                prompt = question
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
-            prompt = self.build_multi_choice_prompt(line, dataset)
+            prompt = build_multi_choice_prompt(line, dataset)
+            if os.getenv('USE_COT') == '1':
+                prompt = build_mcq_cot_prompt(line, prompt)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             question = line['question']
-            if listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse'], dataset):
-                prompt = question
-            elif listinstr(['LLaVABench'], dataset):
+            if listinstr(['LLaVABench', 'WildVision'], dataset):
                 prompt = question + '\nAnswer this question in detail.'
+            elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA', 'OCRBench',
+                            'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
+                prompt = question + '\nAnswer the question using a single word or phrase.'
+            elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
+                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial'], dataset):
+                prompt = question
+                if os.getenv('USE_COT') == '1':
+                    prompt = build_qa_cot_prompt(line, prompt)
             else:
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
+            # VQA_ex_prompt: OlympiadBench, VizWiz
             prompt = line['question']
+            if os.getenv('USE_COT') == '1':
+                prompt = build_qa_cot_prompt(line, prompt)
+
         message = [dict(type='text', value=prompt)]
+        image_num = len(tgt_path)
+        max_num = max(1, min(max_num, 64 // image_num))
+        # TODO：support upscale_flag
         message.extend([dict(type='image', value=s, max_dynamic_patch=max_num) for s in tgt_path])
+
+        if self.use_mpo_prompt:
+            message = build_mpo_prompt(message, line, dataset)
+
+        # reorganize_prompt
+        prompt = reorganize_prompt(message, image_num, dataset=dataset)
+        prompt.replace('<image>', '<IMAGE_TOKEN>')
+        message[0] = dict(type='text', value=prompt)
         return message
 
     def get_max_num(self, dataset):
         assert dataset is not None
         res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
-                           'MME-RealWorld', 'VCR_EN', 'VCR_ZH']
-        res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST']
+                           'VCR_EN', 'VCR_ZH', 'OCRVQA']
+        res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
         if listinstr(res_1_datasets, dataset):
             return 1
@@ -161,7 +153,8 @@ class LMDeployWrapper(BaseAPI):
     custom_prompt: str = None
     prompt_map = {
         'cogvlm2': CogVLM2_PromptUtil(),
-        'internvl2': InternVL2_PromptUtil()
+        'internvl2': InternVL2_PromptUtil(),
+        'internvl2-8b-mpo-cot': InternVL2_PromptUtil(use_mpo_prompt=True),
     }
 
     def __init__(self,
@@ -223,6 +216,11 @@ class LMDeployWrapper(BaseAPI):
             self.max_tokens = 1024
             self.temperature = 0.0
             self.custom_prompt = 'internvl2'
+        if 'internvl2-8b-mpo-cot'.lower() in model_name.lower():
+            self.use_mpo_prompt = True
+            self.max_tokens = 1024
+            self.temperature = 0.0
+            self.custom_prompt = 'internvl2-8b-mpo-cot'
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
@@ -284,6 +282,11 @@ class LMDeployWrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
+
+            # for internvl2-8b-mpo-cot
+            if getattr(self, 'use_mpo_prompt', False):
+                from ..vlm.internvl.utils import mpo_post_processing
+                answer = mpo_post_processing(answer, kwargs.get('dataset'))
         except:
             pass
         return ret_code, answer, response
