@@ -167,36 +167,34 @@ class LMDeployWrapper(BaseAPI):
     def __init__(self,
                  retry: int = 5,
                  wait: int = 5,
-                 key: str = None,
+                 key: str = 'sk-123456',
                  verbose: bool = True,
                  temperature: float = 0.0,
                  timeout: int = 60,
                  api_base: str = None,
                  system_prompt: str = None,
                  max_tokens: int = 1024,
-                 proxy: str = None,
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.timeout = timeout
 
-        if key is None:
-            key = os.environ.get('LMDEPLOY_API_KEY', None)
-            assert key is not None, 'Please set the environment variable LMDEPLOY_API_KEY.'
-        if api_base is None:
-            api_base = os.environ.get('LMDEPLOY_API_BASE', None)
-            assert api_base is not None, 'Please set the environment variable LMDEPLOY_API_BASE.'
+        key = os.environ.get('LMDEPLOY_API_KEY', key)
+        api_base = os.environ.get('LMDEPLOY_API_BASE', api_base)
+        assert key is not None, 'Please set the environment variable LMDEPLOY_API_KEY.'
+        assert api_base is not None, 'Please set the environment variable LMDEPLOY_API_BASE.'
         self.key = key
         self.api_base = api_base
-
-        if proxy is not None:
-            proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
         resp = requests.get(model_url)
         self.model = resp.json()['data'][0]['id']
+        self.logger.info(f'lmdeploy evaluate model: {self.model}')
+        self.set_prompt_pattern(self.model)
+        if hasattr(self, 'custom_prompt'):
+            self.logger.info(f'using custom prompt {self.custom_prompt}')
 
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
@@ -214,14 +212,14 @@ class LMDeployWrapper(BaseAPI):
         raise NotImplementedError
 
     def set_prompt_pattern(self, model_name):
-        if model_name == 'Phi-3.5-Vision':
+        if 'Phi-3.5-Vision'.lower() in model_name.lower():
             self.max_tokens = 1000
             self.temperature = 0.0
-        if model_name == 'cogvlm2-llama3-chat-19B':
+        if 'cogvlm2-llama3-chat-19B'.lower() in model_name.lower():
             self.max_tokens = 2048
             self.temperature = 0.0
             self.custom_prompt = 'cogvlm2'
-        if 'InternVL2-' in model_name:
+        if 'InternVL2-'.lower() in model_name.lower():
             self.max_tokens = 1024
             self.temperature = 0.0
             self.custom_prompt = 'internvl2'
@@ -293,9 +291,8 @@ class LMDeployWrapper(BaseAPI):
 
 class LMDeployAPI(LMDeployWrapper):
 
-    def __init__(self, model_name=None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.set_prompt_pattern(model_name)
 
     def generate(self, message, dataset=None):
         return super(LMDeployAPI, self).generate(message, dataset=dataset)

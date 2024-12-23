@@ -122,8 +122,6 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
-    # Using LMDeploy
-    parser.add_argument('--use-lmdeploy-api', action='store_true', help='Using lmdeploy api.')
 
     args = parser.parse_args()
     return args
@@ -169,14 +167,6 @@ def main():
         model = None
         date, commit_id = timestr('day'), githash(digits=8)
         eval_id = f"T{date}_G{commit_id}"
-
-        if args.use_lmdeploy_api:
-            pred_root = osp.join(args.work_dir, 'lmdeploy', model_name)
-            from functools import partial
-            supported_VLM['lmdeploy'] = partial(supported_VLM['lmdeploy'], model_name=model_name)
-        else:
-            pred_root = osp.join(args.work_dir, model_name)
-        os.makedirs(pred_root, exist_ok=True)
 
         pred_root = osp.join(args.work_dir, model_name, eval_id)
         pred_root_meta = osp.join(args.work_dir, model_name)
@@ -289,8 +279,6 @@ def main():
 
                 if model is None:
                     model = model_name  # which is only a name
-                    if args.use_lmdeploy_api:
-                        model = 'lmdeploy'
 
                 # Perform the Inference
                 if dataset.MODALITY == 'VIDEO':
