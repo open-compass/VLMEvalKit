@@ -128,91 +128,6 @@ def get_local_rank_and_local_world_size():
     )
 
 
-def split_model(model_path):
-    num_gpus_per_node = 8
-    rank, world_size = get_rank_and_world_size()
-    try:
-        local_rank, local_world_size = get_local_rank_and_local_world_size()
-    except:
-        local_rank = rank
-
-    if 'GPUS_PER_PROCESS' in os.environ:
-        gpus_per_process = int(os.environ['GPUS_PER_PROCESS'])
-    else:
-        gpus_per_process = 8  # default to use 8 GPUs for one model
-
-    start_gpu = local_rank * gpus_per_process
-    end_gpu = start_gpu + gpus_per_process
-
-    assert end_gpu <= num_gpus_per_node, f"Process {local_rank} tries to access GPU {end_gpu}, " \
-        f"but only {num_gpus_per_node} GPUs are available per node."
-
-    visible_devices = list(range(start_gpu, end_gpu))
-
-    device_map = {}
-    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
-
-    num_gpus_for_vit = 0.5
-    num_layers = config.llm_config.num_hidden_layers
-    num_layers_per_gpu = math.ceil(num_layers / (len(visible_devices) - num_gpus_for_vit))
-    num_layers_per_gpu = [num_layers_per_gpu] * len(visible_devices)
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
-
-    layer_cnt = 0
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = visible_devices[i]
-            layer_cnt += 1
-    device_map['vision_model'] = visible_devices[0]
-    device_map['mlp1'] = visible_devices[0]
-    device_map['language_model.model.tok_embeddings'] = visible_devices[0]
-    device_map['language_model.model.embed_tokens'] = visible_devices[0]
-    device_map['language_model.output'] = visible_devices[0]
-    device_map['language_model.model.norm'] = visible_devices[0]
-    device_map['language_model.lm_head'] = visible_devices[0]
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = visible_devices[0]
-
-    return device_map, visible_devices
-
-
-def split_model_old(model_name):
-    import math
-    device_map = {}
-    num_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    num_gpus = num_gpus // world_size
-
-    num_layers_map = {
-        'InternVL2-8B': 32,
-        'InternVL2-26B': 48,
-        'InternVL2-40B': 60,
-        'InternVL2-Llama3-76B': 80
-    }
-
-    if model_name not in num_layers_map:
-        return 'cuda'
-    num_layers = num_layers_map[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
-    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
-    layer_cnt = 0
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
-            layer_cnt += 1
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.tok_embeddings'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.output'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map['language_model.model.rotary_emb'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
-    return device_map
-
-
 def build_multi_choice_prompt(line, dataset=None):
     question = line['question']
     hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
@@ -305,24 +220,13 @@ class SailVL(BaseModel):
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
 
-        if auto_split_flag():
-            device_map, visible_devices = split_model(model_path=model_path)
-            self.device = visible_devices[0]
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                device_map=device_map).eval()
-        else:
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True).eval().cuda()
-            self.device = 'cuda'
+        self.model = AutoModel.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+            load_in_8bit=load_in_8bit,
+            trust_remote_code=True,
+            low_cpu_mem_usage=True).eval().cuda()
+        self.device = 'cuda'
 
         self.image_size = self.model.config.vision_config.image_size
         kwargs_default = dict(do_sample=False, max_new_tokens=4096, top_p=None)
