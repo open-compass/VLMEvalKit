@@ -789,7 +789,7 @@ class LLaVA_OneVision_HF(BaseModel):
         assert model_path is not None, "Model path must be provided."
         self.model = LlavaOnevisionForConditionalGeneration.from_pretrained(
             model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
-        ).to(0)
+        ).to('cuda')
         self.processor = AutoProcessor.from_pretrained(model_path)
 
         self.video_kwargs = kwargs.get("video_kwargs", {})
