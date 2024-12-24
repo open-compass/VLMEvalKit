@@ -330,20 +330,27 @@ def mpo_post_processing(response, dataset):
 
 
 def build_mpo_prompt(message, line, dataset):
-    if not listinstr(['LLaVABench'], dataset):
+    if listinstr(['LLaVABench', 'MMVet'], dataset):
+        return message
 
-        if listinstr(['MMVet'], dataset):
-            cot_prompt = mpo_prompt_without_final_answer
-        else:
-            cot_prompt = mpo_prompt_with_final_answer
+    question_orig = line['question']
+    if listinstr(['MathVerse', 'MathVision'], dataset):
+        question_orig = question_orig.split('Question:', 1)[-1].strip()
+        question_orig = question_orig.replace('Choices:\n', '').strip()
 
-        question_orig = line['question']
-        if listinstr(['MathVerse', 'MathVision'], dataset):
-            question_orig = question_orig.split('Question:', 1)[-1].strip()
-            question_orig = question_orig.replace('Choices:\n', '').strip()
+    options = {
+        cand: line[cand]
+        for cand in string.ascii_uppercase
+        if cand in line and not pd.isna(line[cand])
+    }
+    options_prompt = ''
+    for key, item in options.items():
+        options_prompt += f'{key}. {item}\n'
 
-        prompt = cot_prompt.format(question=question_orig)
-    else:
-        prompt = line['question']
+    if options_prompt.strip():
+        question_orig = f'{question_orig}\n{options_prompt}'
+
+    cot_prompt = mpo_prompt_with_final_answer
+    prompt = cot_prompt.format(question=question_orig).strip()
     message[0]['value'] = prompt
     return message
