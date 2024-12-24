@@ -1,3 +1,6 @@
+import requests
+requests.packages.urllib3.disable_warnings()
+
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
@@ -15,21 +18,19 @@ class GLMVisionWrapper(BaseAPI):
                  key: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 4096,
                  proxy: str = None,
                  **kwargs):
 
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
         self.default_params = {
-            'top_p': 0.6,
-            'top_k': 2,
-            'temperature': 0.8,
-            'repetition_penalty': 1.1,
+            'top_k': 1,
             'best_of': 1,
-            'do_sample': True,
+            'do_sample': False,
             'stream': False,
-            'max_tokens': max_tokens
+            'max_tokens': max_tokens,
+            "skip_moderation": True
         }
         if key is None:
             key = os.environ.get('GLMV_API_KEY', None)
@@ -40,24 +41,16 @@ class GLMVisionWrapper(BaseAPI):
         self.key = key
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
-    def image_to_base64(self, image_path):
-        import base64
-        with open(image_path, 'rb') as image_file:
-            encoded_string = base64.b64encode(image_file.read())
-            return encoded_string.decode('utf-8')
-
     def build_msgs(self, msgs_raw, system_prompt=None, dataset=None):
         msgs = cp.deepcopy(msgs_raw)
         content = []
-        text = ''
         for i, msg in enumerate(msgs):
             if msg['type'] == 'text':
-                text += msg['value']
+                content.append(dict(type='text', text=msg['value']))
             elif msg['type'] == 'image':
                 content.append(dict(type='image_url', image_url=dict(url=encode_image_file_to_base64(msg['value']))))
-        if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
-            text += '\nShort Answer.'
-        content.append(dict(type='text', text=text))
+        if dataset in {'HallusionBench', 'POPE'}:
+            content.append(dict(type="text", text="Please answer yes or no."))
         ret = [dict(role='user', content=content)]
         return ret
 

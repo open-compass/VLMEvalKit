@@ -28,6 +28,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 .vscode/
+.gradio/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -164,3 +165,7 @@ cache_dir/*
 
 # Evaluation Outputs
 outputs/*
+demo.ipynb
+*json
+.vscode
+*.swp

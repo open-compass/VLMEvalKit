@@ -55,6 +55,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
 
 ## Step 2. Evaluation
 
+**New!!!**  We integrated a new config system to enable more flexible evaluation settings. Check the [Document](/docs/en/ConfigSystem.md) or run `python run.py --help` for more details 🔥🔥🔥
+
 We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.py` or create a soft-link of the script (to use the script anywhere):
 
 **Arguments**

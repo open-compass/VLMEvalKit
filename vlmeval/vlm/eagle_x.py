@@ -9,6 +9,43 @@ from ..dataset import DATASET_TYPE
 import copy
 
 
+# This function is used to split Eagle-X5-34B
+def split_model(model_name):
+    import math
+    device_map = {}
+    num_gpus = torch.cuda.device_count()
+    rank, world_size = get_rank_and_world_size()
+    num_gpus = num_gpus // world_size
+
+    num_layers_map = {
+        'Eagle-X5-34B-Chat': 60,
+        'Eagle-X5-34B-Plus': 60
+    }
+    if model_name not in num_layers_map:
+        return 'cuda'
+    num_layers = num_layers_map[model_name] + 8
+    # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
+    num_layers_per_gpu = math.ceil(num_layers / num_gpus)
+    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+    num_layers_per_gpu[-1] = num_layers - sum(num_layers_per_gpu[:-1])
+    num_layers_per_gpu[0] -= 4
+    layer_cnt = 0
+    for i, num_layer in enumerate(num_layers_per_gpu):
+        for j in range(num_layer):
+            device_map[f'model.layers.{layer_cnt}'] = rank + world_size * i
+            layer_cnt += 1
+    device_map['model.vision_tower'] = rank
+    device_map['model.embed_tokens'] = rank
+    device_map['model.norm'] = rank
+    device_map['model.rotary_emb'] = rank
+    device_map['model.mm_projector'] = rank
+    device_map['lm_head'] = rank
+    device_map[f'model.layers.{num_layers - 1}'] = rank
+
+    logging.warning("Remove L157-L158 in https://github.com/NVlabs/EAGLE/blob/fef95f103b5e9899acbbe2c237e5b99147ab7e8e/eagle/model/builder.py to make it work properly.")  # noqa: E501
+    return device_map
+
+
 class Eagle(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
@@ -28,10 +65,14 @@ class Eagle(BaseModel):
         warnings.warn('Please install the latest version of eagle from github before you evaluate the Eagle model.')
         assert osp.exists(model_path) or splitlen(model_path) == 2
         model_name = get_model_name_from_path(model_path)
+        rank, world_size = get_rank_and_world_size()
+
+        device_map = split_model(model_path.split('/')[-1])
+
         self.tokenizer, self.model, self.image_processor, self.context_len = (
-            load_pretrained_model(model_path, None, model_name, False, False, device='cpu')
+            load_pretrained_model(model_path, None, model_name, False, False, device_map=device_map)
         )
-        self.model.cuda().eval()
+        self.model.eval()
         self.conv_mode = 'vicuna_v1'
 
         default_kwargs = dict(
@@ -60,9 +101,7 @@ class Eagle(BaseModel):
             you can install it from "https://github.com/NVlabs/EAGLE.git"''')
             raise e
 
-        kwargs = {}
-        if dataset is not None:
-            kwargs = self.kwargs
+        kwargs = self.kwargs
 
         images = []
         prompt = ''

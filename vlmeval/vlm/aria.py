@@ -1,5 +1,4 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoProcessor
 import warnings
 import copy as cp
 from PIL import Image
@@ -17,6 +16,7 @@ class Aria(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='rhymes-ai/Aria', **kwargs):
+        from transformers import AutoModelForCausalLM, AutoProcessor
         assert model_path is not None
         self.model_path = model_path
         processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
@@ -108,6 +108,8 @@ class Aria(BaseModel):
             prompt += "\nAnswer with the option's letter from the given choices directly."
         elif listinstr(['MVBench'], dataset):
             prompt = prompt.replace('Best option:(', '')
+            system_prompt = 'Carefully watch the video and pay attention to the cause and sequence of events, the detail and movement of objects, and the action and pose of persons. Based on your observations, select the best option that accurately addresses the question.\n'  # noqa: E501
+            prompt = prompt.replace(system_prompt, '')
 
         return prompt
 
@@ -157,7 +159,7 @@ class Aria(BaseModel):
         images = []
         last_message_modality = "text"
 
-        if listinstr(['MLVU', 'TempCompass'], dataset):  # re-arrange the data
+        if listinstr(['MLVU', 'TempCompass', 'MVBench'], dataset):  # re-arrange the data
             new_message = []
             for s in message:
                 if s['type'] == 'image':

@@ -14,7 +14,6 @@ from huggingface_hub import snapshot_download
 from PIL import Image
 from torchvision.transforms import PILToTensor
 from torchvision import transforms
-from peft import get_peft_model, LoraConfig, TaskType
 from ..base import BaseModel
 from ...smp import *
 from ...dataset import DATASET_TYPE
@@ -65,6 +64,8 @@ class VideoChat2_HD(BaseModel):
     def __init__(self, model_path='OpenGVLab/VideoChat2_HD_stage4_Mistral_7B',
                  root='./Ask-Anything', config_file='./configs/videochat2_hd.json',
                  **kwargs):
+
+        from peft import get_peft_model, LoraConfig, TaskType
         self.config_file = config_file
         self.root = root
         self.model_path = model_path

@@ -38,7 +38,7 @@ class OpenAIWrapper(BaseAPI):
                  retry: int = 5,
                  wait: int = 5,
                  key: str = None,
-                 verbose: bool = True,
+                 verbose: bool = False,
                  system_prompt: str = None,
                  temperature: float = 0,
                  timeout: int = 60,
@@ -56,7 +56,7 @@ class OpenAIWrapper(BaseAPI):
         self.temperature = temperature
         self.use_azure = use_azure
 
-        if 'step-1v' in model:
+        if 'step' in model:
             env_key = os.environ.get('STEPAI_API_KEY', '')
             if key is None:
                 key = env_key
@@ -66,6 +66,10 @@ class OpenAIWrapper(BaseAPI):
                 key = env_key
         elif 'internvl2-pro' in model:
             env_key = os.environ.get('InternVL2_PRO_KEY', '')
+            if key is None:
+                key = env_key
+        elif 'abab' in model:
+            env_key = os.environ.get('MiniMax_API_KEY', '')
             if key is None:
                 key = env_key
         else:
@@ -239,8 +243,12 @@ class OpenAIWrapper(BaseAPI):
         try:
             enc = tiktoken.encoding_for_model(self.model)
         except Exception as err:
-            self.logger.warning(f'{type(err)}: {err}')
-            enc = tiktoken.encoding_for_model('gpt-4')
+            if 'gpt' in self.model.lower():
+                if self.verbose:
+                    self.logger.warning(f'{type(err)}: {err}')
+                enc = tiktoken.encoding_for_model('gpt-4')
+            else:
+                return 0
         assert isinstance(inputs, list)
         tot = 0
         for item in inputs:
