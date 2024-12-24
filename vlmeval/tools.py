@@ -388,6 +388,7 @@ def parse_args_eval():
     parser.add_argument('data_file', type=str)
     parser.add_argument('--judge', type=str, default=None)
     parser.add_argument('--nproc', type=int, default=4)
+    parser.add_argument('--retry', type=int, default=None)
     args = parser.parse_args()
     return args
 
@@ -458,6 +459,8 @@ def cli():
             kwargs = {'nproc': args.nproc}
             if args.judge is not None:
                 kwargs['model'] = args.judge
+            if args.retry is not None:
+                kwargs['retry'] = args.retry
             EVAL(dataset_name=dataset, data_file=data_file, **kwargs)
     else:
         logger.error('WARNING: command error!')
