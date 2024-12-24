@@ -33,6 +33,8 @@ def build_transform(input_size):
 
 
 def process_response(response, dataset_name):
+    if dataset_name is None:
+        return response
     if listinstr(['ChartQA', 'OCRVQA'], dataset_name):
         if len(response) >= 1 and response[-1] == '.':
             response = response[:-1]
