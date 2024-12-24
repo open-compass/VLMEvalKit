@@ -40,6 +40,7 @@ class Ovis(BaseModel):
             pad_token_id=self.pad_token_id,
             use_cache=True
         )
+        self.gen_kwargs.update(kwargs)
 
     def use_custom_prompt(self, dataset):
         if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':
@@ -52,7 +53,7 @@ class Ovis(BaseModel):
         tgt_path = self.dump_image(line, dataset)
 
         if DATASET_TYPE(dataset) == 'Y/N':
-            prompt = self.built_yorn_prompt(line, dataset)
+            prompt = self.build_yorn_prompt(line, dataset)
         elif DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         else:
@@ -67,7 +68,7 @@ class Ovis(BaseModel):
 
         return message
 
-    def built_yorn_prompt(self, line, dataset=None):
+    def build_yorn_prompt(self, line, dataset=None):
         prompt = line['question']
         if listinstr(['HallusionBench'], dataset):
             prompt += ' Please answer yes or no.'
@@ -172,13 +173,14 @@ class Ovis1_6(BaseModel):
             pad_token_id=self.pad_token_id,
             use_cache=True
         )
+        self.gen_kwargs.update(kwargs)
 
     def use_custom_prompt(self, dataset):
         if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':
             return True
         return False
 
-    def built_yorn_prompt(self, line, dataset=None):
+    def build_yorn_prompt(self, line, dataset=None):
         prompt = line['question'] + '\nAnswer the question using a single word or phrase.'
         return prompt
 
@@ -208,7 +210,7 @@ class Ovis1_6(BaseModel):
         tgt_path = self.dump_image(line, dataset)
 
         if DATASET_TYPE(dataset) == 'Y/N':
-            prompt = self.built_yorn_prompt(line, dataset)
+            prompt = self.build_yorn_prompt(line, dataset)
         elif DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         else:
@@ -232,6 +234,7 @@ class Ovis1_6(BaseModel):
             **self.gen_kwargs
         )
         response = self.text_tokenizer.decode(output_ids[0], skip_special_tokens=True)
+
         return response
 
     def prepare_inputs(self, message):
@@ -260,3 +263,45 @@ class Ovis1_6(BaseModel):
         ]
 
         return prompt, input_ids, attention_mask, pixel_values
+
+
+class Ovis1_6_Plus(Ovis1_6):
+    # Recommend to install `python=3.10`, `transformers==4.46.2`, `torch==2.4.0`, and `numpy==1.25.0`
+
+    def build_mmmu_prompt(self, line, dataset: str) -> list[dict[str, str]]:
+        import string
+        import pandas as pd
+
+        question = line['question']
+        options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += 'Please select the correct answer from the options above.'
+        prompt = prompt.rstrip()
+        return prompt
+
+    def build_prompt(self, line, dataset=None):
+        assert self.use_custom_prompt(dataset)
+        assert isinstance(dataset, str)
+        tgt_path = self.dump_image(line, dataset)
+
+        if dataset.startswith('MMMU_'):
+            prompt = self.build_mmmu_prompt(line, dataset)
+        elif DATASET_TYPE(dataset) == 'Y/N':
+            prompt = self.build_yorn_prompt(line, dataset)
+        elif DATASET_TYPE(dataset) == 'MCQ':
+            prompt = self.build_multi_choice_prompt(line, dataset)
+        else:
+            raise RuntimeError(f'Invalid dataset type: {DATASET_TYPE(dataset)}')
+
+        message = [dict(type='image', value=s) for s in tgt_path] + [dict(type='text', value=prompt)]
+
+        return message

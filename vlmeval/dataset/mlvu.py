@@ -95,6 +95,9 @@ class MLVU_MCQ(VideoBaseDataset):
                     return False
             return True
 
+        if modelscope_flag_set():
+            repo_id = "AI-ModelScope/MLVU"
+
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
@@ -123,9 +126,14 @@ class MLVU_MCQ(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            huggingface_hub.login(hf_token)
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+                huggingface_hub.login(hf_token)
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
@@ -298,6 +306,9 @@ class MLVU_OpenEnded(VideoBaseDataset):
                     return False
             return True
 
+        if modelscope_flag_set():
+            repo_id = "AI-ModelScope/MLVU"
+
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
@@ -326,9 +337,14 @@ class MLVU_OpenEnded(VideoBaseDataset):
                 data_df = data_df.assign(index=range(len(data_df)))
                 data_df.to_csv(data_file, sep='\t', index=False)
 
-            hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            huggingface_hub.login(hf_token)
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_path = dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                hf_token = os.environ.get('HUGGINGFACE_TOKEN')
+                huggingface_hub.login(hf_token)
+                dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')

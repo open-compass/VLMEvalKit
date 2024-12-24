@@ -54,6 +54,8 @@ pip install -e .
 
 ## 第2步 评测
 
+**新功能!!!** 我们集成了一个新的配置系统，以实现更灵活的评估设置。查看[文档](/docs/zh-CN/ConfigSystem.md)或运行`python run.py --help`了解更多详情 🔥🔥🔥
+
 我们使用 `run.py` 进行评估。你可以使用 `$VLMEvalKit/run.py` 或创建脚本的软链接运行（以便在任何地方使用该脚本）：
 
 **参数**

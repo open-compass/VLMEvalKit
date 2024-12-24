@@ -22,8 +22,6 @@ class GeminiWrapper(BaseAPI):
                  project_id='vlmeval',
                  **kwargs):
 
-        assert model in ['gemini-1.0-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
-
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
@@ -77,7 +75,6 @@ class GeminiWrapper(BaseAPI):
             if pure_text and self.model == 'gemini-1.0-pro':
                 model = genai.GenerativeModel('gemini-1.0-pro')
             else:
-                assert self.model in ['gemini-1.5-pro', 'gemini-1.5-flash']
                 model = genai.GenerativeModel(self.model)
 
             messages = self.build_msgs_genai(inputs)

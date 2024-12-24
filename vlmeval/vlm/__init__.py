@@ -10,7 +10,7 @@ from .eagle_x import Eagle
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
 from .kosmos import Kosmos2
-from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision
+from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision, LLaVA_OneVision_HF
 from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6
 from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya, MMAlaya2
@@ -27,7 +27,7 @@ from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
 from .yi_vl import Yi_VL
-from .internvl_chat import InternVLChat
+from .internvl import InternVLChat
 from .deepseek_vl import DeepSeekVL
 from .janus import Janus
 from .mgm import Mini_Gemini
@@ -41,7 +41,7 @@ from .cambrian import Cambrian
 from .chameleon import Chameleon
 from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID, VideoChat2_HD, PLLaVA
 from .vila import VILA
-from .ovis import Ovis, Ovis1_6
+from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
@@ -53,8 +53,10 @@ from .mplug_owl3 import mPLUG_Owl3
 from .pixtral import Pixtral
 from .llama_vision import llama_vision
 from .molmo import molmo
-from .points import POINTS
+from .points import POINTS, POINTSV15
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
 from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
+from .smolvlm import SmolVLM
+from .sail_vl import SailVL

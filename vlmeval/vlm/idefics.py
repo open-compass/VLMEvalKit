@@ -2,7 +2,7 @@ import torch
 import os.path as osp
 import warnings
 from .base import BaseModel
-from ..smp import splitlen
+from ..smp import splitlen, listinstr
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from transformers.image_utils import load_image
@@ -90,7 +90,16 @@ class IDEFICS2(BaseModel):
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
         return inputs
 
-    def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False):
+    def build_prompt_default(self, message, add_brief=False, add_yes_or_no=False, change_the_img_place=False):
+        if change_the_img_place:
+            new_message = []
+            for s in message:
+                if s['type'] == 'image':
+                    new_message.append(s)
+            for s in message:
+                if s['type'] == 'text':
+                    new_message.append(s)
+            message = new_message
         prompt, images = 'User:', []
         for msg in message:
             if msg['type'] == 'image':
@@ -284,6 +293,8 @@ class IDEFICS2(BaseModel):
             'ScienceQA_TEST',
         ]:
             formatted_messages, formatted_images = self.build_prompt_puremcq(message)
+        elif listinstr(['MLVU','TempCompass','MVBench'], dataset):
+            formatted_messages, formatted_images = self.build_prompt_default(message, change_the_img_place=True)
         else:
             formatted_messages, formatted_images = self.build_prompt_default(message)
 

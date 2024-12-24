@@ -274,6 +274,8 @@ class MathJudger:
         exp1 = extract_expression(exp1)
         exp2 = extract_expression(exp2)
 
+        exp_too_long = len(exp1) > 300 or len(exp2) > 300
+
         # 将表达式转换为 sympy 中能够进行处理的格式
         expr1_sym = sympify(parse_latex(exp1))
         expr2_sym = sympify(parse_latex(exp2))
@@ -296,6 +298,9 @@ class MathJudger:
                             f"\"{str(expr1_sym)}\" and \"{str(expr2_sym)}\""
                         )
                         return False
+                    if exp_too_long:
+                        print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                        return False
 
                     if abs(expr1_sym.evalf() - expr2_sym.evalf()) <= self.precision * 1.01:
                         return True
@@ -303,6 +308,9 @@ class MathJudger:
                         return False
                 except:
                     return False
+            elif exp_too_long:
+                print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                return False
             else:
                 try:
                     simplified_expr = simplify(expr1_sym - expr2_sym)

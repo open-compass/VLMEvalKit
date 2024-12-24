@@ -121,6 +121,9 @@ class LongVideoBench(VideoBaseDataset):
                     return False
             return True
 
+        if modelscope_flag_set():
+            repo_id = "AI-ModelScope/LongVideoBench"
+
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
@@ -137,7 +140,11 @@ class LongVideoBench(VideoBaseDataset):
 
                 data_file.to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep='\t', index=False)
 
-            snapshot_download(repo_id=repo_id, repo_type='dataset')
+            if modelscope_flag_set():
+                from modelscope import dataset_snapshot_download
+                dataset_snapshot_download(dataset_id=repo_id)
+            else:
+                snapshot_download(repo_id=repo_id, repo_type='dataset')
             print("All videos are downloaded for LongVideoBench")
 
             if not glob(osp.join(cache_path, "videos")):
