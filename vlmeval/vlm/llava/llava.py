@@ -796,6 +796,7 @@ class LLaVA_OneVision_HF(BaseModel):
         self.force_sample = self.video_kwargs.get("force_sample", False)
         self.nframe = kwargs.get("nframe", 8)
         self.fps = 1
+        self.model_path = model_path
 
     def generate_inner_image(self, message, dataset=None):
         content, images = "", []
@@ -823,6 +824,8 @@ class LLaVA_OneVision_HF(BaseModel):
         inputs = self.processor(images=images, text=prompt, return_tensors="pt").to(0, torch.float16)
 
         output = self.model.generate(**inputs, max_new_tokens=100)
+        if self.model_path == "NCSOFT/VARCO-VISION-14B-HF":
+            return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
         return self.processor.decode(output[0], skip_special_tokens=True)
 
     def generate_inner_video(self, message, dataset=None):

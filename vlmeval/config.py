@@ -165,6 +165,7 @@ llava_series = {
     'Aquila-VL-2B': partial(LLaVA_OneVision, model_path='BAAI/Aquila-VL-2B-llava-qwen'),
     'llava_video_qwen2_7b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-7B-Qwen2'),
     'llava_video_qwen2_72b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-72B-Qwen2'),
+    'varco-vision-hf':partial(LLaVA_OneVision_HF, model_path='NCSOFT/VARCO-VISION-14B-HF'),
 }
 
 internvl_series = {
@@ -399,4 +400,3 @@ model_groups = [
 
 for grp in model_groups:
     supported_VLM.update(grp)
-
