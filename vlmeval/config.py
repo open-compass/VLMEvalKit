@@ -104,7 +104,9 @@ api_models = {
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
     # TeleMM
-    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', temperature=0, retry=10)
+    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', temperature=0, retry=10),
+    # lmdeploy api
+    'lmdeploy': partial(LMDeployAPI, api_base='http://0.0.0.0:23333/v1/chat/completions', temperature=0, retry=10),
 }
 
 mmalaya_series = {
@@ -367,7 +369,7 @@ points_series = {
 }
 
 nvlm_series = {
-    'NVLM': partial(NVLM, model_path='nvidia/NVLM-D-72B'), 
+    'NVLM': partial(NVLM, model_path='nvidia/NVLM-D-72B'),
 }
 
 vintern_series = {
@@ -392,7 +394,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, janus_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
+    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
     smolvlm_series, sail_series
