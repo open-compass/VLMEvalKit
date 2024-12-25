@@ -67,8 +67,6 @@ pip install -e .
 - `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
 - `--nproc (int, 默认值为 4)`: 调用 API 的线程数
 - `--work-dir (str, default to '.')`: 存放测试结果的目录
-- `--nframe (int, default to 8)`: 从视频中采样的帧数，仅对视频多模态评测集适用
-- `--pack (bool, store_true)`: 一个视频可能关联多个问题，如 `pack==True`，将会在一次询问中提问所有问题
 
 **用于评测图像多模态评测集的命令**
 
@@ -98,10 +96,10 @@ torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 # 使用 `python` 运行时，只实例化一个 VLM，并且它可能使用多个 GPU。
 # 这推荐用于评估参数量非常大的 VLMs（如 IDEFICS-80B-Instruct）。
 
-# 在 MMBench-Video 上评测 IDEFCIS2-8B, 视频采样 8 帧作为输入，不采用 pack 模式评测
-torchrun --nproc-per-node=8 run.py --data MMBench-Video --model idefics2_8b --nframe 8
-# 在 MMBench-Video 上评测 GPT-4o (API 模型), 视频采样 16 帧作为输入，采用 pack 模式评测
-python run.py --data MMBench-Video --model GPT4o --nframe 16 --pack
+# 在 MMBench-Video 上评测 IDEFCIS2-8B, 视频采样 8 帧作为输入，不采用 pack 模式评测. MMBench_Video_8frame_nopack 是一个定义在 `vlmeval/dataset/video_dataset_config.py` 的数据集设定.
+torchrun --nproc-per-node=8 run.py --data MMBench_Video_8frame_nopack --model idefics2_8
+# 在 MMBench-Video 上评测 GPT-4o (API 模型), 视频采样每秒一帧作为输入，采用 pack 模式评测
+python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
 评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。

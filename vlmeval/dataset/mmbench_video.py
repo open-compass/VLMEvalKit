@@ -59,8 +59,8 @@ Please directly reply with your response to the only question.
 
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='MMBench-Video', pack=False):
-        super().__init__(dataset=dataset, pack=pack)
+    def __init__(self, dataset='MMBench-Video', pack=False, nframe=0, fps=-1):
+        super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -92,7 +92,7 @@ Please directly reply with your response to the only question.
 
         return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
 
-    def build_prompt_pack(self, line, num_frames, fps=-1):
+    def build_prompt_pack(self, line):
         if isinstance(line, int):
             assert line < len(self)
             video = self.videos[line]
@@ -101,7 +101,7 @@ Please directly reply with your response to the only question.
         elif isinstance(line, str):
             video = line
 
-        frames = self.save_video_frames(video, num_frames, fps)
+        frames = self.save_video_frames(video)
         sub = self.data[self.data['video'] == video]
         sys_prompt = self.SYS + self.FRAMES_TMPL_PACK.format(len(frames))
         message = [dict(type='text', value=sys_prompt)]
@@ -114,7 +114,7 @@ Please directly reply with your response to the only question.
         message.append(dict(type='text', value=prompt))
         return message
 
-    def build_prompt_nopack(self, line, num_frames, video_llm, fps):
+    def build_prompt_nopack(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -125,7 +125,7 @@ Please directly reply with your response to the only question.
             message.append(dict(type='video', value=os.path.join(self.video_path, video_idx_path)))
             return message
         else:
-            frames = self.save_video_frames(line['video'], num_frames, fps)
+            frames = self.save_video_frames(line['video'])
             sys_prompt = self.FRAMES_TMPL_NOPACK.format(len(frames))
             message = [dict(type='text', value=sys_prompt)]
             for im in frames:
@@ -134,11 +134,11 @@ Please directly reply with your response to the only question.
             message.append(dict(type='text', value=prompt))
         return message
 
-    def build_prompt(self, line, num_frames, video_llm, fps):
+    def build_prompt(self, line, video_llm):
         if self.pack and not video_llm:
-            return self.build_prompt_pack(line, num_frames, fps)
+            return self.build_prompt_pack(line)
         else:
-            return self.build_prompt_nopack(line, num_frames, video_llm, fps)
+            return self.build_prompt_nopack(line, video_llm)
 
     @staticmethod
     def remove_side_quote(s, syms=[',', '"', "'"]):
