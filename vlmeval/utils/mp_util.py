@@ -58,8 +58,9 @@ def track_progress_rich(
                     new_finished.add(idx)
                     if keys is not None:
                         res[keys[idx]] = results[idx]
-            if len(new_finished) and save is not None:
-                dump(res, save)
+            if len(new_finished):
+                if save is not None:
+                    dump(res, save)
                 pbar.update(len(new_finished))
                 for k in new_finished:
                     unfinished.remove(k)
