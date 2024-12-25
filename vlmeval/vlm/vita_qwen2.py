@@ -3,21 +3,20 @@ from PIL import Image
 from abc import abstractproperty
 import sys
 import os.path as osp
-from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
+from .base import BaseModel
+from ..smp import *
+from ..dataset import DATASET_TYPE
 import copy
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../')))
-from vita.util.data_utils_video_audio_neg_patch import dynamic_preprocess
 
-class VITA(BaseModel):
+class VITAQwen2(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
 
     DEFAULT_IMAGE_TOKEN = '<image>'
     IMAGE_TOKEN_INDEX = -200
 
-    def __init__(self, model_path='VITA/vita', **kwargs):
+    def __init__(self, model_path='VITA/vita', root=None, **kwargs):
+        sys.path.append(root)
         assert model_path is not None
         try:
             from vita.model.builder import load_pretrained_model
@@ -27,7 +26,7 @@ class VITA(BaseModel):
             warnings.warn('Please install vita first.')
 
         model_name = get_model_name_from_path(model_path)
-        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, model_type='mixtral-8x7b', device_map='auto')
+        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, model_type='qwen2p5_instruct', device_map='auto')
         #model.cuda().eval()
         # model.tie_weights()
 
@@ -36,8 +35,8 @@ class VITA(BaseModel):
         audio_encoder.to(dtype=torch.float16)
         audio_processor = audio_encoder.audio_processor
 
-        conv_mode = 'mixtral_two'
-        self.stop_str = '</s>'
+        conv_mode = 'qwen2p5_instruct'
+        self.stop_str = '<|im_end|>'
         self.conv_template = conv_mode
         self.conv_templates = conv_templates
         self.tokenizer = tokenizer
@@ -117,6 +116,7 @@ class VITA(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             if 'MathVista' in dataset:
                 prompt = line['question']
+                #prompt = 'According to the question shown in the image, please first conduct reasoning, and then answer the question and provide the final value, e.g., The answer is xxx\n' + line['question']
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
@@ -145,6 +145,7 @@ class VITA(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         from vita.util.mm_utils import KeywordsStoppingCriteria
+        from vita.util.data_utils_video_audio_patch import dynamic_preprocess
         self.set_max_num(dataset)
         content, images = '', []
         for msg in message:
@@ -177,6 +178,7 @@ class VITA(BaseModel):
         prompt_question = conv.get_prompt(modality)
         print(prompt_question)
 
+        #import pdb; pdb.set_trace()
         input_ids = image_tokenizer(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
@@ -190,16 +192,26 @@ class VITA(BaseModel):
         audios = dict()
         audios['audios'] = audio.half().cuda()
         audios['lengths'] = audio_length.half().cuda()
+        audio_for_llm_lens = 60
+        audio_for_llm_lens = torch.unsqueeze(torch.tensor(audio_for_llm_lens), dim=0)
+        audios["lengths_for_llm"] = audio_for_llm_lens.cuda()
+        
+        sf_masks = torch.tensor([0]*len(image_tensor)).cuda()
         cont = self.model.generate(
             input_ids,
             images=image_tensor,
             audios=audios,
+            sf_masks=sf_masks,
             do_sample=False,
             temperature=0.01,
-            max_new_tokens=512,
+            max_new_tokens=2048,
             stopping_criteria=[stopping_criteria],
+            shared_v_pid_stride=None#2#16#8#4#1#None,
         )
-        input_token_len = input_ids.shape[1]
-        cont = cont[:, input_token_len:]
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
-        return text_outputs
+        if '☞' in text_outputs or '☜' in text_outputs or '☟' in text_outputs:
+            return text_outputs[1:]
+        else:
+            return text_outputs
+
+
