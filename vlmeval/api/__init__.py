@@ -24,6 +24,6 @@ __all__ = [
     'Claude3V', 'Claude_Wrapper', 'Reka', 'GLMVisionAPI',
     'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI',
     'BlueLMWrapper', 'BlueLM_V_API', 'JTVLChatAPI', 'bailingMMAPI',
-    'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI','LMDeployAPI'
+    'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
     'TaichuVLAPI'
 ]
