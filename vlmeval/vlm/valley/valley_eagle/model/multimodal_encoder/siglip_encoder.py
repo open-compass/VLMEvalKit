@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from ...util.vision_encoder_config import siglip_config
 
 
 class SigLipVisionTower(nn.Module):
@@ -26,7 +27,7 @@ class SigLipVisionTower(nn.Module):
         from transformers import SiglipImageProcessor, SiglipVisionModel
 
         self.image_processor = SiglipImageProcessor.from_pretrained(self.image_tower_name)
-        self.vision_tower = SiglipVisionModel.from_pretrained(self.image_tower_name)
+        self.vision_tower = SiglipVisionModel._from_config(siglip_config)
         self.vision_tower.requires_grad_(False)
         self.image_processor.crop_size = self.image_processor.size["height"]
 

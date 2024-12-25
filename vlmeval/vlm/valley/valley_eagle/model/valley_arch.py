@@ -510,7 +510,6 @@ class ValleyMetaForCausalLM(ABC):
             new_attention_mask = self._prepare_4d_causal_attention_mask_for_pack(new_attention_mask, dtype=new_input_embeds.dtype) # only for pack
 
         # print(f"pack_ids: {pack_ids}, new_input_embeds.shape: {new_input_embeds.shape}, image_grid_thw: {image_grid_thw}, ")
-        print(f"pack_ids: {pack_ids}, new_input_embeds.shape: {new_input_embeds.shape}")
         return None, position_ids, new_attention_mask, past_key_values, new_input_embeds, new_labels
     
     def _prepare_4d_causal_attention_mask_for_pack(self, attention_mask, dtype):
