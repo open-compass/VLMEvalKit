@@ -208,14 +208,14 @@ class WildVision(ImageBaseDataset):
             -2: 'Much Worse'
         }
         scores = {name_map[k]: v for k, v in scores.items()}
-        much_better_score = scores.get('Much Better', 0)
-        better_score = scores.get('Better', 0)
-        worse_score = scores.get('Worse', 0)
-        much_worse_score = scores.get('Much Worse', 0)
+        much_better = scores.get('Much Better', 0)
+        better = scores.get('Better', 0)
+        worse = scores.get('Worse', 0)
+        much_worse = scores.get('Much Worse', 0)
         scores['Reward'] = (
-            100 * much_better_score + 50 * better_score - 50 * worse_score - 100 * much_worse_score
+            100 * much_better + 50 * better - 50 * worse - 100 * much_worse
         ) / lt
-        scores['Win Rate'] = (better_score + much_better_score) / lt
+        scores['Win Rate'] = (better + much_better) / lt
         scores = {k: [v] for k, v in scores.items()}
         scores = pd.DataFrame(scores)
         dump(scores, score_file)
