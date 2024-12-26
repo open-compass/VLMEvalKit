@@ -8,6 +8,7 @@ from ..smp import *
 from ..dataset import DATASET_TYPE
 import copy
 
+
 class VITAQwen2(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
@@ -26,14 +27,17 @@ class VITAQwen2(BaseModel):
             warnings.warn('Please install vita first.')
 
         model_name = get_model_name_from_path(model_path)
-        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, model_type='qwen2p5_instruct', device_map='auto')
-        #model.cuda().eval()
+        tokenizer, model, image_processor, _ = load_pretrained_model(
+            model_path, None, model_name, model_type='qwen2p5_instruct', device_map='auto'
+        )
+        # model.cuda().eval()
         # model.tie_weights()
 
         audio_encoder = model.get_audio_encoder()
-        #audio_encoder.to(device="cuda", dtype=torch.float16)
+        # audio_encoder.to(device="cuda", dtype=torch.float16)
         audio_encoder.to(dtype=torch.float16)
-        audio_processor = audio_encoder.audio_processor
+        # audio_processor not used, consider removing
+        _ = audio_encoder.audio_processor
 
         conv_mode = 'qwen2p5_instruct'
         self.stop_str = '<|im_end|>'
@@ -116,7 +120,7 @@ class VITAQwen2(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             if 'MathVista' in dataset:
                 prompt = line['question']
-                #prompt = 'According to the question shown in the image, please first conduct reasoning, and then answer the question and provide the final value, e.g., The answer is xxx\n' + line['question']
+                # prompt = 'According to the question shown in the image, please first conduct reasoning...'
             elif listinstr(['LLaVABench'], dataset):
                 question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
@@ -127,8 +131,7 @@ class VITAQwen2(BaseModel):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             prompt = line['question']
-        #message = [dict(type='text', value=prompt)]
-        #message.extend([dict(type='image', value=s) for s in tgt_path])
+
         message = [dict(type='image', value=s) for s in tgt_path]
         message.extend([dict(type='text', value=prompt)])
         return message
@@ -152,13 +155,14 @@ class VITAQwen2(BaseModel):
             if msg['type'] == 'text':
                 content += msg['value']
             else:
-                ## 这里分patch，同时计算patch数量
+                # 这里分patch，同时计算patch数量
                 image = Image.open(msg['value']).convert('RGB')
-                image, p_num = dynamic_preprocess(image, min_num=1, max_num=self.max_num, image_size=self.image_size, use_thumbnail=True)
+                image, p_num = dynamic_preprocess(
+                    image, min_num=1, max_num=self.max_num, image_size=self.image_size, use_thumbnail=True
+                )
                 assert len(p_num) == 1
-                #assert len(image) == p_num[0]
                 images += image
-                content += (self.DEFAULT_IMAGE_TOKEN*p_num[0] + '\n')
+                content += (self.DEFAULT_IMAGE_TOKEN * p_num[0] + '\n')
 
         preprocess = self.image_processor.preprocess
         image_tokenizer = self.tokenizer_image_token
@@ -167,7 +171,6 @@ class VITAQwen2(BaseModel):
         ]
         image_tensor = torch.stack(image_tensor)
 
-        #conv = copy.deepcopy(self.conv_templates[self.conv_template])
         conv = self.conv_templates[self.conv_template].copy()
         conv.append_message(conv.roles[0], content)
         conv.append_message(conv.roles[1], None)
@@ -178,7 +181,6 @@ class VITAQwen2(BaseModel):
         prompt_question = conv.get_prompt(modality)
         print(prompt_question)
 
-        #import pdb; pdb.set_trace()
         input_ids = image_tokenizer(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors='pt')
         input_ids = input_ids.unsqueeze(0).cuda()
 
@@ -195,8 +197,8 @@ class VITAQwen2(BaseModel):
         audio_for_llm_lens = 60
         audio_for_llm_lens = torch.unsqueeze(torch.tensor(audio_for_llm_lens), dim=0)
         audios["lengths_for_llm"] = audio_for_llm_lens.cuda()
-        
-        sf_masks = torch.tensor([0]*len(image_tensor)).cuda()
+
+        sf_masks = torch.tensor([0] * len(image_tensor)).cuda()
         cont = self.model.generate(
             input_ids,
             images=image_tensor,
@@ -206,12 +208,10 @@ class VITAQwen2(BaseModel):
             temperature=0.01,
             max_new_tokens=2048,
             stopping_criteria=[stopping_criteria],
-            shared_v_pid_stride=None#2#16#8#4#1#None,
+            shared_v_pid_stride=None,  # 2 #16 #8 #4 #1 #None,
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         if '☞' in text_outputs or '☜' in text_outputs or '☟' in text_outputs:
             return text_outputs[1:]
         else:
             return text_outputs
-
-
