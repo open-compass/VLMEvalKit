@@ -19,7 +19,12 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 class MVTamperBench(VideoBaseDataset):
 
-    MD5 = '12a8bac1b4452c5c7974c31f8e76e882'
+    MD5 = {
+        'MVTamperBench': '12a8bac1b4452c5c7974c31f8e76e882',
+        'MVTamperBenchSample': 'af0059e5e0f894aa61753b5a09c37fc6',
+        'MVTamperBenchSample_Start': '587edbbbe7ae998cebecbbadfe899ba0',
+        'MVTamperBenchSample_End': 'fb12bf5e0355b8ff6a1b029b2970347c',
+    }
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
 Based on your observations, select the best option that accurately addresses the question.
@@ -74,9 +79,14 @@ Based on your observations, select the best option that accurately addresses the
 
     @classmethod
     def supported_datasets(cls):
-        return ['MVTamperBench']
+        return ['MVTamperBench', 'MVTamperBenchSample', 'MVTamperBenchSample_Start', 'MVTamperBenchSample_End']
 
-    def prepare_dataset(self, dataset_name='MVTamperBench', repo_id='Srikant86/MVTamperBench'):
+    def prepare_dataset(self, dataset_name='MVTamperBenchSample', repo_id=None):
+        if repo_id:
+            dataset_name = repo_id.split('/')[-1]
+        else:
+            repo_id = f'Srikant86/{dataset_name}'
+
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
@@ -171,8 +181,8 @@ Based on your observations, select the best option that accurately addresses the
                                         shutil.move(item_path, target_folder)
 
             hf_token = os.environ.get('HUGGINGFACE_TOKEN')
-            #huggingface_hub.login(hf_token)
-            #dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            huggingface_hub.login(hf_token)
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
             unzip_hf_zip(dataset_path)
             move_files(dataset_path)
             generate_tsv(dataset_path)
@@ -360,6 +370,7 @@ Based on your observations, select the best option that accurately addresses the
         tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
         tgt_task_type_file = eval_file.replace('.xlsx', '_task_type_rating.json')
         tgt_tamper_type_file = eval_file.replace('.xlsx', '_tamper_type_rating.json')
+        tgt_task_tamper_type_file = eval_file.replace('.xlsx', '_task_tamper_type_rating.json')
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
@@ -421,5 +432,7 @@ Based on your observations, select the best option that accurately addresses the
         dump(rating_task_type, tgt_task_type_file)
         rating_tamper_type = get_dimension_rating(score_file, 'tamper_type')
         dump(rating_tamper_type, tgt_tamper_type_file)
-        rating = {**rating_task_type, **rating_tamper_type}
+        rating_task_tamper_type = get_dimension_rating(score_file, 'task_tamper_type')
+        dump(rating_task_tamper_type, tgt_task_tamper_type_file)
+        rating = {**rating_task_type, **rating_tamper_type, **rating_task_tamper_type}
         return rating
