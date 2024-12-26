@@ -18,6 +18,6 @@ DEFAULT_GANDALF_TOKEN = "<gandalf>"
 
 DEFAULT_EOC_TOKEN = "<eoc>"
 COR_START_TOKEN = "<cor>"
-COR_END_TOKEN = "<\cor>"
+COR_END_TOKEN = "<\cor>"  # noqa
 
 SEQ_MAX_LEN = 50000
