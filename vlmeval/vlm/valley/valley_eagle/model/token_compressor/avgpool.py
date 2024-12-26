@@ -1,5 +1,6 @@
 from torch import nn
 
+
 class AvgPoolTokenCompressor(nn.Module):
     """
     A PyTorch module for compressing tokens using average pooling.
@@ -28,11 +29,11 @@ class AvgPoolTokenCompressor(nn.Module):
         x = x.view(B, H, W, dim)
 
         return x.view(B, H // scale, scale, W // scale, scale, dim) \
-                    .permute(0, 1, 3, 5, 2, 4) \
-                    .reshape(B, H // scale, W // scale, dim, scale * scale) \
-                    .mean(dim=-1) \
-                    .squeeze(dim=-1) \
-                    .reshape(B, -1, dim)
+            .permute(0, 1, 3, 5, 2, 4) \
+            .reshape(B, H // scale, W // scale, dim, scale * scale) \
+            .mean(dim=-1) \
+            .squeeze(dim=-1) \
+            .reshape(B, -1, dim)
 
     def forward(self, x):
         if type(x) is list:

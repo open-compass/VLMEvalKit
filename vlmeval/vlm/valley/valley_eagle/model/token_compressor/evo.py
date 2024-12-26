@@ -3,6 +3,7 @@ from torch import nn
 from timm.models.layers import trunc_normal_
 import torch.nn.functional as F
 
+
 class EVOTokenCompressor(nn.Module):
     """
     A PyTorch module for compressing tokens using EVO.
@@ -27,8 +28,8 @@ class EVOTokenCompressor(nn.Module):
         super(EVOTokenCompressor, self).__init__()
         self.embed_dim = embed_dim
         self.inner_dim = inner_dim
-        
-        if type(prune_ratio) == str:
+
+        if type(prune_ratio) is str:
             prune_ratio = eval(prune_ratio)
         self.prune_ratio = prune_ratio
 
@@ -49,7 +50,7 @@ class EVOTokenCompressor(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-    
+
     def forward_features(self, x):
         x = self.norm(x)
         x = self.out_conv(x)
@@ -68,7 +69,7 @@ class EVOTokenCompressor(nn.Module):
         B, N, C = x.shape
         N_prune = int(N * self.prune_ratio)
         pred_score = self.forward_features(x)
-        _, indices = torch.sort(pred_score, dim=1, descending=True) # torch.sort is derivable
+        _, indices = torch.sort(pred_score, dim=1, descending=True)  # torch.sort is derivable
         x = self.easy_gather(x, indices)
 
         image_embeds = x[:, :N_prune]

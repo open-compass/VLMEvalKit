@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
 from transformers import Qwen2VLConfig, Qwen2VLModel, Qwen2VLForConditionalGeneration
-from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VLCausalLMOutputWithPast, _prepare_4d_causal_attention_mask_with_cache_position
+from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VLCausalLMOutputWithPast
+from transformers.models.qwen2_vl.modeling_qwen2_vl import _prepare_4d_causal_attention_mask_with_cache_position
 from transformers.cache_utils import StaticCache
 from ..valley_arch import ValleyMetaModel, ValleyMetaForCausalLM
 
@@ -19,9 +20,10 @@ class ValleyQwen2VLModel(ValleyMetaModel, Qwen2VLModel):
     def __init__(self, config: Qwen2VLConfig):
         super(ValleyQwen2VLModel, self).__init__(config)
 
+
 class ValleyQwen2VLForCausalLM(Qwen2VLForConditionalGeneration, ValleyMetaForCausalLM):
     config_class = ValleyConfig
-        
+
     def __init__(self, config):
         super(ValleyQwen2VLForCausalLM, self).__init__(config)
         self.model = ValleyQwen2VLModel(config)
@@ -90,7 +92,8 @@ class ValleyQwen2VLForCausalLM(Qwen2VLForConditionalGeneration, ValleyMetaForCau
         >>> # Generate
         >>> generate_ids = model.generate(inputs.input_ids, max_length=30)
         >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-        "The image shows a street scene with a red stop sign in the foreground. In the background, there is a large red gate with Chinese characters ..."
+        "The image shows a street scene with a red stop sign in the foreground."
+        "In the background, there is a large red gate with Chinese characters ..."
         ```"""
 
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -178,7 +181,7 @@ class ValleyQwen2VLForCausalLM(Qwen2VLForConditionalGeneration, ValleyMetaForCau
         # Exception 2: some generation methods do special slicing of input_ids, so we don't need to do it here
         if past_key_values is not None:
             if inputs_embeds is not None:  # Exception 1
-                input_ids = input_ids[:, -cache_position.shape[0] :]
+                input_ids = input_ids[:, -cache_position.shape[0]:]
             elif input_ids.shape[1] != cache_position.shape[0]:  # Default case (the "else", a no op, is Exception 2)
                 input_ids = input_ids[:, cache_position]
 
@@ -244,4 +247,3 @@ class ValleyQwen2VLForCausalLM(Qwen2VLForConditionalGeneration, ValleyMetaForCau
             }
         )
         return model_inputs
-   

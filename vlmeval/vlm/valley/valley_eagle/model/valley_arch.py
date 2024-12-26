@@ -133,7 +133,7 @@ class ValleyMetaForCausalLM(ABC):
             start = end
         return sub_lists
 
-    def encode_images(self, images = None, split_sizes = None, pixel_values = None, grid_thw = None):
+    def encode_images(self, images=None, split_sizes=None, pixel_values=None, grid_thw=None):
         """
         images: (if not anyres) images.shape = [n,3,336,336] , n = number of images + (number of video) * 8
         images: (if anyres) images.shape = [n,3,336,336] , n = number of tiles * number of images
@@ -147,32 +147,34 @@ class ValleyMetaForCausalLM(ABC):
         qwen2vl_image_features = None
         if pixel_values is not None:
             qwen2vl_image_features = qwen2vl_vision_tower(pixel_values, grid_thw)
-            qwen2vl_image_split_sizes = torch.prod(grid_thw[:, 1:3]//2, dim=1)
+            qwen2vl_image_split_sizes = torch.prod(grid_thw[:, 1:3] // 2, dim=1)
             qwen2vl_image_features = torch.split(qwen2vl_image_features, qwen2vl_image_split_sizes.tolist(), dim=0)
             qwen2vl_image_features = self.split_by_instance(qwen2vl_image_features, split_sizes)
 
             if images is None:
                 return qwen2vl_image_features
 
-
         if getattr(self.config,'anyres', False) and getattr(self.config, 'max_vision_token', None) is not None:
             assert split_sizes is not None
             image_features = list(torch.split(image_features, split_sizes, dim=0))
             for i,image_feature in enumerate(image_features):
                 hidden_dim = image_feature.shape[-1]
-                image_tokens = image_feature.shape[0]*image_feature.shape[1]
+                image_tokens = image_feature.shape[0] * image_feature.shape[1]
                 # the max_vision_token will be processed in the unpad image token part
                 if False:
                     if image_tokens > self.config.max_vision_token:
                         intput_shape = int((image_feature.shape[1])**0.5)
-                        output_shape = int((self.config.max_vision_token/image_feature.shape[0])**0.5)
-                        image_feature = image_feature.view(image_feature.shape[0],intput_shape, intput_shape, -1).permute(0,3,1,2)
-                        m = nn.AdaptiveAvgPool2d(output_shape) # different from roi pooling, but in square image, it seems the same
+                        output_shape = int((self.config.max_vision_token / image_feature.shape[0])**0.5)
+                        image_feature = image_feature.view(image_feature.shape[0],intput_shape, intput_shape, -1) \
+                                                     .permute(0,3,1,2)
+                        # different from roi pooling, but in square image, it seems the same
+                        m = nn.AdaptiveAvgPool2d(output_shape)
                         pooling_feature = m(image_feature).permute(0,2,3,1)
                         image_features[i] = pooling_feature.view(image_feature.shape[0], -1, hidden_dim)
-                split_sizes = None # have already split, set the flag 
+                split_sizes = None  # have already split, set the flag
         if getattr(self.config, 'model_class', None) in ['valley-video','valley_video']:
-            # since we mix video data and image data in a batch, and in valley video structure, both have same dimention, we need to split them to process
+            # since we mix video data and image data in a batch, and in valley video structure,
+            # both have same dimention, we need to split them to process
             if split_sizes is not None:
                 image_features = torch.split(image_features, split_sizes, dim=0)
             if getattr(self.config, 'mm_use_im_start_end', False):
@@ -180,15 +182,21 @@ class ValleyMetaForCausalLM(ABC):
                 for feature in image_features:
                     temporal_features = feature[:,0,:]
                     video_features = torch.mean(feature[:,1:,:],dim=0)
-                    special_token_ids = torch.tensor(self.tokenizer.convert_tokens_to_ids([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_VI_START_TOKEN, DEFAULT_VI_END_TOKEN])).to(video_features.device)
-                    special_token_feature= self.get_model().embed_tokens(special_token_ids)
+                    special_token_ids = torch.tensor(
+                        self.tokenizer.convert_tokens_to_ids(
+                            [DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_VI_START_TOKEN, DEFAULT_VI_END_TOKEN]
+                        )
+                    ).to(video_features.device)
+                    special_token_feature = self.get_model().embed_tokens(special_token_ids)
                     # add special sep feature as [<im_start><video_feature><im_end><vi_start><temporal_feature><vi_end>]
-                    new_image_feature = torch.cat([special_token_feature[0].unsqueeze(0),
-                                                    video_features,
-                                                    special_token_feature[1].unsqueeze(0),
-                                                    special_token_feature[2].unsqueeze(0),
-                                                    temporal_features,
-                                                    special_token_feature[2].unsqueeze(0)])
+                    new_image_feature = torch.cat([
+                        special_token_feature[0].unsqueeze(0),
+                        video_features,
+                        special_token_feature[1].unsqueeze(0),
+                        special_token_feature[2].unsqueeze(0),
+                        temporal_features,
+                        special_token_feature[2].unsqueeze(0)
+                    ])
                     video_start_end_image_features.append(new_image_feature.unsqueeze(0))
                 return video_start_end_image_features, qwen2vl_image_features
             else:
@@ -196,9 +204,8 @@ class ValleyMetaForCausalLM(ABC):
                 for feature in image_features:
                     temporal_features = feature[:,0,:]
                     video_features = torch.mean(feature[:,1:,:],dim=0)
-                    new_image_feature = torch.cat([ video_features,
-                                                    temporal_features,])
-                    image_features_new.append(new_image_feature.unsqueeze(0)) # increase batch dim
+                    new_image_feature = torch.cat([video_features, temporal_features])
+                    image_features_new.append(new_image_feature.unsqueeze(0))  # increase batch dim
                 return image_features_new, qwen2vl_image_features
         elif getattr(self.config, 'model_class', None) in ['valley-product','valley_product', 'tinyvalley']:
             if getattr(self.config, 'mm_use_im_start_end', False):
@@ -207,18 +214,18 @@ class ValleyMetaForCausalLM(ABC):
                 image_features = torch.split(image_features, split_sizes, dim=0)
             return image_features, qwen2vl_image_features
         elif getattr(self.config, 'model_class', None) == 'valley-product-gandalf':
-            raise ValueError('valley-product-gandalf is not support in this version.')    
+            raise ValueError('valley-product-gandalf is not support in this version.')
         else:
-            raise ValueError('No model class specified')    
-
+            raise ValueError('No model class specified')
 
     def prepare_inputs_labels_for_multimodal(
         self, input_ids, position_ids, attention_mask, past_key_values, labels, images,
-        image_sizes, pixel_values, pixel_values_videos, image_grid_thw, video_grid_thw, pack_ids):
+            image_sizes, pixel_values, pixel_values_videos, image_grid_thw, video_grid_thw, pack_ids):
 
         vision_tower = self.get_vision_tower()
         if vision_tower is None or images is None or input_ids.shape[1] == 1:
-            if past_key_values is not None and vision_tower is not None and images is not None and input_ids.shape[1] == 1:
+            if past_key_values is not None and vision_tower is not None and \
+                    images is not None and input_ids.shape[1] == 1:
                 target_shape = past_key_values[-1][-1].shape[-2] + 1
                 attention_mask = torch.cat((attention_mask, torch.ones(
                     (attention_mask.shape[0], target_shape - attention_mask.shape[1]),
@@ -230,13 +237,23 @@ class ValleyMetaForCausalLM(ABC):
 
         if type(images) is list or images.ndim == 5:
             if not getattr(self.config,'anyres', False):
-                concat_images = torch.cat([image for image in images], dim=0) # to do batch compute
-                split_sizes = [image.shape[0] for image in images] 
+                concat_images = torch.cat([image for image in images], dim=0)  # to do batch compute
+                split_sizes = [image.shape[0] for image in images]
                 if pixel_values is not None:
-                    image_features, qwen2vl_image_features = self.encode_images(concat_images, split_sizes, pixel_values, image_grid_thw)
+                    image_features, qwen2vl_image_features = self.encode_images(
+                        concat_images,
+                        split_sizes,
+                        pixel_values,
+                        image_grid_thw
+                    )
                     image_features = [x.to(self.device) for x in image_features]
                 elif pixel_values_videos is not None:
-                    image_features, qwen2vl_image_features = self.encode_images(concat_images, split_sizes, pixel_values_videos, video_grid_thw)
+                    image_features, qwen2vl_image_features = self.encode_images(
+                        concat_images,
+                        split_sizes,
+                        pixel_values_videos,
+                        video_grid_thw
+                    )
                     image_features = [x.to(self.device) for x in image_features]
                 else:
                     image_features, _ = self.encode_images(concat_images, split_sizes)
@@ -247,28 +264,35 @@ class ValleyMetaForCausalLM(ABC):
                 if self.get_token_compressor() is not None:
                     image_features = [self.get_token_compressor()(x) for x in image_features]
             else:
-                # if do anyres, each image become some sub_images, so need to add a 
+                # if do anyres, each image become some sub_images, so need to add a
                 # images = [
                 #           [image1_tiles(n1,3,336,336), image2_tiles(n2,3,336,336), ...],
                 #           [image1_tiles(n1,3,336,336), image2_tiles(n2,3,336,336), ...], ...
                 #          ]
-                split_sizes = [len(image) for image in images] 
+                split_sizes = [len(image) for image in images]
                 # get qwen2vl features
                 qwen2vl_image_features = self.encode_images(None, split_sizes, pixel_values, image_grid_thw)
 
                 image_features = []
                 for batch_images in images:
-                    concat_images = torch.cat([image for image in batch_images], dim=0) # to do batch compute
-                    split_sizes = [image.shape[0] for image in batch_images] 
-                    batch_image_features, _ = self.encode_images(concat_images, split_sizes, pixel_values, image_grid_thw)
+                    concat_images = torch.cat([image for image in batch_images], dim=0)  # to do batch compute
+                    split_sizes = [image.shape[0] for image in batch_images]
+                    batch_image_features, _ = self.encode_images(
+                        concat_images,
+                        split_sizes,
+                        pixel_values,
+                        image_grid_thw
+                    )
                     # token compress
                     if self.get_token_compressor() is not None:
-                        batch_image_features = [self.get_token_compressor()(x) for x in batch_image_features] # x is tensor(n_tiles, T, d) or [tensor(T1, d), tensor(T2, d), ...]
+                        # x is tensor(n_tiles, T, d) or [tensor(T1, d), tensor(T2, d), ...]
+                        batch_image_features = [self.get_token_compressor()(x) for x in batch_image_features]
 
                     if type(batch_image_features[0]) is list:
                         batch_image_features = [torch.cat(x).to(self.device) for x in batch_image_features]
                     else:
-                        batch_image_features = [x.view(-1,x.shape[-1]).to(self.device) for x in batch_image_features] # tiles feature need to flatten in token dimention, [n_tiles, T, d] -> [n_tiles * T, d]
+                        # tiles feature need to flatten in token dimention, [n_tiles, T, d] -> [n_tiles * T, d]
+                        batch_image_features = [x.view(-1,x.shape[-1]).to(self.device) for x in batch_image_features]
 
                     image_features.append(batch_image_features)
 
@@ -278,8 +302,8 @@ class ValleyMetaForCausalLM(ABC):
                 for batch_image_features, batch_image_sizes in zip(image_features, image_sizes):
                     batch_image_features_list = []
                     for cur_image_feature, cur_image_size in zip(batch_image_features, batch_image_sizes):
-                        base_image_feature = cur_image_feature[:width*height, :]
-                        image_feature = cur_image_feature[width*height:, :]
+                        base_image_feature = cur_image_feature[:width * height, :]
+                        image_feature = cur_image_feature[width * height:, :]
                         if image_feature.shape[0] != 0:
                             num_patch_width, num_patch_height = get_anyres_image_grid_shape(
                                 cur_image_size,
@@ -297,12 +321,12 @@ class ValleyMetaForCausalLM(ABC):
                             input_shape = (image_feature.shape[-2], image_feature.shape[-1])
                             subimage_tokens = np.prod(input_shape)
                             # adaptive avg 2d pool for reducing token num
-                            max_subimage_tokens = self.config.max_vision_token-width*height
+                            max_subimage_tokens = self.config.max_vision_token - width * height
                             if subimage_tokens > max_subimage_tokens:
                                 aspect_ratio = input_shape[0] / input_shape[1]
                                 output_shape = (
-                                    int((max_subimage_tokens/aspect_ratio)**0.5*aspect_ratio),
-                                    int((max_subimage_tokens/aspect_ratio)**0.5)
+                                    int((max_subimage_tokens / aspect_ratio) ** 0.5 * aspect_ratio),
+                                    int((max_subimage_tokens / aspect_ratio) ** 0.5)
                                 )
                                 m = nn.AdaptiveAvgPool2d(output_shape)
                                 image_feature = m(image_feature)
@@ -334,7 +358,7 @@ class ValleyMetaForCausalLM(ABC):
         _attention_mask = attention_mask
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids, dtype=torch.bool)
-        elif getattr(self, "use_pack", False) == False:
+        elif getattr(self, "use_pack", False) is False:
             attention_mask = attention_mask.bool()
         if position_ids is None:
             position_ids = torch.arange(0, input_ids.shape[1], dtype=torch.long, device=input_ids.device)
@@ -342,23 +366,31 @@ class ValleyMetaForCausalLM(ABC):
             labels = torch.full_like(input_ids, IGNORE_INDEX)
 
         # remove the padding using attention_mask -- TODO: double check
-        input_ids = [cur_input_ids[cur_attention_mask] for cur_input_ids, cur_attention_mask in zip(input_ids, attention_mask.bool())]
-        labels = [cur_labels[cur_attention_mask] for cur_labels, cur_attention_mask in zip(labels, attention_mask.bool())]
+        input_ids = [
+            cur_input_ids[cur_attention_mask]
+            for cur_input_ids, cur_attention_mask in zip(input_ids, attention_mask.bool())
+        ]
+        labels = [
+            cur_labels[cur_attention_mask]
+            for cur_labels, cur_attention_mask in zip(labels, attention_mask.bool())
+        ]
         attention_mask = [cur_attention_mask[cur_attention_mask.bool()] for cur_attention_mask in attention_mask]
 
         new_input_embeds = []
         new_labels = []
         new_attention_mask = []
-        
+
         for batch_idx, cur_input_ids in enumerate(input_ids):
             cur_batch_image_idx = 0
-            # for iamge 
+            # for iamge
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
 
             if getattr(self.config, 'model_class', None) in ['valley-video','valley_video']:
-                assert num_images<=1, 'valley video is not support for multi image input'
+                assert num_images <= 1, 'valley video is not support for multi image input'
 
-            if num_images == 0: # if this piece of data is pure text, then concat a dummy image to ensure the whole compute graph is same on all device
+            if num_images == 0:
+                # if this piece of data is pure text,
+                # then concat a dummy image to ensure the whole compute graph is same on all device
                 # cur_image_features = image_features[batch_idx][cur_batch_image_idx]
                 siglip_feat = image_features[batch_idx][cur_batch_image_idx]
                 try:
@@ -370,7 +402,8 @@ class ValleyMetaForCausalLM(ABC):
                 # print("num_images = 0: ", siglip_feat.shape, qwen2vl_feat.shape, cur_image_features.shape)
 
                 cur_input_embeds_1 = self.get_model().embed_tokens(cur_input_ids)
-                if getattr(self.config, "use_special_start_end_token", False) and getattr(self.config, "training_stage", None) == 'stage1':
+                if getattr(self.config, "use_special_start_end_token", False) \
+                        and getattr(self.config, "training_stage", None) == 'stage1':
                     cur_input_embeds_1 = cur_input_embeds_1.detach()
                 cur_input_embeds = torch.cat([cur_input_embeds_1, cur_image_features.squeeze(0)[0:0]], dim=0)
                 new_input_embeds.append(cur_input_embeds)
@@ -378,9 +411,10 @@ class ValleyMetaForCausalLM(ABC):
                 new_attention_mask.append(attention_mask[batch_idx])
                 cur_batch_image_idx += 1
                 continue
-            
-            image_token_indices = [-1] + torch.where(cur_input_ids == IMAGE_TOKEN_INDEX)[0].tolist() + [cur_input_ids.shape[0]] 
-            cur_input_ids_noim = [] # this list is to keep text input_ids
+
+            image_token_indices = \
+                [-1] + torch.where(cur_input_ids == IMAGE_TOKEN_INDEX)[0].tolist() + [cur_input_ids.shape[0]]
+            cur_input_ids_noim = []  # this list is to keep text input_ids
             cur_labels = labels[batch_idx]
             cur_labels_noim = []
             cur_attention_mask = attention_mask[batch_idx]
@@ -390,39 +424,57 @@ class ValleyMetaForCausalLM(ABC):
             ]
             cur_attention_mask_noim = []
             for i in range(len(image_token_indices) - 1):
-                cur_input_ids_noim.append(cur_input_ids[image_token_indices[i]+1:image_token_indices[i+1]])
-                cur_labels_noim.append(cur_labels[image_token_indices[i]+1:image_token_indices[i+1]])
-                cur_attention_mask_noim.append(cur_attention_mask[image_token_indices[i]+1:image_token_indices[i+1]])
+                cur_input_ids_noim.append(cur_input_ids[image_token_indices[i] + 1: image_token_indices[i + 1]])
+                cur_labels_noim.append(cur_labels[image_token_indices[i] + 1: image_token_indices[i + 1]])
+                cur_attention_mask_noim.append(
+                    cur_attention_mask[image_token_indices[i] + 1: image_token_indices[i + 1]]
+                )
             split_sizes = [x.shape[0] for x in cur_labels_noim]
             cur_input_embeds = self.get_model().embed_tokens(torch.cat(cur_input_ids_noim))
-            cur_input_embeds_no_im = list(torch.split(cur_input_embeds, split_sizes, dim=0))# get text features
-            if getattr(self.config, "use_special_start_end_token", False) and getattr(self.config, "training_stage", None) == 'stage1':
-                # for all sequence without image token, the first sequence's last token(<im_start> or <vi_start>) need to update embeds weight, 
-                # the last sequences's first token(<im_end> or <vi_end>) need to update embeds weight, other sequence's first and last token need to update weight.
-                cur_input_embeds_no_im[0] = torch.cat([cur_input_embeds_no_im[0][:-1,:].detach(),cur_input_embeds_no_im[0][-1,:].unsqueeze(0)], dim=0)
-                cur_input_embeds_no_im[-1] = torch.cat([cur_input_embeds_no_im[-1][0,:].unsqueeze(0),cur_input_embeds_no_im[-1][1:,:].detach()], dim=0)
-                for i in range(1,len(cur_input_embeds_no_im)-1):
+            cur_input_embeds_no_im = list(torch.split(cur_input_embeds, split_sizes, dim=0))  # get text features
+            if getattr(self.config, "use_special_start_end_token", False) and \
+                    getattr(self.config, "training_stage", None) == 'stage1':
+                # for all sequence without image token,
+                # the first sequence's last token(<im_start> or <vi_start>) need to update embeds weight,
+                # the last sequences's first token(<im_end> or <vi_end>) need to update embeds weight,
+                # other sequence's first and last token need to update weight.
+                cur_input_embeds_no_im[0] = torch.cat(
+                    [cur_input_embeds_no_im[0][:-1,:].detach(),cur_input_embeds_no_im[0][-1,:].unsqueeze(0)],
+                    dim=0
+                )
+                cur_input_embeds_no_im[-1] = torch.cat(
+                    [cur_input_embeds_no_im[-1][0,:].unsqueeze(0), cur_input_embeds_no_im[-1][1:,:].detach()],
+                    dim=0
+                )
+                for i in range(1,len(cur_input_embeds_no_im) - 1):
                     # in this branch <image> token should not be placed in succession
-                    cur_input_embeds_no_im[i] = torch.cat([cur_input_embeds_no_im[i][0,:].unsqueeze(0), # for im_end token
-                                                           cur_input_embeds_no_im[i][1:-1,:].detach(),  # for text token
-                                                           cur_input_embeds_no_im[i][-1,:].unsqueeze(0) # for im_start token
-                                                           ],dim=0)
+                    cur_input_embeds_no_im[i] = torch.cat(
+                        [
+                            cur_input_embeds_no_im[i][0,:].unsqueeze(0),  # for im_end token
+                            cur_input_embeds_no_im[i][1:-1,:].detach(),  # for text token
+                            cur_input_embeds_no_im[i][-1,:].unsqueeze(0)  # for im_start token
+                        ], dim=0
+                    )
             elif getattr(self.config, "training_stage", None) == 'special-token-sft':
                 for i in range(len(cur_input_embeds_no_im)):
                     special_token_idx = torch.where(cur_input_ids_noim[i] > self.config.eos_token_id)[0].tolist()
-                    cur_input_embeds_no_im[i] = torch.cat([cur_input_embeds_no_im[i][j,:].unsqueeze(0) if j in special_token_idx \
-                                                            else cur_input_embeds_no_im[i][j,:].detach().unsqueeze(0) \
-                                                            for j in range(len(cur_input_embeds_no_im[i]))], dim=0)
+                    cur_input_embeds_no_im[i] = torch.cat([
+                        cur_input_embeds_no_im[i][j,:].unsqueeze(0) if j in special_token_idx
+                        else cur_input_embeds_no_im[i][j,:].detach().unsqueeze(0)
+                        for j in range(len(cur_input_embeds_no_im[i]))
+                    ], dim=0)
 
             cur_new_input_embeds = []
             cur_new_labels = []
             cur_new_attention_mask = []
-            for i in range(num_images + 1): # to add multimodal feature internal the text feature
+            for i in range(num_images + 1):  # to add multimodal feature internal the text feature
                 cur_new_input_embeds.append(cur_input_embeds_no_im[i])
                 cur_new_labels.append(cur_labels_noim[i])
                 cur_new_attention_mask.append(cur_attention_mask_noim[i])
                 if i < num_images:
-                    # print(num_images, f"({len(image_features)}, {len(image_features[batch_idx])})", f"({len(qwen2vl_image_features)}, {len(qwen2vl_image_features[batch_idx])})", f"({batch_idx}, {cur_batch_image_idx})")
+                    # print(num_images, f"({len(image_features)}, {len(image_features[batch_idx])})", \
+                    # f"({len(qwen2vl_image_features)}, {len(qwen2vl_image_features[batch_idx])})", \
+                    # f"({batch_idx}, {cur_batch_image_idx})")
                     siglip_feat = image_features[batch_idx][cur_batch_image_idx]
                     try:
                         qwen2vl_feat = qwen2vl_image_features[batch_idx][cur_batch_image_idx]
@@ -435,12 +487,33 @@ class ValleyMetaForCausalLM(ABC):
                     # print(siglip_feat.shape, qwen2vl_feat.shape, cur_image_features.shape)
                     cur_batch_image_idx += 1
                     cur_new_input_embeds.append(cur_image_features)
-                    cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    cur_new_labels.append(
+                        torch.full(
+                            (cur_image_features.shape[0],),
+                            IGNORE_INDEX,
+                            device=cur_labels.device,
+                            dtype=cur_labels.dtype
+                        )
+                    )
                     # build attention_mask for pack
-                    if getattr(self, "use_pack", False) == False:
-                        cur_new_attention_mask.append(torch.full((cur_image_features.shape[0],), True, device=cur_attention_mask.device, dtype=cur_attention_mask.dtype))
+                    if getattr(self, "use_pack", False) is False:
+                        cur_new_attention_mask.append(
+                            torch.full(
+                                (cur_image_features.shape[0],),
+                                True,
+                                device=cur_attention_mask.device,
+                                dtype=cur_attention_mask.dtype
+                            )
+                        )
                     else:
-                        cur_new_attention_mask.append(torch.full((cur_image_features.shape[0],), cur_img_attention_mask[i], device=cur_attention_mask.device, dtype=cur_attention_mask.dtype))
+                        cur_new_attention_mask.append(
+                            torch.full(
+                                (cur_image_features.shape[0],),
+                                cur_img_attention_mask[i],
+                                device=cur_attention_mask.device,
+                                dtype=cur_attention_mask.dtype
+                            )
+                        )
 
             cur_new_input_embeds = torch.cat(cur_new_input_embeds)
             cur_new_labels = torch.cat(cur_new_labels)
@@ -462,33 +535,61 @@ class ValleyMetaForCausalLM(ABC):
         batch_size = len(new_input_embeds)
 
         new_input_embeds_padded = []
-        new_labels_padded = torch.full((batch_size, max_len), IGNORE_INDEX, dtype=new_labels[0].dtype, device=new_labels[0].device)
-        new_attention_mask_padded = torch.zeros((batch_size, max_len), dtype=new_attention_mask[0].dtype, device=new_attention_mask[0].device)
+        new_labels_padded = torch.full(
+            (batch_size, max_len),
+            IGNORE_INDEX,
+            dtype=new_labels[0].dtype,
+            device=new_labels[0].device
+        )
+        new_attention_mask_padded = torch.zeros(
+            (batch_size, max_len),
+            dtype=new_attention_mask[0].dtype,
+            device=new_attention_mask[0].device
+        )
         # attention_mask = torch.zeros((batch_size, max_len), dtype=attention_mask.dtype, device=attention_mask.device)
         position_ids = torch.zeros((batch_size, max_len), dtype=position_ids.dtype, device=position_ids.device)
 
-        for i, (cur_new_embed, cur_new_labels, cur_attention_mask) in enumerate(zip(new_input_embeds, new_labels, new_attention_mask)):
+        for i, (cur_new_embed, cur_new_labels, cur_attention_mask) \
+                in enumerate(zip(new_input_embeds, new_labels, new_attention_mask)):
             cur_len = cur_new_embed.shape[0]
-            if not self.training: # for inference
+            if not self.training:  # for inference
                 new_input_embeds_padded.append(torch.cat((
-                    torch.zeros((max_len - cur_len, cur_new_embed.shape[1]), dtype=cur_new_embed.dtype, device=cur_new_embed.device),
+                    torch.zeros(
+                        (max_len - cur_len, cur_new_embed.shape[1]),
+                        dtype=cur_new_embed.dtype,
+                        device=cur_new_embed.device
+                    ),
                     cur_new_embed
                 ), dim=0))
                 if cur_len > 0:
                     new_labels_padded[i, -cur_len:] = cur_new_labels
                     new_attention_mask_padded[i, -cur_len:] = cur_attention_mask
                     # attention_mask[i, -cur_len:] = True
-                    position_ids[i, -cur_len:] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
+                    position_ids[i, -cur_len:] = torch.arange(
+                        0,
+                        cur_len,
+                        dtype=position_ids.dtype,
+                        device=position_ids.device
+                    )
             else:
                 new_input_embeds_padded.append(torch.cat((
                     cur_new_embed,
-                    torch.zeros((max_len - cur_len, cur_new_embed.shape[1]), dtype=cur_new_embed.dtype, device=cur_new_embed.device)
+                    torch.zeros(
+                        (max_len - cur_len, cur_new_embed.shape[1]),
+                        dtype=cur_new_embed.dtype,
+                        device=cur_new_embed.device
+                    )
                 ), dim=0))
                 if cur_len > 0:
                     new_labels_padded[i, :cur_len] = cur_new_labels
                     new_attention_mask_padded[i, :cur_len] = cur_attention_mask
                     # attention_mask[i, :cur_len] = True
-                    position_ids[i, :cur_len] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
+                    position_ids[i, :cur_len] = torch.arange(
+                        0,
+                        cur_len,
+                        dtype=position_ids.dtype,
+                        device=position_ids.device
+                    )
 
         new_input_embeds = torch.stack(new_input_embeds_padded, dim=0)
 
@@ -505,13 +606,15 @@ class ValleyMetaForCausalLM(ABC):
         if _position_ids is None:
             position_ids = None
 
-        if getattr(self, "use_pack", False) == True:
+        if getattr(self, "use_pack", False) is True:
             # new_attention_mask = new_attention_mask.bool()
-            new_attention_mask = self._prepare_4d_causal_attention_mask_for_pack(new_attention_mask, dtype=new_input_embeds.dtype) # only for pack
+            new_attention_mask = self._prepare_4d_causal_attention_mask_for_pack(
+                new_attention_mask,
+                dtype=new_input_embeds.dtype
+            )  # only for pack
 
-        # print(f"pack_ids: {pack_ids}, new_input_embeds.shape: {new_input_embeds.shape}, image_grid_thw: {image_grid_thw}, ")
         return None, position_ids, new_attention_mask, past_key_values, new_input_embeds, new_labels
-    
+
     def _prepare_4d_causal_attention_mask_for_pack(self, attention_mask, dtype):
         """
         Prepares a 4D causal attention mask for packed sequences.
@@ -521,8 +624,10 @@ class ValleyMetaForCausalLM(ABC):
         and not across different sequences.
 
         Args:
-            attention_mask (torch.Tensor): A 1D tensor where each element indicates whether the corresponding token is valid (non-zero) or not (zero).
-                Tokens with the same non-zero value belong to the same sequence. e.g. [1, 1, 1, 2, 2, 2, 3, 3, 3, 0, 0], 0 is the padding token.
+            attention_mask (torch.Tensor): A 1D tensor where each element,
+                indicating whether the corresponding token is valid (non-zero) or not (zero).
+                Tokens with the same non-zero value belong to the same sequence.
+                e.g. [1, 1, 1, 2, 2, 2, 3, 3, 3, 0, 0], 0 is the padding token.
             dtype (torch.dtype): The data type to use for the resulting mask.
 
         Returns:
@@ -530,8 +635,16 @@ class ValleyMetaForCausalLM(ABC):
                 The mask is filled with `torch.finfo(dtype).min` where tokens cannot attend and 0 where they can.
         """
         batch_size, max_len = attention_mask.shape
-        tril_mask = torch.tril(torch.ones((batch_size, 1, max_len, max_len), dtype=torch.bool, device=attention_mask.device))
-        tril_mask = tril_mask & (attention_mask[:, None, None, :] == attention_mask[:, None, :, None]) & (attention_mask[:, None, None, :] != 0)
+        tril_mask = torch.tril(
+            torch.ones(
+                (batch_size, 1, max_len, max_len),
+                dtype=torch.bool,
+                device=attention_mask.device
+            )
+        )
+        tril_mask = tril_mask \
+            & (attention_mask[:, None, None, :] == attention_mask[:, None, :, None]) \
+            & (attention_mask[:, None, None, :] != 0)
         tril_mask = tril_mask.to(dtype=dtype)
         tril_mask[tril_mask == 0] = torch.finfo(dtype).min
         tril_mask[tril_mask == 1] = 0
@@ -543,8 +656,10 @@ class ValleyMetaForCausalLM(ABC):
             tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
             self.resize_token_embeddings(len(tokenizer))
 
-        if model_args.mm_use_im_start_end :
-            logger.info('Model is using im_start and im_end token placeholder. Adding <im_start> and <im_end> to tokenizer...')
+        if model_args.mm_use_im_start_end:
+            logger.info(
+                'Model is using im_start and im_end token placeholder. Adding <im_start> and <im_end> to tokenizer...'
+            )
             num_new_tokens = tokenizer.add_tokens(
                 [DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_VI_START_TOKEN, DEFAULT_VI_END_TOKEN],
                 special_tokens=True)
@@ -578,12 +693,20 @@ class ValleyMetaForCausalLM(ABC):
                     input_embeddings[-num_new_tokens:] = embed_tokens_weight
                 else:
                     raise ValueError(
-                        f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}.")
-        
+                        f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. "
+                        f"Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}."
+                    )
+
         elif getattr(model_args, "use_special_start_end_token", False):
-            logger.info('Model is using special token for video frame, image and grounding box. Adding <im_start>/<im_end>/<vi_start>/<vi_end>/<cor>/</cor> to tokenizer...')
+            logger.info(
+                'Model is using special token for video frame, image and grounding box.'
+                'Adding <im_start>/<im_end>/<vi_start>/<vi_end>/<cor>/</cor> to tokenizer...'
+            )
             num_new_tokens = tokenizer.add_tokens(
-                [DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_VI_START_TOKEN, DEFAULT_VI_END_TOKEN, COR_START_TOKEN, COR_END_TOKEN],
+                [
+                    DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, DEFAULT_VI_START_TOKEN,
+                    DEFAULT_VI_END_TOKEN, COR_START_TOKEN, COR_END_TOKEN
+                ],
                 special_tokens=True)
             self.resize_token_embeddings(len(tokenizer))
 
@@ -602,7 +725,8 @@ class ValleyMetaForCausalLM(ABC):
             if model_args.tune_mm_mlp_adapter and self.config.training_stage == 'stage1':
                 for p in self.get_input_embeddings().parameters():
                     p.requires_grad = True
-                if not getattr(self.config, "tie_word_embeddings", True): # if model's word embedding is tied with lm head, then do not freeze lm head(word embed)
+                # if model's word embedding is tied with lm head, then do not freeze lm head(word embed)
+                if not getattr(self.config, "tie_word_embeddings", True):
                     for p in self.get_output_embeddings().parameters():
                         p.requires_grad = False
 
@@ -616,7 +740,9 @@ class ValleyMetaForCausalLM(ABC):
                     input_embeddings[-num_new_tokens:] = embed_tokens_weight
                 else:
                     raise ValueError(
-                        f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}.")
+                        f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. "
+                        f"Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}."
+                    )
 
         elif model_args.mm_use_im_patch_token:
             if model_args.tune_mm_mlp_adapter:

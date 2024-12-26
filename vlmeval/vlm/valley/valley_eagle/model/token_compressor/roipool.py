@@ -1,5 +1,6 @@
 from torch import nn
 
+
 class ROIPoolTokenCompressor(nn.Module):
     """
     A Pytorch module for compressing tokens using RoI Pooling.
@@ -12,8 +13,10 @@ class ROIPoolTokenCompressor(nn.Module):
         mode (str): The mode for RoI Pooling. Default is "single". Options: "single" or "multiple".
 
     Note:
-        When mode is "single", max_vision_token means the max vision token number of one image (no cropping) or one tile (cropping).
-        When mode is "multiple", max_vision_token means the max vision token number of all tiles (only for cropping).
+        When mode is "single", max_vision_token means the max vision token number of
+        one image (no cropping) or one tile (cropping).
+        When mode is "multiple", max_vision_token means the max vision token number of
+        all tiles (only for cropping).
 
     Example:
     >>> compressor = ROIPoolTokenCompressor(max_vision_token=64, mode="single")
@@ -26,15 +29,14 @@ class ROIPoolTokenCompressor(nn.Module):
     >>> output_tensor = compressor(input_tensor)
     >>> print(output_tensor.shape) # Expected shape: [4, 64, 4096]
     """
-    
+
     def __init__(self, max_vision_token, mode="single") -> None:
         super(ROIPoolTokenCompressor, self).__init__()
         assert mode in ["single", "multiple"], "Unspported mode for ROIPoolTokenCompressor"
-        if type(max_vision_token) == str:
+        if type(max_vision_token) is str:
             max_vision_token = eval(max_vision_token)
         self.max_vision_token = max_vision_token
         self.mode = mode
-
 
     def _inner_forward(self, x):
         B, N, dim = x.shape
@@ -43,15 +45,17 @@ class ROIPoolTokenCompressor(nn.Module):
         if self.mode == "single" and N > self.max_vision_token:
             H_new = W_new = int(self.max_vision_token ** 0.5)
             x = x.view(B, H, W, dim).permute(0, 3, 1, 2)
-            x = nn.AdaptiveAvgPool2d((H_new, W_new))(x) # different from roi pooling, but in square image, it seems the same
+            # different from roi pooling, but in square image, it seems the same
+            x = nn.AdaptiveAvgPool2d((H_new, W_new))(x)
             x = x.permute(0, 2, 3, 1).view(B, -1, dim)
-        
+
         elif self.mode == "multiple" and (B * N) > self.max_vision_token:
             H_new = W_new = int((self.max_vision_token / B) ** 0.5)
             x = x.view(B, H, W, dim).permute(0, 3, 1, 2)
-            x = nn.AdaptiveAvgPool2d((H_new, W_new))(x) # different from roi pooling, but in square image, it seems the same
+            # different from roi pooling, but in square image, it seems the same
+            x = nn.AdaptiveAvgPool2d((H_new, W_new))(x)
             x = x.permute(0, 2, 3, 1).view(B, -1, dim)
-        
+
         return x
 
     def forward(self, x):

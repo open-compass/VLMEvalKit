@@ -11,7 +11,7 @@ class TokenCompressorStream(nn.Module):
         super(TokenCompressorStream, self).__init__()
         self.compressor_list = nn.ModuleList(compressor_list)
         self.compressor_type_list = compressor_type_list
-    
+
     def has_type(self, target):
         return target in self.compressor_type_list
 
@@ -19,7 +19,7 @@ class TokenCompressorStream(nn.Module):
         # x can be tensor(B, N, C) or [tensor(N1, C), tensor(N2, C), ...]
         for type, compressor in zip(self.compressor_type_list, self.compressor_list):
             x = compressor(x)
-            
+
         return x
 
 
@@ -44,7 +44,10 @@ def build_token_compressor(config) -> nn.Sequential:
             compressor = ROIPoolTokenCompressor(**compressor_params)
         elif compressor_type == "minicpm_resampler":
             assert config.mm_projector_type == "identity_patch"
-            compressor = MiniCPMResampler(embed_dim=config.hidden_size, num_heads=config.hidden_size // 128, kv_dim=config.mm_hidden_size, **compressor_params)
+            compressor = MiniCPMResampler(embed_dim=config.hidden_size,
+                                          num_heads=config.hidden_size // 128,
+                                          kv_dim=config.mm_hidden_size,
+                                          **compressor_params)
         else:
             raise ValueError("Unspported Compressor type!")
 

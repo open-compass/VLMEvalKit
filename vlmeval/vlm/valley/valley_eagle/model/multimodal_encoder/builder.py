@@ -2,6 +2,7 @@ import torch
 from transformers.models.qwen2_vl.modeling_qwen2_vl import Qwen2VisionTransformerPretrainedModel
 from ...util.vision_encoder_config import qwen2vl_vit_config
 
+
 def build_vision_tower(vision_tower_cfg, **kwargs):
     vision_tower = getattr(vision_tower_cfg, "mm_vision_tower", getattr(vision_tower_cfg, "vision_tower", None))
     if getattr(vision_tower_cfg, "language", None) is None:

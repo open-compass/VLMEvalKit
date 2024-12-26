@@ -12,11 +12,11 @@ moderation_msg = "YOUR INPUT VIOLATES OUR CONTENT MODERATION GUIDELINES. PLEASE 
 
 handler = None
 import logging
-import sys
 
 import warnings
 import torch.distributed as dist
 from prettytable import PrettyTable
+
 
 def check_model_config(config):
     model_class = getattr(config, "model_class", None)
@@ -24,20 +24,29 @@ def check_model_config(config):
     if model_class not in ["valley-video", "valley-product", "valley-gandalf"]:
         if model_class == 'tinyvalley':
             config.model_class = 'valley-product'
-            warnings.warn('"tinyvalley" belongs to "valley-product" model class, force set to "valley-product" here.', category=None, stacklevel=1, source=None)
-        elif model_class == None:
+            warnings.warn(
+                '"tinyvalley" belongs to "valley-product" model class, force set to "valley-product" here.',
+                category=None,
+                stacklevel=1,
+                source=None
+            )
+        elif model_class is None:
             raise ValueError("Please specify 'model_class' in 'config.json' in model path")
         else:
-            raise ValueError("Invalid model class. Only [ 'valley-video', 'valley-product', 'valley-gandalf'] is now supported.")
-    
+            raise ValueError(
+                "Invalid model class. Only [ 'valley-video', 'valley-product', 'valley-gandalf'] is now supported."
+            )
+
     if llm_name not in ['llama','llama_2', 'mistral','qwen2']:
-        if llm_name == None:
+        if llm_name is None:
             raise ValueError("Please specify 'model_class' in 'config.json' in model path")
         else:
             raise ValueError("Unknown LLM Name. Only ['llama', 'llama_2', 'mistral'] is now supported.")
     return config
+
+
 def print_trainable_params(model):
-    logger = get_logger('train') # get the logger while train
+    logger = get_logger('train')  # get the logger while train
     if dist.get_rank() == 0:
         trainable_params = [k for k,v in model.named_parameters() if v.requires_grad]
         trainable_params_group = {}
@@ -46,27 +55,28 @@ def print_trainable_params(model):
             block_num = re.findall(r'blocks.(\d+)\.',para)
             if layer_num:
                 cur_layer = int(layer_num[0])
-                if para.replace('layers.'+layer_num[0],'layers.*') not in trainable_params_group:
-                    trainable_params_group[para.replace('layers.'+layer_num[0],'layers.*')] = layer_num[0]
-                elif cur_layer > int(trainable_params_group[para.replace('layers.'+layer_num[0],'layers.*')]):
-                    trainable_params_group[para.replace('layers.'+layer_num[0],'layers.*')] = layer_num[0]
+                if para.replace('layers.' + layer_num[0],'layers.*') not in trainable_params_group:
+                    trainable_params_group[para.replace('layers.' + layer_num[0],'layers.*')] = layer_num[0]
+                elif cur_layer > int(trainable_params_group[para.replace('layers.' + layer_num[0],'layers.*')]):
+                    trainable_params_group[para.replace('layers.' + layer_num[0],'layers.*')] = layer_num[0]
             elif block_num:
                 cur_layer = int(block_num[0])
-                if para.replace('blocks.'+block_num[0],'blocks.*') not in trainable_params_group:
-                    trainable_params_group[para.replace('blocks.'+block_num[0],'blocks.*')] = block_num[0]
-                elif cur_layer > int(trainable_params_group[para.replace('blocks.'+block_num[0],'blocks.*')]):
-                    trainable_params_group[para.replace('blocks.'+block_num[0],'blocks.*')] = block_num[0]
+                if para.replace('blocks.' + block_num[0],'blocks.*') not in trainable_params_group:
+                    trainable_params_group[para.replace('blocks.' + block_num[0],'blocks.*')] = block_num[0]
+                elif cur_layer > int(trainable_params_group[para.replace('blocks.' + block_num[0],'blocks.*')]):
+                    trainable_params_group[para.replace('blocks.' + block_num[0],'blocks.*')] = block_num[0]
             else:
                 trainable_params_group[para] = '0'
         table = PrettyTable(['Parameter Name','Max Layer Number'])
         for key in trainable_params_group.keys():
-            table.add_row([key, str(int(trainable_params_group[key])+1)])
-        
+            table.add_row([key, str(int(trainable_params_group[key]) + 1)])
+
         print(table)
         total_num = sum([v.numel() for k,v in model.named_parameters()])
         trainable_num = sum([v.numel() for k,v in model.named_parameters() if v.requires_grad])
-        logger.info('Total: {:.2f}M'.format(total_num/1e6))
-        logger.info(' Trainable: {:.2f}M'.format(trainable_num/1e6))
+        logger.info('Total: {:.2f}M'.format(total_num / 1e6))
+        logger.info(' Trainable: {:.2f}M'.format(trainable_num / 1e6))
+
 
 def rank_zero_info(content: str, logger, print_type: str = "info"):
     output_method = getattr(logger, print_type)
@@ -92,7 +102,7 @@ def get_logger(name: str):
     return logger
 
 
-def build_logger(logger_name, logger_filename, logdir = LOGDIR):
+def build_logger(logger_name, logger_filename, logdir=LOGDIR):
     global handler
 
     formatter = logging.Formatter(
@@ -190,9 +200,9 @@ def violates_moderation(text):
     try:
         ret = requests.post(url, headers=headers, data=data, timeout=5)
         flagged = ret.json()["results"][0]["flagged"]
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException:
         flagged = False
-    except KeyError as e:
+    except KeyError:
         flagged = False
 
     return flagged

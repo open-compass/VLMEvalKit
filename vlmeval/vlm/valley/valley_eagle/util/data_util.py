@@ -27,6 +27,7 @@ from .config import (
 )
 SPLIT_TOKEN = "<SPLIT_TOKEN>"
 
+
 def collate_wrapper(batch):
     try:
         image_list = [b[0] for b in batch]
@@ -67,7 +68,7 @@ class KeywordsStoppingCriteria(StoppingCriteria):
         if self.start_len is None:
             self.start_len = self.input_ids.shape[1]
         else:
-            outputs = self.tokenizer.batch_decode(output_ids[:, self.start_len :], skip_special_tokens=True)[0]
+            outputs = self.tokenizer.batch_decode(output_ids[:, self.start_len:], skip_special_tokens=True)[0]
             for keyword in self.keywords:
                 if keyword in outputs:
                     return True
@@ -120,7 +121,8 @@ def tokenizer_image_token(
         else:
             chunk_ids = tokenizer(chunk).input_ids
             # For Qwen2-7B, bos token exists but does not appear in the beginning
-            if chunk_ids[0] != getattr(tokenizer,'bos_token_id', None): offset = 0  
+            if chunk_ids[0] != getattr(tokenizer,'bos_token_id', None):
+                offset = 0
             input_ids.extend(chunk_ids[offset:])
 
     # prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<image>')]
@@ -198,7 +200,7 @@ def _mask_targets(target, tokenized_lens, speakers, only_mask_system=False):
     if not only_mask_system:
         for tokenized_len, speaker in zip(tokenized_lens, speakers):
             if speaker == "human":
-                target[cur_idx + 2 : cur_idx + tokenized_len] = IGNORE_INDEX
+                target[cur_idx + 2: cur_idx + tokenized_len] = IGNORE_INDEX
             cur_idx += tokenized_len
 
 
@@ -221,6 +223,7 @@ def _add_speaker_and_signal(header, source, get_conversation=True):
     conversation += BEGIN_SIGNAL
     return conversation
 
+
 def preprocess_multimodal(
     conversations: Sequence[dict],
     img_num,
@@ -234,21 +237,23 @@ def preprocess_multimodal(
         if data_args.model_class in ["valley-product", "valley-gandalf", "tinyvalley", "valley-product-mistral"]:
             if DEFAULT_VIDEO_TOKEN in sentence["value"]:
                 if data_args.use_special_start_end_token:
-                    video_replace_token =  (DEFAULT_VI_START_TOKEN  +DEFAULT_IMAGE_TOKEN+ DEFAULT_VI_END_TOKEN) * img_num
+                    video_replace_token = (
+                        DEFAULT_VI_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_VI_END_TOKEN
+                    ) * img_num
                 else:
-                    video_replace_token =  DEFAULT_IMAGE_TOKEN * img_num
+                    video_replace_token = DEFAULT_IMAGE_TOKEN * img_num
                 # video_replace_token = ' '.join(f'Frame {i}: {DEFAULT_IMAGE_TOKEN}' for i in range(img_num))
                 sentence["value"] = sentence['value'].replace(DEFAULT_VIDEO_TOKEN, '').strip()
                 sentence["value"] = video_replace_token + '\n' + sentence["value"]
-            else: 
+            else:
                 segs = re.split(DEFAULT_IMAGE_TOKEN, sentence["value"])
                 if data_args.use_special_start_end_token:
-                    sentence["value"] = (DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN).join(segs[: img_num + 1]) + "".join(
-                        segs[img_num + 1 :]
-                    )
+                    sentence["value"] = (
+                        DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
+                    ).join(segs[: img_num + 1]) + "".join(segs[img_num + 1:])
                 else:
                     sentence["value"] = DEFAULT_IMAGE_TOKEN.join(segs[: img_num + 1]) + "".join(
-                        segs[img_num + 1 :]
+                        segs[img_num + 1:]
                     )
         elif data_args.model_class in ["valley-video", "valley-video-mistral"]:
             if DEFAULT_IMAGE_TOKEN in sentence["value"] or DEFAULT_VIDEO_TOKEN in sentence["value"]:
@@ -433,7 +438,7 @@ def preprocess_mistral(
                 round_len = len(tokenizer(rou).input_ids)
                 instruction_len = len(tokenizer(parts[0]).input_ids) - 1
 
-            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
+            target[cur_len: cur_len + instruction_len] = IGNORE_INDEX
 
             cur_len += round_len
         if not only_mask_system:
@@ -535,18 +540,18 @@ def preprocess_v1(
             input_ids_ = torch.cat([input_ids_, cur_input_ids_], dim=0)
             if only_mask_system:
                 mask_len = len(
-                    tokenizer_image_token(re.sub(f"{conv.roles[0]}:[\s\S]*", f"{conv.roles[0]}:", rou), tokenizer)[1:]
+                    tokenizer_image_token(re.sub(rf"{conv.roles[0]}:[\s\S]*", f"{conv.roles[0]}:", rou), tokenizer)[1:]
                 )
             else:
                 mask_len = len(
-                    tokenizer_image_token(re.sub(f"{conv.roles[1]}:[\s\S]*", f"{conv.roles[1]}:", rou), tokenizer)[1:]
+                    tokenizer_image_token(re.sub(rf"{conv.roles[1]}:[\s\S]*", f"{conv.roles[1]}:", rou), tokenizer)[1:]
                 )
             # targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
             targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
         else:
             cur_input_ids_ = tokenizer(rou, return_tensors="pt")["input_ids"][0, 1:]
             input_ids_ = torch.cat([input_ids_, cur_input_ids_], dim=0)
-            mask_len = len(tokenizer(re.sub(f"{conv.roles[1]}:[\s\S]*", f"{conv.roles[1]}:", rou))["input_ids"][1:])
+            mask_len = len(tokenizer(re.sub(rf"{conv.roles[1]}:[\s\S]*", f"{conv.roles[1]}:", rou))["input_ids"][1:])
             # targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
             targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
     return {"input_ids": input_ids_, "labels": targets_}
@@ -573,12 +578,13 @@ def preprocess_plain(
 
     return dict(input_ids=input_ids, labels=targets)
 
+
 def preprocess_uninstruct_text_image(
     sources,
     tokenizer: transformers.PreTrainedTokenizer,
 ) -> Dict:
     content = sources["content"]
-    
+
     input_ids_ = torch.tensor([1], dtype=torch.int64) if tokenizer.bos_token else torch.tensor([], dtype=torch.int64)
     targets_ = torch.tensor([-100], dtype=torch.int64) if tokenizer.bos_token else torch.tensor([], dtype=torch.int64)
     cur_input_ids_ = tokenizer_image_token(content, tokenizer, return_tensors="pt")[1:]
@@ -592,7 +598,7 @@ def preprocess_text(
     sources,
     tokenizer: transformers.PreTrainedTokenizer,
 ) -> Dict:
-    
+
     content = sources["content"]
     if len(content) > SEQ_MAX_LEN:
         # This error will be caught by the __getitem__ method in LazySupervisedDataset within valley/data/dataset.py,
@@ -600,13 +606,14 @@ def preprocess_text(
         raise ValueError("sequence is too long !!!")
 
     input_tokens = []
-    bos_token = [tokenizer.bos_token] if tokenizer.bos_token else [] # suppor qwen2
+    bos_token = [tokenizer.bos_token] if tokenizer.bos_token else []  # suppor qwen2
     for sub_text in content.split(SPLIT_TOKEN):
-        input_tokens.extend( bos_token + tokenizer.tokenize(sub_text) + [tokenizer.eos_token])
+        input_tokens.extend(bos_token + tokenizer.tokenize(sub_text) + [tokenizer.eos_token])
     input_ids = torch.tensor(tokenizer.convert_tokens_to_ids(input_tokens))
     targets = input_ids.clone()
-    
+
     return {"input_ids": input_ids, "labels": targets}
+
 
 def preprocess_qwen2(
         source,
@@ -616,7 +623,11 @@ def preprocess_qwen2(
         only_mask_system: bool = False,
 ):
     '''
-      "chat_template": "{% for message in messages %}{% if loop.first and messages[0]['role'] != 'system' %}{{ '<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n' }}{% endif %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}",
+      "chat_template":
+      "{% for message in messages %}{% if loop.first and messages[0]['role'] != 'system' %}
+      {{ '<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n' }}{% endif %}{{'<|im_start|>' +
+      message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}
+      {% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}",
     '''
     conv = conversation_lib.default_conversation.copy()
     assert conv.sep_style == conversation_lib.SeparatorStyle.QWEN2
@@ -644,17 +655,20 @@ def preprocess_qwen2(
             cur_input_ids_ = tokenizer_image_token(rou, tokenizer, return_tensors='pt')
             input_ids_ = torch.cat([input_ids_, cur_input_ids_], dim=0)
             if only_mask_system:
-                mask_len = len(tokenizer_image_token(re.sub(f'{conv.roles[0]}\n[\s\S]*', f'{conv.roles[0]}:', rou), tokenizer))
+                mask_len = len(tokenizer_image_token(re.sub(rf'{conv.roles[0]}\n[\s\S]*', f'{conv.roles[0]}:', rou),
+                                                     tokenizer))
             else:
-                mask_len = len(tokenizer_image_token(re.sub(f'{conv.roles[1]}\n[\s\S]*', f'{conv.roles[1]}:', rou), tokenizer))
+                mask_len = len(tokenizer_image_token(re.sub(rf'{conv.roles[1]}\n[\s\S]*', f'{conv.roles[1]}:', rou),
+                                                     tokenizer))
             targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
         else:
             cur_input_ids_ = tokenizer(rou, return_tensors='pt')["input_ids"][0, :]
             input_ids_ = torch.cat([input_ids_, cur_input_ids_], dim=0)
-            mask_len = len(tokenizer(re.sub(f'{conv.roles[1]}\n[\s\S]*', f'{conv.roles[1]}:', rou))["input_ids"][:])
+            mask_len = len(tokenizer(re.sub(rf'{conv.roles[1]}\n[\s\S]*', rf'{conv.roles[1]}:', rou))["input_ids"][:])
             # targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
             targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
     return {"input_ids": input_ids_, "labels": targets_}
+
 
 def preprocess(
     sources: Sequence[str],
@@ -670,7 +684,9 @@ def preprocess(
     3. Tokenize the concatenated conversation;
     4. Make a deepcopy as the target. Mask human words with IGNORE_INDEX.
     """
-    assert conversation_lib.default_conversation.version in ["v0", "v1", "mistral", "llama_2", "plain", 'qwen2','gemma2']
+    assert conversation_lib.default_conversation.version in [
+        "v0", "v1", "mistral", "llama_2", "plain", 'qwen2','gemma2'
+    ]
     # v0 is for vicuna-v0, sep is '###'
     # v1 is for vicuna-v1.x, sep is ' ', sep2 is '</s>'
     # mistral is for mistral, sep is [INST]
@@ -716,11 +732,13 @@ def preprocess(
 
 
 def find_closest_aspect_ratio(aspect_ratio, min_tile_num, max_tile_num, width, height, tiled_image_size):
-    """ Find the closest aspect ratio from a min tiles' number and a max tiles' number to the current image's aspect ratio. 
-    An example usage: 
-    find_closest_aspect_ratio(1.5, 1, 6, 1200, 800, 1024) 
+    """
+    Find the closest aspect ratio from a min tiles' number and a max tiles' number to the current image's aspect ratio.
+    An example usage:
+    find_closest_aspect_ratio(1.5, 1, 6, 1200, 800, 1024)
 
-    This will return the aspect ratio that is closest to 1.5, considering the image dimensions  and preferring a larger relative area to the 'image_size'. 
+    This will return the aspect ratio that is closest to 1.5, considering the image dimensions  and preferring a larger
+    relative area to the 'image_size'.
     In case of a tie, the ratio that results in a larger relative area compared to the original image size is chosen.
 
     Args:
@@ -732,15 +750,16 @@ def find_closest_aspect_ratio(aspect_ratio, min_tile_num, max_tile_num, width, h
     tiled_image_size (int): the tile size , e.g, 336.
 
     Returns:
-        Tuple[int, int]: The aspect ratio closest to the current image's aspect ratio based on the criteria, e.g., (16, 9).
+        Tuple[int, int]: The aspect ratio closest to the current image's aspect ratio
+        based on the criteria, e.g., (16, 9).
     """
     # calculate the existing image aspect ratio
     target_ratios = set(
         (i, j) for n in range(min_tile_num, max_tile_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
         i * j <= max_tile_num and i * j >= min_tile_num)
-    
+
     # sort by aera
-    target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1]) 
+    target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
 
     # find the best ratio
     best_ratio_diff = float('inf')
@@ -752,9 +771,11 @@ def find_closest_aspect_ratio(aspect_ratio, min_tile_num, max_tile_num, width, h
         if ratio_diff < best_ratio_diff:
             best_ratio_diff = ratio_diff
             best_ratio = ratio
-        elif ratio_diff == best_ratio_diff: 
+        elif ratio_diff == best_ratio_diff:
             # choose the larger area, if the aspect ratio is the same like 2:3 and 4:6.
-            # And in this case(2:3 and 4:6), if the image aera is larger than 1/2 sum of all tiles aera, then choose 4:6, because the target_ratios is sorted, 4:6 is behind 2:3, the final ratio will be 4:6. 
+            # And in this case(2:3 and 4:6), if the image aera is larger than 1/2 sum of all tiles aera,
+            # then choose 4:6,
+            # because the target_ratios is sorted, 4:6 is behind 2:3, the final ratio will be 4:6.
             all_tile_aera_sum = tiled_image_size * tiled_image_size * ratio[0] * ratio[1]
             if area > 0.5 * all_tile_aera_sum:
                 best_ratio = ratio
@@ -762,8 +783,8 @@ def find_closest_aspect_ratio(aspect_ratio, min_tile_num, max_tile_num, width, h
 
 
 def dynamic_preprocess(image, min_num=1, max_num=6, tiled_image_size=448, use_thumbnail=False):
-    """ 
-    Processes an image dynamically based on its aspect ratio and specified parameters, 
+    """
+    Processes an image dynamically based on its aspect ratio and specified parameters,
     splitting it into sub-images or creating a thumbnail as needed.
 
     Example:
@@ -780,12 +801,10 @@ def dynamic_preprocess(image, min_num=1, max_num=6, tiled_image_size=448, use_th
 
     Returns:
         List[PIL.Image.Image]: A list of processed images after resizing and/or splitting, with an optional thumbnail.
-        
+
     """
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
-
-    
 
     # find the closest aspect ratio to the target
     target_aspect_ratio = find_closest_aspect_ratio(

@@ -15,6 +15,7 @@ class IdentityMap(nn.Module):
     def config(self):
         return {"mm_projector_type": 'identity'}
 
+
 class IdentityPatchMap(nn.Module):
     def __init__(self):
         super().__init__()
@@ -275,40 +276,41 @@ class AdaptPyraPooler(nn.Module):
         x = self.pool(x).permute([0, 2, 1])
         return x
 
+
 class MlpPixelShuffle(nn.Module):
     def __init__(self, dim_in, dim_out, pixelshuffle_downsample_ratio, mlp_hidden_dim=None):
         super().__init__()
         self.mm_projector_type = 'mlp_pixel_shuffle'
         if mlp_hidden_dim is None:
             self.mlp = nn.Sequential(
-                nn.Linear(int(dim_in*(pixelshuffle_downsample_ratio**2)), dim_out),
+                nn.Linear(int(dim_in * (pixelshuffle_downsample_ratio ** 2)), dim_out),
                 nn.GELU(),
                 nn.Linear(dim_out, dim_out)
             )
         else:
             self.mlp = nn.Sequential(
-                nn.Linear(int(dim_in*(pixelshuffle_downsample_ratio**2)), mlp_hidden_dim),
+                nn.Linear(int(dim_in * (pixelshuffle_downsample_ratio ** 2)), mlp_hidden_dim),
                 nn.GELU(),
                 nn.Linear(mlp_hidden_dim, dim_out)
             )
         self.scale_factor = pixelshuffle_downsample_ratio
 
     def pixel_shuffle(self, x, scale_factor=2):
-        # brrow from https://github.com/OpenGVLab/InternVL/blob/bb8d3900c1cebb65d80618862becdb49a3362cbc/internvl_chat/internvl/model/internvl_chat/modeling_internvl_chat.py#L197
         # change scale_factor from float to int
 
         n, w, h, c = x.size()
         # N, W, H, C --> N, W, H / scale, C * scale
-        x = x.view(n, w, int(h/scale_factor), int(c*scale_factor))
+        x = x.view(n, w, int(h / scale_factor), int(c * scale_factor))
         # N, W, H / scale, C * scale --> N, H / scale, W, C * scale
         x = x.permute(0, 2, 1, 3).contiguous()
         # N, H / scale, W, C * scale --> N, H / scale, W / scale, C * (scale ** 2)
         x = x.view(n, int(h / scale_factor), int(w / scale_factor),
                    int(c * (scale_factor * scale_factor)))
-        
+
         x = x.permute(0, 2, 1, 3).contiguous()
 
         return x
+
     def forward(self, x):
         """
         Args:
@@ -317,13 +319,14 @@ class MlpPixelShuffle(nn.Module):
         Returns:
             shape (F, n, D) where n is token_num that has been reduced
         """
-        x = x[:, 1:, :] # remove cls_token
+        x = x[:, 1:, :]  # remove cls_token
         h = w = int(x.shape[1] ** 0.5)
         x = x.view(x.shape[0], h, w, -1)
-        x = self.pixel_shuffle(x, self.scale_factor)  
+        x = self.pixel_shuffle(x, self.scale_factor)
         x = self.mlp(x)
         x = x.view(x.shape[0],-1,x.shape[-1])
         return x
+
 
 class OvisConvAdapter(nn.Module):
     def __init__(self, dim_in, dim_out, vocab_size, tokenize_function="softmax"):
@@ -352,7 +355,9 @@ class OvisConvAdapter(nn.Module):
             tokens = st_argmax(logits, dim=-1)
         else:
             raise ValueError(
-                f'Invalid `max_type`, expected softmax or gumbel_argmax or st_argmax, but got {self.config.tokenize_function}')
+                'Invalid `max_type`, expected softmax or gumbel_argmax or st_argmax,'
+                f' but got {self.config.tokenize_function}'
+            )
         return tokens
 
     def forward(self, x):
@@ -377,8 +382,9 @@ class OvisConvAdapter(nn.Module):
 
         # get embeddings
         out = torch.matmul(visual_tokens, self.embedding.weight)
-        
+
         return out
+
 
 def build_vision_projector(config, delay_load=False, **kwargs):
     projector_type = getattr(config, 'mm_projector_type', 'linear')
@@ -398,10 +404,12 @@ def build_vision_projector(config, delay_load=False, **kwargs):
     elif projector_type == 'conv_adapter':
         return ConvAdapter(config.mm_hidden_size, config.hidden_size, getattr(config, "mlp_hidden_dim", None))
     elif projector_type == 'mlp_pixel_shuffle':
-        return MlpPixelShuffle(config.mm_hidden_size, config.hidden_size, config.pixelshuffle_downsample_ratio, getattr(config, "mlp_hidden_dim", None))
+        return MlpPixelShuffle(config.mm_hidden_size, config.hidden_size,
+                               config.pixelshuffle_downsample_ratio, getattr(config, "mlp_hidden_dim", None))
     elif projector_type == 'ovis_conv_adapter':
-        return OvisConvAdapter(config.mm_hidden_size, config.hidden_size, getattr(config, "mlp_hidden_dim", 32000), getattr(config, "tokenize_function", "softmax"))
-    
+        return OvisConvAdapter(config.mm_hidden_size, config.hidden_size, getattr(config, "mlp_hidden_dim", 32000),
+                               getattr(config, "tokenize_function", "softmax"))
+
     mlp_gelu_match = re.match(r'^mlp(\d+)x_gelu$', projector_type)
     if mlp_gelu_match:
         mlp_depth = int(mlp_gelu_match.group(1))
@@ -410,7 +418,9 @@ def build_vision_projector(config, delay_load=False, **kwargs):
             modules.append(nn.GELU())
             modules.append(nn.Linear(config.hidden_size, config.hidden_size))
             mm_projector = nn.Sequential(*modules)
-            mm_projector.mm_projector_type = projector_type # this line is for fixing bug in valley/model/valley_arch.py line 72. If the projector is 2 layer mlp, projector has no attr named mm_projector_type. 
+            # this line is for fixing bug in valley/model/valley_arch.py line 72.
+            # If the projector is 2 layer mlp, projector has no attr named mm_projector_type.
+            mm_projector.mm_projector_type = projector_type
         return mm_projector
 
     if projector_type == 'identity':

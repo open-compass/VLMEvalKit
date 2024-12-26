@@ -5,12 +5,10 @@ from ...smp import *
 from typing import Dict
 import logging
 from transformers import set_seed
-import torch
 from transformers import AutoTokenizer, AutoProcessor
-from PIL import Image
 from qwen_vl_utils import fetch_image, fetch_video
-import re 
- 
+import re
+
 from .valley_eagle.model.language_model.valley_qwen2 import ValleyQwen2ForCausalLM
 from .valley_eagle.util.mm_utils import process_anyres_image
 from .valley_eagle import conversation as conversation_lib
@@ -35,6 +33,7 @@ DEFAULT_GANDALF_TOKEN = "<gandalf>"
 DEFAULT_EOC_TOKEN = "<eoc>"
 COT_PROMPT = "\nPlease think step by step."
 
+
 def disable_torch_init():
     """
     Disable the redundant torch default initialization to accelerate model creation.
@@ -42,7 +41,6 @@ def disable_torch_init():
     import torch
     setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
-
 
 
 def preprocess_multimodal(
@@ -54,20 +52,21 @@ def preprocess_multimodal(
         if data_args.model_class in ["valley-product", "valley-gandalf", "tinyvalley", "valley-product-mistral"]:
             if DEFAULT_VIDEO_TOKEN in sentence["value"]:
                 if data_args.use_special_start_end_token:
-                    video_replace_token =  (DEFAULT_VI_START_TOKEN  +DEFAULT_IMAGE_TOKEN+ DEFAULT_VI_END_TOKEN) * img_num
+                    video_replace_token = \
+                        (DEFAULT_VI_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_VI_END_TOKEN) * img_num
                 else:
-                    video_replace_token =  DEFAULT_IMAGE_TOKEN * img_num
+                    video_replace_token = DEFAULT_IMAGE_TOKEN * img_num
                 sentence["value"] = sentence['value'].replace(DEFAULT_VIDEO_TOKEN, '').strip()
                 sentence["value"] = video_replace_token + '\n' + sentence["value"]
-            else: 
+            else:
                 segs = re.split(DEFAULT_IMAGE_TOKEN, sentence["value"])
                 if data_args.use_special_start_end_token:
-                    sentence["value"] = (DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN).join(segs[: img_num + 1]) + "".join(
-                        segs[img_num + 1 :]
-                    )
+                    sentence["value"] = \
+                        (DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN).join(segs[: img_num + 1])\
+                        + "".join(segs[img_num + 1:])
                 else:
                     sentence["value"] = DEFAULT_IMAGE_TOKEN.join(segs[: img_num + 1]) + "".join(
-                        segs[img_num + 1 :]
+                        segs[img_num + 1:]
                     )
         elif data_args.model_class in ["valley-video", "valley-video-mistral"]:
             if DEFAULT_IMAGE_TOKEN in sentence["value"] or DEFAULT_VIDEO_TOKEN in sentence["value"]:
@@ -79,6 +78,7 @@ def preprocess_multimodal(
             raise Exception(f"unknown model class : {data_args.model_class}")
 
     return conversations
+
 
 def tokenizer_image_token(
     prompt,
@@ -103,7 +103,8 @@ def tokenizer_image_token(
         else:
             chunk_ids = tokenizer(chunk).input_ids
             # For Qwen2-7B, bos token exists but does not appear in the beginning
-            if chunk_ids[0] != getattr(tokenizer,'bos_token_id', None): offset = 0  
+            if chunk_ids[0] != getattr(tokenizer, 'bos_token_id', None):
+                offset = 0
             input_ids.extend(chunk_ids[offset:])
 
     if return_tensors is not None:
@@ -113,22 +114,26 @@ def tokenizer_image_token(
     return input_ids
 
 
-BLACK_IMG_ENV = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00\x00\x00\x03\x08\x02\x00\x00\x00\xd9J"\xe8\x00\x00\x00\x12IDAT\x08\x1dcd\x80\x01F\x06\x18`d\x80\x01\x00\x00Z\x00\x04we\x03N\x00\x00\x00\x00IEND\xaeB`\x82'
+BLACK_IMG_ENV = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x03\x00' + \
+                b'\x00\x00\x03\x08\x02\x00\x00\x00\xd9J"\xe8\x00\x00\x00' + \
+                b'\x12IDAT\x08\x1dcd\x80\x01F\x06\x18`d\x80\x01\x00\x00Z\x00' + \
+                b'\x04we\x03N\x00\x00\x00\x00IEND\xaeB`\x82'
+
 
 class ValleyEagleChat(BaseModel):
 
     def __init__(self,
                  model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
-        torch_dtype=torch.float16
-        padding_side = 'left' 
-        use_fast  = True 
-        trust_remote_code = True 
-        output_logits=False
-        conversation_tag='qwen2'
+        torch_dtype = torch.float16
+        padding_side = 'left'
+        use_fast = True
+        trust_remote_code = True
+        output_logits = False
+        conversation_tag = 'qwen2'
         max_new_tokens: int = 384
         seed = 42
-        black_img= BLACK_IMG_ENV
+        black_img = BLACK_IMG_ENV
         disable_torch_init()
         set_seed(seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -158,14 +163,15 @@ class ValleyEagleChat(BaseModel):
         self.max_new_tokens = max_new_tokens
         # Load image preprocessor
         from transformers import SiglipImageProcessor
-        self.qwen2vl_processor =None
+        self.qwen2vl_processor = None
         self.image_processor = SiglipImageProcessor.from_pretrained(self.model.config.mm_vision_tower)
         self.image_processor.crop_size = self.image_processor.size["height"]
-        #self.vision_tower.load_model()  # vision_tower is an instance
+        # self.vision_tower.load_model()  # vision_tower is an instance
         kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1, use_cache=True) # noqa E501
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
+
     def expand2square(self,pil_img, background_color):
         width, height = pil_img.size
         if width == height:
@@ -203,13 +209,19 @@ class ValleyEagleChat(BaseModel):
             video = [torch.stack(img, dim=0) for img in video_pad]
         return video, image_sizes_list
 
-   
     def generate_inner(self, message, dataset=None):
-        if self.qwen2vl_processor == None:
+        if self.qwen2vl_processor is None:
             if dataset == 'OCRBench':
-                self.qwen2vl_processor = AutoProcessor.from_pretrained(self.model.config.eagle_vision_tower, max_pixels=1280*28*28, min_pixels=10*10*28*28)
+                self.qwen2vl_processor = AutoProcessor.from_pretrained(
+                    self.model.config.eagle_vision_tower,
+                    max_pixels=1280 * 28 * 28,
+                    min_pixels=10 * 10 * 28 * 28
+                )
             else:
-                self.qwen2vl_processor = AutoProcessor.from_pretrained(self.model.config.eagle_vision_tower, max_pixels=1280*28*28)
+                self.qwen2vl_processor = AutoProcessor.from_pretrained(
+                    self.model.config.eagle_vision_tower,
+                    max_pixels=1280 * 28 * 28
+                )
 
         messages = []
         text, images = '', []
@@ -219,7 +231,7 @@ class ValleyEagleChat(BaseModel):
             elif item['type'] == 'image':
                 text += ' <image> '
                 images.append(item['value'])
-        
+
         if dataset in ["MMMU_DEV_VAL", "MMStar", "OCRBench", "MMVet"]:
             messages.append({"from": 'human', "value": text + COT_PROMPT})
         else:
@@ -232,21 +244,31 @@ class ValleyEagleChat(BaseModel):
             image_list.append(image)
         messages_qwen.append({'role': 'user', "content": [{"type": "text", "text": text}]})
         messages_qwen.append({"role": "assistant", "content": [{"type": "text", "text": ""}]})
-                    
-        text = self.qwen2vl_processor.apply_chat_template(messages_qwen[:-1], tokenize=False, add_generation_prompt=True)
+
+        text = self.qwen2vl_processor.apply_chat_template(
+            messages_qwen[:-1],
+            tokenize=False,
+            add_generation_prompt=True
+        )
         text_segs = re.split("<image>", text)
-        text = "<|vision_start|><|image_pad|><|vision_end|>".join(text_segs[: len(image_list) + 1]) + "".join(text_segs[len(image_list) + 1 :])
+        text = "<|vision_start|><|image_pad|><|vision_end|>".join(text_segs[: len(image_list) + 1]) + \
+            "".join(text_segs[len(image_list) + 1:])
 
         sources = self.qwen2vl_processor(text=[text], images=image_list, padding=True, return_tensors="pt")
-        mask_len = len(self.qwen2vl_processor(text=[re.sub("assistant\n[\s\S]*", f"assistant\n", text)], images=image_list, padding=True, return_tensors="pt")["input_ids"][0])
+        mask_len = len(self.qwen2vl_processor(
+            text=[re.sub(r"assistant\\\n[\s\S]*", "assistant\n", text)],
+            images=image_list,
+            padding=True,
+            return_tensors="pt"
+        )["input_ids"][0])
         sources["input_ids"] = sources["input_ids"][0]
         sources["labels"] = torch.cat([torch.tensor([-100] * mask_len), sources["input_ids"][mask_len:]], dim=0)
         data_dict_qwen2vl = sources
         video_images_tensor, image_sizes_list = self.preprocess_images(images)
-        
+
         img_length = len(video_images_tensor)
         source = preprocess_multimodal(messages, img_length, self.model.config)
-        
+
         data_dict = preprocess(
             source,
             self.tokenizer,
@@ -265,10 +287,10 @@ class ValleyEagleChat(BaseModel):
                 input_ids=input_ids,
                 images=[images],
                 image_sizes=[image_sizes_list],
-                pixel_values=data_dict_qwen2vl['pixel_values'].to(self.device) ,
-                image_grid_thw=data_dict_qwen2vl['image_grid_thw'].to(self.device) ,
-                    pixel_values_videos=None,
-                    video_grid_thw=None,
+                pixel_values=data_dict_qwen2vl['pixel_values'].to(self.device),
+                image_grid_thw=data_dict_qwen2vl['image_grid_thw'].to(self.device),
+                pixel_values_videos=None,
+                video_grid_thw=None,
                 do_sample=False,
                 max_new_tokens=2048,
                 repetition_penalty=1.0,
