@@ -169,6 +169,7 @@ llava_series = {
 }
 
 vita_series = {
+    'vita': partial(VITA, model_path='VITA-MLLM/VITA', root=VITA_ROOT),
     'vita_qwen2': partial(VITAQwen2, model_path='VITA-MLLM/VITA-1.5', root=VITA_ROOT),
 }
 
