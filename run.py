@@ -181,7 +181,10 @@ def main():
     if world_size > 1:
         local_rank = os.environ.get('LOCAL_RANK', 0)
         torch.cuda.set_device(int(local_rank))
-        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=3600))
+        dist.init_process_group(
+            backend='nccl',
+            timeout=datetime.timedelta(seconds=os.environ.get('DIST_TIMEOUT', 3600))
+        )
 
     for _, model_name in enumerate(args.model):
         model = None
