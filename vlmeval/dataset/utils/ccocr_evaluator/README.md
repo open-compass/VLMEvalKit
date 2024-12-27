@@ -2,7 +2,7 @@
 
 ## Introduction
  
-Please refer to our [GitHub](https://github.com/QwenLM/CC-OCR) for more information.
+Please refer to our [GitHub](https://github.com/AlibabaResearch/AdvancedLiterateMachinery/tree/main/Benchmarks/CC-OCR) for more information.
 
 ## Running Scripts
 
@@ -44,13 +44,13 @@ If you find our work helpful, feel free to give us a cite.
 
 ```
 @misc{yang2024ccocr,
-    title={CC-OCR: A Comprehensive and Challenging OCR Benchmark for Evaluating Large Multimodal Models in Literacy}, 
-    author={Zhibo Yang and Jun Tang and Zhaohai Li and Pengfei Wang and Jianqiang Wan and Humen Zhong and Xuejing Liu and Mingkun Yang and Peng Wang and Yuliang Liu and LianWen Jin and Xiang Bai and Shuai Bai and Junyang Lin},
-    year={2024},
-    eprint={2412.02210},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV},
-    url={https://arxiv.org/abs/2412.02210}, 
+      title={CC-OCR: A Comprehensive and Challenging OCR Benchmark for Evaluating Large Multimodal Models in Literacy}, 
+      author={Zhibo Yang and Jun Tang and Zhaohai Li and Pengfei Wang and Jianqiang Wan and Humen Zhong and Xuejing Liu and Mingkun Yang and Peng Wang and Shuai Bai and LianWen Jin and Junyang Lin},
+      year={2024},
+      eprint={2412.02210},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2412.02210}, 
 }
 ```
 
