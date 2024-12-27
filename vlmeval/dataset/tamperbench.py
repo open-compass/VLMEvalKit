@@ -140,6 +140,7 @@ Based on your observations, select the best option that accurately addresses the
                                     'answer': data['answer'],
                                     'candidates': data['candidates'],
                                     'tamper_type': data['tamper_type'],
+                                    'task_tamper_type': f'{k}_{data['tamper_type']}'
                                 })
 
                 data_df = pd.DataFrame(self.data_list)
