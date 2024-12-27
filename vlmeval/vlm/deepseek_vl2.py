@@ -6,6 +6,7 @@ from .base import BaseModel
 from ..smp import *
 from PIL import Image
 
+
 class DeepSeekVL2(BaseModel):
 
     INSTALL_REQ = True
@@ -28,8 +29,8 @@ class DeepSeekVL2(BaseModel):
         self.vl_chat_processor = DeepseekVLV2Processor.from_pretrained(model_path)
         self.tokenizer = self.vl_chat_processor.tokenizer
 
-        model: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(model_path, 
-                                                                              trust_remote_code=True, 
+        model: DeepseekVLV2ForCausalLM = AutoModelForCausalLM.from_pretrained(model_path,
+                                                                              trust_remote_code=True,
                                                                               torch_dtype=torch.bfloat16)
         self.model = model.cuda().eval()
 
@@ -40,9 +41,9 @@ class DeepSeekVL2(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def prepare_inputs(self, message, dataset=None):
-        
+
         if dataset == 'MMMU_DEV_VAL':
-            
+
             def prepare_itlist(msgs):
                 content, images = '', []
                 image_idx = 1
@@ -53,14 +54,17 @@ class DeepSeekVL2(BaseModel):
                         image_idx += 1
                     elif s['type'] == 'text':
                         content += s['value']
-                #content = '<image>' * (image_idx-1) + '\n' + content
-                content = '<image>' * (image_idx-1) + '\n' + content
+                # content = '<image>' * (image_idx-1) + '\n' + content
+                content = '<image>' * (image_idx - 1) + '\n' + content
                 return content, images
 
             conversation = []
             if 'role' not in message[0]:
                 content, images = prepare_itlist(message)
-                content = content.replace('Please select the correct answer from the options above.', "Answer with the option's letter from the given choices directly. Answer the question using a single word or phrase.\n")
+                content = content.replace(
+                    'Please select the correct answer from the options above.',
+                    "Answer with the option's letter from the given choices directly. Answer the question using a single word or phrase.\n"  # noqa
+                )
                 content = content.replace('Question:', "")
                 content = content.replace('Options:\n', "")
                 conversation.append(dict(role='<|User|>', content=content, images=images))
@@ -69,14 +73,17 @@ class DeepSeekVL2(BaseModel):
                 for msgs in message:
                     role = role_map[msgs['role']]
                     content, images = prepare_itlist(msgs['content'])
-                    content = content.replace('Please select the correct answer from the options above.', "Answer with the option's letter from the given choices directly. Answer the question using a single word or phrase.\n")
+                    content = content.replace(
+                        'Please select the correct answer from the options above.',
+                        "Answer with the option's letter from the given choices directly. Answer the question using a single word or phrase.\n"  # noqa
+                    )
                     content = content.replace('Question:', "")
                     content = content.replace('Options:\n', "")
                     conversation.append(dict(role=role, content=content, images=images))
             conversation.append(dict(role='<|Assistant|>', content=''))
 
         else:
-            
+
             def prepare_itlist(msgs):
                 content, images = '', []
                 for s in msgs:
@@ -109,12 +116,17 @@ class DeepSeekVL2(BaseModel):
         if dataset == 'MMMU_DEV_VAL':
             if len(pil_images):
                 h, w = pil_images[0].size
-                pil_images[0] = pil_images[0].resize((2*h, 2*w), Image.BILINEAR)
+                pil_images[0] = pil_images[0].resize((2 * h, 2 * w), Image.BILINEAR)
 
-        prepare_inputs = self.vl_chat_processor(conversations=conversation, images=pil_images, force_batchify=True, system_prompt="")
+        prepare_inputs = self.vl_chat_processor(
+            conversations=conversation,
+            images=pil_images,
+            force_batchify=True,
+            system_prompt=""
+        )
         prepare_inputs = prepare_inputs.to(self.model.device)
         inputs_embeds = self.model.prepare_inputs_embeds(**prepare_inputs)
-        
+
         inputs_embeds, past_key_values = self.model.incremental_prefilling(
             input_ids=prepare_inputs.input_ids,
             images=prepare_inputs.images,
@@ -123,7 +135,7 @@ class DeepSeekVL2(BaseModel):
             attention_mask=prepare_inputs.attention_mask,
             chunk_size=512
         )
-        
+
         # run the model to get the response
         outputs = self.model.generate(
             inputs_embeds=inputs_embeds,
@@ -139,7 +151,10 @@ class DeepSeekVL2(BaseModel):
             **self.kwargs
         )
 
-        answer = self.tokenizer.decode(outputs[0][len(prepare_inputs.input_ids[0]):].cpu().tolist(), skip_special_tokens=True)
+        answer = self.tokenizer.decode(
+            outputs[0][len(prepare_inputs.input_ids[0]):].cpu().tolist(),
+            skip_special_tokens=True
+        )
         answer = answer.rstrip('.')
 
         return answer
