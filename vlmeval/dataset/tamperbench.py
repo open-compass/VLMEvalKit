@@ -22,7 +22,7 @@ class MVTamperBench(VideoBaseDataset):
     MD5 = {
         'MVTamperBench': '12a8bac1b4452c5c7974c31f8e76e882',
         'MVTamperBenchSample': 'af0059e5e0f894aa61753b5a09c37fc6',
-        'MVTamperBenchSample_Start': '587edbbbe7ae998cebecbbadfe899ba0',
+        'MVTamperBenchSample_Start': '69f8ce9be14c297c1e7478b49bbe80db',
         'MVTamperBenchSample_End': 'fb12bf5e0355b8ff6a1b029b2970347c',
     }
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
@@ -93,7 +93,7 @@ Based on your observations, select the best option that accurately addresses the
             if not os.path.exists(data_file):
                 return False
 
-            if md5(data_file) != self.MD5:
+            if md5(data_file) != self.MD5[dataset_name]:
                 return False
 
             data = load(data_file)
@@ -119,7 +119,7 @@ Based on your observations, select the best option that accurately addresses the
 
             def generate_tsv(pth):
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
-                if os.path.exists(data_file) and md5(data_file) == self.MD5:
+                if os.path.exists(data_file) and md5(data_file) == self.MD5[dataset_name]:
                     return
                 json_data_dir = os.path.join(dataset_path, 'json')
                 self.data_list = []
