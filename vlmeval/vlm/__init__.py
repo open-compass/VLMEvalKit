@@ -27,7 +27,7 @@ from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
 from .yi_vl import Yi_VL
-from .internvl_chat import InternVLChat
+from .internvl import InternVLChat
 from .deepseek_vl import DeepSeekVL
 from .janus import Janus
 from .mgm import Mini_Gemini
@@ -53,9 +53,11 @@ from .mplug_owl3 import mPLUG_Owl3
 from .pixtral import Pixtral
 from .llama_vision import llama_vision
 from .molmo import molmo
-from .points import POINTS
+from .points import POINTS, POINTSV15
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
 from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM
+from .sail_vl import SailVL
+from .valley import ValleyEagleChat

@@ -93,6 +93,10 @@ class ImageMCQDataset(ImageBaseDataset):
         ),
         'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv',
         'WorldMedQA-V': 'https://opencompass.openxlab.space/utils/VLMEval/WorldMedQA-V.tsv',
+        'VisOnlyQA-VLMEvalKit': (
+            'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
+            'resolve/main/visonlyqa_vlmevalkit.tsv'
+        ),
     }
 
     DATASET_MD5 = {
@@ -143,7 +147,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
-        'WorldMedQA-V': '441e63875e30c87f5750528b57b41285'
+        'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
+        "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -264,6 +269,12 @@ class ImageMCQDataset(ImageBaseDataset):
             warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
+        if dataset == 'VisOnlyQA-VLMEvalKit':
+            warnings.warn('Note that the results on VisOnlyQA-VLMEvalKit are different from the results on \
+                           the original VisOnlyQA. VisOnlyQA-VLMEvalKit does not include the \
+                           chemistry__shape_multi split and uses a different evaluation prompt. Please \
+                           explicitly specify the version of the dataset when you report results.')
+
         return acc
 
 

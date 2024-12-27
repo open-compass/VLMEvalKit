@@ -68,7 +68,9 @@ def DynaMath_auxeval(model, line):
     try:
         dj = json.loads(pred, strict=False)
         short_answer = dj.get("short answer")
-        succeed = True
+        assert short_answer is not None
+        succeed, short_answer = parse_answer(short_answer, answer_type=line['anwser_type'])
+        assert succeed
     except:
         # Failed to parse the JSON, use an auxiliary LLM to get the short answer
         if line['answer_type'] == 'multiple choice':
@@ -80,13 +82,12 @@ def DynaMath_auxeval(model, line):
                 "Output a short answer in a single line. Any float numbers in the answer "
                 "should be formatted as three-digit floating-point numbers."
             )
+
         prompt = f"Free-form answer: {pred}\nInstruction: {inst}"
         response = pred
-        retry = 3
         succeed, short_answer = parse_answer(response, line['answer_type'])
-        while not succeed and retry > 0:
+        if not succeed:
             response = model.generate(prompt)
-            retry -= 1
             succeed, short_answer = parse_answer(response, line['answer_type'])
 
     if line['answer_type'] == 'float':
@@ -172,6 +173,7 @@ Example of expected JSON response format:
         nproc = judge_kwargs.pop('nproc', 6)  # noqa: F841
 
         res = load(tmp_file) if os.path.exists(tmp_file) else {}
+        res = {k: v for k, v in res.items() if v is not None}
 
         model.system_prompt = """\
 You are a helpful assistant that helps me to format free-form answers into a short answer according to the instruction.
@@ -182,9 +184,10 @@ You are a helpful assistant that helps me to format free-form answers into a sho
             payloads = [dict(model=model, line=data.iloc[i]) for i in range(lt) if data.iloc[i]['index'] not in res]
             keys = [idx for idx in data['index'] if idx not in res]
 
-            results = track_progress_rich(DynaMath_auxeval, payloads, nproc=nproc, save=tmp_file, keys=keys)
-            for k, r in zip(keys, results):
-                res[k] = r
+            if len(keys):
+                results = track_progress_rich(DynaMath_auxeval, payloads, nproc=nproc, save=tmp_file, keys=keys)
+                for k, r in zip(keys, results):
+                    res[k] = r
 
             data['parse'] = [res[idx]['parse'] for idx in data['index']]
             data['extracted'] = [res[idx]['extracted'] for idx in data['index']]

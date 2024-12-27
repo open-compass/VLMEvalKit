@@ -789,13 +789,14 @@ class LLaVA_OneVision_HF(BaseModel):
         assert model_path is not None, "Model path must be provided."
         self.model = LlavaOnevisionForConditionalGeneration.from_pretrained(
             model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
-        ).to(0)
+        ).to('cuda')
         self.processor = AutoProcessor.from_pretrained(model_path)
 
         self.video_kwargs = kwargs.get("video_kwargs", {})
         self.force_sample = self.video_kwargs.get("force_sample", False)
         self.nframe = kwargs.get("nframe", 8)
         self.fps = 1
+        self.model_path = model_path
 
     def generate_inner_image(self, message, dataset=None):
         content, images = "", []
@@ -820,9 +821,11 @@ class LLaVA_OneVision_HF(BaseModel):
             }
         ]
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
-        inputs = self.processor(images=images, text=prompt, return_tensors="pt").to(0, torch.float16)
+        inputs = self.processor(images=images, text=prompt, return_tensors="pt").to('cuda', torch.float16)
 
-        output = self.model.generate(**inputs, max_new_tokens=100)
+        output = self.model.generate(**inputs, max_new_tokens=512)
+        if self.model_path == "NCSOFT/VARCO-VISION-14B-HF":
+            return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
         return self.processor.decode(output[0], skip_special_tokens=True)
 
     def generate_inner_video(self, message, dataset=None):
@@ -858,7 +861,7 @@ class LLaVA_OneVision_HF(BaseModel):
         ]
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
 
-        inputs = self.processor(videos=video_frames, text=prompt, return_tensors="pt").to(0, torch.float16)
+        inputs = self.processor(videos=video_frames, text=prompt, return_tensors="pt").to('cuda', torch.float16)
         output = self.model.generate(**inputs, max_new_tokens=512)
         return self.processor.decode(output[0], skip_special_tokens=True)
 
