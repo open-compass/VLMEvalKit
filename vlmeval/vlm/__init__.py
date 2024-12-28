@@ -30,6 +30,7 @@ from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, X
 from .yi_vl import Yi_VL
 from .internvl import InternVLChat
 from .deepseek_vl import DeepSeekVL
+from .deepseek_vl2 import DeepSeekVL2
 from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
@@ -61,3 +62,4 @@ from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM
 from .sail_vl import SailVL
+from .valley import ValleyEagleChat

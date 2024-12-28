@@ -177,16 +177,16 @@ class OpenAIWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
-        context_window = GPT_context_window(self.model)
-        new_max_tokens = min(max_tokens, context_window - self.get_token_len(inputs))
-        if 0 < new_max_tokens <= 100 and new_max_tokens < max_tokens:
-            self.logger.warning(
-                'Less than 100 tokens left, '
-                'may exceed the context window with some additional meta symbols. '
-            )
-        if new_max_tokens <= 0:
-            return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
-        max_tokens = new_max_tokens
+        # context_window = GPT_context_window(self.model)
+        # new_max_tokens = min(max_tokens, context_window - self.get_token_len(inputs))
+        # if 0 < new_max_tokens <= 100 and new_max_tokens < max_tokens:
+        #     self.logger.warning(
+        #         'Less than 100 tokens left, '
+        #         'may exceed the context window with some additional meta symbols. '
+        #     )
+        # if new_max_tokens <= 0:
+        #     return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
+        # max_tokens = new_max_tokens
 
         # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
