@@ -43,11 +43,40 @@ tempcompass_dataset = {
     'TempCompass_0.5fps': partial(TempCompass, dataset='TempCompass', fps=0.5)
 }
 
+cgbench_dataset = {
+    'CGBench_MCQ_Grounding_Mini_8frame_subs_subt': partial(
+        CGBench_MCQ_Grounding_Mini,
+        dataset='CG-Bench_MCQ_Grounding_Mini',
+        nframe=8,
+        use_subtitle=True,
+        use_subtitle_time=True
+    ),
+    'CGBench_OpenEnded_Mini_8frame_subs_subt_ft': partial(
+        CGBench_OpenEnded_Mini,
+        dataset='CG-Bench_OpenEnded_Mini',
+        nframe=8,
+        use_subtitle=True,
+        use_subtitle_time=True,
+        use_frame_time=True
+    ),
+    'CGBench_MCQ_Grounding_32frame_subs': partial(
+        CGBench_MCQ_Grounding,
+        dataset='CG-Bench_MCQ_Grounding',
+        nframe=32,
+        use_subtitle=True
+    ),
+    'CGBench_OpenEnded_8frame': partial(
+        CGBench_OpenEnded,
+        dataset='CG-Bench_OpenEnded',
+        nframe=8
+    ),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset
+    mlvu_dataset, tempcompass_dataset, cgbench_dataset
 ]
 
 for grp in dataset_groups:
