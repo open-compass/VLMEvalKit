@@ -40,6 +40,7 @@ class Ovis(BaseModel):
             pad_token_id=self.pad_token_id,
             use_cache=True
         )
+        self.gen_kwargs.update(kwargs)
 
     def use_custom_prompt(self, dataset):
         if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':
@@ -172,6 +173,7 @@ class Ovis1_6(BaseModel):
             pad_token_id=self.pad_token_id,
             use_cache=True
         )
+        self.gen_kwargs.update(kwargs)
 
     def use_custom_prompt(self, dataset):
         if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':

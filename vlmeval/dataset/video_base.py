@@ -8,7 +8,9 @@ class VideoBaseDataset:
 
     def __init__(self,
                  dataset='MMBench-Video',
-                 pack=False):
+                 pack=False,
+                 nframe=0,
+                 fps=-1):
         try:
             import decord
         except Exception as e:
@@ -33,6 +35,12 @@ class VideoBaseDataset:
         videos.sort()
         self.videos = videos
         self.pack = pack
+        self.nframe = nframe
+        self.fps = fps
+        if self.fps > 0 and self.nframe > 0:
+            raise ValueError('fps and nframe should not be set at the same time')
+        if self.fps <= 0 and self.nframe <= 0:
+            raise ValueError('fps and nframe should be set at least one valid value')
 
     def __len__(self):
         return len(self.videos) if self.pack else len(self.data)
@@ -46,18 +54,19 @@ class VideoBaseDataset:
             assert idx < len(self.data)
             return dict(self.data.iloc[idx])
 
-    def frame_paths(self, video, num_frames=8):
+    def frame_paths(self, video):
         frame_root = osp.join(self.frame_root, video)
         os.makedirs(frame_root, exist_ok=True)
-        return [osp.join(frame_root, self.frame_tmpl.format(i, num_frames)) for i in range(1, num_frames + 1)]
+        return [osp.join(frame_root, self.frame_tmpl.format(i, self.nframe)) for i in range(1, self.nframe + 1)]
 
-    def frame_paths_fps(self, video, num_frames=8, fps=-1):
+    def frame_paths_fps(self, video, num_frames):
         frame_root = osp.join(self.frame_root, video)
         os.makedirs(frame_root, exist_ok=True)
-        return [osp.join(frame_root, self.frame_tmpl_fps.format(i, num_frames, fps)) for i in range(1, num_frames + 1)]
+        return [osp.join(frame_root,
+                         self.frame_tmpl_fps.format(i, num_frames, self.fps)) for i in range(1, num_frames + 1)]
 
-    def save_video_frames(self, video, num_frames=8, fps=-1):
-        if fps > 0:
+    def save_video_frames(self, video):
+        if self.fps > 0:
             vid_path = osp.join(self.data_root, video + '.mp4')
             vid = decord.VideoReader(vid_path)
 
@@ -67,16 +76,16 @@ class VideoBaseDataset:
             total_duration = total_frames / video_fps
 
             # 计算需要提取的总帧数
-            required_frames = int(total_duration * fps)
+            required_frames = int(total_duration * self.fps)
 
             # 计算提取帧的间隔
-            step_size = video_fps / fps
+            step_size = video_fps / self.fps
 
             # 计算提取帧的索引
             indices = [int(i * step_size) for i in range(required_frames)]
 
             # 提取帧并保存
-            frame_paths = self.frame_paths_fps(video, len(indices), fps)
+            frame_paths = self.frame_paths_fps(video, len(indices))
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
@@ -89,14 +98,14 @@ class VideoBaseDataset:
             return frame_paths
 
         else:
-            frame_paths = self.frame_paths(video, num_frames)
+            frame_paths = self.frame_paths(video)
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
             vid_path = osp.join(self.data_root, video + '.mp4')
             vid = decord.VideoReader(vid_path)
-            step_size = len(vid) / (num_frames + 1)
-            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
+            step_size = len(vid) / (self.nframe + 1)
+            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
             images = [vid[i].asnumpy() for i in indices]
             images = [Image.fromarray(arr) for arr in images]
             for im, pth in zip(images, frame_paths):
@@ -115,7 +124,7 @@ class VideoBaseDataset:
         pass
 
     @abstractmethod
-    def build_prompt(self, idx, num_frames=8):
+    def build_prompt(self, idx):
         pass
 
     @abstractmethod

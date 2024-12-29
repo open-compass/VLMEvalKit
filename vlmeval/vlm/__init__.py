@@ -11,6 +11,7 @@ from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
 from .kosmos import Kosmos2
 from .llava import LLaVA, LLaVA_Next, LLaVA_XTuner, LLaVA_Next2, LLaVA_OneVision, LLaVA_OneVision_HF
+from .vita import VITA, VITAQwen2
 from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6
 from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya, MMAlaya2
@@ -27,8 +28,9 @@ from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
 from .yi_vl import Yi_VL
-from .internvl_chat import InternVLChat
+from .internvl import InternVLChat
 from .deepseek_vl import DeepSeekVL
+from .deepseek_vl2 import DeepSeekVL2
 from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
@@ -53,10 +55,11 @@ from .mplug_owl3 import mPLUG_Owl3
 from .pixtral import Pixtral
 from .llama_vision import llama_vision
 from .molmo import molmo
-from .points import POINTS
-from .pointsv15 import POINTSV15
+from .points import POINTS, POINTSV15
 from .nvlm import NVLM
 from .vintern_chat import VinternChat
 from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM
+from .sail_vl import SailVL
+from .valley import ValleyEagleChat

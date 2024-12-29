@@ -21,13 +21,13 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class MLVU(ConcatVideoDataset):
-    def __init__(self, dataset='MLVU'):
+    def __init__(self, dataset='MLVU', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['MLVU_MCQ', 'MLVU_OpenEnded']
         self.type_data_dict = {
             'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning'],
             'G-Avg':['sub_scene', 'summary']
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -63,7 +63,7 @@ class MLVU_MCQ(VideoBaseDataset):
     SYS = BASE_SYS + 'Based on your observations, select the best option that accurately addresses the question.'
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='MLVU_MCQ'):
+    def __init__(self, dataset='MLVU_MCQ', nframe=0, fps=-1):
         self.type_data_list = {
             'plotQA': ('1_plotQA.json', './MLVU/video/1_plotQA', 'MCQ'),
             'needle': ('2_needle.json', './MLVU/video/2_needle', 'MCQ'),
@@ -73,7 +73,7 @@ class MLVU_MCQ(VideoBaseDataset):
             'anomaly_reco': ('6_anomaly_reco.json', './MLVU/video/6_anomaly_reco', 'MCQ'),
             'topic_reasoning': ('7_topic_reasoning.json', './MLVU/video/7_topic_reasoning', 'MCQ'),
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -152,7 +152,7 @@ class MLVU_MCQ(VideoBaseDataset):
         answer = f"({chr(ord('A') + answer_idx)}) {answer}"
         return question, answer
 
-    def save_video_frames(self, line, num_frames=8, fps=-1):
+    def save_video_frames(self, line):
         suffix = line['video'].split('.')[-1]
         video = line['video'].replace(f'.{suffix}','')
         vid_path = osp.join(self.data_root, line['prefix'], line['video'])
@@ -161,17 +161,17 @@ class MLVU_MCQ(VideoBaseDataset):
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if num_frames > 0 and fps < 0:
-            step_size = len(vid) / (num_frames + 1)
-            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-            frame_paths = self.frame_paths(video, num_frames)
-        elif fps > 0:
+        if self.nframe > 0 and self.fps < 0:
+            step_size = len(vid) / (self.nframe + 1)
+            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+            frame_paths = self.frame_paths(video)
+        elif self.fps > 0:
             # not constrained by num_frames, get frames by fps
             total_duration = video_info['n_frames'] / video_info['fps']
-            required_frames = int(total_duration * fps)
-            step_size = video_info['fps'] / fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_info['fps'] / self.fps
             indices = [int(i * step_size) for i in range(required_frames)]
-            frame_paths = self.frame_paths_fps(video, len(indices), fps)
+            frame_paths = self.frame_paths_fps(video, len(indices))
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
@@ -184,11 +184,11 @@ class MLVU_MCQ(VideoBaseDataset):
 
         return frame_paths
 
-    def save_video_into_images(self, line, num_frames, fps):
-        frame_paths = self.save_video_frames(line, num_frames, fps)
+    def save_video_into_images(self, line):
+        frame_paths = self.save_video_frames(line)
         return frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm, fps=-1):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -200,7 +200,7 @@ class MLVU_MCQ(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames, fps)
+            img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))
@@ -279,12 +279,12 @@ class MLVU_OpenEnded(VideoBaseDataset):
     SYS = BASE_SYS + 'Based on your observations, answer the given questions.'
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='MLVU_OpenEnded'):
+    def __init__(self, dataset='MLVU_OpenEnded', nframe=0, fps=-1):
         self.type_data_list = {
             'sub_scene': ('8_sub_scene.json', './MLVU/video/8_sub_scene', 'VQA'),
             'summary': ('9_summary.json', './MLVU/video/9_summary', 'VQA')
         }
-        super().__init__(dataset=dataset)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -355,7 +355,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
         answer = data['answer']
         return question, answer
 
-    def save_video_frames(self, line, num_frames=8, fps=-1):
+    def save_video_frames(self, line):
         suffix = line['video'].split('.')[-1]
         video = line['video'].replace(f'.{suffix}','')
         vid_path = osp.join(self.data_root, line['prefix'], line['video'])
@@ -364,17 +364,17 @@ class MLVU_OpenEnded(VideoBaseDataset):
             'fps': vid.get_avg_fps(),
             'n_frames': len(vid),
         }
-        if num_frames > 0 and fps < 0:
-            step_size = len(vid) / (num_frames + 1)
-            indices = [int(i * step_size) for i in range(1, num_frames + 1)]
-            frame_paths = self.frame_paths(video, num_frames)
-        elif fps > 0:
+        if self.nframe > 0 and self.fps < 0:
+            step_size = len(vid) / (self.nframe + 1)
+            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+            frame_paths = self.frame_paths(video)
+        elif self.fps > 0:
             # not constrained by num_frames, get frames by fps
             total_duration = video_info['n_frames'] / video_info['fps']
-            required_frames = int(total_duration * fps)
-            step_size = video_info['fps'] / fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_info['fps'] / self.fps
             indices = [int(i * step_size) for i in range(required_frames)]
-            frame_paths = self.frame_paths_fps(video, len(indices), fps)
+            frame_paths = self.frame_paths_fps(video, len(indices))
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
@@ -387,11 +387,11 @@ class MLVU_OpenEnded(VideoBaseDataset):
 
         return frame_paths
 
-    def save_video_into_images(self, line, num_frames, fps):
-        frame_paths = self.save_video_frames(line, num_frames, fps)
+    def save_video_into_images(self, line):
+        frame_paths = self.save_video_frames(line)
         return frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm, fps=-1):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -403,7 +403,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
         if video_llm:
             message.append(dict(type='video', value=video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames, fps)
+            img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         return message
