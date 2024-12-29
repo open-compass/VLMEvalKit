@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-from timm.models.layers import trunc_normal_
 import torch.nn.functional as F
 
 
@@ -43,6 +42,7 @@ class EVOTokenCompressor(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
+        from timm.models.layers import trunc_normal_
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=.02)
             if isinstance(m, nn.Linear) and m.bias is not None:

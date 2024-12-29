@@ -6,7 +6,6 @@ from typing import Dict
 import logging
 from transformers import set_seed
 from transformers import AutoTokenizer, AutoProcessor
-from qwen_vl_utils import fetch_image, fetch_video
 import re
 
 from .valley_eagle.model.language_model.valley_qwen2 import ValleyQwen2ForCausalLM
@@ -240,6 +239,7 @@ class ValleyEagleChat(BaseModel):
         messages_qwen = []
         image_list = []
         for image_file in images:
+            from qwen_vl_utils import fetch_image
             image = fetch_image({"image": image_file})
             image_list.append(image)
         messages_qwen.append({'role': 'user', "content": [{"type": "text", "text": text}]})
