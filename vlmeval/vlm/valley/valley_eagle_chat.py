@@ -8,10 +8,6 @@ from transformers import set_seed
 from transformers import AutoTokenizer, AutoProcessor
 import re
 
-from .valley_eagle.model.language_model.valley_qwen2 import ValleyQwen2ForCausalLM
-from .valley_eagle.util.mm_utils import process_anyres_image
-from .valley_eagle import conversation as conversation_lib
-from .valley_eagle.util.data_util import dynamic_preprocess, preprocess
 
 IGNORE_INDEX = -100
 IMAGE_TOKEN_INDEX = -200
@@ -124,6 +120,11 @@ class ValleyEagleChat(BaseModel):
     def __init__(self,
                  model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
+        from .valley_eagle.model.language_model.valley_qwen2 import ValleyQwen2ForCausalLM
+        from .valley_eagle.util.mm_utils import process_anyres_image
+        from .valley_eagle import conversation as conversation_lib
+        from .valley_eagle.util.data_util import dynamic_preprocess, preprocess
+        
         torch_dtype = torch.float16
         padding_side = 'left'
         use_fast = True
@@ -144,6 +145,8 @@ class ValleyEagleChat(BaseModel):
         self.model_path = model_path
         self.model = ValleyQwen2ForCausalLM.from_pretrained(model_path, torch_dtype=torch_dtype)
         self.model = self.model.to(self.device).half()
+        self.process_anyres_image = process_anyres_image
+        self.preprocess = preprocess
 
         # should check this code
         self.model.config.min_tile_num = 1
@@ -192,7 +195,7 @@ class ValleyEagleChat(BaseModel):
         video_pad = []
         for img in images:
             if self.model.config.anyres:
-                image = process_anyres_image(img, self.image_processor, self.model.config.grid_pinpoints)
+                image = self.process_anyres_image(img, self.image_processor, self.model.config.grid_pinpoints)
             else:
                 image = self.image_processor(img, return_tensors="pt")["pixel_values"][0]
 
@@ -269,7 +272,7 @@ class ValleyEagleChat(BaseModel):
         img_length = len(video_images_tensor)
         source = preprocess_multimodal(messages, img_length, self.model.config)
 
-        data_dict = preprocess(
+        data_dict = self.preprocess(
             source,
             self.tokenizer,
             has_image=True,
