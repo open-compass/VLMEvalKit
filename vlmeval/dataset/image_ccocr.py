@@ -1,10 +1,18 @@
+# flake8: noqa
+
 import os
 import re
 import tempfile
 from functools import partial
 import pandas as pd
 
-from .utils import ccocr_evaluator_map
+try:
+    from .utils.ccocr_evaluator import evaluator_map_info as ccocr_evaluator_map
+except ImportError as err:
+    import warnings
+    warnings.warn('The dependency of CCOCR evaluator is not properly installed')
+    warnings.warn(f'{type(err)}: {err}')
+
 from .image_base import ImageBaseDataset
 from ..smp import *
 
@@ -157,7 +165,7 @@ class CCOCRDataset(ImageBaseDataset):
         for data_info in dict_list:
             image_name = data_info['image_name']
             gt_info[image_name] = data_info['answer']
-            
+
             # warning the FAIL samples
             if data_info['prediction'] != FAIL_MSG:
                 ptd_info[image_name] = data_info['prediction']
