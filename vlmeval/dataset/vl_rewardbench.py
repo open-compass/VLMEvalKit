@@ -1,6 +1,3 @@
-import re
-from functools import partial
-import random
 from ast import literal_eval
 
 from .image_base import ImageBaseDataset
@@ -18,7 +15,8 @@ Judgement: {judgement}
 
 
 PROMPT_TEMPLATE = """\
-You are a highly capable multimodal AI assistant tasked with evaluating answers to visual questions. Please analyze the following image and question, then determine which of the two provided answers is better.
+You are a highly capable multimodal AI assistant tasked with evaluating answers to visual questions.
+Please analyze the following image and question, then determine which of the two provided answers is better.
 
 Question: {query}
 
@@ -34,9 +32,11 @@ Please evaluate both answers based on the following criteria:
 
 After your evaluation, please:
 1. Explain your reasoning for each criterion.
-2. Provide an overall judgment on which answer is better (Answer 1 or Answer 2). For example: Overall Judgment: Answer X is better.
+2. Provide an overall judgment on which answer is better (Answer 1 or Answer 2).\
+For example: Overall Judgment: Answer X is better.
 
-Your response should be structured and detailed, demonstrating your understanding of both the visual and textual elements of the task."""
+Your response should be structured and detailed, \
+demonstrating your understanding of both the visual and textual elements of the task."""
 
 
 def get_score(line, parsed_response, random_number):
@@ -46,7 +46,7 @@ def get_score(line, parsed_response, random_number):
     elif "Answer 2".lower() in parsed_response.lower():
         pred = 2
     else:  # failed
-        pred = "None" # random.choice([1, 2])
+        pred = "None"  # random.choice([1, 2])
 
     if pred == gt_ans:
         return 1.0
@@ -84,14 +84,15 @@ class VLRewardBench(ImageBaseDataset):
         question = line["question"]
         msgs = []
         if isinstance(tgt_path, list):
-            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            msgs.extend([dict(type="image", value=p) for p in tgt_path])
         else:
-            msgs = [dict(type='image', value=tgt_path)]
+            msgs = [dict(type="image", value=tgt_path)]
 
         response = toliststr(line["response"])
         random_number = sum(len(res) for res in response) % 2
         if random_number == 1:
-            response = response[::-1]  # randomly shuffle the order of the responses
+            # randomly shuffle the order of the responses
+            response = response[::-1]
         query_prompt = PROMPT_TEMPLATE.format(
             query=question, answer_0=response[0], answer_1=response[1]
         )
