@@ -88,7 +88,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             temperature=temperature,
             repetition_penalty=repetition_penalty,
         )
-        self.system_prompt = system_prompt
+        if system_prompt is None and 'qvq' in model_path.lower():
+            system_prompt = """You are a helpful and harmless assistant.
+        You are Qwen developed by Alibaba. You should think step-by-step."""
         self.verbose = verbose
         self.fps = 2.0
         self.nframe = 64
