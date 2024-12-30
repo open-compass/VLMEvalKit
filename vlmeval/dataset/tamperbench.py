@@ -67,7 +67,7 @@ Based on your observations, select the best option that accurately addresses the
             'State Change': ('state_change.json',
                              'your_data_path/perception/videos/', 'video', False),
             'Fine-grained Pose': ('fine_grained_pose.json',
-                                  'your_data_path/nturgbd/', 'video', False),
+                                  'your_data_path/ntu/', 'video', False),
             'Character Order': ('character_order.json',
                                 'your_data_path/perception/videos/', 'video', False),
             'Egocentric Navigation': ('egocentric_navigation.json',
