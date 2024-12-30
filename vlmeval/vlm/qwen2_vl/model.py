@@ -76,6 +76,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         repetition_penalty=1.0,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
+        post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
         verbose: bool = False,
     ):
         super().__init__(use_custom_prompt=use_custom_prompt)
@@ -90,6 +91,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
+        self.post_process = post_process
         self.fps = 2.0
         self.nframe = 64
         self.FRAME_FACTOR = 2
@@ -195,6 +197,24 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
         response = out[0]
+        if self.post_process:
+            resp = response.split('\\boxed{')[-1]
+            lt = len(resp)
+            counter, end = 1, None
+            for i in range(lt):
+                if resp[i] == '{':
+                    counter += 1
+                elif resp[i] == '}':
+                    counter -= 1
+                if counter == 0:
+                    end = i
+                    break
+                elif i == lt - 1:
+                    end = lt
+                    break
+            if end is not None:
+                response = resp[:end]
+
         if self.verbose:
             print(f'\033[32m{response}\033[0m')
         return response
