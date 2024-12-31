@@ -124,7 +124,7 @@ class ValleyEagleChat(BaseModel):
         from .valley_eagle.util.mm_utils import process_anyres_image
         from .valley_eagle import conversation as conversation_lib
         from .valley_eagle.util.data_util import dynamic_preprocess, preprocess
-        
+
         torch_dtype = torch.float16
         padding_side = 'left'
         use_fast = True

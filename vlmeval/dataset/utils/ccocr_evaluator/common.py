@@ -26,7 +26,7 @@ def pick_response_text(json_path):
 
     response_text = None
     if model_name.startswith("gpt") or model_name.startswith("o1"):
-        response_text = model_response.get("data", {}).get("response", {}).get("choices", [{}])[0].get("message", {}).get("content", None)
+        response_text = model_response.get("data", {}).get("response", {}).get("choices", [{}])[0].get("message", {}).get("content", None)  # noqa: E501
     elif model_name.startswith("local_"):
         response_text = model_response
     else:
@@ -35,7 +35,7 @@ def pick_response_text(json_path):
         elif model_name.startswith("gemini"):
             content_list = model_response.get("candidates", [{}])[0].get("content", {}).get("parts", None)
         elif model_name.startswith("qwen"):
-            content_list = model_response.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", None)
+            content_list = model_response.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", None)  # noqa: E501
         else:
             raise NotImplementedError("The pick_response_text NOT implemented for model: {}".format(model_name))
 
@@ -115,7 +115,7 @@ class BaseMetric(object):
         # add response_success_ratio
         if "summary" in eval_info and with_response_ratio:
             success_ratio = (len(response_info) + len(post_error_list)) / (len(gt_info) + 1e-9)
-            eval_info["summary"].update({"response_success_ratio": success_ratio })
+            eval_info["summary"].update({"response_success_ratio": success_ratio})
         return meta_info, eval_info
 
 
@@ -149,9 +149,9 @@ def summary_multi_exp(exp_dir_base, dataset_list=None, is_weighted_sum=False):
                 data_status_info = json.load(f)
             all_dataset_name.extend(data_status_info.keys())
         dataset_list = sorted(set(all_dataset_name))
-    
+
     # summary main code
-    all_evaluate_info, line_index = {}, 0
+    all_evaluate_info, _ = {}, 0
     for exp_name in os.listdir(exp_dir_base):
         dir_status_path = os.path.join(exp_dir_base, exp_name, "status.json")
         if not os.path.exists(dir_status_path):
