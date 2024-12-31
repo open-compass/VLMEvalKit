@@ -13,6 +13,7 @@ VideoChat2_ROOT = None
 VideoChatGPT_ROOT = None
 PLLaVA_ROOT = None
 RBDash_ROOT = None
+VITA_ROOT = '/fs-computility/mllm1/shared/dhd/VITA'
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 video_models = {
@@ -172,6 +173,11 @@ llava_series = {
     'varco-vision-hf':partial(LLaVA_OneVision_HF, model_path='NCSOFT/VARCO-VISION-14B-HF'),
 }
 
+vita_series = {
+    'vita': partial(VITA, model_path='VITA-MLLM/VITA', root=VITA_ROOT),
+    'vita_qwen2': partial(VITAQwen2, model_path='VITA-MLLM/VITA-1.5', root=VITA_ROOT),
+}
+
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
@@ -326,6 +332,7 @@ xgen_mm_series = {
 qwen2vl_series = {
     'Qwen-VL-Max-0809': partial(Qwen2VLAPI, model='qwen-vl-max-0809', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen-VL-Plus-0809': partial(Qwen2VLAPI, model='qwen-vl-plus-0809', min_pixels=1280*28*28, max_pixels=16384*28*28),
+    'QVQ-72B-Preview': partial(Qwen2VLChat, model_path='Qwen/QVQ-72B-Preview', min_pixels=1280*28*28, max_pixels=16384*28*28, system_prompt='You are a helpful and harmless assistant. You are Qwen developed by Alibaba. You should think step-by-step.', max_new_tokens=8192, post_process=False),
     'Qwen2-VL-72B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-72B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28),
@@ -416,7 +423,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series
+    smolvlm_series, sail_series, valley_series, vita_series
 ]
 
 for grp in model_groups:
