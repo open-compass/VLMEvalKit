@@ -1,12 +1,12 @@
 # CC-OCR: A Comprehensive and Challenging OCR Benchmark for Evaluating Large Multimodal Models in Literacy
 
 ## Introduction
- 
+
 Please refer to our [GitHub](https://github.com/AlibabaResearch/AdvancedLiterateMachinery/tree/main/Benchmarks/CC-OCR) for more information.
 
 ## Running Scripts
 
-Once the environment is ready, execute the following script from the root directory of VLMEvalKit 
+Once the environment is ready, execute the following script from the root directory of VLMEvalKit
 to perform inference and evaluation tasks in batch.
 
 ```shell
@@ -44,13 +44,13 @@ If you find our work helpful, feel free to give us a cite.
 
 ```
 @misc{yang2024ccocr,
-      title={CC-OCR: A Comprehensive and Challenging OCR Benchmark for Evaluating Large Multimodal Models in Literacy}, 
+      title={CC-OCR: A Comprehensive and Challenging OCR Benchmark for Evaluating Large Multimodal Models in Literacy},
       author={Zhibo Yang and Jun Tang and Zhaohai Li and Pengfei Wang and Jianqiang Wan and Humen Zhong and Xuejing Liu and Mingkun Yang and Peng Wang and Shuai Bai and LianWen Jin and Junyang Lin},
       year={2024},
       eprint={2412.02210},
       archivePrefix={arXiv},
       primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2412.02210}, 
+      url={https://arxiv.org/abs/2412.02210},
 }
 ```
 
