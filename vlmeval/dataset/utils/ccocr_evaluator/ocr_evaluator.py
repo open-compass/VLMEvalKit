@@ -92,8 +92,10 @@ class OcrEvaluator(BaseMetric):
         image_pdt_info, image_gt_info = {}, {}
         for file_name, gt_src in gt_info.items():
             pred_src = response_info.get(file_name, "")
-            pdt_token_list = text_normalize_and_tokenize(str(pred_src).strip(), is_word_level, is_lower, is_alphanum_only)
-            gt_token_list = text_normalize_and_tokenize(str(gt_src).strip(), is_word_level, is_lower, is_alphanum_only)
+            pdt_token_list = text_normalize_and_tokenize(
+                str(pred_src).strip(), is_word_level, is_lower, is_alphanum_only)
+            gt_token_list = text_normalize_and_tokenize(
+                str(gt_src).strip(), is_word_level, is_lower, is_alphanum_only)
             image_pdt_info[file_name] = pdt_token_list
             image_gt_info[file_name] = gt_token_list
         eval_result = calculate_metrics(image_pdt_info, image_gt_info, is_verbose=False)
