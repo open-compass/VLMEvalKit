@@ -241,7 +241,7 @@ class ParsingEvaluator(BaseMetric):
             pred = response_info[img_name]
 
             if op_name == 'formula':
-                pred = pred.replace("\n", " ").replace("```latex", "").replace("```", "").replace("\t", " ").replace(" ", "")
+                pred = pred.replace("\n", " ").replace("```latex", "").replace("```", "").replace("\t", " ").replace(" ", "")  # noqa: E501
                 gt = gt.replace(" ", "")
             elif op_name == 'molecular':
                 pred = pred.replace("\n", "").replace(" ", "").replace("<smiles>", "").replace("</smiles>", "")
