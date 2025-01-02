@@ -26,7 +26,7 @@ def resize_image(image: Image.Image, max_height: int, max_width: int) -> Image.I
 def encode_image(path: str, max_height: int = 1024, max_width: int = 1024) -> str:
     image = Image.open(path).convert("RGB")
     image = resize_image(image, max_height, max_width)
-    height, width = image.size
+    width, height = image.size
     if min(height, width) < 50:
         scale = 50 / min(width, height)
         image = image.resize((int(width * scale), int(height * scale)))

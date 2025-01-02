@@ -28,9 +28,9 @@ class VITAQwen2(BaseModel):
 
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, image_processor, _ = load_pretrained_model(
-            model_path, None, model_name, model_type='qwen2p5_instruct', device_map='auto'
+            model_path, None, model_name, model_type='qwen2p5_instruct', device_map='cuda'
         )
-        # model.cuda().eval()
+        model = model.eval()
         # model.tie_weights()
 
         audio_encoder = model.get_audio_encoder()

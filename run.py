@@ -322,7 +322,7 @@ def main():
                         judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath'], dataset_name):
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
@@ -398,7 +398,7 @@ def main():
 
                     # Create the symbolic links for the prediction files
                     files = os.listdir(pred_root)
-                    files = [x for x in files if f'{model_name}_{dataset_name}' in x]
+                    files = [x for x in files if (f'{model_name}_{dataset_name}' in x or "status.json" in x)]
                     for f in files:
                         cwd = os.getcwd()
                         file_addr = osp.join(cwd, pred_root, f)

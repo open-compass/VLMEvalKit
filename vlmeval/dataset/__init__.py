@@ -13,12 +13,14 @@ from .image_vqa import (
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH
 )
 
+from .image_ccocr import CCOCRDataset
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
 from .mmlongbench import MMLongBench
 from .dude import DUDE
 from .slidevqa import SlideVQA
+from .vl_rewardbench import VLRewardBench
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -128,10 +130,10 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU
+    CMMMU, VLRewardBench
 ]
 
 VIDEO_DATASET = [
