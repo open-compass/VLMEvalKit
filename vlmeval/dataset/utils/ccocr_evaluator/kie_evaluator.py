@@ -66,11 +66,11 @@ def update_cost(node1: Node, node2: Node):
     label2 = node2.label
     label1_leaf = "<leaf>" in label1
     label2_leaf = "<leaf>" in label2
-    if label1_leaf == True and label2_leaf == True:
+    if label1_leaf and label2_leaf:
         return edit_distance(label1.replace("<leaf>", ""), label2.replace("<leaf>", ""))
-    elif label1_leaf == False and label2_leaf == True:
+    elif not label1_leaf and label2_leaf:
         return 1 + len(label2.replace("<leaf>", ""))
-    elif label1_leaf == True and label2_leaf == False:
+    elif label1_leaf and not label2_leaf:
         return 1 + len(label1.replace("<leaf>", ""))
     else:
         return int(label1 != label2)
@@ -121,7 +121,8 @@ def normalize_dict(data: Union[Dict, List, Any]):
 
 def cal_f1_all(preds, answers):
     """
-    Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
+    Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives,
+    false negatives and false positives
     """
     metric_info, error_info = {}, {}
     total_tp, total_fn_or_fp = 0, 0
@@ -233,35 +234,28 @@ def cal_acc(pred: dict, answer: dict):
     """
     pred = construct_tree_from_dict(normalize_dict(pred))
     answer = construct_tree_from_dict(normalize_dict(answer))
-    return max(
-        0,
-        1
-        - (
-                zss.distance(
-                    pred,
-                    answer,
-                    get_children=zss.Node.get_children,
-                    insert_cost=insert_and_remove_cost,
-                    remove_cost=insert_and_remove_cost,
-                    update_cost=update_cost,
-                    return_operations=False,
-                )
-                / zss.distance(
-            construct_tree_from_dict(normalize_dict({})),
-            answer,
-            get_children=zss.Node.get_children,
-            insert_cost=insert_and_remove_cost,
-            remove_cost=insert_and_remove_cost,
-            update_cost=update_cost,
-            return_operations=False,
-        )
-        ),
+    val1 = zss.distance(
+        pred,
+        answer,
+        get_children=zss.Node.get_children,
+        insert_cost=insert_and_remove_cost,
+        remove_cost=insert_and_remove_cost,
+        update_cost=update_cost,
+        return_operations=False,
     )
+    val2 = zss.distance(
+        construct_tree_from_dict(normalize_dict({})),
+        answer,
+        get_children=zss.Node.get_children,
+        insert_cost=insert_and_remove_cost,
+        remove_cost=insert_and_remove_cost,
+        update_cost=update_cost,
+        return_operations=False,
+    )
+    return max(0, 1 - val1 / val2)
 
 
 def cal_acc_all(pred_info, answer_info):
-    """
-    """
     acc_info, error_info = {}, {}
     for file_name, answer in answer_info.items():
         # if file_name not in pred_info:
@@ -303,13 +297,11 @@ def eval_donut(pdt_info, gt_info, normalize_func=None, data_name=None):
     acc_average, acc_error_info = cal_acc_all(pdt_info, gt_info)
     eval_info = {"f1_score": f1_score, "acc": acc_average, "class_f1_score": class_eval_info,
                  "f1_error_info": error_info, "acc_error_info": acc_error_info}
-    print(data_name, "f1_score", f1_score,  "acc", acc_average)
+    print(data_name, "f1_score", f1_score, "acc", acc_average)
     return eval_info
 
 
 def post_process_to_json(qwen_info_str, file_name=None):
-    """
-    """
     try:
         if "```json" in qwen_info_str:
             if "```" not in qwen_info_str:
@@ -320,10 +312,7 @@ def post_process_to_json(qwen_info_str, file_name=None):
             json_str = qwen_info_str.strip().replace("\n", "")
         json_data = json.loads(json_str)
         return json_data
-    except Exception as e:
-        # print("--> post error: {}, file_name: {}".format(e, file_name))
-        # print("json_raw", qwen_info_str)
-        # print("json_str", json_str)
+    except Exception as err:  # noqa: F841
         return None
 
 
