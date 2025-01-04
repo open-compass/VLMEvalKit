@@ -21,11 +21,8 @@ class MVTamperBench(VideoBaseDataset):
 
     MD5 = {
         'MVTamperBench': '3557260881ba47db8add440c5edb742a',
-        'MVTamperBenchStart': '3557260881ba47db8add440c5edb742a',
-        'MVTamperBenchEnd': '3557260881ba47db8add440c5edb742a',
-        'MVTamperBenchSample': 'af0059e5e0f894aa61753b5a09c37fc6',
-        'MVTamperBenchSample_Start': '69f8ce9be14c297c1e7478b49bbe80db',
-        'MVTamperBenchSample_End': 'fb12bf5e0355b8ff6a1b029b2970347c',
+        'MVTamperBenchStart': 'c1d3c299ddbff6000f0d9cad820187b8',
+        'MVTamperBenchEnd': 'aa2c19dd02e1b006ee2d4be9f6f2b62b',
     }
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
 the detail and movement of objects, and the action and pose of persons. \
@@ -79,9 +76,9 @@ Based on your observations, select the best option that accurately addresses the
 
     @classmethod
     def supported_datasets(cls):
-        return ['MVTamperBench', 'MVTamperBenchStart', 'MVTamperBenchEnd', 'MVTamperBenchSample', 'MVTamperBenchSample_Start', 'MVTamperBenchSample_End']
+        return ['MVTamperBench', 'MVTamperBenchStart', 'MVTamperBenchEnd']
 
-    def prepare_dataset(self, dataset_name='MVTamperBenchSample', repo_id=None):
+    def prepare_dataset(self, dataset_name='MVTamperBench ', repo_id=None):
         if repo_id:
             dataset_name = repo_id.split('/')[-1]
         else:
