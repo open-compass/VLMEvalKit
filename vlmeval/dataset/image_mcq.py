@@ -42,31 +42,31 @@ class ImageMCQDataset(ImageBaseDataset):
 
     DATASET_URL = {
         # MMBench v1.0
-        'MMBench_DEV_EN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN.tsv',
-        'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN.tsv',
-        'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN.tsv',
-        'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN.tsv',
-        'MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench.tsv',  # Internal Only
-        'MMBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN.tsv',    # Internal Only
+        'MMBench_DEV_EN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_EN.tsv',
+        'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_EN.tsv',
+        'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_CN.tsv',
+        'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_CN.tsv',
+        'MMBench': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench.tsv',  # Internal
+        'MMBench_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN.tsv',  # Internal
         # MMBench v1.1
-        'MMBench_DEV_EN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_EN_V11.tsv',
-        'MMBench_TEST_EN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_EN_V11.tsv',
-        'MMBench_DEV_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_DEV_CN_V11.tsv',
-        'MMBench_TEST_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_TEST_CN_V11.tsv',
-        'MMBench_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_V11.tsv',  # Internal Only
-        'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/VLMEval/MMBench_CN_V11.tsv',    # Internal Only
+        'MMBench_DEV_EN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_EN_V11.tsv',
+        'MMBench_TEST_EN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_EN_V11.tsv',
+        'MMBench_DEV_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_CN_V11.tsv',
+        'MMBench_TEST_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_CN_V11.tsv',
+        'MMBench_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_V11.tsv',  # Internal
+        'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN_V11.tsv',  # Internal
         # SEEDBench Series
-        'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench_IMG.tsv',
+        'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench_IMG.tsv',
         'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
-        'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/VLMEval/SEEDBench2_Plus.tsv',
+        'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench2_Plus.tsv',
         # ScienceQA Series
-        'ScienceQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_VAL.tsv',
-        'ScienceQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ScienceQA_TEST.tsv',
+        'ScienceQA_VAL': 'https://opencompass.openxlab.space/utils/benchmarks/ScienceQA/ScienceQA_VAL.tsv',
+        'ScienceQA_TEST': 'https://opencompass.openxlab.space/utils/benchmarks/ScienceQA/ScienceQA_TEST.tsv',
         # MMT-Bench
-        'MMT-Bench_ALL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL_MI.tsv',
-        'MMT-Bench_ALL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_ALL.tsv',
-        'MMT-Bench_VAL_MI': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL_MI.tsv',
-        'MMT-Bench_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMT-Bench_VAL.tsv',
+        'MMT-Bench_ALL_MI': 'https://opencompass.openxlab.space/utils/benchmarks/MMT-Bench/MMT-Bench_ALL_MI.tsv',
+        'MMT-Bench_ALL': 'https://opencompass.openxlab.space/utils/benchmarks/MMT-Bench/MMT-Bench_ALL.tsv',
+        'MMT-Bench_VAL_MI': 'https://opencompass.openxlab.space/utils/benchmarks/MMT-Bench/MMT-Bench_VAL_MI.tsv',
+        'MMT-Bench_VAL': 'https://opencompass.openxlab.space/utils/benchmarks/MMT-Bench/MMT-Bench_VAL.tsv',
         # AesBench
         'AesBench_VAL': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_VAL.tsv',
         'AesBench_TEST': 'https://huggingface.co/datasets/VLMEval/AesBench/resolve/main/AesBench_TEST.tsv',
@@ -93,6 +93,10 @@ class ImageMCQDataset(ImageBaseDataset):
         ),
         'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv',
         'WorldMedQA-V': 'https://opencompass.openxlab.space/utils/VLMEval/WorldMedQA-V.tsv',
+        'VisOnlyQA-VLMEvalKit': (
+            'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
+            'resolve/main/visonlyqa_vlmevalkit.tsv'
+        ),
     }
 
     DATASET_MD5 = {
@@ -139,11 +143,12 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
-        'RealWorldQA': '92321028d2bc29040284b6674721e48f',
+        'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
-        'WorldMedQA-V': 'db504a238ac8b708f3a678882c23c3d5'
+        'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
+        "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -264,6 +269,12 @@ class ImageMCQDataset(ImageBaseDataset):
             warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
+        if dataset == 'VisOnlyQA-VLMEvalKit':
+            warnings.warn('Note that the results on VisOnlyQA-VLMEvalKit are different from the results on \
+                           the original VisOnlyQA. VisOnlyQA-VLMEvalKit does not include the \
+                           chemistry__shape_multi split and uses a different evaluation prompt. Please \
+                           explicitly specify the version of the dataset when you report results.')
+
         return acc
 
 
@@ -275,7 +286,7 @@ class MMMUDataset(ImageMCQDataset):
     }
 
     DATASET_MD5 = {
-        'MMMU_DEV_VAL': '521afc0f3bf341e6654327792781644d',
+        'MMMU_DEV_VAL': '585e8ad75e73f75dcad265dfd0417d64',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
     }
 
@@ -543,10 +554,16 @@ class MMERealWorld(ImageMCQDataset):
 
     DATASET_MD5 = {
         'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
+        'MME-RealWorld-Lite': '4c17057d7d3b6c4a0d4397c3dae0881c',
         'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
     }
     SYS = {
         'MME-RealWorld': (
+            'Select the best answer to the above multiple-choice question based on the image. '
+            'Respond with only the letter (A, B, C, D, or E) of the correct option. \n'
+            'The best answer is:'
+        ),
+        'MME-RealWorld-Lite': (
             'Select the best answer to the above multiple-choice question based on the image. '
             'Respond with only the letter (A, B, C, D, or E) of the correct option. \n'
             'The best answer is:'
@@ -559,12 +576,14 @@ class MMERealWorld(ImageMCQDataset):
 
     @classmethod
     def supported_datasets(cls):
-        return ['MME-RealWorld', 'MME-RealWorld-CN']
+        return ['MME-RealWorld', 'MME-RealWorld-CN', 'MME-RealWorld-Lite',]
 
-    def load_data(self, dataset='MME-RealWorld', repo_id='yifanzhang114/MME-RealWorld-Base64'):
+    def load_data(
+        self, dataset="MME-RealWorld", repo_id="yifanzhang114/MME-RealWorld-Base64"
+    ):
 
         def check_integrity(pth):
-            data_file = osp.join(pth, f'{dataset}.tsv')
+            data_file = osp.join(pth, f"{dataset}.tsv")
 
             if not os.path.exists(data_file):
                 return False
@@ -574,57 +593,89 @@ class MMERealWorld(ImageMCQDataset):
             return True
 
         def generate_tsv(pth):
-            tsv_file = os.path.join(pth, f'{dataset}.tsv')
+            tsv_file = os.path.join(pth, f"{dataset}.tsv")
 
             if os.path.exists(tsv_file):
-                print(f'{tsv_file} already exists.')
+                print(f"{tsv_file} already exists.")
                 return
 
             json_dir = os.path.join(pth, dataset)
-            json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
+            json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
 
             data_list = []
             for json_file in json_files:
-                with open(os.path.join(json_dir, json_file), 'r') as f:
+                with open(os.path.join(json_dir, json_file), "r") as f:
                     data = json.load(f)
                     for item in tqdm(data):
-                        choice_prompt = 'The choices are listed below:\n' if dataset == 'MME-RealWorld' else '选项如下所示:\n'
-                        data_list.append({
-                            'index': item['index'],
-                            'image': item['image'],
-                            'question': item['question'],
-                            'multi-choice options': choice_prompt + '\n'.join(item['multi-choice options']),
-                            'A': item['multi-choice options'][0][4:],
-                            'B': item['multi-choice options'][1][4:],
-                            'C': item['multi-choice options'][2][4:],
-                            'D': item['multi-choice options'][3][4:],
-                            'E': item['multi-choice options'][4][4:],
-                            'answer': item['answer'],
-                            'category': item['category'],
-                            'l2-category': item['l2-category']
-                        })
+                        choice_prompt = (
+                            "The choices are listed below:\n"
+                            if dataset in ["MME-RealWorld", "MME-RealWorld-Lite"]
+                            else "选项如下所示:\n"
+                        )
+                        data_list.append(
+                            {
+                                "index": item["index"],
+                                "image": item["image"],
+                                "question": item["question"],
+                                "multi-choice options": choice_prompt
+                                + "\n".join(item["multi-choice options"]),
+                                "A": item["multi-choice options"][0][4:],
+                                "B": item["multi-choice options"][1][4:],
+                                "C": item["multi-choice options"][2][4:],
+                                "D": item["multi-choice options"][3][4:],
+                                "E": item["multi-choice options"][4][4:],
+                                "answer": item["answer"],
+                                "category": item["category"],
+                                "l2-category": item["l2-category"],
+                            }
+                        )
             df = pd.DataFrame(data_list)
-            df.to_csv(tsv_file, sep='\t', index=False)
-            print(f'TSV file saved to {tsv_file}')
+            df.to_csv(tsv_file, sep="\t", index=False)
+            print(f"TSV file saved to {tsv_file}")
 
         # Check if dataset is cached and has integrity
+        if dataset == "MME-RealWorld-Lite":
+            url = 'https://huggingface.co/datasets/yifanzhang114/MME-RealWorld-Base64/resolve/main/mme_realworld_lite.tsv'  # noqa: E501
+            file_md5 = (
+                self.DATASET_MD5[dataset] if dataset in self.DATASET_MD5 else None
+            )
+            datas = self.prepare_tsv(url, file_md5)
+            choice_prompt = "The choices are listed below:\n"
+            for index, item in datas.iterrows():
+                options = eval(item["multi-choice options"])
+                datas.loc[index, "multi-choice options"] = choice_prompt + "\n".join(
+                    options
+                )
+                datas.loc[index, "A"] = options[0][4:]
+                datas.loc[index, "B"] = options[1][4:]
+                datas.loc[index, "C"] = options[2][4:]
+                datas.loc[index, "D"] = options[3][4:]
+                datas.loc[index, "E"] = options[4][4:]
+            return datas
+
         update_flag = False
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
-            print(f'Using cached dataset from {cache_path}')
+            print(f"Using cached dataset from {cache_path}")
         else:
             from huggingface_hub import snapshot_download
+
             # Download or find the dataset path
-            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
             generate_tsv(dataset_path)
             update_flag = True
 
-        data_path = os.path.join(dataset_path, f'{dataset}.tsv')
-        if file_size(data_path, 'GB') > 1:
-            local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+        data_path = os.path.join(dataset_path, f"{dataset}.tsv")
+        if file_size(data_path, "GB") > 1:
+            local_path = data_path.replace(".tsv", "_local.tsv")
+            if (
+                not osp.exists(local_path)
+                or os.environ.get("FORCE_LOCAL", None)
+                or update_flag
+            ):
                 from vlmeval.tools import LOCALIZE
+
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)

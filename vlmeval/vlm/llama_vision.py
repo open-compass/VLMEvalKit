@@ -27,6 +27,8 @@ class llama_vision(BaseModel):
         # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
         num_layers_per_gpu = total_cost // num_gpus
         num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
+        # The total number of GPUs might be odd
+        num_layers_per_gpu[-1] = total_cost - sum(num_layers_per_gpu[:-1])
         num_layers_per_gpu[0] -= 5
         num_layers_per_gpu[-1] -= 7
 
@@ -77,7 +79,7 @@ class llama_vision(BaseModel):
 
         self.device = 'cuda'
         self.processor = AutoProcessor.from_pretrained(model_path)
-        if 'Instruct' in model_path:
+        if 'Instruct' in model_path or 'cot' in model_path or 'CoT' in model_path:
             kwargs_default = dict(do_sample=True, temperature=0.6, top_p=0.9)
         else:
             kwargs_default = dict(do_sample=False, max_new_tokens=512, temperature=0.0, top_p=None, num_beams=1)
@@ -194,9 +196,11 @@ class llama_vision(BaseModel):
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
         inputs = self.processor(image, input_text, return_tensors='pt').to(self.device)
         if not self.use_custom_prompt(dataset):
-            if DATASET_TYPE(dataset) == 'MCQ' or DATASET_TYPE(dataset) == 'Y/N':
+            if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
                 self.kwargs['max_new_tokens'] = 128
             else:
                 self.kwargs['max_new_tokens'] = 512
+        if "cot" in self.model_name or "CoT" in self.model_name:
+            self.kwargs['max_new_tokens'] = 2048
         output = self.model.generate(**inputs, **self.kwargs)
         return self.processor.decode(output[0][inputs['input_ids'].shape[1]:]).replace('<|eot_id|>', '')

@@ -76,7 +76,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         repetition_penalty=1.0,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
-        verbose: bool = True,
+        post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
+        verbose: bool = False,
     ):
         super().__init__(use_custom_prompt=use_custom_prompt)
         self.min_pixels = min_pixels
@@ -90,8 +91,10 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
+        self.post_process = post_process
         self.fps = 2.0
         self.nframe = 64
+        self.FRAME_FACTOR = 2
 
         from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
         rank, world_size = get_rank_and_world_size()
@@ -105,22 +108,22 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         assert max_gpu_mem > 0
 
         # If only one process and GPU memory is less than 40GB
-        if auto_split_flag():
+        if '72b' in self.model_path.lower():
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_path, torch_dtype='auto', device_map=split_model(), attn_implementation='flash_attention_2'
+            )
+            self.model.eval()
+        elif auto_split_flag():
             assert world_size == 1, 'Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL'
             # Will Use All GPUs to run one model
             self.model = Qwen2VLForConditionalGeneration.from_pretrained(
                 model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
             )
-        elif '72b' not in self.model_path.lower():
+        else:
             self.model = Qwen2VLForConditionalGeneration.from_pretrained(
                 model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
             )
             self.model.cuda().eval()
-        else:
-            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-                model_path, torch_dtype='auto', device_map=split_model(), attn_implementation='flash_attention_2'
-            )
-            self.model.eval()
 
         torch.cuda.empty_cache()
 
@@ -147,7 +150,16 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 if self.fps is not None:
                     item['fps'] = self.fps
                 elif self.nframe is not None:
-                    item['nframes'] = self.nframe
+                    import cv2
+                    video = cv2.VideoCapture(s['value'])
+                    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                    video.release()
+                    if frame_count < self.nframe:
+                        new_frame_count = frame_count // self.FRAME_FACTOR * self.FRAME_FACTOR
+                        print(f"use {new_frame_count} for {s['value']}")
+                        item['nframes'] = new_frame_count
+                    else:
+                        item['nframes'] = self.nframe
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:
@@ -185,6 +197,24 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
         response = out[0]
+        if self.post_process:
+            resp = response.split('\\boxed{')[-1]
+            lt = len(resp)
+            counter, end = 1, None
+            for i in range(lt):
+                if resp[i] == '{':
+                    counter += 1
+                elif resp[i] == '}':
+                    counter -= 1
+                if counter == 0:
+                    end = i
+                    break
+                elif i == lt - 1:
+                    end = lt
+                    break
+            if end is not None:
+                response = resp[:end]
+
         if self.verbose:
             print(f'\033[32m{response}\033[0m')
         return response

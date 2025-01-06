@@ -162,37 +162,32 @@ def MathVerse_auxeval_score(model, line):
     return dict(log_score=log, score=False)
 
 
-def get_acc_with_condition(res_pd, key, value):
-    """
-    Calculate the accuracy of predictions with a specific condition
-    """
-    total_pd = res_pd[res_pd[key] == value]
-    correct_pd = total_pd[total_pd['score']]
-    acc = '{:.2f}'.format(len(correct_pd) / len(total_pd) * 100) if len(total_pd) > 0 else '0.00'
-    return len(correct_pd), len(total_pd), acc
-
-
 def MathVerse_acc(result_file):
     df = load(result_file)
-    total = len(df)
-    correct = sum(1 for _, row in df.iterrows() if row['score'])
-    accuracy = round(correct / total * 100, 2)
-    scores = {'average': {'accuracy': accuracy, 'correct': correct, 'total': total}}
 
     df['metadata'] = df['metadata'].apply(lambda x: x.replace("'", '"'))
     df['metadata'] = df['metadata'].apply(json.loads)
     df_metadata = pd.json_normalize(df['metadata'])
     df = pd.concat([df.drop('metadata', axis=1), df_metadata], axis=1)
 
-    target_keys = ['problem_version', 'subfield']
+    subset = list(set(df['problem_version']))
 
-    for key in target_keys:
-        values = df[key].unique()
-        scores[key] = {}
-        for value in values:
-            correct, total, acc = get_acc_with_condition(df, key, value)
-            if total > 0:
-                scores[key][value] = {'accuracy': acc, 'correct': correct, 'total': total}
-        scores[key] = dict(sorted(scores[key].items(), key=lambda item: float(item[1]['accuracy']), reverse=True))
+    res = defaultdict(list)
+    for p in subset:
+        if p != 'Overall':
+            sub = df[df['problem_version'] == p]
+        else:
+            sub = cp.deepcopy(df)
+        res['split'].append(p)
+        # Overall Acc
+        res['Overall'].append(np.mean(sub['score']) * 100)
+        # Subject
+        subjects = set(df['subject'])
+        for k in subjects:
+            res[k].append(np.mean(sub[sub['subject'] == k]['score']) * 100)
+        # Subfield
+        subfields = set(df['subfield'])
+        for k in subfields:
+            res[k].append(np.mean(sub[sub['subfield'] == k]['score']) * 100)
 
-    return pd.DataFrame.from_dict(scores, orient='index')
+    return pd.DataFrame(res)
