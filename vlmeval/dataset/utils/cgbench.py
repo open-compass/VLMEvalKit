@@ -539,7 +539,7 @@ def save_step_2_steps(data, step_1_results):
 
 
 def clue_frame_paths(clue_frame_root, qid, num_frames=8):
-    frame_root = osp.join(clue_frame_root, qid)
+    frame_root = osp.join(clue_frame_root, str(qid))
     os.makedirs(frame_root, exist_ok=True)
     return [osp.join(frame_root, frame_tmpl.format(i, num_frames)) for i in range(1, num_frames + 1)]
 

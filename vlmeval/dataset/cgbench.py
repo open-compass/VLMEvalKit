@@ -491,7 +491,6 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
         return valid_paths, valid_indices, vid_fps
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
         assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
@@ -896,7 +895,6 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         return valid_paths, valid_indices, vid_fps
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
         from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
@@ -928,12 +926,12 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
         data_no_model_result = data_pred_no_na[data_pred_no_na["model_result"] == -1]
         data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
 
-        print(judge_kwargs)
+        if judge_kwargs.get("model", None) != "gpt-4o-0806":
+            judge_kwargs["model"] = "gpt-4o-0806"
+            print("The judge model in cg-bench is gpt-4o-0806!")
 
         model_step_1 = build_judge(system_prompt=sys_prompt_open_eval_step_1, **judge_kwargs)
         nproc = judge_kwargs.pop("nproc", 32)
-
-        nproc = 32
 
         lines_step_1 = data_step_1.to_dict("records")
         tups_step_1 = [(model_step_1, line) for line in lines_step_1]
@@ -969,11 +967,11 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         tups_step_2 = []
 
-        for line in lines_step_2:
+        for line in tqdm(lines_step_2):
             clue_intervals = eval(line["clue_intervals"])
             lmu_root = LMUDataRoot()
             clue_frame_root = osp.join(lmu_root, "clue_images", self.dataset)
-            data_root = "../cgbench"
+            data_root = self.data_root
             frame_paths, _, _ = save_clue_video_frames(
                 data_root,
                 clue_frame_root,
@@ -1165,6 +1163,11 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
             for video_pth in data["video"]:
                 if not osp.exists(osp.join(pth, video_pth)):
                     return False
+
+            for clue_video_pth in data["clue_video_path"]:
+                if clue_video_pth and not (isinstance(clue_video_pth, float) and np.isnan(clue_video_pth)):
+                    if not osp.exists(osp.join(pth, clue_video_pth)):
+                        return False
 
             return True
 
@@ -1509,7 +1512,6 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
         return valid_paths, valid_indices, vid_fps
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
         assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
@@ -1776,7 +1778,6 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
             if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
-
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
@@ -1913,7 +1914,6 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         return valid_paths, valid_indices, vid_fps
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
         from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
@@ -1942,17 +1942,15 @@ class CGBench_OpenEnded(VideoBaseDataset):
             axis=1,
         )
 
-        if judge_kwargs["model"] != "gpt-4o-0806":
+        if judge_kwargs.get("model", None) != "gpt-4o-0806":
             judge_kwargs["model"] = "gpt-4o-0806"
             print("The judge model in cg-bench is gpt-4o-0806!")
-
-        nproc = 32
 
         data_no_model_result = data_pred_no_na[data_pred_no_na["model_result"] == -1]
         data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
 
         model_step_1 = build_judge(system_prompt=sys_prompt_open_eval_step_1, **judge_kwargs)
-        # nproc = judge_kwargs.pop('nproc', 32)
+        nproc = judge_kwargs.pop('nproc', 32)
 
         lines_step_1 = data_step_1.to_dict("records")
         tups_step_1 = [(model_step_1, line) for line in lines_step_1]
@@ -1986,11 +1984,11 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         tups_step_2 = []
 
-        for line in lines_step_2:
+        for line in tqdm(lines_step_2):
             clue_intervals = eval(line["clue_intervals"])
             lmu_root = LMUDataRoot()
             clue_frame_root = osp.join(lmu_root, "clue_images", self.dataset)
-            data_root = "../cgbench"
+            data_root = self.data_root
             frame_paths, _, _ = save_clue_video_frames(
                 data_root,
                 clue_frame_root,
