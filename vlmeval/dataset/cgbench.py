@@ -12,7 +12,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
     TYPE = "Video-MCQ-Grounding"
 
-    MD5 = "1e14d1b90104ec92ddbdef5f077d6c41"
+    MD5 = "54ed3e90a51a6fb375c92b319a715f72"
 
     SYS = {
         "long_acc": (
@@ -131,7 +131,11 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                         if sub_text.strip() and sub_text not in subtitles:
                             subtitles.append(sub_text)
 
-        return "\n".join(subtitles)
+        if subtitles:
+            subtitles_str = '\n'.join(subtitles)
+            return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
+        else:
+            return ""
 
     def prepare_dataset(self, dataset_name="CG-Bench_MCQ_Grounding_Mini", repo_id="CG-Bench/CG-Bench"):
 
@@ -155,96 +159,6 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-
-            def unzip_hf_zip(pth):
-
-                import zipfile
-
-                target_dir = pth
-
-                video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("video")
-                ]
-
-                videos_temp_zip = os.path.join(target_dir, "videos_merged.zip")
-
-                print("Merging video files ...")
-
-                with open(videos_temp_zip, "wb") as outfile:
-                    for video_zip_file in tqdm(video_zip_files, desc="Merging videos"):
-                        with open(video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting video files...")
-
-                try:
-                    with zipfile.ZipFile(videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(videos_temp_zip):
-                        os.remove(videos_temp_zip)
-                        print("Cleaned up temporary video file")
-
-                clue_video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("clue_video")
-                ]
-
-                clue_videos_temp_zip = os.path.join(target_dir, "clue_videos_merged.zip")
-
-                print("Merging clue video files ...")
-
-                with open(clue_videos_temp_zip, "wb") as outfile:
-                    for clue_video_zip_file in tqdm(clue_video_zip_files, desc="Merging clue_videos"):
-                        with open(clue_video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting clue video files...")
-
-                try:
-                    with zipfile.ZipFile(clue_videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(clue_videos_temp_zip):
-                        os.remove(clue_videos_temp_zip)
-                        print("Cleaned up temporary clue video file")
-
-                print("Extracting subtitle files ...")
-
-                subtitles_zip = os.path.join(target_dir, "subtitles.zip")
-
-                try:
-                    with zipfile.ZipFile(subtitles_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
 
             def generate_tsv(pth):
 
@@ -333,80 +247,104 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
         message = []
 
-        if task_mode in ["long_acc", "clue_acc"]:
-            system_prompt = self.SYS[task_mode]
-        elif task_mode == "miou":
-            if self.use_frame_time and not video_llm:
+        origin_use_subtitle_time = self.use_subtitle_time
+
+        try:
+            if task_mode in ["long_acc", "clue_acc"]:
                 system_prompt = self.SYS[task_mode]
-            else:
-                system_prompt = self.SYS["miou_wo_frame_time"]
+            elif task_mode == "miou":
+                if self.use_frame_time and not video_llm:
+                    system_prompt = self.SYS[task_mode]
+                else:
+                    system_prompt = self.SYS["miou_wo_frame_time"]
+                    if self.use_subtitle_time is True:
+                        self.use_subtitle_time = False
 
-        user_prompt = ""
+            user_prompt = ""
 
-        if task_mode in ["long_acc", "miou"]:
+            if task_mode in ["long_acc", "miou"]:
+                video_path = line["video"]
 
-            video_path = line["video"]
+                if video_llm:
+                    message.append(dict(type="video", value=osp.join(self.data_root, video_path)))
 
-            if video_llm:
-                message.append(dict(type="video", value=osp.join(self.data_root, video_path)))
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(line["subtitle_path"])
-            else:
-                image_paths, frame_indices, vid_fps = self.save_video_frames(
-                    video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
-                )
-                message.extend(dict(type="image", value=im) for im in image_paths)
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        if self.nframe:
+                            image_paths, frame_indices, vid_fps = self.save_video_frames(
+                                video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                            )
+                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
+                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                        else:
+                            user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
+                else:
+                    image_paths, frame_indices, vid_fps = self.save_video_frames(
+                        video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                    )
+                    message.extend(dict(type="image", value=im) for im in image_paths)
 
-                if self.use_frame_time:
-                    user_prompt += get_timestampes(frame_indices, vid_fps)
+                    if self.use_frame_time:
+                        user_prompt += get_timestampes(frame_indices, vid_fps)
 
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(
-                        line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        user_prompt += self.get_subtitles(
+                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
+                            sub_time=self.use_subtitle_time
+                        )
+
+            elif task_mode == "clue_acc":
+                clue_video_path = line["clue_video_path"]
+                video_path = line["video"]
+
+                if video_llm:
+                    message.append(dict(type="video", value=osp.join(self.data_root, clue_video_path)))
+                    print(message)
+
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        if self.nframe:
+                            image_paths, frame_indices, vid_fps = self.save_video_frames(
+                                video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                            )
+                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
+                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                        else:
+                            user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
+                else:
+                    if self.nframe > 32:
+                        self.nframe = 32
+                        print("The maximum number of frames is 32 when evaluating clue-based mcq in CG-Bench !")
+
+                    clue_intervals = eval(line["clue_intervals"])
+
+                    image_paths, frame_indices, vid_fps = self.save_video_frames(
+                        video_path, uid=line["qid"], clue_intervals=clue_intervals, num_frames=self.nframe, fps=self.fps
                     )
 
-        elif task_mode == "clue_acc":
+                    message.extend(dict(type="image", value=im) for im in image_paths)
 
-            clue_video_path = line["clue_video_path"]
-            video_path = line["video"]
+                    if self.use_frame_time:
+                        user_prompt += get_timestampes(frame_indices, vid_fps)
 
-            if video_llm:
-                message.append(dict(type="video", value=osp.join(self.data_root, clue_video_path)))
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        user_prompt += self.get_subtitles(
+                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
+                            sub_time=self.use_subtitle_time
+                        )
 
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(line["subtitle_path"])
-            else:
+            question = line["question"]
+            user_prompt += f"Question: {question}\n\n"
 
-                if self.nframe > 32:
-                    self.nframe = 32
-                    print("The maximum number of frames is 32 when evaluating clue-based mcq in CG-Bench !")
+            choices = eval(line["choices"])
+            labels = [chr(ord("A") + i) for i in range(len(choices))]
+            user_prompt += "\n".join([f"{label}:{value}" for label, value in zip(labels, choices)]) + "\n\n"
 
-                clue_intervals = eval(line["clue_intervals"])
+            message.append(dict(type="text", value=system_prompt + user_prompt))
 
-                image_paths, frame_indices, vid_fps = self.save_video_frames(
-                    video_path, uid=line["qid"], clue_intervals=clue_intervals, num_frames=self.nframe, fps=self.fps
-                )
+            return message
 
-                message.extend(dict(type="image", value=im) for im in image_paths)
-
-                if self.use_frame_time:
-                    user_prompt += get_timestampes(frame_indices, vid_fps)
-
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(
-                        line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
-                    )
-
-        question = line["question"]
-        user_prompt += f"Question: {question}\n\n"
-
-        choices = eval(line["choices"])
-        labels = [chr(ord("A") + i) for i in range(len(choices))]
-        user_prompt += "\n".join([f"{label}:{value}" for label, value in zip(labels, choices)]) + "\n\n"
-
-        message.append(dict(type="text", value=system_prompt + user_prompt))
-
-        return message
+        finally:
+            # Ensure that `use_subtitle_time` is always restored to its original value
+            self.use_subtitle_time = origin_use_subtitle_time
 
     def save_video_frames(self, video, uid, clue_intervals=None, num_frames=8, fps=-1):
 
@@ -542,7 +480,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
     dataset = "CG-Bench_OpenEnded_Mini"
 
-    MD5 = "6bb8b5bb9a273006601e6fe441ca7a26"
+    MD5 = "9175791b11afdfa305fdb3e525b7a4ee"
 
     SYS = (
         "You will be provided with sampled frames from a video, along with a "
@@ -609,7 +547,11 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                             if sub_text.strip() and sub_text not in subtitles:
                                 subtitles.append(sub_text)
 
-        return "\n".join(subtitles)
+        if subtitles:
+            subtitles_str = '\n'.join(subtitles)
+            return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
+        else:
+            return ""
 
     def prepare_dataset(self, dataset_name="CG-Bench_OpenEnded_Mini", repo_id="CG-Bench/CG-Bench"):
 
@@ -631,99 +573,8 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
         cache_path = get_cache_path(repo_id)
 
         if cache_path is not None and check_integrity(cache_path):
-
             dataset_path = cache_path
         else:
-
-            def unzip_hf_zip(pth):
-
-                import zipfile
-
-                target_dir = pth
-
-                video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("video")
-                ]
-
-                videos_temp_zip = "videos_merged.zip"
-
-                print("Merging video files ...")
-
-                with open(videos_temp_zip, "wb") as outfile:
-                    for video_zip_file in tqdm(video_zip_files, desc="Merging videos"):
-                        with open(video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting video files...")
-
-                try:
-                    with zipfile.ZipFile(videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(videos_temp_zip):
-                        os.remove(videos_temp_zip)
-                        print("Cleaned up temporary video file")
-
-                clue_video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("clue_video")
-                ]
-
-                clue_videos_temp_zip = "clue_videos_merged.zip"
-
-                print("Merging clue video files ...")
-
-                with open(clue_videos_temp_zip, "wb") as outfile:
-                    for clue_video_zip_file in tqdm(clue_video_zip_files, desc="Merging clue_videos"):
-                        with open(clue_video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting clue video files...")
-
-                try:
-                    with zipfile.ZipFile(clue_videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(clue_videos_temp_zip):
-                        os.remove(clue_videos_temp_zip)
-                        print("Cleaned up temporary clue video file")
-
-                print("Extracting subtitle files ...")
-
-                subtitles_zip = os.path.join(target_dir, "subtitles.zip")
-
-                try:
-                    with zipfile.ZipFile(subtitles_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
 
             def generate_tsv(pth):
 
@@ -787,7 +638,14 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
         if video_llm:
             message.append(dict(type="video", value=osp.join(self.data_root, video_path)))
             if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                user_prompt += self.get_subtitles(line["subtitle_path"])
+                if self.nframe:
+                    image_paths, frame_indices, vid_fps = self.save_video_frames(
+                        video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                    )
+                    user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
+                                                      fps=vid_fps, sub_time=self.use_subtitle_time)
+                else:
+                    user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
         else:
             image_paths, frame_indices, vid_fps = self.save_video_frames(
                 video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
@@ -799,7 +657,8 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
             if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                 user_prompt += self.get_subtitles(
-                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
+                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
+                    sub_time=self.use_subtitle_time
                 )
 
         question = line["question"]
@@ -1028,7 +887,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
     TYPE = "Video-MCQ-Grounding"
 
-    MD5 = "93faf79bb67ad7a369c607aa3b98a2cd"
+    MD5 = "eaead3d978a689269fefce4ae29c86df"
 
     SYS = {
         "long_acc": (
@@ -1147,7 +1006,11 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                         if sub_text.strip() and sub_text not in subtitles:
                             subtitles.append(sub_text)
 
-        return "\n".join(subtitles)
+        if subtitles:
+            subtitles_str = '\n'.join(subtitles)
+            return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
+        else:
+            return ""
 
     def prepare_dataset(self, dataset_name="CG-Bench_MCQ_Grounding", repo_id="CG-Bench/CG-Bench"):
 
@@ -1176,96 +1039,6 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-
-            def unzip_hf_zip(pth):
-
-                import zipfile
-
-                target_dir = pth
-
-                video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("video")
-                ]
-
-                videos_temp_zip = "videos_merged.zip"
-
-                print("Merging video files ...")
-
-                with open(videos_temp_zip, "wb") as outfile:
-                    for video_zip_file in tqdm(video_zip_files, desc="Merging videos"):
-                        with open(video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting video files...")
-
-                try:
-                    with zipfile.ZipFile(videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(videos_temp_zip):
-                        os.remove(videos_temp_zip)
-                        print("Cleaned up temporary video file")
-
-                clue_video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("clue_video")
-                ]
-
-                clue_videos_temp_zip = "clue_videos_merged.zip"
-
-                print("Merging clue video files ...")
-
-                with open(clue_videos_temp_zip, "wb") as outfile:
-                    for clue_video_zip_file in tqdm(clue_video_zip_files, desc="Merging clue_videos"):
-                        with open(clue_video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting clue video files...")
-
-                try:
-                    with zipfile.ZipFile(clue_videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(clue_videos_temp_zip):
-                        os.remove(clue_videos_temp_zip)
-                        print("Cleaned up temporary clue video file")
-
-                print("Extracting subtitle files ...")
-
-                subtitles_zip = os.path.join(target_dir, "subtitles.zip")
-
-                try:
-                    with zipfile.ZipFile(subtitles_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
 
             def generate_tsv(pth):
 
@@ -1354,80 +1127,104 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
         message = []
 
-        if task_mode in ["long_acc", "clue_acc"]:
-            system_prompt = self.SYS[task_mode]
-        elif task_mode == "miou":
-            if self.use_frame_time:
+        origin_use_subtitle_time = self.use_subtitle_time
+
+        try:
+            if task_mode in ["long_acc", "clue_acc"]:
                 system_prompt = self.SYS[task_mode]
-            else:
-                system_prompt = self.SYS["miou_wo_frame_time"]
+            elif task_mode == "miou":
+                if self.use_frame_time and not video_llm:
+                    system_prompt = self.SYS[task_mode]
+                else:
+                    system_prompt = self.SYS["miou_wo_frame_time"]
+                    if self.use_subtitle_time is True:
+                        self.use_subtitle_time = False
 
-        user_prompt = ""
+            user_prompt = ""
 
-        if task_mode in ["long_acc", "miou"]:
+            if task_mode in ["long_acc", "miou"]:
+                video_path = line["video"]
 
-            video_path = line["video"]
+                if video_llm:
+                    message.append(dict(type="video", value=osp.join(self.data_root, video_path)))
 
-            if video_llm:
-                message.append(dict(type="video", value=osp.join(self.data_root, video_path)))
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(line["subtitle_path"])
-            else:
-                image_paths, frame_indices, vid_fps = self.save_video_frames(
-                    video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
-                )
-                message.extend(dict(type="image", value=im) for im in image_paths)
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        if self.nframe:
+                            image_paths, frame_indices, vid_fps = self.save_video_frames(
+                                video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                            )
+                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
+                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                        else:
+                            user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
+                else:
+                    image_paths, frame_indices, vid_fps = self.save_video_frames(
+                        video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                    )
+                    message.extend(dict(type="image", value=im) for im in image_paths)
 
-                if self.use_frame_time:
-                    user_prompt += get_timestampes(frame_indices, vid_fps)
+                    if self.use_frame_time:
+                        user_prompt += get_timestampes(frame_indices, vid_fps)
 
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(
-                        line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        user_prompt += self.get_subtitles(
+                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
+                            sub_time=self.use_subtitle_time
+                        )
+
+            elif task_mode == "clue_acc":
+                clue_video_path = line["clue_video_path"]
+                video_path = line["video"]
+
+                if video_llm:
+                    message.append(dict(type="video", value=osp.join(self.data_root, clue_video_path)))
+                    print(message)
+
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        if self.nframe:
+                            image_paths, frame_indices, vid_fps = self.save_video_frames(
+                                video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                            )
+                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
+                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                        else:
+                            user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
+                else:
+                    if self.nframe > 32:
+                        self.nframe = 32
+                        print("The maximum number of frames is 32 when evaluating clue-based mcq in CG-Bench !")
+
+                    clue_intervals = eval(line["clue_intervals"])
+
+                    image_paths, frame_indices, vid_fps = self.save_video_frames(
+                        video_path, uid=line["qid"], clue_intervals=clue_intervals, num_frames=self.nframe, fps=self.fps
                     )
 
-        elif task_mode == "clue_acc":
+                    message.extend(dict(type="image", value=im) for im in image_paths)
 
-            clue_video_path = line["clue_video_path"]
-            video_path = line["video"]
+                    if self.use_frame_time:
+                        user_prompt += get_timestampes(frame_indices, vid_fps)
 
-            if video_llm:
-                message.append(dict(type="video", value=osp.join(self.data_root, clue_video_path)))
+                    if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
+                        user_prompt += self.get_subtitles(
+                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
+                            sub_time=self.use_subtitle_time
+                        )
 
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(line["subtitle_path"])
-            else:
+            question = line["question"]
+            user_prompt += f"Question: {question}\n\n"
 
-                if self.nframe > 32:
-                    self.nframe = 32
-                    print("The maximum number of frames is 32 when evaluating clue-based mcq in CG-Bench !")
+            choices = eval(line["choices"])
+            labels = [chr(ord("A") + i) for i in range(len(choices))]
+            user_prompt += "\n".join([f"{label}:{value}" for label, value in zip(labels, choices)]) + "\n\n"
 
-                clue_intervals = eval(line["clue_intervals"])
+            message.append(dict(type="text", value=system_prompt + user_prompt))
 
-                image_paths, frame_indices, vid_fps = self.save_video_frames(
-                    video_path, uid=line["qid"], clue_intervals=clue_intervals, num_frames=self.nframe, fps=self.fps
-                )
+            return message
 
-                message.extend(dict(type="image", value=im) for im in image_paths)
-
-                if self.use_frame_time:
-                    user_prompt += get_timestampes(frame_indices, vid_fps)
-
-                if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                    user_prompt += self.get_subtitles(
-                        line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
-                    )
-
-        question = line["question"]
-        user_prompt += f"Question: {question}\n\n"
-
-        choices = eval(line["choices"])
-        labels = [chr(ord("A") + i) for i in range(len(choices))]
-        user_prompt += "\n".join([f"{label}:{value}" for label, value in zip(labels, choices)]) + "\n\n"
-
-        message.append(dict(type="text", value=system_prompt + user_prompt))
-
-        return message
+        finally:
+            # Ensure that `use_subtitle_time` is always restored to its original value
+            self.use_subtitle_time = origin_use_subtitle_time
 
     def save_video_frames(self, video, uid, clue_intervals=None, num_frames=8, fps=-1):
 
@@ -1563,7 +1360,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
     dataset = "CG-Bench_OpenEnded"
 
-    MD5 = "447b8cf2fa21ef21b2817d131198a0e9"
+    MD5 = "796035eda0b1e916c517cdc1bc145cfc"
 
     SYS = (
         "You will be provided with sampled frames from a video, along with a "
@@ -1630,7 +1427,11 @@ class CGBench_OpenEnded(VideoBaseDataset):
                             if sub_text.strip() and sub_text not in subtitles:
                                 subtitles.append(sub_text)
 
-        return "\n".join(subtitles)
+        if subtitles:
+            subtitles_str = '\n'.join(subtitles)
+            return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
+        else:
+            return ""
 
     def prepare_dataset(self, dataset_name="CG-Bench_OpenEnded", repo_id="CG-Bench/CG-Bench"):
 
@@ -1654,96 +1455,6 @@ class CGBench_OpenEnded(VideoBaseDataset):
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-
-            def unzip_hf_zip(pth):
-
-                import zipfile
-
-                target_dir = pth
-
-                video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("video")
-                ]
-
-                videos_temp_zip = "videos_merged.zip"
-
-                print("Merging video files ...")
-
-                with open(videos_temp_zip, "wb") as outfile:
-                    for video_zip_file in tqdm(video_zip_files, desc="Merging videos"):
-                        with open(video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting video files...")
-
-                try:
-                    with zipfile.ZipFile(videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-                    # 清理临时文件
-                    if os.path.exists(videos_temp_zip):
-                        os.remove(videos_temp_zip)
-                        print("Cleaned up temporary video file")
-
-                clue_video_zip_files = [
-                    os.path.join(target_dir, file)
-                    for file in os.listdir(target_dir)
-                    if file.endswith(".zip") and file.startswith("clue_video")
-                ]
-
-                clue_videos_temp_zip = "clue_videos_merged.zip"
-
-                print("Merging clue video files ...")
-
-                with open(clue_videos_temp_zip, "wb") as outfile:
-                    for clue_video_zip_file in tqdm(clue_video_zip_files, desc="Merging clue_videos"):
-                        with open(clue_video_zip_file, "rb") as infile:
-                            outfile.write(infile.read())
-
-                print("Extracting clue video files...")
-
-                try:
-                    with zipfile.ZipFile(clue_videos_temp_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
-                finally:
-
-                    if os.path.exists(clue_videos_temp_zip):
-                        os.remove(clue_videos_temp_zip)
-                        print("Cleaned up temporary clue video file")
-
-                print("Extracting subtitle files ...")
-
-                subtitles_zip = os.path.join(target_dir, "subtitles.zip")
-
-                try:
-                    with zipfile.ZipFile(subtitles_zip, "r") as zip_ref:
-
-                        total_files = len(zip_ref.namelist())
-
-                        for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                            zip_ref.extract(file, target_dir)
-
-                    print(f"Successfully extracted to {target_dir}")
-                except Exception as e:
-                    print(f"Error during extraction: {e}")
 
             def generate_tsv(pth):
 
@@ -1806,7 +1517,14 @@ class CGBench_OpenEnded(VideoBaseDataset):
         if video_llm:
             message.append(dict(type="video", value=osp.join(self.data_root, video_path)))
             if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
-                user_prompt += self.get_subtitles(line["subtitle_path"])
+                if self.nframe:
+                    image_paths, frame_indices, vid_fps = self.save_video_frames(
+                        video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
+                    )
+                    user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
+                                                      fps=vid_fps, sub_time=self.use_subtitle_time)
+                else:
+                    user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
         else:
             image_paths, frame_indices, vid_fps = self.save_video_frames(
                 video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
@@ -1818,7 +1536,8 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
             if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                 user_prompt += self.get_subtitles(
-                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
+                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
+                    sub_time=self.use_subtitle_time
                 )
 
         question = line["question"]
