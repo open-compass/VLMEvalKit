@@ -44,10 +44,13 @@ class VideoLLaVA_HF(BaseModel):
         self.model.eval().cuda()
         self.processor = VideoLlavaProcessor.from_pretrained(model_path)
         self.kwargs = kwargs
+        self.nframe = 8
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
         import av
+        if self.nframes != 8:
+            raise Exception(f'Video-LLaVA only supported 8 frames to generate, you now set frame numbers to {self.nframes}')  # noqa
         question, video = self.message_to_promptvideo(message)
 
         container = av.open(video)
