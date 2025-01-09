@@ -49,6 +49,8 @@ class VideoLLaVA_HF(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         import av
+        if self.nframes != 8:
+            raise Exception(f'Video-LLaVA only supported 8 frames to generate, you now set frame numbers to {self.nframes}')  # noqa
         question, video = self.message_to_promptvideo(message)
 
         container = av.open(video)
