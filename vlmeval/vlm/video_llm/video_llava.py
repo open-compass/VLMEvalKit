@@ -44,7 +44,7 @@ class VideoLLaVA_HF(BaseModel):
         self.model.eval().cuda()
         self.processor = VideoLlavaProcessor.from_pretrained(model_path)
         self.kwargs = kwargs
-        self.nframe = 8
+        self.nframes = 8
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
