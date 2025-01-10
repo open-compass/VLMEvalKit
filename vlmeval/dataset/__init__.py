@@ -13,12 +13,14 @@ from .image_vqa import (
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH
 )
 
+from .image_ccocr import CCOCRDataset
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
 from .mmlongbench import MMLongBench
 from .dude import DUDE
 from .slidevqa import SlideVQA
+from .vl_rewardbench import VLRewardBench
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -37,6 +39,7 @@ from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
 from .utils import *
+from .video_dataset_config import *
 from ..smp import *
 
 
@@ -129,10 +132,10 @@ class ConcatDataset(ImageBaseDataset):
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, MathVision,
     MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset,
+    MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU
+    CMMMU, VLRewardBench
 ]
 
 VIDEO_DATASET = [
@@ -200,7 +203,9 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
 
 def build_dataset(dataset_name, **kwargs):
     for cls in DATASET_CLASSES:
-        if dataset_name in cls.supported_datasets():
+        if dataset_name in supported_video_datasets:
+            return supported_video_datasets[dataset_name](**kwargs)
+        elif dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')

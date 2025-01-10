@@ -44,6 +44,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   # Hunyuan-Vision API
   HUNYUAN_SECRET_KEY=
   HUNYUAN_SECRET_ID=
+  # LMDeploy API
+  LMDEPLOY_API_BASE=
   # You can also set a proxy for calling api models during the evaluation stage
   EVAL_PROXY=
   ```
@@ -66,8 +68,6 @@ We use `run.py` for evaluation. To use the script, you can use `$VLMEvalKit/run.
 - `--mode (str, default to 'all', choices are ['all', 'infer'])`: When `mode` set to "all", will perform both inference and evaluation; when set to "infer", will only perform the inference.
 - `--nproc (int, default to 4)`: The number of threads for OpenAI API calling.
 - `--work-dir (str, default to '.')`: The directory to save evaluation results.
-- `--nframe (int, default to 8)`: The number of frames to sample from a video, only applicable to the evaluation of video benchmarks.
-- `--pack (bool, store_true)`: A video may associate with multiple questions, if `pack==True`, will ask all questions for a video in a single query.
 
 **Command for Evaluating Image Benchmarks **
 
@@ -97,10 +97,10 @@ torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
 # When running with `python`, only one VLM instance is instantiated, and it might use multiple GPUs (depending on its default behavior).
 # That is recommended for evaluating very large VLMs (like IDEFICS-80B-Instruct).
 
-# IDEFICS2-8B on MMBench-Video, with 8 frames as inputs and vanilla evaluation. On a node with 8 GPUs.
-torchrun --nproc-per-node=8 run.py --data MMBench-Video --model idefics2_8b --nframe 8
-# GPT-4o (API model) on MMBench-Video, with 16 frames as inputs and pack evaluation (all questions of a video in a single query).
-python run.py --data MMBench-Video --model GPT4o --nframe 16 --pack
+# IDEFICS2-8B on MMBench-Video, with 8 frames as inputs and vanilla evaluation. On a node with 8 GPUs. MMBench_Video_8frame_nopack is a defined dataset setting in `vlmeval/dataset/video_dataset_config.py`.
+torchrun --nproc-per-node=8 run.py --data MMBench_Video_8frame_nopack --model idefics2_8
+# GPT-4o (API model) on MMBench-Video, with 1 frame per second as inputs and pack evaluation (all questions of a video in a single query).
+python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
 The evaluation results will be printed as logs, besides. **Result Files** will also be generated in the directory `$YOUR_WORKING_DIRECTORY/{model_name}`. Files ending with `.csv` contain the evaluated metrics.
@@ -146,3 +146,8 @@ CUDA_VISIBLE_DEVICES=1,2,3 torchrun --nproc-per-node=3 run.py --data HallusionBe
 ```
 - If the local judge LLM is not good enough in following the instructions, the evaluation may fail. Please report such failures (e.g., by issues).
 - It's possible to deploy the judge LLM in different ways, e.g., use a private LLM (not from HuggingFace) or use a quantized LLM. Please refer to the [LMDeploy doc](https://lmdeploy.readthedocs.io/en/latest/serving/api_server.html). You can use any other deployment framework if they support OpenAI API.
+
+
+### Using LMDeploy to Accelerate Evaluation and Inference
+
+You can refer this [doc](/docs/en/EvalByLMDeploy.md)

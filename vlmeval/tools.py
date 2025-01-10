@@ -4,7 +4,7 @@ from vlmeval.config import *
 from vlmeval.smp import *
 
 # Define valid modes
-MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run', 'eval')
+MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run', 'eval', 'merge_pkl')
 
 CLI_HELP_MSG = \
     f"""
@@ -33,6 +33,8 @@ CLI_HELP_MSG = \
             vlmutil run l2 hf
         8. Evaluate data file:
             vlmutil eval [dataset_name] [prediction_file]
+        9. Merge pkl files:
+            vlmutil merge_pkl [pkl_dir] [world_size]
 
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
@@ -393,75 +395,102 @@ def parse_args_eval():
     return args
 
 
+def MERGE_PKL(pkl_dir, world_size=1):
+    prefs = []
+    for ws in list(range(1, 9)):
+        prefs.extend([f'{i}{ws}_' for i in range(ws)])
+    prefs = set(prefs)
+    files = os.listdir(pkl_dir)
+    files = [x for x in files if x[:3] in prefs]
+    # Merge the files
+    res_all = defaultdict(dict)
+    for f in files:
+        full_path = osp.join(pkl_dir, f)
+        key = f[3:]
+        res_all[key].update(load(full_path))
+        os.remove(full_path)
+
+    dump_prefs = [f'{i}{world_size}_' for i in range(world_size)]
+    for k in res_all:
+        for pf in dump_prefs:
+            dump(res_all[k], f'{pkl_dir}/{pf}{k}')
+        print(f'Merged {len(res_all[k])} records into {pkl_dir}/{dump_prefs[0]}{k}')
+
+
 def cli():
     logger = get_logger('VLMEvalKit Tools')
     args = sys.argv[1:]
     if not args:  # no arguments passed
         logger.info(CLI_HELP_MSG)
         return
-    if args[0].lower() in MODES:
-        if args[0].lower() == 'dlist':
-            assert len(args) >= 2
-            lst = DLIST(args[1])
-            print(' '.join(lst))
-        elif args[0].lower() == 'mlist':
-            assert len(args) >= 2
-            size = 'all'
-            if len(args) > 2:
-                size = args[2].lower()
-            lst = MLIST(args[1], size)
-            print('\n'.join(lst))
-        elif args[0].lower() == 'missing':
-            assert len(args) >= 2
-            missing_list = MISSING(args[1])
-            logger = get_logger('Find Missing')
-            logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
-            lines = []
-            for m, D in missing_list:
-                line = f'Model {m}, Dataset {D}'
-                logger.info(colored(line, 'red'))
-                lines.append(line)
-            mwlines(lines, f'{args[1]}_missing.txt')
-        elif args[0].lower() == 'circular':
-            assert len(args) >= 2
-            CIRCULAR(args[1])
-        elif args[0].lower() == 'localize':
-            assert len(args) >= 2
-            LOCALIZE(args[1])
-        elif args[0].lower() == 'check':
-            assert len(args) >= 2
-            model_list = args[1:]
-            for m in model_list:
-                CHECK(m)
-        elif args[0].lower() == 'run':
-            assert len(args) >= 2
-            lvl = args[1]
-            if len(args) == 2:
-                model = 'all'
+
+    if args[0].lower() == 'dlist':
+        assert len(args) >= 2
+        lst = DLIST(args[1])
+        print(' '.join(lst))
+    elif args[0].lower() == 'mlist':
+        assert len(args) >= 2
+        size = 'all'
+        if len(args) > 2:
+            size = args[2].lower()
+        lst = MLIST(args[1], size)
+        print('\n'.join(lst))
+    elif args[0].lower() == 'missing':
+        assert len(args) >= 2
+        missing_list = MISSING(args[1])
+        logger = get_logger('Find Missing')
+        logger.info(colored(f'Level {args[1]} Missing Results: ', 'red'))
+        lines = []
+        for m, D in missing_list:
+            line = f'Model {m}, Dataset {D}'
+            logger.info(colored(line, 'red'))
+            lines.append(line)
+        mwlines(lines, f'{args[1]}_missing.txt')
+    elif args[0].lower() == 'circular':
+        assert len(args) >= 2
+        CIRCULAR(args[1])
+    elif args[0].lower() == 'localize':
+        assert len(args) >= 2
+        LOCALIZE(args[1])
+    elif args[0].lower() == 'check':
+        assert len(args) >= 2
+        model_list = args[1:]
+        for m in model_list:
+            CHECK(m)
+    elif args[0].lower() == 'run':
+        assert len(args) >= 2
+        lvl = args[1]
+        if len(args) == 2:
+            model = 'all'
+            RUN(lvl, model)
+        else:
+            for model in args[2:]:
                 RUN(lvl, model)
-            else:
-                for model in args[2:]:
-                    RUN(lvl, model)
-        elif args[0].lower() == 'eval':
-            args = parse_args_eval()
-            data_file = args.data_file
+    elif args[0].lower() == 'eval':
+        args = parse_args_eval()
+        data_file = args.data_file
 
-            def extract_dataset(file_name):
-                fname = osp.splitext(file_name)[0].split('/')[-1]
-                parts = fname.split('_')
-                for i in range(len(parts)):
-                    if '_'.join(parts[i:]) in SUPPORTED_DATASETS:
-                        return '_'.join(parts[i:])
-                return None
+        def extract_dataset(file_name):
+            fname = osp.splitext(file_name)[0].split('/')[-1]
+            parts = fname.split('_')
+            for i in range(len(parts)):
+                if '_'.join(parts[i:]) in SUPPORTED_DATASETS:
+                    return '_'.join(parts[i:])
+            return None
 
-            dataset = extract_dataset(data_file)
-            assert dataset is not None, f'Cannot infer dataset name from {data_file}'
-            kwargs = {'nproc': args.nproc}
-            if args.judge is not None:
-                kwargs['model'] = args.judge
-            if args.retry is not None:
-                kwargs['retry'] = args.retry
-            EVAL(dataset_name=dataset, data_file=data_file, **kwargs)
+        dataset = extract_dataset(data_file)
+        assert dataset is not None, f'Cannot infer dataset name from {data_file}'
+        kwargs = {'nproc': args.nproc}
+        if args.judge is not None:
+            kwargs['model'] = args.judge
+        if args.retry is not None:
+            kwargs['retry'] = args.retry
+        EVAL(dataset_name=dataset, data_file=data_file, **kwargs)
+    elif args[0].lower() == 'merge_pkl':
+        assert len(args) == 3
+        args[2] = int(args[2])
+        assert args[2] in [1, 2, 4, 8]
+        MERGE_PKL(args[1], args[2])
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)

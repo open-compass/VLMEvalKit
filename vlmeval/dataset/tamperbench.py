@@ -31,7 +31,7 @@ Based on your observations, select the best option that accurately addresses the
 
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='MVTamperBench', pack=False):
+    def __init__(self, dataset='MVTamperBench', nframe=0, fps=-1):
         self.type_data_list = {
             'Action Sequence': ('action_sequence.json',
                                 'your_data_path/star/Charades_v1_480/', 'video', False),  # has start & end
@@ -72,7 +72,7 @@ Based on your observations, select the best option that accurately addresses the
             'Counterfactual Inference': ('counterfactual_inference.json',
                                          'your_data_path/clevrer/video_validation/', 'video', False),
         }
-        super().__init__(dataset=dataset, pack=pack)
+        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
@@ -257,7 +257,7 @@ Based on your observations, select the best option that accurately addresses the
 
     def save_video_frames(self, imgs, video_name, frames):
 
-        frame_paths = self.frame_paths(video_name, frames)
+        frame_paths = self.frame_paths(video_name)
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
@@ -325,7 +325,7 @@ Based on your observations, select the best option that accurately addresses the
 
         return output_video_path
 
-    def save_video_into_images(self, line, num_frames):
+    def save_video_into_images(self, line):
         bound = None
         if line['bound']:
             bound = (
@@ -334,13 +334,13 @@ Based on your observations, select the best option that accurately addresses the
             )
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
         decord_method = self.decord_method[line['data_type']]
-        self.num_segments = num_frames if num_frames > 0 else self.nframe
+        self.num_segments = self.nframe
         torch_imgs = decord_method(video_path, bound)
         img_frame_paths = self.save_video_frames(torch_imgs, line['video'], self.num_segments)
         return img_frame_paths
 
-    def build_prompt(self, line, num_frames, video_llm, fps):
-        if fps > 0:
+    def build_prompt(self, line, video_llm):
+        if self.fps > 0:
             raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
         if isinstance(line, int):
             assert line < len(self)
@@ -353,7 +353,7 @@ Based on your observations, select the best option that accurately addresses the
             new_video_path = self.load_into_video_and_process(line)
             message.append(dict(type='video', value=new_video_path))
         else:
-            img_frame_paths = self.save_video_into_images(line, num_frames)
+            img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
         message.append(dict(type='text', value='\nOnly give the best option.'))

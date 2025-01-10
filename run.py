@@ -2,6 +2,7 @@ import torch
 import torch.distributed as dist
 
 from vlmeval.config import supported_VLM
+from vlmeval.dataset.video_dataset_config import supported_video_datasets
 from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
@@ -10,10 +11,12 @@ from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
-def build_model_from_config(cfg):
+def build_model_from_config(cfg, model_name):
     import vlmeval.api
     import vlmeval.vlm
-    config = cp.deepcopy(cfg)
+    config = cp.deepcopy(cfg[model_name])
+    if config == {}:
+        return supported_VLM[model_name]()
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
@@ -24,13 +27,23 @@ def build_model_from_config(cfg):
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
 
 
-def build_dataset_from_config(cfg):
+def build_dataset_from_config(cfg, dataset_name):
     import vlmeval.dataset
-    config = cp.deepcopy(cfg)
+    import inspect
+    config = cp.deepcopy(cfg[dataset_name])
+    if config == {}:
+        return supported_video_datasets[dataset_name]()
     assert 'class' in config
     cls_name = config.pop('class')
     if hasattr(vlmeval.dataset, cls_name):
-        return getattr(vlmeval.dataset, cls_name)(**config)
+        cls = getattr(vlmeval.dataset, cls_name)
+        sig = inspect.signature(cls.__init__)
+        valid_params = {k: v for k, v in config.items() if k in sig.parameters}
+        if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
+            raise ValueError('fps and nframe should not be set at the same time')
+        if valid_params.get('fps', 0) <= 0 and valid_params.get('nframe', 0) <= 0:
+            raise ValueError('fps and nframe should be set at least one valid value')
+        return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
 
@@ -50,6 +63,8 @@ You can launch the evaluation by setting either --data and --model or --config.
         print(SUPPORTED_DATASETS)
         ```
         or you can check the output of the command `vlmutil dlist all` in the terminal.
+    To find all supported video dataset default settings, please refer to the \
+        `vlmeval/dataset/video_dataset_config.py` file.
 
 --config:
     Launch the evaluation by specifying the path to the config json file. Sample Json Content:
@@ -67,7 +82,8 @@ You can launch the evaluation by setting either --data and --model or --config.
                 "model": "gpt-4o-2024-08-06",
                 "temperature": 1.0,
                 "img_detail": "low"
-            }
+            },
+            "GPT4o_20241120": {}
         },
         "data": {
             "MME-RealWorld-Lite": {
@@ -77,6 +93,13 @@ You can launch the evaluation by setting either --data and --model or --config.
             "MMBench_DEV_EN_V11": {
                 "class": "ImageMCQDataset",
                 "dataset": "MMBench_DEV_EN_V11"
+            },
+            "MMBench_Video_8frame_nopack": {},
+            "Video-MME_16frame_subs": {
+                "class": "VideoMME",
+                "dataset": "Video-MME",
+                "nframe": 16,
+                "use_subtitle": true,
             }
         }
     }
@@ -85,27 +108,24 @@ You can launch the evaluation by setting either --data and --model or --config.
     For `model`, the key is the name of the model, and the value is a dictionary containing the following keys:
     - `class`: The class name of the model, which should be a class in `vlmeval.vlm` or `vlmeval.api`.
     - Other keys are specific to the model, please refer to the corresponding class.
+    - Tip: The defined model in the `supported_VLM` of `vlmeval/config.py` can be used as a shortcut.
     For `data`, the key is the name of the dataset (should be the same as the `dataset` field in most cases, \
         except for video datasets), and the value is a dictionary containing the following keys:
     - `class`: The class name of the dataset, which should be a class in `vlmeval.dataset`.
     - `dataset`: The name of the dataset, which should be a string that is accepted by the `dataset` argument of the \
         corresponding class.
     - Other keys are specific to the dataset, please refer to the corresponding class.
+    - Tip: The defined dataset in the `supported_video_datasets` of `vlmeval/dataset/video_dataset_config.py` \
+        can be used as a shortcut.
 
     The keys in the `model` and `data` fields will be used for naming the prediction files and evaluation results.
-    When launching with `--config`, args for video datasets, such as `--nframe`, `--pack`, `--use-subtitle`, `--fps`, \
-        and args for API VLMs, such as `--retry`, `--verbose`, will be ignored.
+    When launching with `--config`, args for API VLMs, such as `--retry`, `--verbose`, will be ignored.
 """
     parser = argparse.ArgumentParser(description=help_msg, formatter_class=argparse.RawTextHelpFormatter)
     # Essential Args, Setting the Names of Datasets and Models
     parser.add_argument('--data', type=str, nargs='+', help='Names of Datasets')
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
-    # Args that only apply to Video Dataset
-    parser.add_argument('--nframe', type=int, default=8)
-    parser.add_argument('--pack', action='store_true')
-    parser.add_argument('--use-subtitle', action='store_true')
-    parser.add_argument('--fps', type=float, default=-1)
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
@@ -161,7 +181,10 @@ def main():
     if world_size > 1:
         local_rank = os.environ.get('LOCAL_RANK', 0)
         torch.cuda.set_device(int(local_rank))
-        dist.init_process_group(backend='nccl', timeout=datetime.timedelta(seconds=3600))
+        dist.init_process_group(
+            backend='nccl',
+            timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
+        )
 
     for _, model_name in enumerate(args.model):
         model = None
@@ -180,7 +203,7 @@ def main():
             os.makedirs(pred_root, exist_ok=True)
 
         if use_config:
-            model = build_model_from_config(cfg['model'][model_name])
+            model = build_model_from_config(cfg['model'], model_name)
 
         for _, dataset_name in enumerate(args.data):
             try:
@@ -189,9 +212,9 @@ def main():
                 if use_config:
                     if world_size > 1:
                         if rank == 0:
-                            dataset = build_dataset_from_config(cfg['data'][dataset_name])
+                            dataset = build_dataset_from_config(cfg['data'], dataset_name)
                         dist.barrier()
-                    dataset = build_dataset_from_config(cfg['data'][dataset_name])
+                    dataset = build_dataset_from_config(cfg['data'], dataset_name)
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
@@ -199,10 +222,6 @@ def main():
                     dataset_kwargs = {}
                     if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
                         dataset_kwargs['model'] = model_name
-                    if dataset_name == 'MMBench-Video':
-                        dataset_kwargs['pack'] = args.pack
-                    if dataset_name == 'Video-MME':
-                        dataset_kwargs['use_subtitle'] = args.use_subtitle
 
                     # If distributed, first build the dataset on the main process for doing preparation works
                     if world_size > 1:
@@ -214,31 +233,6 @@ def main():
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
-                    # Handling Video Datasets. For Video Dataset, set the fps for priority
-                    if args.fps > 0:
-                        if dataset_name == 'MVBench':
-                            raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
-                        elif dataset_name in ['MVTamperBench', 'MVTamperBenchStart', 'MVTamperBenchEnd']:
-                            raise ValueError('TamperBench does not support fps setting')
-                        args.nframe = 0
-                    if dataset_name in ['MMBench-Video']:
-                        packstr = 'pack' if args.pack else 'nopack'
-                        if args.nframe > 0:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-                        else:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                    elif dataset.MODALITY == 'VIDEO':
-                        if args.pack:
-                            logger.info(f'{dataset_name} not support Pack Mode, directly change to unpack')
-                            args.pack = False
-                        packstr = 'pack' if args.pack else 'nopack'
-                        if args.nframe > 0:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.nframe}frame_{packstr}.xlsx'
-                        else:
-                            result_file_base = f'{model_name}_{dataset_name}_{args.fps}fps_{packstr}.xlsx'
-                        if dataset_name in ['Video-MME', 'LongVideoBench']:
-                            subtitlestr = 'subs' if args.use_subtitle else 'nosubs'
-                            result_file_base = result_file_base.replace('.xlsx', f'_{subtitlestr}.xlsx')
 
                 # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
@@ -289,12 +283,9 @@ def main():
                         work_dir=pred_root,
                         model_name=model_name,
                         dataset=dataset,
-                        nframe=args.nframe,
-                        pack=args.pack,
+                        result_file_name=result_file_base,
                         verbose=args.verbose,
-                        subtitle=args.use_subtitle,
-                        api_nproc=args.nproc,
-                        fps=args.fps)
+                        api_nproc=args.nproc)
                 elif dataset.TYPE == 'MT':
                     model = infer_data_job_mt(
                         model,
@@ -331,7 +322,7 @@ def main():
                         judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath'], dataset_name):
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
@@ -407,7 +398,7 @@ def main():
 
                     # Create the symbolic links for the prediction files
                     files = os.listdir(pred_root)
-                    files = [x for x in files if f'{model_name}_{dataset_name}' in x]
+                    files = [x for x in files if (f'{model_name}_{dataset_name}' in x or "status.json" in x)]
                     for f in files:
                         cwd = os.getcwd()
                         file_addr = osp.join(cwd, pred_root, f)

@@ -119,7 +119,7 @@ def get_local_rank_and_local_world_size():
 
 
 def split_model(model_path):
-    num_gpus_per_node = 8
+    num_gpus_per_node = torch.cuda.device_count()
     rank, world_size = get_rank_and_world_size()
     try:
         local_rank, local_world_size = get_local_rank_and_local_world_size()
@@ -130,7 +130,7 @@ def split_model(model_path):
         gpus_per_process = int(os.environ['GPUS_PER_PROCESS'])
     else:
         gpus_per_process = 8  # default to use 8 GPUs for one model
-
+    gpus_per_process = min(gpus_per_process, num_gpus_per_node // local_world_size)
     start_gpu = local_rank * gpus_per_process
     end_gpu = start_gpu + gpus_per_process
 
@@ -159,6 +159,7 @@ def split_model(model_path):
     device_map['language_model.model.embed_tokens'] = visible_devices[0]
     device_map['language_model.output'] = visible_devices[0]
     device_map['language_model.model.norm'] = visible_devices[0]
+    device_map['language_model.model.rotary_emb'] = visible_devices[0]
     device_map['language_model.lm_head'] = visible_devices[0]
     device_map[f'language_model.model.layers.{num_layers - 1}'] = visible_devices[0]
 
@@ -330,20 +331,27 @@ def mpo_post_processing(response, dataset):
 
 
 def build_mpo_prompt(message, line, dataset):
-    if not listinstr(['LLaVABench'], dataset):
+    if listinstr(['LLaVABench', 'MMVet'], dataset):
+        return message
 
-        if listinstr(['MMVet'], dataset):
-            cot_prompt = mpo_prompt_without_final_answer
-        else:
-            cot_prompt = mpo_prompt_with_final_answer
+    question_orig = line['question']
+    if listinstr(['MathVerse', 'MathVision'], dataset):
+        question_orig = question_orig.split('Question:', 1)[-1].strip()
+        question_orig = question_orig.replace('Choices:\n', '').strip()
 
-        question_orig = line['question']
-        if listinstr(['MathVerse', 'MathVision'], dataset):
-            question_orig = question_orig.split('Question:', 1)[-1].strip()
-            question_orig = question_orig.replace('Choices:\n', '').strip()
+    options = {
+        cand: line[cand]
+        for cand in string.ascii_uppercase
+        if cand in line and not pd.isna(line[cand])
+    }
+    options_prompt = ''
+    for key, item in options.items():
+        options_prompt += f'{key}. {item}\n'
 
-        prompt = cot_prompt.format(question=question_orig)
-    else:
-        prompt = line['question']
+    if options_prompt.strip():
+        question_orig = f'{question_orig}\n{options_prompt}'
+
+    cot_prompt = mpo_prompt_with_final_answer
+    prompt = cot_prompt.format(question=question_orig).strip()
     message[0]['value'] = prompt
     return message
