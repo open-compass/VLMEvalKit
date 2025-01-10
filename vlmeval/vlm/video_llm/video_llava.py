@@ -44,10 +44,13 @@ class VideoLLaVA_HF(BaseModel):
         self.model.eval().cuda()
         self.processor = VideoLlavaProcessor.from_pretrained(model_path)
         self.kwargs = kwargs
+        self.nframe = 8
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
         import av
+        if self.nframe != 8:
+            raise Exception(f'Video-LLaVA only supported 8 frames to generate, you now set frame numbers to {self.nframe}')  # noqa
         question, video = self.message_to_promptvideo(message)
 
         container = av.open(video)
@@ -106,7 +109,7 @@ class VideoLLaVA(BaseModel):
         self.processor = processor
         self.context_len = context_len
         self.kwargs = kwargs
-        self.nframes = 8
+        self.nframe = 8
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
         from videollava.conversation import conv_templates, SeparatorStyle
@@ -115,9 +118,9 @@ class VideoLLaVA(BaseModel):
         from videollava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
 
         if type(qs) is dict and 'user' in qs:
-            qs['user'] = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframes) + '\n' + qs['user']
+            qs['user'] = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframe) + '\n' + qs['user']
         else:
-            qs = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframes) + '\n' + qs
+            qs = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframe) + '\n' + qs
 
         conv_mode = 'llava_v1'
         device = torch.device('cuda')
@@ -164,8 +167,8 @@ class VideoLLaVA(BaseModel):
         return outputs
 
     def generate_inner(self, message, dataset=None):
-        if self.nframes != 8:
-            raise Exception(f'Video-LLaVA only supported 8 frames to generate, you now set frame numbers to {self.nframes}')  # noqa
+        if self.nframe != 8:
+            raise Exception(f'Video-LLaVA only supported 8 frames to generate, you now set frame numbers to {self.nframe}')  # noqa
         if listinstr(['MLVU', 'MVBench'], dataset):
             question, video = self.message_to_promptvideo_withrole(message, dataset)
         else:
