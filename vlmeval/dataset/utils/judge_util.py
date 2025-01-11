@@ -5,7 +5,7 @@ INTERNAL = os.environ.get('INTERNAL', 0)
 
 
 def build_judge(**kwargs):
-    from ...api import OpenAIWrapper, SiliconFlowAPI
+    from ...api import OpenAIWrapper, SiliconFlowAPI, HFChatModel
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
     load_env()
@@ -24,6 +24,7 @@ def build_judge(**kwargs):
             'qwen-7b': 'Qwen/Qwen2.5-7B-Instruct',
             'qwen-72b': 'Qwen/Qwen2.5-72B-Instruct',
             'deepseek': 'deepseek-ai/DeepSeek-V2.5',
+            'llama31-8b': 'meta-llama/Llama-3.1-8B-Instruct',
         }
         model_version = model_map[model]
     else:
@@ -31,6 +32,8 @@ def build_judge(**kwargs):
 
     if model in ['qwen-7b', 'qwen-72b', 'deepseek']:
         model = SiliconFlowAPI(model_version, **kwargs)
+    elif model == 'llama31-8b':
+        model = HFChatModel(model_version, **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)
     return model
