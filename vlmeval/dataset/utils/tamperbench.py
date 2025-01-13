@@ -31,19 +31,39 @@ def get_dimension_rating(data_path, category_type='task_type'):
 
 
 def check_ans(pred, gt):
+    """
+    Checks if the predicted answer matches the ground truth.
+
+    Args:
+        pred (str): The predicted answer.
+        gt (str): The ground truth answer.
+
+    Returns:
+        bool: True if the predicted answer matches the ground truth, False otherwise.
+    """
+    # Convert both predictions and ground truths to lowercase and split them into options and contents
     flag = False
 
+    # Split prediction into option and content
     pred_list = pred.lower().strip().split(' ')
     pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
+
+    # Split ground truth into option and content
     gt_list = gt.lower().strip().split(' ')
     gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
+
+    # Remove trailing period from ground truth content if present
     if gt_content[-1] == '.':
         gt_content = gt_content[:-1]
 
+    # Check for matching conditions
+    # Condition 1: If the predicted option is a substring of the ground truth option
     if pred_option.replace('.', '') in gt_option:
         flag = True
+    # Condition 2: If the ground truth option is a substring of the predicted option
     elif gt_option in pred_option:
         flag = True
+    # Condition 3: If the ground truth is a substring of the predicted answer
     elif gt in pred:
         flag = True
 
