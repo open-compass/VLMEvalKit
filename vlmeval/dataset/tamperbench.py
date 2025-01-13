@@ -340,23 +340,47 @@ Based on your observations, select the best option that accurately addresses the
         return img_frame_paths
 
     def build_prompt(self, line, video_llm):
+        """
+    Builds a prompt for a language model based on the provided data and settings.
+
+    Args:
+        line (int or dict): Either an integer index into the dataset or a dictionary representing a single data point.
+        video_llm (bool): Whether to use a video-based language model or process individual frames as images.
+
+    Returns:
+        list: A list of dictionaries representing the constructed prompt, where each dictionary contains the type and value of the prompt element.
+
+    Raises:
+        ValueError: If the frame rate (fps) is greater than zero, indicating that this method is not compatible with MVBench's requirements.
+    """
+        # Ensure that the frame rate is not set, as MVBench does not support it
         if self.fps > 0:
             raise ValueError('MVBench does not support fps setting, please transfer to MVBench_MP4!')
+
+        # If line is an integer, retrieve the corresponding data point from the d
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
 
+        # Generate the question and answer pair based on the current data point
         question, answer = self.qa_template(line)
+        # Initialize the prompt with a system message
         message = [dict(type='text', value=self.SYS, role='system')]
+        # Add the generated question to the prompt
         message.append(dict(type='text', value=question))
+        # Process the video data according to the specified mode
         if video_llm:
+            # Load the video and process it for the video-based langua
             new_video_path = self.load_into_video_and_process(line)
             message.append(dict(type='video', value=new_video_path))
         else:
+            # Save the video as individual image frames for processing
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        # Add instructions to the prompt
         message.append(dict(type='text', value='\nOnly give the best option.'))
+        # Indicate the start of the assistant's response
         message.append(dict(type='text', value='Best option:(', role='assistant'))
         return message
 
