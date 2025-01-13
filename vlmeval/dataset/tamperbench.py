@@ -84,19 +84,33 @@ Based on your observations, select the best option that accurately addresses the
         else:
             repo_id = f'Srikant86/{dataset_name}'
 
+
         def check_integrity(pth):
+            """
+    Verifies the completeness and consistency of the dataset located at the specified path.
+
+    Args:
+        path_to_dataset (str): The directory path where the dataset is stored.
+
+    Returns:
+        bool: True if the dataset is intact, False otherwise.
+    """
+            # Construct the full path to the data file
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
+            # Check if the data file exists
             if not os.path.exists(data_file):
+                # If the data file doesn't exist, immediately return False
                 return False
-
+            # Verify the integrity of the data file by checking its MD5 hash
             if md5(data_file) != self.MD5[dataset_name]:
                 return False
-
+            # Load the data from the data file
             data = load(data_file)
             for idx, item in data.iterrows():
                 if not osp.exists(osp.join(pth, item['prefix'], item['video'])):
                     return False
+            # If all checks pass, the dataset is considered intact
             return True
 
         cache_path = get_cache_path(repo_id, branch='main')
