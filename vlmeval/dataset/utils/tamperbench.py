@@ -71,19 +71,40 @@ def check_ans(pred, gt):
 
 
 def check_ans_with_model(pred, gt, model, item, dataset_name='MVBench'):
+    """
+    Checks if the predicted answer matches the ground truth using a given model.
+
+    Args:
+        pred (str): The predicted answer.
+        gt (str): The ground truth answer.
+        model: A machine learning model used for additional verification.
+        item (dict): An item containing information about the question or task.
+        dataset_name (str, optional): Name of the dataset being used. Defaults to 'MVBench'.
+
+    Returns:
+        bool: True if the predicted answer matches the ground truth, False otherwise.
+    """
+    # Initialize flag to track match status
     flag = False
 
+    # Preprocess prediction and ground truth by converting to lowercase and splitting into options and contents
     pred_list = pred.lower().strip().split(' ')
     pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
     gt_list = gt.lower().strip().split(' ')
     gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
+
+    # Remove trailing period from ground truth content if presen
     if gt_content[-1] == '.':
         gt_content = gt_content[:-1]
 
+    # Check for matching conditions
+    # Condition 1: If the predicted option is a substring of the ground truth option
     if pred_option.replace('.', '') in gt_option:
         flag = True
+    # Condition 2: If the ground truth option is a substring of the predicted option
     elif gt_option in pred_option:
         flag = True
+    # Condition 3: Use the provided model to verify the answer
     elif extract_answer_from_item(model, item, dataset_name)['opt'] == item['answer']:
         flag = True
 
