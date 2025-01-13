@@ -689,7 +689,7 @@ class LLaVA_OneVision(BaseModel):
             )
 
         video_frames, frame_time, video_time = self.load_video(
-            videos[0], self.nframe,1, self.force_sample
+            videos[0], self.nframe, 1, self.force_sample
         )
 
         time_instruciton = (
