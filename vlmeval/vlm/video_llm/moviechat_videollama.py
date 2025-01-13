@@ -20,7 +20,7 @@ from transformers import StoppingCriteria, StoppingCriteriaList
 from torchvision import transforms
 
 try:
-    from .moviechat.common.registry import registry
+    from ..moviechat.common.registry import registry
 except ImportError:
     logging.debug(
         f"MovieChat is not installed. First, install MovieChat by 'https://github.com/rese1f/MovieChat.git' and link `VLMEval_MovieChat` to `vlmeval/vlm/moviechat`. Change the torch version with `python -m pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url https://download.pytorch.org/whl/cu118` and `python -m pip install flash-attn==2.3.6 --no-build-isolation`"
