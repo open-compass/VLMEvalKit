@@ -138,8 +138,9 @@ class VDC(VideoBaseDataset):
         else:
             raise ValueError(f'Invalid subset: {subset}')
         
-        if limit < 1.0:
-            self.data = self.data.sample(frac=limit)
+        if limit <= 1.0:
+            sample_num = int(limit * len(self.data))
+            self.data = self.data.iloc[:sample_num]
         elif limit > 1.0 and limit < len(self.data):
             self.data = self.data.iloc[:limit]
         else:
