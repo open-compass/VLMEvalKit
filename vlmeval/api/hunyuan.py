@@ -5,7 +5,6 @@ from vlmeval.api.base import BaseAPI
 import math
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.dataset import img_root_map
-from PIL import Image
 from io import BytesIO
 import pandas as pd
 import requests
