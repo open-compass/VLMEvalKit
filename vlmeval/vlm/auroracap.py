@@ -24,20 +24,6 @@ from transformers import (
     BitsAndBytesConfig,
     CLIPImageProcessor,
 )
-try:
-    from .auroracap_xtuner.model.aurora import AuroraEncoder, AuroraModel
-    from .auroracap_xtuner.utils import PROMPT_TEMPLATE
-except Exception as e:
-    logging.critical('Please install AuroraCap to use this model by `git clone https://github.com/rese1f/aurora.git` and link `src/xtuner/xtuner` to `vlmeval/vlm/auroracap_xtuner`"')
-    logging.critical('Please install packages by `pip install mmengine` and `pip install -U "xtuner[deepspeed]"`')
-    raise e
-
-try:
-    from llava.mm_utils import tokenizer_image_token, process_anyres_image
-    from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
-    from llava.conversation import conv_templates
-except ImportError:
-    logging.error("LLaVA is not installed. Please install LLaVA to use this model.")
 
 
 class AuroraCap(BaseModel):
@@ -64,6 +50,20 @@ class AuroraCap(BaseModel):
         pretrained_pth = snapshot_download(repo_id=model_path) if not osp.isdir(model_path) else model_path
         pretrained_llm = pretrained_pth
         pretrained_vit = osp.join(pretrained_pth, "visual_encoder")
+
+        try:
+            from .auroracap_xtuner.model.aurora import AuroraEncoder, AuroraModel
+        except Exception as e:
+            logging.critical('Please install AuroraCap to use this model by `git clone https://github.com/rese1f/aurora.git` and link `src/xtuner/xtuner` to `vlmeval/vlm/auroracap_xtuner`"')
+            logging.critical('Please install packages by `pip install mmengine` and `pip install -U "xtuner[deepspeed]"`')
+            raise e
+        
+        try:
+            from llava.mm_utils import tokenizer_image_token, process_anyres_image
+            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
+            from llava.conversation import conv_templates
+        except ImportError:
+            logging.error("LLaVA is not installed. Please install LLaVA to use this model.")
 
         self.model = AuroraModel(
             slowfast=slowfast,
@@ -208,6 +208,7 @@ class AuroraCap(BaseModel):
                 image = image_processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
                 new_images.append(image)
         elif image_aspect_ratio == "anyres":
+            from llava.mm_utils import process_anyres_image
             for image in images:
                 image = process_anyres_image(image, image_processor, model_cfg.image_grid_pinpoints)
                 new_images.append(image)
@@ -226,6 +227,10 @@ class AuroraCap(BaseModel):
         return input_ids
 
     def generate_inner(self, message, dataset=None):
+
+        from llava.mm_utils import tokenizer_image_token
+        from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN
+        from llava.conversation import conv_templates
         if dataset is not None:
             kwargs = self.adjust_kwargs(dataset)
         else:

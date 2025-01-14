@@ -120,8 +120,30 @@ class VDC(VideoBaseDataset):
 
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='VDC', pack=False, nframe=0, fps=-1):
+    def __init__(self, dataset='VDC', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
+
+        if subset == 'all':
+            pass
+        elif subset == 'breakpoint':
+            self.data = self.data[self.data['caption_type'] == 'breakpoint']
+        elif subset == 'short':
+            self.data = self.data[self.data['caption_type'] == 'short']
+        elif subset == 'detailed':
+            self.data = self.data[self.data['caption_type'] == 'detailed']
+        elif subset == 'background':
+            self.data = self.data[self.data['caption_type'] == 'background']
+        elif subset == 'main_object':
+            self.data = self.data[self.data['caption_type'] == 'main_object']
+        else:
+            raise ValueError(f'Invalid subset: {subset}')
+        
+        if limit < 1.0:
+            self.data = self.data.sample(frac=limit)
+        elif limit > 1.0 and limit < len(self.data):
+            self.data = self.data.iloc[:limit]
+        else:
+            raise ValueError(f'Invalid limit: {limit}')
     
 
     @classmethod

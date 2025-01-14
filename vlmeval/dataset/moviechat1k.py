@@ -17,8 +17,24 @@ class MovieChat1k(VideoBaseDataset):
 
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='MovieChat1k', pack=False, nframe=0, fps=-1):
+    def __init__(self, dataset='MovieChat1k', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
+
+        if subset == 'all':
+            pass
+        elif subset == 'global':
+            self.data = self.data[self.data['mode'] == 'global']
+        elif subset == 'breakpoint':
+            self.data = self.data[self.data['mode'] == 'breakpoint']
+        else:
+            raise ValueError(f'Invalid subset: {subset}')
+        
+        if limit < 1.0:
+            self.data = self.data.sample(frac=limit)
+        elif limit > 1.0 and limit < len(self.data):
+            self.data = self.data.iloc[:limit]
+        else:
+            raise ValueError(f'Invalid limit: {limit}')
     
 
     @classmethod
@@ -31,7 +47,7 @@ class MovieChat1k(VideoBaseDataset):
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
-            for video_pth in data['video_path']:
+            for video_pth in data['video']:
                 if not osp.exists(osp.join(pth, video_pth)):
                     return False
             return True
@@ -43,6 +59,7 @@ class MovieChat1k(VideoBaseDataset):
             if cache_path is not None and check_integrity(cache_path):
                 dataset_path = cache_path
             else:
+                cache_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
                 if not glob(osp.join(cache_path, "video")):
                     tar_files = glob(osp.join(cache_path, "**/*.tar*"), recursive=True)
 
@@ -79,8 +96,9 @@ class MovieChat1k(VideoBaseDataset):
                             concat_tar_parts(parts, output_tar)
                             print('Finish concatenating tar files')
 
-                        if not osp.exists(osp.join(cache_path, osp.basename(base_name))):
-                            untar_video_data(output_tar, cache_path)
+                        if not osp.exists(osp.join(cache_path, 'video')):
+                            untar_video_data(output_tar, osp.join(cache_path, 'video'))
+        dataset_path = cache_path
         self.video_path = osp.join(dataset_path, 'video/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
