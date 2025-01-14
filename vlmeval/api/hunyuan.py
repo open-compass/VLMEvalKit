@@ -2,16 +2,25 @@ from vlmeval.smp import *
 import os
 import sys
 from vlmeval.api.base import BaseAPI
+import math
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.dataset import img_root_map
+from io import BytesIO
+import pandas as pd
+import requests
+import json
+import base64
+import time
 
 
 class HunyuanWrapper(BaseAPI):
 
     is_api: bool = True
-    _apiVersion = '2023-09-01'
+    _apiVersion = '2024-12-31'
     _service = 'hunyuan'
 
     def __init__(self,
-                 model: str = 'hunyuan-vision',
+                 model: str = 'hunyuan-standard-vision',
                  retry: int = 5,
                  wait: int = 5,
                  secret_key: str = None,
@@ -53,14 +62,87 @@ class HunyuanWrapper(BaseAPI):
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         cred = credential.Credential(self.secret_id, self.secret_key)
-        httpProfile = HttpProfile()
+        httpProfile = HttpProfile(reqTimeout=300)
         httpProfile.endpoint = self.endpoint
         clientProfile = ClientProfile()
         clientProfile.httpProfile = httpProfile
-        self.client = hunyuan_client.HunyuanClient(cred, 'ap-beijing', clientProfile)
+        self.client = hunyuan_client.HunyuanClient(cred, '', clientProfile)
         self.logger.info(
             f'Using Endpoint: {self.endpoint}; API Secret ID: {self.secret_id}; API Secret Key: {self.secret_key}'
         )
+
+    def dump_image(self, line, dataset):
+        """Dump the image(s) of the input line to the corresponding dataset folder.
+
+        Args:
+            line (line of pd.DataFrame): The raw input line.
+            dataset (str): The name of the dataset.
+
+        Returns:
+            str | list[str]: The paths of the dumped images.
+        """
+        ROOT = LMUDataRoot()
+        assert isinstance(dataset, str)
+
+        img_root = os.path.join(ROOT, 'images', img_root_map(dataset) if dataset in img_root_map(dataset) else dataset)
+        os.makedirs(img_root, exist_ok=True)
+        if 'image' in line:
+            if isinstance(line['image'], list):
+                tgt_path = []
+                assert 'image_path' in line
+                for img, im_name in zip(line['image'], line['image_path']):
+                    path = osp.join(img_root, im_name)
+                    if not read_ok(path):
+                        decode_base64_to_image_file(img, path)
+                    tgt_path.append(path)
+            else:
+                tgt_path = osp.join(img_root, f"{line['index']}.jpg")
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'], tgt_path)
+                tgt_path = [tgt_path]
+        else:
+            assert 'image_path' in line
+            tgt_path = toliststr(line['image_path'])
+
+        return tgt_path
+
+    def use_custom_prompt(self, dataset_name):
+        if DATASET_TYPE(dataset_name) == 'MCQ':
+            return True
+        else:
+            return False
+
+    def build_prompt(self, line, dataset=None):
+        assert self.use_custom_prompt(dataset)
+        assert dataset is None or isinstance(dataset, str)
+
+        tgt_path = self.dump_image(line, dataset)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += 'Answer with the option letter from the given choices directly.'
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
@@ -109,36 +191,26 @@ class HunyuanWrapper(BaseAPI):
             Model=self.model,
             Messages=input_msgs,
             Temperature=temperature,
+            TopK=1,
             **kwargs)
 
-        retry_counter = 0
-        while retry_counter < 3:
-            try:
-                req = models.ChatCompletionsRequest()
-                req.from_json_string(json.dumps(payload))
-                resp = self.client.ChatCompletions(req)
-                resp = json.loads(resp.to_json_string())
-                answer = resp['Choices'][0]['Message']['Content']
-                return 0, answer, resp
-            except TencentCloudSDKException as e:
-                self.logger.error(f'Got error code: {e.get_code()}')
-                if e.get_code() == 'ClientNetworkError':
-                    return -1, self.fail_msg + e.get_code(), None
-                elif e.get_code() in ['InternalError', 'ServerNetworkError']:
-                    if retry_counter == 3:
-                        return -1, self.fail_msg + e.get_code(), None
-                    retry_counter += 1
-                    continue
-                elif e.get_code() in ['LimitExceeded']:
-                    time.sleep(5)
-                    if retry_counter == 3:
-                        return -1, self.fail_msg + e.get_code(), None
-                    retry_counter += 1
-                    continue
-                else:
-                    return -1, self.fail_msg + str(e), None
-
-        return -1, self.fail_msg, None
+        try:
+            req = models.ChatCompletionsRequest()
+            req.from_json_string(json.dumps(payload))
+            resp = self.client.ChatCompletions(req)
+            resp = json.loads(resp.to_json_string())
+            answer = resp['Choices'][0]['Message']['Content']
+            return 0, answer, resp
+        except TencentCloudSDKException as e:
+            self.logger.error(f'Got error code: {e.get_code()}')
+            if e.get_code() == 'ClientNetworkError':
+                return -1, self.fail_msg + e.get_code(), None
+            elif e.get_code() in ['InternalError', 'ServerNetworkError']:
+                return -1, self.fail_msg + e.get_code(), None
+            elif e.get_code() in ['LimitExceeded']:
+                return -1, self.fail_msg + e.get_code(), None
+            else:
+                return -1, self.fail_msg + str(e), None
 
 
 class HunyuanVision(HunyuanWrapper):
