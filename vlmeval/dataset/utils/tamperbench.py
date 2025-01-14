@@ -6,6 +6,7 @@ import random
 import numbers
 import math
 import torch
+import pandas as pd
 import re
 
 def get_dimension_rating(data_path, category_type='task_type'):
@@ -28,6 +29,167 @@ def get_dimension_rating(data_path, category_type='task_type'):
     result_board['overall'] = [correct, total, f'{correct / total * 100 :.2f}%']
 
     return result_board
+
+def process_results(result_path) :
+    data = pd.read_excel(result_path)
+
+    # Create the prediction column based on the Score and Answer columns
+    data['prediction'] = data.apply(
+        lambda row: row['answer'] if row['score'] == 1 else ('Yes' if row['answer'] == 'No' else 'No'), axis=1
+    )
+
+    # Recompute metrics for tamper types including 'original' in the calculations but exclude 'original' from the output
+    grouped_metrics_with_original_excluding_original = {}
+
+    original_group = data[data['tamper_type'] == 'original']
+
+    for tamper_type, group in data[data['tamper_type'] != 'original'].groupby('tamper_type'):
+        # Combine the current group with the 'original' group
+        combined_group = pd.concat([group, original_group])
+
+        # Extract ground truth and predictions for the combined group
+        y_true_group = combined_group['answer'].map({'Yes': 1, 'No': 0})
+        y_pred_group = combined_group['prediction'].map({'Yes': 1, 'No': 0})
+
+        # Calculate metrics for the combined group
+        accuracy = accuracy_score(y_true_group, y_pred_group)
+        precision = precision_score(y_true_group, y_pred_group, zero_division=0)
+        recall = recall_score(y_true_group, y_pred_group, zero_division=0)
+        f1 = f1_score(y_true_group, y_pred_group, zero_division=0)
+        conf_matrix = confusion_matrix(y_true_group, y_pred_group)
+
+        # Store metrics for the tamper_type
+        grouped_metrics_with_original_excluding_original[tamper_type] = {
+            "Accuracy": accuracy,
+            "Precision": precision,
+            "Recall": recall,
+            "F1 Score": f1,
+            "Confusion Matrix": conf_matrix.tolist()  # Convert to list for JSON compatibility
+        }
+
+
+
+        # Add the Macro Average row to the Dictionary
+        # grouped_metrics_with_original_excluding_original["overall"] = macro_averages
+
+    # Display the metrics in a dataframe for clarity
+    df_grouped_metrics_with_original_excluding_original = pd.DataFrame.from_dict(
+        grouped_metrics_with_original_excluding_original, orient='index'
+    )
+
+    # Compute Macro Averages for Accuracy, Precision, Recall, and F1 Score
+    macro_averages = {
+        "Accuracy": df_grouped_metrics_with_original_excluding_original["Accuracy"].mean(),
+        "Precision": df_grouped_metrics_with_original_excluding_original["Precision"].mean(),
+        "Recall": df_grouped_metrics_with_original_excluding_original["Recall"].mean(),
+        "F1 Score": df_grouped_metrics_with_original_excluding_original["F1 Score"].mean(),
+        "Confusion Matrix": "N/A"  # Macro average doesn't have a meaningful confusion matrix
+    }
+
+
+
+    # # Add the Macro Average row to the DataFrame
+    df_grouped_metrics_with_original_excluding_original.loc["overall"] = macro_averages
+
+
+
+    # df_grouped_metrics_with_original_excluding_original
+    return df_grouped_metrics_with_original_excluding_original.T.to_json()
+
+
+def aggregate_metrics_with_macro_average(result_path):
+    # Load data
+    data = pd.read_excel(result_path)
+
+    # Create the prediction column based on the Score and Answer columns
+    data['prediction'] = data.apply(
+        lambda row: row['answer'] if row['score'] == 1 else ('Yes' if row['answer'] == 'No' else 'No'), axis=1
+    )
+
+    # Initialize a dictionary to store metrics
+    task_type_metrics = {}
+
+    # Process each task_type separately
+    for task_type, task_group in data.groupby('task_type'):
+        # Separate the 'original' group for the current task_type
+        original_group = task_group[task_group['tamper_type'] == 'original']
+
+        # Skip if there is no 'original' data for this task_type
+        if original_group.empty:
+            continue
+
+        # Process each tamper type for the current task_type (excluding 'original')
+        tamper_metrics = {}
+        for tamper_type, tamper_group in task_group[task_group['tamper_type'] != 'original'].groupby('tamper_type'):
+        # for tamper_type, tamper_group in task_group.groupby('tamper_type'):
+            # Combine the tamper group with the original group of the current task_type
+            combined_group = pd.concat([tamper_group, original_group])
+
+            # Map answers and predictions to binary values
+            y_true = combined_group['answer'].map({'Yes': 1, 'No': 0})
+            y_pred = combined_group['prediction'].map({'Yes': 1, 'No': 0})
+
+            # Compute metrics
+            accuracy = accuracy_score(y_true, y_pred)
+            precision = precision_score(y_true, y_pred, zero_division=0)
+            recall = recall_score(y_true, y_pred, zero_division=0)
+            f1 = f1_score(y_true, y_pred, zero_division=0)
+            conf_matrix = confusion_matrix(y_true, y_pred)
+
+            # Store metrics for the tamper_type
+            tamper_metrics[tamper_type] = {
+                "Accuracy": accuracy,
+                "Precision": precision,
+                "Recall": recall,
+                "F1 Score": f1,
+                "Confusion Matrix": conf_matrix.tolist()  # Convert to list for JSON compatibility
+            }
+
+        # Compute Macro Averages for the current task_type
+        metrics_df = pd.DataFrame(tamper_metrics).T
+        macro_average = {
+            "Accuracy": metrics_df["Accuracy"].mean(),
+            "Precision": metrics_df["Precision"].mean(),
+            "Recall": metrics_df["Recall"].mean(),
+            "F1 Score": metrics_df["F1 Score"].mean(),
+            "Confusion Matrix": "N/A"  # Macro average doesn't have a meaningful confusion matrix
+        }
+
+        # Add the macro average as "overall" for the task_type
+        tamper_metrics["overall"] = macro_average
+
+        # Add tamper metrics for the current task_type to the main dictionary
+        task_type_metrics[task_type] = tamper_metrics
+
+    # # Return the nested dictionary as JSON for compatibility
+    # return json.dumps(task_type_metrics, indent=4)
+    # Transform the nested dictionary into a DataFrame
+
+
+    dataframes = []
+    for task_type, metrics in task_type_metrics.items():
+        task_df = pd.DataFrame.from_dict(metrics, orient='index')
+        task_df['task_type'] = task_type  # Add the task_type as a column
+        dataframes.append(task_df)
+
+    # Combine all task-specific DataFrames into a single DataFrame
+    result_df = pd.concat(dataframes).reset_index().rename(columns={'index': 'tamper_type'})
+    # Reorder the columns to place task_type first, then tamper_type
+    result_df = result_df[['task_type', 'tamper_type', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Confusion Matrix']]
+
+
+
+    return result_df
+
+
+
+
+
+
+
+
+
+
 
 
 def check_ans(pred, gt):
