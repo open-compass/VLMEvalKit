@@ -3,10 +3,8 @@ from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
 import torchvision.transforms as T
 from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
 from decord import VideoReader, cpu
 import imageio
 import cv2
