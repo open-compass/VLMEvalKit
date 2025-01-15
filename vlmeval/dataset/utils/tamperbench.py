@@ -41,8 +41,8 @@ def get_dimension_rating(data_path, category_type='task_type'):
 
     return result_board
 
-def process_results(result_path) :
-    data = pd.read_excel(result_path)
+def process_results(score_file,model_name) :
+    data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
     data['prediction'] = data.apply(
@@ -105,12 +105,28 @@ def process_results(result_path) :
 
 
     # df_grouped_metrics_with_original_excluding_original
-    return df_grouped_metrics_with_original_excluding_original.T.to_json()
+    metrics_dict =  df_grouped_metrics_with_original_excluding_original.T.to_json()
+    # Process Model Level Metrics
+    formatted_data = []
+    for task, task_metrics in metrics_dict.items():
+        task_metrics['Model'] = model_name
+        task_metrics['Task'] = task
+        formatted_data.append(task_metrics)
+
+    df_metrics = pd.DataFrame(formatted_data)
+
+    # Reorder columns to make 'Model' and 'Task' appear first
+    columns_order = ['Model', 'Task'] + [col for col in df_metrics.columns if col not in ['Model', 'Task']]
+    df_metrics = df_metrics[columns_order]
+
+    # # View the DataFrame
+    # df_metrics.to_excel(f"{score_file[:-5]}_aggregate.xlsx",index=False)
+    return df_metrics
 
 
-def aggregate_metrics_with_macro_average(result_path):
+def aggregate_metrics_with_macro_average(score_file):
     # Load data
-    data = pd.read_excel(result_path)
+    data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
     data['prediction'] = data.apply(
@@ -188,9 +204,14 @@ def aggregate_metrics_with_macro_average(result_path):
     # Reorder the columns to place task_type first, then tamper_type
     result_df = result_df[['task_type', 'tamper_type', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Confusion Matrix']]
 
+    df_metrics_task = pd.concat(result_df).reset_index(drop=True)
+    # Select only numeric columns for aggregation
+    numeric_columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
 
+    # Group by task_type and tamper_type, and calculate the mean for numeric columns
+    average_metrics = df_metrics_task.groupby(['task_type', 'tamper_type'])[numeric_columns].mean().reset_index()
 
-    return result_df
+    return average_metrics
 
 
 

@@ -32,6 +32,7 @@ Based on your observations, select the best option that accurately addresses the
     TYPE = 'Video-MCQ'
 
     def __init__(self, dataset='MVTamperBench', nframe=0, fps=-1):
+        self.dataset_name = dataset
         self.type_data_list = {
             'Action Sequence': ('action_sequence.json',
                                 'your_data_path/star/Charades_v1_480/', 'video', False),  # has start & end
@@ -408,6 +409,8 @@ Based on your observations, select the best option that accurately addresses the
         tgt_tamper_type_file = eval_file.replace('.xlsx', '_tamper_type_rating.json')
         tgt_task_tamper_type_file = eval_file.replace('.xlsx', '_task_tamper_type_rating.json')
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        score_metrics_file = eval_file.replace('.xlsx', '_score_f1.xlsx')
+        action_metrics_file = eval_file.replace('.xlsx', '_action_f1.xlsx')
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
@@ -463,6 +466,14 @@ Based on your observations, select the best option that accurately addresses the
             )
 
             dump(data, score_file)
+
+        model_name = score_file.split(f"_{self.dataset_name}")[0].split("/")[-1]
+
+        score_metrics = process_results(score_file, model_name)
+        dump(score_metrics, score_metrics_file)
+
+        action_metrics = aggregate_metrics_with_macro_average(score_file, model_name)
+        dump(action_metrics, action_metrics_file)
 
         rating_task_type = get_dimension_rating(score_file, 'task_type')
         dump(rating_task_type, tgt_task_type_file)
