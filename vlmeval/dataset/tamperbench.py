@@ -469,6 +469,8 @@ Based on your observations, select the best option that accurately addresses the
             dump(data, score_file)
 
         model_name = score_file.split(f"_{self.BASENAME}")[0].split("/")[-1]
+        import pdb; pdb.set_trace()
+    
 
         score_metrics = process_results(score_file, model_name)
         dump(score_metrics, score_metrics_file)
