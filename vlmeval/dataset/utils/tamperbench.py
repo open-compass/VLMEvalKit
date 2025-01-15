@@ -7,6 +7,17 @@ import numbers
 import math
 import torch
 import pandas as pd
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    classification_report,
+    confusion_matrix,
+    roc_auc_score
+)
+import numpy as np
 import re
 
 def get_dimension_rating(data_path, category_type='task_type'):
