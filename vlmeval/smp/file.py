@@ -322,13 +322,14 @@ def parse_file(s):
             mime = 'image/webp'
         elif suffix in mimetypes.types_map:
             mime = mimetypes.types_map[suffix]
+            dname = osp.join(LMUDataRoot(), 'files')
+            os.makedirs(dname, exist_ok=True)
+            tgt = osp.join(dname, md5(s) + suffix)
+            download_file(s, tgt)
+            return (mime, tgt)
         else:
             return ('url', s)
-        dname = osp.join(LMUDataRoot(), 'files')
-        os.makedirs(dname, exist_ok=True)
-        tgt = osp.join(dname, md5(s) + suffix)
-        download_file(s, tgt)
-        return (mime, tgt)
+
     else:
         return (None, s)
 
