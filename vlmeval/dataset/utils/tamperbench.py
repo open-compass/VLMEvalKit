@@ -205,12 +205,12 @@ def aggregate_metrics_with_macro_average(score_file):
     # Reorder the columns to place task_type first, then tamper_type
     result_df = result_df[['task_type', 'tamper_type', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Confusion Matrix']]
 
-    df_metrics_task = pd.concat(result_df).reset_index(drop=True)
+    # df_metrics_task = pd.concat(result_df).reset_index(drop=True)
     # Select only numeric columns for aggregation
     numeric_columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
 
     # Group by task_type and tamper_type, and calculate the mean for numeric columns
-    average_metrics = df_metrics_task.groupby(['task_type', 'tamper_type'])[numeric_columns].mean().reset_index()
+    average_metrics = result_df.groupby(['task_type', 'tamper_type'])[numeric_columns].mean().reset_index()
 
     return average_metrics
 
