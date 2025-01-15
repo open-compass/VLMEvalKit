@@ -13,8 +13,9 @@ import os
 import glob
 from .utils.tamperbench import *
 
-#constants
+# constants
 FAIL_MSG = 'Failed to obtain answer via API.'
+
 
 class MVTamperBench(VideoBaseDataset):
 
@@ -85,7 +86,6 @@ Based on your observations, select the best option that accurately addresses the
         else:
             repo_id = f'Srikant86/{dataset_name}'
 
-
         def check_integrity(pth):
             """
     Verifies the completeness and consistency of the dataset located at the specified path.
@@ -138,8 +138,9 @@ Based on your observations, select the best option that accurately addresses the
                 for k, v in self.type_data_list.items():
                     with open(os.path.join(json_data_dir, v[0]), 'r') as f:
                         json_data = json.load(f)
-                    for data in json_data:
-                            if os.path.exists(os.path.join(dataset_path, v[1].replace('your_data_path', 'video'), data['video'])):
+                        for data in json_data:
+                            if os.path.exists(
+                                    os.path.join(dataset_path, v[1].replace('your_data_path', 'video'), data['video'])):
                                 self.data_list.append({
                                     'task_type': k,
                                     'prefix': v[1].replace('your_data_path', 'video'),
@@ -152,7 +153,7 @@ Based on your observations, select the best option that accurately addresses the
                                     'answer': data['answer'],
                                     'candidates': data['candidates'],
                                     'tamper_type': data['tamper_type'],
-                                    'task_tamper_type': f'{k}_{data['tamper_type']}'
+                                    'task_tamper_type': f"{k}_{data['tamper_type']}"
                                 })
 
                 data_df = pd.DataFrame(self.data_list)
@@ -218,7 +219,7 @@ Based on your observations, select the best option that accurately addresses the
         ])
 
         return dict(root=dataset_path, data_file=data_file)
-    
+
     def get_index(self, bound, fps, max_frame, first_idx=0):
         start, end = bound if bound else (-100000, 100000)
         start_idx = max(first_idx, round(start * fps))
@@ -384,14 +385,16 @@ Based on your observations, select the best option that accurately addresses the
         Builds a prompt for a language model based on the provided data and settings.
 
         Args:
-            line (int or dict): Either an integer index into the dataset or a dictionary representing a single data point.
+            line (int or dict): Either an integer index into the dataset or dictionary representing a single data point.
             video_llm (bool): Whether to use a video-based language model or process individual frames as images.
 
         Returns:
-            list: A list of dictionaries representing the constructed prompt, where each dictionary contains the type and value of the prompt element.
+            list: A list of dictionaries representing the constructed prompt, where each dictionary contains the type
+                    and value of the prompt element.
 
         Raises:
-            ValueError: If the frame rate (fps) is greater than zero, indicating that this method is not compatible with MVBench's requirements.
+            ValueError: If the frame rate (fps) is greater than zero, indicating that this method
+                        is not compatible with MVBench's requirements.
         """
         # Ensure that the frame rate is not set, as MVBench does not support it
         if self.fps > 0:
@@ -438,7 +441,8 @@ Based on your observations, select the best option that accurately addresses the
 
         Raises:
             AssertionError: If the eval_file does not end with '.xlsx'.
-            Warning: If the OPENAI API is not working properly or the API key is not set, exact matching will be used for evaluation.
+            Warning: If the OPENAI API is not working properly or the API key is not set,
+                     exact matching will be used for evaluation.
 
         Notes:
             - The function generates temporary files and score files based on the eval_file name.
