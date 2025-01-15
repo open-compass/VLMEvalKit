@@ -30,8 +30,7 @@ class VideoBaseDataset:
         self.data_file = ret['data_file']
         self.data = load(self.data_file)
 
-
-
+        assert 'question' in self.data and 'video' in self.data
         videos = list(set(self.data['video']))
         videos.sort()
         self.videos = videos
