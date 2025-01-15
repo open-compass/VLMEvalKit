@@ -475,7 +475,7 @@ Based on your observations, select the best option that accurately addresses the
         score_metrics = process_results(score_file, model_name)
         dump(score_metrics, score_metrics_file)
 
-        action_metrics = aggregate_metrics_with_macro_average(score_file, model_name)
+        action_metrics = aggregate_metrics_with_macro_average(score_file)
         dump(action_metrics, action_metrics_file)
 
         rating_task_type = get_dimension_rating(score_file, 'task_type')
