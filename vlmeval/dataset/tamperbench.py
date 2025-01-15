@@ -19,6 +19,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 class MVTamperBench(VideoBaseDataset):
 
+    BASENAME = "MVTamperBench"
     MD5 = {
         'MVTamperBench': '3557260881ba47db8add440c5edb742a',
         'MVTamperBenchStart': 'c1d3c299ddbff6000f0d9cad820187b8',
@@ -467,7 +468,7 @@ Based on your observations, select the best option that accurately addresses the
 
             dump(data, score_file)
 
-        model_name = score_file.split(f"_{self.dataset_name}")[0].split("/")[-1]
+        model_name = score_file.split(f"_{self.BASENAME}")[0].split("/")[-1]
 
         score_metrics = process_results(score_file, model_name)
         dump(score_metrics, score_metrics_file)
