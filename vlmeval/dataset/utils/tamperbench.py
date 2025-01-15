@@ -6,6 +6,7 @@ import random
 import numbers
 import math
 import torch
+import json
 import pandas as pd
 
 from sklearn.metrics import (
@@ -105,7 +106,7 @@ def process_results(score_file,model_name) :
 
 
     # df_grouped_metrics_with_original_excluding_original
-    metrics_dict =  df_grouped_metrics_with_original_excluding_original.T.to_json()
+    metrics_dict =  json.loads(df_grouped_metrics_with_original_excluding_original.T.to_json())
     # Process Model Level Metrics
     formatted_data = []
     for task, task_metrics in metrics_dict.items():
