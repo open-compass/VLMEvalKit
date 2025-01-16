@@ -131,7 +131,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
-    parser.add_argument('--nproc', type=int, default=4, help='Parallel API calling')
+    parser.add_argument('--api_nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
     # Explicitly Set the Judge Model
     parser.add_argument('--judge', type=str, default=None)
@@ -285,7 +285,7 @@ def main():
                         dataset=dataset,
                         result_file_name=result_file_base,
                         verbose=args.verbose,
-                        api_nproc=args.nproc)
+                        api_nproc=args.api_nproc)
                 elif dataset.TYPE == 'MT':
                     model = infer_data_job_mt(
                         model,
@@ -293,7 +293,7 @@ def main():
                         model_name=model_name,
                         dataset=dataset,
                         verbose=args.verbose,
-                        api_nproc=args.nproc,
+                        api_nproc=args.api_nproc,
                         ignore_failed=args.ignore)
                 else:
                     model = infer_data_job(
@@ -302,13 +302,13 @@ def main():
                         model_name=model_name,
                         dataset=dataset,
                         verbose=args.verbose,
-                        api_nproc=args.nproc,
+                        api_nproc=args.api_nproc,
                         ignore_failed=args.ignore)
 
                 # Set the judge kwargs first before evaluation or dumping
 
                 judge_kwargs = {
-                    'nproc': args.nproc,
+                    'nproc': args.api_nproc,
                     'verbose': args.verbose,
                     'retry': args.retry if args.retry is not None else 3
                 }
