@@ -63,3 +63,4 @@ from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM
 from .sail_vl import SailVL
 from .valley import ValleyEagleChat
+from .ross import Ross
