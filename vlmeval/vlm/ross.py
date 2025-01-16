@@ -1,7 +1,8 @@
 import torch
 from PIL import Image
 from abc import abstractproperty
-import sys, copy
+import sys
+import copy
 import os.path as osp
 from .base import BaseModel
 from ..smp import *
@@ -35,7 +36,7 @@ class Ross(BaseModel):
         self.model.eval()
         self.model.cuda()
 
-        if 'Qwen2'in model_path:
+        if 'Qwen2' in model_path:
             self.conv_mode = 'v1_qwen2'
         elif 'llama3' in model_path.lower():
             self.conv_mode = 'llama3'
