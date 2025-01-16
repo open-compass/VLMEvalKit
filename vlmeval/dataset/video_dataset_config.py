@@ -92,11 +92,16 @@ cgbench_dataset = {
     )
 }
 
+moviechat1k_dataset = {
+    'moviechat_breakpoint_8frame': partial(MovieChat1k, dataset='MovieChat1k', subset='breakpoint', nframe=8),
+    'moviechat_global_8frame_limit0.05': partial(MovieChat1k, dataset='MovieChat1k', subset='global', nframe=8, limit=0.05)
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset, cgbench_dataset
+    mlvu_dataset, tempcompass_dataset, cgbench_dataset, moviechat1k_dataset
 ]
 
 for grp in dataset_groups:

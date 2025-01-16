@@ -3,6 +3,7 @@ import torch
 torch.set_grad_enabled(False)
 torch.manual_seed(1234)
 from .aria import Aria
+from .auroracap import AuroraCap
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu
@@ -42,6 +43,7 @@ from .wemm import WeMM
 from .cambrian import Cambrian
 from .chameleon import Chameleon
 from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID, VideoChat2_HD, PLLaVA
+from .video_llm.moviechat_videollama import MovieChat
 from .vila import VILA
 from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus
 from .mantis import Mantis
