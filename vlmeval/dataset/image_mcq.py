@@ -897,3 +897,144 @@ class NaturalBenchDataset(ImageMCQDataset):
         dump(df, score_file)
 
         return scores
+
+class WeMath(ImageMCQDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'MathVista_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
+    }
+    DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
+
+    def build_prompt(self, line):
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        prompt = ("Now, we require you to solve a multiple-choice math question. Please briefly describe your thought process and provide the final answer(option).\n"
+        "Question: {Question}\n"
+        "Option: \n{Option}\n"
+        "Regarding the format, please answer following the template below, and be sure to include two <> symbols: <Thought process>: <<your thought process>> <Answer>: <<your option>>")
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        prompt_dic = dict(Question=question, Option=options_prompt)
+        prompt = prompt.format(**prompt_dic)
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        # question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'extract_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage) and model is not None:
+            data = load(eval_file)
+            # model = build_judge(max_tokens=128, **judge_kwargs)
+            # assert model.working(), ('MathVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            # lt = len(data)
+            # lines = [data.iloc[i] for i in range(lt)]
+            # tups = [(model, line) for line in lines]
+            # indices = [line['index'] for line in lines]
+
+            # ans = {}
+            # if osp.exists(tmp_file):
+            #     ans = load(tmp_file)
+            # tups = [x for x, i in zip(tups, indices) if i not in ans]
+            # indices = [i for i in indices if i not in ans]
+
+            # if len(indices):
+            #     new_results = track_progress_rich(
+            #         wemath_evaluate_models,
+            #         tups,
+            #         nproc=nproc,
+            #         chunksize=nproc,
+            #         keys=indices,
+            #         save=tmp_file,
+            #     )
+            #     ans = load(tmp_file)
+            #     for k, v in zip(indices, new_results):
+            #         assert k in ans
+            #         assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            # data['res'] = [ans[idx]['res'] for idx in data['index']]
+            # data['log'] = [ans[idx]['log'] for idx in data['index']]
+            # dump(data, storage)
+
+            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+            data = load(eval_file)
+            data = data.sort_values(by='index')
+            data['prediction'] = [str(x) for x in data['prediction']]
+            # If not choice label, then use lower case
+            for k in data.keys():
+                data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+            meta = self.data
+            meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+            data_map = {x: y for x, y in zip(data['index'], data['question'])}
+            for k in data_map:
+                assert k in meta_q_map, (
+                    f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+                )
+
+            # if osp.exists(score_file):
+            # acc = load(score_file)
+            # return acc
+            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+            # dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+            # data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+            dump(data, storage)
+        if osp.exists(storage):
+            accuracy_scores = wemath_evaluate_models(storage)
+            four_dim_scores = wemath_accuracy(storage)
+        else:
+            accuracy_scores = wemath_evaluate_models(eval_file)
+            four_dim_scores = wemath_accuracy(eval_file)
+        combine_score = {**accuracy_scores, **four_dim_scores}
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(combine_score, score_pth)
+        return combine_score
