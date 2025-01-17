@@ -65,7 +65,7 @@ pip install -e .
 - `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（可以在代码库首页的 README 中找到支持的数据集列表）
 - `--model (list[str])`: 设置在 VLMEvalKit 中支持的 VLM 名称（在 `vlmeval/config.py` 中的 `supported_VLM` 中定义）
 - `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
-- `--nproc (int, 默认值为 4)`: 调用 API 的线程数
+- `--api_nproc (int, 默认值为 4)`: 调用 API 的线程数
 - `--work-dir (str, default to '.')`: 存放测试结果的目录
 
 **用于评测图像多模态评测集的命令**

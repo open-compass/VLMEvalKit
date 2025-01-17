@@ -98,6 +98,7 @@ api_models = {
     # SenseChat-V
     'SenseChat-Vision': partial(SenseChatVisionAPI, model='SenseChat-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
+    'HunYuan-Standard-Vision': partial(HunyuanVision, model='hunyuan-standard-vision', temperature=0, retry=10),
     'bailingMM': partial(bailingMMAPI, model='bailingMM-mini', temperature=0, retry=10),
     # BlueLM-V
     "BlueLM_V": partial(BlueLM_V_API, model='BlueLM-VL-v3.0', temperature=0, retry=10),
@@ -424,6 +425,10 @@ valley_series = {
     'valley_eagle': partial(ValleyEagleChat, model_path='bytedance-research/Valley-Eagle-7B'),
 }
 
+ross_series = {
+    'ross-qwen2-7b': partial(Ross, model_path='HaochenWang/ross-qwen2-7b'),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -435,7 +440,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series
 ]
 
 for grp in model_groups:

@@ -480,7 +480,7 @@ def cli():
 
         dataset = extract_dataset(data_file)
         assert dataset is not None, f'Cannot infer dataset name from {data_file}'
-        kwargs = {'nproc': args.nproc}
+        kwargs = {'nproc': args.api_nproc}
         if args.judge is not None:
             kwargs['model'] = args.judge
         if args.retry is not None:
