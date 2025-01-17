@@ -6,9 +6,6 @@ from PIL import Image
 import pandas as pd
 import string
 import re
-import av
-from av.codec.context import CodecContext
-from moviepy.video.io.VideoFileClip import VideoFileClip
 import numpy as np
 import os
 import os.path as osp
@@ -58,7 +55,13 @@ class MovieChat(BaseModel):
         **kwargs
     ):
         assert model_path is not None
-
+        try:
+            import av
+            from av.codec.context import CodecContext
+            from moviepy.video.io.VideoFileClip import VideoFileClip
+        except ImportError:
+            raise ImportError("Please install moviepy and av to use MovieChat")
+        
         self.VIDEO_LLM = True
         self.model_path = model_path
         llama_model = snapshot_download(repo_id=model_path) if not osp.isdir(model_path) else model_path
@@ -186,7 +189,8 @@ class MovieChat(BaseModel):
             img_list = []
 
             os.makedirs(self.tmp_folder, exist_ok=True)
-
+            
+            from moviepy.video.io.VideoFileClip import VideoFileClip
             video = VideoFileClip(visuals)
             clip_duration = video.duration / self.num_clips
 

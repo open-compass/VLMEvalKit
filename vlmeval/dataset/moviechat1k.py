@@ -29,7 +29,7 @@ class MovieChat1k(VideoBaseDataset):
         else:
             raise ValueError(f'Invalid subset: {subset}')
         
-        if limit <= 1.0:
+        if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
         elif limit > 1.0 and limit < len(self.data):
@@ -97,13 +97,13 @@ class MovieChat1k(VideoBaseDataset):
                             concat_tar_parts(parts, output_tar)
                             print('Finish concatenating tar files')
 
-                        if not osp.exists(osp.join(cache_path, 'video')):
-                            untar_video_data(output_tar, osp.join(cache_path, 'video'))
+                        if not osp.exists(osp.join(cache_path, 'videos')):
+                            untar_video_data(output_tar, cache_path)
         dataset_path = cache_path
-        self.video_path = osp.join(dataset_path, 'video/')
+        self.video_path = osp.join(dataset_path, 'videos/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
-        return dict(data_file=data_file, root=osp.join(dataset_path, 'video')) 
+        return dict(data_file=data_file, root=osp.join(dataset_path, 'videos')) 
 
     def build_prompt_pack(self, line):
         if isinstance(line, int):
@@ -217,7 +217,8 @@ class MovieChat1k(VideoBaseDataset):
         from .utils.moviechat1k import get_dimension_rating, prepare_score_prompt
 
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
-        judge = judge_kwargs['model']
+        judge = judge_kwargs.setdefault('model', 'chatgpt-0125')
+        assert judge in ['chatgpt-0125'], f'Invalid judge model for MovieChat1k: {judge}'
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)

@@ -318,7 +318,7 @@ def main():
                 if args.judge is not None:
                     judge_kwargs['model'] = args.judge
                 else:
-                    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['MovieChat1K'], dataset_name):
+                    if dataset.TYPE in ['MCQ', 'Y/N'] or listinstr(['moviechat1k'], dataset_name.lower()):
                         judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'

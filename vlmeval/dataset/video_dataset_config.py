@@ -93,15 +93,21 @@ cgbench_dataset = {
 }
 
 moviechat1k_dataset = {
-    'moviechat_breakpoint_8frame': partial(MovieChat1k, dataset='MovieChat1k', subset='breakpoint', nframe=8),
-    'moviechat_global_8frame_limit0.05': partial(MovieChat1k, dataset='MovieChat1k', subset='global', nframe=8, limit=0.05)
+    'moviechat1k_breakpoint_8frame': partial(MovieChat1k, dataset='MovieChat1k', subset='breakpoint', nframe=8),
+    'moviechat1k_global_14frame': partial(MovieChat1k, dataset='MovieChat1k', subset='global', nframe=14),
+    'moviechat1k_global_8frame_limit0.01': partial(MovieChat1k, dataset='MovieChat1k', subset='global', nframe=8, limit=0.01)
+}
+
+vdc_dataset = {
+    'VDC_8frame': partial(VDC, dataset='VDC', nframe=8),
+    'VDC_1fps': partial(VDC, dataset='VDC', fps=1.0),
 }
 
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset, cgbench_dataset, moviechat1k_dataset
+    mlvu_dataset, tempcompass_dataset, cgbench_dataset, moviechat1k_dataset, vdc_dataset
 ]
 
 for grp in dataset_groups:

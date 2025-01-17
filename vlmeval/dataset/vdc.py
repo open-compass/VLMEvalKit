@@ -138,7 +138,7 @@ class VDC(VideoBaseDataset):
         else:
             raise ValueError(f'Invalid subset: {subset}')
         
-        if limit <= 1.0:
+        if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
         elif limit > 1.0 and limit < len(self.data):
@@ -157,8 +157,8 @@ class VDC(VideoBaseDataset):
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
-            for video_pth in data['video_path']:
-                if not osp.exists(osp.join(pth, video_pth)):
+            for video_pth in data['video']:
+                if not osp.exists(osp.join(pth, 'videos', video_pth)):
                     return False
             return True
 
@@ -169,6 +169,7 @@ class VDC(VideoBaseDataset):
             if cache_path is not None and check_integrity(cache_path):
                 dataset_path = cache_path
             else:
+                cache_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
                 if not glob(osp.join(cache_path, "video")):
                     tar_files = glob(osp.join(cache_path, "**/*.tar*"), recursive=True)
 
@@ -207,7 +208,8 @@ class VDC(VideoBaseDataset):
 
                         if not osp.exists(osp.join(cache_path, osp.basename(base_name))):
                             untar_video_data(output_tar, cache_path)
-        self.video_path = osp.join(dataset_path, 'video/')
+        dataset_path = cache_path
+        self.video_path = osp.join(dataset_path, 'videos/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
         return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
@@ -362,7 +364,7 @@ class VDC(VideoBaseDataset):
 
         if not osp.exists(score_file):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
-            res = {k: v for k, v in res.items() if model.fail_msg not in v}
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
             
