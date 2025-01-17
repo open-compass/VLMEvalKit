@@ -11,6 +11,7 @@ from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 import re
 
+
 class MiniCPM_V(BaseModel):
 
     INSTALL_REQ = False
@@ -500,7 +501,7 @@ class MiniCPM_o_2_6(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-        
+
         num_beams = int(os.getenv("NUM_BEAMS", "3"))
         self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-o-2_6' else num_beams
 
