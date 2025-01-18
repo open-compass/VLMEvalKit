@@ -182,13 +182,11 @@ vita_series = {
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
-    'InternVL-Chat-V1-2-Plus': partial(
-        InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'
-    ),
+    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'),
     # InternVL1.5 series
     'InternVL-Chat-V1-5': partial(
         InternVLChat,
-        model_path='/mnt/hwfile/opencompass/dhd/hub/models--OpenGVLab--InternVL-Chat-V1-5/snapshots/59ef538d26ac27398d7bc13cab28dae24297fd41',
+        model_path='OpenGVLab/InternVL-Chat-V1-5',
         version='V1.5',
     ),
     'Mini-InternVL-Chat-2B-V1-5': partial(
@@ -203,13 +201,13 @@ internvl_series = {
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
-    'InternVL2-40B': partial(
-        InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0'
-    ),
+    'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0'),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
     # InternVL2 MPO series
     'InternVL2-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0'),
-    'InternVL2-8B-MPO-CoT': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0', use_mpo_prompt=True),
+    'InternVL2-8B-MPO-CoT': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
     # InternVL2.5 series
     'InternVL2_5-1B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-1B', version='V2.0'),
     'InternVL2_5-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-2B', version='V2.0'),
@@ -219,13 +217,27 @@ internvl_series = {
     'InternVL2_5-38B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-38B', version='V2.0'),
     'InternVL2_5-78B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-78B', version='V2.0'),
     # InternVL2.5-MPO series
-    'InternVL2_5-1B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-1B-MPO', version='V2.0', use_mpo_prompt=True),
-    'InternVL2_5-2B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-2B-MPO', version='V2.0', use_mpo_prompt=True),
-    'InternVL2_5-4B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-4B-MPO', version='V2.0', use_mpo_prompt=True),
-    'InternVL2_5-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-8B-MPO', version='V2.0', use_mpo_prompt=True),
-    'InternVL2_5-26B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-26B-MPO', version='V2.0', use_mpo_prompt=True),
-    'InternVL2_5-38B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-38B-MPO', version='V2.0', use_mpo_prompt=True),
-    'InternVL2_5-78B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-78B-MPO', version='V2.0', use_mpo_prompt=True),
+    'InternVL2_5-1B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-1B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-2B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-2B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-4B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-4B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-8B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-8B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-26B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-26B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-38B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-38B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-78B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-78B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
 }
 
 sail_series = {
