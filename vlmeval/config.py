@@ -143,7 +143,7 @@ qwen_series = {
 }
 
 llava_series = {
-    'llava_v1.5_7b': partial(LLaVA, model_path='liuhaotian/llava-v1.5-7b'),
+    'llava_v1.5_7b': partial(LLaVA, model_path='models/llava-v1.5-7b'),
     'llava_v1.5_13b': partial(LLaVA, model_path='liuhaotian/llava-v1.5-13b'),
     'llava_v1_7b': partial(LLaVA, model_path=LLAVA_V1_7B_MODEL_PTH),
     'sharegpt4v_7b': partial(LLaVA, model_path='Lin-Chen/ShareGPT4V-7B'),
@@ -186,7 +186,9 @@ vita_series = {
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
-    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'),
+    'InternVL-Chat-V1-2-Plus': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'
+    ),
     # InternVL1.5 series
     'InternVL-Chat-V1-5': partial(
         InternVLChat,
@@ -205,7 +207,9 @@ internvl_series = {
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
-    'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0'),
+    'InternVL2-40B': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0'
+    ),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
     # InternVL2 MPO series
     'InternVL2-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0'),
