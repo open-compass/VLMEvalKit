@@ -71,7 +71,6 @@ def LMUDataRoot():
     home = osp.expanduser('~')
     root = osp.join(home, 'LMUData')
     os.makedirs(root, exist_ok=True)
-    root = '/cpfs01/user/zhaoxiangyu/LMUData/'
     return root
 
 
