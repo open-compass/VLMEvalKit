@@ -170,6 +170,7 @@ def build_prompt(question, options, prediction):
     )
     return tmpl.format(question, options, prediction)
 
+
 def build_prompt_wemath(question, prediction):
     tmpl = (
         'You are an AI assistant who will help me to match '
@@ -187,8 +188,13 @@ def build_prompt_wemath(question, prediction):
         'Example 3: \n'
         'Question: <start>\n{}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
     )
-    question = question.replace("Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>", '')
+    question = question.replace(
+        ("Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
+        "<Thought process>: <<your thought process>> <Answer>: <<your option>>"),
+        '',
+    )
     return tmpl.format(question, prediction)
+
 
 def build_prompt_blink(question, options, prediction):
     tmpl = (

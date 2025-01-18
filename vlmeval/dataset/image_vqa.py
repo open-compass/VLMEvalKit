@@ -642,6 +642,7 @@ class OlympiadBench(ImageBaseDataset):
         accdz = pd.read_csv(score_file)
         return accdz
 
+
 class WeMath(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -655,8 +656,8 @@ class WeMath(ImageBaseDataset):
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
-        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
@@ -673,7 +674,6 @@ class WeMath(ImageBaseDataset):
 
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage) and model is not None:
@@ -711,6 +711,7 @@ class WeMath(ImageBaseDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(combine_score, score_pth)
         return combine_score
+
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
