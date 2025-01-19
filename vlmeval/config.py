@@ -449,6 +449,10 @@ ross_series = {
     'ross-qwen2-7b': partial(Ross, model_path='HaochenWang/ross-qwen2-7b'),
 }
 
+ursa_series = {
+    'URSA-7B': partial(UrsaChat, model_path='URSA-MATH/URSA-7B')
+}
+
 supported_VLM = {}
 
 model_groups = [
