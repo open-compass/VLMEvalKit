@@ -450,7 +450,7 @@ ross_series = {
 }
 
 ursa_series = {
-    'URSA-7B': partial(UrsaChat, model_path='URSA-MATH/URSA-7B')
+    'URSA-8B': partial(UrsaChat, model_path='URSA-MATH/URSA-8B')
 }
 
 supported_VLM = {}
