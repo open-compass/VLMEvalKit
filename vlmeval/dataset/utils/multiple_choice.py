@@ -195,6 +195,27 @@ def build_prompt_wemath(question, prediction):
     )
     return tmpl.format(question, prediction)
 
+def build_prompt_logicvista(question, prediction):
+    tmpl = (
+        "You are a information extractor that extracts multiple choice letter answer choices "
+        "from a paragraph that contains the answer choice and sometimes explaination of why that "
+        "choice is correct to the given question.\n"
+        "What letter did the following answer choose? If the answer did not select a letter answer choice, "
+        "first try to infer the answer based off the given choices.\n"
+        "If it does not seem like the given answer corresponds to an answer choice OR if there is no selected answer, please just respond with Z.\n"
+        "Make sure you answer with ONLY the letters chosen.\n"
+        'Example 1: \n'
+        'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
+        'Answer: a cute teddy bear\nYour output: A\n'
+        'Example 2: \n'
+        'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
+        'Answer: Spider\nYour output: Z\n'
+        'Example 3: \n'
+        'Question: {}\nAnswer: {}\nYour output: '
+    )
+
+    return tmpl.format(question, prediction)
+
 
 def build_prompt_blink(question, options, prediction):
     tmpl = (
