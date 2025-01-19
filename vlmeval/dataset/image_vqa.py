@@ -643,79 +643,9 @@ class OlympiadBench(ImageBaseDataset):
         return accdz
 
 
-class WeMath(ImageBaseDataset):
-    TYPE = 'VQA'
-    DATASET_URL = {
-        'WeMath': 'https://opencompass.openxlab.space/utils/VLMEval/WeMath.tsv'
-    }
-    DATASET_MD5 = {'WeMath': '056142c89b09d864702450b5b5ea0913'}
-
-    def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
-        from .utils.multiple_choice import mcq_vanilla_eval
-
-        # model = judge_kwargs['model']
-        model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
-        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
-        name_str = name_str_map[model] if model in name_str_map else model
-
-        if model == 'exact_matching':
-            model = None
-        elif gpt_key_set():
-            model = build_judge(**judge_kwargs)
-            if not model.working():
-                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                warnings.warn(DEBUG_MESSAGE)
-                model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
-
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
-        nproc = judge_kwargs.pop('nproc', 4)
-
-        if not osp.exists(storage) and model is not None:
-            data = load(eval_file)
-            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
-
-            data = load(eval_file)
-            data = data.sort_values(by='index')
-            data['prediction'] = [str(x) for x in data['prediction']]
-            # If not choice label, then use lower case
-            for k in data.keys():
-                data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
-
-            meta = self.data
-            meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
-            data_map = {x: y for x, y in zip(data['index'], data['question'])}
-            for k in data_map:
-                assert k in meta_q_map, (
-                    f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
-                )
-            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
-
-            if 'id' in data.columns:
-                # 更改列名
-                data.rename(columns={'id': 'ID'}, inplace=True)
-            dump(data, storage)
-        if osp.exists(storage):
-            accuracy_scores = wemath_evaluate_models(storage)
-            four_dim_scores = wemath_accuracy(storage)
-        else:
-            accuracy_scores = wemath_evaluate_models(eval_file)
-            four_dim_scores = wemath_accuracy(eval_file)
-        combine_score = {**accuracy_scores, **four_dim_scores}
-        combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_score.csv')
-        dump(combine_score, score_pth)
-        return combine_score
-
-
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}
+    DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv',}
     DATASET_MD5 = {'LLaVABench': 'd382a093f749a697820d3dadd61c8428'}
 
     # It returns a DataFrame
@@ -755,9 +685,10 @@ class LLaVABench(ImageBaseDataset):
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv'
+        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
+        'MMVet_Hard': 'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
-    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3'}
+    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3', 'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16'}
 
     # It returns a DataFrame
     @classmethod
