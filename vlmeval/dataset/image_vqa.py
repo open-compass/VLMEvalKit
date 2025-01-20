@@ -713,6 +713,80 @@ class WeMath(ImageBaseDataset):
         return combine_score
 
 
+class LogicVista(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LogicVista': 'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
+    }
+    DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage) and model is not None:
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('LogicVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    LogicVista_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res'] and ans[k]['hit'] == v['hit']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            data['hit'] = [ans[idx]['hit'] for idx in data['index']]
+
+            dump(data, storage)
+        if osp.exists(storage):
+            accuracy_scores = evaluate_logicvista(storage)
+            score_pth = storage.replace('.xlsx', '_score.csv')
+            dump(accuracy_scores, score_pth)
+
+            return accuracy_scores
+
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}

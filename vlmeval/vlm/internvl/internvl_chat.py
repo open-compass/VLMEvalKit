@@ -112,8 +112,6 @@ class InternVLChat(BaseModel):
                 prompt = question + ' Please answer yes or no. Answer the question using a single word or phrase.'
             else:
                 prompt = question
-        elif dataset == "WeMath":
-            prompt = line['question']
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = build_multi_choice_prompt(line, dataset)
             if os.getenv('USE_COT') == '1':
@@ -126,7 +124,8 @@ class InternVLChat(BaseModel):
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
-                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial'], dataset):
+                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
+                            'WeMath', 'LogicVista'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt)
