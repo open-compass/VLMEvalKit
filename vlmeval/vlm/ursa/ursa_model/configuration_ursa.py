@@ -11,12 +11,51 @@
 # See the License for the specific language governing permissions and 
 # limitations under the License. 
 
+import sys
+
+if sys.version_info >= (3, 10):
+    print("Python version is above 3.10, patching the collections module.")
+    import collections
+    import collections.abc
+
+    for type_name in collections.abc.__all__:
+        setattr(collections, type_name, getattr(collections.abc, type_name))
+
 from transformers.configuration_utils import PretrainedConfig
 from transformers.utils import logging
 from transformers import CONFIG_MAPPING
-from ..ursa_model.deepseek_vl.models import VisionConfig, AlignerConfig
-
+from attrdict import AttrDict
 logger = logging.get_logger(__name__)
+
+
+class VisionConfig(PretrainedConfig):
+    model_type = "vision"
+    cls: str = ""
+    params: AttrDict = {}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.cls = kwargs.get("cls", "")
+        if not isinstance(self.cls, str):
+            self.cls = self.cls.__name__
+
+        self.params = AttrDict(kwargs.get("params", {}))
+
+
+class AlignerConfig(PretrainedConfig):
+    model_type = "aligner"
+    cls: str = ""
+    params: AttrDict = {}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.cls = kwargs.get("cls", "")
+        if not isinstance(self.cls, str):
+            self.cls = self.cls.__name__
+
+        self.params = AttrDict(kwargs.get("params", {}))
 
 class UrsaConfig(PretrainedConfig):
     model_type = "ursa"

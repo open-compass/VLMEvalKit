@@ -25,9 +25,9 @@ from transformers import (
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache
 from transformers.modeling_outputs import ModelOutput
-from .configuration_ursa import UrsaConfig
-from ..ursa_model.deepseek_vl.models.clip_encoder import CLIPVisionTower, HybridVisionTower
-from ..ursa_model.deepseek_vl.models import VisionConfig, MlpProjector, AlignerConfig   
+from .configuration_ursa import UrsaConfig, AlignerConfig, VisionConfig
+from .clip_encoder import CLIPVisionTower, HybridVisionTower
+from .projector import MlpProjector
 
 @dataclass
 class UrsaCausalLMOutputWithPast(ModelOutput):

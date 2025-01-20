@@ -6,8 +6,7 @@ from typing import Dict
 import logging
 from transformers import set_seed
 from transformers import AutoTokenizer, AutoProcessor
-from .ursa_model.modeling_ursa import UrsaForConditionalGeneration
-from .ursa_model.processing_ursa import UrsaProcessor
+from .ursa_model import UrsaForConditionalGeneration, UrsaProcessor
 import re
 from typing import List, Optional, Union
 from vlmeval.dataset import DATASET_TYPE
