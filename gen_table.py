@@ -28,8 +28,10 @@ def nth_large(val, vals):
 
 
 def format_timestamp(timestamp):
-    date = timestamp[:2] + '.' + timestamp[2:4] + '.' + timestamp[4:6]
-    time = timestamp[6:8] + ':' + timestamp[8:10] + ':' + timestamp[10:12]
+    date = timestamp[:-6]
+    time = timestamp[-6:]
+    date = date[:-4] + '.' + date[-4:-2] + '.' + date[-2:]
+    time = time[:-4] + ':' + time[-4:-2] + ':' + time[-2:]
     return date + ' ' + time
 
 
