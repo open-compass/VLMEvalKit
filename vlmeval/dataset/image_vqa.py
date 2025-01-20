@@ -829,9 +829,10 @@ class LLaVABench(ImageBaseDataset):
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv'
+        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
+        'MMVet_Hard': 'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
-    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3'}
+    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3', 'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16'}
 
     # It returns a DataFrame
     @classmethod
