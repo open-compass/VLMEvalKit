@@ -13,6 +13,7 @@ VideoChat2_ROOT = None
 VideoChatGPT_ROOT = None
 PLLaVA_ROOT = None
 RBDash_ROOT = None
+VITA_ROOT = '/fs-computility/mllm1/shared/dhd/VITA'
 LLAVA_V1_7B_MODEL_PTH = 'Please set your local path to LLaVA-7B-v1.1 here, the model weight is obtained by merging LLaVA delta weight based on vicuna-7b-v1.1 in https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md with vicuna-7b-v1.1. '
 
 video_models = {
@@ -59,11 +60,15 @@ api_models = {
     'GPT4o': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=512, img_detail='low', retry=10, verbose=False),
     'GPT4o_HIGH': partial(GPT4V, model='gpt-4o-2024-05-13', temperature=0, img_size=-1, img_detail='high', retry=10, verbose=False),
     'GPT4o_20240806': partial(GPT4V, model='gpt-4o-2024-08-06', temperature=0, img_size=-1, img_detail='high', retry=10, verbose=False),
+    'GPT4o_20241120': partial(GPT4V, model='gpt-4o-2024-11-20', temperature=0, img_size=-1, img_detail='high', retry=10, verbose=False),
     'GPT4o_MINI': partial(GPT4V, model='gpt-4o-mini-2024-07-18', temperature=0, img_size=-1, img_detail='high', retry=10, verbose=False),
     # Gemini
     'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),  # now GeminiPro1-0 is only supported by vertex backend
     'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
     'GeminiFlash1-5': partial(GeminiProVision, model='gemini-1.5-flash', temperature=0, retry=10),
+    'GeminiFlash2-0': partial(GeminiProVision, model='gemini-2.0-flash-exp', temperature=0, retry=10),
+    'GeminiPro1-5-002': partial(GPT4V, model='gemini-1.5-pro-002', temperature=0, retry=10),  # Internal Use Only
+    'GeminiFlash1-5-002': partial(GPT4V, model='gemini-1.5-flash-002', temperature=0, retry=10),  # Internal Use Only
     # Qwen-VL
     'QwenVLPlus': partial(QwenVLAPI, model='qwen-vl-plus', temperature=0, retry=10),
     'QwenVLMax': partial(QwenVLAPI, model='qwen-vl-max', temperature=0, retry=10),
@@ -73,6 +78,7 @@ api_models = {
     'RekaCore': partial(Reka, model='reka-core-20240415'),
     # Step1V
     'Step1V': partial(GPT4V, model='step-1v-32k', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10, img_size=-1, img_detail='high'),
+    'Step1.5V-mini': partial(GPT4V, model='step-1.5v-mini', api_base="https://api.stepfun.com/v1/chat/completions", temperature=0, retry=10, img_size=-1, img_detail='high'),
     # Yi-Vision
     'Yi-Vision': partial(GPT4V, model='yi-vision', api_base="https://api.lingyiwanwu.com/v1/chat/completions", temperature=0, retry=10),
     # Claude
@@ -82,12 +88,17 @@ api_models = {
     'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10, verbose=False),
     # GLM4V
+    'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     'GLM4V_PLUS': partial(GLMVisionAPI, model='cogvlm-evaluation-241203', temperature=0, retry=10),
+    # MiniMax abab
+    'abab6.5s': partial(GPT4V, model='abab6.5s-chat', api_base='https://api.minimax.chat/v1/chat/completions', temperature=0, retry=10),
+    'abab7-preview': partial(GPT4V, model='abab7-chat-preview', api_base='https://api.minimax.chat/v1/chat/completions', temperature=0, retry=10),
     # CongRong
     'CloudWalk': partial(CWWrapper, model='cw-congrong-v1.5', temperature=0, retry=10),
     # SenseChat-V
-    'SenseChat-5-Vision': partial(SenseChatVisionAPI, model='SenseChat-5-Vision', temperature=0, retry=10),
+    'SenseChat-Vision': partial(SenseChatVisionAPI, model='SenseChat-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
+    'HunYuan-Standard-Vision': partial(HunyuanVision, model='hunyuan-standard-vision', temperature=0, retry=10),
     'bailingMM': partial(bailingMMAPI, model='bailingMM-mini', temperature=0, retry=10),
     # BlueLM-V
     "BlueLM_V": partial(BlueLM_V_API, model='BlueLM-VL-v3.0', temperature=0, retry=10),
@@ -95,7 +106,11 @@ api_models = {
     "JTVL": partial(JTVLChatAPI, model='jt-vl-chat', temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model='taiyi', temperature=0, retry=10),
     # TeleMM
-    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', stream=False, temperature=0.7, top_p=0.95, top_k=50, frequency_penalty=0, n=1, max_tokens=300, retry=10)
+    'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', temperature=0, retry=10),
+    # lmdeploy api
+    'lmdeploy': partial(LMDeployAPI, api_base='http://0.0.0.0:23333/v1/chat/completions', temperature=0, retry=10),
+    # Taichu-VL
+    'Taichu-VL-2B': partial(TaichuVLAPI, model='Taichu-VL-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
 }
 
 mmalaya_series = {
@@ -108,6 +123,7 @@ minicpm_series = {
     'MiniCPM-V-2': partial(MiniCPM_V, model_path='openbmb/MiniCPM-V-2'),
     'MiniCPM-Llama3-V-2_5': partial(MiniCPM_Llama3_V, model_path='openbmb/MiniCPM-Llama3-V-2_5'),
     'MiniCPM-V-2_6': partial(MiniCPM_V_2_6, model_path='openbmb/MiniCPM-V-2_6'),
+    'MiniCPM-o-2_6': partial(MiniCPM_o_2_6, model_path='openbmb/MiniCPM-o-2_6'),
 }
 
 xtuner_series = {
@@ -128,7 +144,7 @@ qwen_series = {
 }
 
 llava_series = {
-    'llava_v1.5_7b': partial(LLaVA, model_path='liuhaotian/llava-v1.5-7b'),
+    'llava_v1.5_7b': partial(LLaVA, model_path='models/llava-v1.5-7b'),
     'llava_v1.5_13b': partial(LLaVA, model_path='liuhaotian/llava-v1.5-13b'),
     'llava_v1_7b': partial(LLaVA, model_path=LLAVA_V1_7B_MODEL_PTH),
     'sharegpt4v_7b': partial(LLaVA, model_path='Lin-Chen/ShareGPT4V-7B'),
@@ -143,8 +159,12 @@ llava_series = {
     'llava_next_qwen_32b': partial(LLaVA_Next2, model_path='lmms-lab/llava-next-qwen-32b'),
     'llava_next_interleave_7b': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-hf'),
     'llava_next_interleave_7b_dpo': partial(LLaVA_Next, model_path='llava-hf/llava-interleave-qwen-7b-dpo-hf'),
-    'llava-onevision-qwen2-0.5b-ov-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-0.5b-ov-hf'),
-    'llava-onevision-qwen2-0.5b-si-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-0.5b-si-hf'),
+    'llava-onevision-qwen2-0.5b-ov-hf': partial(
+        LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-0.5b-ov-hf'
+    ),
+    'llava-onevision-qwen2-0.5b-si-hf': partial(
+        LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-0.5b-si-hf'
+    ),
     'llava-onevision-qwen2-7b-ov-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-7b-ov-hf'),
     'llava-onevision-qwen2-7b-si-hf': partial(LLaVA_OneVision_HF, model_path='llava-hf/llava-onevision-qwen2-7b-si-hf'),
     'llava_onevision_qwen2_0.5b_si': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-0.5b-si'),
@@ -154,29 +174,83 @@ llava_series = {
     'llava_onevision_qwen2_7b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-7b-ov'),
     'llava_onevision_qwen2_72b_ov': partial(LLaVA_OneVision, model_path='lmms-lab/llava-onevision-qwen2-72b-ov-sft'),
     'Aquila-VL-2B': partial(LLaVA_OneVision, model_path='BAAI/Aquila-VL-2B-llava-qwen'),
-    'llava_video_qwen2_7b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-7B-Qwen2'),
-    'llava_video_qwen2_72b':partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-72B-Qwen2'),
+    'llava_video_qwen2_7b': partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-7B-Qwen2'),
+    'llava_video_qwen2_72b': partial(LLaVA_OneVision, model_path='lmms-lab/LLaVA-Video-72B-Qwen2'),
+    'varco-vision-hf': partial(LLaVA_OneVision_HF, model_path='NCSOFT/VARCO-VISION-14B-HF'),
+}
+
+vita_series = {
+    'vita': partial(VITA, model_path='VITA-MLLM/VITA', root=VITA_ROOT),
+    'vita_qwen2': partial(VITAQwen2, model_path='VITA-MLLM/VITA-1.5', root=VITA_ROOT),
 }
 
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
-    'InternVL-Chat-V1-2-Plus': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'),
-    'InternVL-Chat-V1-5': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='V1.5'),
-    'Mini-InternVL-Chat-2B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5', version='V1.5'),
-    'Mini-InternVL-Chat-4B-V1-5': partial(InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5', version='V1.5'),
+    'InternVL-Chat-V1-2-Plus': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2-Plus', version='V1.2'
+    ),
+    # InternVL1.5 series
+    'InternVL-Chat-V1-5': partial(
+        InternVLChat,
+        model_path='OpenGVLab/InternVL-Chat-V1-5',
+        version='V1.5',
+    ),
+    'Mini-InternVL-Chat-2B-V1-5': partial(
+        InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-2B-V1-5', version='V1.5'
+    ),
+    'Mini-InternVL-Chat-4B-V1-5': partial(
+        InternVLChat, model_path='OpenGVLab/Mini-InternVL-Chat-4B-V1-5', version='V1.5'
+    ),
     # InternVL2 series
     'InternVL2-1B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-1B', version='V2.0'),
     'InternVL2-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-2B', version='V2.0'),
     'InternVL2-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-4B', version='V2.0'),
     'InternVL2-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B', version='V2.0'),
-    'InternVL2-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0'),
-    'InternVL2-8B-MPO-CoT': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0', cot_prompt=True),
     'InternVL2-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-26B', version='V2.0'),
-    'InternVL2-40B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0', load_in_8bit=True),
+    'InternVL2-40B': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2-40B', version='V2.0'
+    ),
     'InternVL2-76B': partial(InternVLChat, model_path='OpenGVLab/InternVL2-Llama3-76B', version='V2.0'),
-    # test mmniah
-    'InternVL-mmniah': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-5', version='mmniah'),
+    # InternVL2 MPO series
+    'InternVL2-8B-MPO': partial(InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0'),
+    'InternVL2-8B-MPO-CoT': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2-8B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    # InternVL2.5 series
+    'InternVL2_5-1B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-1B', version='V2.0'),
+    'InternVL2_5-2B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-2B', version='V2.0'),
+    'InternVL2_5-4B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-4B', version='V2.0'),
+    'InternVL2_5-8B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-8B', version='V2.0'),
+    'InternVL2_5-26B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-26B', version='V2.0'),
+    'InternVL2_5-38B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-38B', version='V2.0'),
+    'InternVL2_5-78B': partial(InternVLChat, model_path='OpenGVLab/InternVL2_5-78B', version='V2.0'),
+    # InternVL2.5-MPO series
+    'InternVL2_5-1B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-1B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-2B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-2B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-4B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-4B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-8B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-8B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-26B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-26B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-38B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-38B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+    'InternVL2_5-78B-MPO': partial(
+        InternVLChat, model_path='OpenGVLab/InternVL2_5-78B-MPO', version='V2.0', use_mpo_prompt=True
+    ),
+}
+
+sail_series = {
+    'SAIL-VL-2B': partial(SailVL, model_path='BytedanceDouyinContent/SAIL-VL-2B')
 }
 
 yivl_series = {
@@ -225,6 +299,11 @@ deepseekvl_series = {
     'deepseek_vl_1.3b': partial(DeepSeekVL, model_path='deepseek-ai/deepseek-vl-1.3b-chat'),
 }
 
+deepseekvl2_series = {
+    'deepseek_vl2_tiny': partial(DeepSeekVL2, model_path='deepseek-ai/deepseek-vl2-tiny'),
+    'deepseek_vl2_small': partial(DeepSeekVL2, model_path='deepseek-ai/deepseek-vl2-small'),
+    'deepseek_vl2': partial(DeepSeekVL2, model_path='deepseek-ai/deepseek-vl2'),
+}
 
 janus_series = {
     'Janus-1.3B': partial(Janus, model_path='deepseek-ai/Janus-1.3B')
@@ -287,6 +366,7 @@ xgen_mm_series = {
 qwen2vl_series = {
     'Qwen-VL-Max-0809': partial(Qwen2VLAPI, model='qwen-vl-max-0809', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen-VL-Plus-0809': partial(Qwen2VLAPI, model='qwen-vl-plus-0809', min_pixels=1280*28*28, max_pixels=16384*28*28),
+    'QVQ-72B-Preview': partial(Qwen2VLChat, model_path='Qwen/QVQ-72B-Preview', min_pixels=1280*28*28, max_pixels=16384*28*28, system_prompt='You are a helpful and harmless assistant. You are Qwen developed by Alibaba. You should think step-by-step.', max_new_tokens=8192, post_process=False),
     'Qwen2-VL-72B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-72B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28),
@@ -322,6 +402,7 @@ moondream_series={
 
 llama_series={
     'Llama-3.2-11B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct'),
+    'LLaVA-CoT': partial(llama_vision, model_path='Xkev/Llama-3.2V-11B-cot'),
     'Llama-3.2-90B-Vision-Instruct': partial(llama_vision, model_path='meta-llama/Llama-3.2-90B-Vision-Instruct'),
 }
 
@@ -344,7 +425,7 @@ points_series = {
 }
 
 nvlm_series = {
-    'NVLM': partial(NVLM, model_path='nvidia/NVLM-D-72B'), 
+    'NVLM': partial(NVLM, model_path='nvidia/NVLM-D-72B'),
 }
 
 vintern_series = {
@@ -361,20 +442,27 @@ h2ovl_series = {
     'h2ovl-mississippi-1b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-800m'),
 }
 
+valley_series = {
+    'valley_eagle': partial(ValleyEagleChat, model_path='bytedance-research/Valley-Eagle-7B'),
+}
+
+ross_series = {
+    'ross-qwen2-7b': partial(Ross, model_path='HaochenWang/ross-qwen2-7b'),
+}
+
 supported_VLM = {}
 
 model_groups = [
     ungrouped, api_models,
     xtuner_series, qwen_series, llava_series, internvl_series, yivl_series,
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
-    deepseekvl_series, janus_series, minicpm_series, cogvlm_series, wemm_series,
+    deepseekvl_series, deepseekvl2_series, janus_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series, 
+    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series
 ]
 
 for grp in model_groups:
     supported_VLM.update(grp)
-

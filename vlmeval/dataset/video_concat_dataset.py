@@ -8,15 +8,17 @@ class ConcatVideoDataset(VideoBaseDataset):
 
     DATASET_SETS = {}
 
-    def __init__(self, dataset):
+    def __init__(self, dataset, **kwargs):
         from . import build_dataset
         datasets = self.DATASET_SETS[dataset]
         self.dataset_map = {}
         # The name of the compliation
         self.dataset_name = dataset
         self.datasets = datasets
+        self.nframe = kwargs.get('nframe', 0)
+        self.fps = kwargs.get('fps', -1)
         for dname in datasets:
-            dataset = build_dataset(dname)
+            dataset = build_dataset(dname, **kwargs)
             assert dataset is not None, dataset
             self.dataset_map[dname] = dataset
         TYPES = [x.TYPE for x in self.dataset_map.values()]
@@ -36,14 +38,14 @@ class ConcatVideoDataset(VideoBaseDataset):
         data['index'] = np.arange(len(data))
         self.data = data
 
-    def build_prompt(self, line, num_frames, video_llm, fps):
+    def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             line = self.data.iloc[line]
         idx = line['original_index']
         dname = line['SUB_DATASET']
         org_data = self.dataset_map[dname].data
         org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
-        return self.dataset_map[dname].build_prompt(org_line, num_frames, video_llm, fps)
+        return self.dataset_map[dname].build_prompt(org_line, video_llm)
 
     def dump_image(self, line):
         # Assert all images are pre-dumped

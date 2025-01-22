@@ -6,6 +6,7 @@ from rich.progress import (BarColumn, MofNCompleteColumn, Progress, Task,
                            TaskProgressColumn, TextColumn, TimeRemainingColumn)
 from rich.text import Text
 import os.path as osp
+import time
 import portalocker
 from ..smp import load, dump
 
@@ -33,7 +34,7 @@ def track_progress_rich(
             f'tasks must be an iterable object, but got {type(tasks)}')
     assert nproc > 0, 'nproc must be a positive number'
     res = load(save) if save is not None else {}
-    results = []
+    results = [None for _ in range(len(tasks))]
 
     with ThreadPoolExecutor(max_workers=nproc) as executor:
         futures = []
@@ -47,13 +48,24 @@ def track_progress_rich(
                 future = executor.submit(func, *inputs)
             futures.append(future)
 
-        for i, future in enumerate(tqdm(futures)):
-            tmp = future.result()
-            if keys is not None:
-                res[keys[i]] = tmp
-                if i % 10 == 0 and save is not None:
+        unfinished = set(range(len(tasks)))
+        pbar = tqdm(total=len(unfinished))
+        while len(unfinished):
+            new_finished = set()
+            for idx in unfinished:
+                if futures[idx].done():
+                    results[idx] = futures[idx].result()
+                    new_finished.add(idx)
+                    if keys is not None:
+                        res[keys[idx]] = results[idx]
+            if len(new_finished):
+                if save is not None:
                     dump(res, save)
-            results.append(tmp)
+                pbar.update(len(new_finished))
+                for k in new_finished:
+                    unfinished.remove(k)
+            time.sleep(0.1)
+        pbar.close()
 
     if save is not None:
         dump(res, save)

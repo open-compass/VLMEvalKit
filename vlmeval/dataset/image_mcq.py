@@ -93,6 +93,14 @@ class ImageMCQDataset(ImageBaseDataset):
         ),
         'A-OKVQA': 'https://huggingface.co/datasets/Allen8/A-OKVQA/resolve/main/a-okvqa.tsv',
         'WorldMedQA-V': 'https://opencompass.openxlab.space/utils/VLMEval/WorldMedQA-V.tsv',
+        'VisOnlyQA-VLMEvalKit': (
+            'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
+            'resolve/main/visonlyqa_vlmevalkit.tsv'
+        ),
+        '3DSRBench': (
+            'https://huggingface.co/datasets/ccvl/3DSRBench/'
+            'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
+        ),
     }
 
     DATASET_MD5 = {
@@ -139,11 +147,13 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
-        'RealWorldQA': '92321028d2bc29040284b6674721e48f',
+        'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
-        'WorldMedQA-V': '441e63875e30c87f5750528b57b41285'
+        'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
+        "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
+        '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -264,6 +274,12 @@ class ImageMCQDataset(ImageBaseDataset):
             warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
                            larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
+        if dataset == 'VisOnlyQA-VLMEvalKit':
+            warnings.warn('Note that the results on VisOnlyQA-VLMEvalKit are different from the results on \
+                           the original VisOnlyQA. VisOnlyQA-VLMEvalKit does not include the \
+                           chemistry__shape_multi split and uses a different evaluation prompt. Please \
+                           explicitly specify the version of the dataset when you report results.')
+
         return acc
 
 
@@ -275,7 +291,7 @@ class MMMUDataset(ImageMCQDataset):
     }
 
     DATASET_MD5 = {
-        'MMMU_DEV_VAL': '521afc0f3bf341e6654327792781644d',
+        'MMMU_DEV_VAL': '585e8ad75e73f75dcad265dfd0417d64',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
     }
 

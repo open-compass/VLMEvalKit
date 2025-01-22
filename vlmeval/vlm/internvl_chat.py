@@ -235,6 +235,7 @@ class InternVLChat(BaseModel):
 
         elif listinstr(['InternVL2-Llama3-76B'], model_path):
             device_map = split_model(model_path.split('/')[-1])
+            breakpoint()
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,

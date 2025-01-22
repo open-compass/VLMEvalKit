@@ -1,5 +1,6 @@
 from vlmeval.smp import *
 from vlmeval.tools import EVAL
+from vlmeval.dataset import build_dataset
 import gradio as gr
 
 HEADER = """
@@ -81,6 +82,18 @@ def evaluate(file):
     ret = f"Evaluation ID: {eval_id}\n"
     timestamp = datetime.datetime.now().strftime('%Y.%m.%d  %H:%M:%S')
     ret += f'Evaluation Timestamp: {timestamp}\n'
+    eval_data = load(eval_file)
+    eval_data['index'] = [int(x) for x in eval_data['index']]
+    base_data = build_dataset(dataset).data
+    base_index_set = set([int(x) for x in base_data['index']])
+    inds_more = {k for k in eval_data['index'] if k not in base_index_set}
+    if len(inds_more) > 0:
+        inds_more = set([x % 1e6 for x in inds_more])
+        ret += f"Warning: The matched dataset is {dataset}. The following indices are not in the base dataset: {inds_more}\n"
+        ret += f"We automatically remove those indices, and still recommend you to check the indices in your prediction file.\n"
+        eval_data = eval_data[eval_data['index'].isin(base_index_set)]
+        dump(eval_data, eval_file)
+
     acc = EVAL(dataset, eval_file)
     nacc = reformat_acc(acc).round(1)
     return ret, nacc

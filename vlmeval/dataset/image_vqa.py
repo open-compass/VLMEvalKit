@@ -2,8 +2,6 @@ import os
 import re
 import tempfile
 from functools import partial
-from jinja2.sandbox import SandboxedEnvironment
-from jinja2 import Template
 
 import pandas as pd
 
@@ -11,7 +9,6 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..utils import track_progress_rich
-import ipdb
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -38,7 +35,7 @@ class ImageVQADataset(ImageBaseDataset):
         'InfoVQA_VAL': '2342e9c225222f0ef4dec545ebb126fe',
         'InfoVQA_TEST': 'df535bf51b88dc9718252c34131a6227',
         'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
-        'GQA_TestDev_Balanced': 'fead7df22befc1ed3ca2b62ea26fa17b',
+        'GQA_TestDev_Balanced': '99b62f22e224d9b2f32dcbe41359d1c9',
     }
 
     def build_prompt(self, line):
@@ -266,7 +263,7 @@ class MathVista(ImageBaseDataset):
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINI.tsv', # noqa
+        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv', # noqa
         'MathVerse_MINI_Vision_Only': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
         'MathVerse_MINI_Vision_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv', # noqa
         'MathVerse_MINI_Vision_Intensive': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv', # noqa
@@ -363,7 +360,7 @@ class MathVerse(ImageBaseDataset):
             dump(data, storage_score)
 
         score = MathVerse_acc(storage_score)
-        score_pth = storage_score.replace('.xlsx', '_score.csv')
+        score_pth = storage_score.replace('.xlsx', '.csv')
         dump(score, score_pth)
         return score
 
@@ -451,7 +448,7 @@ class OlympiadBench(ImageBaseDataset):
         tgt_path_z = []
         if isinstance(line['image'], list):
             for i in range(len(line['image'])):
-                tgt_path = osp.join(self.img_root, f"{line['index']}--{i+1}.jpg")
+                tgt_path = osp.join(self.img_root, f"{line['index']}--{i + 1}.jpg")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'][i], tgt_path)
                 tgt_path_z.append(tgt_path)
@@ -646,6 +643,150 @@ class OlympiadBench(ImageBaseDataset):
         return accdz
 
 
+class WeMath(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'WeMath': 'https://opencompass.openxlab.space/utils/VLMEval/WeMath.tsv'
+    }
+    DATASET_MD5 = {'WeMath': '056142c89b09d864702450b5b5ea0913'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage) and model is not None:
+            data = load(eval_file)
+            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+            data = load(eval_file)
+            data = data.sort_values(by='index')
+            data['prediction'] = [str(x) for x in data['prediction']]
+            # If not choice label, then use lower case
+            for k in data.keys():
+                data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+            meta = self.data
+            meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+            data_map = {x: y for x, y in zip(data['index'], data['question'])}
+            for k in data_map:
+                assert k in meta_q_map, (
+                    f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+                )
+            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+
+            if 'id' in data.columns:
+                # 更改列名
+                data.rename(columns={'id': 'ID'}, inplace=True)
+            dump(data, storage)
+        if osp.exists(storage):
+            accuracy_scores = wemath_evaluate_models(storage)
+            four_dim_scores = wemath_accuracy(storage)
+        else:
+            accuracy_scores = wemath_evaluate_models(eval_file)
+            four_dim_scores = wemath_accuracy(eval_file)
+        combine_score = {**accuracy_scores, **four_dim_scores}
+        combine_score = pd.DataFrame(combine_score)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(combine_score, score_pth)
+        return combine_score
+
+
+class LogicVista(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LogicVista': 'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
+    }
+    DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage) and model is not None:
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('LogicVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    LogicVista_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res'] and ans[k]['hit'] == v['hit']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            data['hit'] = [ans[idx]['hit'] for idx in data['index']]
+
+            dump(data, storage)
+        if osp.exists(storage):
+            accuracy_scores = evaluate_logicvista(storage)
+            score_pth = storage.replace('.xlsx', '_score.csv')
+            dump(accuracy_scores, score_pth)
+
+            return accuracy_scores
+
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}
@@ -688,9 +829,10 @@ class LLaVABench(ImageBaseDataset):
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv'
+        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
+        'MMVet_Hard': 'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
-    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3'}
+    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3', 'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16'}
 
     # It returns a DataFrame
     @classmethod
@@ -965,7 +1107,7 @@ class QSpatial(ImageBaseDataset):
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
-
+        from jinja2.sandbox import SandboxedEnvironment
         text_prompt_template = self._prompt_templates["spatial_prompt_single"]
         env = SandboxedEnvironment()
         text_prompt = env.from_string(text_prompt_template).render(question=line["question"])
