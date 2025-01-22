@@ -99,7 +99,8 @@ api_models = {
     'SenseChat-Vision': partial(SenseChatVisionAPI, model='SenseChat-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
     'HunYuan-Standard-Vision': partial(HunyuanVision, model='hunyuan-standard-vision', temperature=0, retry=10),
-    'bailingMM': partial(bailingMMAPI, model='bailingMM-mini', temperature=0, retry=10),
+    'BailingMM-Lite-1203': partial(bailingMMAPI, model='BailingMM-Lite-1203', temperature=0, retry=10),
+    'BailingMM-Pro-0120': partial(bailingMMAPI, model='BailingMM-Pro-0120', temperature=0, retry=10),
     # BlueLM-V
     "BlueLM_V": partial(BlueLM_V_API, model='BlueLM-VL-v3.0', temperature=0, retry=10),
     # JiuTian-VL
