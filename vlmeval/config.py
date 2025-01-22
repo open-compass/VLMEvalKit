@@ -90,6 +90,7 @@ api_models = {
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     'GLM4V_PLUS': partial(GLMVisionAPI, model='cogvlm-evaluation-241203', temperature=0, retry=10),
+    'GLM4V_PLUS_202501': partial(GLMVisionAPI, model='glm-4-vision-250120-evaluation', temperature=0, retry=10),
     # MiniMax abab
     'abab6.5s': partial(GPT4V, model='abab6.5s-chat', api_base='https://api.minimax.chat/v1/chat/completions', temperature=0, retry=10),
     'abab7-preview': partial(GPT4V, model='abab7-chat-preview', api_base='https://api.minimax.chat/v1/chat/completions', temperature=0, retry=10),
