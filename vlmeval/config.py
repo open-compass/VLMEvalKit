@@ -115,8 +115,8 @@ api_models = {
 
 emu_series = {
     'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
-    'Emu3_chat': partial(Emu3_chat, model_path='BAAI/Emu3-Chat'),
-    'Emu3_gen': partial(Emu3_gen, model_path='BAAI/Emu3-Gen')
+    'emu3_chat': partial(Emu3_chat, model_path='BAAI/Emu3-Chat'),
+    'emu3_gen': partial(Emu3_gen, model_path='BAAI/Emu3-Gen')
 }
 mmalaya_series = {
     'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
