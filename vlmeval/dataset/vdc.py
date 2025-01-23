@@ -268,7 +268,7 @@ class VDC(VideoBaseDataset):
             ]
         else:
             # 如果不是视频LLM，返回帧图像和文本
-            frames = self.save_video_frames(line['video'])
+            frames = self.save_video_frames(os.path.splitext(line['video'])[0])
             message = []
             for im in frames:
                 message.append(dict(type='image', value=im))
