@@ -154,7 +154,7 @@ class LMDeployWrapper(BaseAPI):
     prompt_map = {
         'cogvlm2': CogVLM2_PromptUtil(),
         'internvl2': InternVL2_PromptUtil(),
-        'internvl2-8b-mpo-cot': InternVL2_PromptUtil(use_mpo_prompt=True),
+        'internvl2-mpo-cot': InternVL2_PromptUtil(use_mpo_prompt=True),
     }
 
     def __init__(self,
@@ -215,12 +215,19 @@ class LMDeployWrapper(BaseAPI):
         if 'InternVL2-'.lower() in model_name.lower():
             self.max_tokens = 1024
             self.temperature = 0.0
-            self.custom_prompt = 'internvl2'
+            if 'mpo' in model_name.lower():
+                self.custom_prompt = 'internvl2'
+            else:
+                self.max_tokens = 4096
+                self.custom_prompt = 'internvl2-mpo-cot'
         if 'internvl2-8b-mpo-cot'.lower() in model_name.lower():
             self.use_mpo_prompt = True
             self.max_tokens = 1024
             self.temperature = 0.0
-            self.custom_prompt = 'internvl2-8b-mpo-cot'
+            self.custom_prompt = 'internvl2-mpo-cot'
+        if 'qvq'.lower() in model_name.lower():
+            self.max_tokens = 4096
+            self.temperature = 0.0
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
