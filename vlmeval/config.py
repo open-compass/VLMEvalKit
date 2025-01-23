@@ -36,7 +36,6 @@ ungrouped = {
     'VisualGLM_6b': partial(VisualGLM, model_path='THUDM/visualglm-6b'),
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'mPLUG-Owl3': partial(mPLUG_Owl3, model_path='mPLUG/mPLUG-Owl3-7B-240728'),
-    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
     'OmniLMM_12B': partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B': partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-v1_1-Llama-3-8B-V'),
@@ -114,6 +113,11 @@ api_models = {
     'Taichu-VL-2B': partial(TaichuVLAPI, model='Taichu-VL-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
 }
 
+emu_series = {
+    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
+    'Emu3_chat': partial(Emu3_chat, model_path='BAAI/Emu3-Chat'),
+    'Emu3_gen': partial(Emu3_gen, model_path='BAAI/Emu3-Gen')
+}
 mmalaya_series = {
     'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MMAlaya2': partial(MMAlaya2, model_path='DataCanvas/MMAlaya2'),
@@ -462,7 +466,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series
 ]
 
 for grp in model_groups:
