@@ -57,7 +57,7 @@ class InternVL2_PromptUtil:
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
-                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial'], dataset):
+                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial', 'WeMath', 'LogicVista'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt)
@@ -170,7 +170,6 @@ class LMDeployWrapper(BaseAPI):
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
-        self.temperature = temperature
         self.timeout = timeout
 
         key = os.environ.get('LMDEPLOY_API_KEY', key)
@@ -188,6 +187,8 @@ class LMDeployWrapper(BaseAPI):
         self.set_prompt_pattern(self.model)
         if hasattr(self, 'custom_prompt'):
             self.logger.info(f'using custom prompt {self.custom_prompt}')
+        self.temperature = temperature
+        self.logger.info(f'Init temperature: {self.temperature}')
 
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
@@ -212,22 +213,26 @@ class LMDeployWrapper(BaseAPI):
             self.max_tokens = 2048
             self.temperature = 0.0
             self.custom_prompt = 'cogvlm2'
-        if 'InternVL2-'.lower() in model_name.lower():
+        if 'InternVL2'.lower() in model_name.lower():
             self.max_tokens = 1024
             self.temperature = 0.0
             if 'mpo' in model_name.lower():
-                self.custom_prompt = 'internvl2'
-            else:
                 self.max_tokens = 4096
+                self.logger.info('Use custom prompt internvl2-mpo-cot')
                 self.custom_prompt = 'internvl2-mpo-cot'
+            else:
+                self.logger.info('Use custom prompt internvl2')
+                self.custom_prompt = 'internvl2'
         if 'internvl2-8b-mpo-cot'.lower() in model_name.lower():
             self.use_mpo_prompt = True
             self.max_tokens = 1024
             self.temperature = 0.0
+            self.logger.info('Use custom prompt internvl2-mpo-cot')
             self.custom_prompt = 'internvl2-mpo-cot'
         if 'qvq'.lower() in model_name.lower():
             self.max_tokens = 4096
             self.temperature = 0.0
+            self.logger.info('QVQ model detected, do not use custom prompt')
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
@@ -270,6 +275,7 @@ class LMDeployWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
 
         temperature = kwargs.pop('temperature', self.temperature)
+        self.logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
