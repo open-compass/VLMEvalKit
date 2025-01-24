@@ -1,3 +1,5 @@
+import json
+
 import torch
 import torch.distributed as dist
 
@@ -131,8 +133,9 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
-    parser.add_argument('--api_nproc', type=int, default=4, help='Parallel API calling')
+    parser.add_argument('--api-nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
+    parser.add_argument('--judge-args', type=str, default=None, help='Judge arguments in JSON format')
     # Explicitly Set the Judge Model
     parser.add_argument('--judge', type=str, default=None)
     # Logging Utils
@@ -310,7 +313,8 @@ def main():
                 judge_kwargs = {
                     'nproc': args.api_nproc,
                     'verbose': args.verbose,
-                    'retry': args.retry if args.retry is not None else 3
+                    'retry': args.retry if args.retry is not None else 3,
+                    **(json.loads(args.judge_args) if args.judge_args else {}),
                 }
 
                 if args.retry is not None:
@@ -322,7 +326,7 @@ def main():
                         judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'WeMath'], dataset_name):  # noqa: E501
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'WeMath', 'LogicVista'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
