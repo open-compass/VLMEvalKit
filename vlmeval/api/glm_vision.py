@@ -5,7 +5,6 @@ from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp.vlm import encode_image_file_to_base64
-from zhipuai import ZhipuAI
 
 
 class GLMVisionWrapper(BaseAPI):
@@ -22,7 +21,8 @@ class GLMVisionWrapper(BaseAPI):
                  max_tokens: int = 4096,
                  proxy: str = None,
                  **kwargs):
-
+                 
+        from zhipuai import ZhipuAI
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
         if key is None:
