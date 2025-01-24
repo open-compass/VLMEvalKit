@@ -5,6 +5,7 @@ from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp.vlm import encode_image_file_to_base64
+from zhipuai import ZhipuAI
 
 
 class GLMVisionWrapper(BaseAPI):
@@ -24,21 +25,13 @@ class GLMVisionWrapper(BaseAPI):
 
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
-        self.default_params = {
-            'top_k': 1,
-            'best_of': 1,
-            'do_sample': False,
-            'stream': False,
-            'max_tokens': max_tokens,
-            "skip_moderation": True
-        }
         if key is None:
             key = os.environ.get('GLMV_API_KEY', None)
         assert key is not None, (
             'Please set the API Key (obtain it here: '
-            'https://open.bigmodel.cn/dev/howuse/introduction)'
+            'https://bigmodel.cn)'
         )
-        self.key = key
+        self.client = ZhipuAI(api_key=key)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def build_msgs(self, msgs_raw, system_prompt=None, dataset=None):
@@ -60,28 +53,17 @@ class GLMVisionWrapper(BaseAPI):
 
         messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs.get('dataset', None))
 
-        url = 'https://api.chatglm.cn/v1/chat/completions'
-        headers = {
-            'Content-Type': 'application/json',
-            'Request-Id': 'remote-test',
-            'Authorization': f'Bearer {self.key}'
-        }
-        payload = {
-            'model': self.model,
-            'messages': messages,
-            **self.default_params
-        }
-        response = requests.post(url, headers=headers, data=json.dumps(payload), verify=False)
-        output = []
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            do_sample=False,
+            max_tokens=2048
+        )
         try:
-            assert response.status_code == 200
-            for line in response.iter_lines():
-                data = json.loads(line.decode('utf-8').lstrip('data: '))
-                output.append(data['choices'][0]['message']['content'])
-            answer = ''.join(output).replace('</s>', '')
+            answer = response.choices[0].message.content.strip()
             if self.verbose:
                 self.logger.info(f'inputs: {inputs}\nanswer: {answer}')
-            return 0, answer, 'Succeeded! '
+            return 0, answer, 'Succeeded!'
         except Exception as err:
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
