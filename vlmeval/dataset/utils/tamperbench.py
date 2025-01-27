@@ -9,15 +9,7 @@ import torch
 import json
 import pandas as pd
 
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    classification_report,
-    confusion_matrix,
-    roc_auc_score
-)
+
 import numpy as np
 import re
 
@@ -45,6 +37,15 @@ def get_dimension_rating(data_path, category_type='task_type'):
 
 
 def process_results(score_file,model_name):
+    from sklearn.metrics import (
+        accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score,
+        classification_report,
+        confusion_matrix,
+        roc_auc_score
+    )
     data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
@@ -120,6 +121,15 @@ def process_results(score_file,model_name):
 
 
 def aggregate_metrics_with_macro_average(score_file):
+    from sklearn.metrics import (
+        accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score,
+        classification_report,
+        confusion_matrix,
+        roc_auc_score
+    )
     # Load data
     data = pd.read_excel(score_file)
 
