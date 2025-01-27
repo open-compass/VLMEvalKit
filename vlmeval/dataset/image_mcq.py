@@ -97,6 +97,10 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
             'resolve/main/visonlyqa_vlmevalkit.tsv'
         ),
+        '3DSRBench': (
+            'https://huggingface.co/datasets/ccvl/3DSRBench/'
+            'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
+        ),
     }
 
     DATASET_MD5 = {
@@ -149,6 +153,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
+        '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
     }
 
     DATASET_URL.update(MMMB_URLS)

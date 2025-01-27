@@ -27,7 +27,7 @@ class MiniCPM_V(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V' else 3
+        self.num_beams = 3
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -106,7 +106,7 @@ class MiniCPM_Llama3_V(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V' else 3
+        self.num_beams = 3
         self.options_system_prompt = ('Carefully read the following question and select the letter corresponding '
                                       'to the correct answer. Highlight the applicable choices without giving '
                                       'explanations.')
@@ -277,7 +277,7 @@ class MiniCPM_V_2_6(BaseModel):
         self.kwargs = kwargs
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
-        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-V-2_6' else 3
+        self.num_beams = 3
 
         self.options_suffix_prompt = '''\nAnswer with the option's letter from the given choices directly.'''
         self.wo_options_system_prompt = 'Carefully read the following question Answer the question directly.'
@@ -502,8 +502,7 @@ class MiniCPM_o_2_6(BaseModel):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
         torch.cuda.empty_cache()
 
-        num_beams = int(os.getenv("NUM_BEAMS", "3"))
-        self.num_beams = 1 if self.model_path == 'openbmb/MiniCPM-o-2_6' else num_beams
+        self.num_beams = int(os.getenv("NUM_BEAMS", "3"))
 
         repetition_penalty = float(os.getenv("PENALTY", "1.2"))
         self.repetition_penalty = repetition_penalty

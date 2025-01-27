@@ -5,7 +5,7 @@ torch.manual_seed(1234)
 from .aria import Aria
 from .base import BaseModel
 from .cogvlm import CogVlm, GLM4v
-from .emu import Emu
+from .emu import Emu, Emu3_chat, Emu3_gen
 from .eagle_x import Eagle
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
@@ -64,3 +64,4 @@ from .smolvlm import SmolVLM
 from .sail_vl import SailVL
 from .valley import ValleyEagleChat
 from .ross import Ross
+from .ursa import UrsaChat

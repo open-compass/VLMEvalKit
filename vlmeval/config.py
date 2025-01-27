@@ -36,7 +36,6 @@ ungrouped = {
     'VisualGLM_6b': partial(VisualGLM, model_path='THUDM/visualglm-6b'),
     'mPLUG-Owl2': partial(mPLUG_Owl2, model_path='MAGAer13/mplug-owl2-llama2-7b'),
     'mPLUG-Owl3': partial(mPLUG_Owl3, model_path='mPLUG/mPLUG-Owl3-7B-240728'),
-    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
     'OmniLMM_12B': partial(OmniLMM12B, model_path='openbmb/OmniLMM-12B', root=OmniLMM_ROOT),
     'MGM_7B': partial(Mini_Gemini, model_path='YanweiLi/MGM-7B-HD', root=Mini_Gemini_ROOT),
     'Bunny-llama3-8B': partial(BunnyLLama3, model_path='BAAI/Bunny-v1_1-Llama-3-8B-V'),
@@ -89,7 +88,8 @@ api_models = {
     'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10, verbose=False),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
-    'GLM4V_PLUS': partial(GLMVisionAPI, model='cogvlm-evaluation-241203', temperature=0, retry=10),
+    'GLM4V_PLUS': partial(GLMVisionAPI, model='glm-4v-plus', temperature=0, retry=10),
+    'GLM4V_PLUS_20250111': partial(GLMVisionAPI, model='glm-4v-plus-0111', temperature=0, retry=10),
     # MiniMax abab
     'abab6.5s': partial(GPT4V, model='abab6.5s-chat', api_base='https://api.minimax.chat/v1/chat/completions', temperature=0, retry=10),
     'abab7-preview': partial(GPT4V, model='abab7-chat-preview', api_base='https://api.minimax.chat/v1/chat/completions', temperature=0, retry=10),
@@ -99,7 +99,8 @@ api_models = {
     'SenseChat-Vision': partial(SenseChatVisionAPI, model='SenseChat-Vision', temperature=0, retry=10),
     'HunYuan-Vision': partial(HunyuanVision, model='hunyuan-vision', temperature=0, retry=10),
     'HunYuan-Standard-Vision': partial(HunyuanVision, model='hunyuan-standard-vision', temperature=0, retry=10),
-    'bailingMM': partial(bailingMMAPI, model='bailingMM-mini', temperature=0, retry=10),
+    'BailingMM-Lite-1203': partial(bailingMMAPI, model='BailingMM-Lite-1203', temperature=0, retry=10),
+    'BailingMM-Pro-0120': partial(bailingMMAPI, model='BailingMM-Pro-0120', temperature=0, retry=10),
     # BlueLM-V
     "BlueLM_V": partial(BlueLM_V_API, model='BlueLM-VL-v3.0', temperature=0, retry=10),
     # JiuTian-VL
@@ -109,10 +110,19 @@ api_models = {
     'TeleMM': partial(TeleMMAPI, model='TeleAI/TeleMM', temperature=0, retry=10),
     # lmdeploy api
     'lmdeploy': partial(LMDeployAPI, api_base='http://0.0.0.0:23333/v1/chat/completions', temperature=0, retry=10),
+    'lmdeploy_internvl_78B_MPO': partial(LMDeployAPI, api_base='http://0.0.0.0:23333/v1/chat/completions', temperature=0, retry=10, timeout=100),
+    'lmdeploy_qvq_72B_preview': partial(LMDeployAPI, api_base='http://0.0.0.0:23333/v1/chat/completions', temperature=0, retry=10, timeout=300),
     # Taichu-VL
     'Taichu-VL-2B': partial(TaichuVLAPI, model='Taichu-VL-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
+    #doubao_vl
+    'DoubaoVL': partial(DoubaoVL, model='Doubao-1.5-vision-pro', temperature=0,  retry=10, verbose=False),
 }
 
+emu_series = {
+    'emu2_chat': partial(Emu, model_path='BAAI/Emu2-Chat'),
+    'emu3_chat': partial(Emu3_chat, model_path='BAAI/Emu3-Chat'),
+    'emu3_gen': partial(Emu3_gen, model_path='BAAI/Emu3-Gen')
+}
 mmalaya_series = {
     'MMAlaya': partial(MMAlaya, model_path='DataCanvas/MMAlaya'),
     'MMAlaya2': partial(MMAlaya2, model_path='DataCanvas/MMAlaya2'),
@@ -284,9 +294,11 @@ idefics_series = {
 }
 
 smolvlm_series = {
+    'SmolVLM-256M': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-256M-Instruct'),
+    'SmolVLM-500M': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-500M-Instruct'),
     'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
     'SmolVLM-DPO': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct-DPO'),
-    'SmolVLM-Synthetic': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
+    'SmolVLM-Synthetic': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Synthetic'),
 }
 
 instructblip_series = {
@@ -450,6 +462,10 @@ ross_series = {
     'ross-qwen2-7b': partial(Ross, model_path='HaochenWang/ross-qwen2-7b'),
 }
 
+ursa_series = {
+    'URSA-8B': partial(UrsaChat, model_path='URSA-MATH/URSA-8B')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -461,7 +477,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ursa_series
 ]
 
 for grp in model_groups:

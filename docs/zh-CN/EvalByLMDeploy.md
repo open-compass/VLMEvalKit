@@ -24,5 +24,5 @@ lmdeploy serve api_server OpenGVLab/InternVL2-8B --model-name InternVL2-8B
 ## 第2步 评测
 
 ```bash
-python run.py --data MMStar --model InternVL2-8B --verbose --api_nproc 64
+python run.py --data MMStar --model InternVL2-8B --verbose --api-nproc 64
 ```
