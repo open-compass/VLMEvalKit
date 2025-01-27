@@ -294,9 +294,11 @@ idefics_series = {
 }
 
 smolvlm_series = {
+    'SmolVLM-256M': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-256M-Instruct'),
+    'SmolVLM-500M': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-500M-Instruct'),
     'SmolVLM': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
     'SmolVLM-DPO': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct-DPO'),
-    'SmolVLM-Synthetic': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Instruct'),
+    'SmolVLM-Synthetic': partial(SmolVLM, model_path='HuggingFaceTB/SmolVLM-Synthetic'),
 }
 
 instructblip_series = {
@@ -464,6 +466,10 @@ ross_series = {
     'ross-qwen2-7b': partial(Ross, model_path='HaochenWang/ross-qwen2-7b'),
 }
 
+ursa_series = {
+    'URSA-8B': partial(UrsaChat, model_path='URSA-MATH/URSA-8B')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -475,7 +481,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series
 ]
 
 for grp in model_groups:

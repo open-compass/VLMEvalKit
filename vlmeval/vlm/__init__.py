@@ -65,3 +65,4 @@ from .sail_vl import SailVL
 from .valley import ValleyEagleChat
 from .ross import Ross
 from .ola import Ola
+from .ursa import UrsaChat
