@@ -171,7 +171,7 @@ def build_prompt(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
-def build_prompt_wemath(question, prediction):
+def build_prompt_wemath(question, options, prediction):
     tmpl = (
         'You are an AI assistant who will help me to match '
         'an answer with several options of a single-choice question. '
@@ -186,14 +186,14 @@ def build_prompt_wemath(question, prediction):
         'Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n'
         'Answer: <start>\nSpider\n<end>\nYour output: Z\n'
         'Example 3: \n'
-        'Question: <start>\n{}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
+        'Question: <start>\n{}\nOptions: {}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
     )
     question = question.replace(
         ("Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
         "<Thought process>: <<your thought process>> <Answer>: <<your option>>"),
         '',
     )
-    return tmpl.format(question, prediction)
+    return tmpl.format(question, options, prediction)
 
 
 def build_prompt_blink(question, options, prediction):
@@ -268,7 +268,7 @@ def extract_answer_from_item(model, item, dataset_name=None):
     if dataset_name == 'BLINK':
         prompt = build_prompt_blink(item['question'], option_str, item['prediction'])
     elif dataset_name == 'WeMath':
-        prompt = build_prompt_wemath(item['question'], item['prediction'])
+        prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
     else:
