@@ -57,6 +57,17 @@ class Claude_Wrapper(BaseAPI):
 
         super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
+    def encode_image_file_to_base64(self, image_path, target_size=-1, fmp='jpg'):
+        image = Image.open(image_path)
+        if fmp in ('jpg', 'jpeg'):
+            format = 'JPEG'
+        elif fmp == 'png':
+            format = 'PNG'
+        else:
+            print(f'Unsupported image format: {fmp}, will cause media type match error.')
+
+        return encode_image_to_base64(image, target_size=target_size, fmp=format)
+
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
     def prepare_itlist(self, inputs):
@@ -78,7 +89,7 @@ class Claude_Wrapper(BaseAPI):
                         source={
                             'type': 'base64',
                             'media_type': media_type,
-                            'data': encode_image_file_to_base64(pth, target_size=4096)
+                            'data': self.encode_image_file_to_base64(pth, target_size=4096, fmp=suffix)
                         }))
         else:
             assert all([x['type'] == 'text' for x in inputs])
@@ -115,7 +126,10 @@ class Claude_Wrapper(BaseAPI):
 
         try:
             resp_struct = json.loads(response.text)
-            answer = resp_struct['data']['content'][0]['text'].strip()
+            if self.backend == 'alles':
+                answer = resp_struct['data']['content'][0]['text'].strip()
+            elif self.backend == 'official':
+                answer = resp_struct['content'][0]['text'].strip()
         except Exception as err:
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
