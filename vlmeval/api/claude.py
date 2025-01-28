@@ -59,9 +59,9 @@ class Claude_Wrapper(BaseAPI):
 
     def encode_image_file_to_base64(self, image_path, target_size=-1, fmp='jpg'):
         image = Image.open(image_path)
-        if fmp in ('jpg', 'jpeg'):
+        if fmp in ('.jpg', '.jpeg'):
             format = 'JPEG'
-        elif fmp == 'png':
+        elif fmp == '.png':
             format = 'PNG'
         else:
             print(f'Unsupported image format: {fmp}, will cause media type match error.')
