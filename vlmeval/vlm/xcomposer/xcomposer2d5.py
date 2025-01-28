@@ -18,7 +18,6 @@ def get_font():
     try:
         truetype_url = "http://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
         ff = urlopen(truetype_url)
-        # ff = '/fs-computility/mllm/shared/dongxiaoyi/share_data/SimHei.ttf'
         font = ImageFont.truetype(ff, size=40)
     except Exception as e:
         logging.warning(f'{type(e)}: {e}')
