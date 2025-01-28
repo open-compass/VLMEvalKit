@@ -57,16 +57,16 @@ class Claude_Wrapper(BaseAPI):
 
         super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
-    def encode_image_file_to_base64(self, image_path, target_size=-1, fmp='jpg'):
+    def encode_image_file_to_base64(self, image_path, target_size=-1, fmt='jpg'):
         image = Image.open(image_path)
-        if fmp in ('jpg', 'jpeg'):
+        if fmt in ('.jpg', '.jpeg'):
             format = 'JPEG'
-        elif fmp == 'png':
+        elif fmt == '.png':
             format = 'PNG'
         else:
-            print(f'Unsupported image format: {fmp}, will cause media type match error.')
+            print(f'Unsupported image format: {fmt}, will cause media type match error.')
 
-        return encode_image_to_base64(image, target_size=target_size, fmp=format)
+        return encode_image_to_base64(image, target_size=target_size, fmt=format)
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
@@ -89,7 +89,7 @@ class Claude_Wrapper(BaseAPI):
                         source={
                             'type': 'base64',
                             'media_type': media_type,
-                            'data': self.encode_image_file_to_base64(pth, target_size=4096, fmp=suffix)
+                            'data': self.encode_image_file_to_base64(pth, target_size=4096, fmt=suffix)
                         }))
         else:
             assert all([x['type'] == 'text' for x in inputs])
