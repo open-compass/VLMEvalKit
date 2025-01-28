@@ -57,7 +57,7 @@ class Claude_Wrapper(BaseAPI):
 
         super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
-    def encode_image_file_to_base64(self, image_path, target_size=-1, fmt='jpg'):
+    def encode_image_file_to_base64(self, image_path, target_size=-1, fmt='.jpg'):
         image = Image.open(image_path)
         if fmt in ('.jpg', '.jpeg'):
             format = 'JPEG'
