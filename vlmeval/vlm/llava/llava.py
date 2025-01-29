@@ -820,7 +820,6 @@ class LLaVA_OneVision_HF(BaseModel):
             }
         ]
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
-        print(prompt)
         inputs = self.processor(images=images, text=prompt, return_tensors="pt").to('cuda', torch.float16)
 
         output = self.model.generate(**inputs, max_new_tokens=512)
