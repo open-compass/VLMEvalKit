@@ -6,7 +6,6 @@ from typing import Dict
 import logging
 from transformers import set_seed
 from transformers import AutoTokenizer, AutoProcessor
-from .ursa_model import UrsaForConditionalGeneration, UrsaProcessor
 import re
 from typing import List, Optional, Union
 from vlmeval.dataset import DATASET_TYPE
@@ -14,8 +13,9 @@ from vlmeval.dataset import DATASET_TYPE
 
 class UrsaChat(BaseModel):
     def __init__(self, model_path: str, **kwargs) -> None:
+        from .ursa_model import UrsaForConditionalGeneration, UrsaProcessor
         super().__init__()
-        self.model: UrsaForConditionalGeneration = UrsaForConditionalGeneration.from_pretrained(model_path, 
+        self.model: UrsaForConditionalGeneration = UrsaForConditionalGeneration.from_pretrained(model_path,
                                                                                                 torch_dtype=torch.bfloat16).to('cuda')
         self.image_processor: UrsaProcessor = UrsaProcessor.from_pretrained(model_path)
         self.prompts = {
@@ -23,8 +23,8 @@ class UrsaChat(BaseModel):
             'ORIGINAL_PROMPT' : 'you are given a math problem image, please solve the problem step by step. \nQuestion:',
             'EXTRACT_PROMPT' : 'you are given a math problem image, please solve the problem step by step. When you get an answer, please return the correspond option instead of the text content.\nQuestion:',
         }
-        
-    
+
+
     def use_custom_prompt(self, dataset: str) -> bool:
         """Whether to use custom prompt for the dataset.
 
@@ -37,7 +37,7 @@ class UrsaChat(BaseModel):
         if 'VQA' in DATASET_TYPE(dataset):
             return True
         return False
-    
+
 
     def build_prompt(self, line: str, dataset: str) -> List[dict]:
         """Build prompt for multi-choice dataset.
@@ -71,7 +71,7 @@ class UrsaChat(BaseModel):
         message = [dict(type='image', value=s) for s in tgt_path]
         message.append(dict(type='text', value=prompt))
         return message
-    
+
 
     def extract_answer(self, text:str) -> str:
         """Extract final answer which places after '†Answer:'
@@ -129,8 +129,8 @@ class UrsaChat(BaseModel):
                         return res
 
         return text
-    
-    
+
+
     def generate_inner(self, message: List[dict], dataset: str=None) -> str:
         """Generate response for the given message.
 
