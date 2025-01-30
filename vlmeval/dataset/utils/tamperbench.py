@@ -9,17 +9,10 @@ import torch
 import json
 import pandas as pd
 
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    classification_report,
-    confusion_matrix,
-    roc_auc_score
-)
+
 import numpy as np
 import re
+
 
 def get_dimension_rating(data_path, category_type='task_type'):
     data = load(data_path)
@@ -36,13 +29,23 @@ def get_dimension_rating(data_path, category_type='task_type'):
     for key, value in result_board.items():
         correct += value[0]
         total += value[1]
-        result_board[key].append(f'{value[0] / value[1] * 100 :.2f}%')
+        result_board[key].append(f'{value[0] / value[1] * 100:.2f}%')
 
-    result_board['overall'] = [correct, total, f'{correct / total * 100 :.2f}%']
+    result_board['overall'] = [correct, total, f'{correct / total * 100:.2f}%']
 
     return result_board
 
-def process_results(score_file,model_name) :
+
+def process_results(score_file,model_name):
+    from sklearn.metrics import (
+        accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score,
+        classification_report,
+        confusion_matrix,
+        roc_auc_score
+    )
     data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
@@ -79,8 +82,6 @@ def process_results(score_file,model_name) :
             "Confusion Matrix": conf_matrix.tolist()  # Convert to list for JSON compatibility
         }
 
-
-
         # Add the Macro Average row to the Dictionary
         # grouped_metrics_with_original_excluding_original["overall"] = macro_averages
 
@@ -98,15 +99,11 @@ def process_results(score_file,model_name) :
         "Confusion Matrix": "N/A"  # Macro average doesn't have a meaningful confusion matrix
     }
 
-
-
     # # Add the Macro Average row to the DataFrame
     df_grouped_metrics_with_original_excluding_original.loc["overall"] = macro_averages
 
-
-
     # df_grouped_metrics_with_original_excluding_original
-    metrics_dict =  json.loads(df_grouped_metrics_with_original_excluding_original.T.to_json())
+    metrics_dict = json.loads(df_grouped_metrics_with_original_excluding_original.T.to_json())
     # Process Model Level Metrics
     formatted_data = []
     for task, task_metrics in metrics_dict.items():
@@ -120,12 +117,19 @@ def process_results(score_file,model_name) :
     columns_order = ['Model', 'Task'] + [col for col in df_metrics.columns if col not in ['Model', 'Task']]
     df_metrics = df_metrics[columns_order]
 
-    # # View the DataFrame
-    # df_metrics.to_excel(f"{score_file[:-5]}_aggregate.xlsx",index=False)
     return df_metrics
 
 
 def aggregate_metrics_with_macro_average(score_file):
+    from sklearn.metrics import (
+        accuracy_score,
+        precision_score,
+        recall_score,
+        f1_score,
+        classification_report,
+        confusion_matrix,
+        roc_auc_score
+    )
     # Load data
     data = pd.read_excel(score_file)
 
@@ -149,7 +153,7 @@ def aggregate_metrics_with_macro_average(score_file):
         # Process each tamper type for the current task_type (excluding 'original')
         tamper_metrics = {}
         for tamper_type, tamper_group in task_group[task_group['tamper_type'] != 'original'].groupby('tamper_type'):
-        # for tamper_type, tamper_group in task_group.groupby('tamper_type'):
+
             # Combine the tamper group with the original group of the current task_type
             combined_group = pd.concat([tamper_group, original_group])
 
@@ -189,11 +193,7 @@ def aggregate_metrics_with_macro_average(score_file):
         # Add tamper metrics for the current task_type to the main dictionary
         task_type_metrics[task_type] = tamper_metrics
 
-    # # Return the nested dictionary as JSON for compatibility
-    # return json.dumps(task_type_metrics, indent=4)
     # Transform the nested dictionary into a DataFrame
-
-
     dataframes = []
     for task_type, metrics in task_type_metrics.items():
         task_df = pd.DataFrame.from_dict(metrics, orient='index')
@@ -203,9 +203,9 @@ def aggregate_metrics_with_macro_average(score_file):
     # Combine all task-specific DataFrames into a single DataFrame
     result_df = pd.concat(dataframes).reset_index().rename(columns={'index': 'tamper_type'})
     # Reorder the columns to place task_type first, then tamper_type
-    result_df = result_df[['task_type', 'tamper_type', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'Confusion Matrix']]
+    result_df = result_df[['task_type', 'tamper_type', 'Accuracy', 'Precision', 'Recall',
+                           'F1 Score', 'Confusion Matrix']]
 
-    # df_metrics_task = pd.concat(result_df).reset_index(drop=True)
     # Select only numeric columns for aggregation
     numeric_columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
 
@@ -213,16 +213,6 @@ def aggregate_metrics_with_macro_average(score_file):
     average_metrics = result_df.groupby(['task_type', 'tamper_type'])[numeric_columns].mean().reset_index()
 
     return average_metrics
-
-
-
-
-
-
-
-
-
-
 
 
 def check_ans(pred, gt):
