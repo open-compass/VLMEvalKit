@@ -323,10 +323,13 @@ def main():
                     judge_kwargs['model'] = args.judge
                 else:
                     if dataset.TYPE in ['MCQ', 'Y/N']:
-                        judge_kwargs['model'] = 'chatgpt-0125'
+                        if listinstr(['WeMath'], dataset_name):
+                            judge_kwargs['model'] = 'gpt-4o-mini'
+                        else:
+                            judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'WeMath', 'LogicVista'], dataset_name):  # noqa: E501
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
