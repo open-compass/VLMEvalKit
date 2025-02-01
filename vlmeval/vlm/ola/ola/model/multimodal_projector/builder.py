@@ -100,7 +100,10 @@ class OlaMLP(nn.Module):
                 ], dim=2)
                 x2 = x2.reshape(b, -1, c)
                 sep = self.image_sep.reshape(1, 1, -1).expand(b, 1, c2).to(dtype)
-                x = torch.cat([x, sep, x2], dim=1)
+                if os.environ.get('USE_HIGHRES_ONLY', '0') == '1':
+                    x = x2
+                else:
+                    x = torch.cat([x, sep, x2], dim=1)
             
             begin = self.image_begin.reshape(1, 1, -1).expand(b, 1, c).to(dtype)
             end = self.image_end.reshape(1, 1, -1).expand(b, 1, c).to(dtype)
