@@ -3,7 +3,6 @@ from PIL import Image
 from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE
-from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
 
 
 class GLM4v(BaseModel):
@@ -12,6 +11,7 @@ class GLM4v(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path='THUDM/glm-4v-9b', **kwargs):
+        from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
         assert model_path is not None
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -50,6 +50,7 @@ class CogVlm(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
+        from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
         assert model_path is not None
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
