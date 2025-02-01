@@ -147,7 +147,8 @@ def MATH_V_acc(result_file):
     fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
-    for i in range(lt):
+    from tqdm import tqdm
+    for i in tqdm(range(lt)):
         item = data.iloc[i]
         cate = item['category']
         tot['Overall'] += 1
