@@ -145,6 +145,8 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
+    # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
+    parser.add_argument('--reuse-aux', type=bool, default=True, help='reuse auxiliary evaluation files')
 
     args = parser.parse_args()
     return args
@@ -245,11 +247,14 @@ def main():
 
                 # Reuse the previous prediction file if exists
                 if rank == 0 and len(prev_pred_roots):
-                    prev_result_file = None
+                    prev_result_files = []
                     prev_pkl_file_list = []
                     for root in prev_pred_roots[::-1]:
                         if osp.exists(osp.join(root, result_file_base)):
-                            prev_result_file = osp.join(root, result_file_base)
+                            if args.reuse_aux:
+                                prev_result_files = fetch_aux_files(osp.join(root, result_file_base))
+                            else:
+                                prev_result_files = [osp.join(root, result_file_base)]
                             break
                         elif commit_id in root and len(ls(root)) and root != pred_root:
                             temp_files = ls(root, match=[dataset_name, '.pkl'])
@@ -257,13 +262,18 @@ def main():
                                 prev_pkl_file_list.extend(temp_files)
                                 break
                     if not args.reuse:
-                        prev_result_file = None
+                        prev_result_files = []
                         prev_pkl_file_list = []
-                    if prev_result_file is not None:
-                        logger.warning(
-                            f'--reuse is set, will reuse the prediction file {prev_result_file}.')
-                        if prev_result_file != result_file:
-                            shutil.copy(prev_result_file, result_file)
+                    if len(prev_result_files):
+                        for prev_result_file in prev_result_files:
+                            src = prev_result_file
+                            tgt = osp.join(pred_root, osp.basename(src))
+                            if not osp.exists(tgt):
+                                shutil.copy(src, tgt)
+                                logger.info(f'--reuse is set, will reuse the prediction file {src}.')
+                            else:
+                                logger.warning(f'File already exists: {tgt}')
+                        
                     elif len(prev_pkl_file_list):
                         for fname in prev_pkl_file_list:
                             target_path = osp.join(pred_root, osp.basename(fname))

@@ -1,14 +1,17 @@
 from ...smp import *
 from ...utils import can_infer
+import timeout_decorator
 try:
     from latex2sympy2 import latex2sympy
 except Exception as e:
     logging.critical(f'{type(e)}: {e}')
     logging.critical('Please install latex2sympy2 by running "pip install latex2sympy2"')
 
+
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
+@timeout_decorator.timeout(30)
 def is_equal(asw: str, gt_asw: str) -> bool:
     if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
         print('Warning: input is not string')
@@ -115,9 +118,13 @@ def post_check(line, prefetch=False):
     except ValueError:
         pass
 
-    if is_equal(res, ans):
-        return res if prefetch else True
-    else:
+    try:
+        if is_equal(res, ans):
+            return res if prefetch else True
+        else:
+            return False
+    except Exception as err:
+        logging.warning(f'{type(err)}: {err}')
         return False
 
 
@@ -147,7 +154,8 @@ def MATH_V_acc(result_file):
     fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
-    for i in range(lt):
+    from tqdm import tqdm
+    for i in tqdm(range(lt)):
         item = data.iloc[i]
         cate = item['category']
         tot['Overall'] += 1

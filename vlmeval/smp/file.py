@@ -342,3 +342,27 @@ def parquet_to_tsv(file_path):
     pth = '/'.join(file_path.split('/')[:-1])
     data_name = file_path.split('/')[-1].split('.')[0]
     data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
+
+
+def fetch_aux_files(eval_file): 
+    file_root = osp.dirname(eval_file)
+    file_name = osp.basename(eval_file)
+
+    eval_id = osp.basename(file_root)
+    if eval_id[:3] == 'T20' and eval_id[9:11] == '_G':
+        model_name = osp.basename(osp.dirname(file_root))
+    else:
+        model_name = eval_id
+
+    suffix = file_name.split('.')[-1]
+    dataset_name = file_name.split('.')[0][len(model_name) + 1:]
+    from vlmeval.dataset import SUPPORTED_DATASETS
+    to_handle = []
+    for d in SUPPORTED_DATASETS:
+        if d.startswith(dataset_name) and d != dataset_name:
+            to_handle.append(d)
+    fs = ls(file_root, match=f'{model_name}_{dataset_name}')
+    if len(to_handle):
+        for d in to_handle:
+            fs = [x for x in fs if d not in x]
+    return fs
