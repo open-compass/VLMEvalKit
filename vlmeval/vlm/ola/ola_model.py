@@ -112,6 +112,8 @@ class Ola(BaseModel):
             if msg['type'] == 'text':
                 content += msg['value']
             elif msg['type'] == 'image':
+                if 'MMVet' in msg['value'] or 'MMMU' in msg['value']:
+                    os.environ['USE_HIGHRES_ONLY'] = '1'
                 if self.model.config.mm_use_im_start_end:
                     content += DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN + '\n'
                 else:
