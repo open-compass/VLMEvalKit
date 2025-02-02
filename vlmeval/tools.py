@@ -4,7 +4,7 @@ from vlmeval.config import *
 from vlmeval.smp import *
 
 # Define valid modes
-MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run', 'eval', 'merge_pkl')
+MODES = ('dlist', 'mlist', 'missing', 'circular', 'localize', 'check', 'run', 'eval', 'merge_pkl', 'scan')
 
 CLI_HELP_MSG = \
     f"""
@@ -35,7 +35,8 @@ CLI_HELP_MSG = \
             vlmutil eval [dataset_name] [prediction_file]
         9. Merge pkl files:
             vlmutil merge_pkl [pkl_dir] [world_size]
-
+        10. Scan evaluation results and detect api failure
+            vlmutil scan --model [model_list.txt or model_names] --data [dataset_names] --root [root_dir]
     GitHub: https://github.com/open-compass/VLMEvalKit
     """  # noqa: E501
 
@@ -395,6 +396,15 @@ def parse_args_eval():
     return args
 
 
+def parse_args_scan():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, nargs='+')
+    parser.add_argument('--data', type=str, nargs='+')
+    parser.add_argument('--root', type=str, default=None)
+    args, unknownargs = parser.parse_known_args()
+    return args, unknownargs
+
+
 def MERGE_PKL(pkl_dir, world_size=1):
     prefs = []
     for ws in list(range(1, 9)):
@@ -415,6 +425,53 @@ def MERGE_PKL(pkl_dir, world_size=1):
         for pf in dump_prefs:
             dump(res_all[k], f'{pkl_dir}/{pf}{k}')
         print(f'Merged {len(res_all[k])} records into {pkl_dir}/{dump_prefs[0]}{k}')
+
+    
+def SCAN(root, model, dataset):
+    from termcolor import colored
+    FAIL_MSG = 'Failed to obtain answer via API.'
+    root = osp.join(root, model)
+    fname = f'{model}_{dataset}.xlsx'
+    pth = osp.join(root, fname)
+    if osp.exists(pth):
+        data = load(pth)
+        # Detect Failure
+        assert 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        fail = [FAIL_MSG in x for x in data['prediction']]
+        if sum(fail):
+            nfail = sum(fail)
+            ntot = len(fail)
+            print(colored(f'Model {model} x Dataset {dataset} Inference: {nfail} out of {ntot} failed. {nfail / ntot * 100: .2f}%. ', 'light_red'))
+
+        eval_files = ls(root, match=f'{model}_{dataset}_')
+        eval_files = [x for x in eval_files if listinstr([f'{dataset}_openai', f'{dataset}_gpt'], x) and x.endswith('.xlsx')]
+
+        if len(eval_files) == 0:
+            return
+        
+        for eval_file in eval_files:
+            data = load(eval_file)
+            
+            if 'MMVet' in dataset:
+                bad = [x for x in data['log'] if 'All 5 retries failed.' in str(x)]
+                if len(bad):
+                    print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
+            elif 'MathVista' in dataset:
+                bad = [x for x in data['res'] if FAIL_MSG in str(x)]
+                if len(bad):
+                    print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
+            elif dataset == 'LLaVABench':
+                sub = data[data['gpt4_score'] == -1]
+                sub = sub[sub['gpt4_score'] == -1]
+                if len(sub):
+                    print(f'Evaluation ({eval_file}): {len(sub)} out of {len(data)} failed.')
+            else:
+                bad = [x for x in data['log'] if FAIL_MSG in str(x)]
+                if len(bad):
+                    print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
+    else:
+        print(colored(f'Model {model} x Dataset {dataset} Inference Result Missing! ', 'red'))
 
 
 def cli():
@@ -491,6 +548,25 @@ def cli():
         args[2] = int(args[2])
         assert args[2] in [1, 2, 4, 8]
         MERGE_PKL(args[1], args[2])
+    elif args[0].lower() == 'scan':
+        args, unknownargs = parse_args_scan()
+        # The default value is only for the maintainer usage
+        root = args.root if args.root is not None else osp.join(osp.expanduser('~'), 'mmeval')
+        models = []
+        for m in args.model:
+            if osp.exists(m) and m.endswith('.txt'):
+                lines = mrlines(m)
+                models.extend([x.split()[0] for x in lines if len(x.split()) >= 1])
+            else:
+                models.append(m)
+        datasets = args.data
+        assert len(datasets)
+        for m in models:
+            if not osp.exists(osp.join(root, m)):
+                warnings.warn(f'Model {m} not found in {root}')
+                continue
+            for d in datasets:
+                SCAN(root, m, d)
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
