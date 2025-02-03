@@ -339,17 +339,9 @@ class MMMUDataset(ImageMCQDataset):
             ]
             return msgs
         else:
-            img_pth = self.dump_image(line)
-            if isinstance(img_pth, list):
-                img_pth = img_pth[0]
-            return [dict(type='image', value=img_pth)]
-            return []
-        else:
             msgs = super().build_prompt(line)
             msgs = self.split_MMMU(msgs)
             return msgs
-
-        
 
 
 class MUIRDataset(ImageMCQDataset):
