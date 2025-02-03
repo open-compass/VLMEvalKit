@@ -288,11 +288,15 @@ class MMMUDataset(ImageMCQDataset):
     DATASET_URL = {
         'MMMU_DEV_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv',
         'MMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST.tsv',
+        'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+        'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
     }
 
     DATASET_MD5 = {
         'MMMU_DEV_VAL': '585e8ad75e73f75dcad265dfd0417d64',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
+        'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
+        'MMMU_Pro_10c': '3ead402181e6cab09ecddf52b4bbd641',
     }
 
     @staticmethod
@@ -319,9 +323,33 @@ class MMMUDataset(ImageMCQDataset):
         return segs
 
     def build_prompt(self, line):
-        msgs = super().build_prompt(line)
-        msgs = self.split_MMMU(msgs)
-        return msgs
+        if self.dataset_name == 'MMMU_Pro_V':
+            if isinstance(line, int):
+                line = self.data.iloc[line]
+            if self.meta_only:
+                assert 'image_path' in line
+                tgt_path = toliststr(line['image_path'])
+            else:
+                tgt_path = self.dump_image(line)
+            if isinstance(tgt_path, list):
+                tgt_path = tgt_path[0]
+            msgs = [
+                dict(type='image', value=tgt_path), 
+                dict(type='text', value="Please answer the question in the image with the option's letter from the given choices directly.")  # noqa: E501
+            ]
+            return msgs
+        else:
+            img_pth = self.dump_image(line)
+            if isinstance(img_pth, list):
+                img_pth = img_pth[0]
+            return [dict(type='image', value=img_pth)]
+            return []
+        else:
+            msgs = super().build_prompt(line)
+            msgs = self.split_MMMU(msgs)
+            return msgs
+
+        
 
 
 class MUIRDataset(ImageMCQDataset):
