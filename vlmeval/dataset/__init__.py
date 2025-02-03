@@ -5,7 +5,7 @@ from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
-    NaturalBenchDataset, WeMath
+    NaturalBenchDataset, WeMath, MMMUProVDataset
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -51,8 +51,7 @@ class ConcatDataset(ImageBaseDataset):
         'MTL_MMBench_DEV': [
             'MMBench_dev_ar', 'MMBench_dev_cn', 'MMBench_dev_en',
             'MMBench_dev_pt', 'MMBench_dev_ru', 'MMBench_dev_tr'
-        ], 
-        'MMMU_Pro': ['MMMU_Pro_V', 'MMMU_Pro_10c']
+        ],
     }
 
     def __init__(self, dataset):
@@ -135,7 +134,7 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU, VLRewardBench, WeMath, LogicVista
+    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProVDataset
 ]
 
 VIDEO_DATASET = [

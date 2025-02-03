@@ -288,15 +288,13 @@ class MMMUDataset(ImageMCQDataset):
     DATASET_URL = {
         'MMMU_DEV_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv',
         'MMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST.tsv',
-        'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
         'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
     }
 
     DATASET_MD5 = {
         'MMMU_DEV_VAL': '585e8ad75e73f75dcad265dfd0417d64',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
-        'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
-        'MMMU_Pro_10c': '3ead402181e6cab09ecddf52b4bbd641',
+        'MMMU_Pro_10c': '22cee868fe6b680d14b99bfff6db8172',
     }
 
     @staticmethod
@@ -335,13 +333,31 @@ class MMMUDataset(ImageMCQDataset):
                 tgt_path = tgt_path[0]
             msgs = [
                 dict(type='image', value=tgt_path), 
-                dict(type='text', value="Please answer the question in the image with the option's letter from the given choices directly.")  # noqa: E501
+                dict(type='text', value=line['question'])
             ]
             return msgs
         else:
             msgs = super().build_prompt(line)
             msgs = self.split_MMMU(msgs)
             return msgs
+
+
+class MMMUProVDataset(MMMUDataset):
+
+    TYPE = 'MCQ_MMMU_Pro_V'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        question = "Please answer the question in the image with the option's letter from the given choices directly."
+        self.data['question'] = [question] * len(self.data)
+
+    DATASET_URL = {
+        'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
+    }
 
 
 class MUIRDataset(ImageMCQDataset):
