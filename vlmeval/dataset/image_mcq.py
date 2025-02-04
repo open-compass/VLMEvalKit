@@ -403,6 +403,7 @@ class MMMUProDataset(MMMUDataset):
 
     def cot_postproc(self, response):
         lines = response.strip().split('\n')
+        lines = [x.strip() for x in lines]
         cands = [x for x in lines if x.startswith('Answer:')]
         if len(cands) == 1:
             counter = defaultdict(lambda: 0)
@@ -411,6 +412,8 @@ class MMMUProDataset(MMMUDataset):
                     counter[ch] += 1
             if len(counter) == 1:
                 return list(counter.keys())[0]
+            else:
+                return cands[0][7:]
         return response
 
     def evaluate(self, eval_file, **judge_kwargs):
