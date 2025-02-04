@@ -422,7 +422,11 @@ class MMMUProDataset(MMMUDataset):
             data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
             tgt = eval_file.replace('.xlsx', '_cotpost.xlsx')
             dump(data, tgt)
-            return super().evaluate(tgt, **judge_kwargs)
+            res = super().evaluate(tgt, **judge_kwargs)
+            acc_org = eval_file.replace('.xlsx', '_acc.csv')
+            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv') 
+            shutil.copy(acc_now, acc_org)
+            return res
         else:
             return super().evaluate(eval_file, **judge_kwargs)  
 
