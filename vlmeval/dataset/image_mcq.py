@@ -328,12 +328,6 @@ class MMMUProDataset(MMMUDataset):
 
     TYPE = 'MCQ_MMMU_Pro'
 
-"""
-Answer the following multiple-choice question. The last line of your response should be of the
-following format: ’Answer: $LETTER’ (without quotes) where LETTER is one of the options. Think
-step by step before answering. 
-"""
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if 'MMMU_Pro_V' in self.dataset_name:
@@ -406,6 +400,28 @@ step by step before answering.
             msgs.append(dict(type='text', value=prompt))
             msgs = self.split_MMMU(msgs)
             return msgs
+
+    def cot_postproc(self, response):
+        lines = response.strip().split('\n')
+        cands = [x for x in lines if x.startswith('Answer:')]
+        if len(cands) == 1:
+            counter = defaultdict(lambda x: 0)
+            for ch in cands[0]:
+                if ch in string.ascii_uppercase:
+                    counter[ch] += 1
+            if len(counter) == 1:
+                return list(counter.keys())[0]
+        return response
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        if 'COT' in self.dataset_name:
+            data = load(eval_file)
+            data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
+            tgt = eval_file.replace('.xlsx', '_cotpost.xlsx')
+            dump(data, tgt)
+            return super().evaluate(tgt, **judge_kwargs)
+        else:
+            return super().evaluate(eval_file, **judge_kwargs)  
 
 
 class MUIRDataset(ImageMCQDataset):
