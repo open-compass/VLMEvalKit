@@ -288,13 +288,11 @@ class MMMUDataset(ImageMCQDataset):
     DATASET_URL = {
         'MMMU_DEV_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_DEV_VAL.tsv',
         'MMMU_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_TEST.tsv',
-        'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
     }
 
     DATASET_MD5 = {
         'MMMU_DEV_VAL': '585e8ad75e73f75dcad265dfd0417d64',
         'MMMU_TEST': 'c19875d11a2d348d07e5eb4bdf33166d',
-        'MMMU_Pro_10c': '22cee868fe6b680d14b99bfff6db8172',
     }
 
     @staticmethod
@@ -321,43 +319,93 @@ class MMMUDataset(ImageMCQDataset):
         return segs
 
     def build_prompt(self, line):
-        if self.dataset_name == 'MMMU_Pro_V':
-            if isinstance(line, int):
-                line = self.data.iloc[line]
-            if self.meta_only:
-                assert 'image_path' in line
-                tgt_path = toliststr(line['image_path'])
-            else:
-                tgt_path = self.dump_image(line)
-            if isinstance(tgt_path, list):
-                tgt_path = tgt_path[0]
-            msgs = [
-                dict(type='image', value=tgt_path), 
-                dict(type='text', value=line['question'])
-            ]
-            return msgs
-        else:
-            msgs = super().build_prompt(line)
-            msgs = self.split_MMMU(msgs)
-            return msgs
+        msgs = super().build_prompt(line)
+        msgs = self.split_MMMU(msgs)
+        return msgs
 
 
-class MMMUProVDataset(MMMUDataset):
+class MMMUProDataset(MMMUDataset):
 
-    TYPE = 'MCQ_MMMU_Pro_V'
+    TYPE = 'MCQ_MMMU_Pro'
+
+"""
+Answer the following multiple-choice question. The last line of your response should be of the
+following format: ’Answer: $LETTER’ (without quotes) where LETTER is one of the options. Think
+step by step before answering. 
+"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        question = "Please answer the question in the image with the option's letter from the given choices directly."
-        self.data['question'] = [question] * len(self.data)
+        if 'MMMU_Pro_V' in self.dataset_name:
+            self.data['question'] = ['placeholder'] * len(self.data)
 
     DATASET_URL = {
+        'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
+        'MMMU_Pro_10c_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
         'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+        'MMMU_Pro_V_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
     }
 
     DATASET_MD5 = {
+        'MMMU_Pro_10c': '22cee868fe6b680d14b99bfff6db8172',
+        'MMMU_Pro_10c_COT': '22cee868fe6b680d14b99bfff6db8172',
         'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
+        'MMMU_Pro_V_COT': 'd01441a87b3dbe721b5a04652ae38009',
     }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+        
+        if 'MMMU_Pro_V' in self.dataset_name:
+            question = 'Answer the following multiple-choice question in the image. '
+            if 'COT' in self.dataset_name:
+                question += (
+                    "The last line of your response should be of the following format: 'Answer: $LETTER' "
+                    "(without quotes) where LETTER is one of the options. Think step by step before answering. "
+                )
+            else:
+                question += "Answer directly with the option letter from the given choices. "
+            if isinstance(tgt_path, list):
+                assert len(tgt_path) == 1
+                tgt_path = tgt_path[0]
+            return [dict(type='image', value=tgt_path), dict(type='text', value=question)]
+        else:
+            question = line['question']
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = 'Options:\n'
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            prompt = ''
+            prompt += f'Question: {question}\n'
+            if len(options):
+                prompt += options_prompt
+                if 'COT' in self.dataset_name:
+                    prompt += (
+                        "Answer the following multiple-choice question. The last line of your response should be of "
+                        "the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of the options. "
+                        "Think step by step before answering. "
+                    )
+                else:
+                    prompt += "Answer directly with the option letter from the given choices. "
+
+            msgs = []
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+            msgs.append(dict(type='text', value=prompt))
+            msgs = self.split_MMMU(msgs)
+            return msgs
 
 
 class MUIRDataset(ImageMCQDataset):

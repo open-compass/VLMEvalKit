@@ -361,7 +361,7 @@ def EVAL(dataset_name, data_file, **kwargs):
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
     if 'model' not in kwargs:
-        if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro_V']:
+        if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro']:
             judge_kwargs['model'] = 'chatgpt-0125'
         elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
             judge_kwargs['model'] = 'gpt-4-turbo'
