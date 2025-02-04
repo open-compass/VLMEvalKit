@@ -361,7 +361,7 @@ def EVAL(dataset_name, data_file, **kwargs):
     # Set the judge kwargs first before evaluation or dumping
     judge_kwargs = {'nproc': 4, 'verbose': True}
     if 'model' not in kwargs:
-        if dataset.TYPE in ['MCQ', 'Y/N']:
+        if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro']:
             judge_kwargs['model'] = 'chatgpt-0125'
         elif listinstr(['MMVet', 'LLaVABench', 'MMBench-Video'], dataset_name):
             judge_kwargs['model'] = 'gpt-4-turbo'
@@ -390,7 +390,7 @@ def parse_args_eval():
     parser.add_argument('cmd', type=str)
     parser.add_argument('data_file', type=str)
     parser.add_argument('--judge', type=str, default=None)
-    parser.add_argument('--nproc', type=int, default=4)
+    parser.add_argument('--api-nproc', type=int, default=4)
     parser.add_argument('--retry', type=int, default=None)
     args = parser.parse_args()
     return args

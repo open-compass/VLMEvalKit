@@ -324,6 +324,113 @@ class MMMUDataset(ImageMCQDataset):
         return msgs
 
 
+class MMMUProDataset(MMMUDataset):
+
+    TYPE = 'MCQ_MMMU_Pro'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if 'MMMU_Pro_V' in self.dataset_name:
+            self.data['question'] = ['placeholder'] * len(self.data)
+
+    DATASET_URL = {
+        'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
+        'MMMU_Pro_10c_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
+        'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+        'MMMU_Pro_V_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MMMU_Pro_10c': '22cee868fe6b680d14b99bfff6db8172',
+        'MMMU_Pro_10c_COT': '22cee868fe6b680d14b99bfff6db8172',
+        'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
+        'MMMU_Pro_V_COT': 'd01441a87b3dbe721b5a04652ae38009',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+        
+        if 'MMMU_Pro_V' in self.dataset_name:
+            question = 'Answer the following multiple-choice question in the image. '
+            if 'COT' in self.dataset_name:
+                question += (
+                    "The last line of your response should be of the following format: 'Answer: $LETTER' "
+                    "(without quotes) where LETTER is one of the options. Think step by step before answering. "
+                )
+            else:
+                question += "Answer directly with the option letter from the given choices. "
+            if isinstance(tgt_path, list):
+                assert len(tgt_path) == 1
+                tgt_path = tgt_path[0]
+            return [dict(type='image', value=tgt_path), dict(type='text', value=question)]
+        else:
+            question = line['question']
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = 'Options:\n'
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            prompt = ''
+            prompt += f'Question: {question}\n'
+            if len(options):
+                prompt += options_prompt
+                if 'COT' in self.dataset_name:
+                    prompt += (
+                        "Answer the following multiple-choice question. The last line of your response should be of "
+                        "the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of the options. "
+                        "Think step by step before answering. "
+                    )
+                else:
+                    prompt += "Answer directly with the option letter from the given choices. "
+
+            msgs = []
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+            msgs.append(dict(type='text', value=prompt))
+            msgs = self.split_MMMU(msgs)
+            return msgs
+
+    def cot_postproc(self, response):
+        lines = response.strip().split('\n')
+        lines = [x.strip() for x in lines]
+        cands = [x for x in lines if x.startswith('Answer:')]
+        if len(cands) == 1:
+            counter = defaultdict(lambda: 0)
+            for ch in cands[0]:
+                if ch in string.ascii_uppercase:
+                    counter[ch] += 1
+            if len(counter) == 1:
+                return list(counter.keys())[0]
+            else:
+                return cands[0][7:]
+        return response
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        if 'COT' in self.dataset_name:
+            data = load(eval_file)
+            data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
+            tgt = eval_file.replace('.xlsx', '_cotpost.xlsx')
+            dump(data, tgt)
+            res = super().evaluate(tgt, **judge_kwargs)
+            acc_org = eval_file.replace('.xlsx', '_acc.csv')
+            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv') 
+            shutil.copy(acc_now, acc_org)
+            return res
+        else:
+            return super().evaluate(eval_file, **judge_kwargs)  
+
+
 class MUIRDataset(ImageMCQDataset):
 
     DATASET_URL = {

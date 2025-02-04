@@ -47,7 +47,7 @@ def localize_df(data, dname, nproc=32):
     else:
         img_paths = []
         for i in indices_str:
-            if len(image_map[i]) <= 64:
+            if len(image_map[i]) <= 64 and isinstance(image_map[i], str):
                 idx = image_map[i]
                 assert idx in image_map and len(image_map[idx]) > 64
                 img_paths.append(f'{idx}.jpg')

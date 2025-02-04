@@ -332,7 +332,7 @@ def main():
                 if args.judge is not None:
                     judge_kwargs['model'] = args.judge
                 else:
-                    if dataset.TYPE in ['MCQ', 'Y/N']:
+                    if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro']:
                         if listinstr(['WeMath'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
                         else:
