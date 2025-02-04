@@ -405,7 +405,7 @@ class MMMUProDataset(MMMUDataset):
         lines = response.strip().split('\n')
         cands = [x for x in lines if x.startswith('Answer:')]
         if len(cands) == 1:
-            counter = defaultdict(lambda x: 0)
+            counter = defaultdict(lambda: 0)
             for ch in cands[0]:
                 if ch in string.ascii_uppercase:
                     counter[ch] += 1
