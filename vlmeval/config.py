@@ -463,6 +463,10 @@ valley_series = {
     'valley_eagle': partial(ValleyEagleChat, model_path='bytedance-research/Valley-Eagle-7B'),
 }
 
+ola_series = {
+    'ola': partial(Ola, model_path='THUdyh/Ola-7b'),
+}
+
 ross_series = {
     'ross-qwen2-7b': partial(Ross, model_path='HaochenWang/ross-qwen2-7b'),
 }
@@ -482,7 +486,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ursa_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series
 ]
 
 for grp in model_groups:
