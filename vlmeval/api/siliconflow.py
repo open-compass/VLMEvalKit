@@ -58,6 +58,7 @@ class SiliconFlowAPI(BaseAPI):
         self.model = model
         self.api_base = api_base
         self.reasoning = reasoning
+        self.timeout = timeout
 
         default_kwargs = {
             "stream": False,
