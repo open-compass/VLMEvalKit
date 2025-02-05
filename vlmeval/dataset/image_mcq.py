@@ -211,7 +211,7 @@ class ImageMCQDataset(ImageBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         circular = False
-        if listinstr(['mmbench', 'ccbench'], dataset.lower()):
+        if listinstr(['mmbench', 'ccbench', 'circular'], dataset.lower()):
             data = load(eval_file)
             data['index'] = [int(x) for x in data['index']]
             dump(data, eval_file)
