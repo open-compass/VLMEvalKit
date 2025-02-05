@@ -51,11 +51,13 @@ class SiliconFlowAPI(BaseAPI):
         verbose: bool = True,
         system_prompt: str = None,
         timeout: int = 60,
+        reasoning: bool = False,  # If set, will return results in the format of {'content': '...', 'reasoning': '...'}
         **kwargs,
     ):
 
         self.model = model
         self.api_base = api_base
+        self.reasoning = reasoning
 
         default_kwargs = {
             "stream": False,
@@ -109,7 +111,7 @@ class SiliconFlowAPI(BaseAPI):
         )
 
         response = requests.post(
-            self.api_base, headers=self.headers, data=json.dumps(payload)
+            self.api_base, headers=self.headers, data=json.dumps(payload), timeout=self.timeout * 1.1
         )
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
@@ -117,7 +119,11 @@ class SiliconFlowAPI(BaseAPI):
         answer = self.fail_msg
         try:
             resp_struct = json.loads(response.text)
-            answer = resp_struct["choices"][0]["message"]["content"].strip()
+            msg = resp_struct["choices"][0]["message"]
+            if self.reasoning and 'reasoning_content' in msg:
+                answer = {'content': msg['content'], 'reasoning': msg['reasoning_content']}
+            else:
+                answer = resp_struct["choices"][0]["message"]["content"].strip()
         except:
             pass
         return ret_code, answer, response
