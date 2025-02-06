@@ -135,11 +135,7 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-<<<<<<< HEAD
-    CMMMU, VLRewardBench, WeMath, LogicVista,OmniDocBench
-=======
-    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset
->>>>>>> 6b81b5e8bbb29b9451f73d7f4b86a54d9d43c3a8
+    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,OmniDocBench
 ]
 
 
