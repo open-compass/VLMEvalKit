@@ -5,12 +5,12 @@ from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
-    NaturalBenchDataset
+    NaturalBenchDataset, WeMath, MMMUProDataset
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, WeMath, LogicVista
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista
 )
 
 from .image_ccocr import CCOCRDataset
@@ -52,7 +52,7 @@ class ConcatDataset(ImageBaseDataset):
         'MTL_MMBench_DEV': [
             'MMBench_dev_ar', 'MMBench_dev_cn', 'MMBench_dev_en',
             'MMBench_dev_pt', 'MMBench_dev_ru', 'MMBench_dev_tr'
-        ]
+        ],
     }
 
     def __init__(self, dataset):
@@ -135,7 +135,11 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
+<<<<<<< HEAD
     CMMMU, VLRewardBench, WeMath, LogicVista,OmniDocBench
+=======
+    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset
+>>>>>>> 6b81b5e8bbb29b9451f73d7f4b86a54d9d43c3a8
 ]
 
 

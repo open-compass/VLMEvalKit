@@ -171,7 +171,7 @@ def build_prompt(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
-def build_prompt_wemath(question, prediction):
+def build_prompt_wemath(question, options, prediction):
     tmpl = (
         'You are an AI assistant who will help me to match '
         'an answer with several options of a single-choice question. '
@@ -186,14 +186,14 @@ def build_prompt_wemath(question, prediction):
         'Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n'
         'Answer: <start>\nSpider\n<end>\nYour output: Z\n'
         'Example 3: \n'
-        'Question: <start>\n{}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
+        'Question: <start>\n{}\nOptions: {}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
     )
     question = question.replace(
         ("Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
         "<Thought process>: <<your thought process>> <Answer>: <<your option>>"),
         '',
     )
-    return tmpl.format(question, prediction)
+    return tmpl.format(question, options, prediction)
 
 
 def build_prompt_blink(question, options, prediction):
@@ -268,7 +268,7 @@ def extract_answer_from_item(model, item, dataset_name=None):
     if dataset_name == 'BLINK':
         prompt = build_prompt_blink(item['question'], option_str, item['prediction'])
     elif dataset_name == 'WeMath':
-        prompt = build_prompt_wemath(item['question'], item['prediction'])
+        prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
     else:
@@ -406,18 +406,23 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
 
     for idx in list(meta['index']) + list(data['index']):
         assert istype(idx, int)
+    if 'g_index' not in data:
+        data['g_index'] = [int(x % 1e6) for x in data['index']]
 
     # Only keep those lines in the meta data
     data = data[data['index'].isin(answer_map)]
     data['GT'] = [answer_map[idx] for idx in data['index']]
-    data_main = data[data['index'] < int(1e6)]
-
+    
+    data['tmp_flag'] = [x == y for x, y in zip(data['index'], data['g_index'])]
+    data_main = data[data['tmp_flag']]
+    data_main.pop('tmp_flag')
+    
     data_groups = []
     for i in range(len(data_main)):
         # Dealing with the normal part
         idx = data_main.iloc[i]['index']
         if idx not in result:
-            sub_data = data[data['index'] % int(1e6) == idx]
+            sub_data = data[data['g_index'] == idx]
             data_groups.append(sub_data)
 
     if len(data_groups):
@@ -425,13 +430,13 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
         remain = []
         for dg, pf in zip(data_groups, prefetched):
             if pf is not None:
-                result[dg.iloc[0]['index'] % 1e6] = pf
+                result[dg.iloc[0]['g_index']] = pf
             else:
                 remain.append(dg)
         dump(result, result_file)
 
         tups = [dict(model=model, sub_data=x, dataset_name=dataset_name) for x in remain]
-        keys = [x.iloc[0]['index'] % 1e6 for x in remain]
+        keys = [x.iloc[0]['g_index'] for x in remain]
 
         if len(tups) == 0:
             pass

@@ -265,6 +265,7 @@ class MathVerse(ImageBaseDataset):
     DATASET_URL = {
         'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv', # noqa
         'MathVerse_MINI_Vision_Only': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
+        'MathVerse_MINI_Vision_Only_cot': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
         'MathVerse_MINI_Vision_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv', # noqa
         'MathVerse_MINI_Vision_Intensive': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv', # noqa
         'MathVerse_MINI_Text_Lite': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv', # noqa
@@ -273,11 +274,34 @@ class MathVerse(ImageBaseDataset):
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
         'MathVerse_MINI_Vision_Only': '68a11d4680014ac881fa37adeadea3a4',
+        'MathVerse_MINI_Vision_Only_cot': '68a11d4680014ac881fa37adeadea3a4',
         'MathVerse_MINI_Vision_Dominant': 'b8fb63852d261ab2aaefba29cc2414d3',
         'MathVerse_MINI_Vision_Intensive': '01cbd35be202bb0c4873a4186a63bc19',
         'MathVerse_MINI_Text_Lite': '19e4b13bdd30b89a03b2e358bcfefa04',
         'MathVerse_MINI_Text_Dominant': '4f5cd2fa6630ea00bb11d6fde1f6fe6a',
     }
+
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+        if 'cot' in self.dataset_name:
+            question = line['query_cot']
+        else:
+            question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        return msgs
 
     # It returns a DataFrame
     @classmethod
@@ -641,76 +665,6 @@ class OlympiadBench(ImageBaseDataset):
 
         accdz = pd.read_csv(score_file)
         return accdz
-
-
-class WeMath(ImageBaseDataset):
-    TYPE = 'VQA'
-    DATASET_URL = {
-        'WeMath': 'https://opencompass.openxlab.space/utils/VLMEval/WeMath.tsv'
-    }
-    DATASET_MD5 = {'WeMath': '056142c89b09d864702450b5b5ea0913'}
-
-    def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
-        from .utils.multiple_choice import mcq_vanilla_eval
-
-        # model = judge_kwargs['model']
-        model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
-        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
-        name_str = name_str_map[model] if model in name_str_map else model
-
-        if model == 'exact_matching':
-            model = None
-        elif gpt_key_set():
-            model = build_judge(**judge_kwargs)
-            if not model.working():
-                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                warnings.warn(DEBUG_MESSAGE)
-                model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
-
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
-        nproc = judge_kwargs.pop('nproc', 4)
-
-        if not osp.exists(storage) and model is not None:
-            data = load(eval_file)
-            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
-
-            data = load(eval_file)
-            data = data.sort_values(by='index')
-            data['prediction'] = [str(x) for x in data['prediction']]
-            # If not choice label, then use lower case
-            for k in data.keys():
-                data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
-
-            meta = self.data
-            meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
-            data_map = {x: y for x, y in zip(data['index'], data['question'])}
-            for k in data_map:
-                assert k in meta_q_map, (
-                    f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
-                )
-            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
-
-            if 'id' in data.columns:
-                # 更改列名
-                data.rename(columns={'id': 'ID'}, inplace=True)
-            dump(data, storage)
-        if osp.exists(storage):
-            accuracy_scores = wemath_evaluate_models(storage)
-            four_dim_scores = wemath_accuracy(storage)
-        else:
-            accuracy_scores = wemath_evaluate_models(eval_file)
-            four_dim_scores = wemath_accuracy(eval_file)
-        combine_score = {**accuracy_scores, **four_dim_scores}
-        combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_score.csv')
-        dump(combine_score, score_pth)
-        return combine_score
 
 
 class LogicVista(ImageBaseDataset):
