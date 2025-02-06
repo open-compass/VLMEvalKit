@@ -11,7 +11,8 @@ from vlmeval.inference_video import infer_data_job_video
 from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
-
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.dataset.video_base import VideoBaseDataset
 
 def build_model_from_config(cfg, model_name):
     import vlmeval.api
@@ -41,13 +42,15 @@ def build_dataset_from_config(cfg, dataset_name):
         cls = getattr(vlmeval.dataset, cls_name)
         sig = inspect.signature(cls.__init__)
         valid_params = {k: v for k, v in config.items() if k in sig.parameters}
-        if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
-            raise ValueError('fps and nframe should not be set at the same time')
-        if valid_params.get('fps', 0) <= 0 and valid_params.get('nframe', 0) <= 0:
-            raise ValueError('fps and nframe should be set at least one valid value')
+        if cls.MODALITY == 'VIDEO':
+            if valid_params.get('fps', 0) > 0 and valid_params.get('nframe', 0) > 0:
+                raise ValueError('fps and nframe should not be set at the same time')
+            if valid_params.get('fps', 0) <= 0 and valid_params.get('nframe', 0) <= 0:
+                raise ValueError('fps and nframe should be set at least one valid value')
         return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
+
 
 
 def parse_args():
@@ -160,6 +163,10 @@ def main():
         use_config, cfg = True, load(args.config)
         args.model = list(cfg['model'].keys())
         args.data = list(cfg['data'].keys())
+        ##
+        print(f'cfg:{cfg}')
+        print(f'agrs.model:{args.model}')
+        print(f'args.data:{args.data}')
     else:
         assert len(args.data), '--data should be a list of data files'
 
@@ -209,6 +216,8 @@ def main():
             model = build_model_from_config(cfg['model'], model_name)
 
         for _, dataset_name in enumerate(args.data):
+            print(f"cfg[data]:{cfg['data']}")
+            print(f'dataset_name:{dataset_name}')
             try:
                 result_file_base = f'{model_name}_{dataset_name}.xlsx'
 
@@ -243,6 +252,9 @@ def main():
 
                 result_file = osp.join(pred_root, result_file_base)
 
+                print(f'pred_root:{pred_root}')
+                print(f'result_file:{result_file}')
+                
                 # Reuse the previous prediction file if exists
                 if rank == 0 and len(prev_pred_roots):
                     prev_result_file = None

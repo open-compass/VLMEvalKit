@@ -40,6 +40,7 @@ from .dynamath import Dynamath
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
+from .Omnidocbench.omnidocbench import OmniDocBench
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -134,8 +135,9 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU, VLRewardBench, WeMath, LogicVista
+    CMMMU, VLRewardBench, WeMath, LogicVista,OmniDocBench
 ]
+
 
 VIDEO_DATASET = [
     MMBenchVideo, VideoMME, MVBench, MVBench_MP4, LongVideoBench,
