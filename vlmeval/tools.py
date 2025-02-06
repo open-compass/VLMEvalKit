@@ -1,4 +1,5 @@
 import sys
+from collections import deque
 from vlmeval.dataset import SUPPORTED_DATASETS
 from vlmeval.config import *
 from vlmeval.smp import *
@@ -157,88 +158,104 @@ def MISSING(lvl):
 
 
 def CIRCULAR(inp):
+    def proc_str(s):
+        chs = set(s)
+        chs = [x for x in chs if x not in string.ascii_letters and x != ' ']
+        for ch in chs:
+            s = s.replace(ch, ' ')
+        return s
+    
+    def abnormal_entry(line):
+        choices = {k: line[k] for k in string.ascii_uppercase if k in line and not pd.isna(line[k])}
+        for k in choices:
+            s = proc_str(choices[k]).split()
+            hit_words = [x for x in s if x in choices]
+            hit_words = set(hit_words)
+            if len(hit_words) > 1:
+                return True
+        return False
+        
     assert inp.endswith('.tsv')
     data = load(inp)
     OFFSET = 1e6
     while max(data['index']) >= OFFSET:
         OFFSET *= 10
-
-    assert 'E' not in data, 'Currently build_circular only works for up to 4-choice questions'
-    data_2c = data[pd.isna(data['C'])]
-    data_3c = data[~pd.isna(data['C']) & pd.isna(data['D'])]
-    data_4c = data[~pd.isna(data['D'])]
-    map_2c = [('AB', 'BA')]
-    map_3c = [('ABC', 'BCA'), ('ABC', 'CAB')]
-    map_4c = [('ABCD', 'BCDA'), ('ABCD', 'CDAB'), ('ABCD', 'DABC')]
-
-    def okn(o, n=4):
-        ostr = o.replace(',', ' ')
-        osplits = ostr.split()
-        if sum([c in osplits for c in string.ascii_uppercase[:n - 1]]) == n - 1:
-            return False
-        olower = o.lower()
-        olower = olower.replace(',', ' ')
-        olower_splits = olower.split()
-        if 'all' in olower_splits or 'none' in olower_splits:
-            return False
-        return True
-
-    yay4, nay4 = [], []
-    lt4 = len(data_4c)
-    for i in range(lt4):
-        if okn(data_4c.iloc[i]['D'], 4):
-            yay4.append(i)
+    n_opt = 2
+    for i, ch in enumerate(string.ascii_uppercase):
+        if ch in data:
+            n_opt = ord(ch) - ord('A') + 1
         else:
-            nay4.append(i)
-    data_4c_y = data_4c.iloc[yay4]
-    data_4c_n = data_4c.iloc[nay4]
-    data_3c = pd.concat([data_4c_n, data_3c])
-
-    yay3, nay3 = [], []
-    lt3 = len(data_3c)
-    for i in range(lt3):
-        if okn(data_3c.iloc[i]['C'], 3):
-            yay3.append(i)
+            for j in range(i + 1, 26):
+                assert string.ascii_uppercase[j] not in data
+    groups = defaultdict(list)
+    for i in range(len(data)):
+        item = data.iloc[i]
+        this_n_opt = 0
+        for j, ch in enumerate(string.ascii_uppercase[:n_opt]):
+            if not pd.isna(item[ch]):
+                this_n_opt = j + 1
+            else:
+                for k in range(j + 1, n_opt):
+                    assert pd.isna(item[string.ascii_uppercase[k]]), (k, item)
+        assert this_n_opt >= 2 or this_n_opt == 0
+        flag = abnormal_entry(item)
+        if flag or this_n_opt == 0:
+            groups['abnormal'].append(item)
+        elif ord(item['answer']) - ord('A') + 1 > this_n_opt:
+            groups['abnormal'].append(item)
         else:
-            nay3.append(i)
-    data_3c_y = data_3c.iloc[yay3]
-    data_3c_n = data_3c.iloc[nay3]
-    data_2c = pd.concat([data_3c_n, data_2c])
+            groups[this_n_opt].append(item)
+    for k in groups:
+        groups[k] = pd.concat(groups[k], axis=1).T
+        print(f'{k if k == "abnormal" else str(k) + "-choice"} records: {len(groups[k])}')
+            
+    data_all = []
+        
+    for k in groups:
+        if k == 'abnormal':
+            warnings.warn(
+                f"{len(groups['abnormal'])} abnormal entries detected. The problems can be: "
+                "1. Choice labels found in some choice contents; 2. No choices found for this question; "
+                "3. The answer is not a valid choice. Will not apply circular to those samples." 
+            )
+            abdata = groups['abnormal']
+            abdata['g_index'] = abdata['index']
+            data_all.append(abdata)
+        else:
+            cir_data = []
+            assert isinstance(k, int) and k >= 2
+            labels = string.ascii_uppercase[:k]
+            rotates = [labels]
+            dq = deque(labels)
+            for i in range(k - 1):
+                dq.rotate(1)
+                rotates.append(list(dq))
+            for i, rot in enumerate(rotates):
+                if i == 0:
+                    data = groups[k].copy()
+                    data['g_index'] = data['index']
+                    cir_data.append(data)
+                else:
+                    try:
+                        data = groups[k].copy()
+                        data['index'] = [x + OFFSET * i for x in data['index']]
+                        data['g_index'] = [x % OFFSET for x in data['index']]
+                        c_map = {k: v for k, v in zip(rotates[0], rot)}
+                        data['answer'] = [c_map[x] for x in data['answer']]
+                        for s, t in c_map.items():
+                            data[t] = groups[k][s]
+                        cir_data.append(data)
+                    except:
+                        print(set(data['answer']))
+                        raise NotImplementedError
+            data_all.append(pd.concat(cir_data))
+    data_all = pd.concat(data_all)
+    data_all['index'] = [int(x) for x in data_all['index']]
+    data_all['g_index'] = [int(x) for x in data_all['g_index']]
 
-    def remap(data_in, tup, off):
-        off = int(off)
-        data = data_in.copy()
-        char_map = {k: v for k, v in zip(*tup)}
-        idx = data.pop('index')
-        answer = data.pop('answer')
-        answer_new = [char_map[x] if x in char_map else x for x in answer]
-        data['answer'] = answer_new
-        options = {}
-        for c in char_map:
-            options[char_map[c]] = data.pop(c)
-        for c in options:
-            data[c] = options[c]
-        data.pop('image')
-        data['image'] = idx
-        idx = [x + off for x in idx]
-        data['index'] = idx
-        return data
-
-    data_all = pd.concat([
-        data_2c,
-        data_3c_y,
-        data_4c_y,
-        remap(data_2c, map_2c[0], OFFSET),
-        remap(data_3c_y, map_3c[0], OFFSET),
-        remap(data_4c_y, map_4c[0], OFFSET),
-        remap(data_3c_y, map_3c[1], OFFSET * 2),
-        remap(data_4c_y, map_4c[1], OFFSET * 2),
-        remap(data_4c_y, map_4c[2], OFFSET * 3),
-    ])
-
-    tgt_file = inp.replace('.tsv', '_CIRC.tsv')
+    tgt_file = inp.replace('.tsv', '_circular.tsv')
     dump(data_all, tgt_file)
-    print(f'The circularized data is saved to {tgt_file}')
+    print(f'Processed data are saved to {tgt_file}: {len(load(inp))} raw records, {len(data_all)} circularized records.')
     assert osp.exists(tgt_file)
     print(f'The MD5 for the circularized data is {md5(tgt_file)}')
 
