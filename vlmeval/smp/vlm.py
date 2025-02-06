@@ -144,36 +144,3 @@ def gpt_key_set():
 def apiok(wrapper):
     s = wrapper.generate('Hello!')
     return wrapper.fail_msg not in s
-
-
-def circular_pred(df, extract_func=None):
-    if extract_func is None:
-        extract_func = lambda x: x  # noqa: E731
-    df = df.sort_values('index')
-    from vlmeval.utils import can_infer_option
-
-    shift = int(1e6)
-
-    choices = [extract_func(x) for x in df['prediction']]
-    pred_map = {i: c for i, c in zip(df['index'], choices)}
-    flag_map = {i: True for i in pred_map if i < 1e6}
-    valid_map = {i: True for i in pred_map if i < 1e6}
-    for i in df['index']:
-        if i >= shift and pred_map[i] and pred_map[i - shift]:
-            if pred_map[i] not in list(
-                string.ascii_uppercase
-            ) or pred_map[  # noqa: W504
-                i - shift
-            ] not in list(
-                string.ascii_uppercase
-            ):
-
-                valid_map[i % shift] = False
-                continue
-            if (ord(pred_map[i]) - ord(pred_map[i - shift])) % 4 == 1:
-                continue
-            else:
-                flag_map[i % shift] = False
-    flag_map = {k: v for k, v in flag_map.items() if valid_map[k]}
-    flags = list(flag_map.values())
-    return np.mean(flags)
