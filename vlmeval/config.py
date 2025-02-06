@@ -87,6 +87,7 @@ api_models = {
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10, verbose=False),
+    'Claude3-5V_Sonnet_20241022_tem07': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0.7, retry=10, verbose=False),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     'GLM4V_PLUS': partial(GLMVisionAPI, model='glm-4v-plus', temperature=0, retry=10),
