@@ -67,7 +67,7 @@ class LLaVA(BaseModel):
         kwargs_default = dict(
             do_sample=False,
             temperature=0,
-            max_new_tokens=512,
+            max_new_tokens=2048,
             top_p=None,
             num_beams=1,
             use_cache=True,
