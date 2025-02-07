@@ -1,7 +1,8 @@
 from .image_base import ImageBaseDataset
 import numpy as np
 import pandas as pd
-from ...smp import *
+from ..smp import *
+from .utils import build_judge
 
 prompt_dict = {
     # Subjective Judge [GPT-4o reference]
@@ -237,11 +238,10 @@ def get_dimension_rating(score_file_name):
                 return_dict[k]['obj_score'].append(score)
                 return_dict[k]['obj_ref_score'].append(ref_score)
                 return_dict[k]['obj_rel_score'].append(score / ref_score * 10)
-       else:
+        else:
             return_dict['overall']['obj_missing'] += 1
             return_dict[task_name]['obj_missing'] += 1
             
-    
     final_res = {}
     final_res['raw'] = return_dict
     
@@ -270,17 +270,17 @@ class CreationMMBenchDataset(ImageBaseDataset):
     DATASET_URL = {
         'LiveMMBench_Creation': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Creation.tsv'
     }
-    DATASET_MD5 = {
-        'LiveMMBench_Creation': '9e533abfc541c9a5074b801bcf5df5de'
-    }
+    DATASET_MD5 = {}
 
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         # build_prompt, Generate_Creation_MMBench_judge,
         # Creation_MMBench_extract, get_dimension_rating
-        
+        dual_eval = judge_kwargs.pop('dual_eval', False)
+
         suffix = '.' + eval_file.split('.')[-1]
+
         score_file = eval_file.replace(suffix, '_score.csv')
         tgt_file = eval_file.replace(suffix, '_rating.json')
 

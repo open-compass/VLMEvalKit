@@ -37,6 +37,7 @@ from .cmmmu import CMMMU
 from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
+from .mmbench_c import CreationMMBenchDataset
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
@@ -134,7 +135,7 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset
+    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, CreationMMBenchDataset
 ]
 
 VIDEO_DATASET = [
