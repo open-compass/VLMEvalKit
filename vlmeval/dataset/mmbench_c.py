@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from ..smp import *
 from .utils import build_judge
+from ..utils import track_progress_rich
 
 prompt_dict = {
     # Subjective Judge [GPT-4o reference]
@@ -142,7 +143,7 @@ def Generate_Creation_MMBench_judge(model, prompt):
 
 
 def extract_subjective(inp):
-    inp = inp.split('\n')
+    lines = inp.split('\n')
     for line in lines:
         line = line.upper()
         if line.startswith('FINAL CONCLUSION:'):
@@ -161,7 +162,7 @@ def extract_objective(inp):
     # Response A Alignment Score: X/10
     if pd.isna(inp) or inp is None or inp == '':
         return 'NO_OBJECTIVE'
-    inp = inp.split('\n')
+    lines = inp.split('\n')
     a_score, b_score = None, None
     for line in lines:
         line = line.upper()
@@ -195,7 +196,7 @@ def Creation_MMBench_extract(judge_response_pkl, org_data):
     return data
 
 
-def get_dimension_rating(score_file_name):
+def get_dimension_rating(score_file_name, rev=False):
     def get_pw_score(text):
         if 'A<<B' in text or 'B>>A' in text:
             return 2
@@ -237,13 +238,12 @@ def get_dimension_rating(score_file_name):
                 return_dict[k]['obj_valid'] += 1
                 return_dict[k]['obj_score'].append(score)
                 return_dict[k]['obj_ref_score'].append(ref_score)
-                return_dict[k]['obj_rel_score'].append(score / ref_score * 10)
+                # return_dict[k]['obj_rel_score'].append(score / ref_score * 10)
         else:
             return_dict['overall']['obj_missing'] += 1
             return_dict[task_name]['obj_missing'] += 1
             
     final_res = {}
-    final_res['raw'] = return_dict
     
     for k, v in return_dict.items():
         res = {}
@@ -257,16 +257,54 @@ def get_dimension_rating(score_file_name):
     
         if v['obj_valid'] + v['obj_missing']:
             res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
-            res['obj_score'] = sum(v['obj_score']) / v['obj_valid']
-            res['obj_rel_score'] = sum(v['obj_rel_score']) / v['obj_valid']
-            res['obj_ref_score'] = sum(v['obj_ref_score']) / v['obj_valid']
+            if v['obj_valid']:
+                res['obj_score'] = sum(v['obj_score']) / v['obj_valid']
+                # res['obj_rel_score'] = sum(v['obj_rel_score']) / v['obj_valid']
+                res['obj_ref_score'] = sum(v['obj_ref_score']) / v['obj_valid']
         final_res[k] = res
+
+    final_res['raw'] = return_dict
+    return final_res
+
+
+def merge_dual(raw, raw_dual):
+    final_res = {}
+    for k, v in raw.items():
+        # merge dual: {'sub_valid': 0, 'sub_missing': 0, 'sub_score': [], 'obj_valid': 0, 'obj_missing': 0, 'obj_ref_score': [], 'obj_score': [],  'obj_rel_score': []}
+        dual_v = raw_dual[k]
+        v['sub_valid'] += dual_v['sub_valid'] 
+        v['sub_missing'] += dual_v['sub_missing']
+        v['sub_score'].extend([-x for x in dual_v['sub_score']])
+        v['obj_valid'] += dual_v['obj_valid']
+        v['obj_missing'] += dual_v['obj_missing']
+        v['obj_score'].extend(dual_v['obj_ref_score'])
+        v['obj_ref_score'].extend(dual_v['obj_score'])
+        raw[k] = v
+
+        res = {}
+        res['sub_parse_ok'] = v['sub_valid'] / (v['sub_valid'] + v['sub_missing'])
+        dist = defaultdict(lambda: 0)
+        for x in v['sub_score']:
+            dist[x] += 1
+        assert len(dist) <= 5 and sum(list(dist.values())) == v['sub_valid']
+        res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
+        res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
+
+        if v['obj_valid'] + v['obj_missing']:
+            res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
+            if v['obj_valid']:
+                res['obj_score'] = sum(v['obj_score']) / v['obj_valid']
+                # res['obj_rel_score'] = sum(v['obj_rel_score']) / v['obj_valid']
+                res['obj_ref_score'] = sum(v['obj_ref_score']) / v['obj_valid']
+        final_res[k] = res
+
+    final_res['raw'] = raw
     return final_res
 
 
 class CreationMMBenchDataset(ImageBaseDataset):
 
-    TYPE = 'VQA'
+    TYPE = 'CreationVQA'
     DATASET_URL = {
         'LiveMMBench_Creation': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Creation.tsv'
     }
@@ -277,7 +315,16 @@ class CreationMMBenchDataset(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         # build_prompt, Generate_Creation_MMBench_judge,
         # Creation_MMBench_extract, get_dimension_rating
+        rating_rev = None
         dual_eval = judge_kwargs.pop('dual_eval', False)
+        if dual_eval:
+            src = load(eval_file)
+            tgt = load(eval_file)
+            tgt['reference_answer_by_gpt4o'] = src['prediction']
+            tgt['prediction'] = src['reference_answer_by_gpt4o']
+            tgt_file_name = eval_file.replace('.xlsx', '_rev.xlsx')
+            dump(tgt, tgt_file_name)
+            rating_rev = self.evaluate(tgt_file_name, **judge_kwargs)
 
         suffix = '.' + eval_file.split('.')[-1]
 
@@ -295,7 +342,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
             lt = len(data)
             lines = [data.iloc[i] for i in range(len(data))]
             judge_kwargs['max_tokens'] = 4096
-            model = build_judge(**judge_kwargs)
+            model = build_judge(model=model, **judge_kwargs)
             assert model.working(), ('CreationMMBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
 
             prompts = [build_prompt(line) for line in lines]
@@ -323,4 +370,14 @@ class CreationMMBenchDataset(ImageBaseDataset):
 
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
-        return rating
+
+        if dual_eval:
+            raw = rating['raw']
+            rev_tgt_file = tgt_file.replace('rating.json', 'rev_rating.json')
+            rev_raw = load(rev_tgt_file)['raw']
+            merged_rating = merge_dual(raw, rev_raw)
+            dump(merged_rating, tgt_file.replace('rating.json', 'merged_rating.json'))
+            print(f"Rating:\n{rating['overall']}\n\nDual Rating:\n{merged_rating['overall']}")
+            return merged_rating['overall']
+        else:
+            return rating['overall']
