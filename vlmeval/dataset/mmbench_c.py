@@ -252,8 +252,9 @@ def get_dimension_rating(score_file_name, rev=False):
         for x in v['sub_score']:
             dist[x] += 1
         assert len(dist) <= 5 and sum(list(dist.values())) == v['sub_valid']
-        res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
-        res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
+        if v['sub_valid']:
+            res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
+            res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
     
         if v['obj_valid'] + v['obj_missing']:
             res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
