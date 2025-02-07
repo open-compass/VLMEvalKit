@@ -92,11 +92,26 @@ cgbench_dataset = {
     )
 }
 
+worldsense_dataset = {
+    'WorldSense_8frame': partial(WorldSense, dataset='WorldSense', nframe=8),
+    'WorldSense_8frame_subs': partial(WorldSense, dataset='WorldSense', nframe=8, use_subtitle=True),
+    'WorldSense_8frame_audio': partial(WorldSense, dataset='WorldSense', nframe=8, use_audio=True),
+    'WorldSense_32frame': partial(WorldSense, dataset='WorldSense', nframe=32),
+    'WorldSense_32frame_subs': partial(WorldSense, dataset='WorldSense', nframe=32, use_subtitle=True),
+    'WorldSense_32frame_audio': partial(WorldSense, dataset='WorldSense', nframe=32, use_audio=True),
+    'WorldSense_1fps': partial(WorldSense, dataset='WorldSense', fps=1.0),
+    'WorldSense_1fps_subs': partial(WorldSense, dataset='WorldSense', fps=1.0, use_subtitle=True),
+    'WorldSense_1fps_audio': partial(WorldSense, dataset='WorldSense', fps=1.0, use_audio=True),
+    'WorldSense_0.5fps': partial(WorldSense, dataset='WorldSense', fps=0.5),
+    'WorldSense_0.5fps_subs': partial(WorldSense, dataset='WorldSense', fps=0.5, use_subtitle=True),
+    'WorldSense_0.5fps_audio': partial(WorldSense, dataset='WorldSense', fps=0.5, use_audio=True)
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset, cgbench_dataset
+    mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset
 ]
 
 for grp in dataset_groups:
