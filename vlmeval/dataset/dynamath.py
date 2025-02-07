@@ -1,10 +1,7 @@
 import re
 import json
-import sympy as sp
 import numpy as np
 import pandas as pd
-from sympy import simplify, Eq, sympify, Pow, pi
-from sympy.parsing.latex import parse_latex
 import sys
 import math
 import os

@@ -1,14 +1,19 @@
 import re
 import json
 from math import isclose
-import sympy as sp
-from sympy import simplify, Eq, sympify, evalf, Pow
-from sympy.parsing.latex import parse_latex
-import antlr4
 from decimal import Decimal, getcontext
 from fractions import Fraction
 import sys
 import math
+import timeout_decorator
+
+try:
+    import sympy as sp
+    from sympy import simplify, Eq, sympify, evalf, Pow
+    from sympy.parsing.latex import parse_latex
+    import antlr4
+except ImportError:
+    logging.warning('sympy or antlr4 is not installed, please install it for OlympiadBench evaluation.')
 
 
 chinese_answer_type_dict = {
@@ -175,11 +180,15 @@ class MathJudger:
             # print(self.precision)
 
             for item2 in temp_list2:
-                if self.is_equal(item1, item2):
-                    temp_list1.remove(item1)
-                    temp_list2.remove(item2)
-                    precision.remove(self.precision)
-                    break
+                try:
+                    if self.is_equal(item1, item2):
+                        temp_list1.remove(item1)
+                        temp_list2.remove(item2)
+                        precision.remove(self.precision)
+                        break
+                except Exception as err:
+                    logging.warning(f'{type(err)}: {err}')
+                    continue
             else:
                 # If we didn't break from the inner loop, it means no match was found
                 return False
@@ -195,6 +204,7 @@ class MathJudger:
     #     return expression_sympy.subs(self.pi, math.pi)
 
     # 默认第一个表达式是 ground_truth
+    @timeout_decorator.timeout(30)
     def is_equal(self, expression1, expression2):
         if expression1 == expression2 and expression1 != "" and expression2 != "":
             # print("原生等价")
