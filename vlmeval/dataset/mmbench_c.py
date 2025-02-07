@@ -316,7 +316,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
         # build_prompt, Generate_Creation_MMBench_judge,
         # Creation_MMBench_extract, get_dimension_rating
         rating_rev = None
-        dual_eval = judge_kwargs.pop('dual_eval', False)
+        dual_eval = judge_kwargs.pop('dual_eval', True)
         if dual_eval:
             src = load(eval_file)
             tgt = load(eval_file)
@@ -324,6 +324,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
             tgt['prediction'] = src['reference_answer_by_gpt4o']
             tgt_file_name = eval_file.replace('.xlsx', '_rev.xlsx')
             dump(tgt, tgt_file_name)
+            judge_kwargs['dual_eval'] = False
             rating_rev = self.evaluate(tgt_file_name, **judge_kwargs)
 
         suffix = '.' + eval_file.split('.')[-1]
