@@ -2,7 +2,7 @@ from .image_base import ImageBaseDataset
 import numpy as np
 import pandas as pd
 from ..smp import *
-from .utils import build_judge
+from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
 
 prompt_dict = {
@@ -327,6 +327,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
             dump(tgt, tgt_file_name)
             judge_kwargs['dual_eval'] = False
             rating_rev = self.evaluate(tgt_file_name, **judge_kwargs)
+        judge_kwargs.pop('dual_eval', None)
 
         suffix = '.' + eval_file.split('.')[-1]
 
