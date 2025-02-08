@@ -167,14 +167,17 @@ def CIRCULAR(inp):
     
     def abnormal_entry(line):
         choices = {k: line[k] for k in string.ascii_uppercase if k in line and not pd.isna(line[k])}
+        has_label = False
         for k in choices:
             s = proc_str(choices[k]).split()
             hit_words = [x for x in s if x in choices]
             hit_words = set(hit_words)
             if len(hit_words) > 1:
                 return True
-        return False
-        
+            if choices[k] in string.ascii_uppercase:
+                has_label = True
+        return has_label
+
     assert inp.endswith('.tsv')
     data = load(inp)
     OFFSET = 1e6
