@@ -17,7 +17,6 @@ mvbench_dataset = {
 }
 
 tamperbench_dataset = {
-    'MVTamperBench_8frame': partial(MVTamperBench, dataset='MVTamperBenchSample', nframe=8),
     'MVTamperBench_8frame': partial(MVTamperBench, dataset='MVTamperBench', nframe=8),
     'MVTamperBenchStart_8frame': partial(MVTamperBench, dataset='MVTamperBenchStart', nframe=8),
     'MVTamperBenchEnd_8frame': partial(MVTamperBench, dataset='MVTamperBenchEnd', nframe=8),
