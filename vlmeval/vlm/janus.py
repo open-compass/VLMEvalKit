@@ -34,7 +34,7 @@ class Janus(BaseModel):
 
         torch.cuda.empty_cache()
         default_kwargs = dict(
-            max_new_tokens=512,
+            max_new_tokens=2048,
             do_sample=False,
             use_cache=True,
             output_logits=False,

@@ -24,7 +24,7 @@ class SmolVLM(BaseModel):
             device_map='cuda'
         )
 
-        kwargs_default = {'max_new_tokens': 512,
+        kwargs_default = {'max_new_tokens': 2048,
                           'use_cache': True}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
