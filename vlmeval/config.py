@@ -358,7 +358,13 @@ ovis_series = {
     'Ovis1.5-Gemma2-9B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Gemma2-9B'),
     'Ovis1.6-Gemma2-9B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Gemma2-9B'),
     'Ovis1.6-Llama3.2-3B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Llama3.2-3B'),
-    'Ovis1.6-Gemma2-27B': partial(Ovis1_6_Plus, model_path='AIDC-AI/Ovis1.6-Gemma2-27B')
+    'Ovis1.6-Gemma2-27B': partial(Ovis1_6_Plus, model_path='AIDC-AI/Ovis1.6-Gemma2-27B'),
+    'Ovis2-1B': partial(Ovis2, model_path='AIDC-AI/Ovis2-1B'),
+    'Ovis2-2B': partial(Ovis2, model_path='AIDC-AI/Ovis2-2B'),
+    'Ovis2-4B': partial(Ovis2, model_path='AIDC-AI/Ovis2-4B'),
+    'Ovis2-8B': partial(Ovis2, model_path='AIDC-AI/Ovis2-8B'),
+    'Ovis2-16B': partial(Ovis2, model_path='AIDC-AI/Ovis2-16B'),
+    'Ovis2-34B': partial(Ovis2, model_path='AIDC-AI/Ovis2-34B')
 }
 
 mantis_series = {
