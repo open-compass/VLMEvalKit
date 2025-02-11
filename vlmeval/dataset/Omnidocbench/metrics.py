@@ -7,7 +7,7 @@ import pdb
 import copy
 import pandas as pd
 
-from utils import save_paired_result,normalized_table
+from .utils import save_paired_result,normalized_table
 from collections import defaultdict
 from apted.helpers import Tree
 from apted import APTED, Config
