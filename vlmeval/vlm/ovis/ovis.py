@@ -421,7 +421,7 @@ class Ovis2(BaseModel):
         assert isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
 
-        use_cot = any(dataset.startswith(prefix) for prefix in (self.use_cot[self.size]))
+        use_cot = any(dataset.startswith(prefix) for prefix in self.use_cot[self.size])
 
         if dataset == 'MMVet':
             prompt = self.build_mmvet_prompt(line, dataset, use_cot)
