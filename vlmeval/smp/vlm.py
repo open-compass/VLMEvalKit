@@ -54,7 +54,7 @@ def concat_images_vlmeval(images, target_size=-1, mode='h', return_image=False):
         return tgt
 
 
-def mmqa_display(question, target_size=512):
+def mmqa_display(question, target_size=-1):
     question = {k.lower(): v for k, v in question.items()}
     keys = list(question.keys())
     keys = [k for k in keys if k not in ['index', 'image']]
