@@ -212,6 +212,9 @@ def main():
             model = build_model_from_config(cfg['model'], model_name)
 
         for _, dataset_name in enumerate(args.data):
+            if world_size > 1:
+                dist.barrier()
+
             try:
                 result_file_base = f'{model_name}_{dataset_name}.xlsx'
 
@@ -429,9 +432,6 @@ def main():
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '
                                  'skipping this combination.')
                 continue
-
-            if world_size > 1:
-                dist.barrier()
 
     if world_size > 1:
         dist.destroy_process_group()
