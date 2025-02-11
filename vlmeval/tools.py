@@ -204,7 +204,7 @@ def CIRCULAR(inp):
         flag = abnormal_entry(item)
         if flag or this_n_opt == 0:
             groups['abnormal'].append(item)
-        elif ord(item['answer']) - ord('A') + 1 > this_n_opt:
+        elif len(item['answer']) > 1 or item['answer'] not in string.ascii_uppercase[:this_n_opt]:
             groups['abnormal'].append(item)
         else:
             groups[this_n_opt].append(item)
@@ -425,6 +425,15 @@ def parse_args_scan():
     return args, unknownargs
 
 
+def parse_args_sync():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--src', type=str, default='/home/kenny/mmeval')
+    parser.add_argument('--tgt', type=str, default='/home/kenny/volc/mmeval')
+    parser.add_argument('--data', type=str, nargs='+')
+    args, unknownargs = parser.parse_known_args()
+    return args, unknownargs
+
+
 def MERGE_PKL(pkl_dir, world_size=1):
     prefs = []
     for ws in list(range(1, 9)):
@@ -587,6 +596,7 @@ def cli():
                 continue
             for d in datasets:
                 SCAN(root, m, d)
+    
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
