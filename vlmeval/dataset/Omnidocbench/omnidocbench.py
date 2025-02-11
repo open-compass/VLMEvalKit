@@ -54,6 +54,7 @@ class OmniDocBench(ImageBaseDataset):
     def __init__(self,dataset='OmniDocBench',**kwargs):
         super().__init__(dataset,**kwargs)
         print(f'self.img_root:{self.img_root}')
+
     def build_prompt(self, line):
      
         image_path = self.dump_image(line)[0] 
@@ -61,21 +62,14 @@ class OmniDocBench(ImageBaseDataset):
             dict(type='image', value=image_path),
             dict(type='text', value=self.system_prompt)
         ]
-        
         return msg
         
-    
-
-
     def evaluate(self, eval_file, **judge_kwargs):
         tsv_path=self.data_path
         evaluator=Omnidocbenchend2endEvaluator(eval_file,tsv_path)
         metrics=evaluator.score()
         return metrics
 
-
-
- 
 
 class Omnidocbenchend2endEvaluator():
     def __init__(self,
@@ -113,8 +107,6 @@ class Omnidocbenchend2endEvaluator():
                 continue
         print(f'load_success:{load_success},load_fail:{load_fail}')
            
-       
-
         filtered_gt_samples = []
         if filter_types:
             for gt_sample in self.references:
@@ -127,15 +119,10 @@ class Omnidocbenchend2endEvaluator():
         else:
             filtered_gt_samples = self.references #[{},{},{}]
         self.references=filtered_gt_samples
-        print(f'self.references_length:{len(self.references)}')
+      
 
-    def score(self,predictions:list=None,references:list=None)->dict:
-        if not predictions:
-            predictions=self.predictions
-        if not references:
-            references=self.references
-        
-        samples=self.get_matched_elements(references,predictions)
+    def score(self)->dict:
+        samples=self.get_matched_elements(self.references,self.predictions)
         metrics=self.process_generated_metric_results(samples)
         return metrics      
 
@@ -176,8 +163,7 @@ class Omnidocbenchend2endEvaluator():
                 "merge_list": sorted_block
             }
             saved_element_dict[sorted_block[0]["category_type"]].append(merged_block)
-            # print('Merged truncated')
-
+            
         return saved_element_dict
     
     def get_page_elements_list(self, gt_page_elements, category_list):
@@ -244,12 +230,9 @@ class Omnidocbenchend2endEvaluator():
 
         for i,sample in enumerate(references):
             img_name = os.path.basename(sample["page_info"]["image_path"])
-            # pred_path=predictions[i]
-            # pred_content=read_md_file(pred_path)
             pred_content = predictions[i]
             result = self.process_get_matched_elements(sample, pred_content, img_name) 
             [plain_text_match_clean, formated_display_formula, latex_table_match_s, html_table_match_s, order_match_single] = result
-
 
             if order_match_single:
                 order_match.append(order_match_single)
@@ -365,11 +348,13 @@ class Omnidocbenchend2endEvaluator():
             sample = samples.get(element)
 
             for metric in metircs_dict[element]['metric']:
-                
                 metric_val = METRIC_REGISTRY.get(metric)
-                result_s = metric_val(sample).evaluate(group_info, f"{save_name}_{element}")
-                if isinstance(result_s, tuple) and len(result_s) > 1 and isinstance(result_s[1], dict):
-                    result.update(result_s[1])
+
+                sample,result_s = metric_val(sample).evaluate(group_info, f"{save_name}_{element}")
+                if result_s:
+                    result.update(result_s)
+                # if isinstance(result_s, tuple) and len(result_s) > 1 and isinstance(result_s[1], dict):
+                #     result.update(result_s[1])    
             if result:
                 print(f"{element}")
                 show_result(result)
@@ -385,6 +370,7 @@ class Omnidocbenchend2endEvaluator():
                 'page':page_result
             }
 
+        dict_list = []
         save_dict={}
         en_overall=[]
         ch_overall=[]
@@ -404,9 +390,10 @@ class Omnidocbenchend2endEvaluator():
         
         save_dict['overall_EN'] = sum(en_overall) / len(en_overall)
         save_dict['overall_CH'] = sum(ch_overall) / len(ch_overall)
-        df = pd.DataFrame(save_dict,index=['end2end',]).round(3)
+        dict_list.append(save_dict)
+        df = pd.DataFrame(dict_list,index=['end2end',]).round(3)
 
-        return save_dict
+        return df
 
 
 

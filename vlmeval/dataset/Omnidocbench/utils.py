@@ -506,6 +506,7 @@ code_block_reg = re.compile(
     re.DOTALL
 )
 
+
 def md_tex_filter(content):
     '''
     Input: 1 page md or tex content - String
@@ -514,9 +515,10 @@ def md_tex_filter(content):
     content = re.sub(img_pattern, '', content)  # remove image
     content = remove_markdown_fences(content)   # remove markdown fences
     content = replace_repeated_chars(content) # replace all consecutive characters
+    
+   
 
     pred_all = []
-
     latex_table_array, table_positions = extract_tex_table(content)
     for latex_table, position in zip(latex_table_array, table_positions):
         position = [position[0], position[0]+len(latex_table)]   # !!!
@@ -526,7 +528,9 @@ def md_tex_filter(content):
             'content': latex_table
         })
         content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]  # replace latex table with space
- 
+
+    
+    # extract html table  
     html_table_array, table_positions = extract_html_table(content)
     for html_table, position in zip(html_table_array, table_positions):
         position = [position[0], position[0]+len(html_table)]
@@ -536,7 +540,85 @@ def md_tex_filter(content):
             'content': html_table
         })
         content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]  # replace html table with space
-   
+
+    # extract interline formula
+    display_matches = display_reg.finditer(content)
+    for match in display_matches:
+        matched = match.group(0)
+        if matched:
+            single_line = ''.join(matched.split())
+            position = [match.start(), match.end()]
+            # replace $$ with \[\]
+            dollar_pattern = re.compile(r'\$\$(.*?)\$\$|\$(.*?)\$|\\\((.*?)\\\)', re.DOTALL)
+            sub_match = dollar_pattern.search(single_line)
+            if sub_match is None:
+                # pass
+                content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]
+                pred_all.append({
+                    'category_type': 'equation_isolated',
+                    'position': position,
+                    'content': single_line
+                })
+            elif sub_match.group(1):
+                single_line = re.sub(dollar_pattern, r'\\[\1\\]', single_line)
+                content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]  # replace equation with space
+                pred_all.append({
+                    'category_type': 'equation_isolated',
+                    'position': position,
+                    'content': single_line
+                })
+            else:
+                single_line = re.sub(dollar_pattern, r'\\[\2\3\\]', single_line)
+                pred_all.append({
+                    'category_type': 'equation_isolated',
+                    'position': position,
+                    'content': single_line,
+                    'fine_category_type': 'equation_inline'
+                })
+         
+
+    # extract md table with ||
+    md_table_mathces = md_table_reg.findall(content+'\n')
+    if len(md_table_mathces) >= 2:
+        # print("md table found!")
+        # print("content:", content)
+        content = convert_markdown_to_html(content)
+        # print('----------content after converting md table to html:', content)
+        html_table_matches = html_table_reg.finditer(content)
+        if html_table_matches:
+            for match in html_table_matches:
+                matched = match.group(0)
+                position = [match.start(), match.end()]
+                # content = content.replace(match, '')
+                # print('content after removing the md table:', content)
+                content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]  # replace md table with space
+                pred_all.append({
+                    'category_type': 'html_table',
+                    'position': position,
+                    'content': matched.strip(),
+                    'fine_category_type': 'md2html_table'
+                })
+    # print('---------After md table: \n', content)
+
+    # extract code blocks
+    code_matches = code_block_reg.finditer(content)
+    if code_matches:
+        for match in code_matches:
+            position = [match.start(), match.end()]
+            language = match.group(1)
+            code = match.group(2).strip()
+            # content = content.replace(match.group(0), '')
+            content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]  # replace code block with space
+            pred_all.append({
+                'category_type': 'text_all',
+                'position': position,
+                'content': code,
+                'language': language,
+                'fine_category_type': 'code'
+            })
+
+
+    # Remove latex style
     content = re.sub(r'\\title\{(.*?)\}', r'\1', content)
     content = re.sub(r'\\title\s*\{\s*(.*?)\s*\}', r'\1', content, flags=re.DOTALL)
     content = re.sub(r'\\text\s*\{\s*(.*?)\s*\}', r'\1', content, flags=re.DOTALL)
@@ -565,6 +647,7 @@ def md_tex_filter(content):
                     'position': position,
                     'content': text,
                 })
+         
             elif text.startswith('$') and text.endswith('$'):
                 if text.replace('$', '').strip():
                     pred_all.append({
@@ -581,9 +664,6 @@ def md_tex_filter(content):
                         'content': text,
                         'fine_category_type': 'text_block'
                     })
-                # if '$' in text:
-                #     for formula in re.findall(r'\$(.*?)\$', text):
-                #         formula_array.append(formula)
 
     pred_dataset = defaultdict(list)
     pred_all = sorted(pred_all, key=lambda x: x['position'][0])
@@ -591,8 +671,6 @@ def md_tex_filter(content):
         pred_dataset[item['category_type']].append(item)
     # pdb.set_trace()
     return pred_dataset
-
-
 
 
 def extract_tex_table(content):

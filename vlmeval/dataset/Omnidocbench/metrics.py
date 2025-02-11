@@ -7,7 +7,7 @@ import pdb
 import copy
 import pandas as pd
 
-from .utils import save_paired_result,normalized_table
+from utils import save_paired_result,normalized_table
 from collections import defaultdict
 from apted.helpers import Tree
 from apted import APTED, Config
@@ -214,16 +214,13 @@ class call_TEDS():
                 structure_only_result[group_name] = 'NaN'
                 print(f'Warning: Empyty matched samples for {group_name}.')
 
-        return {'TEDS': result, 'TEDS_structure_only': structure_only_result}
+        return samples,{'TEDS': result, 'TEDS_structure_only': structure_only_result}
 
 
 @METRIC_REGISTRY.register("BLEU")
 class call_BLEU():
     def __init__(self, samples):
-        self.samples = samples
-        print(f'samples_type:{type(samples)}')
-        print(f'samples_[0]_type:{type(samples)}')
-     
+        self.samples = samples 
     def evaluate(self, group_info=[], save_name='default'):
         group_samples = get_groups(self.samples, group_info)
         result = {}
@@ -236,24 +233,19 @@ class call_BLEU():
                 pred = sample['norm_pred'] if sample.get('norm_pred') else sample['pred']
                 predictions.append(pred)
                 references.append(gt)
-        
-        print(f"Predictions length: {len(predictions)}")
-        print(f"References length: {len(references)}")
 
         if not predictions or not any(predictions) or not references or not any(references):
             bleu_score = 0
-            print(f"Predictions 或 References 为空或全为空字符串，BLEU 分数设为 0")
         else:
             try:
                 bleu_results = bleu.compute(predictions=predictions, references=references)
                 bleu_score = bleu_results["bleu"]
             except ZeroDivisionError:
                 bleu_score = 0
-                print(f"计算 BLEU 分数时出现除零错误，BLEU 分数设为 0")
 
         result[group_name] = bleu_score
         
-        return {'BLEU': result}
+        return self.samples,{'BLEU': result}
 
 @METRIC_REGISTRY.register("METEOR")
 class call_METEOR():
@@ -273,7 +265,7 @@ class call_METEOR():
             meteor_results = meteor.compute(predictions=predictions, references=references)
             result[group_name] = meteor_results['meteor']
         
-        return {'METEOR': result}
+        return self.samples,{'METEOR': result}
 
 
 @METRIC_REGISTRY.register("Edit_dist")
@@ -308,7 +300,7 @@ class call_Edit_dist():
         up_total_avg = df.groupby("image_name").apply(lambda x: x['Edit_num'].sum() / x['upper_len'].sum()) # page level, sum of edits divided by sum of max(gt,pred) lengths for each sample
         per_img_score = up_total_avg.to_dict()       
 
-        return {'Edit_dist': {'ALL_page_avg': up_total_avg.mean()}}
+        return samples,{'Edit_dist': {'ALL_page_avg': up_total_avg.mean()}}
     
    
 @METRIC_REGISTRY.register("CDM")
@@ -326,10 +318,8 @@ class call_CDM():
             sample['gt'] = sample['gt'].lstrip("$$").rstrip("$$").strip()
             sample['pred'] = sample['pred'].split("```latex")[-1].split("```")[0]
             sample['pred'] = sample['pred'].lstrip("$$").rstrip("$$").strip()
-
-        # with open(f'result/{save_name}_formula.json', 'w', encoding='utf-8') as f:
-        #     json.dump(cdm_samples, f, indent=4, ensure_ascii=False)
-        return  False
+            
+        return  self.samples,False
 
 
 class TEDS(object):
@@ -463,6 +453,7 @@ class TableTree(Tree):
             result += child.bracket()
         return "{{{}}}".format(result)
 
+
 class recogition_end2end_base_dataset():
     def __init__(self, samples):
         img_id = 0
@@ -474,6 +465,7 @@ class recogition_end2end_base_dataset():
     def __getitem__(self, idx):
         return self.samples[idx]
 
+
 class recogition_end2end_table_dataset(recogition_end2end_base_dataset):
     def __init__(self, samples, table_format):
         self.pred_table_format = table_format
@@ -481,20 +473,18 @@ class recogition_end2end_table_dataset(recogition_end2end_base_dataset):
 
     def normalize_data(self, samples):
         img_id = 0
-
         for sample in samples:
             p = sample['pred']
             r = sample['gt']
             p = normalized_table(p, self.pred_table_format)
             r = normalized_table(r)
-            # print('p:\n', p)
-            # print('r:\n', r)
             sample['norm_gt'] = r
             sample['norm_pred'] = p
             sample['img_id'] = sample['img_id'] if sample.get('img_id') else img_id
             img_id += 1
 
         return samples
+
 
 
 
