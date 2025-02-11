@@ -105,7 +105,7 @@ class ImageShortQADataset(ImageBaseDataset):
     TYPE = 'Short'
 
     DATASET_URL = {
-        'LiveMMBench_OCR': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_OCR.tsv',
+        'LiveMMBench_Infographic': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Infographic.tsv',
         'LiveMMBench_Perception': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Perception.tsv',
         'LiveMMBench_Reasoning': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Reasoning.tsv',
     }
