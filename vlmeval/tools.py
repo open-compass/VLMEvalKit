@@ -63,6 +63,11 @@ dataset_levels = {
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
         ('SEEDBench2', 'acc.csv')
+    ], 
+    'live': [
+        ('LiveMMBench_VQ_circular', 'acc.csv'), ('LiveMMBench_Spatial_circular', 'acc.csv'), 
+        ('LiveMMBench_Reasoning_circular', 'acc.csv'), ('LiveMMBench_Infographic', 'acc.csv'), 
+        ('LiveMMBench_Perception', 'acc.csv'), ('LiveMMBench_Creation', 'merged_score.json'), 
     ]
 }
 

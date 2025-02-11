@@ -108,6 +108,7 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Infographic': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Infographic.tsv',
         'LiveMMBench_Perception': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Perception.tsv',
         'LiveMMBench_Reasoning': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Reasoning.tsv',
+        'LiveMMBench_Reasoning_circular': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Reasoning_circular.tsv',
     }
 
     DATASET_MD5 = {}
