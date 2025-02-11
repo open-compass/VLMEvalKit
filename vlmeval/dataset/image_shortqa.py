@@ -158,7 +158,6 @@ class ImageShortQADataset(ImageBaseDataset):
                     lines = [data[data['g_index'] == x] for x in main_data['index']]
                     indices = [x.iloc[0]['g_index'] for x in lines if x.iloc[0]['g_index'] not in ans_map] 
                     lines = [x for x in lines if x.iloc[0]['g_index'] not in ans_map]
-                    print([type(x) for x in lines], flush=True)
                     tups = [(model, x) for x in lines]
                     data = main_data
 
