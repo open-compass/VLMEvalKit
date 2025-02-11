@@ -31,7 +31,7 @@ class Claude_Wrapper(BaseAPI):
                  system_prompt: str = None,
                  verbose: bool = True,
                  temperature: float = 0,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 2048,
                  **kwargs):
 
         if os.environ.get('ANTHROPIC_BACKEND', '') == 'official':
