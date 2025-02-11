@@ -57,6 +57,7 @@ dataset_levels = {
         ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv'), ('MTVQA_TEST', 'acc.json'),
         ('Q-Bench1_VAL', 'acc.csv'), ('A-Bench_VAL', 'acc.csv'), ('R-Bench-Dis', 'acc.csv'),
         ('MathVision', 'score.csv'), ('MathVerse_MINI_Vision_Only', 'score.csv'), ('DynaMath', 'score.csv'),
+        ('WeMath', 'score.csv'), ('LogicVista', 'score.csv'),
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
