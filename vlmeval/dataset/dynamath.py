@@ -114,8 +114,14 @@ def DynaMath_auxeval(model, line):
 class Dynamath(ImageBaseDataset):
 
     TYPE = 'VQA'
-    DATASET_URL = {'DynaMath': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv'}
-    DATASET_MD5 = {'DynaMath': 'b8425ad9a7114571fc9366e013699494'}
+    DATASET_URL = {
+        'DynaMath': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
+        'DynaMath_noprompt': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
+    }
+    DATASET_MD5 = {
+        'DynaMath': 'b8425ad9a7114571fc9366e013699494',
+        'DynaMath_noprompt': 'b8425ad9a7114571fc9366e013699494',
+    }
     GUIDE = """
 ## Answer Instruction Please provide an answer to the question outlined above. Your response should adhere \
 to the following JSON format, which includes two keys: 'solution' and 'short answer'. The 'solution' key can contain \
@@ -148,7 +154,8 @@ Example of expected JSON response format:
         else:
             inst = "Float numbers in the answer should be formatted as three-digit floating-point numbers."
 
-        prompt = prompt + self.GUIDE.format(INST=inst) + self.TEXT_EXAMPLE
+        if 'noprompt' not in self.dataset_name:
+            prompt = prompt + self.GUIDE.format(INST=inst) + self.TEXT_EXAMPLE
 
         msgs = []
         if isinstance(tgt_path, list):
