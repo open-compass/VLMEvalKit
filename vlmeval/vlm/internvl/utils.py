@@ -264,7 +264,7 @@ def build_video_prompt(prompt, dataset=None, max_frames=64):
         prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
     if listinstr(['MMBench-Video'], dataset):
         prompt = prompt.replace('\nAnswer:', '')
-    elif listinstr(['Video-MME'], dataset):
+    elif listinstr(['Video-MME', 'WorldSense'], dataset):
         prompt = prompt.replace('\nAnswer:', '')
         prompt += "\nAnswer with the option's letter from the given choices directly."
     elif listinstr(['MVBench'], dataset):

@@ -116,7 +116,7 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4', 'LongVideoBench']
+        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4', 'LongVideoBench', 'WorldSense']
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod
