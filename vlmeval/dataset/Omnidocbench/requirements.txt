@@ -1,0 +1,13 @@
+torchvision
+Levenshtein
+BeautifulSoup4
+pylatexenc
+scipy
+evaluate
+apted
+lxml
+func_timeout
+accelerate>=0.26.0
+jmespath
+qwen_vl_utils
+nltk
