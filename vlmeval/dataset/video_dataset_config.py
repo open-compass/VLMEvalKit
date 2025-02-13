@@ -16,6 +16,12 @@ mvbench_dataset = {
     'MVBench_MP4_1fps': partial(MVBench_MP4, dataset='MVBench_MP4', fps=1.0),
 }
 
+tamperbench_dataset = {
+    'MVTamperBench_8frame': partial(MVTamperBench, dataset='MVTamperBench', nframe=8),
+    'MVTamperBenchStart_8frame': partial(MVTamperBench, dataset='MVTamperBenchStart', nframe=8),
+    'MVTamperBenchEnd_8frame': partial(MVTamperBench, dataset='MVTamperBenchEnd', nframe=8),
+}
+
 videomme_dataset = {
     'Video-MME_8frame': partial(VideoMME, dataset='Video-MME', nframe=8),
     'Video-MME_8frame_subs': partial(VideoMME, dataset='Video-MME', nframe=8, use_subtitle=True),
@@ -95,7 +101,7 @@ cgbench_dataset = {
 supported_video_datasets = {}
 
 dataset_groups = [
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
+    mmbench_video_dataset, mvbench_dataset, tamperbench_dataset, videomme_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset
 ]
 
