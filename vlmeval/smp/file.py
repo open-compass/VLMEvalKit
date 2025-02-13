@@ -353,9 +353,8 @@ def fetch_aux_files(eval_file):
         model_name = osp.basename(osp.dirname(file_root))
     else:
         model_name = eval_id
-
-    suffix = file_name.split('.')[-1]
-    dataset_name = file_name.split('.')[0][len(model_name) + 1:]
+    
+    dataset_name = osp.splitext(file_name)[0][len(model_name) + 1:]
     from vlmeval.dataset import SUPPORTED_DATASETS
     to_handle = []
     for d in SUPPORTED_DATASETS:
