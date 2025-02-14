@@ -298,6 +298,9 @@ def parse_file(s):
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
+        # 添加对webp的支持
+        if suffix == '.webp':
+            return ('image/webp', s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
         return (mime, s)
     elif s.startswith('data:image/'):
@@ -314,7 +317,10 @@ def parse_file(s):
         return parse_file(tgt)
     elif validators.url(s):
         suffix = osp.splitext(s)[1].lower()
-        if suffix in mimetypes.types_map:
+        # 添加对webp的支持
+        if suffix == '.webp':
+            mime = 'image/webp'
+        elif suffix in mimetypes.types_map:
             mime = mimetypes.types_map[suffix]
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
@@ -323,6 +329,7 @@ def parse_file(s):
             return (mime, tgt)
         else:
             return ('url', s)
+
     else:
         return (None, s)
 
