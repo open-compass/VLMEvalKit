@@ -26,7 +26,7 @@ class JTVLChatWrapper(BaseAPI):
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0.7,
-                 max_tokens: int = 256,
+                 max_tokens: int = 2048,
                  proxy: str = None,
                  **kwargs):
         self.model = model

@@ -33,7 +33,7 @@ def images_to_md(images):
     return '\n\n'.join([image_to_mdstring(image) for image in images])
 
 
-def mmqa_display(question, target_size=768):
+def mmqa_display(question, target_size=2048):
     question = {k.lower() if len(k) > 1 else k: v for k, v in question.items()}
     keys = list(question.keys())
     keys = [k for k in keys if k not in ['index', 'image']]

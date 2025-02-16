@@ -332,6 +332,10 @@ def eval_vanilla(model, item, dataset_name=None):
 
 # For Circular Evaluation
 def eval_circular_group(model, sub_data, dataset_name=None):
+    prefetched = prefetch_circular_group(sub_data, verbose=True)
+    if isinstance(prefetched, dict) and 'hit' in prefetched:
+        return prefetched
+    
     res, GT, PRED = prefetch_circular_group(sub_data, verbose=True)
     if res is not None:
         return res

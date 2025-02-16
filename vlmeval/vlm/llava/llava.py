@@ -67,7 +67,7 @@ class LLaVA(BaseModel):
         kwargs_default = dict(
             do_sample=False,
             temperature=0,
-            max_new_tokens=512,
+            max_new_tokens=2048,
             top_p=None,
             num_beams=1,
             use_cache=True,
@@ -286,7 +286,7 @@ class LLaVA_Next(BaseModel):
         model = model.eval()
         self.model = model.cuda()
         kwargs_default = dict(
-            do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1
+            do_sample=False, temperature=0, max_new_tokens=2048, top_p=None, num_beams=1
         )
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
@@ -485,7 +485,7 @@ class LLaVA_Next2(BaseModel):
             images=image_tensor,
             do_sample=False,
             temperature=0,
-            max_new_tokens=512,
+            max_new_tokens=2048,
             stopping_criteria=[stopping_criteria],
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
@@ -666,7 +666,7 @@ class LLaVA_OneVision(BaseModel):
             image_sizes=image_sizes,  # Pass the image sizes here
             do_sample=False,
             temperature=0,
-            max_new_tokens=512,
+            max_new_tokens=2048,
             stopping_criteria=[stopping_criteria],
         )
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
@@ -738,7 +738,7 @@ class LLaVA_OneVision(BaseModel):
             image_sizes=image_sizes,  # Pass the image sizes here
             do_sample=False,
             temperature=0,
-            max_new_tokens=512,
+            max_new_tokens=2048,
             modalities=modalities,
             stopping_criteria=[stopping_criteria],
         )
@@ -821,7 +821,7 @@ class LLaVA_OneVision_HF(BaseModel):
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
         inputs = self.processor(images=images, text=prompt, return_tensors="pt").to('cuda', torch.float16)
 
-        output = self.model.generate(**inputs, max_new_tokens=512)
+        output = self.model.generate(**inputs, max_new_tokens=2048)
         return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
 
     def generate_inner_video(self, message, dataset=None):
@@ -858,7 +858,7 @@ class LLaVA_OneVision_HF(BaseModel):
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
 
         inputs = self.processor(videos=video_frames, text=prompt, return_tensors="pt").to('cuda', torch.float16)
-        output = self.model.generate(**inputs, max_new_tokens=512)
+        output = self.model.generate(**inputs, max_new_tokens=2048)
         return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
 
     def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):

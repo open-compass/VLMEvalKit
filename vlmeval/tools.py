@@ -57,11 +57,17 @@ dataset_levels = {
         ('SEEDBench2_Plus', 'acc.csv'), ('BLINK', 'acc.csv'), ('MTVQA_TEST', 'acc.json'),
         ('Q-Bench1_VAL', 'acc.csv'), ('A-Bench_VAL', 'acc.csv'), ('R-Bench-Dis', 'acc.csv'),
         ('MathVision', 'score.csv'), ('MathVerse_MINI_Vision_Only', 'score.csv'), ('DynaMath', 'score.csv'),
+        ('WeMath', 'score.csv'), ('LogicVista', 'score.csv'),
     ],
     'l3': [
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
         ('SEEDBench2', 'acc.csv')
+    ], 
+    'live': [
+        ('LiveMMBench_VQ_circular', 'acc.csv'), ('LiveMMBench_Spatial_circular', 'acc.csv'), 
+        ('LiveMMBench_Reasoning_circular', 'acc.csv'), ('LiveMMBench_Infographic', 'acc.csv'), 
+        ('LiveMMBench_Perception', 'acc.csv'), ('LiveMMBench_Creation', 'merged_score.json'), 
     ]
 }
 
@@ -167,14 +173,17 @@ def CIRCULAR(inp):
     
     def abnormal_entry(line):
         choices = {k: line[k] for k in string.ascii_uppercase if k in line and not pd.isna(line[k])}
+        has_label = False
         for k in choices:
             s = proc_str(choices[k]).split()
             hit_words = [x for x in s if x in choices]
             hit_words = set(hit_words)
             if len(hit_words) > 1:
                 return True
-        return False
-        
+            if choices[k] in string.ascii_uppercase:
+                has_label = True
+        return has_label
+
     assert inp.endswith('.tsv')
     data = load(inp)
     OFFSET = 1e6
@@ -201,7 +210,7 @@ def CIRCULAR(inp):
         flag = abnormal_entry(item)
         if flag or this_n_opt == 0:
             groups['abnormal'].append(item)
-        elif ord(item['answer']) - ord('A') + 1 > this_n_opt:
+        elif len(item['answer']) > 1 or item['answer'] not in string.ascii_uppercase[:this_n_opt]:
             groups['abnormal'].append(item)
         else:
             groups[this_n_opt].append(item)
@@ -422,6 +431,15 @@ def parse_args_scan():
     return args, unknownargs
 
 
+def parse_args_sync():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--src', type=str, default='/home/kenny/mmeval')
+    parser.add_argument('--tgt', type=str, default='/home/kenny/volc/mmeval')
+    parser.add_argument('--data', type=str, nargs='+')
+    args, unknownargs = parser.parse_known_args()
+    return args, unknownargs
+
+
 def MERGE_PKL(pkl_dir, world_size=1):
     prefs = []
     for ws in list(range(1, 9)):
@@ -444,7 +462,7 @@ def MERGE_PKL(pkl_dir, world_size=1):
         print(f'Merged {len(res_all[k])} records into {pkl_dir}/{dump_prefs[0]}{k}')
 
     
-def SCAN(root, model, dataset):
+def SCAN_ONE(root, model, dataset):
     from termcolor import colored
     FAIL_MSG = 'Failed to obtain answer via API.'
     root = osp.join(root, model)
@@ -484,11 +502,28 @@ def SCAN(root, model, dataset):
                 if len(sub):
                     print(f'Evaluation ({eval_file}): {len(sub)} out of {len(data)} failed.')
             else:
-                bad = [x for x in data['log'] if FAIL_MSG in str(x)]
-                if len(bad):
-                    print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
+                if 'log' in data:
+                    bad = [x for x in data['log'] if FAIL_MSG in str(x)]
+                    if len(bad):
+                        print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
     else:
         print(colored(f'Model {model} x Dataset {dataset} Inference Result Missing! ', 'red'))
+
+
+def SCAN(root, models, datasets):
+    for m in models:
+        if not osp.exists(osp.join(root, m)):
+            warnings.warn(f'Model {m} not found in {root}')
+            continue
+        cur_datasets = []
+        if len(datasets) == 0:
+            for d in SUPPORTED_DATASETS:
+                if osp.exists(osp.join(root, m, f'{m}_{d}.xlsx')):
+                    cur_datasets.append(d)
+        else:
+            cur_datasets = datasets
+        for d in cur_datasets:
+            SCAN_ONE(root, m, d)
 
 
 def cli():
@@ -576,14 +611,9 @@ def cli():
                 models.extend([x.split()[0] for x in lines if len(x.split()) >= 1])
             else:
                 models.append(m)
+        assert len(models)
         datasets = args.data
-        assert len(datasets)
-        for m in models:
-            if not osp.exists(osp.join(root, m)):
-                warnings.warn(f'Model {m} not found in {root}')
-                continue
-            for d in datasets:
-                SCAN(root, m, d)
+        SCAN(root, models, datasets if datasets is not None else [])
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)

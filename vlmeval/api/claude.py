@@ -22,20 +22,18 @@ class Claude_Wrapper(BaseAPI):
 
     is_api: bool = True
 
-    def __init__(
-        self,
-        backend: str = 'alles',
-        model: str = 'claude-3-opus-20240229',
-        key: str = None,
-        retry: int = 10,
-        timeout: int = 60,
-        wait: int = 3,
-        system_prompt: str = None,
-        verbose: bool = True,
-        temperature: float = 0,
-        max_tokens: int = 1024,
-        **kwargs,
-    ):
+    def __init__(self,
+                 backend: str = 'alles',
+                 model: str = 'claude-3-opus-20240229',
+                 key: str = None,
+                 retry: int = 10,
+                 timeout: int = 60,
+                 wait: int = 3,
+                 system_prompt: str = None,
+                 verbose: bool = True,
+                 temperature: float = 0,
+                 max_tokens: int = 2048,
+                 **kwargs):
 
         if os.environ.get('ANTHROPIC_BACKEND', '') == 'official':
             backend = 'official'

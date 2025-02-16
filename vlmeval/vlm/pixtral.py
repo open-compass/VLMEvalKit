@@ -32,7 +32,7 @@ class Pixtral(BaseModel):
         model = Transformer.from_folder(cache_path, device='cpu')
         model.cuda()
         self.model = model
-        self.max_tokens = 512
+        self.max_tokens = 2048
 
     def generate_inner(self, message, dataset=None):
         try:
