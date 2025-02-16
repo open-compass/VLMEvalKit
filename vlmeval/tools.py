@@ -462,7 +462,7 @@ def MERGE_PKL(pkl_dir, world_size=1):
         print(f'Merged {len(res_all[k])} records into {pkl_dir}/{dump_prefs[0]}{k}')
 
     
-def SCAN(root, model, dataset):
+def SCAN_ONE(root, model, dataset):
     from termcolor import colored
     FAIL_MSG = 'Failed to obtain answer via API.'
     root = osp.join(root, model)
@@ -502,11 +502,28 @@ def SCAN(root, model, dataset):
                 if len(sub):
                     print(f'Evaluation ({eval_file}): {len(sub)} out of {len(data)} failed.')
             else:
-                bad = [x for x in data['log'] if FAIL_MSG in str(x)]
-                if len(bad):
-                    print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
+                if 'log' in data:
+                    bad = [x for x in data['log'] if FAIL_MSG in str(x)]
+                    if len(bad):
+                        print(f'Evaluation ({eval_file}): {len(bad)} out of {len(data)} failed.')
     else:
         print(colored(f'Model {model} x Dataset {dataset} Inference Result Missing! ', 'red'))
+
+
+def SCAN(root, models, datasets):
+    for m in models:
+        if not osp.exists(osp.join(root, m)):
+            warnings.warn(f'Model {m} not found in {root}')
+            continue
+        cur_datasets = []
+        if len(datasets) == 0:
+            for d in SUPPORTED_DATASETS:
+                if osp.exists(osp.join(root, m, f'{m}_{d}.xlsx')):
+                    cur_datasets.append(d)
+        else:
+            cur_datasets = datasets
+        for d in cur_datasets:
+            SCAN_ONE(root, m, d)
 
 
 def cli():
@@ -594,15 +611,9 @@ def cli():
                 models.extend([x.split()[0] for x in lines if len(x.split()) >= 1])
             else:
                 models.append(m)
+        assert len(models)
         datasets = args.data
-        assert len(datasets)
-        for m in models:
-            if not osp.exists(osp.join(root, m)):
-                warnings.warn(f'Model {m} not found in {root}')
-                continue
-            for d in datasets:
-                SCAN(root, m, d)
-    
+        SCAN(root, models, datasets if datasets is not None else [])
     else:
         logger.error('WARNING: command error!')
         logger.info(CLI_HELP_MSG)
