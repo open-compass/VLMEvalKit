@@ -121,7 +121,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
-        'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
+        'SEEDBench2_Plus': '7cb2323950d71f049df70e5162062af3',
         # ScienceQA
         'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
         'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',

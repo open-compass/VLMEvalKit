@@ -27,6 +27,7 @@ class Claude_Wrapper(BaseAPI):
                  model: str = 'claude-3-opus-20240229',
                  key: str = None,
                  retry: int = 10,
+                 timeout: int = 60,
                  wait: int = 3,
                  system_prompt: str = None,
                  verbose: bool = True,
@@ -44,6 +45,7 @@ class Claude_Wrapper(BaseAPI):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.headers = alles_headers if backend == 'alles' else official_headers
+        self.timeout = timeout
 
         if key is not None:
             self.key = key
@@ -119,7 +121,7 @@ class Claude_Wrapper(BaseAPI):
         if self.system_prompt is not None:
             payload['system'] = self.system_prompt
 
-        response = requests.request('POST', self.url, headers=self.headers, data=json.dumps(payload))
+        response = requests.request('POST', self.url, headers=self.headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg

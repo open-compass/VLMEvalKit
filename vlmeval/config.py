@@ -88,6 +88,7 @@ api_models = {
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10, verbose=False),
+    'Claude3-5V_Sonnet_20241022_tem07': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0.7, retry=10, verbose=False),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     'GLM4V_PLUS': partial(GLMVisionAPI, model='glm-4v-plus', temperature=0, retry=10),
@@ -358,7 +359,13 @@ ovis_series = {
     'Ovis1.5-Gemma2-9B': partial(Ovis, model_path='AIDC-AI/Ovis1.5-Gemma2-9B'),
     'Ovis1.6-Gemma2-9B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Gemma2-9B'),
     'Ovis1.6-Llama3.2-3B': partial(Ovis1_6, model_path='AIDC-AI/Ovis1.6-Llama3.2-3B'),
-    'Ovis1.6-Gemma2-27B': partial(Ovis1_6_Plus, model_path='AIDC-AI/Ovis1.6-Gemma2-27B')
+    'Ovis1.6-Gemma2-27B': partial(Ovis1_6_Plus, model_path='AIDC-AI/Ovis1.6-Gemma2-27B'),
+    'Ovis2-1B': partial(Ovis2, model_path='AIDC-AI/Ovis2-1B'),
+    'Ovis2-2B': partial(Ovis2, model_path='AIDC-AI/Ovis2-2B'),
+    'Ovis2-4B': partial(Ovis2, model_path='AIDC-AI/Ovis2-4B'),
+    'Ovis2-8B': partial(Ovis2, model_path='AIDC-AI/Ovis2-8B'),
+    'Ovis2-16B': partial(Ovis2, model_path='AIDC-AI/Ovis2-16B'),
+    'Ovis2-34B': partial(Ovis2, model_path='AIDC-AI/Ovis2-34B')
 }
 
 mantis_series = {
