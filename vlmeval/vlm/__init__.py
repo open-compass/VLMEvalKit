@@ -43,7 +43,7 @@ from .cambrian import Cambrian
 from .chameleon import Chameleon
 from .video_llm import VideoLLaVA, VideoLLaVA_HF, Chatunivi, VideoChatGPT, LLaMAVID, VideoChat2_HD, PLLaVA
 from .vila import VILA
-from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus
+from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
