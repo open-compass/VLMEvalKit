@@ -5,6 +5,7 @@ import pandas as pd
 import Levenshtein
 import tempfile
 import base64
+from tqdm import tqdm
 import torch.distributed as dist
 from ..image_base import ImageBaseDataset
 from ...smp import *
@@ -12,6 +13,7 @@ from ...smp import *
 from .utils import match_gt2pred_simple, match_gt2pred_no_split,match_gt2pred_quick,md_tex_filter
 from .metrics import show_result, get_full_labels_results, get_page_split
 from .metrics import TEDS,METRIC_REGISTRY,recogition_end2end_base_dataset,recogition_end2end_table_dataset
+from .data_preprocess import clean_string,normalized_formula,textblock2unicode,normalized_table
 
 from func_timeout import FunctionTimedOut, func_timeout
 
@@ -66,18 +68,24 @@ class OmniDocBench(ImageBaseDataset):
         
     def evaluate(self, eval_file, **judge_kwargs):
         tsv_path=self.data_path
-        evaluator=Omnidocbenchend2endEvaluator(eval_file,tsv_path)
-        metrics=evaluator.score()
-        return metrics
+        End2end_evaluator=end2end_evaluator(eval_file,tsv_path)
+        Table_evalutor=table_evalutor(eval_file,tsv_path)
+
+        metrics_all=End2end_evaluator.score()
+        metircs_table=Table_evalutor.score()
+
+        return metrics_all
 
 
-class Omnidocbenchend2endEvaluator():
+class end2end_evaluator():
     def __init__(self,
                  eval_file,
                  tsv_path,
                  match_method:str='quick_match',
                  filter_types:dict=None):
-        
+        self.result_foler='../../../outputs/OmniDocBench'
+        if not os.path.exists(self.result_foler):
+            os.makedirs(self.result_foler)
         self.eval_file=eval_file
         self.match_method=match_method
         self.references=[]
@@ -96,8 +104,7 @@ class Omnidocbenchend2endEvaluator():
         references = load(tsv_path)['answer'].tolist()
 
         load_success,load_fail=0,0
-        # str->dict
-        for i,ans in enumerate(references):
+        for i,ans in tqdm(enumerate(references),desc='Loading data'):
             try:
                 ans = json.loads(ans)
                 load_success+=1
@@ -330,7 +337,6 @@ class Omnidocbenchend2endEvaluator():
             
         return [plain_text_match_clean, display_formula_match_s, latex_table_match_s, html_table_match_s, order_match_single]  
 
-
     def process_generated_metric_results(self,samples,save_name:str='end2end_quick_match'):
         
         result_all={}
@@ -345,30 +351,40 @@ class Omnidocbenchend2endEvaluator():
         for element in metircs_dict.keys():
             result={}
             group_info=metircs_dict[element].get('group',[])
-            sample = samples.get(element)
+            samples = samples.get(element)
 
             for metric in metircs_dict[element]['metric']:
                 metric_val = METRIC_REGISTRY.get(metric)
 
-                sample,result_s = metric_val(sample).evaluate(group_info, f"{save_name}_{element}")
+                samples,result_s = metric_val(samples).evaluate(group_info, f"{save_name}_{element}")
                 if result_s:
                     result.update(result_s)
-                # if isinstance(result_s, tuple) and len(result_s) > 1 and isinstance(result_s[1], dict):
-                #     result.update(result_s[1])    
+  
             if result:
                 print(f"{element}")
                 show_result(result)
             result_all[element]={}
 
         
-            group_result=get_full_labels_results(sample)
-            page_result=get_page_split(sample,page_info)
+            group_result=get_full_labels_results(samples)
+            page_result=get_page_split(samples,page_info)
 
             result_all[element]={
                 'all':result,
                 'group':group_result,
                 'page':page_result
             }
+            if not os.path.exists('./output/OmniDocBench'):
+                os.makedirs('./output/OmniDocBench')
+            if isinstance(samples,list):
+                saved_samples=samples
+            else:
+                saved_samples=samples.samples
+            with open(os.path.join(self.result_foler,f'{save_name}_result.josn'),'w',encoding='utf-8') as f:
+                json.dump(saved_samples,f,indent=4,ensure_ascii=False)
+
+        with open(os.path.join(self.result_foler,f'{save_name}_metric_result.json'),'w',encoding='utf-8') as f:
+            json.dump(result_all,f,indent=4,ensure_ascii=False)
 
         dict_list = []
         save_dict={}
@@ -393,11 +409,163 @@ class Omnidocbenchend2endEvaluator():
         dict_list.append(save_dict)
         df = pd.DataFrame(dict_list,index=['end2end',]).round(3)
 
+        with open(os.path.join(self.result_foler,'End-to-End Evaluation.json'),'w',encoding='utf-8') as f:
+            json.dump(result_all,f,indent=4,ensure_ascii=False)
+        df.to_csv(os.path.join(self.result_foler,'overall.csv'))
+        print(f'The save path of overall.csv is :{os.path.join(self.result_foler,'End-to-End Evaluation.json')}')
         return df
 
 
+class table_evalutor():
+    def __init__(self,eval_file,tsv_path):
+
+        self.result_foler='../../../outputs/OmniDocBench'
+        if not os.path.exists(self.result_foler):
+            os.makedirs(self.result_foler)
+        gt_key='html'
+        pred_key='pred'
+        self.category_filter='table'
+        self.category_type='table'
+        self.metircs_list=['TEDS','Edit_dist']
+        self.gt_samples,self.table_samples=self.load_data(eval_file,tsv_path,pred_key,gt_key)
+        
+    def load_data(self,eval_file,gt_file,pred_key,gt_key):
+        samples=[]
+        preds=[]
+        predictions=pd.read_excel(eval_file)['prediction'].tolist()
+        gt_samples=pd.read_csv(gt_file,sep='\t')['answer'].tolist()
+        load_success,load_fail=0,0        
+        for i,gt_sample in tqdm(enumerate(gt_samples),desc='Loading data'):
+            try:
+                ans=json.loads(gt_sample)
+                for item in ans['layout_dets']:
+                    if item['category_type']=="table": 
+                        item['pred']=predictions[i]
+                        load_success+=1
+                        preds.append(ans)
+                
+            except json.JSONDecodeError as e:
+                load_fail+=1
+                continue
+        print(f'load_table_success:{load_success},load_table_fail:{load_fail}')
+
+        count=0
+        for pred in preds:
+            img_name = os.path.basename(pred['page_info']['image_path'])
+            for i, ann in enumerate(pred['layout_dets']):
+                if not ann.get(gt_key):
+                    continue
+                if self.category_filter:
+                    if ann['category_type'] not in self.category_filter:
+                        continue
+                if not ann.get(pred_key):
+                    # print(f'Cannot find pred for {img_name}. ann is {ann}')
+                    # pdb.set_trace()
+                    count += 1
+                    continue
+                else:
+                    gt_text = ann[gt_key]
+                    norm_gt = gt_text
+                    pred_text = ann[pred_key]
+                    norm_pred = pred_text
+                    if self.category_type:
+                        if self.category_type == 'text':
+                            norm_gt = clean_string(textblock2unicode(ann[gt_key]))
+                            norm_pred = clean_string(textblock2unicode(ann[pred_key]))
+                        elif self.category_type == 'formula':
+                            norm_gt = normalized_formula(ann[gt_key])
+                            norm_pred = normalized_formula(ann[pred_key])
+                        elif self.category_type == 'table':
+                            norm_gt = normalized_table(ann[gt_key], gt_key)
+                            norm_pred = normalized_table(ann[pred_key], gt_key)
+                        else:
+                            raise ValueError(f'Invalid category type: {self.category_type}')
+
+                samples.append({
+                    "gt": gt_text,
+                    "norm_gt": norm_gt,
+                    "gt_attribute": [ann['attribute']],
+                    'pred': pred_text,
+                    "norm_pred": norm_pred,
+                    'img_id': img_name
+                })
+        
+        print(f'Cannot find pred for {count} samples.')
+        return preds,samples
+        
+    def score(self)->dict:
+        metrics=self.process_generated_metric_results()
+        return metrics  
+    def process_generated_metric_results(self,save_name:str='OmniDocBench_table'):
+        p_scores={}
+        page_info={}
+        no_page_flag=False
+        samples=self.table_samples
+        pages=self.gt_samples
+       
+        for page in pages:
+            if 'page_info' not in page:
+                no_page_flag=True
+                break
+            img_path=os.path.basename(page['page_info']['image_path'])
+            page_info[img_path]=page['page_info']['page_attribute']
+
+        for metric in self.metircs_list:
+            metric_val=METRIC_REGISTRY.get(metric)
+            samples, result = metric_val(samples).evaluate({}, save_name)
+            if result:
+                p_scores.update(result)
+        show_result(p_scores)
+        group_result=get_full_labels_results(samples)
+        if no_page_flag:
+            page_result={}
+        else:
+            page_result=get_page_split(samples,page_info)
+
+        result_all={
+            'all':p_scores,
+            'group':group_result,
+            'page':page_result
+        }
+
+        with open(os.path.join(self.result_foler,f'{save_name}_metric_result.json'),'w',encoding='utf-8') as f:
+            json.dump(result_all,f,indent=4,ensure_ascii=False)
+        
+        dict_list=[]
+        dict_list.append(result_all["group"]["TEDS"])
+
+        df4 = pd.DataFrame(dict_list, index=['OmniDocBench_table'])
+        df4 = df4 * 100
+        df4 = df4.round(1)
+        selected_columns = df4[["language: table_en", "language: table_simplified_chinese", "language: table_en_ch_mixed", "line: full_line", "line: less_line", "line: fewer_line", "line: wireless_line", 
+                        "with_span: True", "with_span: False", "include_equation: True", "include_equation: False", "include_background: True", "include_background: False", "table_layout: vertical", "table_layout: horizontal"]]
+
+        selected_columns.to_csv(os.path.join(self.result_foler,'table_attribute.csv'))
+        print(f'The save path of table_attribute.csv is :{os.path.join(self.result_foler,'table_attribute.csv')} ')
+        selected_columns
 
 
+        return selected_columns
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    
+
+    
+        
 
 
 
