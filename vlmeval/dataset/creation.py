@@ -307,7 +307,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
 
     TYPE = 'CreationVQA'
     DATASET_URL = {
-        'LiveMMBench_Creation': 'https://opencompass.openxlab.space/utils/VLMEval/LiveMMBench_Creation.tsv'
+        'LiveMMBench_Creation': ''
     }
     DATASET_MD5 = {}
 

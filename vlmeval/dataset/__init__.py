@@ -38,7 +38,7 @@ from .cmmmu import CMMMU
 from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
-from .mmbench_c import CreationMMBenchDataset
+from .creation import CreationMMBenchDataset
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
