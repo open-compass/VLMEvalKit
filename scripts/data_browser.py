@@ -41,12 +41,20 @@ def mmqa_display(question, target_size=2048):
     idx = question.pop('index', 'XXX')
     text = f'\n- INDEX: {idx}\n'
 
-    images = question.pop('image')
-    if images[0] == '[' and images[-1] == ']':
-        images = eval(images)
+    if 'image' in question:
+        images = question.pop('image')
+        if images[0] == '[' and images[-1] == ']':
+            images = eval(images)
+        else:
+            images = [images]
     else:
-        images = [images]
-
+        images = question.pop('image_path')
+        if images[0] == '[' and images[-1] == ']':
+            images = eval(images)
+        else:
+            images = [images]
+        images = [encode_image_file_to_base64(x) for x in images]
+    
     qtext = question.pop('question', None)
     if qtext is not None:
         text += f'- QUESTION: {qtext}\n'
