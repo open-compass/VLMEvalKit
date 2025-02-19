@@ -652,7 +652,7 @@ class LongVITAWrapper(BaseModel):
     INTERLEAVE = True
     VIDEO_LLM = True
 
-    def __init__(self, model_path='VITA-MLLM/Long-VITA-16K_HF', **kwargs):
+    def __init__(self, model_path='VITA-MLLM/Long-VITA-16K_HF', max_num_frame=4096, **kwargs):
         assert model_path is not None
 
         self.default_params = {
@@ -662,9 +662,6 @@ class LongVITAWrapper(BaseModel):
             'repetition_penalty': 1.0,
             'do_sample': False,
             'max_new_tokens': 1024,
-            # 'best_of': 1,
-            # 'stream': False,
-            # 'tokens_to_generate': max_tokens,  
         }
 
         chat_template = """
@@ -705,7 +702,7 @@ class LongVITAWrapper(BaseModel):
         self.tokenizer = tokenizer
         self.image_processor = image_processor
 
-        max_num_frame = os.environ.get('MAX_NUM_FRAME', default=4096)
+        max_num_frame = os.environ.get('MAX_NUM_FRAME', default=max_num_frame)
         self.max_num_frame = int(max_num_frame)
         print(f"max_num_frame {self.max_num_frame}")
 
@@ -740,22 +737,15 @@ class LongVITAWrapper(BaseModel):
         text = text.replace("\nAnswer: ", "\n")
 
         if dataset == "OCRBench":
-            # text += "Offer a very short reply."
             text += "\nAnswer this question using the text in the image directly without any other context."
-            # text += "Answer the question using a single word or phrase."
-            # text += "Answer this question using the text in the image directly."
 
         elif dataset in ['MMMU_DEV_VAL', 'MMMU_TEST', "MMStar"]:
             text = text.replace("Please select the correct answer from the options above.", "").strip() + "\n"
-            # text += "Answer with the letter."
             text += "Answer with the option's letter from the given choices directly."
-            # text += "Answer with the given options directly."
-            # text += "Answer the question by selecting only one option from the given options."
 
         elif dataset in ['MVBench',]:
             text = text.replace("Only give the best option.Best option:(", "")
             text += "Answer with the letter."
-            # text += "Answer with the option's letter from the given choices directly."
 
         elif dataset in ['MMVet',]:
             pass
@@ -766,32 +756,20 @@ class LongVITAWrapper(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) in ['Y/N',]:
             text = text.replace("Answer the question with Yes or No.", "").strip() + "\n"
             text += "Answer yes or no."
-            # text += "\nAnswer the question using a single word or phrase.\n [/INST]"
-            # text = text.replace("Please answer yes or no.", "").strip() + "\n"
 
         elif dataset is not None and DATASET_TYPE(dataset) in ['MCQ',]:
             text = text.replace("Please select the correct answer from the options above.", "").strip() + "\n"
             text += "Answer with the letter."
-            # text += "Answer with the option's letter from the given choices directly."
-            # text += "Answer with the given options directly."
-            # text += "Answer the question by selecting only one option from the given options."
 
         elif dataset is not None and DATASET_TYPE(dataset) in ['VQA',]:
             pass
 
         elif dataset is not None and DATASET_TYPE(dataset) in ['Video-MCQ',]:
             text += "Offer a very short reply."
-            # text += "Please respond with only the letter of the correct answer."
-            # text += "Answer the question using few words or phrase."
-            # text += "Please provide your answer by stating the letter followed by the full option."
 
         else:
             text = text.replace("Answer the question using a single word or phrase.", "").strip() + "\n"
-            # text += "Offer a very short reply."
             text += "Answer the question using a single word or phrase."
-            # text += "Answer the question with a short phrase."
-            # text += Answer this question using the text in the image directly without any other context.
-            # text += Answer this question using the text in the image directly.
 
         return text, image_list, image_path_list, video_path_list
 

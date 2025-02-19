@@ -197,9 +197,9 @@ vita_series = {
 }
 
 long_vita_series = {
-    'Long-VITA-16K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-16K_HF'),
-    'Long-VITA-128K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-128K_HF'),
-    'Long-VITA-1M': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-1M_HF'),
+    'Long-VITA-16K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-16K_HF', max_num_frame=128),
+    'Long-VITA-128K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-128K_HF', max_num_frame=256),
+    'Long-VITA-1M': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-1M_HF', max_num_frame=256),
 }
 
 internvl_series = {
