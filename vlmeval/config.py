@@ -197,8 +197,8 @@ vita_series = {
 }
 
 long_vita_series = {
-    'Long-VITA-16k': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-16K_HF'),
-    'Long-VITA-128k': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-128K_HF'),
+    'Long-VITA-16K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-16K_HF'),
+    'Long-VITA-128K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-128K_HF'),
     'Long-VITA-1M': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-1M_HF'),
 }
 
