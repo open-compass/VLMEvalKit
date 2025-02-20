@@ -32,11 +32,8 @@ from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
 from .mmgenbench import MMGenBench
 from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
-<<<<<<< HEAD
 from .megabench import MEGABench
-=======
 from .worldsense import WorldSense
->>>>>>> main
 
 from .miabench import MIABench
 from .cmmmu import CMMMU
