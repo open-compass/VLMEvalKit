@@ -88,7 +88,7 @@ class InternVLChat(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
