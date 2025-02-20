@@ -77,7 +77,7 @@ class Cambrian(BaseModel):
                 do_sample=False,
                 temperature=0,
                 num_beams=1,
-                max_new_tokens=512,
+                max_new_tokens=2048,
                 use_cache=True
             )
         outputs = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
