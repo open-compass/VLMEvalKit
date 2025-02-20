@@ -94,9 +94,21 @@ cgbench_dataset = {
 
 megabench_dataset = {
     'MEGABench_core_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core"),
-    'MEGABench_core_single_image_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core_single_image"),
+    'MEGABench_core_single_image_16frame': partial(
+        MEGABench, dataset='MEGABench', nframe=16, subset_name="core_single_image"
+    ),
     'MEGABench_open_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="open"),
-    'MEGABench_open_single_image_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="open_single_image"),
+    'MEGABench_open_single_image_16frame': partial(
+        MEGABench, dataset='MEGABench', nframe=16, subset_name="open_single_image"
+    ),
+    'MEGABench_core_64frame': partial(MEGABench, dataset='MEGABench', nframe=64, subset_name="core"),
+    'MEGABench_core_single_image_64frame': partial(
+        MEGABench, dataset='MEGABench', nframe=64, subset_name="core_single_image"
+    ),
+    'MEGABench_open_64frame': partial(MEGABench, dataset='MEGABench', nframe=64, subset_name="open"),
+    'MEGABench_open_single_image_64frame': partial(
+        MEGABench, dataset='MEGABench', nframe=64, subset_name="open_single_image"
+    ),
 }
 
 supported_video_datasets = {}

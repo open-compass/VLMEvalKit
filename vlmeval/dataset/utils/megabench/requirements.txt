@@ -7,7 +7,6 @@ numpy==1.26.4
 pronouncing==0.2.0
 rapidfuzz==3.9.5
 regex==2024.7.24
-Requests==2.32.3
 requests==2.32.3
 requests_cache==1.2.1
 sacrebleu==2.4.3

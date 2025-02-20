@@ -55,7 +55,7 @@ class MetricType(Enum):
     BOXED_SINGLE_NUMERICAL_MATCH = "boxed_single_numerical_match"
     SEQUENCE_COORDS_SIMILARITY = "sequence_coords_similarity"
     CONSTRAINED_GENERATION = "constrained_generation"
-    GPT_4O_AS_JUDGE = "gpt_4o_as_judge"
+    VLM_AS_JUDGE = "gpt_4o_as_judge"
     UNSUPPORTED = "unsupported"
 
     @cached_property
@@ -218,8 +218,8 @@ class MetricType(Enum):
             MetricType.CONSTRAINED_GENERATION: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.constrained_generation", "ConstrainedGenerationEval"
             ),
-            MetricType.GPT_4O_AS_JUDGE: lazy_import(
-                "vlmeval.dataset.utils.megabench.scoring.gpt_4o_as_judge", "GPT4OJudgeScore"
+            MetricType.VLM_AS_JUDGE: lazy_import(
+                "vlmeval.dataset.utils.megabench.scoring.vlm_as_judge", "VLMJudgeScore"
             ),
         }
 

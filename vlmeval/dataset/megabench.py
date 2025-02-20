@@ -10,10 +10,10 @@ import json
 import glob
 
 
-
 class MEGABench(VideoBaseDataset):
     TYPE = 'Video-VQA'
     MODALITY = 'VIDEO'
+
     def __init__(self, dataset='MEGABench', use_subtitle=False, nframe=0, fps=-1, subset_name="core"):
         self.subset_name = subset_name
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -40,7 +40,7 @@ class MEGABench(VideoBaseDataset):
         num_demo_videos += count_videos(line['example_media'])
         num_query_videos += count_videos(line['query_media'])
 
-        print("num_query_videos, num_demo_videos:", num_query_videos, num_demo_videos)
+        # print("num_query_videos, num_demo_videos:", num_query_videos, num_demo_videos)
 
         if hasattr(self, 'max_num_frames') and self.max_num_frames:
             if num_demo_videos > 0:
@@ -65,15 +65,11 @@ class MEGABench(VideoBaseDataset):
             else:
                 self.query_video_frames = 0
 
-            total_frames = (
-                self.query_video_frames * num_query_videos
-                + self.demo_video_frames * num_demo_videos
-            )
         else:
             self.demo_video_frames = 2
             self.query_video_frames = 8
 
-        print("demo_video_frames, query_video_frames:", self.demo_video_frames, self.query_video_frames)
+        # print("demo_video_frames, query_video_frames:", self.demo_video_frames, self.query_video_frames)
 
     def is_video_file(self, file_path):
         from mimetypes import guess_type
@@ -100,7 +96,10 @@ class MEGABench(VideoBaseDataset):
             if not osp.exists(extract_path):
                 zip_path = osp.join(dataset_path, 'data.zip')
                 if not osp.exists(zip_path):
-                    wget.download('https://huggingface.co/datasets/TIGER-Lab/MEGA-Bench/resolve/main/data.zip?download=true', zip_path)
+                    wget.download(
+                        'https://huggingface.co/datasets/TIGER-Lab/MEGA-Bench/resolve/main/data.zip?download=true',
+                        zip_path
+                    )
                     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
                         zip_ref.extractall(extract_path)
             return extract_path
@@ -130,10 +129,12 @@ class MEGABench(VideoBaseDataset):
             with open(data_file, 'w', encoding='utf-8') as f:
                 import csv
                 writer = csv.writer(f, delimiter='\t', quoting=csv.QUOTE_MINIMAL,
-                                  quotechar='"', escapechar='\\')
-                headers = ['index', 'task_name', 'task_description', 'global_media',
-                         'example_text', 'example_media', 'question', 'query_media',
-                         'answer', 'metric_info', 'eval_context','video']
+                                    quotechar='"', escapechar='\\')
+                headers = [
+                    'index', 'task_name', 'task_description', 'global_media',
+                    'example_text', 'example_media', 'question', 'query_media',
+                    'answer', 'metric_info', 'eval_context','video'
+                ]
                 writer.writerow(headers)
 
                 for item in dataset[split]:
@@ -157,7 +158,6 @@ class MEGABench(VideoBaseDataset):
                     f.write('\t'.join(row) + '\n')
 
             print(f'Generated TSV file at {data_file} with {len(dataset[split])} entries')
-
 
         dataset = load_dataset(repo_id, self.subset_name)
         lmu_root = LMUDataRoot()
@@ -184,7 +184,7 @@ class MEGABench(VideoBaseDataset):
                 return msg
 
         def _process_video(file_path, is_demo=False):
-             # Open the video file
+            # Open the video file
             cap = cv2.VideoCapture(file_path)
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
@@ -316,10 +316,7 @@ class MEGABench(VideoBaseDataset):
             query_media = process_media_list(line['query_media'])
             message.extend(process_text_and_media(line['question'], query_media))
 
-        print('message:', message)
         return message
-
-
 
     def evaluate(self, eval_file, **judge_kwargs):
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
@@ -351,7 +348,7 @@ class MEGABench(VideoBaseDataset):
         # save the result to json
         output_path = os.path.join(os.path.dirname(eval_file), f'megabench_result_{self.subset_name}.json')
         result_path = os.path.join(os.path.dirname(eval_file), f'megabench_score_{self.subset_name}.json')
-        if not os.path.exists(output_path) and not os.path.exists(result_path):
+        if not os.path.exists(output_path) or not os.path.exists(result_path):
             for task_name, group in data.groupby('task_name'):
                 task_dict = {
                     "task_name": task_name,
@@ -381,7 +378,6 @@ class MEGABench(VideoBaseDataset):
 
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
-
 
             evaluator = MEGABenchEvaluator(
                 subset_name=self.subset_name,

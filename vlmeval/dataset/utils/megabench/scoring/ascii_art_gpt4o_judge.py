@@ -5,22 +5,19 @@ from numbers import Number
 import os
 import requests
 from .common.conversions import ascii_text_to_image
-from ..LLMJudge.OpenAI import OpenAI
+from .vlm_as_judge import OpenAIVLMJudger
+"""Return if two ASCII art images depict the same thing."""
 
 
-class AsciiArtGPT4Judger(OpenAI):
+class AsciiArtVLMJudger(OpenAIVLMJudger):
     """A GPT-4o judge for assessing if two ASCII art images depict the same thing."""
 
-    def __init__(self, verbose=True):
-        self.eval_prompt = 'Determine if the following two ASCII art images depict the same object. Your answer should be either "yes" or "no", but without the quotation marks.'
-        model = "gpt-4o"
+    def __init__(self, metric_config, model="gpt-4o-2024-08-06"):
+        self.eval_prompt = """Determine if the following two ASCII art images depict the same object.
+        Your answer should be either "yes" or "no", but without the quotation marks."""
         super().__init__(
-            os.getenv("OPENAI_API_KEY"),
+            metric_config,
             model,
-            None,
-            0,
-            resize=False,
-            print_response=verbose,
         )
 
     def encode_image(self, image):
@@ -38,6 +35,13 @@ class AsciiArtGPT4Judger(OpenAI):
             encoded_image = self._encode_image(image, image_format)
 
         return encoded_image, mime_type
+
+    def create_image_content(self, image):
+        base64_image, mime_type = self.encode_image(image)
+        return {
+            "type": "image_url",
+            "image_url": {"url": f"data:{mime_type};base64,{base64_image}"},
+        }
 
     def prepare_eval_prompt(self, images):
         """Prepare the evaluation prompt."""
@@ -60,53 +64,56 @@ class AsciiArtGPT4Judger(OpenAI):
         query_payload = {
             "model": self.model,
             "messages": [{"role": "user", "content": context}],
-            "temperature": 0,
+            "temperature": 0.0,
         }
 
         response_data = None
         while response_data is None:
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=query_payload,
-            )
+            try:
+                response = requests.post(
+                    self.url,
+                    headers=headers,
+                    json=query_payload,
+                )
+            except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
+                print(f'Error in requests: {e}')
+                print('Retry...')
+                continue
+
             response_ = response.json()
             if "error" in response_:
                 error_info = response_["error"]
-                logging.info(
+                print(
                     f"Got error with type: {error_info['type']}. Message: {error_info['message']}"
                 )
-                logging.info(f"Retry...")
+                print("Retry...")
             else:
                 response_data = response_
                 break
 
         total_tokens = response_data.get("usage", {}).get("total_tokens", "N/A")
 
-        # Extracting the 'content' field from the response
         if response_data and "choices" in response_data:
             choices = response_data["choices"]
             if choices and "message" in choices[0]:
                 message_content = choices[0]["message"]["content"]
-                if self.print_response:
-                    logging.info(
-                        f"gpt-4o judge results: {message_content}; tokens:{total_tokens}"
-                    )
+                print(
+                    f"gpt-4o judge results: {message_content}; tokens:{total_tokens}"
+                )
         else:
-            logging.error(f"gpt-4o judge query failed...")
+            print("gpt-4o judge query failed...")
             message_content = ""
 
         return message_content
 
 
-judge = AsciiArtGPT4Judger()
-
-
-class AsciiArtGPT4OJudge:
+class AsciiArtVLMJudgeScore:
     """Compute the cosine similarity between two pieces of ASCII art."""
 
-    @classmethod
-    def match(cls, response, correct_answer) -> Number:
+    def __init__(self, metric_config):
+        self.model = AsciiArtVLMJudger(metric_config)
+
+    def match(self, response, correct_answer) -> Number:
         """Compute the cosine similarity between two pieces of ASCII art."""
         if not isinstance(response, str) or not isinstance(correct_answer, str):
             return 0
@@ -115,5 +122,5 @@ class AsciiArtGPT4OJudge:
         response_image = ascii_text_to_image(response, 224, 224)
         correct_answer_image = ascii_text_to_image(correct_answer, 224, 224)
 
-        eval_results = judge.query([response_image, correct_answer_image])
+        eval_results = self.model.query([response_image, correct_answer_image])
         return 1 if "yes" in eval_results.lower() else 0

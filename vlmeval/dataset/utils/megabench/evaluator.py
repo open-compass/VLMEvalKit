@@ -7,7 +7,6 @@ import ast
 from datasets import load_dataset
 from . import MetricType, AggregationType, ResponseParseType
 from .parsing.common.utils import evaluate_as_string
-#from metrics.scoring.gpt_4o_as_judge import GPT4OJudgeScore
 
 
 class MEGABenchEvaluator:
@@ -228,6 +227,17 @@ class MEGABenchEvaluator:
             score, eval_info = metric.match(response_obj.get(field), eval_context)
             query["scores"]["field"][field] = score
             query["scores"]["info"][field] = eval_info
+        elif isinstance(metric, MetricType.VLM_AS_JUDGE.class_impl):
+            images = query.get("images", [])
+            question = query.get("question", "")
+            correct_val = correct_answer.get(field, "") if not is_aux else correct_answer
+            predicted_val = response_obj.get(field, "")
+            query["scores"]["field"][field] = metric.match(
+                predicted_val,
+                correct_val,
+                images=images,
+                question=question
+            )
         else:
             correct_val = correct_answer.get(field, "") if not is_aux else correct_answer
             correct_val = evaluate_as_string(correct_val)  # remove extra formatting
@@ -293,7 +303,7 @@ class MEGABenchEvaluator:
         return the actual MetricType or a specialized metric class.
         """
         metric = MetricType.from_string(metric_name)
-        if metric == MetricType.GPT_4O_AS_JUDGE:
+        if metric == MetricType.VLM_AS_JUDGE:
             # Build the GPT4O metric using the provided config
             gpt4o_configs = score_config.get("gpt4o_eval_configs", {})
             metric = metric.class_impl(gpt4o_configs)
