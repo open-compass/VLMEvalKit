@@ -14,6 +14,7 @@ from .image_vqa import (
 )
 
 from .image_ccocr import CCOCRDataset
+from .image_shortqa import ImageShortQADataset
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
@@ -38,6 +39,7 @@ from .cmmmu import CMMMU
 from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
+from .creation import CreationMMBenchDataset
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
@@ -135,7 +137,8 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset
+    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, CreationMMBenchDataset, 
+    ImageShortQADataset
 ]
 
 VIDEO_DATASET = [

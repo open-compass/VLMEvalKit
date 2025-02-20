@@ -265,7 +265,7 @@ class InternVLChat(BaseModel):
 
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
-        kwargs_default = dict(do_sample=False, max_new_tokens=1024, top_p=None, num_beams=1)
+        kwargs_default = dict(do_sample=False, max_new_tokens=2048, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
 

@@ -33,7 +33,7 @@ def images_to_md(images):
     return '\n\n'.join([image_to_mdstring(image) for image in images])
 
 
-def mmqa_display(question, target_size=768):
+def mmqa_display(question, target_size=2048):
     question = {k.lower() if len(k) > 1 else k: v for k, v in question.items()}
     keys = list(question.keys())
     keys = [k for k in keys if k not in ['index', 'image']]
@@ -41,12 +41,20 @@ def mmqa_display(question, target_size=768):
     idx = question.pop('index', 'XXX')
     text = f'\n- INDEX: {idx}\n'
 
-    images = question.pop('image')
-    if images[0] == '[' and images[-1] == ']':
-        images = eval(images)
+    if 'image' in question:
+        images = question.pop('image')
+        if images[0] == '[' and images[-1] == ']':
+            images = eval(images)
+        else:
+            images = [images]
     else:
-        images = [images]
-
+        images = question.pop('image_path')
+        if images[0] == '[' and images[-1] == ']':
+            images = eval(images)
+        else:
+            images = [images]
+        images = [encode_image_file_to_base64(x) for x in images]
+    
     qtext = question.pop('question', None)
     if qtext is not None:
         text += f'- QUESTION: {qtext}\n'

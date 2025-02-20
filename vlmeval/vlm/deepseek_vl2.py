@@ -35,7 +35,7 @@ class DeepSeekVL2(BaseModel):
         self.model = model.cuda().eval()
 
         torch.cuda.empty_cache()
-        default_kwargs = dict(max_new_tokens=512, do_sample=False, use_cache=True)
+        default_kwargs = dict(max_new_tokens=2048, do_sample=False, use_cache=True)
         default_kwargs.update(kwargs)
         self.kwargs = default_kwargs
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')

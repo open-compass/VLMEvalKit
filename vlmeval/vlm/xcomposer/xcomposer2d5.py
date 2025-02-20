@@ -149,7 +149,7 @@ It is designed to be helpful, honest, and harmless.\n"+"- InternLM (书生·浦�
 can understand and communicate fluently in the language chosen by the user such as English and 中文."""
 
 
-def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_token=500, video_input=False):
+def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_token=2048, video_input=False):
     embeds = []
     im_mask = []
     # print(text)
