@@ -144,7 +144,7 @@ def use_custom_prompt(self, dataset: str) -> bool:
         return False
     return False
 ```
-
+Only when the `use_custom_prompt()` function returns `True` will VLMEvalKit call the model's `build_prompt()` function for the current benchmark.
 With this approach, you can flexibly control which benchmarks use the model's custom prompt logic based on your specific needs, thereby better adapting to different models and tasks.
 
 #### Model Splitting
@@ -157,12 +157,12 @@ For example, on a machine equipped with 8 GPUs, you can run the model using the 
 # For an 8-GPU machine
 AUTO_SPLIT=1 torchrun --nproc-per-node=1 run.py --data MMBench_DEV_EN --model InternVL2-76B --verbose
 ```
-
+This command will automatically split the InternVL2-76B model into 8 parts and run each part on a separate GPU.
 #### Performance Discrepancies
 
 Model performance may vary across different environments. As a result, you might observe discrepancies between your evaluation results and those listed on the official VLMEvalKit leaderboard. These differences could be attributed to variations in versions of libraries such as `transformers`, `cuda`, and `torch`.
 
-Besides, if you encounter unexpected performance, we recommend first reviewing the generation records (`{model}_{dataset}.xlsx`) or the evaluation records (`{model}_{dataset}_{judge_model}.xlsx`). This may help you better understand the evaluation outcomes and identify potential issues.
+Besides, if you encounter unexpected performance, we recommend first reviewing the local generation records (`{model}_{dataset}.xlsx`) or the evaluation records (`{model}_{dataset}_{judge_model}.xlsx`). This may help you better understand the evaluation outcomes and identify potential issues.
 
 ## Deploy a local language model as the judge / choice extractor
 The default setting mentioned above uses OpenAI's GPT as the judge LLM. However, you can also deploy a local judge LLM with [LMDeploy](https://github.com/InternLM/lmdeploy).

@@ -139,6 +139,7 @@ def use_custom_prompt(self, dataset: str) -> bool:
         return False
     return False
 ```
+仅当`use_custom_prompt()`函数返回`True`时，VLMEvalkit才会对当前benchmark调用模型的`build_prompt()`函数。
 通过这种方式，您可以根据具体需求灵活地控制哪些benchmark使用模型自定义的prompt构建逻辑，从而更好地适配不同模型和任务的需求。
 
 #### 模型切分
@@ -150,11 +151,12 @@ def use_custom_prompt(self, dataset: str) -> bool:
 # 对于八卡机器
 AUTO_SPLIT=1 torchrun --nproc-per-node=1 run.py --data MMBench_DEV_EN --model InternVL2-76B --verbose
 ```
+这会将InternVL2-76B模型切分为 8 份，分别分配到 8 块 GPU 上进行推理。
 
 #### 性能差距
-在不同的运行环境中，模型的性能表现可能会有所差异。因此，在评估过程中，您可能会发现自己的评测结果与VLMEvalKit官方榜单上的结果存在差距。这种差异可能由以下几个因素引起：这可能是由于`transformers`, `cuda`, `torch`等版本的
+在不同的运行环境中，模型的性能表现可能会有所差异。因此，在评估过程中，您可能会发现自己的评测结果与VLMEvalKit官方榜单上的结果存在差距。这种差异可能与`transformers`, `cuda`, `torch`等版本的变化有关。
 
-此外，对于异常的表现，我们建议您优先查看评估后的生成记录`{model}_{dataset}.xlsx`或者评估记录`{model}_{dataset}_{judge_model}.xlsx`，这可能会帮助您更好地理解评估结果并发现问题。
+此外，对于异常的表现，我们建议您优先查看运行完成后的本地生成记录`{model}_{dataset}.xlsx`或者评估记录`{model}_{dataset}_{judge_model}.xlsx`，这可能会帮助您更好地理解评估结果并发现问题。
 
 
 
