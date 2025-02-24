@@ -4,7 +4,7 @@ import requests
 from ..dataset import DATASET_TYPE, DATASET_MODALITY
 from vlmeval.api.base import BaseAPI
 from vlmeval.smp import *
-class CompassLLVMWrapper(BaseAPI):
+class MUGUWrapper(BaseAPI):
 
     is_api: bool = True
 
@@ -209,7 +209,6 @@ class CompassLLVMWrapper(BaseAPI):
         return ret_code, answer, response
 
 
-class CompassLLVMAPI(CompassLLVMWrapper):
-
+class MUGUAPI(MUGUWrapper):
     def generate(self, message, dataset=None):
-        return super(CompassLLVMAPI, self).generate(message, dataset=dataset)
+        return super(MUGUAPI, self).generate(message, dataset=dataset)
