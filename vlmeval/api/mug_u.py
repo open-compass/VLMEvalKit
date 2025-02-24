@@ -25,7 +25,7 @@ class MUGUWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.timeout = timeout
 
-        api_base = 'https://test.shopee.sg/api/v1/compassllvm/v1/chat/completions'
+        api_base = 'https://shopee.sg/api/v1/compassllvm/v1/chat/completions'
         assert api_base is not None, 'Please set the environment variable LMDEPLOY_API_BASE.'
         self.api_base = api_base
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
