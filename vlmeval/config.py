@@ -119,6 +119,8 @@ api_models = {
     'Taichu-VL-2B': partial(TaichuVLAPI, model='Taichu-VL-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
     #doubao_vl
     'DoubaoVL': partial(DoubaoVL, model='Doubao-1.5-vision-pro', temperature=0,  retry=10, verbose=False),
+    #shopee_compassllvm
+    'CompassLLVM': partial(CompassLLVMAPI, model='CompassLLVM', temperature=0,  retry=10, verbose=False, timeout=300),
 }
 
 emu_series = {
