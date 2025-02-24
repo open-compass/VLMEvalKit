@@ -14,7 +14,6 @@ from .utils import match_gt2pred_simple, match_gt2pred_no_split,match_gt2pred_qu
 from .metrics import show_result, get_full_labels_results, get_page_split
 from .metrics import TEDS,METRIC_REGISTRY,recogition_end2end_base_dataset,recogition_end2end_table_dataset
 from .data_preprocess import clean_string,normalized_formula,textblock2unicode,normalized_table
-
 from func_timeout import FunctionTimedOut, func_timeout
 
 
@@ -75,6 +74,7 @@ class OmniDocBench(ImageBaseDataset):
         metircs_table=Table_evalutor.score()
 
         return metrics_all
+
 
 
 class end2end_evaluator():
@@ -260,10 +260,10 @@ class end2end_evaluator():
             table_format = 'html'
 
         matched_samples_all = {
-            'text_block': recogition_end2end_base_dataset(plain_text_match),
-            'display_formula': recogition_end2end_base_dataset(display_formula_match),
-            'table': recogition_end2end_table_dataset(table_match, table_format),
-            'reading_order': recogition_end2end_base_dataset(order_match)
+            "text_block": recogition_end2end_base_dataset(plain_text_match),
+            "display_formula": recogition_end2end_base_dataset(display_formula_match),
+            "table": recogition_end2end_table_dataset(table_match, table_format),
+            "reading_order": recogition_end2end_base_dataset(order_match)
         }
         
         return matched_samples_all
@@ -339,6 +339,8 @@ class end2end_evaluator():
 
     def process_generated_metric_results(self,samples,save_name:str='end2end_quick_match'):
         
+   
+
         result_all={}
         page_info={}
         metircs_dict=self.dafault_metircs_dict
@@ -349,14 +351,16 @@ class end2end_evaluator():
                 page_info[img_path]=page['page_info']['page_attribute']
 
         for element in metircs_dict.keys():
+           
             result={}
             group_info=metircs_dict[element].get('group',[])
-            samples = samples.get(element)
+            # samples = samples.get(element) ##
+            cur_samples = samples[element]
 
             for metric in metircs_dict[element]['metric']:
                 metric_val = METRIC_REGISTRY.get(metric)
 
-                samples,result_s = metric_val(samples).evaluate(group_info, f"{save_name}_{element}")
+                cur_samples,result_s = metric_val(cur_samples).evaluate(group_info, f"{save_name}_{element}")
                 if result_s:
                     result.update(result_s)
   
@@ -366,8 +370,8 @@ class end2end_evaluator():
             result_all[element]={}
 
         
-            group_result=get_full_labels_results(samples)
-            page_result=get_page_split(samples,page_info)
+            group_result=get_full_labels_results(cur_samples)
+            page_result=get_page_split(cur_samples,page_info)
 
             result_all[element]={
                 'all':result,
@@ -376,10 +380,10 @@ class end2end_evaluator():
             }
             if not os.path.exists('./output/OmniDocBench'):
                 os.makedirs('./output/OmniDocBench')
-            if isinstance(samples,list):
-                saved_samples=samples
+            if isinstance(cur_samples,list):
+                saved_samples=cur_samples
             else:
-                saved_samples=samples.samples
+                saved_samples=cur_samples.samples
             with open(os.path.join(self.result_foler,f'{save_name}_result.josn'),'w',encoding='utf-8') as f:
                 json.dump(saved_samples,f,indent=4,ensure_ascii=False)
 
@@ -409,10 +413,11 @@ class end2end_evaluator():
         dict_list.append(save_dict)
         df = pd.DataFrame(dict_list,index=['end2end',]).round(3)
 
-        with open(os.path.join(self.result_foler,'End-to-End Evaluation.json'),'w',encoding='utf-8') as f:
+        with open(os.path.join(self.result_foler,'End2End_Evaluation.json'),'w',encoding='utf-8') as f:
             json.dump(result_all,f,indent=4,ensure_ascii=False)
         df.to_csv(os.path.join(self.result_foler,'overall.csv'))
-        print(f'The save path of overall.csv is :{os.path.join(self.result_foler,'End-to-End Evaluation.json')}')
+        over_all_path=os.path.join(self.result_foler,'End2End_Evaluation.json')
+        print(f"The save path of overall.csv is :{over_all_path}")
         return df
 
 
@@ -541,11 +546,13 @@ class table_evalutor():
                         "with_span: True", "with_span: False", "include_equation: True", "include_equation: False", "include_background: True", "include_background: False", "table_layout: vertical", "table_layout: horizontal"]]
 
         selected_columns.to_csv(os.path.join(self.result_foler,'table_attribute.csv'))
-        print(f'The save path of table_attribute.csv is :{os.path.join(self.result_foler,'table_attribute.csv')} ')
+        table_attribute_path=os.path.join(self.result_foler,'table_attribute.csv')
+        print(f'The save path of table_attribute.csv is :{table_attribute_path}')
         selected_columns
 
 
         return selected_columns
+
 
 
 
