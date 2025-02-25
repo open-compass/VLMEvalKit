@@ -2,48 +2,8 @@ from vlmeval import *
 from .image_base import ImageBaseDataset
 from .utils import build_judge
 from .utils.multiple_choice import report_acc, eval_vanilla, eval_circular_group
+from .utils.shortqa import ShortQA_prompt
 from ..utils import track_progress_rich
-
-EVAL_PROMPT = """
-You are an AI assistant who will help me to extract the answer of a visual-language question from a model response and determine if the answer is correct.
-You will be provided with: 1. the question (text only); 2. the model response; 3. the ground-truth.
-By default, you should determine if the answer is correct based on if the meaning of the model response align with the ground-truth.
-{requirement}
-
-[Begin Question]\n{question}\n[End Question]
-[Begin Response]\n{response}\n[End Response]
-[Begin Ground-Truth]\n{ground_truth}\n[End Ground-Truth]
-
-You should output your judgement in the following format ("X" should be "yes" or "no"):
-
-CORRECT: [[X]]
-REASON: [[Your reason]]
-"""
-
-
-def ShortQA_prompt(line):
-    answer = line['answer']
-    if answer[0] == '[' and answer[-1] == ']':
-        answer = eval(answer)
-    else:
-        answer = [answer]
-    multi_ans = False
-    if len(answer) > 1:
-        if 'multi_ans' in line and not pd.isna(line['multi_ans']):
-            multi_ans = line['multi_ans']
-        else:
-            multi_ans = True
-    requirement = ''
-    if len(answer) > 1:
-        if multi_ans:
-            requirement = "The provided ground-truth is a list. The answer is correct if the model response contains and only contains all the ground-truths (no other answer included)."
-        else:
-            requirement = 'The provided ground-truth is a list. If the model response matches any of the ground-truths, the answer is correct. '
-    return EVAL_PROMPT.format(
-        question=line['question'],
-        response=line['prediction'],
-        ground_truth=answer,
-        requirement=requirement)
 
 
 def ShortQA_auxeval(model, line):
@@ -55,21 +15,20 @@ def ShortQA_auxeval(model, line):
         return s
 
     def extraction(resp):
-        lines = resp.split('\n')
         correct, reason = None, None
-        for l in lines:
-            l = l.upper()
-            l = proc_str(l).strip()
-            if l.startswith('CORRECT:'):
-                l = l[8:].strip()
-                if l in ['YES', 'NO']:
-                    correct = 1 if l == 'YES' else 0
-                    break
-        for word in ['REASON:', 'reason:', 'Reason:']:
-            if word in resp:
-                reason = resp.split(word)[1].strip()
-                break
-        return (correct, reason)
+        correct_st, correct_ed = '[Begin Correctness]', '[End Correctness]'
+        reason_st, reason_ed = '[Begin Reason]', '[End Reason]'
+        if correct_st in resp and correct_ed in resp:
+            correct = resp.split(correct_st)[1].split(correct_ed)[0].strip().lower()
+            if ('yes' in correct) ^ ('no' in correct):
+                correct = 1 if 'yes' in correct else 0
+                if reason_st in resp and reason_ed in resp:
+                    reason = resp.split(reason_st)[1].split(reason_ed)[0].strip()
+                return correct, reason
+            else:
+                return None, None
+        else:
+            return None, None
         
     prompt = ShortQA_prompt(line)
     retry = 3
