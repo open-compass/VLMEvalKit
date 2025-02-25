@@ -27,11 +27,12 @@ class Claude_Wrapper(BaseAPI):
                  model: str = 'claude-3-opus-20240229',
                  key: str = None,
                  retry: int = 10,
+                 timeout: int = 60,
                  wait: int = 3,
                  system_prompt: str = None,
                  verbose: bool = True,
                  temperature: float = 0,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 2048,
                  **kwargs):
 
         if os.environ.get('ANTHROPIC_BACKEND', '') == 'official':
@@ -44,6 +45,7 @@ class Claude_Wrapper(BaseAPI):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.headers = alles_headers if backend == 'alles' else official_headers
+        self.timeout = timeout
 
         if key is not None:
             self.key = key
@@ -56,6 +58,17 @@ class Claude_Wrapper(BaseAPI):
             self.headers['x-api-key'] = self.key
 
         super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
+
+    def encode_image_file_to_base64(self, image_path, target_size=-1, fmt='.jpg'):
+        image = Image.open(image_path)
+        if fmt in ('.jpg', '.jpeg'):
+            format = 'JPEG'
+        elif fmt == '.png':
+            format = 'PNG'
+        else:
+            print(f'Unsupported image format: {fmt}, will cause media type match error.')
+
+        return encode_image_to_base64(image, target_size=target_size, fmt=format)
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
@@ -78,7 +91,7 @@ class Claude_Wrapper(BaseAPI):
                         source={
                             'type': 'base64',
                             'media_type': media_type,
-                            'data': encode_image_file_to_base64(pth, target_size=4096)
+                            'data': self.encode_image_file_to_base64(pth, target_size=4096, fmt=suffix)
                         }))
         else:
             assert all([x['type'] == 'text' for x in inputs])
@@ -108,14 +121,17 @@ class Claude_Wrapper(BaseAPI):
         if self.system_prompt is not None:
             payload['system'] = self.system_prompt
 
-        response = requests.request('POST', self.url, headers=self.headers, data=json.dumps(payload))
+        response = requests.request('POST', self.url, headers=self.headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg
 
         try:
             resp_struct = json.loads(response.text)
-            answer = resp_struct['data']['content'][0]['text'].strip()
+            if self.backend == 'alles':
+                answer = resp_struct['data']['content'][0]['text'].strip()
+            elif self.backend == 'official':
+                answer = resp_struct['content'][0]['text'].strip()
         except Exception as err:
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')

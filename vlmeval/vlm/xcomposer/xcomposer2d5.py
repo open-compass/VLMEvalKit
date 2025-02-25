@@ -18,7 +18,6 @@ def get_font():
     try:
         truetype_url = "http://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
         ff = urlopen(truetype_url)
-        # ff = '/fs-computility/mllm/shared/dongxiaoyi/share_data/SimHei.ttf'
         font = ImageFont.truetype(ff, size=40)
     except Exception as e:
         logging.warning(f'{type(e)}: {e}')
@@ -150,7 +149,7 @@ It is designed to be helpful, honest, and harmless.\n"+"- InternLM (书生·浦�
 can understand and communicate fluently in the language chosen by the user such as English and 中文."""
 
 
-def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_token=500, video_input=False):
+def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_token=2048, video_input=False):
     embeds = []
     im_mask = []
     # print(text)
