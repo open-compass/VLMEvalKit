@@ -183,6 +183,13 @@ def load(f, fmt=None):
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
 
+    import validators
+    if validators.url(f):
+        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        if not osp.exists(tgt):
+            download_file(f, tgt)
+        f = tgt
+
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
     if fmt is not None:
         return handlers[fmt](f)
