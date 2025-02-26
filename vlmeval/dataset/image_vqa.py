@@ -140,7 +140,7 @@ class VizWiz(ImageBaseDataset):
 class OCRBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv'
+        'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
         # For internal test only
         'OCRBench_MINI': 'https://opencompass.openxlab.space/utils/TEST/OCRBench_MINI.tsv'
     }
