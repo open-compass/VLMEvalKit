@@ -46,6 +46,7 @@ from .mmalignbench import MMAlignBench
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
+from .Omnidocbench.omnidocbench import OmniDocBench
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -141,8 +142,9 @@ IMAGE_DATASET = [
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
     CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, CreationMMBenchDataset,
-    ImageShortQADataset, MMAlignBench
+    ImageShortQADataset, MMAlignBench, OmniDocBench
 ]
+
 
 VIDEO_DATASET = [
     MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, LongVideoBench,
