@@ -86,7 +86,7 @@ class InternVL2_PromptUtil:
 
     def get_max_num(self, dataset):
         assert dataset is not None
-        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video']
+        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'VCR_EN', 'VCR_ZH', 'OCRVQA']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']

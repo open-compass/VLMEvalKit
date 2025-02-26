@@ -43,9 +43,20 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
             struct = dataset.build_prompt(item)
         structs.append(struct)
 
-    # structs = [dataset.build_prompt(data.iloc[i]) for i in range(lt)]
-
     out_file = f'{work_dir}/{model_name}_{dataset_name}_supp.pkl'
+
+    # To reuse records in MMBench_V11
+    if dataset_name in ['MMBench', 'MMBench_CN']:
+        v11_pred = f'{work_dir}/{model_name}_{dataset_name}_V11.xlsx'
+        if osp.exists(v11_pred):
+            try:
+                reuse_inds = load('http://opencompass.openxlab.space/utils/mmb_reuse.pkl')
+                data = load(v11_pred)
+                ans_map = {x: y for x, y in zip(data['index'], data['prediction']) if x in reuse_inds}
+                dump(ans_map, out_file)
+            except Exception as err:
+                print(type(err), err)
+                
     res = {}
     if osp.exists(out_file):
         res = load(out_file)

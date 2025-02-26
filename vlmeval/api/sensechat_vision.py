@@ -16,7 +16,7 @@ class SenseChatVisionWrapper(BaseAPI):
                  sk: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 2048,
                  proxy: str = None,
                  **kwargs):
 

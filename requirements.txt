@@ -23,6 +23,7 @@ tabulate
 tiktoken
 timeout-decorator
 torch
+torchvision
 tqdm
 transformers
 typing_extensions

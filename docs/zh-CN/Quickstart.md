@@ -103,6 +103,62 @@ python run.py --data MMBench_Video_1fps_pack --model GPT4o
 ```
 
 评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。
+### 常见问题
+#### 构建输入prompt：`build_prompt()`函数
+如果您在评测某个benchmark时，发现模型输出的结果与预期不符，可能是因为您使用的模型没有正确构建输入prompt。
+
+在VLMEvalkit中，每个`dataset`类都包含一个名为`build_prompt()`的函数，用于构建输入问题的格式。不同的benchmark可以选择自定义`build_prompt()`函数，也可以使用默认的实现。
+
+例如，在处理默认的[多选题/Multi-Choice QA]([vlmeval/dataset/image_mcq.py](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/dataset/image_mcq.py#L164))时，`ImageMCQDataset.build_prompt()`类会将`hint`、`question`、`options`等元素（若数据集中包含）组合成一个完整的问题格式，如下所示：
+```
+HINT
+QUESTION
+Options:
+A. Option A
+B. Option B
+···
+Please select the correct answer from the options above.
+```
+
+此外，由于不同模型对评测的需求可能有所不同，VLMEvalkit也支持在模型层面自定义对不同benchmark构建prompt的方法，即`model.build_prompt()`，具体示例可以参考[InternVL](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/vlm/internvl_chat.py#L324)。
+
+**注意：当同时定义了`model.build_prompt()`以及`dataset.build_prompt()`时，`model.build_prompt()`将优先于`dataset.build_prompt()`，即前者会覆盖后者。**
+
+由于部分模型（如Qwen2VL，InternVL等）对于不同类型的benchmark定义了广泛的prompt构建方法，为了更灵活地适应不同的benchmark，VLMEvalkit支持在模型中自定义`model.use_custom_prompt()`函数。通过添加或者修改`use_custom_prompt()`函数，您可以决定对于哪些benchmark使用模型自定义的`use_custom_prompt()`方法，示例如下：
+```
+def use_custom_prompt(self, dataset: str) -> bool:
+    from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
+    dataset_type = DATASET_TYPE(dataset, default=None)
+    if not self._use_custom_prompt:
+        return False
+    if listinstr(['MMVet'], dataset):
+        return True
+    if dataset_type == 'MCQ':
+        return True
+    if DATASET_MODALITY(dataset) == 'VIDEO':
+        return False
+    return False
+```
+仅当`use_custom_prompt()`函数返回`True`时，VLMEvalkit才会对当前benchmark调用模型的`build_prompt()`函数。
+通过这种方式，您可以根据具体需求灵活地控制哪些benchmark使用模型自定义的prompt构建逻辑，从而更好地适配不同模型和任务的需求。
+
+#### 模型切分
+对于一些参数量较大的模型，如InternVL2-78B，由于其参数量较大，单个 GPU 可能无法容纳整个模型进行推理。
+在这种情况下，您可以定义环境变量`AUTO_SPLIT=1`，对于支持`split_model()`函数的模型，模型将会自动切分并分配到多个GPU上进行运行。
+
+例如，在一台配备 8 块 GPU 的机器上，您可以使用以下命令来运行模型：：
+```
+# 对于八卡机器
+AUTO_SPLIT=1 torchrun --nproc-per-node=1 run.py --data MMBench_DEV_EN --model InternVL2-76B --verbose
+```
+这会将InternVL2-76B模型切分为 8 份，分别分配到 8 块 GPU 上进行推理。
+
+#### 性能差距
+在不同的运行环境中，模型的性能表现可能会有所差异。因此，在评估过程中，您可能会发现自己的评测结果与VLMEvalKit官方榜单上的结果存在差距。这种差异可能与`transformers`, `cuda`, `torch`等版本的变化有关。
+
+此外，对于异常的表现，我们建议您优先查看运行完成后的本地生成记录`{model}_{dataset}.xlsx`或者评估记录`{model}_{dataset}_{judge_model}.xlsx`，这可能会帮助您更好地理解评估结果并发现问题。
+
+
 
 ### 部署本地语言模型作为评判 / 选择提取器
 上述默认设置使用 OpenAI 的 GPT 作为评判 LLM。你也可以使用 [LMDeploy](https://github.com/InternLM/lmdeploy) 部署本地评判 LLM。

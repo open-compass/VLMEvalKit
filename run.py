@@ -277,7 +277,7 @@ def main():
                                 logger.info(f'--reuse is set, will reuse the prediction file {src}.')
                             else:
                                 logger.warning(f'File already exists: {tgt}')
-                        
+
                     elif len(prev_pkl_file_list):
                         for fname in prev_pkl_file_list:
                             target_path = osp.join(pred_root, osp.basename(fname))
@@ -345,7 +345,7 @@ def main():
                         judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'], dataset_name):  # noqa: E501
+                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
 
                 if rank == 0:

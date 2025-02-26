@@ -82,7 +82,7 @@ class llama_vision(BaseModel):
         if 'Instruct' in model_path or 'cot' in model_path or 'CoT' in model_path:
             kwargs_default = dict(do_sample=True, temperature=0.6, top_p=0.9)
         else:
-            kwargs_default = dict(do_sample=False, max_new_tokens=512, temperature=0.0, top_p=None, num_beams=1)
+            kwargs_default = dict(do_sample=False, max_new_tokens=2048, temperature=0.0, top_p=None, num_beams=1)
         kwargs.update(kwargs_default)
         print(f'Following kwargs received: {kwargs}, will use as generation config. ')
         self.kwargs = kwargs

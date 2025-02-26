@@ -183,6 +183,13 @@ def load(f, fmt=None):
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
 
+    import validators
+    if validators.url(f):
+        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        if not osp.exists(tgt):
+            download_file(f, tgt)
+        f = tgt
+
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
     if fmt is not None:
         return handlers[fmt](f)
@@ -353,9 +360,8 @@ def fetch_aux_files(eval_file):
         model_name = osp.basename(osp.dirname(file_root))
     else:
         model_name = eval_id
-
-    suffix = file_name.split('.')[-1]
-    dataset_name = file_name.split('.')[0][len(model_name) + 1:]
+    
+    dataset_name = osp.splitext(file_name)[0][len(model_name) + 1:]
     from vlmeval.dataset import SUPPORTED_DATASETS
     to_handle = []
     for d in SUPPORTED_DATASETS:

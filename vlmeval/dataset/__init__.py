@@ -14,6 +14,7 @@ from .image_vqa import (
 )
 
 from .image_ccocr import CCOCRDataset
+from .image_shortqa import ImageShortQADataset
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
@@ -25,18 +26,23 @@ from .vl_rewardbench import VLRewardBench
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
 from .mvbench import MVBench, MVBench_MP4
+from .tamperbench import MVTamperBench
+from .miabench import MIABench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
 from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
 from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
 from .mmgenbench import MMGenBench
 from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
+from .worldsense import WorldSense
 
 from .miabench import MIABench
 from .cmmmu import CMMMU
 from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
+from .creation import CreationMMBenchDataset
+from .mmalignbench import MMAlignBench
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
@@ -135,15 +141,16 @@ IMAGE_DATASET = [
     MMLongBench, VCRDataset, MMDUDataset, DUDE, SlideVQA, MUIRDataset, CCOCRDataset,
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
-    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,OmniDocBench
+    CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, CreationMMBenchDataset,
+    ImageShortQADataset, MMAlignBench, OmniDocBench
 ]
 
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, LongVideoBench,
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, LongVideoBench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
-    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
+    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded, WorldSense
 ]
 
 TEXT_DATASET = [

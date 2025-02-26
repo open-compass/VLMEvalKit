@@ -65,7 +65,8 @@ api_models = {
     'GeminiPro1-0': partial(GeminiProVision, model='gemini-1.0-pro', temperature=0, retry=10),  # now GeminiPro1-0 is only supported by vertex backend
     'GeminiPro1-5': partial(GeminiProVision, model='gemini-1.5-pro', temperature=0, retry=10),
     'GeminiFlash1-5': partial(GeminiProVision, model='gemini-1.5-flash', temperature=0, retry=10),
-    'GeminiFlash2-0': partial(GeminiProVision, model='gemini-2.0-flash-exp', temperature=0, retry=10),
+    'GeminiFlash2-0': partial(GeminiProVision, model='gemini-2.0-flash', temperature=0, retry=10),
+    'GeminiPro2-0': partial(GeminiProVision, model='gemini-2.0-pro-exp', temperature=0, retry=10),
     'GeminiPro1-5-002': partial(GPT4V, model='gemini-1.5-pro-002', temperature=0, retry=10),  # Internal Use Only
     'GeminiFlash1-5-002': partial(GPT4V, model='gemini-1.5-flash-002', temperature=0, retry=10),  # Internal Use Only
     # Qwen-VL
@@ -87,7 +88,7 @@ api_models = {
     'Claude3V_Haiku': partial(Claude3V, model='claude-3-haiku-20240307', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet': partial(Claude3V, model='claude-3-5-sonnet-20240620', temperature=0, retry=10, verbose=False),
     'Claude3-5V_Sonnet_20241022': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0, retry=10, verbose=False),
-    'Claude3-5V_Sonnet_20241022_tem07': partial(Claude3V, model='claude-3-5-sonnet-20241022', temperature=0.7, retry=10, verbose=False),
+    'Claude3-7V_Sonnet': partial(Claude3V, model='claude-3-7-sonnet-20250219', temperature=0, retry=10, verbose=False),
     # GLM4V
     'GLM4V': partial(GLMVisionAPI, model='glm4v-biz-eval', temperature=0, retry=10),
     'GLM4V_PLUS': partial(GLMVisionAPI, model='glm-4v-plus', temperature=0, retry=10),
@@ -194,6 +195,12 @@ llava_series = {
 vita_series = {
     'vita': partial(VITA, model_path='VITA-MLLM/VITA', root=VITA_ROOT),
     'vita_qwen2': partial(VITAQwen2, model_path='VITA-MLLM/VITA-1.5', root=VITA_ROOT),
+}
+
+long_vita_series = {
+    'Long-VITA-16K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-16K_HF', max_num_frame=128),
+    'Long-VITA-128K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-128K_HF', max_num_frame=256),
+    'Long-VITA-1M': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-1M_HF', max_num_frame=256),
 }
 
 internvl_series = {
@@ -398,9 +405,12 @@ qwen2vl_series = {
     'Qwen2-VL-2B-Instruct-GPTQ-Int4': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int4', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'Qwen2-VL-2B-Instruct-GPTQ-Int8': partial(Qwen2VLChat, model_path='Qwen/Qwen2-VL-2B-Instruct-GPTQ-Int8', min_pixels=1280*28*28, max_pixels=16384*28*28),
     'XinYuan-VL-2B-Instruct': partial(Qwen2VLChat, model_path='Cylingo/Xinyuan-VL-2B', min_pixels=1280*28*28, max_pixels=16384*28*28),
-    'Qwen2.5-VL-3B': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-3B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
-    'Qwen2.5-VL-7B': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
-    'Qwen2.5-VL-72B': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-72B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28),
+    'Qwen2.5-VL-3B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-3B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
+    'Qwen2.5-VL-3B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-3B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
+    'Qwen2.5-VL-7B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-7B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
+    'Qwen2.5-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
+    'Qwen2.5-VL-72B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-72B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
+    'Qwen2.5-VL-72B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-72B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
 }
 
 slime_series = {
@@ -493,7 +503,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series, long_vita_series
 ]
 
 for grp in model_groups:

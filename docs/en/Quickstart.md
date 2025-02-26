@@ -105,6 +105,65 @@ python run.py --data MMBench_Video_1fps_pack --model GPT4o
 
 The evaluation results will be printed as logs, besides. **Result Files** will also be generated in the directory `$YOUR_WORKING_DIRECTORY/{model_name}`. Files ending with `.csv` contain the evaluated metrics.
 
+### Frequently Asked Questions
+
+#### Constructing Input Prompt: The `build_prompt()` Function
+If you find that the model's output does not match the expected results when evaluating a specific benchmark, it could be due to the model not constructing the input prompt correctly.
+
+In VLMEvalKit, each `dataset` class includes a function named `build_prompt()`, which is responsible for formatting input questions. Different benchmarks can either customize their own `build_prompt()` function or use the default implementation.
+
+For instance, when handling the default [Multiple-Choice QA](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/dataset/image_mcq.py#L164), the `ImageMCQDataset.build_prompt()` method combines elements such as `hint`, `question`, and `options` (if present in the dataset) into a complete question format, as shown below:
+
+```
+HINT
+QUESTION
+Options:
+A. Option A
+B. Option B
+···
+Please select the correct answer from the options above.
+```
+
+Additionally, since different models may have varying evaluation requirements, VLMEvalKit also supports customizing the prompt construction method at the model level through `model.build_prompt()`. For an example, you can refer to [InternVL](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/vlm/internvl_chat.py#L324).
+
+**Note: If both `model.build_prompt()` and `dataset.build_prompt()` are defined, `model.build_prompt()` will take precedence over `dataset.build_prompt()`, effectively overriding it.**
+
+Some models, such as Qwen2VL and InternVL, define extensive prompt-building methods for various types of benchmarks. To provide more flexibility in adapting to different benchmarks, VLMEvalKit allows users to customize the `model.use_custom_prompt()` function within the model. By adding or modifying the `use_custom_prompt()` function, you can decide which benchmarks should utilize the model's custom prompt logic. Below is an example:
+
+```python
+def use_custom_prompt(self, dataset: str) -> bool:
+    from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
+    dataset_type = DATASET_TYPE(dataset, default=None)
+    if not self._use_custom_prompt:
+        return False
+    if listinstr(['MMVet'], dataset):
+        return True
+    if dataset_type == 'MCQ':
+        return True
+    if DATASET_MODALITY(dataset) == 'VIDEO':
+        return False
+    return False
+```
+Only when the `use_custom_prompt()` function returns `True` will VLMEvalKit call the model's `build_prompt()` function for the current benchmark.
+With this approach, you can flexibly control which benchmarks use the model's custom prompt logic based on your specific needs, thereby better adapting to different models and tasks.
+
+#### Model Splitting
+
+For large models with substantial parameter counts, such as InternVL2-78B, a single GPU may not be able to accommodate the entire model during inference. In such cases, you can define the environment variable `AUTO_SPLIT=1`. For models that support the `split_model()` function, the model will automatically be split and distributed across multiple GPUs.
+
+For example, on a machine equipped with 8 GPUs, you can run the model using the following command:
+
+```bash
+# For an 8-GPU machine
+AUTO_SPLIT=1 torchrun --nproc-per-node=1 run.py --data MMBench_DEV_EN --model InternVL2-76B --verbose
+```
+This command will automatically split the InternVL2-76B model into 8 parts and run each part on a separate GPU.
+#### Performance Discrepancies
+
+Model performance may vary across different environments. As a result, you might observe discrepancies between your evaluation results and those listed on the official VLMEvalKit leaderboard. These differences could be attributed to variations in versions of libraries such as `transformers`, `cuda`, and `torch`.
+
+Besides, if you encounter unexpected performance, we recommend first reviewing the local generation records (`{model}_{dataset}.xlsx`) or the evaluation records (`{model}_{dataset}_{judge_model}.xlsx`). This may help you better understand the evaluation outcomes and identify potential issues.
+
 ## Deploy a local language model as the judge / choice extractor
 The default setting mentioned above uses OpenAI's GPT as the judge LLM. However, you can also deploy a local judge LLM with [LMDeploy](https://github.com/InternLM/lmdeploy).
 

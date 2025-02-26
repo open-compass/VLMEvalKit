@@ -17,7 +17,7 @@ class CWWrapper(BaseAPI):
                  temperature: float = 0,
                  timeout: int = 600,
                  api_base: str = 'http://cwapi-vlm01.cw_rb.azurebot.tk/v1/chat/completions',
-                 max_tokens: int = 1024,
+                 max_tokens: int = 2048,
                  img_size: int = 512,
                  img_detail: str = 'low',
                  **kwargs):
