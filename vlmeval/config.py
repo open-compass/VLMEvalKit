@@ -197,6 +197,12 @@ vita_series = {
     'vita_qwen2': partial(VITAQwen2, model_path='VITA-MLLM/VITA-1.5', root=VITA_ROOT),
 }
 
+long_vita_series = {
+    'Long-VITA-16K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-16K_HF', max_num_frame=128),
+    'Long-VITA-128K': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-128K_HF', max_num_frame=256),
+    'Long-VITA-1M': partial(LongVITA, model_path='VITA-MLLM/Long-VITA-1M_HF', max_num_frame=256),
+}
+
 internvl_series = {
     'InternVL-Chat-V1-1': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-1', version='V1.1'),
     'InternVL-Chat-V1-2': partial(InternVLChat, model_path='OpenGVLab/InternVL-Chat-V1-2', version='V1.2'),
@@ -497,7 +503,7 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series, long_vita_series
 ]
 
 for grp in model_groups:
