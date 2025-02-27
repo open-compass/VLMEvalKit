@@ -1,6 +1,5 @@
 import os
 import math
-import natsort
 import numpy as np
 from PIL import Image
 import decord
@@ -508,6 +507,7 @@ class ImageProcessor:
         return images
 
     def process_video(self, video_file_or_dir, max_num_frame=8, max_fps=1):
+        import natsort
         if os.path.isdir(video_file_or_dir):
             all_filepath = []
             for root, dirs, files in os.walk(video_file_or_dir):
