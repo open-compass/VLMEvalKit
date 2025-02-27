@@ -10,12 +10,6 @@ import torch.distributed as dist
 from ..image_base import ImageBaseDataset
 from ...smp import *
 
-from .utils import match_gt2pred_simple, match_gt2pred_no_split,match_gt2pred_quick,md_tex_filter
-from .metrics import show_result, get_full_labels_results, get_page_split
-from .metrics import TEDS,METRIC_REGISTRY,recogition_end2end_base_dataset,recogition_end2end_table_dataset
-from .data_preprocess import clean_string,normalized_formula,textblock2unicode,normalized_table
-from func_timeout import FunctionTimedOut, func_timeout
-
 
 class OmniDocBench(ImageBaseDataset):
 
@@ -74,7 +68,6 @@ class OmniDocBench(ImageBaseDataset):
         metircs_table=Table_evalutor.score()
 
         return metrics_all
-
 
 
 class end2end_evaluator():
@@ -227,6 +220,7 @@ class end2end_evaluator():
         return formula_matches
             
     def get_matched_elements(self,references:list,predictions:list)->dict:
+        from .metrics import recogition_end2end_base_dataset, recogition_end2end_table_dataset
 
         plain_text_match = []
         display_formula_match = []
@@ -269,6 +263,9 @@ class end2end_evaluator():
         return matched_samples_all
     
     def process_get_matched_elements(self, sample, pred_content, img_name):
+        from .utils import match_gt2pred_simple, match_gt2pred_no_split, match_gt2pred_quick, md_tex_filter
+        from func_timeout import FunctionTimedOut, func_timeout
+        
         if self.match_method == 'simple_match':   # add match choice
             match_gt2pred = match_gt2pred_simple
         elif self.match_method == 'quick_match':
@@ -338,8 +335,7 @@ class end2end_evaluator():
         return [plain_text_match_clean, display_formula_match_s, latex_table_match_s, html_table_match_s, order_match_single]  
 
     def process_generated_metric_results(self,samples,save_name:str='end2end_quick_match'):
-        
-   
+        from .metrics import show_result, get_full_labels_results, get_page_split, METRIC_REGISTRY
 
         result_all={}
         page_info={}
@@ -435,6 +431,7 @@ class table_evalutor():
         self.gt_samples,self.table_samples=self.load_data(eval_file,tsv_path,pred_key,gt_key)
         
     def load_data(self,eval_file,gt_file,pred_key,gt_key):
+        from .data_preprocess import clean_string, normalized_formula, textblock2unicode, normalized_table
         samples=[]
         preds=[]
         predictions=pd.read_excel(eval_file)['prediction'].tolist()
@@ -501,7 +498,10 @@ class table_evalutor():
     def score(self)->dict:
         metrics=self.process_generated_metric_results()
         return metrics  
+
     def process_generated_metric_results(self,save_name:str='OmniDocBench_table'):
+        from .metrics import show_result, get_full_labels_results, get_page_split, METRIC_REGISTRY
+
         p_scores={}
         page_info={}
         no_page_flag=False
@@ -552,42 +552,3 @@ class table_evalutor():
 
 
         return selected_columns
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    
-
-    
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
