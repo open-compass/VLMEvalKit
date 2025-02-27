@@ -119,6 +119,14 @@ api_models = {
     'Taichu-VL-2B': partial(TaichuVLAPI, model='Taichu-VL-2B', url='https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions'),
     #doubao_vl
     'DoubaoVL': partial(DoubaoVL, model='Doubao-1.5-vision-pro', temperature=0,  retry=10, verbose=False),
+    #grok
+    'grok-vision-beta': partial(GPT4V, model='grok-vision-beta',api_base='https://api.x.ai/v1/chat/completions', temperature=0, retry=10),
+    'grok-2-vision': partial(GPT4V, model='grok-2-vision',api_base='https://api.x.ai/v1/chat/completions', temperature=0, retry=10),
+    'grok-2-vision-latest': partial(GPT4V, model='grok-2-vision-latest',api_base='https://api.x.ai/v1/chat/completions', temperature=0, retry=10),
+    #kimi
+    'moonshot-v1-8k-vision-preview': partial(GPT4V, model='moonshot-v1-8k-vision-preview',api_base='https://api.moonshot.cn/v1/chat/completions', temperature=0, retry=10),
+    'moonshot-v1-32k-vision-preview': partial(GPT4V, model='moonshot-v1-32k-vision-preview',api_base='https://api.moonshot.cn/v1/chat/completions', temperature=0, retry=10),
+    'moonshot-v1-128k-vision-preview': partial(GPT4V, model='moonshot-v1-128k-vision-preview',api_base='https://api.moonshot.cn/v1/chat/completions', temperature=0, retry=10),
 }
 
 emu_series = {

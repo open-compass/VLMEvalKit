@@ -72,6 +72,14 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('MiniMax_API_KEY', '')
             if key is None:
                 key = env_key
+        elif 'moonshot' in model:
+            env_key = os.environ.get('MOONSHOT_API_KEY', '')
+            if key is None:
+                key = env_key
+        elif 'grok' in model:
+            env_key = os.environ.get('XAI_API_KEY', '')
+            if key is None:
+                key = env_key
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
