@@ -2,7 +2,6 @@ import json
 import os
 import copy
 import pandas as pd
-import Levenshtein
 import tempfile
 import base64
 from tqdm import tqdm
@@ -203,6 +202,7 @@ class end2end_evaluator():
         pred = sum(read_order_pred, [])
         pred = [x for x in pred if x]
         if len(pred) > 0 or len(gt) > 0:
+            import Levenshtein
             edit = Levenshtein.distance(gt, pred)/ max(len(pred), len(gt))
             return {
                 'gt': gt,  
