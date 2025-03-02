@@ -393,6 +393,10 @@ phi3_series = {
     'Phi-3.5-Vision': partial(Phi3_5Vision, model_path='microsoft/Phi-3.5-vision-instruct')
 }
 
+phi4_series = {
+    'Phi-4-multimodal-instruct': partial(Phi4Multimodal, model_path='microsoft/Phi-4-multimodal-instruct'),
+}
+
 xgen_mm_series = {
     'xgen-mm-phi3-interleave-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-interleave-r-v1.5'),
     'xgen-mm-phi3-dpo-r-v1.5': partial(XGenMM, model_path='Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5'),
@@ -507,7 +511,7 @@ model_groups = [
     xcomposer_series, minigpt4_series, idefics_series, instructblip_series,
     deepseekvl_series, deepseekvl2_series, janus_series, minicpm_series, cogvlm_series, wemm_series,
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
-    mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
+    mantis_series, mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
     smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series, long_vita_series
