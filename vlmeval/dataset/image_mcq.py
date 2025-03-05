@@ -1177,14 +1177,10 @@ class VMCBenchDataset(ImageBaseDataset):
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         data['hit'] = data.apply(get_mc_score, axis=1)
-        # import pdb; pdb.set_trace()
         result_file = eval_file.replace(f'.{suffix}', f'_result.{suffix}')
         dump(data, result_file)
         acc = report_vmc_acc(data)
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         dump(acc, score_file)
 
-        # warnings.warn('Note that VMCBench is just a toy version of AesBench TEST. For full results, \
-        #                    please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
-        #                    larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
         return acc
