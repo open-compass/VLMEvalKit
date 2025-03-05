@@ -88,7 +88,6 @@ def report_vmc_acc(data):
     results['Reasoning'] = results[reason_datasets].mean(axis=1)
     results['OCR'] = results[ocr_datasets].mean(axis=1)
     results['Doc & Chart'] = results[doc_datasets].mean(axis=1)
-    # import pdb; pdb.set_trace()
     for key in results:
         results[key] = round(results[key]*100, 2)
     results = results[['Overall', 'General', 'Reasoning', 'OCR', 'Doc & Chart'] 
