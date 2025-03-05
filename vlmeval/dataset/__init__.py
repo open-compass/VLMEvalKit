@@ -5,7 +5,7 @@ from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
-    NaturalBenchDataset, WeMath, MMMUProDataset
+    NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -142,7 +142,7 @@ IMAGE_DATASET = [
     GMAIMMBenchDataset, MMERealWorld, HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset,
     MIABench, OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, MMNIAH,
     CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, CreationMMBenchDataset,
-    ImageShortQADataset, MMAlignBench, OmniDocBench
+    ImageShortQADataset, MMAlignBench, OmniDocBench, VMCBenchDataset
 ]
 
 

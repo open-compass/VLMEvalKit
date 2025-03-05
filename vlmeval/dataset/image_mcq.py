@@ -1125,3 +1125,66 @@ class WeMath(ImageBaseDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(combine_score, score_pth)
         return combine_score
+    
+class VMCBenchDataset(ImageBaseDataset):
+
+    TYPE = 'MCQ'
+
+    DATASET_URL = {
+        'VMCBench_DEV': 'https://huggingface.co/datasets/suyc21/VMCBench/resolve/main/data/tsv/VMCBench_DEV.tsv',
+        'VMCBench_TEST': 'https://huggingface.co/datasets/suyc21/VMCBench/resolve/main/data/tsv/VMCBench_TEST.tsv'
+    }
+
+    DATASET_MD5 = {
+    }
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        prompt = ''
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            # prompt += 'Please select the correct answer from the options above. \n'
+            prompt += "Answer with the option's letter from the given choices directly. \n"
+            
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vmcbench import get_mc_score, report_vmc_acc
+        suffix = eval_file.split('.')[-1]
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['hit'] = data.apply(get_mc_score, axis=1)
+        # import pdb; pdb.set_trace()
+        result_file = eval_file.replace(f'.{suffix}', f'_result.{suffix}')
+        dump(data, result_file)
+        acc = report_vmc_acc(data)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        # warnings.warn('Note that VMCBench is just a toy version of AesBench TEST. For full results, \
+        #                    please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
+        #                    larger than the VAL dataset and the leaderboard results are based on AesBench TEST.')
+        return acc
