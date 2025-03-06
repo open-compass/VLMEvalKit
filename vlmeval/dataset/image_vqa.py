@@ -840,7 +840,6 @@ class MME_CoT(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        # print('[MME-CoT Evaluation]Please refer to the official repository for detailed evaluation: https://github.com/CaraJ7/MME-CoT/tree/main')
         print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")
         dummy_result = dict(
             dummy_result=0
