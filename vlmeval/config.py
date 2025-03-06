@@ -418,6 +418,7 @@ qwen2vl_series = {
     'Qwen2.5-VL-7B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-7B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
     'Qwen2.5-VL-72B-Instruct': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-72B-Instruct', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
     'Qwen2.5-VL-72B-Instruct-AWQ': partial(Qwen2VLChat, model_path='Qwen/Qwen2.5-VL-72B-Instruct-AWQ', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
+    'VLM-R1-Qwen2.5VL-3B-Math-0305': partial(VLMR1Chat, model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', min_pixels=1280*28*28, max_pixels=16384*28*28, use_custom_prompt=False),
 }
 
 slime_series = {
