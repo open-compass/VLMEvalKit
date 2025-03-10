@@ -346,6 +346,14 @@ api_models = {
     "DoubaoVL": partial(
         DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=10, verbose=False
     ),
+    # Shopee MUG-U
+    'MUG-U-7B': partial(
+        MUGUAPI, 
+        model='MUG-U', 
+        temperature=0,  
+        retry=10, 
+        verbose=False, 
+        timeout=300),
     # grok
     "grok-vision-beta": partial(
         GPT4V,
