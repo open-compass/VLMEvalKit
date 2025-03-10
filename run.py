@@ -12,7 +12,6 @@ from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
-
 def build_model_from_config(cfg, model_name):
     import vlmeval.api
     import vlmeval.vlm
@@ -49,6 +48,7 @@ def build_dataset_from_config(cfg, dataset_name):
         return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
+
 
 
 def parse_args():
@@ -248,7 +248,7 @@ def main():
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
                 result_file = osp.join(pred_root, result_file_base)
-
+                
                 # Reuse the previous prediction file if exists
                 if rank == 0 and len(prev_pred_roots):
                     prev_result_files = []
@@ -277,7 +277,7 @@ def main():
                                 logger.info(f'--reuse is set, will reuse the prediction file {src}.')
                             else:
                                 logger.warning(f'File already exists: {tgt}')
-                        
+
                     elif len(prev_pkl_file_list):
                         for fname in prev_pkl_file_list:
                             target_path = osp.join(pred_root, osp.basename(fname))
@@ -345,7 +345,7 @@ def main():
                         judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision'], dataset_name):  # noqa: E501
+                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
 
                 if rank == 0:
