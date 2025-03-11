@@ -974,6 +974,12 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+    'VLM-R1-Qwen2.5VL-3B-Math-0305': partial(
+        VLMR1Chat, 
+        model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False),
 }
 
 slime_series = {
