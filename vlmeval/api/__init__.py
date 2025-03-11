@@ -17,7 +17,7 @@ from .taiyi import TaiyiAPI
 from .lmdeploy import LMDeployAPI
 from .taichu import TaichuVLAPI
 from .doubao_vl_api import DoubaoVL
-
+from .mug_u import MUGUAPI
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V',
@@ -26,5 +26,5 @@ __all__ = [
     'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI',
     'BlueLMWrapper', 'BlueLM_V_API', 'JTVLChatAPI', 'bailingMMAPI',
     'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
-    'TaichuVLAPI', 'DoubaoVL'
+    'TaichuVLAPI', 'DoubaoVL', "MUGUAPI"
 ]
