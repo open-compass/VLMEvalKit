@@ -838,7 +838,7 @@ phi3_series = {
 }
 
 phi4_series = {
-    'Phi-4-multimodal-instruct': partial(Phi4Multimodal, model_path='microsoft/Phi-4-multimodal-instruct'),
+    'Phi-4-Vision': partial(Phi4Multimodal, model_path='microsoft/Phi-4-multimodal-instruct'),
 }
 
 xgen_mm_series = {
