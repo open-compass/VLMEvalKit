@@ -1,0 +1,47 @@
+name: pr_run_test
+
+on:
+  pull_request:
+    branches:
+      - "main"
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  BASE_SCORE: '{"MMBench_V11_MINI":{"Qwen2-VL-7B-Instruct":0.8727272727272727,"InternVL2_5-8B":0.8727272727272727,"llava_onevision_qwen2_7b_si":0.8363636363636363},"MMStar_MINI":{"Qwen2-VL-7B-Instruct":0.6266666666666667,"InternVL2_5-8B":0.6333333333333333,"llava_onevision_qwen2_7b_si":0.49333333333333335},"AI2D_MINI":{"Qwen2-VL-7B-Instruct":0.7854251012145749,"InternVL2_5-8B":0.8421052631578947,"llava_onevision_qwen2_7b_si":0.8178137651821862},"OCRBench_MINI":{"Qwen2-VL-7B-Instruct":16.6,"InternVL2_5-8B":16.4,"llava_onevision_qwen2_7b_si":12.9}}'
+
+jobs:
+  vlm_test:
+    if: ${{!cancelled()}}
+    runs-on: [linux-a100]
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [Qwen/Qwen2-VL-7B-Instruct,OpenGVLab/InternVL2_5-8B,lmms-lab/llava-onevision-qwen2-7b-si]
+        dataset: ["MMBench_V11_MINI MMStar_MINI AI2D_MINI","OCRBench_MINI"]
+    container:
+      image: kkscilife/vlmevalkit_2:a100
+      options: "--gpus=all --ipc=host -e https_proxy=$https_proxy -e http_proxy=$http_proxy --pull never"
+      volumes:
+        - /mnt/187:/mnt/187
+    steps:
+      - name: clone_repo
+        uses: actions/checkout@v3
+      - name: evaluation_model
+        run: |
+          pip install -e .
+          pre_model=$(echo ${{matrix.model}} | awk -F'/' '{print $1}')
+          ln -s /mnt/187/$pre_model .
+          if [ "${{matrix.model}}" = "lmms-lab/llava-onevision-qwen2-7b-si" ];then
+              model_name="llava_onevision_qwen2_7b_si"
+          else
+              model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
+          fi
+          nvidia-smi
+          python run.py --data ${{matrix.dataset}} --model $model_name
+          python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
