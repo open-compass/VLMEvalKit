@@ -98,6 +98,25 @@ cgbench_dataset = {
     )
 }
 
+megabench_dataset = {
+    'MEGABench_core_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core"),
+    'MEGABench_core_single_image_16frame': partial(
+        MEGABench, dataset='MEGABench', nframe=16, subset_name="core_single_image"
+    ),
+    'MEGABench_open_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="open"),
+    'MEGABench_open_single_image_16frame': partial(
+        MEGABench, dataset='MEGABench', nframe=16, subset_name="open_single_image"
+    ),
+    'MEGABench_core_64frame': partial(MEGABench, dataset='MEGABench', nframe=64, subset_name="core"),
+    'MEGABench_core_single_image_64frame': partial(
+        MEGABench, dataset='MEGABench', nframe=64, subset_name="core_single_image"
+    ),
+    'MEGABench_open_64frame': partial(MEGABench, dataset='MEGABench', nframe=64, subset_name="open"),
+    'MEGABench_open_single_image_64frame': partial(
+        MEGABench, dataset='MEGABench', nframe=64, subset_name="open_single_image"
+    ),
+}
+
 worldsense_dataset = {
     'WorldSense_8frame': partial(WorldSense, dataset='WorldSense', nframe=8),
     'WorldSense_8frame_subs': partial(WorldSense, dataset='WorldSense', nframe=8, use_subtitle=True),
@@ -117,7 +136,8 @@ supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset
+    mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
+    megabench_dataset
 ]
 
 for grp in dataset_groups:
