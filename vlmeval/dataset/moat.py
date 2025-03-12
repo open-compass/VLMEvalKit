@@ -25,20 +25,39 @@ EVAL_SYSTEM_PROMPT = json.dumps({
     ]
 })
 
+def str2json(s: str):
+    try:
+        return json.loads(s)
+    except:
+        if s.startswith('```json') and s.endswith('```'):
+            return json.loads(s[6:-3])
+        return s
+
 class MOAT(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MOAT': "https://huggingface.co/datasets/waltsun/MOAT/resolve/main/MOAT.tsv",
-        'MOAT_images': "https://huggingface.co/datasets/waltsun/MOAT/resolve/main/MOAT_images.zip",
     }
     DATASET_MD5 = {
         'MOAT': '803b5a176a5b01aa1b8094fae73532a2',
-        'MOAT_images': 'c0818a3e0a3f0bc7ee2be89ff04d73a6',
     }
 
     def post_build(self, dataset):
         assert dataset == "MOAT", f"Wrong dataset name {dataset}"
         ROOT = LMUDataRoot()
+        os.makedirs(ROOT, exist_ok=True)
+
+        # Download images zip file
+        zip_url = "https://huggingface.co/datasets/waltsun/MOAT/resolve/main/MOAT_images.zip"
+        zip_md5 = 'c0818a3e0a3f0bc7ee2be89ff04d73a6'
+        zip_path = osp.join(ROOT, "MOAT_images.zip")
+        if osp.exists(zip_path) and md5(zip_path) == zip_md5:
+            pass
+        else:
+            warnings.warn('The dataset tsv is not downloaded')
+            download_file(zip_url, zip_path)
+        
+        # Extract images
         self.img_root = osp.join(ROOT, 'MOAT_images')
         if not osp.exists(self.img_root):
             with zipfile.ZipFile(osp.join(ROOT, 'MOAT_images.zip'), 'r') as zip_ref:
@@ -67,8 +86,9 @@ class MOAT(ImageBaseDataset):
     
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
+        model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
-        result_path = eval_file.replace(f'.{suffix}', f'_{judge_kwargs['model']}.xlsx')
+        result_path = eval_file.replace(f'.{suffix}', f"_{model}.xlsx")
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(result_path):
@@ -76,10 +96,30 @@ class MOAT(ImageBaseDataset):
             model = build_judge(**judge_kwargs)
             assert model.working(), ('MOAT evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
 
+            def extract_prediction(s: str):
+                try:
+                    return json.loads(s)['answer']
+                except:
+                    pass
+                try:
+                    if s.startswith('```json') and s.endswith('```'):
+                        return json.loads(s[7:-3])['answer']
+                except:
+                    print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ", s)
+                    return s
+            def extract_verdict(s: str):
+                try:
+                    return json.loads(s)['verdict']
+                except:
+                    if s.startswith('```json') and s.endswith('```'):
+                        return json.loads(s[7:-3])['verdict']
+                    raise
             def verdict_one(model, line):
-                prompt = EVAL_SYSTEM_PROMPT + '\n' + f'The answer to evaluate is {line['prediction']}\nThe ground truth answer is {line['answer']}'
+                prediction = extract_prediction(line['prediction'])
+                answer = line['answer']
+                prompt = EVAL_SYSTEM_PROMPT + '\n' + f'The answer to evaluate is {prediction}\nThe ground truth answer is {answer}'
                 res = model.generate(prompt)
-                return int(json.loads(res)['verdict'])
+                return extract_verdict(res)
             verdict_list = track_progress_rich(
                 lambda line: verdict_one(model, line),
                 [data.iloc[i] for i in range(len(data))],
