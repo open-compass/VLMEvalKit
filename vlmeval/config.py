@@ -26,8 +26,7 @@ video_models = {
     'Video-ChatGPT': partial(VideoChatGPT, model_path='MBZUAI/Video-ChatGPT-7B', dir_root=VideoChatGPT_ROOT),
     'PLLaVA-7B': partial(PLLaVA, model_path='ermu2001/pllava-7b', dir_root=PLLaVA_ROOT),
     'PLLaVA-13B': partial(PLLaVA, model_path='ermu2001/pllava-13b', dir_root=PLLaVA_ROOT),
-    'PLLaVA-34B': partial(PLLaVA, model_path='ermu2001/pllava-34b', dir_root=PLLaVA_ROOT),
-    "MovieChat": partial(MovieChat, model_path='Enxin/MovieChat-vicuna', short_memory_length=18, long_memory_length=256)
+    'PLLaVA-34B': partial(PLLaVA, model_path='ermu2001/pllava-34b', dir_root=PLLaVA_ROOT)
 }
 
 ungrouped = {
@@ -404,10 +403,6 @@ aria_series = {
     "Aria": partial(Aria, model_path='rhymes-ai/Aria')
 }
 
-aurora_series = {
-    "AuroraCap": partial(AuroraCap, model_path='wchai/AuroraCap-7B-VID-xtuner', token_merge_ratio=0.4)
-}
-
 h2ovl_series = {
     'h2ovl-mississippi-2b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-2b'),
     'h2ovl-mississippi-1b': partial(H2OVLChat, model_path='h2oai/h2ovl-mississippi-800m'),
@@ -427,7 +422,7 @@ model_groups = [
     cambrian_series, chameleon_series, video_models, ovis_series, vila_series,
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
-    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series, aurora_series,
+    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series, 
     smolvlm_series, sail_series, valley_series, vita_series
 ]
 
