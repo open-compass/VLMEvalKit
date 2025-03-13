@@ -49,7 +49,7 @@ from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
 from .vxverse import VXVERSE
-from .paligemma import PaliGemma
+from .gemma import PaliGemma, Gemma3
 from .qh_360vl import QH_360VL
 from .phi3_vision import Phi3Vision, Phi3_5Vision
 from .phi4_multimodal import Phi4Multimodal
