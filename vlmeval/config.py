@@ -66,9 +66,6 @@ ungrouped = {
     ),
     "Bunny-llama3-8B": partial(BunnyLLama3, model_path="BAAI/Bunny-v1_1-Llama-3-8B-V"),
     "VXVERSE": partial(VXVERSE, model_name="XVERSE-V-13B", root=VXVERSE_ROOT),
-    "paligemma-3b-mix-448": partial(
-        PaliGemma, model_path="google/paligemma-3b-mix-448"
-    ),
     "360VL-70B": partial(QH_360VL, model_path="qihoo360/360VL-70B"),
     "Llama-3-MixSenseV1_1": partial(
         LLama3Mixsense, model_path="Zero-Vision/Llama-3-MixSenseV1_1"
@@ -974,7 +971,7 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
-    'VLM-R1-Qwen2.5VL-3B-Math-0305': partial(
+    'VLM-R1': partial(
         VLMR1Chat, 
         model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
         min_pixels=1280*28*28, 
@@ -1070,6 +1067,15 @@ ross_series = {
 
 ursa_series = {"URSA-8B": partial(UrsaChat, model_path="URSA-MATH/URSA-8B")}
 
+gemma_series = {
+    "paligemma-3b-mix-448": partial(
+        PaliGemma, model_path="google/paligemma-3b-mix-448"
+    ),
+    'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
+    'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
+    'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -1120,6 +1126,7 @@ model_groups = [
     emu_series,
     ola_series,
     ursa_series,
+    gemma_series,
     long_vita_series,
 ]
 
