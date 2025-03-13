@@ -29,6 +29,8 @@ class VideoBaseDataset:
         self.data_root = ret['root']
         self.data_file = ret['data_file']
         self.data = load(self.data_file)
+        if 'index' not in self.data:
+            self.data['index'] = np.arange(len(self.data))
 
         assert 'question' in self.data and 'video' in self.data
         videos = list(set(self.data['video']))
