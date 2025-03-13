@@ -6,6 +6,7 @@ from ..smp import load, dump, decode_base64_to_image
 from .utils import DEBUG_MESSAGE
 
 import zipfile
+from random import shuffle
 
 
 VQA_SYSTEM_PROMPT = json.dumps({
@@ -70,16 +71,19 @@ class MOAT(ImageBaseDataset):
         question, choices, images, outside_knowledge_text, outside_knowledge_images = line['question'], line['choices'], line['images'], line['outside_knowledge_text'], line['outside_knowledge_images']  # noqa: E501
         choices, images, outside_knowledge_images = toliststr(choices), toliststr(images), toliststr(outside_knowledge_images)  # noqa: E501
 
+        if len(choices):
+            shuffle(choices)        # shuffle the choices to avoid bias
+            question += f'\nThe choices are: {choices}'
         msgs = [
             {
                 'type': 'text',
-                'value': VQA_SYSTEM_PROMPT + '\n' + question + (f'\nThe choices are: {choices}' if choices else ''),
+                'value': VQA_SYSTEM_PROMPT + '\n' + question,
             },
         ]
         for img in images:
             msgs.append({'type': 'image', 'value': osp.join(self.img_root, img)})
         if not pd.isna(outside_knowledge_text):
-            msgs.append({'type': 'text', 'value': outside_knowledge_text})
+            msgs.append({'type': 'text', 'value': 'Hint:\n' + outside_knowledge_text})
         for img in outside_knowledge_images:
             msgs.append({'type': 'image', 'value': osp.join(self.img_root, img)})
         return msgs
