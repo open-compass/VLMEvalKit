@@ -113,11 +113,16 @@ worldsense_dataset = {
     'WorldSense_0.5fps_audio': partial(WorldSense, dataset='WorldSense', fps=0.5, use_audio=True)
 }
 
+qbench_video_dataset = {
+    'QBench_Video_8frame': partial(QBench_Video, dataset='QBench_Video', nframe=8),
+    'QBench_Video_16frame': partial(QBench_Video, dataset='QBench_Video', nframe=16),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
-    mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset
+    mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset, qbench_video_dataset
 ]
 
 for grp in dataset_groups:
