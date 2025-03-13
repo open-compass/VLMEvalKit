@@ -36,6 +36,7 @@ from .video_concat_dataset import ConcatVideoDataset
 from .mmgenbench import MMGenBench
 from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
 from .worldsense import WorldSense
+from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
 from .miabench import MIABench
 from .cmmmu import CMMMU
@@ -151,11 +152,11 @@ IMAGE_DATASET = [
 
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, 
-    LongVideoBench, MLVU, MLVU_MCQ, MLVU_OpenEnded, TempCompass, 
-    TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
-    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, 
-    CGBench_OpenEnded, WorldSense
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, LongVideoBench, WorldSense,
+    MLVU, MLVU_MCQ, MLVU_OpenEnded,
+    TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
+    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded, 
+    QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 ]
 
 TEXT_DATASET = [
