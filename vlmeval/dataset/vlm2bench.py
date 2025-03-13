@@ -16,7 +16,7 @@ class VLM2Bench(ImageBaseDataset):
         "VLM2Bench": 'https://huggingface.co/datasets/Sterzhang/vlm2-bench/resolve/main/VLM2Bench_img.tsv' # all 2860 image cases from VLM2Bench huggingface repo
     }
     # DATASET_MD5
-    DATASET_MD5 = {'VLM2Bench': '587b658f297aaed0b1be8d519399b3f3'}
+    DATASET_MD5 = {'VLM2Bench': '16f474bfc4e269c583468bf89139da8f'}
 
     def build_prompt(self, line):
         """

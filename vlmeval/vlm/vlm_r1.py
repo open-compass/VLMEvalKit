@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import torch
 import re
-import jsonlines
 import logging
 import warnings
 
@@ -248,6 +247,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
                 id = message[0]['value'].rsplit('/')[-1].split('.')[0] 
             else:
                 id = None
+            import jsonlines
             with jsonlines.open(output_file, mode='a') as writer:
                 writer.write({"id": id, "response": raw_output})
 
