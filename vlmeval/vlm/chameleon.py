@@ -39,7 +39,7 @@ class Chameleon(BaseModel):
             padding=True,
             return_tensors='pt'
         ).to(device='cuda', dtype=torch.bfloat16)
-        generate_ids = self.model.generate(**inputs, max_new_tokens=512)
+        generate_ids = self.model.generate(**inputs, max_new_tokens=2048)
         input_token_len = inputs.input_ids.shape[1]
         text = self.processor.batch_decode(
             generate_ids[:, input_token_len:],

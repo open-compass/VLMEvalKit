@@ -264,7 +264,7 @@ def build_video_prompt(prompt, dataset=None, max_frames=64):
         prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
     if listinstr(['MMBench-Video'], dataset):
         prompt = prompt.replace('\nAnswer:', '')
-    elif listinstr(['Video-MME'], dataset):
+    elif listinstr(['Video-MME', 'WorldSense'], dataset):
         prompt = prompt.replace('\nAnswer:', '')
         prompt += "\nAnswer with the option's letter from the given choices directly."
     elif listinstr(['MVBench'], dataset):
@@ -338,7 +338,8 @@ def build_mpo_prompt(message, line, dataset):
     if listinstr(['MathVerse', 'MathVision'], dataset):
         question_orig = question_orig.split('Question:', 1)[-1].strip()
         question_orig = question_orig.replace('Choices:\n', '').strip()
-
+    if listinstr(['WeMath'], dataset):
+        question_orig = question_orig.replace('Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>', '').strip()
     options = {
         cand: line[cand]
         for cand in string.ascii_uppercase

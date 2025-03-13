@@ -26,7 +26,6 @@ The contents of the TSV file consist of:
 | CCBench                                 | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
 | SEEDBench_IMG                           | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
 | MME                                     | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
-| CORE_MM                                 | ✅     | ✅     | ✅          | ✅        |      |                         |        | ✅        |             |       |
 | MMVet                                   | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
 | MMMU_DEV_VAL                            | ✅     | ✅     | ✅          | ✅        |      | ✅                       | ✅      | ✅        | ✅           | ✅     |
 | COCO_VAL                                | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |

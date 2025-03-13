@@ -43,7 +43,7 @@ class OpenAIWrapper(BaseAPI):
                  temperature: float = 0,
                  timeout: int = 60,
                  api_base: str = None,
-                 max_tokens: int = 1024,
+                 max_tokens: int = 2048,
                  img_size: int = 512,
                  img_detail: str = 'low',
                  use_azure: bool = False,
@@ -70,6 +70,14 @@ class OpenAIWrapper(BaseAPI):
                 key = env_key
         elif 'abab' in model:
             env_key = os.environ.get('MiniMax_API_KEY', '')
+            if key is None:
+                key = env_key
+        elif 'moonshot' in model:
+            env_key = os.environ.get('MOONSHOT_API_KEY', '')
+            if key is None:
+                key = env_key
+        elif 'grok' in model:
+            env_key = os.environ.get('XAI_API_KEY', '')
             if key is None:
                 key = env_key
         else:

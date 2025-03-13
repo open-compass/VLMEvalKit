@@ -4,8 +4,6 @@ import warnings
 from .base import BaseModel
 from ..smp import splitlen, listinstr
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq
-from transformers.image_utils import load_image
 
 
 class IDEFICS(BaseModel):
@@ -62,6 +60,8 @@ class IDEFICS2(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='HuggingFaceM4/idefics2-8b', **kwargs):
+        from transformers import AutoProcessor, AutoModelForVision2Seq
+        from transformers.image_utils import load_image
         assert model_path is not None
         self.model_path = model_path
         if 'Idefics3' in self.model_path.lower():

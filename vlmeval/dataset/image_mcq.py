@@ -97,6 +97,14 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
             'resolve/main/visonlyqa_vlmevalkit.tsv'
         ),
+        '3DSRBench': (
+            'https://huggingface.co/datasets/ccvl/3DSRBench/'
+            'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
+        ),
+        # For Internal Use Only
+        'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
+        'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
+        'AI2D_MINI': 'https://opencompass.openxlab.space/utils/TEST/AI2D_MINI.tsv',
     }
 
     DATASET_MD5 = {
@@ -117,7 +125,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
-        'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
+        'SEEDBench2_Plus': '7cb2323950d71f049df70e5162062af3',
         # ScienceQA
         'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
         'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
@@ -149,6 +157,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
+        '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -206,7 +215,7 @@ class ImageMCQDataset(ImageBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         circular = False
-        if listinstr(['mmbench', 'ccbench'], dataset.lower()):
+        if listinstr(['mmbench', 'ccbench', 'circular'], dataset.lower()):
             data = load(eval_file)
             data['index'] = [int(x) for x in data['index']]
             dump(data, eval_file)
@@ -317,6 +326,113 @@ class MMMUDataset(ImageMCQDataset):
         msgs = super().build_prompt(line)
         msgs = self.split_MMMU(msgs)
         return msgs
+
+
+class MMMUProDataset(MMMUDataset):
+
+    TYPE = 'MCQ_MMMU_Pro'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if 'MMMU_Pro_V' in self.dataset_name:
+            self.data['question'] = ['placeholder'] * len(self.data)
+
+    DATASET_URL = {
+        'MMMU_Pro_10c': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
+        'MMMU_Pro_10c_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_10c.tsv',
+        'MMMU_Pro_V': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+        'MMMU_Pro_V_COT': 'https://opencompass.openxlab.space/utils/VLMEval/MMMU_Pro_V.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MMMU_Pro_10c': '22cee868fe6b680d14b99bfff6db8172',
+        'MMMU_Pro_10c_COT': '22cee868fe6b680d14b99bfff6db8172',
+        'MMMU_Pro_V': 'd01441a87b3dbe721b5a04652ae38009',
+        'MMMU_Pro_V_COT': 'd01441a87b3dbe721b5a04652ae38009',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+        
+        if 'MMMU_Pro_V' in self.dataset_name:
+            question = 'Answer the following multiple-choice question in the image. '
+            if 'COT' in self.dataset_name:
+                question += (
+                    "The last line of your response should be of the following format: 'Answer: $LETTER' "
+                    "(without quotes) where LETTER is one of the options. Think step by step before answering. "
+                )
+            else:
+                question += "Answer directly with the option letter from the given choices. "
+            if isinstance(tgt_path, list):
+                assert len(tgt_path) == 1
+                tgt_path = tgt_path[0]
+            return [dict(type='image', value=tgt_path), dict(type='text', value=question)]
+        else:
+            question = line['question']
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
+            options_prompt = 'Options:\n'
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            prompt = ''
+            prompt += f'Question: {question}\n'
+            if len(options):
+                prompt += options_prompt
+                if 'COT' in self.dataset_name:
+                    prompt += (
+                        "Answer the following multiple-choice question. The last line of your response should be of "
+                        "the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of the options. "
+                        "Think step by step before answering. "
+                    )
+                else:
+                    prompt += "Answer directly with the option letter from the given choices. "
+
+            msgs = []
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+            msgs.append(dict(type='text', value=prompt))
+            msgs = self.split_MMMU(msgs)
+            return msgs
+
+    def cot_postproc(self, response):
+        lines = response.strip().split('\n')
+        lines = [x.strip() for x in lines]
+        cands = [x for x in lines if x.startswith('Answer:')]
+        if len(cands) == 1:
+            counter = defaultdict(lambda: 0)
+            for ch in cands[0]:
+                if ch in string.ascii_uppercase:
+                    counter[ch] += 1
+            if len(counter) == 1:
+                return list(counter.keys())[0]
+            else:
+                return cands[0][7:]
+        return response
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        if 'COT' in self.dataset_name:
+            data = load(eval_file)
+            data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
+            tgt = eval_file.replace('.xlsx', '_cotpost.xlsx')
+            dump(data, tgt)
+            res = super().evaluate(tgt, **judge_kwargs)
+            acc_org = eval_file.replace('.xlsx', '_acc.csv')
+            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv') 
+            shutil.copy(acc_now, acc_org)
+            return res
+        else:
+            return super().evaluate(eval_file, **judge_kwargs)  
 
 
 class MUIRDataset(ImageMCQDataset):
@@ -897,3 +1013,173 @@ class NaturalBenchDataset(ImageMCQDataset):
         dump(df, score_file)
 
         return scores
+
+
+class WeMath(ImageBaseDataset):
+    TYPE = 'MCQ'
+    DATASET_URL = {
+        'WeMath': 'https://opencompass.openxlab.space/utils/VLMEval/WeMath.tsv',
+        'WeMath_COT': 'https://opencompass.openxlab.space/utils/VLMEval/WeMath.tsv',
+    }
+    DATASET_MD5 = {'WeMath': 'b5e969a075f01290a542411fb7766388',
+                   'WeMath_COT': 'b5e969a075f01290a542411fb7766388'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+
+        if 'COT' in self.dataset_name:
+            requirement = line['requirement']
+            if requirement is not None:
+                prompt += f'\n{requirement}'
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage) and model is not None:
+            data = load(eval_file)
+            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+            data = load(eval_file)
+            data = data.sort_values(by='index')
+            data['prediction'] = [str(x) for x in data['prediction']]
+            # If not choice label, then use lower case
+            for k in data.keys():
+                data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+            meta = self.data
+            meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+            data_map = {x: y for x, y in zip(data['index'], data['question'])}
+            for k in data_map:
+                assert k in meta_q_map, (
+                    f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+                )
+            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+
+            if 'id' in data.columns:
+                # 更改列名
+                data.rename(columns={'id': 'ID'}, inplace=True)
+            dump(data, storage)
+        if osp.exists(storage):
+            accuracy_scores = wemath_evaluate_models(storage)
+            four_dim_scores = wemath_accuracy(storage)
+        else:
+            accuracy_scores = wemath_evaluate_models(eval_file)
+            four_dim_scores = wemath_accuracy(eval_file)
+        combine_score = {**accuracy_scores, **four_dim_scores}
+        combine_score = pd.DataFrame(combine_score)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(combine_score, score_pth)
+        return combine_score
+    
+class VMCBenchDataset(ImageBaseDataset):
+
+    TYPE = 'MCQ'
+
+    DATASET_URL = {
+        'VMCBench_DEV': 'https://huggingface.co/datasets/suyc21/VMCBench/resolve/main/data/tsv/VMCBench_DEV.tsv',
+        'VMCBench_TEST': 'https://huggingface.co/datasets/suyc21/VMCBench/resolve/main/data/tsv/VMCBench_TEST.tsv'
+    }
+
+    DATASET_MD5 = {
+    }
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        prompt = ''
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += "Answer with the option's letter from the given choices directly. \n"
+            
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vmcbench import get_mc_score, report_vmc_acc
+        suffix = eval_file.split('.')[-1]
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['hit'] = data.apply(get_mc_score, axis=1)
+        result_file = eval_file.replace(f'.{suffix}', f'_result.{suffix}')
+        dump(data, result_file)
+        acc = report_vmc_acc(data)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        return acc

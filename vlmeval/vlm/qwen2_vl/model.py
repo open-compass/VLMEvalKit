@@ -10,7 +10,7 @@ import torch
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
-from ...smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag
+from ...smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag, listinstr
 
 
 def ensure_image_url(image: str) -> str:
@@ -95,13 +95,19 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.fps = 2.0
         self.nframe = 64
         self.FRAME_FACTOR = 2
-
-        from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
         rank, world_size = get_rank_and_world_size()
-
         assert model_path is not None
         self.model_path = model_path
-        self.processor = Qwen2VLProcessor.from_pretrained(model_path)
+        MODEL_CLS = None
+
+        if listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
+            from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+            MODEL_CLS = Qwen2_5_VLForConditionalGeneration
+            self.processor = AutoProcessor.from_pretrained(model_path)
+        else:
+            from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
+            MODEL_CLS = Qwen2VLForConditionalGeneration
+            self.processor = Qwen2VLProcessor.from_pretrained(model_path)
 
         gpu_mems = get_gpu_memory()
         max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
@@ -109,18 +115,18 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
 
         # If only one process and GPU memory is less than 40GB
         if '72b' in self.model_path.lower():
-            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+            self.model = MODEL_CLS.from_pretrained(
                 model_path, torch_dtype='auto', device_map=split_model(), attn_implementation='flash_attention_2'
             )
             self.model.eval()
         elif auto_split_flag():
             assert world_size == 1, 'Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL'
             # Will Use All GPUs to run one model
-            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+            self.model = MODEL_CLS.from_pretrained(
                 model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
             )
         else:
-            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+            self.model = MODEL_CLS.from_pretrained(
                 model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
             )
             self.model.cuda().eval()

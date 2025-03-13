@@ -17,6 +17,8 @@ class VITAQwen2(BaseModel):
     IMAGE_TOKEN_INDEX = -200
 
     def __init__(self, model_path='VITA/vita', root=None, **kwargs):
+        if root is None:
+            root = os.environ.get('VITA_ROOT', '')
         sys.path.append(root)
         assert model_path is not None
         try:

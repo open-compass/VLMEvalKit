@@ -47,7 +47,7 @@ def localize_df(data, dname, nproc=32):
     else:
         img_paths = []
         for i in indices_str:
-            if len(image_map[i]) <= 64:
+            if len(image_map[i]) <= 64 and isinstance(image_map[i], str):
                 idx = image_map[i]
                 assert idx in image_map and len(image_map[idx]) > 64
                 img_paths.append(f'{idx}.jpg')
@@ -182,6 +182,13 @@ def load(f, fmt=None):
 
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
+
+    import validators
+    if validators.url(f):
+        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
+        if not osp.exists(tgt):
+            download_file(f, tgt)
+        f = tgt
 
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
     if fmt is not None:
@@ -342,3 +349,26 @@ def parquet_to_tsv(file_path):
     pth = '/'.join(file_path.split('/')[:-1])
     data_name = file_path.split('/')[-1].split('.')[0]
     data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
+
+
+def fetch_aux_files(eval_file): 
+    file_root = osp.dirname(eval_file)
+    file_name = osp.basename(eval_file)
+
+    eval_id = osp.basename(file_root)
+    if eval_id[:3] == 'T20' and eval_id[9:11] == '_G':
+        model_name = osp.basename(osp.dirname(file_root))
+    else:
+        model_name = eval_id
+    
+    dataset_name = osp.splitext(file_name)[0][len(model_name) + 1:]
+    from vlmeval.dataset import SUPPORTED_DATASETS
+    to_handle = []
+    for d in SUPPORTED_DATASETS:
+        if d.startswith(dataset_name) and d != dataset_name:
+            to_handle.append(d)
+    fs = ls(file_root, match=f'{model_name}_{dataset_name}')
+    if len(to_handle):
+        for d in to_handle:
+            fs = [x for x in fs if d not in x]
+    return fs

@@ -6,13 +6,6 @@ import tempfile
 from functools import partial
 import pandas as pd
 
-try:
-    from .utils.ccocr_evaluator import evaluator_map_info as ccocr_evaluator_map
-except ImportError as err:
-    import warnings
-    warnings.warn('The dependency of CCOCR evaluator is not properly installed')
-    warnings.warn(f'{type(err)}: {err}')
-
 from .image_base import ImageBaseDataset
 from ..smp import *
 
@@ -176,6 +169,12 @@ class CCOCRDataset(ImageBaseDataset):
         data_name = set([str(x) for x in df['split']]).pop()
 
         data_info = {"op": op_name, "group": group_name, "dataset": data_name,  "num": len(gt_info)}
+        try:
+            from .utils.ccocr_evaluator import evaluator_map_info as ccocr_evaluator_map
+        except ImportError as err:
+            import warnings
+            warnings.warn('The dependency of CCOCR evaluator is not properly installed')
+            warnings.warn(f'{type(err)}: {err}')
         eval_func = ccocr_evaluator_map.get(group_name, None)
         if eval_func is None:
             raise ValueError("error: evaluator not defined for: {}".format(group_name))

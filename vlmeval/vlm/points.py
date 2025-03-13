@@ -125,7 +125,7 @@ class POINTS(BaseModel):
 
         image = Image.open(image_path).convert('RGB')
         generation_config = {
-            'max_new_tokens': 1024,
+            'max_new_tokens': 2048,
             'temperature': 0.0,
             'top_p': 0.0,
             'num_beams': 1,
@@ -296,7 +296,7 @@ class POINTSV15(BaseModel):
         messages = self.construct_messages(prompt, image_paths)
 
         generation_config = {
-            'max_new_tokens': 1024,
+            'max_new_tokens': 2048,
             'temperature': 0.0,
             'top_p': 0.0,
             'num_beams': 1,
