@@ -4,6 +4,5 @@ from .chat_uni_vi import Chatunivi
 from .video_chatgpt import VideoChatGPT
 from .llama_vid import LLaMAVID
 from .pllava import PLLaVA
-from .moviechat_videollama import MovieChat
 
-__all__ = ['VideoLLaVA', 'VideoLLaVA_HF', 'Chatunivi', 'VideoChatGPT', 'LLaMAVID', 'VideoChat2_HD', 'PLLaVA', 'MovieChat']
+__all__ = ['VideoLLaVA', 'VideoLLaVA_HF', 'Chatunivi', 'VideoChatGPT', 'LLaMAVID', 'VideoChat2_HD', 'PLLaVA']
