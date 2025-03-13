@@ -11,8 +11,8 @@ import zipfile
 VQA_SYSTEM_PROMPT = json.dumps({
     'task': 'Answer the question presented to you truthfully.',
     'requirements': [
-        'Analyze the image(s) first, then answer the question. If you are given a list of possible answers, you must choose from it.',
-        'You must answer in the following json format: {"analysis": "(write your analysis here)", "answer": "(your answer)"}'
+        'Analyze the image(s) first, then answer the question. If you are given a list of possible answers, you must choose from it.',  # noqa: E501
+        'You must answer in the following json format: {"analysis": "(write your analysis here)", "answer": "(your answer)"}'  # noqa: E501
     ]
 })
 
@@ -67,8 +67,8 @@ class MOAT(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        question, choices, images, outside_knowledge_text, outside_knowledge_images = line['question'], line['choices'], line['images'], line['outside_knowledge_text'], line['outside_knowledge_images']
-        choices, images, outside_knowledge_images = toliststr(choices), toliststr(images), toliststr(outside_knowledge_images)
+        question, choices, images, outside_knowledge_text, outside_knowledge_images = line['question'], line['choices'], line['images'], line['outside_knowledge_text'], line['outside_knowledge_images']  # noqa: E501
+        choices, images, outside_knowledge_images = toliststr(choices), toliststr(images), toliststr(outside_knowledge_images)  # noqa: E501
 
         msgs = [
             {
@@ -107,6 +107,7 @@ class MOAT(ImageBaseDataset):
                 except:
                     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ", s)
                     return s
+
             def extract_verdict(s: str):
                 try:
                     return json.loads(s)['verdict']
@@ -114,12 +115,14 @@ class MOAT(ImageBaseDataset):
                     if s.startswith('```json') and s.endswith('```'):
                         return json.loads(s[7:-3])['verdict']
                     raise
+
             def verdict_one(model, line):
                 prediction = extract_prediction(line['prediction'])
                 answer = line['answer']
                 prompt = EVAL_SYSTEM_PROMPT + '\n' + f'The answer to evaluate is {prediction}\nThe ground truth answer is {answer}'
                 res = model.generate(prompt)
                 return extract_verdict(res)
+
             verdict_list = track_progress_rich(
                 lambda line: verdict_one(model, line),
                 [data.iloc[i] for i in range(len(data))],
@@ -142,8 +145,12 @@ class MOAT(ImageBaseDataset):
             for capability in capabilities:
                 capability_score_map[capability] = (capability_score_map[capability][0] + verdict, capability_score_map[capability][1] + 1)
         capability_score_map = {capability: score[0] / score[1] for capability, score in capability_score_map.items()}
-        return {
+        metrics = { 
             'overall_acc': overall_acc,
             'result_path': result_path,
             'capability_acc': capability_score_map,
         }
+        score_pth = eval_file.replace(f'.{suffix}', f"_score.json")
+        dump(metrics, score_pth) 
+        
+        return metrics
