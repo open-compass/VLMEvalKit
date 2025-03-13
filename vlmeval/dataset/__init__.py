@@ -50,6 +50,7 @@ from .utils import *
 from .video_dataset_config import *
 from ..smp import *
 from .Omnidocbench.omnidocbench import OmniDocBench
+from .moat import MOAT
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -147,7 +148,7 @@ IMAGE_DATASET = [
     OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, 
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, 
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench, 
-    VLM2Bench, VMCBenchDataset, EMMADataset
+    VLM2Bench, VMCBenchDataset, EMMADataset, MOAT
 ]
 
 
