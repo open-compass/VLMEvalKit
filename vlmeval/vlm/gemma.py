@@ -87,7 +87,7 @@ class Gemma3(BaseModel):
         return ret
 
     def generate_inner(self, message, dataset=None):
-        pipeline_input = self.message2pipline(message)
+        pipeline_input = self.message2pipeline(message)
         output = self.model(text=pipeline_input, **self.kwargs)
         if os.environ.get('VERBOSE', 0):
             logging.debug(output)
