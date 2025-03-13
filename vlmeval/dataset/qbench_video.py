@@ -32,23 +32,9 @@ class QBench_Video(ConcatVideoDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         result = super().evaluate(eval_file=eval_file, **judge_kwargs)
         suffix = eval_file.split('.')[-1]
-        # score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
-        # for key in self.type_data_dict:
-        #     result.loc[key] = 0.0
-        #     for name, item in result.iterrows():
-        #         if name in self.type_data_dict[key]:
-        #             result.loc[key, 'success'] += item['success']
-        #             result.loc[key, 'overall'] += item['overall']
-        #     if key == 'G-Avg':
-        #         result.loc[key, 'acc'] = round(
-        #             result.loc[key, 'success'] / result.loc[key, 'overall'], 2
-        #         )
-        #     else:
-        #         result.loc[key, 'acc'] = round(
-        #             result.loc[key, 'success'] / result.loc[key, 'overall'] * 100, 1
-        #         )
-        # result = result.reset_index().rename(columns={'index': 'task'})
-        # dump(result, score_file)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        result.at['open_ended', 'acc'] /= 2
+        dump(result, score_file)
         return result
 
 
@@ -326,64 +312,40 @@ Please analyze these frames and provide a detailed and accurate answer from the 
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        model = judge_kwargs.setdefault('model', 'gpt-4o-0806')
+        assert model in ['gpt-4o-0806', 'gpt-4o']
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        suffix = eval_file.split('.')[-1]
+        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(score_file):
-            model = judge_kwargs.setdefault('model', 'chatgpt-0125')
-            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
-
-            if model == 'exact_matching':
-                model = None
-            elif gpt_key_set():
-                model = build_judge(**judge_kwargs)
-                if not model.working():
-                    warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                    warnings.warn(DEBUG_MESSAGE)
-                    model = None
-            else:
-                warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-                model = None
-            res = {} if not osp.exists(tmp_file) else load(tmp_file)
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
-
             data = load(eval_file)
-            data_un = data[~pd.isna(data['prediction'])]
+            model = build_judge(system_prompt=VQA_JUDGE_SYS_PROMPT, **judge_kwargs)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
 
-            for idx in data['index']:
-                ans = data.loc[data['index'] == idx, 'answer'].values[0]
-                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
-                options = eval(data.loc[data['index'] == idx, 'candidates'].values[0])
-                answer_idx = -1
-                for id, c in enumerate(options):
-                    if c == ans:
-                        answer_idx = id
-                ans = f"({chr(ord('A') + answer_idx)}) {ans}"
-                input_item = data.loc[data['index'] == idx].to_dict(orient='records')[0]
-                for id, option_content in enumerate(eval(input_item['candidates'])):
-                    input_item[chr(ord('A') + id)] = option_content
-                    if option_content == input_item['answer']:
-                        input_item['answer'] = chr(ord('A') + id)
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
 
-                if FAIL_MSG in pred:
-                    data.loc[idx, 'score'] = -1
-                else:
-                    data.loc[idx, 'score'] = int(check_ans_with_model(
-                        pred, ans, model,
-                        input_item,
-                        'MLVU_MCQ'
-                    ))
-
-            rejected = [x for x in data['score'] if x == -1]
-
-            print(
-                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as -1 score in ALL rating, and will not be counted in VALID rating.'
-            )
-
+            if len(indices):
+                _ = track_progress_rich(
+                    check_ans_vqa,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+            ans = load(tmp_file)
+            for idx in ans:
+                data.loc[data['index'] == idx, 'score'] = int(ans[idx].replace('Score:', '').strip())
             dump(data, score_file)
 
         rating = get_dimension_rating(score_file)
