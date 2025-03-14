@@ -47,6 +47,7 @@ video_models = {
 }
 
 ungrouped = {
+    "AKI": partial(AKI, name="AKI", ckpt_pth="Sony/AKI-4B-phi-3.5-mini"),
     "TransCore_M": partial(TransCoreM, root=TransCore_ROOT),
     "PandaGPT_13B": partial(PandaGPT, name="PandaGPT_13B", root=PandaGPT_ROOT),
     "flamingov2": partial(
