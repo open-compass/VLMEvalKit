@@ -1,3 +1,4 @@
+from vlmeval.vlm.rwkv.worldrwkv7_siglip2 import WorldRWKV7_Siglip2
 from vlmeval.vlm import *
 from vlmeval.api import *
 from functools import partial
@@ -499,6 +500,11 @@ ursa_series = {
     'URSA-8B': partial(UrsaChat, model_path='URSA-MATH/URSA-8B')
 }
 
+rwkv_series = {
+    "worldrwkv7_siglip": partial(WorldRWKV7_Siglip2, model_path="/home/lynn/rwkv/WorldRWKV/model/RWKV7-3B-siglip2/rwkv-0", encoder_path="google/siglip2-base-patch16-384")
+}
+
+
 supported_VLM = {}
 
 model_groups = [
@@ -510,7 +516,8 @@ model_groups = [
     mantis_series, mmalaya_series, phi3_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series, aria_series,
-    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series, long_vita_series
+    smolvlm_series, sail_series, valley_series, vita_series, ross_series, emu_series, ola_series, ursa_series, long_vita_series,
+    rwkv_series
 ]
 
 for grp in model_groups:

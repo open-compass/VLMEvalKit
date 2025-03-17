@@ -29,6 +29,7 @@ from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import ShareCaptioner, XComposer, XComposer2, XComposer2_4KHD, XComposer2d5
 from .yi_vl import Yi_VL
+from .rwkv.worldrwkv7_siglip2 import WorldRWKV7_Siglip2
 from .internvl import InternVLChat
 from .deepseek_vl import DeepSeekVL
 from .deepseek_vl2 import DeepSeekVL2
