@@ -347,6 +347,8 @@ def build_prompt(line, dataset_name):
     assert 'subjective' in criteria, 'No subjective criteria found in the criteria dict'
     
     prompts = {}
+    if listinstr(['Creation_MMBench'], dataset_name):
+        dataset_name = 'Creation_MMBench'
     prompts['subjective'] = prompt_dict[dataset_name]['subjective'].format(
         instructions=line['question'],
         criteria=criteria['subjective'],
@@ -392,7 +394,7 @@ def Generate_Creation_MMBench_judge(model, image_list, prompt):
 def extract_subjective(inp, dataset_name):
     mapping_dict = {
         'LiveMMBench_Creation': 'FINAL CONCLUSION:',
-        'Creation_MMBench': 'FINAL VERDICT IS:',
+        'Creation_MMBench': 'FINAL VERDICT IS:'
     }
     lines = inp.split('\n')
     for line in lines:
@@ -419,7 +421,7 @@ def extract_objective(inp, dataset_name):
         'Creation_MMBench': {
             'A': 'RESPONSE A VISUAL FACTUALITY SCORE:', 
             'B': 'RESPONSE B VISUAL FACTUALITY SCORE:'
-        }
+        },
     }
     if pd.isna(inp) or inp is None or inp == '':
         return 'NO_OBJECTIVE'
@@ -618,6 +620,35 @@ class CreationMMBenchDataset(ImageBaseDataset):
     }
 
     # It returns a dictionary
+    def dump_image(self, line):
+        os.makedirs(self.img_root, exist_ok=True)
+
+        if 'image' in line:
+            if isinstance(line['image'], list):
+                tgt_path = []
+                assert 'image_path' in line
+                for img, im_name in zip(line['image'], line['image_path']):
+                    path = osp.join(self.img_root, im_name)
+                    if not read_ok(path):
+                        decode_base64_to_image_file(img, path)
+                    tgt_path.append(path)
+            else:
+                if 'image_path' in line:
+                    assert isinstance(line['image_path'], str) or (isinstance(line['image_path'], list) and len(line['image_path']) == 1)
+                    if isinstance(line['image_path'], list):
+                        line['image_path'] = line['image_path'][0]
+                    tgt_path = osp.join(self.img_root, line['image_path'])
+                else:
+                    tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'], tgt_path)
+                tgt_path = [tgt_path]
+        else:
+            assert 'image_path' in line
+            tgt_path = toliststr(line['image_path'])
+
+        return tgt_path
+
     def evaluate(self, eval_file, **judge_kwargs):
         rating_rev = None
         dual_eval = judge_kwargs.pop('dual_eval', True)
