@@ -55,16 +55,22 @@ class Gemma3(BaseModel):
             "pip install git+https://github.com/huggingface/transformers@v4.49.0-Gemma-3"
         ) 
         try:
-            from transformers import pipeline 
+            from transformers import AutoProcessor, Gemma3ForConditionalGeneration
             import torch
         except Exception as e:
             logging.critical('Please install torch and transformers')
             raise e
 
-        self.model = pipeline('image-text-to-text', model=model_path, device="cuda", torch_dtype=torch.bfloat16)
+        self.model = Gemma3ForConditionalGeneration.from_pretrained(
+            model_path, device_map="cuda", attn_implementation="flash_attention_2"
+        ).eval()
+
+        self.device = self.model.device
+        self.processor = AutoProcessor.from_pretrained(model_path)
+
         self.system_prompt = kwargs.pop('system_prompt', 'You are a helpful assistant. ')
+
         default_kwargs = {
-            'temperature': 0, 
             'do_sample': False, 
             'max_new_tokens': 2048
         }
@@ -87,8 +93,17 @@ class Gemma3(BaseModel):
         return ret
 
     def generate_inner(self, message, dataset=None):
-        pipeline_input = self.message2pipeline(message)
-        output = self.model(text=pipeline_input, **self.kwargs)
-        if os.environ.get('VERBOSE', 0):
-            logging.debug(output)
-        return output[0]['generated_text'][-1]['content']
+        messages = self.message2pipeline(message)
+        inputs = self.processor.apply_chat_template(
+            messages, add_generation_prompt=True, tokenize=True,
+            return_dict=True, return_tensors="pt",
+        ).to(self.device, dtype=torch.bfloat16)
+
+        input_len = inputs['input_ids'].shape[-1]
+        
+        with torch.inference_mode():
+            generation = self.model.generate(**inputs, **self.kwargs)
+            generation = generation[0][input_len:]
+
+        decoded = self.processor.decode(generation, skip_special_tokens=True)
+        return decoded
