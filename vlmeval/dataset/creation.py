@@ -151,7 +151,7 @@ Assistant B Evaluation: [qualitative comment]
 Final Verdict is: [[VERDICT]]
 """,
 
-##### For Groundtruth Alignment
+##### For Visual Factuality
     'objective_without_gt':"""
 Please act as an impartial judge and evaluate the **Visual Factuality** of the responses provided by two AI assistants to the user prompt displayed below.
 
