@@ -304,6 +304,29 @@ def is_criteria_valid(criteria):
             return False
     return True
 
+key_mapping = {
+    "sub_parse_ok": "preference_parse_ok",
+    "sub_dist": "preference_dist",
+    "win_rate": "win_rate",
+    "sub_reward": "reward",
+    "obj_parse_ok": "visual_factuality_parse_ok",
+    "obj_score": "visual_factuality_score",
+    "obj_ref_score": "visual_factuality_ref_score"
+}
+
+def rename_keys(data, key_mapping):
+    if isinstance(data, dict):
+        new_data = {}
+        for key, value in data.items():
+            new_key = key_mapping.get(key, key)
+            new_data[new_key] = rename_keys(value, key_mapping)
+        return new_data
+    elif isinstance(data, list):
+        return [rename_keys(item, key_mapping) for item in data]
+    else:
+        return data
+
+
 def build_prompt(line, dataset_name):
     try:
         criteria = eval(line['criteria'])
@@ -324,8 +347,6 @@ def build_prompt(line, dataset_name):
     assert 'subjective' in criteria, 'No subjective criteria found in the criteria dict'
     
     prompts = {}
-    if listinstr(['Creation_MMBench'], dataset_name): # can removed this line
-        dataset_name = 'Creation_MMBench'
     prompts['subjective'] = prompt_dict[dataset_name]['subjective'].format(
         instructions=line['question'],
         criteria=criteria['subjective'],
@@ -361,7 +382,7 @@ def Generate_Creation_MMBench_judge(model, image_list, prompt):
                 else: 
                     raise ValueError(f"Image not found: {img_path}")
             input_msg.append({'type': 'text', 'value': prompt[key]}) 
-            print(f'using image {image_list} and text')
+            # print(f'using image {image_list} and text')
             response[key] = model.generate(input_msg)
         else:
             response[key] = model.generate(prompt[key])
@@ -372,7 +393,6 @@ def extract_subjective(inp, dataset_name):
     mapping_dict = {
         'LiveMMBench_Creation': 'FINAL CONCLUSION:',
         'Creation_MMBench': 'FINAL VERDICT IS:',
-        'Creation_MMBench_sampled': 'FINAL VERDICT IS:'
     }
     lines = inp.split('\n')
     for line in lines:
@@ -397,10 +417,6 @@ def extract_objective(inp, dataset_name):
             'B': 'RESPONSE B ALIGNMENT SCORE:'
         },
         'Creation_MMBench': {
-            'A': 'RESPONSE A VISUAL FACTUALITY SCORE:', 
-            'B': 'RESPONSE B VISUAL FACTUALITY SCORE:'
-        },
-        'Creation_MMBench_sampled': {
             'A': 'RESPONSE A VISUAL FACTUALITY SCORE:', 
             'B': 'RESPONSE B VISUAL FACTUALITY SCORE:'
         }
@@ -585,6 +601,8 @@ def merge_dual(raw, raw_dual, dataset_name):
 
     final_res['raw'] = raw
     final_res['category_raw'] = category_raw
+    if listinstr(['Creation_MMBench'], dataset_name):
+        final_res = rename_keys(final_res, key_mapping)
     return final_res
 
 
@@ -593,12 +611,10 @@ class CreationMMBenchDataset(ImageBaseDataset):
     TYPE = 'CreationVQA'
     DATASET_URL = {
         'LiveMMBench_Creation': '',
-        'Creation_MMBench': '',
-        'Creation_MMBench_sampled':''
+        'Creation_MMBench': 'https://opencompass.openxlab.space/utils/VLMEval/Creation_MMBench.tsv'
     }
     DATASET_MD5 = {
-        'Creation_MMBench':'870c0332a9c6a169d0ac9b8574c245fe',
-        'Creation_MMBench_sampled':'f038b3124d08db9cf97185c6238eb191'
+        'Creation_MMBench':'870c0332a9c6a169d0ac9b8574c245fe'
     }
 
     # It returns a dictionary
