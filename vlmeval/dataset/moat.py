@@ -6,8 +6,10 @@ from ..smp import load, dump, decode_base64_to_image
 from .utils import DEBUG_MESSAGE
 
 import zipfile
-from random import shuffle
+from random import shuffle, seed
 
+
+RANDOM_SEED = 0
 
 VQA_SYSTEM_PROMPT = json.dumps({
     'task': 'Answer the question presented to you truthfully.',
@@ -42,6 +44,10 @@ class MOAT(ImageBaseDataset):
     DATASET_MD5 = {
         'MOAT': '803b5a176a5b01aa1b8094fae73532a2',
     }
+
+    def __init__(self, dataset, **kwargs):
+        super().__init__(dataset, **kwargs)
+        seed(RANDOM_SEED) # seed the random number generator to ensure reproducibility
 
     def post_build(self, dataset):
         assert dataset == "MOAT", f"Wrong dataset name {dataset}"
