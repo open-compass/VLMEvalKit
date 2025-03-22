@@ -335,10 +335,15 @@ api_models = {
         timeout=300,
     ),
     # Taichu-VL
-    "Taichu-VL-2B": partial(
-        TaichuVLAPI,
-        model="Taichu-VL-2B",
-        url="https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions",
+    # "Taichu-VL-2B": partial(
+    #     TaichuVLAPI,
+    #     model="Taichu-VL-2B",
+    #     url="https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions",
+    # ),
+    'Taichu-VLR-3B': partial(
+        TaichuVLRAPI, 
+        model='taichu_vlr_3b', 
+        url="https://platform.wair.ac.cn/maas/v1/chat/completions"
     ),
     # doubao_vl
     "DoubaoVL": partial(

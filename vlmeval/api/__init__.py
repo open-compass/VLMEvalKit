@@ -15,7 +15,7 @@ from .bluelm_v_api import BlueLMWrapper, BlueLM_V_API
 from .jt_vl_chat import JTVLChatAPI
 from .taiyi import TaiyiAPI
 from .lmdeploy import LMDeployAPI
-from .taichu import TaichuVLAPI
+from .taichu import TaichuVLAPI, TaichuVLRAPI
 from .doubao_vl_api import DoubaoVL
 from .mug_u import MUGUAPI
 
@@ -26,5 +26,5 @@ __all__ = [
     'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision', 'Qwen2VLAPI',
     'BlueLMWrapper', 'BlueLM_V_API', 'JTVLChatAPI', 'bailingMMAPI',
     'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
-    'TaichuVLAPI', 'DoubaoVL', "MUGUAPI"
+    'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI"
 ]
