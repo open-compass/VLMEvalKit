@@ -80,6 +80,20 @@ ungrouped = {
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
 }
 
+o1_key = 'XXX'  # noqa: E501
+o1_apis = {
+    'o1': partial(
+        GPT4V,
+        model="o1-2024-12-17",
+        key=o1_key,
+        api_base='OFFICIAL', 
+        temperature=0,
+        img_detail='high',
+        retry=10,
+        verbose=False,
+    ),
+}
+
 api_models = {
     # GPT
     "GPT4V": partial(
@@ -1086,6 +1100,7 @@ supported_VLM = {}
 
 model_groups = [
     ungrouped,
+    o1_apis,
     api_models,
     xtuner_series,
     qwen_series,
