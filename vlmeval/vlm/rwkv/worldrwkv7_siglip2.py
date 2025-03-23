@@ -6,11 +6,8 @@ import warnings
 from PIL import Image
 
 from ..base import BaseModel
-from .prompt import Qwen2VLPromptMixin
+from .prompt import WorldRWKVPromptMixin
 
-# Add the WorldRWKV root directory to Python path
-worldrwkv_root = '/home/lynn/rwkv/WorldRWKV'
-sys.path.insert(0, worldrwkv_root)
 
 # Import WorldRWKV specific modules
 from infer.worldmodel import Worldinfer
