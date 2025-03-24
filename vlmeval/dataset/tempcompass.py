@@ -396,8 +396,8 @@ class TempCompass_Captioning(VideoBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-1106', 'exact_matching']
+        model = judge_kwargs.setdefault('model', 'chatgpt-1106')
+        assert model in ['chatgpt-1106']
         judge_kwargs.update({
             "max_tokens": 128,
             "temperature": 1.0,
