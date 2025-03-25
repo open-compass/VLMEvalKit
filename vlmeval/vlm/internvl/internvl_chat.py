@@ -35,8 +35,12 @@ class InternVLChat(BaseModel):
                  load_in_8bit=False,
                  use_mpo_prompt=False,
                  version='V1.0',
+                 # Best-of-N parameters
+                 best_of_n=1,
+                 reward_model_path=None,
                  **kwargs):
 
+        assert best_of_n >= 1
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.37.2', 'ge')
 
@@ -78,8 +82,37 @@ class InternVLChat(BaseModel):
                 low_cpu_mem_usage=True).eval().cuda()
             self.device = 'cuda'
 
+        if best_of_n > 1:
+            assert version == 'V2.0', 'only support BoN evaluation with version==V2.0'
+            assert reward_model_path is not None
+
+            if auto_split_flag():
+                rm_device_map, visible_devices = split_model(model_path=reward_model_path)
+                rm_kwargs = {'device_map': rm_device_map}
+            else:
+                rm_kwargs = {}
+
+            self.reward_tokenizer = AutoTokenizer.from_pretrained(reward_model_path, trust_remote_code=True, use_fast=False)
+            self.reward_model = AutoModel.from_pretrained(
+                reward_model_path,
+                torch_dtype=torch.bfloat16,
+                load_in_8bit=load_in_8bit,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True, **rm_kwargs).eval()
+
+            if not auto_split_flag():
+                self.reward_model = self.reward_model.to(self.device)
+
+            if not self.use_cot:
+                os.environ['USE_COT'] = '1'
+                self.use_cot = True
+                print('[Warning] Since Best-of-N is enabled, USE_COT is forced to be set to 1.')
+
+            print(f'Enable Best-of-N evaluation with PRM: {reward_model_path}')
+
         self.image_size = self.model.config.vision_config.image_size
         self.version = version
+        self.best_of_n = best_of_n
         kwargs_default = dict(do_sample=False, max_new_tokens=4096, top_p=None)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
@@ -206,6 +239,7 @@ class InternVLChat(BaseModel):
                 verbose=True)
         return response
 
+    @torch.no_grad()
     def generate_v2(self, message, dataset=None):
         
         use_mpo_prompt = self.use_mpo_prompt and (self.use_cot or dataset in ['MMStar', 'HallusionBench', 'OCRBench'])
@@ -237,15 +271,32 @@ class InternVLChat(BaseModel):
             pixel_values = None
             num_patches_list = []
 
-        with torch.no_grad():
+        response_list = []
+        for idx in range(self.best_of_n):
+            kwargs_default = self.kwargs.copy()
+            kwargs_default['do_sample'] = idx > 0
+            kwargs_default['temperature'] = 0.7
+            kwargs_default['top_p'] = 0.95
+            
             response = self.model.chat(
                 self.tokenizer,
                 pixel_values=pixel_values,
                 num_patches_list=num_patches_list,
                 question=prompt,
-                generation_config=self.kwargs,
-                verbose=True
+                generation_config=kwargs_default,
+                verbose=idx == 0,
             )
+            response_list.append(response)
+
+        if self.best_of_n > 1:
+            response_list = self.reward_model.select_best_response(
+                tokenizer=self.reward_tokenizer,
+                question=prompt,
+                response_list=response_list,
+                pixel_values=pixel_values,
+                num_patches_list=num_patches_list,
+            )
+        response = response_list[0]
 
         if use_mpo_prompt:
             response = mpo_post_processing(response, dataset)

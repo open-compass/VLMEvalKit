@@ -648,6 +648,11 @@ internvl_series = {
     "InternVL2_5-78B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-78B", version="V2.0"
     ),
+    # InternVL2.5 series with Best-of-N evaluation
+    "InternVL2_5-8B-BoN-8": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL2_5-8B", version="V2.0",
+        best_of_n=8, reward_model_path="OpenGVLab/VisualPRM-8B",
+    ),
     # InternVL2.5-MPO series
     "InternVL2_5-1B-MPO": partial(
         InternVLChat,
