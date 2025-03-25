@@ -177,6 +177,16 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "GPT4.5": partial(
+        GPT4V, 
+        model='gpt-4.5-preview-2025-02-27',
+        temperature=0, 
+        timeout=600,
+        img_size=-1, 
+        img_detail='high', 
+        retry=10, 
+        verbose=False,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         GeminiProVision, model="gemini-1.0-pro", temperature=0, retry=10
