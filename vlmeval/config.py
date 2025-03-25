@@ -181,6 +181,7 @@ api_models = {
         GPT4V, 
         model='gpt-4.5-preview-2025-02-27',
         temperature=0, 
+        timeout=600,
         img_size=-1, 
         img_detail='high', 
         retry=10, 
