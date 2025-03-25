@@ -359,6 +359,11 @@ api_models = {
         model='taichu_vlr_3b', 
         url="https://platform.wair.ac.cn/maas/v1/chat/completions"
     ),
+    'Taichu-VLR-7B': partial(
+        TaichuVLRAPI, 
+        model='taichu_vlr_7b', 
+        url="https://platform.wair.ac.cn/maas/v1/chat/completions"
+    ),
     # doubao_vl
     "DoubaoVL": partial(
         DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=10, verbose=False
