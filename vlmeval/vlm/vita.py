@@ -131,6 +131,9 @@ class VITAQwen2(BaseModel):
             else:
                 question = line['question']
                 prompt = question + '\nAnswer the question using a single word or phrase.'
+        elif DATASET_TYPE(dataset) == 'CreationVQA':
+            question = line['question']
+            prompt = question + '\nAnswer this question in detail.'
         else:
             prompt = line['question']
 

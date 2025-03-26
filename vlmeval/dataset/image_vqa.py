@@ -743,6 +743,111 @@ class LogicVista(ImageBaseDataset):
 
             return accuracy_scores
 
+class MME_CoT(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'MME_CoT_TEST': 'https://huggingface.co/datasets/CaraJ/MME-CoT_VLMEvalKit/resolve/main/MME-CoT.tsv' # noqa
+    }
+    DATASET_MD5 = {
+        'MME_CoT_TEST': 'a612dee0f2d702e01fe50267201302e0',
+    }
+
+    def split_MME_CoT(self, msgs):
+        text, images = None, []
+
+        # Separate images and text from msgs
+        for s in msgs:
+            if s['type'] == 'image':
+                images.append(s['value'])
+            elif s['type'] == 'text':
+                assert text is None  # Ensure only one text entry is expected
+                text = s['value']
+
+        # Split text by <image> tags
+        text_segs = text.split('<image>')
+
+        # Initialize the segments list
+        segs = []
+        # Iterate through the text segments and images
+        for i, seg in enumerate(text_segs):
+            # Append the image if this is not the first segment and there are still images left
+            if i > 0 and i - 1 < len(images):
+                segs.append(dict(type='image', value=images[i - 1]))
+            # Append the text segment (if it's non-empty)
+            if len(seg.strip()) > 0:
+                segs.append(dict(type='text', value=seg))
+
+        return segs
+    
+    def dump_image(self, line):
+        os.makedirs(self.img_root, exist_ok=True)
+
+        if 'image' in line:
+            if isinstance(line['image'], list):
+                tgt_path = []
+                if 'image_path' in line:
+                    image_path_list = line['image_path']
+                else:
+                    image_path_list = [f"{line['index']}--{i + 1}.jpg" for i in range(len(line['image']))]
+                for img, im_name in zip(line['image'], image_path_list):
+                    path = osp.join(self.img_root, im_name)
+                    if not read_ok(path):
+                        decode_base64_to_image_file(img, path)
+                    tgt_path.append(path)
+            else:
+                tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'], tgt_path)
+                tgt_path = [tgt_path]
+        else:
+            assert 'image_path' in line
+            tgt_path = toliststr(line['image_path'])
+
+        return tgt_path
+
+    def build_prompt(self, line):
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        tgt_path = self.dump_image(line)
+
+        prompt = line['question']
+
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        prompt = prompt + '\n' + '\n'.join([f'{key}. {item}' for key, item in options.items()])
+        
+        # add cot prompt
+        if os.environ.get('USE_COT_PROMPT', '1') == '1':
+            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."
+        else:
+            prompt += "\nPlease directly provide the final answer without any other output."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        msgs = self.split_MME_CoT(msgs)
+        return msgs
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")
+        dummy_result = dict(
+            dummy_result=0
+        )
+        return pd.DataFrame(dummy_result, index=[0])
+
+
+
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}

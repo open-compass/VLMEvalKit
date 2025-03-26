@@ -105,6 +105,7 @@ class OpenAIWrapper(BaseAPI):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
+        self.o1_model = 'o1' in model or 'o3' in model
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
@@ -185,17 +186,6 @@ class OpenAIWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
-        # context_window = GPT_context_window(self.model)
-        # new_max_tokens = min(max_tokens, context_window - self.get_token_len(inputs))
-        # if 0 < new_max_tokens <= 100 and new_max_tokens < max_tokens:
-        #     self.logger.warning(
-        #         'Less than 100 tokens left, '
-        #         'may exceed the context window with some additional meta symbols. '
-        #     )
-        # if new_max_tokens <= 0:
-        #     return 0, self.fail_msg + 'Input string longer than context window. ', 'Length Exceeded. '
-        # max_tokens = new_max_tokens
-
         # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
@@ -206,10 +196,16 @@ class OpenAIWrapper(BaseAPI):
         payload = dict(
             model=self.model,
             messages=input_msgs,
-            max_tokens=max_tokens,
+            # max_tokens=max_tokens,
             n=1,
             temperature=temperature,
             **kwargs)
+        if self.o1_model:
+            payload['max_completion_tokens'] = max_tokens
+            payload.pop('temperature')
+        else:
+            payload['max_tokens'] = max_tokens
+        
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)

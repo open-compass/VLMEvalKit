@@ -47,6 +47,7 @@ video_models = {
 }
 
 ungrouped = {
+    "AKI": partial(AKI, name="AKI", ckpt_pth="Sony/AKI-4B-phi-3.5-mini"),
     "TransCore_M": partial(TransCoreM, root=TransCore_ROOT),
     "PandaGPT_13B": partial(PandaGPT, name="PandaGPT_13B", root=PandaGPT_ROOT),
     "flamingov2": partial(
@@ -66,9 +67,6 @@ ungrouped = {
     ),
     "Bunny-llama3-8B": partial(BunnyLLama3, model_path="BAAI/Bunny-v1_1-Llama-3-8B-V"),
     "VXVERSE": partial(VXVERSE, model_name="XVERSE-V-13B", root=VXVERSE_ROOT),
-    "paligemma-3b-mix-448": partial(
-        PaliGemma, model_path="google/paligemma-3b-mix-448"
-    ),
     "360VL-70B": partial(QH_360VL, model_path="qihoo360/360VL-70B"),
     "Llama-3-MixSenseV1_1": partial(
         LLama3Mixsense, model_path="Zero-Vision/Llama-3-MixSenseV1_1"
@@ -80,6 +78,20 @@ ungrouped = {
     ),
     "Pixtral-12B": partial(Pixtral, model_path="mistralai/Pixtral-12B-2409"),
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
+}
+
+o1_key = 'XXX'  # noqa: E501
+o1_apis = {
+    'o1': partial(
+        GPT4V,
+        model="o1-2024-12-17",
+        key=o1_key,
+        api_base='OFFICIAL', 
+        temperature=0,
+        img_detail='high',
+        retry=10,
+        verbose=False,
+    ),
 }
 
 api_models = {
@@ -163,6 +175,16 @@ api_models = {
         img_size=-1,
         img_detail="high",
         retry=10,
+        verbose=False,
+    ),
+    "GPT4.5": partial(
+        GPT4V, 
+        model='gpt-4.5-preview-2025-02-27',
+        temperature=0, 
+        timeout=600,
+        img_size=-1, 
+        img_detail='high', 
+        retry=10, 
         verbose=False,
     ),
     # Gemini
@@ -337,10 +359,20 @@ api_models = {
         timeout=300,
     ),
     # Taichu-VL
-    "Taichu-VL-2B": partial(
-        TaichuVLAPI,
-        model="Taichu-VL-2B",
-        url="https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions",
+    # "Taichu-VL-2B": partial(
+    #     TaichuVLAPI,
+    #     model="Taichu-VL-2B",
+    #     url="https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions",
+    # ),
+    'Taichu-VLR-3B': partial(
+        TaichuVLRAPI, 
+        model='taichu_vlr_3b', 
+        url="https://platform.wair.ac.cn/maas/v1/chat/completions"
+    ),
+    'Taichu-VLR-7B': partial(
+        TaichuVLRAPI, 
+        model='taichu_vlr_7b', 
+        url="https://platform.wair.ac.cn/maas/v1/chat/completions"
     ),
     # doubao_vl
     "DoubaoVL": partial(
@@ -630,6 +662,11 @@ internvl_series = {
     ),
     "InternVL2_5-78B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-78B", version="V2.0"
+    ),
+    # InternVL2.5 series with Best-of-N evaluation
+    "InternVL2_5-8B-BoN-8": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL2_5-8B", version="V2.0",
+        best_of_n=8, reward_model_path="OpenGVLab/VisualPRM-8B",
     ),
     # InternVL2.5-MPO series
     "InternVL2_5-1B-MPO": partial(
@@ -974,7 +1011,7 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
-    'VLM-R1-Qwen2.5VL-3B-Math-0305': partial(
+    'VLM-R1': partial(
         VLMR1Chat, 
         model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
         min_pixels=1280*28*28, 
@@ -1070,10 +1107,20 @@ ross_series = {
 
 ursa_series = {"URSA-8B": partial(UrsaChat, model_path="URSA-MATH/URSA-8B")}
 
+gemma_series = {
+    "paligemma-3b-mix-448": partial(
+        PaliGemma, model_path="google/paligemma-3b-mix-448"
+    ),
+    'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
+    'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
+    'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
+}
+
 supported_VLM = {}
 
 model_groups = [
     ungrouped,
+    o1_apis,
     api_models,
     xtuner_series,
     qwen_series,
@@ -1120,6 +1167,7 @@ model_groups = [
     emu_series,
     ola_series,
     ursa_series,
+    gemma_series,
     long_vita_series,
 ]
 
