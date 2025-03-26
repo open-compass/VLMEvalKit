@@ -16,7 +16,10 @@ class AggregationType(Enum):
 
         for field, score in field_scores.items():
             weight = field_weights.get(field, 1.0)
-            total_score += score * weight
+            try:
+                total_score += score * weight
+            except:
+                total_score += score[0] * weight
             total_weight += weight
 
         return total_score / total_weight if total_weight > 0 else 0.0

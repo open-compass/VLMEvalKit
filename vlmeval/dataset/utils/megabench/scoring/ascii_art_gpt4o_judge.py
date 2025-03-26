@@ -9,7 +9,7 @@ from .vlm_as_judge import OpenAIVLMJudger
 """Return if two ASCII art images depict the same thing."""
 
 
-class AsciiArtVLMJudger(OpenAIVLMJudger):
+class AsciiArtGPT4OJudge(OpenAIVLMJudger):
     """A GPT-4o judge for assessing if two ASCII art images depict the same thing."""
 
     def __init__(self, metric_config, model="gpt-4o-2024-08-06"):
@@ -111,7 +111,7 @@ class AsciiArtVLMJudgeScore:
     """Compute the cosine similarity between two pieces of ASCII art."""
 
     def __init__(self, metric_config):
-        self.model = AsciiArtVLMJudger(metric_config)
+        self.model = AsciiArtGPT4OJudge(metric_config)
 
     def match(self, response, correct_answer) -> Number:
         """Compute the cosine similarity between two pieces of ASCII art."""

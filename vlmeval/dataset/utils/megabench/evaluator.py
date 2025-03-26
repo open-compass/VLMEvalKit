@@ -3,6 +3,7 @@ import json
 import os
 from typing import Any, Dict, List
 import ast
+from vlmeval import load, dump
 
 from datasets import load_dataset
 from . import MetricType, AggregationType, ResponseParseType
@@ -24,6 +25,7 @@ class MEGABenchEvaluator:
         self.hf_data = self._load_hf(subset_name)  # e.g. same structure used previously
         self.data = self._load_json(responses_file)  # The model's output
         self.output_file = output_file
+        self.tmp_output_file = output_file.replace(".json", "_tmp.pkl")
 
         # Build a dict of {task_name -> metric configuration} for quick lookup
         self.scoring_functions = {}
@@ -62,6 +64,10 @@ class MEGABenchEvaluator:
         """
         The main entry point to evaluate all tasks in self.data based on the HF dataset’s metric info.
         """
+        if os.path.exists(self.tmp_output_file):
+            exist_records = load(self.tmp_output_file)
+        else:
+            exist_records = {}
         num_tasks = 0
         num_queries = 0
         total_query_score = 0.0
@@ -70,6 +76,8 @@ class MEGABenchEvaluator:
         # Evaluate each task
         for task in self.data:
             task_name = task.get("task_name", "")
+            if task_name not in exist_records:
+                exist_records[task_name] = {}
 
             # If no scoring config is found for the given task_name, skip
             score_config = self.scoring_functions.get(
@@ -103,7 +111,7 @@ class MEGABenchEvaluator:
             answer_fields = [f for f in all_fields if not f.startswith("##")]
 
             # For each query in the task
-            for query in task["query_response"]:
+            for idx, query in enumerate(task["query_response"]):
                 num_queries += 1
                 response_text = query.get("response", "")
                 correct_answer = query["correct_answer"]
@@ -118,37 +126,44 @@ class MEGABenchEvaluator:
                     query,
                     task,
                 )
+                
+                if idx in exist_records[task_name]:
+                    query["scores"] = exist_records[task_name][idx]
+                else:
+                    # Initialize scores for this query
+                    query["scores"] = {"field": {}, "info": {}}
 
-                # Initialize scores for this query
-                query["scores"] = {"field": {}, "info": {}}
+                    # 2) Evaluate each field
+                    for fld, fld_metric_name in field_score_functions.items():
+                        metric = self._build_metric(fld_metric_name, score_config)
+                        self._evaluate_field(
+                            task_name,
+                            metric,
+                            fld,
+                            response_obj,
+                            correct_answer,
+                            query
+                        )
 
-                # 2) Evaluate each field
-                for fld, fld_metric_name in field_score_functions.items():
-                    metric = self._build_metric(fld_metric_name, score_config)
-                    self._evaluate_field(
-                        task_name,
-                        metric,
-                        fld,
-                        response_obj,
-                        correct_answer,
-                        query
-                    )
-
-                # Evaluate global auxiliary metrics (if any)
-                for fld, fld_metric_name in global_aux_metrics.items():
-                    metric = self._build_metric(fld_metric_name, score_config)
-                    # Some tasks want the entire response object to do an additional check
-                    # So, pass original `response_obj` under `fld` key:
-                    tmp_obj = {fld: response_obj}
-                    self._evaluate_field(
-                        task_name,
-                        metric,
-                        fld,
-                        tmp_obj,
-                        correct_answer,
-                        query,
-                        is_aux=True,
-                    )
+                    # Evaluate global auxiliary metrics (if any)
+                    for fld, fld_metric_name in global_aux_metrics.items():
+                        metric = self._build_metric(fld_metric_name, score_config)
+                        # Some tasks want the entire response object to do an additional check
+                        # So, pass original `response_obj` under `fld` key:
+                        tmp_obj = {fld: response_obj}
+                        self._evaluate_field(
+                            task_name,
+                            metric,
+                            fld,
+                            tmp_obj,
+                            correct_answer,
+                            query,
+                            is_aux=True,
+                        )
+                        
+                    exist_records[task_name][idx] = query["scores"]
+                    if idx % 10 == 0 or idx == len(task["query_response"]) - 1:
+                        dump(exist_records, self.tmp_output_file)
 
                 # 3) Aggregate the query-level score
                 query["scores"]["query"] = aggregator.aggregate(
@@ -307,6 +322,10 @@ class MEGABenchEvaluator:
             # Build the GPT4O metric using the provided config
             gpt4o_configs = score_config.get("gpt4o_eval_configs", {})
             metric = metric.class_impl(gpt4o_configs)
+        elif metric == MetricType.ASCII_ART_GPT4O_JUDGE:
+            # Build the ASCII Art metric using the provided config
+            ascii_art_configs = score_config.get("ascii_art_eval_configs", {})
+            metric = metric.class_impl(ascii_art_configs)
         return metric
 
     @staticmethod

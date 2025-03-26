@@ -128,7 +128,7 @@ class MetricType(Enum):
             ),
             MetricType.ASCII_ART_GPT4O_JUDGE: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.ascii_art_gpt4o_judge",
-                "AsciiArtGPT4OJudge",
+                "AsciiArtVLMJudgeScore",
             ),
             MetricType.NLI_ENTAILMENT: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.nli_entailment", "NliEntailment"

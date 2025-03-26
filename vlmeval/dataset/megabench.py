@@ -12,6 +12,7 @@ import glob
 
 class MEGABench(VideoBaseDataset):
     TYPE = 'Video-VQA'
+    ZIP_MD5 = '5ec01ab69cd25b643c4f5e1396e96441'
     MODALITY = 'VIDEO'
 
     def __init__(self, dataset='MEGABench', use_subtitle=False, nframe=0, fps=-1, subset_name="core"):
@@ -21,6 +22,7 @@ class MEGABench(VideoBaseDataset):
         self.dataset_name = dataset
         self.max_num_frames = nframe
         self.total_demo_video_frames = nframe / 4
+        self.max_side = 1000
 
     def _set_sampling_config(self, line):
         def count_videos(media_str):
@@ -83,25 +85,21 @@ class MEGABench(VideoBaseDataset):
         return ['MEGABench']
 
     def prepare_dataset(self, dataset_name='MEGABench', repo_id='TIGER-Lab/MEGA-Bench'):
+        def not_integrity(dataset_path):
+            zip_file = osp.join(dataset_path, 'data.zip')
+            return self.ZIP_MD5 != md5(zip_file)
 
-        def unzip_hf_zip(pth):
-            dataset_path = osp.join(pth, 'images')
+        def unzip_hf_zip(pth, hub_pth):
+            dataset_path = osp.join(pth, 'images') # LMUData/images
             os.makedirs(dataset_path, exist_ok=True)
-            # 下载数据集压缩包
-            import wget
-            import zipfile
 
             # 解压到megabench目录
             extract_path = osp.join(dataset_path, 'MEGABench')
             if not osp.exists(extract_path):
-                zip_path = osp.join(dataset_path, 'data.zip')
-                if not osp.exists(zip_path):
-                    wget.download(
-                        'https://huggingface.co/datasets/TIGER-Lab/MEGA-Bench/resolve/main/data.zip?download=true',
-                        zip_path
-                    )
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        zip_ref.extractall(extract_path)
+                zip_path = osp.join(hub_pth, 'data.zip')
+                import zipfile
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(extract_path)
             return extract_path
 
         def generate_tsv(pth, data_file, dataset, split='test'):
@@ -161,7 +159,11 @@ class MEGABench(VideoBaseDataset):
 
         dataset = load_dataset(repo_id, self.subset_name)
         lmu_root = LMUDataRoot()
-        dataset_path = unzip_hf_zip(lmu_root)
+        dataset_path = get_cache_path(repo_id)
+        if dataset_path is None or not_integrity(dataset_path):
+            print(f'download {repo_id} dataset automatically')
+            dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+        dataset_path = unzip_hf_zip(lmu_root, dataset_path)
         data_file_path = osp.join(lmu_root, f'{dataset_name}_{self.subset_name}.tsv')
         generate_tsv(dataset_path, data_file_path, dataset, 'test')
 
@@ -220,6 +222,7 @@ class MEGABench(VideoBaseDataset):
                     frame_filename = f"{base_path}_frame_{frame_idx:04d}.jpg"
                     os.makedirs(osp.dirname(frame_filename), exist_ok=True)
                     cv2.imwrite(frame_filename, frame)
+                    frame_filename = _encode_image(frame_filename)
                     msg.append(dict(type='image', value=frame_filename))
                     frame_idx += 1
                 frame_number += 1
@@ -229,21 +232,51 @@ class MEGABench(VideoBaseDataset):
 
             return msg
 
-        def _rgba_to_rgb(image_path):
+        def _encode_image(image_path):
+            original_path = image_path  # 字符串不需要 deepcopy
+            current_path = image_path   # 跟踪当前处理阶段的路径
+            image = None
+            rgba_transform = False
+            
             try:
-                image = Image.open(image_path)
+                # 第一阶段：RGBA 转换
+                image = Image.open(current_path)
                 if image.mode == 'RGBA':
-                    background = Image.new("RGBA", image.size, (255, 255, 255, 255))
-                    image = Image.alpha_composite(background, image).convert("RGB")
-                    base_path = osp.splitext(image_path)[0]
-                    new_path = f"{base_path}_rgb.jpg"
-                    image.save(new_path, "JPEG")
-                    return new_path
-                else:
-                    return image_path
+                    try:
+                        background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+                        image = Image.alpha_composite(background, image).convert("RGB")
+                        base_path = osp.splitext(current_path)[0]
+                        current_path = f"{base_path}_rgb.jpg"
+                        image.save(current_path, "JPEG")
+                        print(f'Turn RGBA image into RGB mode, stored to {current_path}')
+                        rgba_transform = True
+                    except Exception as e:
+                        print(f"Warning: Failed to convert RGBA image {current_path}: {e}")
+                        # 使用原始图像继续处理
+                        image = Image.open(original_path)
+                
+                if rgba_transform:
+                    original_path = current_path
+                
+                # 第二阶段：调整大小
+                resize_scale = self.max_side / max(image.size)
+                if resize_scale < 1:
+                    try:
+                        new_size = (int(image.size[0] * resize_scale), int(image.size[1] * resize_scale))
+                        image = image.resize(new_size)
+                        base_path = osp.splitext(current_path)[0]
+                        current_path = f"{base_path}_resize.jpg"
+                        image.save(current_path)
+                        print(f'Resized image, stored to {current_path}')
+                    except Exception as e:
+                        print(f"Warning: Failed to resize image {current_path}: {e}")
+                        return original_path  # 返回当前路径（可能是 RGB 转换后的）
+                
+                return current_path
+            
             except Exception as e:
-                print(f"Warning: Failed to process image {image_path}: {e}")
-                return image_path
+                print(f"Warning: Critical error processing image {original_path}: {e}")
+                return original_path  # 任何严重错误都返回原始路径
 
         def create_media_content(file_path, is_demo=False):
             if self.is_video_file(file_path):
@@ -251,7 +284,7 @@ class MEGABench(VideoBaseDataset):
                 return process_video(file_path, is_demo)
             else:
                 # Handle image processing otherwise
-                return (dict(type='image', value=_rgba_to_rgb(file_path)))
+                return (dict(type='image', value=_encode_image(file_path)))
 
         def process_media_list(media_str):
             if not media_str or media_str == '[]':

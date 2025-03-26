@@ -21,23 +21,24 @@ class OpenAIVLMJudger(abc.ABC):
         resize=True,
         max_side=1000,
     ):
-        if metric_config is not None:
+        if metric_config is not None and metric_config != {}:
             self.judge_model_type = metric_config["judge_model_type"]
             self.eval_prompt = metric_config["eval_criteria_prompt"]
             self.reference_type = metric_config["reference_type"]
             self.template_mapping = metric_config["template_mapping"]
 
         self.api_key = os.getenv("OPENAI_API_KEY")
+        self.url = os.getenv("OPENAI_API_BASE")
         self.model = model
         self.resize = resize
         self.max_side = max_side
 
-        if os.getenv("MEGABENCH_OPEN_API_KEY") is not None:
-            self.api_key = os.getenv("MEGABENCH_OPEN_API_KEY")
-            self.url = os.getenv("MEGABENCH_OPEN_API_URL")
-            if os.getenv("MEGABENCH_OPEN_API_MODEL") is not None:
-                self.model = os.getenv("MEGABENCH_OPEN_API_MODEL")
-            assert self.url, "You must set up the API URL for evaluating the Open tasks using your own API"
+        # if os.getenv("MEGABENCH_OPEN_API_KEY") is not None:
+        #     self.api_key = os.getenv("MEGABENCH_OPEN_API_KEY")
+        #     self.url = os.getenv("MEGABENCH_OPEN_API_URL")
+        #     if os.getenv("MEGABENCH_OPEN_API_MODEL") is not None:
+        #         self.model = os.getenv("MEGABENCH_OPEN_API_MODEL")
+        #     assert self.url, "You must set up the API URL for evaluating the Open tasks using your own API"
 
     @staticmethod
     def _update_image_path(image_path):
