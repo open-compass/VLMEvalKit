@@ -246,13 +246,17 @@ class MEGABenchEvaluator:
             images = query.get("images", [])
             question = query.get("question", "")
             correct_val = correct_answer.get(field, "") if not is_aux else correct_answer
-            
-            predicted_val = response_obj.get(field, "")
+            response_info = (
+                response_obj.get(field)
+                if isinstance(response_obj, dict)
+                else response_obj
+            )
             query["scores"]["field"][field] = metric.match(
-                predicted_val,
+                response_info,
                 correct_val,
                 images=images,
-                question=question
+                question=question,
+                eval_context=eval_context,
             )
         else:
             correct_val = correct_answer.get(field, "") if not is_aux else correct_answer
