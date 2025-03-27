@@ -522,7 +522,7 @@ class MiniCPM_o_2_6(BaseModel):
     def use_custom_prompt(self, dataset=None):
         if dataset is None:
             return False
-        if listinstr(['MCQ', 'VQA', 'Y/N'], DATASET_TYPE(dataset)):
+        if listinstr(['MCQ', 'VQA', 'Y/N'], DATASET_TYPE(dataset)) and not listinstr(['Video'], DATASET_TYPE(dataset)):
             return True
         return False
 
@@ -686,6 +686,9 @@ class MiniCPM_o_2_6(BaseModel):
         default_kwargs.update(self.kwargs)
 
         content = []
+
+        if DATASET_TYPE(dataset) == 'Video-MCQ':
+            message.append(dict(type='text', value=self.options_suffix_prompt))
 
         for x in message:
             if x['type'] == 'text':

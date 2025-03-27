@@ -10,7 +10,7 @@ def get_gpu_num(model_name):
     kws = {
         8: ['65b', '70b'],
         4: ['30b', '33b', '35b', '40b'],
-        2: ['13b', '14b', '20b'],
+        2: ['13b', '14b', '20b', '8b'],
         1: ['6b', '7b', 'moss'],
     }
     for k in [8, 4, 2, 1]:
@@ -26,7 +26,8 @@ validated_llms = [
     'THUDM/chatglm2-6b', 'THUDM/chatglm2-6b-32k', 'THUDM/chatglm3-6b', 'THUDM/chatglm3-6b-32k',
     'baichuan-inc/Baichuan2-7B-Chat', 'baichuan-inc/Baichuan2-13B-Chat',
     'lmsys/vicuna-7b-v1.5', 'lmsys/vicuna-13b-v1.5',
-    'meta-llama/Llama-2-7b-chat-hf'
+    'meta-llama/Llama-2-7b-chat-hf',
+    'meta-llama/Llama-3.1-8B-Instruct'
 ]
 Auto_model = ['chatglm']
 
@@ -65,7 +66,7 @@ class HFChatModel:
                  **kwargs):
 
         self.logger = get_logger('HFChatModel')
-        if 'vicuna' in model_path.lower():
+        if 'vicuna' in model_path.lower() or 'llama' in model_path.lower():
             try:
                 from fastchat.model import get_conversation_template
             except Exception as err:
@@ -73,7 +74,6 @@ class HFChatModel:
                 raise err
 
         self.explicit_device = kwargs.pop('device', None)
-
         if self.explicit_device is None:
             # If CUDA_VISIBLE_DEVICES is not properly set
             if 'CUDA_VISIBLE_DEVICES' not in os.environ or os.environ['CUDA_VISIBLE_DEVICES'] == '0,1,2,3,4,5,6,7':
@@ -93,7 +93,6 @@ class HFChatModel:
             LoadModel = AutoModel
         else:
             LoadModel = AutoModelForCausalLM
-
         assert osp.exists(model_path) or len(model_path.split('/')) == 2
 
         device = self.explicit_device if self.explicit_device else 'auto'
@@ -105,20 +104,36 @@ class HFChatModel:
             precision = {'torch_dtype': torch.bfloat16}
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        model = LoadModel.from_pretrained(model_path, trust_remote_code=True, device_map='cpu', **precision)
-        model = model.eval()
+        cuda_devices = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
+        if ',' in cuda_devices:
+            device_ids = [int(x) for x in cuda_devices.split(',')]
+            device_map = {i: i for i in range(len(device_ids))}
+        else:
+            device_map = {'': 0}
 
-        if device != 'cpu':
-            model = model.to(f'cuda:{device}' if isinstance(device, int) else 'cuda')
-        try:
-            model.generation_config = GenerationConfig.from_pretrained(
-                model_path, trust_remote_code=True, device_map=device)
-        except Exception as err:
-            self.logger.warning(f'{type(err)}: {err}')
+        if 'llama' in self.model_path.lower():
+            from lmdeploy import pipeline, GenerationConfig, TurbomindEngineConfig
+            print(f"Loading model {model_path} with {num_gpu} GPUs")
+            backend_config = TurbomindEngineConfig(tp=num_gpu)
+            self.gen_config = GenerationConfig(max_new_tokens=256)
+            model = pipeline(model_path,
+                            backend_config=backend_config)
+        else:
+            model = LoadModel.from_pretrained(model_path, trust_remote_code=True, device_map='cpu', **precision)
+            model = model.eval()
+
+            if device != 'cpu':
+                model = model.to(f'cuda:{device}' if isinstance(device, int) else 'cuda')
+            try:
+                model.generation_config = GenerationConfig.from_pretrained(
+                    model_path, trust_remote_code=True, device_map=device)
+            except Exception as err:
+                self.logger.warning(f'{type(err)}: {err}')
+
+            self.context_length = self._get_context_length_robust(model=model, model_path=model_path)
 
         torch.cuda.empty_cache()
         self.model = model
-        self.context_length = self._get_context_length_robust(model=model, model_path=model_path)
         self.answer_buffer = 192
         self.system_prompt = system_prompt
         for k, v in kwargs.items():
@@ -149,7 +164,9 @@ class HFChatModel:
                 outputs[0][len(inputs['input_ids'][0]):],
                 skip_special_tokens=True,
                 spaces_between_special_tokens=False)
-
+        elif 'llama' in self.model_path.lower():
+            prompt = [{'role': 'system', 'content': self.system_prompt}, {'role': 'user', 'content': input}]
+            resp = self.model(prompt, gen_config=self.gen_config).text
         else:
             params = self.kwargs
             params.update(kwargs)
@@ -165,7 +182,6 @@ class HFChatModel:
 
     def generate_list(self, full_inputs, offset=0, **kwargs):
         assert isinstance(full_inputs, list)
-
         inputs = full_inputs[offset:]
         if not self.length_ok(inputs):
             return self.chat(full_inputs, offset + 1)
@@ -244,3 +260,4 @@ class HFChatModel:
             return self.generate_str(inputs, **kwargs)
         elif isinstance(inputs, list):
             return self.generate_list(inputs, **kwargs)
+        

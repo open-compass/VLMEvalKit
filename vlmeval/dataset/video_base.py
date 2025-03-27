@@ -29,6 +29,8 @@ class VideoBaseDataset:
         self.data_root = ret['root']
         self.data_file = ret['data_file']
         self.data = load(self.data_file)
+        if 'index' not in self.data:
+            self.data['index'] = np.arange(len(self.data))
 
         assert 'question' in self.data and 'video' in self.data
         videos = list(set(self.data['video']))
@@ -116,7 +118,7 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4', 'LongVideoBench', 'WorldSense']
+        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4', 'LongVideoBench', 'WorldSense', 'VDC', 'MovieChat1k']
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

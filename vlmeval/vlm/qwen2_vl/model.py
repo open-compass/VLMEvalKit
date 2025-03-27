@@ -10,7 +10,7 @@ import torch
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
-from ...smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag
+from ...smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag, listinstr
 
 
 def ensure_image_url(image: str) -> str:
@@ -98,9 +98,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         rank, world_size = get_rank_and_world_size()
         assert model_path is not None
         self.model_path = model_path
-        MODEL_CLS = None  
+        MODEL_CLS = None
 
-        if '2.5' in model_path:
+        if listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
             from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
