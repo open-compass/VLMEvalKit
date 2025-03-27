@@ -3,6 +3,7 @@ from ..smp import *
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from glob import glob
+import os
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -104,13 +105,10 @@ class LongVideoBench(VideoBaseDataset):
         return ['LongVideoBench']
 
     def prepare_dataset(self, dataset_name='LongVideoBench', repo_id='longvideobench/LongVideoBench'):
-
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
-
             if not osp.exists(data_file):
                 return False
-
             if md5(data_file) != self.MD5:
                 print("md5 mismatch", md5(data_file), self.MD5)
                 return False
@@ -125,7 +123,13 @@ class LongVideoBench(VideoBaseDataset):
             repo_id = "AI-ModelScope/LongVideoBench"
 
         cache_path = get_cache_path(repo_id)
-        if cache_path is not None and check_integrity(cache_path):
+        
+        if cache_path is None:
+            cache_path = osp.expanduser("~/.cache/huggingface/hub/datasets--longvideobench--LongVideoBench")
+            if not osp.exists(cache_path):
+                os.makedirs(cache_path)
+        
+        if check_integrity(cache_path):
             dataset_path = cache_path
         else:
             def generate_tsv(pth):
@@ -192,7 +196,6 @@ class LongVideoBench(VideoBaseDataset):
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
-
         return dict(data_file=data_file, root=dataset_path)
 
     def save_video_frames(self, video_path, video_llm=False):
