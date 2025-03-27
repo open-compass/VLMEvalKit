@@ -162,6 +162,7 @@ class MEGABench(VideoBaseDataset):
         dataset_path = get_cache_path(repo_id)
         if dataset_path is None or not_integrity(dataset_path):
             print(f'download {repo_id} dataset automatically')
+            from huggingface_hub import snapshot_download
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
         dataset_path = unzip_hf_zip(lmu_root, dataset_path)
         data_file_path = osp.join(lmu_root, f'{dataset_name}_{self.subset_name}.tsv')
