@@ -717,6 +717,10 @@ sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B")
 }
 
+ristretto_series = {
+    "Ristretto-3B": partial(Ristretto, model_path="LiAutoAD/Ristretto-3B"),
+}
+
 yivl_series = {
     "Yi_VL_6B": partial(Yi_VL, model_path="01-ai/Yi-VL-6B", root=Yi_ROOT),
     "Yi_VL_34B": partial(Yi_VL, model_path="01-ai/Yi-VL-34B", root=Yi_ROOT),
@@ -1169,6 +1173,7 @@ model_groups = [
     ursa_series,
     gemma_series,
     long_vita_series,
+    ristretto_series,
 ]
 
 for grp in model_groups:
