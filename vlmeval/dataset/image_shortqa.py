@@ -68,9 +68,12 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Perception': '',
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
+        'hle':'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
     }
 
-    DATASET_MD5 = {}
+    DATASET_MD5 = {
+        'hle': 'a83cbdbea89f27c2aa5b8f34a8894b72',
+    }
 
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
