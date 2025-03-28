@@ -1016,7 +1016,16 @@ qwen2vl_series = {
         model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
         min_pixels=1280*28*28, 
         max_pixels=16384*28*28, 
-        use_custom_prompt=False),
+        use_custom_prompt=False,
+    ),
+    "Qwen2.5-Omni-7B": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-Omni-7B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+
 }
 
 slime_series = {
