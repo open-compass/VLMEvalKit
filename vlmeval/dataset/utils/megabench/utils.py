@@ -1,6 +1,5 @@
 import importlib
 from mimetypes import guess_type
-from datasets import load_dataset
 
 
 def lazy_import(module_name, class_name):
@@ -28,6 +27,7 @@ def prepare_megabench_data(dataset_name, dataset_subset_name):
             subset_dataset: The organized data of the specified subset
             all_dataset: The organized data of all tasks, used for evaluation
     """
+    from datasets import load_dataset
     if "single_image" in dataset_subset_name:
         core_data = load_dataset(dataset_name, "core_single_image")
         open_data = load_dataset(dataset_name, "open_single_image")

@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 import ast
 from vlmeval import load, dump
 
-from datasets import load_dataset
+
 from . import MetricType, AggregationType, ResponseParseType
 from .parsing.common.utils import evaluate_as_string
 
@@ -38,6 +38,7 @@ class MEGABenchEvaluator:
         """
         Load the HF dataset for the given subset name.
         """
+        from datasets import load_dataset
         dataset = load_dataset("TIGER-Lab/MEGA-Bench", subset_name)["test"]
         task_dict = {}
         for sample in dataset:
