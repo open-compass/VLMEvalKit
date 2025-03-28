@@ -613,9 +613,7 @@ class SmolVLM2(BaseModel):
             "TempCompass_Captioning",
             "TempCompass_YorN",
         ]:
-            if dataset == "TempCompass_YorN":
-                prompt += "\nAnswer yes or no."
-            elif dataset == "TempCompass_MCQ":
+            if dataset == "TempCompass_MCQ":
                 prompt = prompt.replace("Options:", "Choices:")
                 prompt = prompt.replace(
                     "Please select the correct answer from the options above.",
