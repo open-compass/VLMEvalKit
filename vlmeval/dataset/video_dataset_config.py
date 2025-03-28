@@ -105,6 +105,13 @@ cgbench_dataset = {
 }
 
 
+megabench_dataset = {
+    'MEGABench_core_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core"),
+    'MEGABench_open_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="open"),
+    'MEGABench_core_64frame': partial(MEGABench, dataset='MEGABench', nframe=64, subset_name="core"),
+    'MEGABench_open_64frame': partial(MEGABench, dataset='MEGABench', nframe=64, subset_name="open")
+}
+
 moviechat1k_dataset = {
     'moviechat1k_breakpoint_8frame': partial(MovieChat1k, dataset='MovieChat1k', subset='breakpoint', nframe=8),
     'moviechat1k_global_14frame': partial(MovieChat1k, dataset='MovieChat1k', subset='global', nframe=14),
@@ -141,7 +148,8 @@ supported_video_datasets = {}
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset, 
-    qbench_video_dataset, moviechat1k_dataset, vdc_dataset
+    megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset
+
 ]
 
 for grp in dataset_groups:
