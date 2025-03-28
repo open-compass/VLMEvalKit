@@ -2,7 +2,6 @@ import math
 import re
 import tempfile
 import cv2
-from datasets import load_dataset
 from vlmeval.smp import *
 from vlmeval.dataset.video_base import VideoBaseDataset
 from vlmeval.dataset.utils.megabench.evaluator import MEGABenchEvaluator
@@ -157,6 +156,7 @@ class MEGABench(VideoBaseDataset):
 
             print(f'Generated TSV file at {data_file} with {len(dataset[split])} entries')
 
+        from datasets import load_dataset
         dataset = load_dataset(repo_id, self.subset_name)
         lmu_root = LMUDataRoot()
         dataset_path = get_cache_path(repo_id)
