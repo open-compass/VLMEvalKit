@@ -92,7 +92,7 @@ def mmqa_display(question, target_size=-1):
 def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
-    if img.mode in ('RGBA', 'P'):
+    if img.mode in ('RGBA', 'P', 'LA'):
         img = img.convert('RGB')
     if target_size > 0:
         img.thumbnail((target_size, target_size))
