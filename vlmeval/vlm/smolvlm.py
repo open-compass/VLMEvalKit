@@ -436,6 +436,7 @@ class SmolVLM2(BaseModel):
         ]:
             formatted_messages, formatted_images = self.build_prompt_puremcq(message)
         elif dataset in [
+            "MMBench-Video",
             "MLVU",
             "MLVU_MCQ",
             "MLVU_OpenEnded",
@@ -633,11 +634,8 @@ class SmolVLM2(BaseModel):
                     "Please select the correct answer from the options above.",
                     "Answer with the letter.",
                 )
-        elif dataset == "MLVU":
-            # Generic handling for MLVU dataset
-            pass
-        elif dataset == "TempCompass":
-            # Generic handling for TempCompass dataset
+        elif dataset in ["MLVU", "MMBench-Video", "TempCompass"]:
+            # Generic handling for MLVU, TempCompass, MMBench-Video dataset
             pass
         else:
             print(f"Warning: No specific formatting for {dataset}, using default")
