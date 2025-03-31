@@ -241,7 +241,8 @@ def ShortQA_prompt(line):
     question = line['question']
     is_cn = cn_string(question)
     answer = line['answer']
-    if answer[0] == '[' and answer[-1] == ']':
+    answer_type = line['answer_type']
+    if answer[0] == '[' and answer[-1] == ']' and answer_type not in ('exactMatch', 'multipleChoice'):
         answer = eval(answer)
     else:
         answer = [answer]
