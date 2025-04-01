@@ -54,7 +54,7 @@ DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide short but accu
 
 
 VIDEO_MMLU_DIMENSIONS = {
-    'Math': ['Math'],
+    'math': ['math'],
     'physics': ['physics'],
     'chemistry': ['chemistry'],
     'overall': [] 
@@ -102,7 +102,7 @@ def get_dimension_rating(data_path):
             is_correct = -1
         
         # Map caption types to their lowercase versions
-        if discipline in ['Math', 'physics', 'chemistry']:
+        if discipline in ['math', 'physics', 'chemistry']:
             coarse_rating[discipline].append(score)
             coarse_rating['overall'].append(score)
 

@@ -45,6 +45,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
+    MODALITY = 'VIDEO'
 
     def __init__(self, dataset='VideoMMLU_CAP', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
@@ -285,6 +286,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
         tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
         score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
 
+        judge_kwargs['temperature'] = 0.0
         model = build_judge(**judge_kwargs)
 
         if not osp.exists(score_file):
@@ -357,6 +359,7 @@ class VideoMMLU_QA(VideoBaseDataset):
     MD5 = ''
 
     TYPE = 'Video-VQA'
+    MODALITY = 'VIDEO'
 
     def __init__(self, dataset='VideoMMLU_QA', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
@@ -570,6 +573,7 @@ class VideoMMLU_QA(VideoBaseDataset):
         tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
         score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
 
+        judge_kwargs['temperature'] = 0.0
         model = build_judge(**judge_kwargs)
 
         if not osp.exists(score_file):
