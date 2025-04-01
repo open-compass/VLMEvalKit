@@ -62,7 +62,7 @@ class bailingMMWrapper(BaseAPI):
         service_url = "https://bailingchat.alipay.com/api/proxy/eval/antgmm/completions"
 
         payload = {
-            "structInput": messages,
+            "structInput": json.dumps([{"role":"user","content":messages}]),
             "sk": self.key,
             "model": self.model,
             "timeout": 180000
