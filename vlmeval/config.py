@@ -1021,6 +1021,38 @@ qwen2vl_series = {
         min_pixels=1280*28*28, 
         max_pixels=16384*28*28, 
         use_custom_prompt=False),
+    'VLAA-Thinker-Qwen2.5VL-3B': partial(
+        VLAAThinkerChat, 
+        model_path='UCSC-VLAA/VLAA-Thinker-Qwen2.5VL-3B', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False,
+        post_process=True, # post processing for evaluation
+        system_prompt=(''
+                    "You are VL-Thinking🤔, a helpful assistant with excellent reasoning ability."
+                    " A user asks you a question, and you should try to solve it."
+                    " You should first think about the reasoning process in the mind and then provides the user with the answer."
+                    " The reasoning process and answer are enclosed within <think> </think> and"
+                    "<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think>"
+                    "<answer> answer here </answer>"
+                ),
+    ),
+    'VLAA-Thinker-Qwen2.5VL-7B': partial(
+        VLAAThinkerChat, 
+        model_path='UCSC-VLAA/VLAA-Thinker-Qwen2.5VL-7B', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False,
+        post_process=True, # post processing for evaluation
+        system_prompt=(''
+                    "You are VL-Thinking🤔, a helpful assistant with excellent reasoning ability."
+                    " A user asks you a question, and you should try to solve it."
+                    " You should first think about the reasoning process in the mind and then provides the user with the answer."
+                    " The reasoning process and answer are enclosed within <think> </think> and"
+                    "<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think>"
+                    "<answer> answer here </answer>"
+                ),
+    ),
 }
 
 slime_series = {
