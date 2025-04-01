@@ -101,6 +101,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ccvl/3DSRBench/'
             'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
         ),
+        'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -158,6 +159,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
         '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
+        'MMCR': '9052635f2c3835bdb87755ef73564f5e',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -215,7 +217,7 @@ class ImageMCQDataset(ImageBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         circular = False
-        if listinstr(['mmbench', 'ccbench', 'circular'], dataset.lower()):
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
             data = load(eval_file)
             data['index'] = [int(x) for x in data['index']]
             dump(data, eval_file)
