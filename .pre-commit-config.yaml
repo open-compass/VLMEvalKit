@@ -3,7 +3,7 @@ exclude: |
       scripts/|
       assets/|
       vlmeval/config.py |
-      vlmeval/dataset/utils/wemath.py |
+      vlmeval/dataset/utils/wemath.py
   )
 repos:
   - repo: https://github.com/PyCQA/flake8
