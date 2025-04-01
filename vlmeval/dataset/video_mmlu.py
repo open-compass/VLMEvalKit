@@ -47,7 +47,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
     TYPE = 'Video-VQA'
     MODALITY = 'VIDEO'
 
-    def __init__(self, dataset='VideoMMLU_CAP', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
+    def __init__(self, dataset='Video_MMLU_CAP', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
         if subset == 'all':
@@ -361,7 +361,7 @@ class VideoMMLU_QA(VideoBaseDataset):
     TYPE = 'Video-VQA'
     MODALITY = 'VIDEO'
 
-    def __init__(self, dataset='VideoMMLU_QA', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
+    def __init__(self, dataset='Video_MMLU_QA', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
         if subset == 'all':
@@ -388,7 +388,7 @@ class VideoMMLU_QA(VideoBaseDataset):
     def supported_datasets(cls):
         return ['VideoMMLU_QA']
 
-    def prepare_dataset(self, dataset_name='VideoMMLU_QA', repo_id='Enxin/Video-MMLU'):
+    def prepare_dataset(self, dataset_name='Video_MMLU_QA', repo_id='Enxin/Video-MMLU'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
             if md5(data_file) != self.MD5:

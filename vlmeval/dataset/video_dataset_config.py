@@ -143,6 +143,13 @@ qbench_video_dataset = {
     'QBench_Video_16frame': partial(QBench_Video, dataset='QBench_Video', nframe=16),
 }
 
+video_mmlu_dataset = {
+    'VideoMMLU_CAP_16frame': partial(VideoMMLU_CAP, dataset='Video_MMLU_CAP', nframe=16),
+    'VideoMMLU_CAP_64frame': partial(VideoMMLU_CAP, dataset='Video_MMLU_CAP', nframe=64),
+    'VideoMMLU_QA_16frame': partial(VideoMMLU_QA, dataset='Video_MMLU_QA', nframe=16),
+    'VideoMMLU_QA_64frame': partial(VideoMMLU_QA, dataset='Video_MMLU_QA', nframe=64),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
