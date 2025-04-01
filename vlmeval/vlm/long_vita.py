@@ -1,15 +1,16 @@
-import os
 import math
-import numpy as np
-from PIL import Image
+import os
+
 import decord
-from ..smp import *
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
+import numpy as np
+import torch
+from PIL import Image
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.generation import GenerationConfig
-import torch
 
+from ..dataset import DATASET_TYPE
+from ..smp import *
+from .base import BaseModel
 
 IMG_TAG_TOKEN = "<image>"
 VID_TAG_TOKEN = "<video>"
@@ -61,7 +62,8 @@ def select_best_resolution(original_size, possible_resolutions):
 
     Args:
         original_size (tuple): The original size of the image in the format (width, height).
-        possible_resolutions (list): A list of possible resolutions in the format [(width1, height1), (width2, height2), ...].
+        possible_resolutions (list):
+            A list of possible resolutions in the format [(width1, height1), (width2, height2), ...].
 
     Returns:
         tuple: The best fit resolution in the format (width, height).
@@ -218,7 +220,10 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
     return processed_images, (target_width, target_height)
 
 
-def get_external_inputs(tokens, tokenizer, image_processor, image_list=None, image_path_list=None, video_path_list=None, max_num_frame=4096, max_fps=1, image_token_length=256):
+def get_external_inputs(
+        tokens, tokenizer, image_processor, image_list=None, image_path_list=None, video_path_list=None,
+        max_num_frame=4096, max_fps=1, image_token_length=256
+    ):
     tokens = tokens.tolist()
 
     IMG_CONTEXT_ID = tokenizer(IMG_CONTEXT_TOKEN, add_special_tokens=False).input_ids
@@ -399,7 +404,7 @@ def get_external_inputs(tokens, tokenizer, image_processor, image_list=None, ima
 
     image_indices = torch.cat(image_indices, dim=1)
     image_indices = image_indices.contiguous().to(torch.cuda.current_device())
-    
+
     tokens = torch.tensor(tokens, dtype=torch.long, device='cuda')
 
     return tokens, images, image_indices
@@ -720,16 +725,16 @@ class LongVITAWrapper(BaseModel):
                 image_path_list.append(msg['value'])
                 if dataset == "Video-MME":
                     if image_count == 1:
-                        text += f"<video>"
+                        text += "<video>"
                     else:
-                        text += f"<video>"
+                        text += "<video>"
                 else:
-                    text += f"<image>\n"
+                    text += "<image>\n"
                 image_count += 1
 
             elif msg['type'] == 'video':
                 video_path_list.append(msg['value'])
-                text += f"<video>"
+                text += "<video>"
             else:
                 raise ValueError(f"Invalid message type: {msg['type']}, {msg}")
 
@@ -797,10 +802,15 @@ class LongVITAWrapper(BaseModel):
 
         print("input", self.tokenizer.decode(inputs[0], skip_special_tokens=False), flush=True)
 
-        inputs, images, image_indices = get_external_inputs(inputs, self.tokenizer, self.image_processor, image_path_list=image_path_list if len(image_path_list) > 0 else None, video_path_list=video_path_list if len(video_path_list) > 0 else None, max_num_frame=self.max_num_frame)
+        inputs, images, image_indices = get_external_inputs(
+            inputs, self.tokenizer, self.image_processor,
+            image_path_list=image_path_list if len(image_path_list) > 0 else None,
+            video_path_list=video_path_list if len(video_path_list) > 0 else None,
+            max_num_frame=self.max_num_frame
+        )
         outputs = self.model.generate(inputs=inputs, images=images, image_indices=image_indices, **self.default_params)
         output = self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
-        print(f"output", output, flush=True)
+        print("output", output, flush=True)
 
         answer = output
 

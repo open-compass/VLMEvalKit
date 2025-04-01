@@ -46,7 +46,7 @@ class MUGUWrapper(BaseAPI):
 
     def set_dump_image(self, dump_image_func):
         self.dump_image_func = dump_image_func
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         assert DATASET_MODALITY(dataset) != 'VIDEO', 'not supported'
@@ -178,7 +178,7 @@ class MUGUWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         self.logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
-        
+
         headers = {'Content-Type': 'application/json'}
         payload = dict(
             model=self.model,
@@ -189,7 +189,7 @@ class MUGUWrapper(BaseAPI):
             temperature=temperature,
             stream=False,
             **kwargs)
-        
+
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)

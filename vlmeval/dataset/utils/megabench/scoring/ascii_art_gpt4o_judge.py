@@ -6,6 +6,7 @@ import os
 import requests
 from .common.conversions import ascii_text_to_image
 from .vlm_as_judge import OpenAIVLMJudger
+
 """Return if two ASCII art images depict the same thing."""
 
 
@@ -76,16 +77,14 @@ class AsciiArtGPT4OJudge(OpenAIVLMJudger):
                     json=query_payload,
                 )
             except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
-                print(f'Error in requests: {e}')
-                print('Retry...')
+                print(f"Error in requests: {e}")
+                print("Retry...")
                 continue
 
             response_ = response.json()
             if "error" in response_:
                 error_info = response_["error"]
-                print(
-                    f"Got error with type: {error_info['type']}. Message: {error_info['message']}"
-                )
+                print(f"Got error with type: {error_info['type']}. Message: {error_info['message']}")
                 print("Retry...")
             else:
                 response_data = response_
@@ -97,9 +96,7 @@ class AsciiArtGPT4OJudge(OpenAIVLMJudger):
             choices = response_data["choices"]
             if choices and "message" in choices[0]:
                 message_content = choices[0]["message"]["content"]
-                print(
-                    f"gpt-4o judge results: {message_content}; tokens:{total_tokens}"
-                )
+                print(f"gpt-4o judge results: {message_content}; tokens:{total_tokens}")
         else:
             print("gpt-4o judge query failed...")
             message_content = ""

@@ -1,20 +1,21 @@
 from ...smp import *
 from ...utils import can_infer
 import timeout_decorator
+
 try:
     from latex2sympy2 import latex2sympy
 except Exception as e:
-    logging.critical(f'{type(e)}: {e}')
+    logging.critical(f"{type(e)}: {e}")
     logging.critical('Please install latex2sympy2 by running "pip install latex2sympy2"')
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 
 @timeout_decorator.timeout(30)
 def is_equal(asw: str, gt_asw: str) -> bool:
     if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
-        print('Warning: input is not string')
+        print("Warning: input is not string")
         print(asw, gt_asw)
     asw = str(asw).lower().strip()
     gt_asw = str(gt_asw).lower().strip()
@@ -85,15 +86,15 @@ def build_mathv_gpt4_prompt(line):
 Please read the following example.
 Then extract the answer from the model response and type it at the end of the prompt.\n
 """
-    question = line['question']
-    prediction = str(line['prediction'])
+    question = line["question"]
+    prediction = str(line["prediction"])
     prompt = task_description
     examples = get_gpt4_ICE()
     for example in examples:
-        prompt += example + '\n'
-    prompt += question + '\n'
-    prompt += 'Model respone: ' + prediction
-    prompt += 'Extracted answer:'
+        prompt += example + "\n"
+    prompt += question + "\n"
+    prompt += "Model respone: " + prediction
+    prompt += "Extracted answer:"
     return prompt
 
 
@@ -103,12 +104,12 @@ def list_to_dict(lst):
 
 def post_check(line, prefetch=False):
     res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
+    ans = line["answer"]
+    response = line["prediction"] if prefetch else line["res"]
     try:
-        if len(eval(line['choices'])) > 0:
-            ans = line['answer']
-            choices = list_to_dict(eval(line['choices']))
+        if len(eval(line["choices"])) > 0:
+            ans = line["answer"]
+            choices = list_to_dict(eval(line["choices"]))
             res = can_infer(response, choices)
             if prefetch:
                 return res
@@ -124,28 +125,28 @@ def post_check(line, prefetch=False):
         else:
             return False
     except Exception as err:
-        logging.warning(f'{type(err)}: {err}')
+        logging.warning(f"{type(err)}: {err}")
         return False
 
 
 def MATH_V_auxeval(model, line):
     prompt = build_mathv_gpt4_prompt(line)
-    log = ''
+    log = ""
     retry = 5
     if post_check(line, prefetch=True):
         res = post_check(line, prefetch=True)
-        return dict(log='Prefetch succeed', res=res)
+        return dict(log="Prefetch succeed", res=res)
     for i in range(retry):
-        prediction = line['prediction']
+        prediction = line["prediction"]
         res = model.generate(prompt, temperature=i * 0.5)
 
         if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+            log += f"Try {i}: output is {prediction}, failed to parse.\n"
         else:
-            log += 'Succeed'
+            log += "Succeed"
             return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')
+    log += "All 5 retries failed.\n"
+    return dict(log=log, res="")
 
 
 def MATH_V_acc(result_file):
@@ -155,25 +156,26 @@ def MATH_V_acc(result_file):
     hit = defaultdict(lambda: 0)
     lt = len(data)
     from tqdm import tqdm
+
     for i in tqdm(range(lt)):
         item = data.iloc[i]
-        cate = item['category']
-        tot['Overall'] += 1
+        cate = item["category"]
+        tot["Overall"] += 1
         tot[cate] += 1
-        if item['log'] == 'Prefetch succeed':
-            fetch['Overall'] += 1
+        if item["log"] == "Prefetch succeed":
+            fetch["Overall"] += 1
             fetch[cate] += 1
         if post_check(item, prefetch=False):
-            hit['Overall'] += 1
+            hit["Overall"] += 1
             hit[cate] += 1
 
     res = defaultdict(list)
     for k in tot.keys():
-        res['Subject'].append(k)
-        res['tot'].append(tot[k])
-        res['prefetch'].append(fetch[k])
-        res['hit'].append(hit[k])
-        res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
-        res['acc'].append(hit[k] / tot[k] * 100)
-    res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
+        res["Subject"].append(k)
+        res["tot"].append(tot[k])
+        res["prefetch"].append(fetch[k])
+        res["hit"].append(hit[k])
+        res["prefetch_rate"].append(fetch[k] / tot[k] * 100)
+        res["acc"].append(hit[k] / tot[k] * 100)
+    res = pd.DataFrame(res).sort_values("Subject", ignore_index=True)
     return res

@@ -13,10 +13,10 @@ class VLM2Bench(ImageBaseDataset):
     TYPE = "VQA"
 
     DATASET_URL = {
-        "VLM2Bench": 'https://huggingface.co/datasets/Sterzhang/vlm2-bench/resolve/main/VLM2Bench_img.tsv' # all 2860 image cases from VLM2Bench huggingface repo
+        "VLM2Bench": "https://huggingface.co/datasets/Sterzhang/vlm2-bench/resolve/main/VLM2Bench_img.tsv"  # all 2860 image cases from VLM2Bench huggingface repo
     }
     # DATASET_MD5
-    DATASET_MD5 = {'VLM2Bench': '16f474bfc4e269c583468bf89139da8f'}
+    DATASET_MD5 = {"VLM2Bench": "16f474bfc4e269c583468bf89139da8f"}
 
     def build_prompt(self, line):
         """
@@ -58,7 +58,7 @@ class VLM2Bench(ImageBaseDataset):
         Evaluation function:
         - Automatically read the model prediction result file (xlsx or TSV), which contains fields: index, question, answer, category, prediction
         - Directly use the original fields for evaluation without additional conversion;
-        - For categories "oc-cnt" or "pc-cnt", calculate image_seq_len based on the "image" field (stored as a regular multi-image encoding) 
+        - For categories "oc-cnt" or "pc-cnt", calculate image_seq_len based on the "image" field (stored as a regular multi-image encoding)
           and write it into each record;
         - Group by category and use different evaluation functions to calculate metrics for each sub-task:
                 • tf pair: suitable for gc-mat, gc-trk, oc-cpr, pc-cpr
@@ -68,10 +68,10 @@ class VLM2Bench(ImageBaseDataset):
         """
         model = judge_kwargs.get("model")
         if model:
-            suffix = eval_file.split('.')[-1]
-            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-            score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
-            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            suffix = eval_file.split(".")[-1]
+            storage = eval_file.replace(f".{suffix}", f"_{model}.xlsx")
+            score_file = eval_file.replace(f".{suffix}", f"_{model}_score.csv")
+            tmp_file = eval_file.replace(f".{suffix}", f"_{model}.pkl")
             if os.path.exists(storage):
                 if storage.lower().endswith(".xlsx"):
                     data = pd.read_excel(storage)
@@ -87,10 +87,10 @@ class VLM2Bench(ImageBaseDataset):
                 data = pd.read_excel(eval_file)
             else:
                 data = pd.read_csv(eval_file, sep="\t", encoding="latin1", engine="python")
-        
+
         results = data.to_dict(orient="records")
         processed = common_process_results(results)
-        
+
         # For cnt category, calculate image_seq_len (i.e., number of images) based on the list of image encodings stored in the image field
         for rec in processed:
             if rec.get("category", "").lower() in ["oc-cnt", "pc-cnt"]:

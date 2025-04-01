@@ -6,56 +6,61 @@ from ..utils import track_progress_rich
 
 class ImageMTDataset(ImageBaseDataset):
 
-    TYPE = 'MT'
+    TYPE = "MT"
 
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
         if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
+            tgt_path = toliststr(line["image_path"])
         else:
             tgt_path = self.dump_image(line)
 
-        questions = toliststr(line['question'])
-        if 'answer' in line:
-            answers = toliststr(line['answer'])
+        questions = toliststr(line["question"])
+        if "answer" in line:
+            answers = toliststr(line["answer"])
         else:
-            answers = [''] * len(questions)
+            answers = [""] * len(questions)
         assert len(questions) == len(answers)
 
         dlgs, pics_number = [], 0
         for i in range(len(questions)):
             q, a = questions[i], answers[i]
-            if '<ImageHere>' in q:
+            if "<ImageHere>" in q:
                 content = []
-                tag_number = q.count('<ImageHere>')
-                images = tgt_path[pics_number: pics_number + tag_number]
+                tag_number = q.count("<ImageHere>")
+                images = tgt_path[pics_number : pics_number + tag_number]
                 pics_number += tag_number
-                q_split = q.split('<ImageHere>')
+                q_split = q.split("<ImageHere>")
                 for i in range(tag_number):
                     qsp, im = q_split[i], images[i]
-                    if qsp != '':
-                        content.append(dict(type='text', value=qsp))
-                    content.append(dict(type='image', value=im))
-                if q_split[-1] != '':
-                    content.append(dict(type='text', value=q_split[-1]))
+                    if qsp != "":
+                        content.append(dict(type="text", value=qsp))
+                    content.append(dict(type="image", value=im))
+                if q_split[-1] != "":
+                    content.append(dict(type="text", value=q_split[-1]))
             else:
-                content = [dict(type='text', value=q)]
-            dlgs.append(dict(role='user', content=content))
-            assert '<ImageHere>' not in a, 'We currently do not support images in the answer. '
-            content = [dict(type='text', value=a)]
-            dlgs.append(dict(role='assistant', content=content))
+                content = [dict(type="text", value=q)]
+            dlgs.append(dict(role="user", content=content))
+            assert "<ImageHere>" not in a, "We currently do not support images in the answer. "
+            content = [dict(type="text", value=a)]
+            dlgs.append(dict(role="assistant", content=content))
         return dlgs
 
 
 class MMDUDataset(ImageMTDataset):
 
-    DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
-    DATASET_MD5 = {'MMDU': '848b635a88a078f49aebcc6e39792061'}
+    DATASET_URL = {"MMDU": "https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv"}
+    DATASET_MD5 = {"MMDU": "848b635a88a078f49aebcc6e39792061"}
     DIMS = [
-        'Creativity', 'Richness', 'Visual Perception', 'Logical Coherence',
-        'Answer Accuracy', 'Image Relationship Understanding', 'Overall Score'
+        "Creativity",
+        "Richness",
+        "Visual Perception",
+        "Logical Coherence",
+        "Answer Accuracy",
+        "Image Relationship Understanding",
+        "Overall Score",
     ]
 
     def calculat_metric(self, ans):
@@ -63,7 +68,7 @@ class MMDUDataset(ImageMTDataset):
         tot = defaultdict(lambda: 0)
         valid = defaultdict(lambda: 0)
         for k in ans:
-            res = ans[k]['res']
+            res = ans[k]["res"]
             assert isinstance(res, pd.DataFrame)
             lt = len(res)
             for i in range(lt):
@@ -77,30 +82,30 @@ class MMDUDataset(ImageMTDataset):
                             all[k] += score
                             valid[k] += 1
                         except Exception as e:
-                            print(f'Failed to parse the score: {str(e)}')
-        sp1 = {'set': 'all'}
+                            print(f"Failed to parse the score: {str(e)}")
+        sp1 = {"set": "all"}
         sp1.update({k: all[k] / tot[k] * 10 for k in self.DIMS})
-        sp2 = {'set': 'valid'}
+        sp2 = {"set": "valid"}
         sp2.update({k: all[k] / valid[k] * 10 for k in self.DIMS})
 
         return pd.DataFrame([sp1, sp2])
 
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
-        model = judge_kwargs['model']
+        suffix = eval_file.split(".")[-1]
+        model = judge_kwargs["model"]
 
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
-        nproc = judge_kwargs.pop('nproc', 4)
+        tmp_file = eval_file.replace(f".{suffix}", f"_{model}.pkl")
+        score_file = eval_file.replace(f".{suffix}", f"_{model}_score.csv")
+        nproc = judge_kwargs.pop("nproc", 4)
 
         data = load(eval_file)
-        model = judge_kwargs.pop('model', 'gpt-4o')
+        model = judge_kwargs.pop("model", "gpt-4o")
         judge_model = build_judge(model=model, **judge_kwargs)
 
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
         tups = [(judge_model, line) for line in lines]
-        indices = [line['index'] for line in lines]
+        indices = [line["index"] for line in lines]
 
         ans = {}
         if osp.exists(tmp_file):
@@ -118,7 +123,8 @@ class MMDUDataset(ImageMTDataset):
                 nproc=nproc,
                 chunksize=nproc,
                 keys=indices,
-                save=tmp_file,)
+                save=tmp_file,
+            )
             ans = load(tmp_file)
             for k, v in zip(indices, new_results):
                 assert k in ans

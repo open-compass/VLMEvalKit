@@ -3,19 +3,19 @@ from ..smp import *
 
 
 class TextBaseDataset:
-    MODALITY = 'TEXT'
+    MODALITY = "TEXT"
     DATASET_URL = {}
     DATASET_MD5 = {}
 
-    def __init__(self, dataset='MMBench', **kwargs):
+    def __init__(self, dataset="MMBench", **kwargs):
         self.dataset_name = dataset
 
         data = self.load_data(dataset)
 
-        data['index'] = [str(x) for x in data['index']]
+        data["index"] = [str(x) for x in data["index"]]
 
-        if np.all([istype(x, int) for x in data['index']]):
-            data['index'] = [int(x) for x in data['index']]
+        if np.all([istype(x, int) for x in data["index"]]):
+            data["index"] = [int(x) for x in data["index"]]
 
         self.data = data
         self.post_build(dataset)
@@ -30,19 +30,20 @@ class TextBaseDataset:
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
-        file_name = url.split('/')[-1]
+        file_name = url.split("/")[-1]
         data_path = osp.join(data_root, file_name)
         if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
             pass
         else:
-            warnings.warn('The dataset tsv is not downloaded')
+            warnings.warn("The dataset tsv is not downloaded")
             download_file(url, data_path)
             update_flag = True
 
-        if file_size(data_path, 'GB') > 1:
-            local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+        if file_size(data_path, "GB") > 1:
+            local_path = data_path.replace(".tsv", "_local.tsv")
+            if not osp.exists(local_path) or os.environ.get("FORCE_LOCAL", None) or update_flag:
                 from ..tools import LOCALIZE
+
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         return load(data_path)
@@ -76,10 +77,10 @@ class TextBaseDataset:
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        question = line['question']
+        question = line["question"]
 
         msgs = []
-        msgs.append(dict(type='text', value=question))
+        msgs.append(dict(type="text", value=question))
         return msgs
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe

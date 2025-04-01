@@ -13,78 +13,73 @@ try:
     from sympy.parsing.latex import parse_latex
     import antlr4
 except ImportError:
-    logging.warning('sympy or antlr4 is not installed, please install it for OlympiadBench evaluation.')
+    logging.warning("sympy or antlr4 is not installed, please install it for OlympiadBench evaluation.")
 
 
-chinese_answer_type_dict = {
-    'Numerical': '数值',
-    'Expression': '表达式',
-    'Equation': '方程',
-    'Interval': '区间'
-}
+chinese_answer_type_dict = {"Numerical": "数值", "Expression": "表达式", "Equation": "方程", "Interval": "区间"}
 english_answer_type_dict = {
-    'Numerical': 'a numerical value',
-    'Expression': 'an expression',
-    'Equation': 'an equation',
-    'Interval': 'an interval'
+    "Numerical": "a numerical value",
+    "Expression": "an expression",
+    "Equation": "an equation",
+    "Interval": "an interval",
 }
 
 
 def get_single_answer_type_text(answer_type, is_chinese):
-    if '-' in answer_type:  # No need now
-        answer_type = answer_type[:answer_type.find('-')]
-    for t in ['Numerical', 'Expression', 'Equation', 'Interval']:
+    if "-" in answer_type:  # No need now
+        answer_type = answer_type[: answer_type.find("-")]
+    for t in ["Numerical", "Expression", "Equation", "Interval"]:
         if t in answer_type:
             if is_chinese:
                 return chinese_answer_type_dict[t]
             else:
                 return english_answer_type_dict[t]
-    exit(f'Error parsing answer type {answer_type}!')
+    exit(f"Error parsing answer type {answer_type}!")
 
 
 def get_answer_type_text(answer_type, is_chinese, multiple_answer):
     # 'Tuple' has various meanings in different context, such as position or values of a series of variable,
     # so it may lead to confusion to directly use 'tuple' in the prompt.
-    if ('Need_human_evaluate' in answer_type) or ('Tuple' in answer_type):
-        full_answer_text = ''
+    if ("Need_human_evaluate" in answer_type) or ("Tuple" in answer_type):
+        full_answer_text = ""
     else:
         if not multiple_answer:
             answer_text = get_single_answer_type_text(answer_type, is_chinese)
             if is_chinese:
-                full_answer_text = f'，答案类型为{answer_text}'
+                full_answer_text = f"，答案类型为{answer_text}"
             else:
                 full_answer_text = f"The answer of The problem should be {answer_text}. "
         else:
-            if ',' not in answer_type:  # Same answer type for all answers
+            if "," not in answer_type:  # Same answer type for all answers
                 answer_text = get_single_answer_type_text(answer_type, is_chinese)
                 if is_chinese:
-                    full_answer_text = f'，题目有多个答案，答案类型均为{answer_text}'
+                    full_answer_text = f"，题目有多个答案，答案类型均为{answer_text}"
                 else:
-                    full_answer_text = f'The problem has multiple answers, each of them should be {answer_text}. '
+                    full_answer_text = f"The problem has multiple answers, each of them should be {answer_text}. "
             else:
-                answer_types = answer_type.split(',')
+                answer_types = answer_type.split(",")
                 answer_types = [get_single_answer_type_text(t, is_chinese) for t in answer_types]
                 if len(set(answer_types)) == 1:
                     answer_text = answer_types[0]
                     if is_chinese:
-                        full_answer_text = f'，题目有多个答案，答案类型均为{answer_text}'
+                        full_answer_text = f"，题目有多个答案，答案类型均为{answer_text}"
                     else:
-                        full_answer_text = f'The problem has multiple answers, each of them should be {answer_text}. '
+                        full_answer_text = f"The problem has multiple answers, each of them should be {answer_text}. "
                 else:
                     if is_chinese:
-                        answer_text = '、'.join(answer_types)
-                        full_answer_text = f'，题目有多个答案，答案类型分别为{answer_text}'
+                        answer_text = "、".join(answer_types)
+                        full_answer_text = f"，题目有多个答案，答案类型分别为{answer_text}"
                     else:
-                        answer_text = ', '.join(answer_types)
+                        answer_text = ", ".join(answer_types)
                         full_answer_text = (
-                            f'The problem has multiple answers, with the answers in order being {answer_text}. '
+                            f"The problem has multiple answers, with the answers in order being {answer_text}. "
                         )
     return full_answer_text
 
 
 def make_input(prompt, question_content):
     # diversified based on the vllm, which is not implemented temporarily
-    input = prompt + '\n' + question_content
+    input = prompt + "\n" + question_content
     return input
 
 
@@ -154,8 +149,8 @@ class MathJudger:
             return True
 
         # 去除字符串中的中文字符，因为上面已经判断过了类似回答为"能"或"不能"的含有中文字符的回答情况
-        expression1 = re.sub(r'[\u4e00-\u9fff]+', '', expression1)
-        expression2 = re.sub(r'[\u4e00-\u9fff]+', '', expression2)
+        expression1 = re.sub(r"[\u4e00-\u9fff]+", "", expression1)
+        expression2 = re.sub(r"[\u4e00-\u9fff]+", "", expression2)
 
         expression1 = self.split_by_comma(expression1)
         expression2 = self.split_by_comma(expression2)
@@ -187,7 +182,7 @@ class MathJudger:
                         precision.remove(self.precision)
                         break
                 except Exception as err:
-                    logging.warning(f'{type(err)}: {err}')
+                    logging.warning(f"{type(err)}: {err}")
                     continue
             else:
                 # If we didn't break from the inner loop, it means no match was found
@@ -298,18 +293,19 @@ class MathJudger:
             # 如果输入的表达式可以计算出具体数值的话，则将其进行数值计算的比较
 
             if (expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol)) or (
-                    not expr1_sym.has(sp.Symbol) and expr2_sym.has(sp.Symbol)):
+                not expr1_sym.has(sp.Symbol) and expr2_sym.has(sp.Symbol)
+            ):
                 return False
             elif not expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol):
                 try:
                     if not (self.can_compute_power(expr1_sym) and self.can_compute_power(expr2_sym)):
                         print(
                             "These two number can not be calculated by current computer for: "
-                            f"\"{str(expr1_sym)}\" and \"{str(expr2_sym)}\""
+                            f'"{str(expr1_sym)}" and "{str(expr2_sym)}"'
                         )
                         return False
                     if exp_too_long:
-                        print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                        print(f"Expression {exp1} or {exp2} is too long to compute. ")
                         return False
 
                     if abs(expr1_sym.evalf() - expr2_sym.evalf()) <= self.precision * 1.01:
@@ -319,7 +315,7 @@ class MathJudger:
                 except:
                     return False
             elif exp_too_long:
-                print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                print(f"Expression {exp1} or {exp2} is too long to compute. ")
                 return False
             else:
                 try:
@@ -342,7 +338,7 @@ class MathJudger:
         # 将等式的右边都移到左边，并返回一个 sympy 格式的表达式
         def simplify_equation(latex_eq):
             # 分割等式的左边和右边
-            lhs, rhs = latex_eq.split('=')
+            lhs, rhs = latex_eq.split("=")
 
             # 使用 parse_latex 解析 LaTeX 表达式
             lhs_expr = parse_latex(lhs)
@@ -364,7 +360,8 @@ class MathJudger:
 
         # 如果两个方程转换后的式子相除为整数 且非零，则根据推导可知这两个方程等价
         if (division_result_1.is_Integer and division_result_1 != 0) or (
-                division_result_2.is_Integer and division_result_2 != 0):
+            division_result_2.is_Integer and division_result_2 != 0
+        ):
             return True
         else:
             return False
@@ -380,12 +377,12 @@ class MathJudger:
             if inter1[0] != inter2[0] or inter1[-1] != inter2[-1]:
                 return False
 
-            inter1 = inter1.strip('[]()')
-            inter2 = inter2.strip('[]()')
+            inter1 = inter1.strip("[]()")
+            inter2 = inter2.strip("[]()")
 
             # 分割区间的左右部分
-            items_1 = inter1.split(',')
-            items_2 = inter2.split(',')
+            items_1 = inter1.split(",")
+            items_2 = inter2.split(",")
 
             for item_1, item_2 in zip(items_1, items_2):
                 if not self.expression_equal(item_1, item_2):
@@ -414,7 +411,7 @@ class MathJudger:
         # 尝试捕获box中的内容，如果有多个则以逗号相连返回，如果一个都没有，则报错
         def extract_boxed_content(latex_str):
             # 查找所有的 \boxed{...} 结构
-            boxed_matches = re.finditer(r'\\boxed{', latex_str)
+            boxed_matches = re.finditer(r"\\boxed{", latex_str)
             results = ""
 
             for match in boxed_matches:
@@ -424,15 +421,15 @@ class MathJudger:
 
                 # 从 \boxed{ 之后开始搜索，直到找到对应的闭合括号
                 while stack > 0 and end_index < len(latex_str):
-                    if latex_str[end_index] == '{':
+                    if latex_str[end_index] == "{":
                         stack += 1
-                    elif latex_str[end_index] == '}':
+                    elif latex_str[end_index] == "}":
                         stack -= 1
                     end_index += 1
 
                 if stack == 0:
                     # 提取 \boxed{} 内部的内容
-                    content = latex_str[start_index:end_index - 1]
+                    content = latex_str[start_index : end_index - 1]
                     results += content + ","
                 else:
                     # 如果括号没有正确闭合，则返回错误信息
@@ -462,8 +459,8 @@ class MathJudger:
 
             expression = expression.strip("\n$,.:;^_=+`!@#$%^&*~，。")
 
-            pattern = r'\\(?:mathrm|mathbf)\{~?([^}]*)\}'
-            expression = re.sub(pattern, r'\1', expression)
+            pattern = r"\\(?:mathrm|mathbf)\{~?([^}]*)\}"
+            expression = re.sub(pattern, r"\1", expression)
 
             return expression
 
@@ -507,14 +504,14 @@ class MathJudger:
 
 def extract_answer(is_chinese, model_output, is_deepseek=False):
     # deepseekmath has special answering format
-    if str(model_output) == 'nan':
-        model_output = 'nan'
+    if str(model_output) == "nan":
+        model_output = "nan"
 
     if is_deepseek:
         if is_chinese:
-            matches = re.findall('## 解题答案(.*)', model_output)
+            matches = re.findall("## 解题答案(.*)", model_output)
         else:
-            matches = re.findall('The answer is: (.*)', model_output)
+            matches = re.findall("The answer is: (.*)", model_output)
 
         # 检测是否至少找到一个匹配，如果没有就直接整个送进去找\boxed{}
         if matches:
@@ -525,9 +522,9 @@ def extract_answer(is_chinese, model_output, is_deepseek=False):
             return model_output
 
     if is_chinese:
-        matches = re.findall('所以最终答案是(.*)', model_output)
+        matches = re.findall("所以最终答案是(.*)", model_output)
     else:
-        matches = re.findall('So the final answer is (.*)', model_output)
+        matches = re.findall("So the final answer is (.*)", model_output)
 
     # 检测是否至少找到一个匹配，如果没有就直接整个送进去找\boxed{}
     if matches:

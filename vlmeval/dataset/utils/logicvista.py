@@ -4,12 +4,12 @@ import pandas as pd
 from ...smp import *
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 
 def build_prompt_logicvista(line):
-    question = line['question']
-    prediction = str(line['prediction'])
+    question = line["question"]
+    prediction = str(line["prediction"])
     tmpl = (
         "You are a information extractor that extracts multiple choice letter answer choices "
         "from a paragraph that contains the answer choice and sometimes explaination of why that "
@@ -18,20 +18,20 @@ def build_prompt_logicvista(line):
         "first try to infer the answer based off the given choices.\n"
         "If it does not seem like the given answer corresponds to an answer choice OR if there is no selected answer, please just respond with Z.\n"
         "Make sure you answer with ONLY the letters chosen.\n"
-        'Example 1: \n'
-        'Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n'
-        'Answer: <start>\na cute teddy bear\n<end>\nYour output: A\n'
-        'Example 2: \n'
-        'Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n'
-        'Answer: <start>\nSpider\n<end>\nYour output: Z\n'
-        'Example 3: \n'
-        'Question: <start>\nWhich figure is a rotation of the object?\n<end>\n'
+        "Example 1: \n"
+        "Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n"
+        "Answer: <start>\na cute teddy bear\n<end>\nYour output: A\n"
+        "Example 2: \n"
+        "Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n"
+        "Answer: <start>\nSpider\n<end>\nYour output: Z\n"
+        "Example 3: \n"
+        "Question: <start>\nWhich figure is a rotation of the object?\n<end>\n"
         'Answer: <start>\nThe figure on the right, labeled "D," is a rotation of the object shown in the top left corner.\n<end>\nYour output: D\n'
-        'Example 4: \n'
-        'Question: <start>\nWhich of the boxes comes next in the sequence? Select from A-E\n<end>\n'
-        'Answer: <start>\nThe sequence of the boxes is A, B, C, D, E.\n<end>\nYour output: ABCDE\n'
-        'Example 5: \n'
-        'Question: <start>\n{}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
+        "Example 4: \n"
+        "Question: <start>\nWhich of the boxes comes next in the sequence? Select from A-E\n<end>\n"
+        "Answer: <start>\nThe sequence of the boxes is A, B, C, D, E.\n<end>\nYour output: ABCDE\n"
+        "Example 5: \n"
+        "Question: <start>\n{}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: "
     )
 
     return tmpl.format(question, prediction)
@@ -40,33 +40,33 @@ def build_prompt_logicvista(line):
 def LogicVista_auxeval(model, line):
     prompt = build_prompt_logicvista(line)
     print(prompt)
-    log = ''
+    log = ""
     retry = 5
 
     for i in range(retry):
-        prediction = line['prediction']
+        prediction = line["prediction"]
         res = model.generate(prompt, temperature=i * 0.5)
-        answer = line['answer'].split(", ")
+        answer = line["answer"].split(", ")
         for j in range(0, len(answer)):
             answer[j] = answer[j].lower()
         answer.sort()
-        answer = ''.join(answer)
+        answer = "".join(answer)
 
         if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+            log += f"Try {i}: output is {prediction}, failed to parse.\n"
         elif not res.isupper() or not res.isalpha():
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+            log += f"Try {i}: output is {prediction}, failed to parse.\n"
         else:
-            log += 'Succeed'
+            log += "Succeed"
             hit = 0
             extracted = [alpha.lower() for alpha in res]
             extracted.sort()
-            extracted = ''.join(extracted)
+            extracted = "".join(extracted)
             if extracted == answer:
                 hit = 1
             return dict(log=log, res=res, hit=hit)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='', hit=0)
+    log += "All 5 retries failed.\n"
+    return dict(log=log, res="", hit=0)
 
 
 cat = ["diagram", "ocr", "patterns", "graphs", "tables", "3d shapes", "puzzles", "sequences", "physics"]
@@ -92,9 +92,9 @@ def evaluate_logicvista(file_path):
 
     tot_correct = df_tot["hit"].sum()
     tot_acc = (tot_correct / df_tot.shape[0]) * 100
-    tot['Overall'] = df_tot.shape[0]
-    hit['Overall'] = tot_correct
-    acc['Overall'] = tot_acc
+    tot["Overall"] = df_tot.shape[0]
+    hit["Overall"] = tot_correct
+    acc["Overall"] = tot_acc
 
     inductive_correct = df_inductive["hit"].sum()
     inductive_acc = (inductive_correct / df_inductive.shape[0]) * 100
@@ -142,9 +142,9 @@ def evaluate_logicvista(file_path):
 
     res = defaultdict(list)
     for k in tot.keys():
-        res['Task&Skill'].append(k)
-        res['tot'].append(tot[k])
-        res['hit'].append(hit[k])
-        res['acc'].append(acc[k])
+        res["Task&Skill"].append(k)
+        res["tot"].append(tot[k])
+        res["hit"].append(hit[k])
+        res["acc"].append(acc[k])
     res = pd.DataFrame(res)
     return res

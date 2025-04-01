@@ -368,7 +368,7 @@ def post_process(response, right_answer, task_mode, duration):
 
         # 如果找到了 json 内容
         if json_start != -1 and json_end != -1:
-            json_content = response[json_start + len("```json"):json_end].strip()
+            json_content = response[json_start + len("```json") : json_end].strip()
         else:
             json_content = ""
 
@@ -440,7 +440,7 @@ def post_process_open(response):
 
         # 如果找到了 json 内容
         if json_start != -1 and json_end != -1:
-            json_content = response[json_start + len("```json"):json_end].strip()
+            json_content = response[json_start + len("```json") : json_end].strip()
         else:
             json_content = ""
 
@@ -466,7 +466,7 @@ def post_process_eval_open(response, step):
         json_end = response.find("```", json_start + len("```json"))
 
         if json_start != -1 and json_end != -1:
-            json_content = response[json_start + len("```json"):json_end].strip()
+            json_content = response[json_start + len("```json") : json_end].strip()
         else:
             json_content = ""
 
@@ -579,7 +579,7 @@ def get_chunk_number(filename):
         num = filename.split("chunk_")[1].split(".zip")[0]
         return int(num)
     except:
-        return float('inf')
+        return float("inf")
 
 
 def unzip_hf_zip(pth):
@@ -588,8 +588,11 @@ def unzip_hf_zip(pth):
 
     target_dir = pth
 
-    if os.path.exists(f"{target_dir}/cg_videos_720p") and os.path.exists(f"{target_dir}/cg_subtitles")\
-            and os.path.exists(f"{target_dir}/cg_clue_videos"):
+    if (
+        os.path.exists(f"{target_dir}/cg_videos_720p")
+        and os.path.exists(f"{target_dir}/cg_subtitles")
+        and os.path.exists(f"{target_dir}/cg_clue_videos")
+    ):
         print("all exists")
         return
 

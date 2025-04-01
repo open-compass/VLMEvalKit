@@ -92,24 +92,21 @@ def get_score(judgement, pattern=REGEX_PATTERN):
 
 
 def MMAlignBench_auxeval(model, line):
-    if 'gt' in line and str(line['gt']) != 'nan':
-        config = dict(question=line['question'], gt=line['gt'], answer_1=line['A'], answer_2=line['B'])
-        prompt = SYSTEM_PROMPT_GT + '\n' + PROMPT_TEMPLATE_GT.format(**config)
+    if "gt" in line and str(line["gt"]) != "nan":
+        config = dict(question=line["question"], gt=line["gt"], answer_1=line["A"], answer_2=line["B"])
+        prompt = SYSTEM_PROMPT_GT + "\n" + PROMPT_TEMPLATE_GT.format(**config)
         # prompt = PROMPT_TEMPLATE.format(**config)
-        print('gt_prompt'+prompt)
+        print("gt_prompt" + prompt)
     else:
-        config = dict(question=line['question'], answer_1=line['A'], answer_2=line['B'])
-        prompt = SYSTEM_PROMPT + '\n' + PROMPT_TEMPLATE.format(**config)
+        config = dict(question=line["question"], answer_1=line["A"], answer_2=line["B"])
+        prompt = SYSTEM_PROMPT + "\n" + PROMPT_TEMPLATE.format(**config)
         # prompt = PROMPT_TEMPLATE.format(**config)
-        print('prompt'+prompt)
+        print("prompt" + prompt)
 
-    prefix = 'data:image/jpeg;base64,'
-    img = prefix + line['image']
+    prefix = "data:image/jpeg;base64,"
+    img = prefix + line["image"]
 
-    messages = [
-        dict(type='text', value=prompt),
-        dict(type='image', value=img)
-    ]
+    messages = [dict(type="text", value=prompt), dict(type="image", value=img)]
 
     retry = 2
     while retry:
@@ -120,22 +117,16 @@ def MMAlignBench_auxeval(model, line):
         retry -= 1
 
     if score is None:
-        return 'Unknown'
+        return "Unknown"
     return [score, resp]
 
 
 class MMAlignBench(ImageBaseDataset):
-    TYPE = 'VQA'
-    DATASET_URL = {'MMAlignBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMAlignBench.tsv'}
-    DATASET_MD5 = {'MMAlignBench': 'd00d8e61c99257cbaf76d8d5e926f01e'}
+    TYPE = "VQA"
+    DATASET_URL = {"MMAlignBench": "https://opencompass.openxlab.space/utils/VLMEval/MMAlignBench.tsv"}
+    DATASET_MD5 = {"MMAlignBench": "d00d8e61c99257cbaf76d8d5e926f01e"}
 
-    score_map = {
-        'A>>B': -2,
-        'A>B': -1,
-        'A=B': 0,
-        'B>A': 1,
-        'B>>A': 2
-    }
+    score_map = {"A>>B": -2, "A>B": -1, "A=B": 0, "B>A": 1, "B>>A": 2}
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
@@ -143,59 +134,57 @@ class MMAlignBench(ImageBaseDataset):
             line = self.data.iloc[line]
 
         if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
+            tgt_path = toliststr(line["image_path"])
         else:
             tgt_path = self.dump_image(line)
 
-        question = line['question']
+        question = line["question"]
 
         msgs = []
         if isinstance(tgt_path, list):
-            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            msgs.extend([dict(type="image", value=p) for p in tgt_path])
         else:
-            msgs = [dict(type='image', value=tgt_path)]
+            msgs = [dict(type="image", value=tgt_path)]
         # WildVision adopts text first
-        msgs = [dict(type='text', value=question)] + msgs
+        msgs = [dict(type="text", value=question)] + msgs
         return msgs
 
     @classmethod
     def gen_eval_base(self, eval_file, b64_map):
         data = load(eval_file)
-        data['B'] = data.pop('prediction')
-        data['A'] = data.pop('claude3_sonnet')
-        data['image'] = [b64_map[x] for x in data['index']]
+        data["B"] = data.pop("prediction")
+        data["A"] = data.pop("claude3_sonnet")
+        data["image"] = [b64_map[x] for x in data["index"]]
         return data
 
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         # We adopt pairwise evaluation (twice for a pair) for this dataset
-        suffix = eval_file.split('.')[-1]
-        model = judge_kwargs['model']
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
-        nproc = judge_kwargs.pop('nproc', 4)
+        suffix = eval_file.split(".")[-1]
+        model = judge_kwargs["model"]
+        storage = eval_file.replace(f".{suffix}", f"_{model}.xlsx")
+        score_file = eval_file.replace(f".{suffix}", f"_{model}_score.csv")
+        tmp_file = eval_file.replace(f".{suffix}", f"_{model}.pkl")
+        nproc = judge_kwargs.pop("nproc", 4)
 
         if not osp.exists(storage):
-            raw_data = MMAlignBench('MMAlignBench').data
-            b64_map = {x: y for x, y in zip(raw_data['index'], raw_data['image'])}
+            raw_data = MMAlignBench("MMAlignBench").data
+            b64_map = {x: y for x, y in zip(raw_data["index"], raw_data["image"])}
             data = self.gen_eval_base(eval_file, b64_map)
 
             # judge_kwargs['system_prompt'] = SYSTEM_PROMPT
-            judge_kwargs['temperature'] = 0
-            judge_kwargs['img_detail'] = 'high'
-            judge_kwargs['timeout'] = 300
+            judge_kwargs["temperature"] = 0
+            judge_kwargs["img_detail"] = "high"
+            judge_kwargs["timeout"] = 300
             model = build_judge(max_tokens=4096, **judge_kwargs)
 
-            assert model.working(), (
-                'MMAlignBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
-            )
+            assert model.working(), "MMAlignBench evaluation requires a working OPENAI API\n" + DEBUG_MESSAGE
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
-            indices = [line['index'] for line in lines]
+            indices = [line["index"] for line in lines]
 
             ans = load(tmp_file) if osp.exists(tmp_file) else {}
             tups = [x for x, i in zip(tups, indices) if i not in ans]
@@ -212,14 +201,14 @@ class MMAlignBench(ImageBaseDataset):
                 )
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
-                    ans[k] = {'score': v[0], 'resp': v[1]}
+                    ans[k] = {"score": v[0], "resp": v[1]}
             else:
-                for k,v in ans.items():
-                    ans[k] = {'score': v[0], 'resp': v[1]}
+                for k, v in ans.items():
+                    ans[k] = {"score": v[0], "resp": v[1]}
             # breakpoint()
-            data['score'] = [ans[x]['score'] for x in data['index']]
-            data['judge'] = [ans[x]['resp'] for x in data['index']]
-            data.pop('image')
+            data["score"] = [ans[x]["score"] for x in data["index"]]
+            data["judge"] = [ans[x]["resp"] for x in data["index"]]
+            data.pop("image")
             dump(data, storage)
 
         data = load(storage)
@@ -230,31 +219,25 @@ class MMAlignBench(ImageBaseDataset):
 
         for i in range(lt):
             item = data.iloc[i]
-            if item['score'] not in self.score_map:
+            if item["score"] not in self.score_map:
                 score = 0
             else:
-                score = self.score_map[item['score']]
-                if '_rev' in item['index']:
+                score = self.score_map[item["score"]]
+                if "_rev" in item["index"]:
                     score = -score
             scores[score] += 1
-            type = item['type']
+            type = item["type"]
             type_scores[type][score] += 1
 
-        name_map = {
-            2: 'Much Better',
-            1: 'Better',
-            0: 'Tie',
-            -1: 'Worse',
-            -2: 'Much Worse'
-        }
+        name_map = {2: "Much Better", 1: "Better", 0: "Tie", -1: "Worse", -2: "Much Worse"}
         scores = {name_map[k]: v for k, v in scores.items()}
-        scores['Reward'] = (
-            100 * scores.get('Much Better', 0)
-            + 50 * scores.get('Better', 0)
-            - 50 * scores.get('Worse', 0)
-            - 100 * scores.get('Much Worse', 0)
+        scores["Reward"] = (
+            100 * scores.get("Much Better", 0)
+            + 50 * scores.get("Better", 0)
+            - 50 * scores.get("Worse", 0)
+            - 100 * scores.get("Much Worse", 0)
         ) / lt
-        scores['Win Rate'] = (scores.get('Better', 0) + scores.get('Much Better', 0)) / lt
+        scores["Win Rate"] = (scores.get("Better", 0) + scores.get("Much Better", 0)) / lt
         scores = {k: [v] for k, v in scores.items()}
         scores = pd.DataFrame(scores)
 
@@ -262,20 +245,20 @@ class MMAlignBench(ImageBaseDataset):
             type_score_dict = {name_map[k]: v for k, v in type_score_dict.items()}
             type_lt = sum(type_score_dict.values())
 
-            type_score_dict['Reward'] = (
+            type_score_dict["Reward"] = (
                 (
-                    100 * type_score_dict.get('Much Better', 0)
-                    + 50 * type_score_dict.get('Better', 0)
-                    - 50 * type_score_dict.get('Worse', 0)
-                    - 100 * type_score_dict.get('Much Worse', 0)
+                    100 * type_score_dict.get("Much Better", 0)
+                    + 50 * type_score_dict.get("Better", 0)
+                    - 50 * type_score_dict.get("Worse", 0)
+                    - 100 * type_score_dict.get("Much Worse", 0)
                 )
                 / type_lt
                 if type_lt > 0
                 else 0
             )
 
-            type_score_dict['Win Rate'] = (
-                (type_score_dict.get('Better', 0) + type_score_dict.get('Much Better', 0)) / type_lt
+            type_score_dict["Win Rate"] = (
+                (type_score_dict.get("Better", 0) + type_score_dict.get("Much Better", 0)) / type_lt
                 if type_lt > 0
                 else 0
             )
@@ -283,13 +266,13 @@ class MMAlignBench(ImageBaseDataset):
             # 将该类型的得分添加到结果中
             type_score_df = pd.DataFrame(
                 {
-                    f"{type_name}_Much Better": [type_score_dict.get('Much Better', 0)],
-                    f"{type_name}_Better": [type_score_dict.get('Better', 0)],
-                    f"{type_name}_Tie": [type_score_dict.get('Tie', 0)],
-                    f"{type_name}_Worse": [type_score_dict.get('Worse', 0)],
-                    f"{type_name}_Much Worse": [type_score_dict.get('Much Worse', 0)],
-                    f"{type_name}_Reward": [type_score_dict['Reward']],
-                    f"{type_name}_Win Rate": [type_score_dict['Win Rate']],
+                    f"{type_name}_Much Better": [type_score_dict.get("Much Better", 0)],
+                    f"{type_name}_Better": [type_score_dict.get("Better", 0)],
+                    f"{type_name}_Tie": [type_score_dict.get("Tie", 0)],
+                    f"{type_name}_Worse": [type_score_dict.get("Worse", 0)],
+                    f"{type_name}_Much Worse": [type_score_dict.get("Much Worse", 0)],
+                    f"{type_name}_Reward": [type_score_dict["Reward"]],
+                    f"{type_name}_Win Rate": [type_score_dict["Win Rate"]],
                 }
             )
             scores = pd.concat([scores, type_score_df], axis=1)

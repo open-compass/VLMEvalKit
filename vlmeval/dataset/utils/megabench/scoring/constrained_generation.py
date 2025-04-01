@@ -78,10 +78,7 @@ def phones_for_word(text: str) -> list[str]:
         text = text.removesuffix("'s")
 
     if text in custom_phones_for_word:
-        return [
-            pr + suffix
-            for pr, suffix in itertools.product(custom_phones_for_word[text], suffixes)
-        ]
+        return [pr + suffix for pr, suffix in itertools.product(custom_phones_for_word[text], suffixes)]
 
     pronunciations = pronouncing.phones_for_word(text)
 
@@ -158,9 +155,7 @@ def count_syllables(text: str) -> list[int]:
     pronunciations = [phones_for_word(p) for p in text.split()]
     syllable_counts = []
     for pronun_possibility in itertools.product(*pronunciations):
-        syllable_counts.append(
-            sum([pronouncing.syllable_count(p) for p in pronun_possibility])
-        )
+        syllable_counts.append(sum([pronouncing.syllable_count(p) for p in pronun_possibility]))
     return syllable_counts
 
 
@@ -193,10 +188,7 @@ def find_string_occurrences_with_variations(text, search_string):
 def word_to_stresses(word: str) -> list[list[int]]:
     """Convert a word to a list of stresses, for each valid pronunciation."""
     pronunciations = phones_for_word(word)
-    stresses = {
-        tuple(int(stress) for stress in pronouncing.stresses(pronunc))
-        for pronunc in pronunciations
-    }
+    stresses = {tuple(int(stress) for stress in pronouncing.stresses(pronunc)) for pronunc in pronunciations}
     return [list(pronunc_stresses) for pronunc_stresses in stresses]
 
 
@@ -233,9 +225,7 @@ def is_line_iambic(line: str) -> bool:
                 word_syllable_index += 1
 
             word_valid_iambic_pairs = True
-            for stress1, stress2 in grouper_ignore_last(
-                stress_pattern[word_syllable_index:], 2
-            ):
+            for stress1, stress2 in grouper_ignore_last(stress_pattern[word_syllable_index:], 2):
                 if not is_iambic_pair(stress1, stress2):
                     word_valid_iambic_pairs = False
                     break
@@ -259,9 +249,7 @@ def is_line_iambic(line: str) -> bool:
 
         return False
 
-    return backtrack(
-        0, 0, -1
-    )  # Start with -1 as prev_stress as a placeholder for the first syllable
+    return backtrack(0, 0, -1)  # Start with -1 as prev_stress as a placeholder for the first syllable
 
 
 def parse_constraints(key_string, value_string):
@@ -280,9 +268,7 @@ def parse_constraints(key_string, value_string):
 
     # Combine keys and values into a dictionary
     if len(key_components) == len(value_components):
-        result = {
-            key.lower(): value for key, value in zip(key_components, value_components)
-        }
+        result = {key.lower(): value for key, value in zip(key_components, value_components)}
     elif len(key_components) == 1 and len(value_components) == 1:
         result = {key_components[0].lower(): value_components[0]}
     else:
@@ -305,9 +291,7 @@ def check_constraint(response, constraint, constraint_val):
             for cond in conditions:
                 count, occurs = 0, []
                 for item in cond:  # check one condition
-                    count_, occurs_ = find_string_occurrences_with_variations(
-                        response, item
-                    )
+                    count_, occurs_ = find_string_occurrences_with_variations(response, item)
                     if count_ > 0:
                         count += count_
                         occurs.extend(occurs_)
@@ -319,9 +303,7 @@ def check_constraint(response, constraint, constraint_val):
             items = str_to_iterable(list, parsed_constraint["contain"])
             count, occurs = 0, []
             for item in items:
-                count_, occurs_ = find_string_occurrences_with_variations(
-                    response, item
-                )
+                count_, occurs_ = find_string_occurrences_with_variations(response, item)
                 if count_ > 0:
                     count += count_
                     occurs.extend(occurs_)
@@ -402,9 +384,7 @@ def check_constraint(response, constraint, constraint_val):
         response = response.replace('"', "")
         response = response.replace("-", " ")
         response = response.replace("—", " ")
-        response = re.sub(
-            " *\(\w\) *(?=\n|$)", "", response
-        )  # The parenthesized letter in the rhyming scheme
+        response = re.sub(" *\(\w\) *(?=\n|$)", "", response)  # The parenthesized letter in the rhyming scheme
 
         lines = response.lower().split("\n")
         match constraint:
@@ -414,13 +394,8 @@ def check_constraint(response, constraint, constraint_val):
                     return 0
                 try:
                     all_match = all(
-                        any(
-                            min_count <= syll_count <= max_count
-                            for syll_count in count_syllables(line)
-                        )
-                        for line, (min_count, max_count) in zip(
-                            lines, syllable_count_intervals
-                        )
+                        any(min_count <= syll_count <= max_count for syll_count in count_syllables(line))
+                        for line, (min_count, max_count) in zip(lines, syllable_count_intervals)
                     )
                 except IndexError:
                     all_match = None
@@ -444,10 +419,7 @@ def check_constraint(response, constraint, constraint_val):
                 letter_to_rhyming_parts = {}
                 for letter, words in letter_to_words.items():
                     rhyming_parts: list[set[str]] = [
-                        {
-                            rhyming_part_include_unstressed(pronunciations)
-                            for pronunciations in phones_for_word(word)
-                        }
+                        {rhyming_part_include_unstressed(pronunciations) for pronunciations in phones_for_word(word)}
                         for word in words
                     ]
                     common_rhyming_parts = set.intersection(*rhyming_parts)

@@ -58,7 +58,7 @@ class AnswerStrParse:
                 # )
                 if "[]" not in answer_content:
                     return answer_content
-            return str(response_obj) # make sure the response to the metric is always a string
+            return str(response_obj)  # make sure the response to the metric is always a string
         else:
             # drop the redundant string quotes
             answer_content = evaluate_as_string(answer_content)

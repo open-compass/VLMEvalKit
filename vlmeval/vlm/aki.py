@@ -39,7 +39,7 @@ class AKI(BaseModel):
         n_px = getattr(config, "n_px", 384)
         norm_mean = getattr(config, "norm_mean", 0.5)
         norm_std = getattr(config, "norm_std", 0.5)
-        
+
         image_processor = Compose([
             Resize((n_px, n_px), interpolation=InterpolationMode.BICUBIC, antialias=True),
             Lambda(lambda x: x.convert('RGB')),
@@ -94,7 +94,7 @@ class AKI(BaseModel):
         vision_x = vision_x.unsqueeze(1).unsqueeze(0)
         prompt = self.apply_prompt_template(prompt)
         lang_x = self.tokenizer([prompt], return_tensors='pt')
-        
+
         generated_text = self.model.generate(
             vision_x=vision_x.cuda(),
             lang_x=lang_x['input_ids'].cuda(),

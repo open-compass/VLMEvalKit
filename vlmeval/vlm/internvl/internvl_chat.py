@@ -241,7 +241,7 @@ class InternVLChat(BaseModel):
 
     @torch.no_grad()
     def generate_v2(self, message, dataset=None):
-        
+
         use_mpo_prompt = self.use_mpo_prompt and (self.use_cot or dataset in ['MMStar', 'HallusionBench', 'OCRBench'])
 
         image_num = len([x for x in message if x['type'] == 'image'])
@@ -277,7 +277,7 @@ class InternVLChat(BaseModel):
             kwargs_default['do_sample'] = idx > 0
             kwargs_default['temperature'] = 0.7
             kwargs_default['top_p'] = 0.95
-            
+
             response = self.model.chat(
                 self.tokenizer,
                 pixel_values=pixel_values,

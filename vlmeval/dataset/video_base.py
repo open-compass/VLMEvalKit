@@ -4,45 +4,41 @@ from ..smp import *
 
 class VideoBaseDataset:
 
-    MODALITY = 'VIDEO'
+    MODALITY = "VIDEO"
 
-    def __init__(self,
-                 dataset='MMBench-Video',
-                 pack=False,
-                 nframe=0,
-                 fps=-1):
+    def __init__(self, dataset="MMBench-Video", pack=False, nframe=0, fps=-1):
         try:
             import decord
         except Exception as e:
-            logging.critical(f'{type(e)}: {e}')
-            logging.critical('Please install decord via `pip install decord`.')
+            logging.critical(f"{type(e)}: {e}")
+            logging.critical("Please install decord via `pip install decord`.")
 
         self.dataset_name = dataset
         ret = self.prepare_dataset(dataset)
         assert ret is not None
         lmu_root = LMUDataRoot()
-        self.frame_root = osp.join(lmu_root, 'images', dataset)
+        self.frame_root = osp.join(lmu_root, "images", dataset)
         os.makedirs(self.frame_root, exist_ok=True)
-        self.frame_tmpl = 'frame-{}-of-{}.jpg'
-        self.frame_tmpl_fps = 'frame-{}-of-{}-{}fps.jpg'
+        self.frame_tmpl = "frame-{}-of-{}.jpg"
+        self.frame_tmpl_fps = "frame-{}-of-{}-{}fps.jpg"
 
-        self.data_root = ret['root']
-        self.data_file = ret['data_file']
+        self.data_root = ret["root"]
+        self.data_file = ret["data_file"]
         self.data = load(self.data_file)
-        if 'index' not in self.data:
-            self.data['index'] = np.arange(len(self.data))
+        if "index" not in self.data:
+            self.data["index"] = np.arange(len(self.data))
 
-        assert 'question' in self.data and 'video' in self.data
-        videos = list(set(self.data['video']))
+        assert "question" in self.data and "video" in self.data
+        videos = list(set(self.data["video"]))
         videos.sort()
         self.videos = videos
         self.pack = pack
         self.nframe = nframe
         self.fps = fps
         if self.fps > 0 and self.nframe > 0:
-            raise ValueError('fps and nframe should not be set at the same time')
+            raise ValueError("fps and nframe should not be set at the same time")
         if self.fps <= 0 and self.nframe <= 0:
-            raise ValueError('fps and nframe should be set at least one valid value')
+            raise ValueError("fps and nframe should be set at least one valid value")
 
     def __len__(self):
         return len(self.videos) if self.pack else len(self.data)
@@ -50,7 +46,7 @@ class VideoBaseDataset:
     def __getitem__(self, idx):
         if self.pack:
             assert idx < len(self.videos)
-            sub_data = self.data[self.data['video'] == self.videos[idx]]
+            sub_data = self.data[self.data["video"] == self.videos[idx]]
             return sub_data
         else:
             assert idx < len(self.data)
@@ -64,12 +60,13 @@ class VideoBaseDataset:
     def frame_paths_fps(self, video, num_frames):
         frame_root = osp.join(self.frame_root, video)
         os.makedirs(frame_root, exist_ok=True)
-        return [osp.join(frame_root,
-                         self.frame_tmpl_fps.format(i, num_frames, self.fps)) for i in range(1, num_frames + 1)]
+        return [
+            osp.join(frame_root, self.frame_tmpl_fps.format(i, num_frames, self.fps)) for i in range(1, num_frames + 1)
+        ]
 
     def save_video_frames(self, video):
         if self.fps > 0:
-            vid_path = osp.join(self.data_root, video + '.mp4')
+            vid_path = osp.join(self.data_root, video + ".mp4")
             vid = decord.VideoReader(vid_path)
 
             # 计算视频的总帧数和总时长
@@ -104,7 +101,7 @@ class VideoBaseDataset:
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
-            vid_path = osp.join(self.data_root, video + '.mp4')
+            vid_path = osp.join(self.data_root, video + ".mp4")
             vid = decord.VideoReader(vid_path)
             step_size = len(vid) / (self.nframe + 1)
             indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
@@ -118,7 +115,16 @@ class VideoBaseDataset:
     # Return a list of dataset names that are supported by this class, can override
     @classmethod
     def supported_datasets(cls):
-        return ['MMBench-Video', 'Video-MME', 'MVBench', 'MVBench_MP4', 'LongVideoBench', 'WorldSense', 'VDC', 'MovieChat1k']
+        return [
+            "MMBench-Video",
+            "Video-MME",
+            "MVBench",
+            "MVBench_MP4",
+            "LongVideoBench",
+            "WorldSense",
+            "VDC",
+            "MovieChat1k",
+        ]
 
     # Given the prediction file, return the evaluation results in the format of a dictionary or pandas dataframe
     @abstractmethod

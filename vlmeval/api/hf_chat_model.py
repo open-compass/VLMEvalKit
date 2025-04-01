@@ -260,4 +260,3 @@ class HFChatModel:
             return self.generate_str(inputs, **kwargs)
         elif isinstance(inputs, list):
             return self.generate_list(inputs, **kwargs)
-        

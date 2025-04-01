@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-import os
-import torch
-import re
 import logging
+import os
+import re
 import warnings
 
+import torch
+
+from ..smp import auto_split_flag, get_gpu_memory, get_rank_and_world_size
 from .base import BaseModel
+from .qwen2_vl.model import ensure_image_url, ensure_video_url, split_model
 from .qwen2_vl.prompt import Qwen2VLPromptMixin
-from .qwen2_vl.model import split_model, ensure_image_url, ensure_video_url
-from ..smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag
+
 
 class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
     INSTALL_REQ = False
@@ -42,7 +44,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
             top_k=top_k,
             temperature=temperature,
             repetition_penalty=repetition_penalty,
-            use_cache = True
+            use_cache=True
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
@@ -58,7 +60,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         MODEL_CLS = None
 
         if "2.5" in model_path:
-            from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+            from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
@@ -111,7 +113,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """
         content = []
-        
+
         post_prompt = '  Output the thinking process in <think> </think> and final answer in <answer> </answer> tags.'
 
         for s in inputs:
@@ -187,7 +189,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
             {"role": "user", "content": self._prepare_content(message, dataset=dataset)}
         )
         from termcolor import colored
-        
+
         print(colored(f"messages: === {messages}", "red"))
         print(colored(f"generate_kwargs: === {self.generate_kwargs}", "blue"))
         if self.verbose:
@@ -243,8 +245,8 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
             output_file = os.path.join(
                 self.output_dir, f"{self.model_path.split('/')[-1]}_{dataset}.jsonl"
             )
-            if message[0]['type']== 'image':
-                id = message[0]['value'].rsplit('/')[-1].split('.')[0] 
+            if message[0]['type'] == 'image':
+                id = message[0]['value'].rsplit('/')[-1].split('.')[0]
             else:
                 id = None
             import jsonlines

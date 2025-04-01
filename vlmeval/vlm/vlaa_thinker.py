@@ -1,46 +1,17 @@
 from __future__ import annotations
 
-import os
-import torch
-import re
-import math
 import logging
+import math
+import os
+import re
 import warnings
 
+import torch
+
+from ..smp import auto_split_flag, get_gpu_memory, get_rank_and_world_size, listinstr
 from .base import BaseModel
+from .qwen2_vl.model import ensure_image_url, ensure_video_url, split_model
 from .qwen2_vl.prompt import Qwen2VLPromptMixin
-from .qwen2_vl.model import split_model, ensure_image_url, ensure_video_url
-from ..smp import get_rank_and_world_size, get_gpu_memory, auto_split_flag, listinstr
-
-
-
-
-def split_model():
-    device_map = {}
-
-    total_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    num_gpus = total_gpus // world_size
-    # + 8 is virtual layers for the memory of visual
-    num_layers = 80 + 8
-    num_layers_per_gpu = math.ceil(num_layers / num_gpus)
-    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] -= 6
-    num_layers_per_gpu[-1] -= 2
-    layer_cnt = 0
-
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'model.layers.{layer_cnt}'] = rank + i * world_size
-            layer_cnt += 1
-
-    last_gpu = rank + (num_gpus - 1) * world_size
-    device_map['visual'] = rank
-    device_map['model.embed_tokens'] = rank
-    device_map['model.norm'] = last_gpu
-    device_map['model.rotary_emb'] = last_gpu
-    device_map['lm_head'] = last_gpu
-    return device_map
 
 
 def extract_answer_tag(s: str, verbose=False) -> str:
@@ -56,7 +27,7 @@ def extract_answer_tag(s: str, verbose=False) -> str:
         return None
     else:
         return matches[0].strip()
-    
+
 
 def extract_response_for_eval(s: str, verbose=False):
     ret = None
@@ -69,7 +40,6 @@ def extract_response_for_eval(s: str, verbose=False):
     if ret is None:
         ret = s
     return ret
-
 
 
 class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
@@ -116,7 +86,7 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         MODEL_CLS = None
 
         if listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
-            from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+            from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
         else:

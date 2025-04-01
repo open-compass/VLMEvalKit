@@ -17,7 +17,7 @@ try:
     from sympy import simplify, Eq, sympify, Pow, pi
     from sympy.parsing.latex import parse_latex
 except ImportError:
-    logging.warning('sympy is not installed, please install it for MM-Math evaluation.')
+    logging.warning("sympy is not installed, please install it for MM-Math evaluation.")
 
 
 class AutoScoringJudge:
@@ -26,22 +26,22 @@ class AutoScoringJudge:
         self.special_signal_map = {
             "\\left": "",
             "\\right": "",
-            "厘米":"",
+            "厘米": "",
             # "∶": ":",
             "，": ",",
             "$": "",
-            "（":"(",
-            "）":")",
-            "\\infty":"oo",
-            "\\colon ":":",
+            "（": "(",
+            "）": ")",
+            "\\infty": "oo",
+            "\\colon ": ":",
             # "\\approx": "=",
             # "\\simeq": "=",
             # "\\sim": "=",
             # "^\\prime": "'",
             # "^{\\prime}": "'",
-            "＋":"+",
+            "＋": "+",
             "\\, ": "",
-            "\\,":"",
+            "\\,": "",
             "^\\circ": "",
             "^{\\circ}": "",
             # "%": "",
@@ -50,7 +50,7 @@ class AutoScoringJudge:
         # MM-Math default precision
         self.precision = 1e-2
 
-    def trans_greater_sign_to_interval(self, expr:str):
+    def trans_greater_sign_to_interval(self, expr: str):
         expr_tmp = expr.split("<")
         return "(" + expr_tmp[0] + ", " + expr_tmp[-1] + ")"
 
@@ -99,8 +99,16 @@ class AutoScoringJudge:
             return True
 
         # Remove Chinese characters from the string, as answers like "yes" or "no" in Chinese have been considered
-        expression1 = expression1 if re.fullmatch(r"[\u4e00-\u9fff]+", expression1) else re.sub(r'[\u4e00-\u9fff]+', '', expression1)  # noqa: E501
-        expression2 = expression2 if re.fullmatch(r'[\u4e00-\u9fff]+', expression2) else re.sub(r'[\u4e00-\u9fff]+', '', expression2)  # noqa: E501
+        expression1 = (
+            expression1
+            if re.fullmatch(r"[\u4e00-\u9fff]+", expression1)
+            else re.sub(r"[\u4e00-\u9fff]+", "", expression1)
+        )  # noqa: E501
+        expression2 = (
+            expression2
+            if re.fullmatch(r"[\u4e00-\u9fff]+", expression2)
+            else re.sub(r"[\u4e00-\u9fff]+", "", expression2)
+        )  # noqa: E501
         # Check if two < or > in expression
         if self.is_two_greater_sign(expression1):
             expression1 = self.trans_greater_sign_to_interval(expression1)
@@ -137,7 +145,7 @@ class AutoScoringJudge:
                         precision.remove(self.precision)
                         break
                 except Exception as err:
-                    logging.warning(f'{type(err)}: {err}')
+                    logging.warning(f"{type(err)}: {err}")
                     continue
             else:
                 # If no match was found, return False
@@ -151,7 +159,7 @@ class AutoScoringJudge:
         return expr.startswith(("(", "[")) and expr.endswith((")", "]"))
 
     def is_two_greater_sign(self, expr):
-        match = re.findall(r'<', expr)
+        match = re.findall(r"<", expr)
         return len(match) == 2
 
     def sympy_sub_pi(self, expression_sympy):
@@ -237,17 +245,20 @@ class AutoScoringJudge:
             expr1_sym = self.sympy_sub_pi(expr1_sym)
             expr2_sym = self.sympy_sub_pi(expr2_sym)
 
-            if (expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol)) or \
-                    (not expr1_sym.has(sp.Symbol) and expr2_sym.has(sp.Symbol)):
+            if (expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol)) or (
+                not expr1_sym.has(sp.Symbol) and expr2_sym.has(sp.Symbol)
+            ):
                 return False
             elif not expr1_sym.has(sp.Symbol) and not expr2_sym.has(sp.Symbol):
                 try:
                     if not (self.can_compute_power(expr1_sym) and self.can_compute_power(expr2_sym)):
-                        print("These two numbers cannot be calculated by the current computer for: "
-                              f"\"{str(expr1_sym)}\" and \"{str(expr2_sym)}\"")
+                        print(
+                            "These two numbers cannot be calculated by the current computer for: "
+                            f'"{str(expr1_sym)}" and "{str(expr2_sym)}"'
+                        )
                         return False
                     if exp_too_long:
-                        print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                        print(f"Expression {exp1} or {exp2} is too long to compute. ")
                         return False
                     if abs(expr1_sym.evalf() - expr2_sym.evalf()) <= self.precision * 1.01:
                         return True
@@ -256,7 +267,7 @@ class AutoScoringJudge:
                 except:
                     return False
             elif exp_too_long:
-                print(f'Expression {exp1} or {exp2} is too long to compute. ')
+                print(f"Expression {exp1} or {exp2} is too long to compute. ")
                 return False
             else:
                 try:
@@ -270,7 +281,7 @@ class AutoScoringJudge:
         # Check if two equations are mathematically equivalent
         # Simplify equations and use sympy for equivalence checking
         def simplify_equation(latex_eq):
-            lhs, rhs = latex_eq.split('=')
+            lhs, rhs = latex_eq.split("=")
 
             lhs_expr = parse_latex(lhs)
             rhs_expr = parse_latex(rhs)
@@ -287,8 +298,9 @@ class AutoScoringJudge:
         division_result_1 = simplify(expr1_sym / expr2_sym)
         division_result_2 = simplify(expr2_sym / expr1_sym)
 
-        if ((division_result_1.is_Integer and division_result_1 != 0) or  # noqa: W504
-                (division_result_2.is_Integer and division_result_2 != 0)):
+        if (division_result_1.is_Integer and division_result_1 != 0) or (  # noqa: W504
+            division_result_2.is_Integer and division_result_2 != 0
+        ):
             return True
         else:
             return False
@@ -299,11 +311,11 @@ class AutoScoringJudge:
             if inter1[0] != inter2[0] or inter1[-1] != inter2[-1]:
                 return False
 
-            inter1 = inter1.strip('[]()')
-            inter2 = inter2.strip('[]()')
+            inter1 = inter1.strip("[]()")
+            inter2 = inter2.strip("[]()")
 
-            items_1 = inter1.split(',')
-            items_2 = inter2.split(',')
+            items_1 = inter1.split(",")
+            items_2 = inter2.split(",")
 
             for item_1, item_2 in zip(items_1, items_2):
                 if not self.expression_equal(item_1, item_2):
@@ -330,7 +342,7 @@ class AutoScoringJudge:
     def preprocess(self, expression1, expression2):
         # Preprocess expressions to extract and replace special symbols
         def extract_boxed_content(latex_str):
-            boxed_matches = re.finditer(r'\\boxed{', latex_str)
+            boxed_matches = re.finditer(r"\\boxed{", latex_str)
             results = ""
 
             for match in boxed_matches:
@@ -339,14 +351,14 @@ class AutoScoringJudge:
                 stack = 1
 
                 while stack > 0 and end_index < len(latex_str):
-                    if latex_str[end_index] == '{':
+                    if latex_str[end_index] == "{":
                         stack += 1
-                    elif latex_str[end_index] == '}':
+                    elif latex_str[end_index] == "}":
                         stack -= 1
                     end_index += 1
 
                 if stack == 0:
-                    content = latex_str[start_index:end_index - 1]
+                    content = latex_str[start_index : end_index - 1]
                     results += content + ","
                 else:
                     raise ValueError("Mismatched braces in LaTeX string.")
@@ -366,7 +378,19 @@ class AutoScoringJudge:
 
         def sepcial_symbol_replace(expression):
 
-            expression = expression.replace("\\text{cm}^2", '').replace("\\text{cm}", "").replace("\\,cm", '').replace("\\text{ cm}", '').replace("cm", '').replace("\\text{分米}^2", '').replace("cm^{2}", '').replace("60 \\text{ cm}^2",'').replace("\\ \\text{m}", "").replace("\\text{米}","").strip()  # noqa: E501
+            expression = (
+                expression.replace("\\text{cm}^2", "")
+                .replace("\\text{cm}", "")
+                .replace("\\,cm", "")
+                .replace("\\text{ cm}", "")
+                .replace("cm", "")
+                .replace("\\text{分米}^2", "")
+                .replace("cm^{2}", "")
+                .replace("60 \\text{ cm}^2", "")
+                .replace("\\ \\text{m}", "")
+                .replace("\\text{米}", "")
+                .strip()
+            )  # noqa: E501
 
             expression = re.sub(r"(.+)m$", r"\1", expression)
 
@@ -376,12 +400,12 @@ class AutoScoringJudge:
             for signal in self.special_signal_map:
                 expression = expression.replace(signal, self.special_signal_map[signal])
 
-            expression = re.sub(r'(\\sin|\\cos|\\tan)(\d+)', r'\1((\2/180)\\pi)', expression)
+            expression = re.sub(r"(\\sin|\\cos|\\tan)(\d+)", r"\1((\2/180)\\pi)", expression)
 
             expression = expression.strip("\n,.:;^_=+`!@#%^&*~，。")
 
-            pattern = r'\\(?:mathrm|mathbf)\{~?([^}]*)\}'
-            expression = re.sub(pattern, r'\1', expression)
+            pattern = r"\\(?:mathrm|mathbf)\{~?([^}]*)\}"
+            expression = re.sub(pattern, r"\1", expression)
 
             return expression
 
@@ -409,13 +433,13 @@ class AutoScoringJudge:
 
 class MMMath(ImageBaseDataset):
 
-    TYPE = 'VQA'
+    TYPE = "VQA"
 
     DATASET_URL = {
-        'MM-Math': 'https://opencompass.openxlab.space/utils/VLMEval/MM-Math.tsv',
+        "MM-Math": "https://opencompass.openxlab.space/utils/VLMEval/MM-Math.tsv",
     }
     DATASET_MD5 = {
-        'MM-Math': '1f064ed7c4e0e8926a3fa65849419ca5',
+        "MM-Math": "1f064ed7c4e0e8926a3fa65849419ca5",
     }
 
     @classmethod
@@ -425,34 +449,34 @@ class MMMath(ImageBaseDataset):
         judger = AutoScoringJudge()
         func = judger.judge
 
-        tups = [dict(expression1=x, expression2=y) for x, y in zip(data['answer'], data['prediction'])]
+        tups = [dict(expression1=x, expression2=y) for x, y in zip(data["answer"], data["prediction"])]
 
         res = track_progress_rich(func, tups, nproc=16)
-        data['hit'] = res
+        data["hit"] = res
         dump(data, eval_file)
 
-        score_file = eval_file.replace('.xlsx', '_score.json')
+        score_file = eval_file.replace(".xlsx", "_score.json")
         score = {}
-        score['overall'] = np.mean(data['hit'])
+        score["overall"] = np.mean(data["hit"])
         # Results by Difficulty
-        difficulties = set(data['difficulty'])
+        difficulties = set(data["difficulty"])
         for d in difficulties:
-            score[f'Difficulty-{d}'] = np.mean(data[data['difficulty'] == d]['hit'])
+            score[f"Difficulty-{d}"] = np.mean(data[data["difficulty"] == d]["hit"])
 
         # Results by Year
-        years = set(data['year'])
+        years = set(data["year"])
         for y in years:
-            score[f'Year-{y}'] = np.mean(data[data['year'] == y]['hit'])
+            score[f"Year-{y}"] = np.mean(data[data["year"] == y]["hit"])
 
         # Results by Knowledge-L1
-        points = set(data['knowledge_l1'])
+        points = set(data["knowledge_l1"])
         for p in points:
-            score[f'Knowledge-L1-{p}'] = np.mean(data[data['knowledge_l1'] == p]['hit'])
+            score[f"Knowledge-L1-{p}"] = np.mean(data[data["knowledge_l1"] == p]["hit"])
 
         # Results by Knowledge-L2
-        points = set(data['knowledge_l2'])
+        points = set(data["knowledge_l2"])
         for p in points:
-            score[f'Knowledge-L2-{p}'] = np.mean(data[data['knowledge_l2'] == p]['hit'])
+            score[f"Knowledge-L2-{p}"] = np.mean(data[data["knowledge_l2"] == p]["hit"])
 
         dump(score, score_file)
         return score

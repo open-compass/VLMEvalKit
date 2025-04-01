@@ -20,9 +20,7 @@ class DictSetEqualityAggJaccard:
         num_keys = 0
         total_score = 0
         for key in all_keys:
-            total_score += SetEquality.match(
-                responses.get(key, []), targets.get(key, [])
-            )
+            total_score += SetEquality.match(responses.get(key, []), targets.get(key, []))
             num_keys += 1
 
         return total_score / num_keys

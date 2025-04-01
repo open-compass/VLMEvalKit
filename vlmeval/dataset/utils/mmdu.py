@@ -80,41 +80,61 @@ ensuring your scores are integers:
 {'Dimension One': Score, 'Dimension Two': Score, ..., 'Overall Score': Score}, \
 for example: {'Creativity': 9, 'Richness': 6, ..., 'Overall Score': 7}.\n
 """
-question_begin_prompt = '[Question]'
-reference_begin_prompt = '[The Start of Reference Answer]'
-reference_end_prompt = '[The End of Reference Answer]'
-answers_begin_prompt = '[The Start of Assistant’s Answer]'
-answers_end_prompt = '[The End of Assistant’s Answer]'
+question_begin_prompt = "[Question]"
+reference_begin_prompt = "[The Start of Reference Answer]"
+reference_end_prompt = "[The End of Reference Answer]"
+answers_begin_prompt = "[The Start of Assistant’s Answer]"
+answers_end_prompt = "[The End of Assistant’s Answer]"
 
 
 def mmdu_score(model, line):
-    question = eval(line['question'])
-    gt = eval(line['answer'])
-    prediction = eval(line['prediction'])
+    question = eval(line["question"])
+    gt = eval(line["answer"])
+    prediction = eval(line["prediction"])
 
     DIMS = [
-        'Creativity', 'Richness', 'Visual Perception', 'Logical Coherence',
-        'Answer Accuracy', 'Image Relationship Understanding', 'Overall Score'
+        "Creativity",
+        "Richness",
+        "Visual Perception",
+        "Logical Coherence",
+        "Answer Accuracy",
+        "Image Relationship Understanding",
+        "Overall Score",
     ]
 
     all_result_dict = []
     logs = []
     for j in range(len(question)):
         try:
-            prompt = meta_prompt + question_begin_prompt + '\n' + question[j] + '\n\n' + \
-                reference_begin_prompt + '\n' + gt[j] + '\n' + reference_end_prompt + '\n\n' + \
-                answers_begin_prompt + '\n' + prediction[j] + '\n' + answers_end_prompt
+            prompt = (
+                meta_prompt
+                + question_begin_prompt
+                + "\n"
+                + question[j]
+                + "\n\n"
+                + reference_begin_prompt
+                + "\n"
+                + gt[j]
+                + "\n"
+                + reference_end_prompt
+                + "\n\n"
+                + answers_begin_prompt
+                + "\n"
+                + prediction[j]
+                + "\n"
+                + answers_end_prompt
+            )
             response = model.generate(prompt)
-            start_index = response.find('{')
-            end_index = response.rfind('}') + 1
-            dictionary_str = response[start_index: end_index]
+            start_index = response.find("{")
+            end_index = response.rfind("}") + 1
+            dictionary_str = response[start_index:end_index]
             result_dict = eval(dictionary_str)
             all_result_dict.append(result_dict)
             if all([x in result_dict for x in DIMS]):
-                logs.append('Succeed')
+                logs.append("Succeed")
             else:
                 logs.append(
-                    f'Following Dims are not in results of turn {j}: '
+                    f"Following Dims are not in results of turn {j}: "
                     f'{",".join([x for x in DIMS if x not in result_dict])}'
                 )
         except Exception as e:
@@ -123,4 +143,4 @@ def mmdu_score(model, line):
             logs.append(str(e))
 
     df = pd.DataFrame(all_result_dict)
-    return dict(res=df, log='\n'.join(logs))
+    return dict(res=df, log="\n".join(logs))

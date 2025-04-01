@@ -2,9 +2,9 @@ from ...smp import *
 
 
 def build_mmvet_gpt4_prompt(line):
-    question = line['question']
-    gt = str(line['answer'])
-    prediction = str(line['prediction'])
+    question = line["question"]
+    gt = str(line["answer"])
+    prediction = str(line["prediction"])
     prompt = """
 Compare the ground truth and prediction from AI models, to give a correctness score for the prediction.
 <AND> in the ground truth means it is totally right
@@ -37,8 +37,9 @@ that these contradictions can lead to distrust or confusion.
 The humor in this meme is derived from the unexpected contrast between the names of the countries
 and their actual physical characteristics. | 1.0
 """
-    gpt4_prompt = prompt + '\n' + ' | '.join(
-        [question, gt.replace('<AND>', ' <AND> ').replace('<OR>', ' <OR> '), prediction, ''])
+    gpt4_prompt = (
+        prompt + "\n" + " | ".join([question, gt.replace("<AND>", " <AND> ").replace("<OR>", " <OR> "), prediction, ""])
+    )
     return gpt4_prompt
 
 
@@ -50,19 +51,19 @@ def MMVet_auxeval(model, line):
             return None
 
     prompt = build_mmvet_gpt4_prompt(line)
-    log = ''
+    log = ""
     retry = 5
     for i in range(retry):
         output = model.generate(prompt, temperature=i * 0.5)
         score = float_cvt(output)
         if score is None:
-            log += f'Try {i}: output is {output}, failed to parse.\n'
+            log += f"Try {i}: output is {output}, failed to parse.\n"
         elif score < 0 or score > 1:
-            log += f'Try {i}: output is {output}, invalid score: {score}.\n'
+            log += f"Try {i}: output is {output}, invalid score: {score}.\n"
         else:
-            log += 'Succeed'
+            log += "Succeed"
             return dict(log=log, score=score)
-    log += 'All 5 retries failed.\n'
+    log += "All 5 retries failed.\n"
     return dict(log=log, score=0.0)
 
 
@@ -74,33 +75,33 @@ def MMVet_acc(result_file):
     cate2_list = []
     for i in range(lt):
         item = data.iloc[i]
-        cate = item['category']
-        cate2 = cate.replace(',', '_')
+        cate = item["category"]
+        cate2 = cate.replace(",", "_")
         if cate2 not in cate2_list:
             cate2_list.append(cate2)
-        grade = float(item['score'])
-        cate_list = ['rec', 'ocr', 'know', 'gen', 'spat', 'math']
+        grade = float(item["score"])
+        cate_list = ["rec", "ocr", "know", "gen", "spat", "math"]
         for capa in cate_list:
             if capa in cate:
                 tot[capa] += 1
                 score[capa] += grade
-        tot['Overall'] += 1
+        tot["Overall"] += 1
         tot[cate2] += 1
-        score['Overall'] += grade
+        score["Overall"] += grade
         score[cate2] += grade
 
     res = defaultdict(list)
     res2 = defaultdict(list)
-    cate_list.append('Overall')
-    cate2_list.append('Overall')
+    cate_list.append("Overall")
+    cate2_list.append("Overall")
     for k in cate_list:
-        res['Category'].append(k)
-        res['tot'].append(tot[k])
-        res['acc'].append(score[k] / tot[k] * 100)
+        res["Category"].append(k)
+        res["tot"].append(tot[k])
+        res["acc"].append(score[k] / tot[k] * 100)
     for v in cate2_list:
-        res2['Category'].append(v)
-        res2['tot'].append(tot[v])
-        res2['acc'].append(score[v] / tot[v] * 100)
+        res2["Category"].append(v)
+        res2["tot"].append(tot[v])
+        res2["acc"].append(score[v] / tot[v] * 100)
     res = pd.DataFrame(res)
     res2 = pd.DataFrame(res2)
     return res, res2

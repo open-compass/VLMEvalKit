@@ -46,12 +46,8 @@ class StringSetEqualityLineSplit:
             responses = responses.replace("\\n", "\n")
         responses_set = set(responses.split("\n"))
         targets_set = set(targets.split("\n"))
-        responses_set = {
-            item.lower() if isinstance(item, str) else item for item in responses_set
-        }
-        targets_set = {
-            item.lower() if isinstance(item, str) else item for item in targets_set
-        }
+        responses_set = {item.lower() if isinstance(item, str) else item for item in responses_set}
+        targets_set = {item.lower() if isinstance(item, str) else item for item in targets_set}
         return 1 if responses_set == targets_set else 0
 
 
@@ -65,10 +61,6 @@ class StringSetEqualityCommaSplit:
     def match(cls, responses, targets) -> int:
         responses_set = str_to_set(responses)
         targets_set = str_to_set(targets)
-        responses_set = {
-            item.lower() if isinstance(item, str) else item for item in responses_set
-        }
-        targets_set = {
-            item.lower() if isinstance(item, str) else item for item in targets_set
-        }
+        responses_set = {item.lower() if isinstance(item, str) else item for item in responses_set}
+        targets_set = {item.lower() if isinstance(item, str) else item for item in targets_set}
         return 1 if responses_set == targets_set else 0

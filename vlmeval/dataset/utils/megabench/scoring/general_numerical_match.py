@@ -202,12 +202,7 @@ class GeneralSingleNumericalMatch:
         tgt = number_it(targets)
 
         if res is not None and tgt is not None:
-            if (
-                isinstance(res, list)
-                and isinstance(tgt, list)
-                or isinstance(res, tuple)
-                and isinstance(tgt, tuple)
-            ):
+            if isinstance(res, list) and isinstance(tgt, list) or isinstance(res, tuple) and isinstance(tgt, tuple):
                 score = float(compare_two_list(res, tgt))
             else:
                 score = float(compare_two_numbers(res, tgt))

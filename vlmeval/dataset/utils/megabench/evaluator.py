@@ -30,15 +30,14 @@ class MEGABenchEvaluator:
         # Build a dict of {task_name -> metric configuration} for quick lookup
         self.scoring_functions = {}
         for task_name, task_samples in self.hf_data.items():
-            self.scoring_functions[task_name] = ast.literal_eval(
-                task_samples[0]["metric_info"]
-            )
+            self.scoring_functions[task_name] = ast.literal_eval(task_samples[0]["metric_info"])
 
     def _load_hf(self, subset_name: str) -> List[Dict[str, Any]]:
         """
         Load the HF dataset for the given subset name.
         """
         from datasets import load_dataset
+
         dataset = load_dataset("TIGER-Lab/MEGA-Bench", subset_name)["test"]
         task_dict = {}
         for sample in dataset:
@@ -127,7 +126,7 @@ class MEGABenchEvaluator:
                     query,
                     task,
                 )
-                
+
                 if idx in exist_records[task_name]:
                     query["scores"] = exist_records[task_name][idx]
                 else:
@@ -137,14 +136,7 @@ class MEGABenchEvaluator:
                     # 2) Evaluate each field
                     for fld, fld_metric_name in field_score_functions.items():
                         metric = self._build_metric(fld_metric_name, score_config)
-                        self._evaluate_field(
-                            task_name,
-                            metric,
-                            fld,
-                            response_obj,
-                            correct_answer,
-                            query
-                        )
+                        self._evaluate_field(task_name, metric, fld, response_obj, correct_answer, query)
 
                     # Evaluate global auxiliary metrics (if any)
                     for fld, fld_metric_name in global_aux_metrics.items():
@@ -161,7 +153,7 @@ class MEGABenchEvaluator:
                             query,
                             is_aux=True,
                         )
-                        
+
                     exist_records[task_name][idx] = query["scores"]
                     if idx % 10 == 0 or idx == len(task["query_response"]) - 1:
                         dump(exist_records, self.tmp_output_file)
@@ -247,11 +239,7 @@ class MEGABenchEvaluator:
             images = query.get("images", [])
             question = query.get("question", "")
             correct_val = correct_answer.get(field, "") if not is_aux else correct_answer
-            response_info = (
-                response_obj.get(field)
-                if isinstance(response_obj, dict)
-                else response_obj
-            )
+            response_info = response_obj.get(field) if isinstance(response_obj, dict) else response_obj
             query["scores"]["field"][field] = metric.match(
                 response_info,
                 correct_val,
@@ -281,9 +269,7 @@ class MEGABenchEvaluator:
         res_parsing_pass = True
         if parser.is_single_field_parser():
             # single field
-            assert (
-                len(answer_fields) == 1
-            ), "The answer_string parse must be used when the answer has a single field"
+            assert len(answer_fields) == 1, "The answer_string parse must be used when the answer has a single field"
             answer_key = answer_fields[0]
 
             global_description = task["task_description"]
@@ -302,9 +288,7 @@ class MEGABenchEvaluator:
             # Structural output (using JSON parser or other specified parsing func) or dummy parse (return all)
             response_obj = parser.parse(response_text)
 
-            if parser == ResponseParseType.JSON and (
-                not isinstance(response_obj, dict) or not response_obj
-            ):
+            if parser == ResponseParseType.JSON and (not isinstance(response_obj, dict) or not response_obj):
                 # Expect a JSON, but parsing failed,
                 # Record the failure parsing, and use the raw string for each field of the answer
                 res_parsing_pass = False
@@ -313,9 +297,7 @@ class MEGABenchEvaluator:
                     response_obj[field] = response_text
 
         if not res_parsing_pass:
-            print(
-                f"Task:{task_name}, cannot parse query with global idx {query['global_idx']}"
-            )
+            print(f"Task:{task_name}, cannot parse query with global idx {query['global_idx']}")
         return response_obj
 
     def _build_metric(self, metric_name: str, score_config: Dict[str, Any]):

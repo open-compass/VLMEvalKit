@@ -33,9 +33,7 @@ GEOLOCATION_TIMEOUT = 1
 MAX_RETRIES = 30
 
 
-geocode = RateLimiter(
-    geolocator.geocode, min_delay_seconds=GEOLOCATION_TIMEOUT, max_retries=MAX_RETRIES
-)
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=GEOLOCATION_TIMEOUT, max_retries=MAX_RETRIES)
 
 
 @functools.cache
@@ -43,21 +41,15 @@ def try_geolocate(query):
     """Try to look up the location."""
     location = geocode(query)
     if location is None:
-        error_logger.error(
-            f"Geolocation API request failed due to timeout: exceeded {MAX_RETRIES} retries!"
-        )
+        error_logger.error(f"Geolocation API request failed due to timeout: exceeded {MAX_RETRIES} retries!")
     return location
 
 
-def location_to_coords(
-    country: str, province_or_state: str, municipality: str
-) -> tuple[float, float] | None:
+def location_to_coords(country: str, province_or_state: str, municipality: str) -> tuple[float, float] | None:
     if country == "" or province_or_state == "" or municipality == "":
         return None
     """Convert the location to longitude and latitude."""
-    location = geolocator.geocode(
-        query={"country": country, "state": province_or_state, "city": municipality}
-    )
+    location = geolocator.geocode(query={"country": country, "state": province_or_state, "city": municipality})
     if location is not None:
         return (location.latitude, location.longitude)
     # Try searching without the province/state, as it can be non-standard for some questions
@@ -86,15 +78,11 @@ class GeoProximityLocationDict:
             return 0
 
         if guess_coords is None:
-            error_logger.error(
-                f"GeoProximityLocationDict: could not load co-ordinates for {responses=}"
-            )
+            error_logger.error(f"GeoProximityLocationDict: could not load co-ordinates for {responses=}")
             return 0
         actual_coords = location_to_coords(**targets)
         if actual_coords is None:
-            error_logger.error(
-                f"GeoProximityLocationDict: could not load co-ordinates for {targets=}"
-            )
+            error_logger.error(f"GeoProximityLocationDict: could not load co-ordinates for {targets=}")
             return 0
 
         return calculate_proximity_score(guess_coords, actual_coords)

@@ -4,13 +4,37 @@ from .image_base import img_root_map, ImageBaseDataset
 from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
-    ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
-    NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset
+    ImageMCQDataset,
+    MMMUDataset,
+    CustomMCQDataset,
+    MUIRDataset,
+    GMAIMMBenchDataset,
+    MMERealWorld,
+    HRBenchDataset,
+    NaturalBenchDataset,
+    WeMath,
+    MMMUProDataset,
+    VMCBenchDataset,
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT
+    ImageVQADataset,
+    MathVision,
+    OCRBench,
+    MathVista,
+    LLaVABench,
+    MMVet,
+    MTVQADataset,
+    TableVQABench,
+    CustomVQADataset,
+    CRPE,
+    MathVerse,
+    OlympiadBench,
+    QSpatial,
+    VizWiz,
+    MMNIAH,
+    LogicVista,
+    MME_CoT,
 )
 
 from .image_ccocr import CCOCRDataset
@@ -63,10 +87,14 @@ class ConcatDataset(ImageBaseDataset):
     # Each single dataset should not have a field named `SUB_DATASET`
 
     DATASET_SETS = {
-        'MMMB': ['MMMB_ar', 'MMMB_cn', 'MMMB_en', 'MMMB_pt', 'MMMB_ru', 'MMMB_tr'],
-        'MTL_MMBench_DEV': [
-            'MMBench_dev_ar', 'MMBench_dev_cn', 'MMBench_dev_en',
-            'MMBench_dev_pt', 'MMBench_dev_ru', 'MMBench_dev_tr'
+        "MMMB": ["MMMB_ar", "MMMB_cn", "MMMB_en", "MMMB_pt", "MMMB_ru", "MMMB_tr"],
+        "MTL_MMBench_DEV": [
+            "MMBench_dev_ar",
+            "MMBench_dev_cn",
+            "MMBench_dev_en",
+            "MMBench_dev_pt",
+            "MMBench_dev_ru",
+            "MMBench_dev_tr",
         ],
     }
 
@@ -89,29 +117,29 @@ class ConcatDataset(ImageBaseDataset):
         data_all = []
         for dname in datasets:
             data = self.dataset_map[dname].data
-            data['SUB_DATASET'] = [dname] * len(data)
+            data["SUB_DATASET"] = [dname] * len(data)
             data_new = localize_df(data, dname, nproc=16)
             data_all.append(data_new)
 
         data = pd.concat(data_all)
-        data['original_index'] = data.pop('index')
-        data['index'] = np.arange(len(data))
+        data["original_index"] = data.pop("index")
+        data["index"] = np.arange(len(data))
         self.data = data
 
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        idx = line['original_index']
-        dname = line['SUB_DATASET']
+        idx = line["original_index"]
+        dname = line["SUB_DATASET"]
         org_data = self.dataset_map[dname].data
-        org_line = cp.deepcopy(org_data[org_data['index'] == idx]).iloc[0]
+        org_line = cp.deepcopy(org_data[org_data["index"] == idx]).iloc[0]
         return self.dataset_map[dname].build_prompt(org_line)
 
     def dump_image(self, line):
         # Assert all images are pre-dumped
-        assert 'image' not in line
-        assert 'image_path' in line
-        tgt_path = toliststr(line['image_path'])
+        assert "image" not in line
+        assert "image_path" in line
+        tgt_path = toliststr(line["image_path"])
         return tgt_path
 
     @classmethod
@@ -119,15 +147,15 @@ class ConcatDataset(ImageBaseDataset):
         return list(cls.DATASET_SETS)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
+        suffix = eval_file.split(".")[-1]
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
             tgt = eval_file.replace(self.dataset_name, dname)
-            data_sub = data_all[data_all['SUB_DATASET'] == dname]
-            data_sub.pop('index')
-            data_sub['index'] = data_sub.pop('original_index')
-            data_sub.pop('SUB_DATASET')
+            data_sub = data_all[data_all["SUB_DATASET"] == dname]
+            data_sub.pop("index")
+            data_sub["index"] = data_sub.pop("original_index")
+            data_sub.pop("SUB_DATASET")
             dump(data_sub, tgt)
         # Then, evaluate each dataset separately
         results_all = []
@@ -135,44 +163,99 @@ class ConcatDataset(ImageBaseDataset):
             tgt = eval_file.replace(self.dataset_name, dname)
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
             assert isinstance(res, pd.DataFrame)
-            res['DATASET'] = [dname] * len(res)
+            res["DATASET"] = [dname] * len(res)
             results_all.append(res)
         result = pd.concat(results_all)
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
         dump(result, score_file)
         return result
 
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
-    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, 
-    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, 
-    MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE, 
-    SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld, 
-    HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench, 
-    OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, 
-    MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, 
-    CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench, 
-    VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT
+    ImageCaptionDataset,
+    ImageYORNDataset,
+    ImageMCQDataset,
+    ImageVQADataset,
+    MathVision,
+    MMMUDataset,
+    OCRBench,
+    MathVista,
+    LLaVABench,
+    MMVet,
+    MTVQADataset,
+    TableVQABench,
+    MMLongBench,
+    VCRDataset,
+    MMDUDataset,
+    DUDE,
+    SlideVQA,
+    MUIRDataset,
+    CCOCRDataset,
+    GMAIMMBenchDataset,
+    MMERealWorld,
+    HRBenchDataset,
+    CRPE,
+    MathVerse,
+    NaturalBenchDataset,
+    MIABench,
+    OlympiadBench,
+    WildVision,
+    MMMath,
+    QSpatial,
+    Dynamath,
+    MMGenBench,
+    VizWiz,
+    MMNIAH,
+    CMMMU,
+    VLRewardBench,
+    WeMath,
+    LogicVista,
+    MMMUProDataset,
+    CreationMMBenchDataset,
+    ImageShortQADataset,
+    MMAlignBench,
+    OmniDocBench,
+    VLM2Bench,
+    VMCBenchDataset,
+    EMMADataset,
+    MME_CoT,
+    MOAT,
 ]
 
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
-    MLVU, MLVU_MCQ, MLVU_OpenEnded,
-    TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
-    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded, 
-    QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
-    VideoMMLU_CAP, VideoMMLU_QA
+    MMBenchVideo,
+    VideoMME,
+    MVBench,
+    MVBench_MP4,
+    MVTamperBench,
+    LongVideoBench,
+    WorldSense,
+    VDC,
+    MovieChat1k,
+    MEGABench,
+    MLVU,
+    MLVU_MCQ,
+    MLVU_OpenEnded,
+    TempCompass,
+    TempCompass_MCQ,
+    TempCompass_Captioning,
+    TempCompass_YorN,
+    CGBench_MCQ_Grounding_Mini,
+    CGBench_OpenEnded_Mini,
+    CGBench_MCQ_Grounding,
+    CGBench_OpenEnded,
+    QBench_Video,
+    QBench_Video_MCQ,
+    QBench_Video_VQA,
+    VideoMMLU_CAP,
+    VideoMMLU_QA,
 ]
 
-TEXT_DATASET = [
-    TextMCQDataset
-]
+TEXT_DATASET = [TextMCQDataset]
 
-CUSTOM_DATASET = [
-    CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
-]
+CUSTOM_DATASET = [CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset]
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
@@ -182,10 +265,10 @@ for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
 
 
-def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
+def DATASET_TYPE(dataset, *, default: str = "MCQ") -> str:
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
-            if hasattr(cls, 'TYPE'):
+            if hasattr(cls, "TYPE"):
                 return cls.TYPE
     # Have to add specific routine to handle ConcatDataset
     if dataset in ConcatDataset.DATASET_SETS:
@@ -194,19 +277,21 @@ def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:
         assert np.all([x == TYPES[0] for x in TYPES]), (dataset_list, TYPES)
         return TYPES[0]
 
-    if 'openended' in dataset.lower():
-        return 'VQA'
-    warnings.warn(f'Dataset {dataset} is a custom one and not annotated as `openended`, will treat as {default}. ')  # noqa: E501
+    if "openended" in dataset.lower():
+        return "VQA"
+    warnings.warn(
+        f"Dataset {dataset} is a custom one and not annotated as `openended`, will treat as {default}. "
+    )  # noqa: E501
     return default
 
 
-def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
+def DATASET_MODALITY(dataset, *, default: str = "IMAGE") -> str:
     if dataset is None:
-        warnings.warn(f'Dataset is not specified, will treat modality as {default}. ')
+        warnings.warn(f"Dataset is not specified, will treat modality as {default}. ")
         return default
     for cls in DATASET_CLASSES:
         if dataset in cls.supported_datasets():
-            if hasattr(cls, 'MODALITY'):
+            if hasattr(cls, "MODALITY"):
                 return cls.MODALITY
     # Have to add specific routine to handle ConcatDataset
     if dataset in ConcatDataset.DATASET_SETS:
@@ -215,11 +300,11 @@ def DATASET_MODALITY(dataset, *, default: str = 'IMAGE') -> str:
         assert np.all([x == MODALITIES[0] for x in MODALITIES]), (dataset_list, MODALITIES)
         return MODALITIES[0]
 
-    if 'VIDEO' in dataset.lower():
-        return 'VIDEO'
-    elif 'IMAGE' in dataset.lower():
-        return 'IMAGE'
-    warnings.warn(f'Dataset {dataset} is a custom one, will treat modality as {default}. ')
+    if "VIDEO" in dataset.lower():
+        return "VIDEO"
+    elif "IMAGE" in dataset.lower():
+        return "IMAGE"
+    warnings.warn(f"Dataset {dataset} is a custom one, will treat modality as {default}. ")
     return default
 
 
@@ -230,30 +315,35 @@ def build_dataset(dataset_name, **kwargs):
         elif dataset_name in cls.supported_datasets():
             return cls(dataset=dataset_name, **kwargs)
 
-    warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
+    warnings.warn(f"Dataset {dataset_name} is not officially supported. ")
 
-    data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
+    data_file = osp.join(LMUDataRoot(), f"{dataset_name}.tsv")
     if not osp.exists(data_file):
-        warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
+        warnings.warn(f"Data file {data_file} does not exist. Dataset building failed. ")
         return None
 
     data = load(data_file)
-    if 'question' not in [x.lower() for x in data.columns]:
-        warnings.warn(f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
+    if "question" not in [x.lower() for x in data.columns]:
+        warnings.warn(f"Data file {data_file} does not have a `question` column. Dataset building failed. ")
         return None
 
-    if 'A' in data and 'B' in data:
-        if 'image' in data or 'image_path' in data:
-            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
+    if "A" in data and "B" in data:
+        if "image" in data or "image_path" in data:
+            warnings.warn(f"Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ")
             return CustomMCQDataset(dataset=dataset_name, **kwargs)
         else:
-            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ')
+            warnings.warn(f"Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ")
             return CustomTextMCQDataset(dataset=dataset_name, **kwargs)
     else:
-        warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ')
+        warnings.warn(f"Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ")
         return CustomVQADataset(dataset=dataset_name, **kwargs)
 
 
 __all__ = [
-    'build_dataset', 'img_root_map', 'build_judge', 'extract_answer_from_item', 'prefetch_answer', 'DEBUG_MESSAGE'
+    "build_dataset",
+    "img_root_map",
+    "build_judge",
+    "extract_answer_from_item",
+    "prefetch_answer",
+    "DEBUG_MESSAGE",
 ] + [cls.__name__ for cls in DATASET_CLASSES]

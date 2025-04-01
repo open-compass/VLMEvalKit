@@ -44,7 +44,7 @@ class OpenAIVLMJudger(abc.ABC):
     def _update_image_path(image_path):
         hf_home = os.getenv("HF_HOME", "~/.cache/huggingface")
         base_cache_dir = os.path.expanduser(hf_home)
-        image_path = image_path.replace('./data/', f'{base_cache_dir}/megabench_data/data/')
+        image_path = image_path.replace("./data/", f"{base_cache_dir}/megabench_data/data/")
         return image_path
 
     def create_image_content(self, image_path):
@@ -57,8 +57,8 @@ class OpenAIVLMJudger(abc.ABC):
 
     @property
     def url(self) -> str:
-        """The server URL. We use OpenAI API by default. """
-        return self._url if hasattr(self, '_url') else "https://api.openai.com/v1/chat/completions"
+        """The server URL. We use OpenAI API by default."""
+        return self._url if hasattr(self, "_url") else "https://api.openai.com/v1/chat/completions"
 
     @url.setter
     def url(self, value: str) -> None:
@@ -103,9 +103,7 @@ class OpenAIVLMJudger(abc.ABC):
 
         return encoded_image, mime_type
 
-    def prepare_eval_prompt(
-        self, reference, response, images, question, eval_context=None
-    ):
+    def prepare_eval_prompt(self, reference, response, images, question, eval_context=None):
         content = []
         if self.judge_model_type == "with image":
             for image_path in images:
@@ -123,7 +121,7 @@ class OpenAIVLMJudger(abc.ABC):
                 else:
                     # 如果是字典，则按原来的逻辑处理
                     key_name = val.split(".")[1]
-                    prompt_mapping[key] = reference.get(key_name, '')
+                    prompt_mapping[key] = reference.get(key_name, "")
             elif val.split(".")[0] == "eval_context":
                 key_name = val.split(".")[1]
                 prompt_mapping[key] = eval_context[key_name]
@@ -139,9 +137,7 @@ class OpenAIVLMJudger(abc.ABC):
             "Authorization": f"Bearer {self.api_key}",
         }
 
-        context = self.prepare_eval_prompt(
-            reference_info, response, images, question, eval_context
-        )
+        context = self.prepare_eval_prompt(reference_info, response, images, question, eval_context)
 
         query_payload = {
             "model": self.model,
@@ -159,15 +155,13 @@ class OpenAIVLMJudger(abc.ABC):
                 )
                 response_ = response.json()
             except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
-                print(f'Error in requests: {e}')
-                print('Retry...')
+                print(f"Error in requests: {e}")
+                print("Retry...")
                 continue
 
             if "error" in response_:
                 error_info = response_["error"]
-                print(
-                    f"Got error with type: {error_info['type']}. Message: {error_info['message']}"
-                )
+                print(f"Got error with type: {error_info['type']}. Message: {error_info['message']}")
                 if (
                     error_info["message"]
                     == """Sorry! We've encountered an issue with repetitive patterns in your prompt.
@@ -189,9 +183,7 @@ class OpenAIVLMJudger(abc.ABC):
             choices = response_data["choices"]
             if choices and "message" in choices[0]:
                 message_content = choices[0]["message"]["content"]
-                print(
-                    f"gpt-4o judge results: {message_content}; tokens:{total_tokens}"
-                )
+                print(f"gpt-4o judge results: {message_content}; tokens:{total_tokens}")
         else:
             print("gpt-4o judge query failed...")
             message_content = ""
@@ -226,11 +218,7 @@ class VLMJudgeScore:
 
         return score / 10.0, info_str
 
-    def match(
-        self, response, reference_dict, images, question, eval_context=None
-    ) -> int:
-        eval_results = self.model.query(
-            reference_dict, response, images, question, eval_context
-        )
+    def match(self, response, reference_dict, images, question, eval_context=None) -> int:
+        eval_results = self.model.query(reference_dict, response, images, question, eval_context)
         score = self.parse_results(eval_results)
         return score

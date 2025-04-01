@@ -1,9 +1,9 @@
-
 """
 Donut
 Copyright (c) 2022-present NAVER Corp.
 MIT License
 """
+
 import json
 import os
 import sys
@@ -165,12 +165,17 @@ def cal_f1_all(preds, answers):
         field_tp, field_fn_or_fp = field_info["total_tp"], field_info["total_fn_or_fp"]
         metric_info[field_name]["acc"] = field_tp / (field_tp + field_fn_or_fp / 2 + 1e-6)
 
-    print("donut_evaluator: total_tp: {}, total_fn_or_fp: {}, ptd_num: {}, gt_num: {}".format(total_tp, total_fn_or_fp,
-                                                                                              len(preds), len(answers)))
-    error_info = {k: v for k, v in
-                  sorted(error_info.items(), key=lambda item: item[1].get("error_num", 0), reverse=True)}
-    metric_info = {k: v for k, v in
-                   sorted(metric_info.items(), key=lambda item: item[1].get("total_fn_or_fp", 0), reverse=True)}
+    print(
+        "donut_evaluator: total_tp: {}, total_fn_or_fp: {}, ptd_num: {}, gt_num: {}".format(
+            total_tp, total_fn_or_fp, len(preds), len(answers)
+        )
+    )
+    error_info = {
+        k: v for k, v in sorted(error_info.items(), key=lambda item: item[1].get("error_num", 0), reverse=True)
+    }
+    metric_info = {
+        k: v for k, v in sorted(metric_info.items(), key=lambda item: item[1].get("total_fn_or_fp", 0), reverse=True)
+    }
     return total_tp / (total_tp + total_fn_or_fp / 2 + 1e-6), metric_info, error_info
 
 
@@ -273,8 +278,7 @@ def cal_acc_all(pred_info, answer_info):
 
 
 def normalize_values_of_nested_dict(d, normalize_func):
-    """
-    """
+    """ """
     if isinstance(d, dict):
         return {k: normalize_values_of_nested_dict(v, normalize_func) for k, v in d.items()}
     elif isinstance(d, list):
@@ -286,8 +290,7 @@ def normalize_values_of_nested_dict(d, normalize_func):
 
 
 def eval_donut(pdt_info, gt_info, normalize_func=None, data_name=None):
-    """
-    """
+    """ """
     if normalize_func is not None:
         print("--> info: normalize_func executed.")
         pdt_info = normalize_values_of_nested_dict(pdt_info, normalize_func)
@@ -295,8 +298,13 @@ def eval_donut(pdt_info, gt_info, normalize_func=None, data_name=None):
 
     f1_score, class_eval_info, error_info = cal_f1_all(pdt_info, gt_info)
     acc_average, acc_error_info = cal_acc_all(pdt_info, gt_info)
-    eval_info = {"f1_score": f1_score, "acc": acc_average, "class_f1_score": class_eval_info,
-                 "f1_error_info": error_info, "acc_error_info": acc_error_info}
+    eval_info = {
+        "f1_score": f1_score,
+        "acc": acc_average,
+        "class_f1_score": class_eval_info,
+        "f1_error_info": error_info,
+        "acc_error_info": acc_error_info,
+    }
     print(data_name, "f1_score", f1_score, "acc", acc_average)
     return eval_info
 
@@ -306,7 +314,7 @@ def post_process_to_json(qwen_info_str, file_name=None):
         if "```json" in qwen_info_str:
             if "```" not in qwen_info_str:
                 qwen_info_str += "```"
-            qwen_info_group = re.search(r'```json(.*?)```', qwen_info_str, re.DOTALL)
+            qwen_info_group = re.search(r"```json(.*?)```", qwen_info_str, re.DOTALL)
             json_str = qwen_info_group.group(1).strip().replace("\n", "")
         else:
             json_str = qwen_info_str.strip().replace("\n", "")
@@ -318,7 +326,7 @@ def post_process_to_json(qwen_info_str, file_name=None):
 
 def fullwidth_to_halfwidth(text):
     # 全角转半角
-    result = ''
+    result = ""
     for char in text:
         code_point = ord(char)
         # 全角空格直接转化
@@ -334,22 +342,22 @@ def fullwidth_to_halfwidth(text):
 
 def remove_unnecessary_spaces(text):
     # 去掉中文字符之间的空格
-    text = re.sub(r'(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])', '', text)
+    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", text)
     # 去掉中文和英文、数字之间的空格
-    text = re.sub(r'(?<=[\u4e00-\u9fff])\s+(?=[a-zA-Z0-9])', '', text)
-    text = re.sub(r'(?<=[a-zA-Z0-9])\s+(?=[\u4e00-\u9fff])', '', text)
+    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[a-zA-Z0-9])", "", text)
+    text = re.sub(r"(?<=[a-zA-Z0-9])\s+(?=[\u4e00-\u9fff])", "", text)
     # 去掉符号前的不必要空格，保留符号后的一个空格
-    text = re.sub(r'(?<![0-9])\s*([,.!?:;])\s*', r'\1 ', text)  # 非数字前后的符号
+    text = re.sub(r"(?<![0-9])\s*([,.!?:;])\s*", r"\1 ", text)  # 非数字前后的符号
     # 在数字和英文之间添加空格
-    text = re.sub(r'(?<=[0-9])(?=[a-zA-Z])', ' ', text)
-    text = re.sub(r'(?<=[a-zA-Z])(?=[0-9])', ' ', text)
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"(?<=[0-9])(?=[a-zA-Z])", " ", text)
+    text = re.sub(r"(?<=[a-zA-Z])(?=[0-9])", " ", text)
+    text = re.sub(r"\s+", " ", text)
     return text
 
 
 class KieEvaluator(BaseMetric):
     def response_post_func(self, response_text, **kwargs):
-        response_text = post_process_to_json(response_text, file_name=kwargs.get('file_name', None))
+        response_text = post_process_to_json(response_text, file_name=kwargs.get("file_name", None))
         return response_text
 
     def normalize_func(self, text, **kwargs):
@@ -376,10 +384,14 @@ class KieEvaluator(BaseMetric):
 
         # summary info
         summary_info = {"f1_score": f1_score, "acc": acc_average}
-        eval_info = {"summary": summary_info, "class_f1_score": class_eval_info,
-                     "f1_error_info": error_info, "acc_error_info": acc_error_info}
+        eval_info = {
+            "summary": summary_info,
+            "class_f1_score": class_eval_info,
+            "f1_error_info": error_info,
+            "acc_error_info": acc_error_info,
+        }
         return eval_info
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

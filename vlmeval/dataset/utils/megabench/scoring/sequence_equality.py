@@ -30,9 +30,7 @@ class SequenceEqualityCaseInsensitive:
         responses = str_to_list(responses)
         targets = str_to_list(targets)
 
-        responses = [
-            item.lower() if isinstance(item, str) else str(item) for item in responses
-        ]
+        responses = [item.lower() if isinstance(item, str) else str(item) for item in responses]
         targets = [item.lower() for item in targets]
         return 1 if responses == targets else 0
 

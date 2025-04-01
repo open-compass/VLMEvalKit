@@ -103,7 +103,7 @@ class DoubaoVLWrapper(BaseAPI):
 
 
     def build_prompt(self, line, dataset: str) -> list[dict[str, str]]:
-        
+
         if dataset in {'MathVerse_MINI_Vision_Only'}:
             return self. _build_mathVerse_mini_vision_only_prompt(line, dataset)
         raise ValueError(f'Unsupported dataset: {dataset}')
@@ -115,7 +115,7 @@ class DoubaoVLWrapper(BaseAPI):
         tgt_path = self.dump_image(line, dataset)
 
         question = line['question']
-        
+
         ###remove 'directly' from the prompt, so the model will answer the question in Chain-of-Thought (CoT) manner
         prompt = question.replace('directly','',1)
 
@@ -170,7 +170,7 @@ class DoubaoVLWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
-        ret_code = -1 
+        ret_code = -1
         answer = self.fail_msg
         response = None
         try:

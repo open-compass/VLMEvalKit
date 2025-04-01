@@ -19,15 +19,15 @@ def is_video_file(file_path):
     return mime_type.startswith("video")
 
 
-
 def prepare_megabench_data(dataset_name, dataset_subset_name):
     """
-        Prepare the MEGA-Bench dataset for evaluation.
-        Return:
-            subset_dataset: The organized data of the specified subset
-            all_dataset: The organized data of all tasks, used for evaluation
+    Prepare the MEGA-Bench dataset for evaluation.
+    Return:
+        subset_dataset: The organized data of the specified subset
+        all_dataset: The organized data of all tasks, used for evaluation
     """
     from datasets import load_dataset
+
     if "single_image" in dataset_subset_name:
         core_data = load_dataset(dataset_name, "core_single_image")
         open_data = load_dataset(dataset_name, "open_single_image")
@@ -61,9 +61,6 @@ def organize_hf_dataset(dataset):
 
     organized_dataset = []
     for task_name, samples in task_dict.items():
-        organized_dataset.append({
-            "task_name": task_name,
-            "task_samples": samples
-        })
+        organized_dataset.append({"task_name": task_name, "task_samples": samples})
 
     return organized_dataset

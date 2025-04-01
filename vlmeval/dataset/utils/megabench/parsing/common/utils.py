@@ -37,20 +37,14 @@ def extract_code_block_content(
         return response, False
 
 
-def extract_answer_content(
-    response, is_ascii_art=False, should_remove_surrounding_whitespace=True
-):
+def extract_answer_content(response, is_ascii_art=False, should_remove_surrounding_whitespace=True):
     if is_ascii_art:
         match = re.search(r"\*\*?Answer:(.*?)\*\*?|\bAnswer:(.*)", response, re.DOTALL)
     else:
-        match = re.search(
-            r"\*\*?Answer:\s*(.*?)\*\*?|\bAnswer:\s*(.*)", response, re.DOTALL
-        )
+        match = re.search(r"\*\*?Answer:\s*(.*?)\*\*?|\bAnswer:\s*(.*)", response, re.DOTALL)
     if match:
         # Extract the content after "Answer:"
-        response = match.group(1) or match.group(
-            2
-        )  # Return the first capturing group or second if the first is None
+        response = match.group(1) or match.group(2)  # Return the first capturing group or second if the first is None
         if response is None:
             response = ""
     if is_ascii_art:
@@ -92,9 +86,7 @@ def drop_additional_text(result):
     )
 
     only_return_first_paragraph = (
-        potential_ans_in_single_line
-        and result_first_paragraph.strip() != ""
-        and not _is_multiline_answer(result)
+        potential_ans_in_single_line and result_first_paragraph.strip() != "" and not _is_multiline_answer(result)
     )
 
     if only_return_first_paragraph:

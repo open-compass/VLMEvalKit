@@ -88,9 +88,7 @@ class MetricType(Enum):
             MetricType.NUMBER_RELATIVE_DIFF_RATIO: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.number_rel_diff_ratio", "NumberRelDiffRatio"
             ),
-            MetricType.SET_EQUALITY: lazy_import(
-                "vlmeval.dataset.utils.megabench.scoring.set_equality", "SetEquality"
-            ),
+            MetricType.SET_EQUALITY: lazy_import("vlmeval.dataset.utils.megabench.scoring.set_equality", "SetEquality"),
             MetricType.SET_EQUALITY_CASE_INSENSITIVE: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.set_equality", "SetEqualityCaseInsensitive"
             ),
@@ -185,9 +183,7 @@ class MetricType(Enum):
             MetricType.GEO_PROXIMITY_LOCATION_DICT: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.geo_proximity", "GeoProximityLocationDict"
             ),
-            MetricType.NORMALIZED_RMSE: lazy_import(
-                "vlmeval.dataset.utils.megabench.scoring.mse", "NormalizedRMSE"
-            ),
+            MetricType.NORMALIZED_RMSE: lazy_import("vlmeval.dataset.utils.megabench.scoring.mse", "NormalizedRMSE"),
             MetricType.PROGRAM_JUDGE: lazy_import(
                 "vlmeval.dataset.utils.megabench.scoring.program_judge", "ProgramJudge"
             ),

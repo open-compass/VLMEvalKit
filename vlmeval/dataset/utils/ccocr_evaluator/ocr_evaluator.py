@@ -9,18 +9,17 @@ from .common import BaseMetric
 
 
 def token_normalize(token_text, is_lower=False, is_alphanum_only=False):
-    """
-    """
+    """ """
     if is_lower:
         token_text = token_text.lower()
     if is_alphanum_only:
-        token_text = re.sub('[^A-Za-z0-9]+', '', token_text)
+        token_text = re.sub("[^A-Za-z0-9]+", "", token_text)
     return token_text
 
 
 def text_normalize_and_tokenize(text, is_keep_blank=True, is_lower=True, is_alphanum_only=False):
     text = text.replace("\t", " ").replace("\n", " ").replace("###", "").replace("***", "")
-    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r"\s+", " ", text)
     if not is_keep_blank:
         text = text.replace(" ", "")
     text_tokens = text.split(" ") if is_keep_blank else list(text)
@@ -40,8 +39,7 @@ def evaluate_single_sample(gts, preds):
 
 
 def calculate_metrics(response_info, gt_info, is_verbose=False):
-    """
-    """
+    """ """
     macro_recall_list, macro_precision_list, macro_f1_list = [], [], []
     total_gt_num, total_pred_num, total_right_num = 0, 0, 0
     for file_name, fullbox_gts in gt_info.items():
@@ -68,10 +66,14 @@ def calculate_metrics(response_info, gt_info, is_verbose=False):
     preci_acc = total_right_num / (total_pred_num + 1e-9)
     hmean = 2 * recall_acc * preci_acc / (recall_acc + preci_acc + 1e-9)
     vbs_eval_result = {
-        'macro_recall': final_macro_recall, 'macro_precision': final_macro_precision, 'macro_f1_score': final_macro_f1,
-        'micro_recall': recall_acc, 'micro_precision': preci_acc, 'mirco_f1_score': hmean
+        "macro_recall": final_macro_recall,
+        "macro_precision": final_macro_precision,
+        "macro_f1_score": final_macro_f1,
+        "micro_recall": recall_acc,
+        "micro_precision": preci_acc,
+        "mirco_f1_score": hmean,
     }
-    eval_result = vbs_eval_result if is_verbose else {'macro_f1_score': final_macro_f1, 'mirco_f1_score': hmean}
+    eval_result = vbs_eval_result if is_verbose else {"macro_f1_score": final_macro_f1, "mirco_f1_score": hmean}
     return eval_result
 
 
@@ -81,7 +83,7 @@ class OcrEvaluator(BaseMetric):
 
     def evaluate(self, response_info, gt_info, **kwargs):
         # hard code here
-        dataset_name = kwargs['dataset']
+        dataset_name = kwargs["dataset"]
         is_word_level, is_lower, is_alphanum_only = True, True, False
         if dataset_name in ["Arabic", "Japanese", "Korean"] or "zh" in dataset_name:
             is_word_level = False
@@ -93,14 +95,14 @@ class OcrEvaluator(BaseMetric):
         for file_name, gt_src in gt_info.items():
             pred_src = response_info.get(file_name, "")
             pdt_token_list = text_normalize_and_tokenize(
-                str(pred_src).strip(), is_word_level, is_lower, is_alphanum_only)
-            gt_token_list = text_normalize_and_tokenize(
-                str(gt_src).strip(), is_word_level, is_lower, is_alphanum_only)
+                str(pred_src).strip(), is_word_level, is_lower, is_alphanum_only
+            )
+            gt_token_list = text_normalize_and_tokenize(str(gt_src).strip(), is_word_level, is_lower, is_alphanum_only)
             image_pdt_info[file_name] = pdt_token_list
             image_gt_info[file_name] = gt_token_list
         eval_result = calculate_metrics(image_pdt_info, image_gt_info, is_verbose=False)
         return {"summary": eval_result, "metric_config": eval_config}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

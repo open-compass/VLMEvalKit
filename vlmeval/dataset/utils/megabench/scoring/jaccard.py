@@ -30,10 +30,7 @@ class JaccardCaseInsensitive:
         targets = cast_to_set(targets)
 
         if isinstance(list(targets)[0], str):
-            new_responses = {
-                item.lower() if isinstance(item, str) else str(item).lower()
-                for item in responses
-            }
+            new_responses = {item.lower() if isinstance(item, str) else str(item).lower() for item in responses}
             new_targets = {item.lower() for item in targets}
         elif isinstance(list(targets)[0], tuple):
             new_responses = set()

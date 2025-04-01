@@ -2,7 +2,7 @@ from ...smp import *
 from ...utils import can_infer
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 
 def get_gpt4_ICE_for_qspatial():
@@ -62,22 +62,22 @@ def list_to_dict(lst):
 
 def post_check(line, prefetch=False):
     res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
+    ans = line["answer"]
+    response = line["prediction"] if prefetch else line["res"]
     try:
-        if line['question_type'] == 'multi_choice':
-            ans = line['answer_option']
-            choices = list_to_dict(eval(line['choices']))
+        if line["question_type"] == "multi_choice":
+            ans = line["answer_option"]
+            choices = list_to_dict(eval(line["choices"]))
             res = can_infer(response, choices)
             if prefetch:
                 return res
         else:
-            if line['answer_type'] == 'integer':
+            if line["answer_type"] == "integer":
                 res = int(response)
-                ans = int(line['answer'])
-            elif line['answer_type'] == 'float':
+                ans = int(line["answer"])
+            elif line["answer_type"] == "float":
                 res = float(response)
-                ans = float(line['answer'])
+                ans = float(line["answer"])
             else:
                 res = str(res)
                 ans = str(ans)
@@ -95,29 +95,29 @@ def build_qspatial_gpt4_prompt(line):
 Please read the following example.
 Then extract the answer from the model response and type it at the end of the prompt.\n
 """
-    prediction = str(line['prediction'])
+    prediction = str(line["prediction"])
     prompt = task_description
     examples = get_gpt4_ICE_for_qspatial()
     for example in examples:
-        prompt += example + '\n'
-    prompt += 'Model respone: ' + prediction
-    prompt += '\nExtracted answer:'
+        prompt += example + "\n"
+    prompt += "Model respone: " + prediction
+    prompt += "\nExtracted answer:"
     return prompt
 
 
 def QSpatial_auxeval(model, line):
     prompt = build_qspatial_gpt4_prompt(line)
 
-    log = ''
+    log = ""
     retry = 5
     for i in range(retry):
-        prediction = line['prediction']
+        prediction = line["prediction"]
         res = model.generate(prompt, temperature=i * 0.5)
 
         if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+            log += f"Try {i}: output is {prediction}, failed to parse.\n"
         else:
-            log += 'Succeed'
+            log += "Succeed"
             return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')
+    log += "All 5 retries failed.\n"
+    return dict(log=log, res="")

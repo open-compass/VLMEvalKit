@@ -2,7 +2,7 @@ from ...smp import *
 from ...utils import can_infer
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 
 def get_gpt4_ICE():
@@ -55,15 +55,15 @@ def build_mathvista_gpt4_prompt(line):
 Please read the following example.
 Then extract the answer from the model response and type it at the end of the prompt.\n
 """
-    question = line['question']
-    prediction = str(line['prediction'])
+    question = line["question"]
+    prediction = str(line["prediction"])
     prompt = task_description
     examples = get_gpt4_ICE()
     for example in examples:
-        prompt += example + '\n'
-    prompt += question + '\n'
-    prompt += 'Model respone: ' + prediction
-    prompt += 'Extracted answer:'
+        prompt += example + "\n"
+    prompt += question + "\n"
+    prompt += "Model respone: " + prediction
+    prompt += "Extracted answer:"
     return prompt
 
 
@@ -73,22 +73,22 @@ def list_to_dict(lst):
 
 def post_check(line, prefetch=False):
     res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
+    ans = line["answer"]
+    response = line["prediction"] if prefetch else line["res"]
     try:
-        if line['question_type'] == 'multi_choice':
-            ans = line['answer_option']
-            choices = list_to_dict(eval(line['choices']))
+        if line["question_type"] == "multi_choice":
+            ans = line["answer_option"]
+            choices = list_to_dict(eval(line["choices"]))
             res = can_infer(response, choices)
             if prefetch:
                 return res
         else:
-            if line['answer_type'] == 'integer':
+            if line["answer_type"] == "integer":
                 res = int(response)
-                ans = int(line['answer'])
-            elif line['answer_type'] == 'float':
+                ans = int(line["answer"])
+            elif line["answer_type"] == "float":
                 res = float(response)
-                ans = float(line['answer'])
+                ans = float(line["answer"])
             else:
                 res = str(res)
                 ans = str(ans)
@@ -103,22 +103,22 @@ def post_check(line, prefetch=False):
 
 def MathVista_auxeval(model, line):
     prompt = build_mathvista_gpt4_prompt(line)
-    log = ''
+    log = ""
     retry = 5
     if post_check(line, prefetch=True):
         res = post_check(line, prefetch=True)
-        return dict(log='Prefetch succeed', res=res)
+        return dict(log="Prefetch succeed", res=res)
     for i in range(retry):
-        prediction = line['prediction']
+        prediction = line["prediction"]
         res = model.generate(prompt, temperature=i * 0.5)
 
         if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+            log += f"Try {i}: output is {prediction}, failed to parse.\n"
         else:
-            log += 'Succeed'
+            log += "Succeed"
             return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')
+    log += "All 5 retries failed.\n"
+    return dict(log=log, res="")
 
 
 def MathVista_acc(result_file):
@@ -130,35 +130,35 @@ def MathVista_acc(result_file):
     skill_list = []
     for i in range(lt):
         item = data.iloc[i]
-        cate = item['task']
-        tot['Overall'] += 1
+        cate = item["task"]
+        tot["Overall"] += 1
         try:
-            skills = eval(item['skills'])
+            skills = eval(item["skills"])
         except SyntaxError:
-            skills = [item['skills']]
+            skills = [item["skills"]]
         for skill in skills:
             if skill not in skill_list:
                 skill_list.append(skill)
             tot[skill] += 1
         tot[cate] += 1
-        if item['log'] == 'Prefetch succeed':
-            fetch['Overall'] += 1
+        if item["log"] == "Prefetch succeed":
+            fetch["Overall"] += 1
             fetch[cate] += 1
             for skill in skills:
                 fetch[skill] += 1
         if post_check(item, prefetch=False):
-            hit['Overall'] += 1
+            hit["Overall"] += 1
             hit[cate] += 1
             for skill in skills:
                 hit[skill] += 1
 
     res = defaultdict(list)
     for k in tot.keys():
-        res['Task&Skill'].append(k)
-        res['tot'].append(tot[k])
-        res['prefetch'].append(fetch[k])
-        res['hit'].append(hit[k])
-        res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
-        res['acc'].append(hit[k] / tot[k] * 100)
+        res["Task&Skill"].append(k)
+        res["tot"].append(tot[k])
+        res["prefetch"].append(fetch[k])
+        res["hit"].append(hit[k])
+        res["prefetch_rate"].append(fetch[k] / tot[k] * 100)
+        res["acc"].append(hit[k] / tot[k] * 100)
     res = pd.DataFrame(res)
     return res

@@ -61,14 +61,14 @@ dataset_levels = {
         ('OCRVQA_TESTCORE', 'acc.csv'), ('TextVQA_VAL', 'acc.csv'),
         ('ChartQA_TEST', 'acc.csv'), ('DocVQA_VAL', 'acc.csv'), ('InfoVQA_VAL', 'acc.csv'),
         ('SEEDBench2', 'acc.csv')
-    ], 
+    ],
     'live': [
-        ('LiveMMBench_VQ_circular', 'acc.csv'), ('LiveMMBench_Spatial_circular', 'acc.csv'), 
-        ('LiveMMBench_Reasoning_circular', 'acc.csv'), ('LiveMMBench_Infographic', 'acc.csv'), 
-        ('LiveMMBench_Perception', 'acc.csv'), ('LiveMMBench_Creation', 'merged_score.json'), 
-    ], 
+        ('LiveMMBench_VQ_circular', 'acc.csv'), ('LiveMMBench_Spatial_circular', 'acc.csv'),
+        ('LiveMMBench_Reasoning_circular', 'acc.csv'), ('LiveMMBench_Infographic', 'acc.csv'),
+        ('LiveMMBench_Perception', 'acc.csv'), ('LiveMMBench_Creation', 'merged_score.json'),
+    ],
     'math': [
-        ('MathVision', 'score.csv'), ('MathVerse_MINI_Vision_Only', 'score.csv'), 
+        ('MathVision', 'score.csv'), ('MathVerse_MINI_Vision_Only', 'score.csv'),
         ('DynaMath', 'score.csv'), ('WeMath', 'score.csv'), ('LogicVista', 'score.csv'),
         ('MathVista_MINI', 'gpt-4-turbo_score.csv'),
     ]
@@ -173,7 +173,7 @@ def CIRCULAR(inp):
         for ch in chs:
             s = s.replace(ch, ' ')
         return s
-    
+
     def abnormal_entry(line):
         choices = {k: line[k] for k in string.ascii_uppercase if k in line and not pd.isna(line[k])}
         has_label = False
@@ -220,15 +220,15 @@ def CIRCULAR(inp):
     for k in groups:
         groups[k] = pd.concat(groups[k], axis=1).T
         print(f'{k if k == "abnormal" else str(k) + "-choice"} records: {len(groups[k])}')
-            
+
     data_all = []
-        
+
     for k in groups:
         if k == 'abnormal':
             warnings.warn(
                 f"{len(groups['abnormal'])} abnormal entries detected. The problems can be: "
                 "1. Choice labels found in some choice contents; 2. No choices found for this question; "
-                "3. The answer is not a valid choice. Will not apply circular to those samples." 
+                "3. The answer is not a valid choice. Will not apply circular to those samples."
             )
             abdata = groups['abnormal']
             abdata['g_index'] = abdata['index']
@@ -464,7 +464,7 @@ def MERGE_PKL(pkl_dir, world_size=1):
             dump(res_all[k], f'{pkl_dir}/{pf}{k}')
         print(f'Merged {len(res_all[k])} records into {pkl_dir}/{dump_prefs[0]}{k}')
 
-    
+
 def SCAN_ONE(root, model, dataset):
     from termcolor import colored
     FAIL_MSG = 'Failed to obtain answer via API.'
@@ -487,10 +487,10 @@ def SCAN_ONE(root, model, dataset):
 
         if len(eval_files) == 0:
             return
-        
+
         for eval_file in eval_files:
             data = load(eval_file)
-            
+
             if 'MMVet' in dataset:
                 bad = [x for x in data['log'] if 'All 5 retries failed.' in str(x)]
                 if len(bad):

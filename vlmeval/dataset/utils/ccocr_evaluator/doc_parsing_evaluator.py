@@ -11,13 +11,13 @@ from .common import BaseMetric
 
 # 移除指定的LaTeX命令
 patterns = [
-    r'\\documentclass\{.*?\}',
-    r'\\usepackage\[.*?\]\{.*?\}',
-    r'\\usepackage\{.*?\}',
-    r'\\geometry\{.*?\}',
-    r'\\begin\{document\}',
-    r'\\end\{document\}',
-    r'\\noindent'
+    r"\\documentclass\{.*?\}",
+    r"\\usepackage\[.*?\]\{.*?\}",
+    r"\\usepackage\{.*?\}",
+    r"\\geometry\{.*?\}",
+    r"\\begin\{document\}",
+    r"\\end\{document\}",
+    r"\\noindent",
 ]
 
 
@@ -27,6 +27,7 @@ class TableTree(Tree):
     # Author: peter.zhong@au1.ibm.com
     # License:  Apache 2.0 License.
     """
+
     def __init__(self, tag, colspan=None, rowspan=None, content=None, *children):
         self.tag = tag
         self.colspan = colspan
@@ -56,14 +57,11 @@ class CustomConfig(Config):
     # Author: peter.zhong@au1.ibm.com
     # License:  Apache 2.0 License.
     """
+
     def rename(self, node1, node2):
         """Compares attributes of trees"""
         # print(node1.tag)
-        if (
-            (node1.tag != node2.tag)
-            or (node1.colspan != node2.colspan)
-            or (node1.rowspan != node2.rowspan)
-        ):
+        if (node1.tag != node2.tag) or (node1.colspan != node2.colspan) or (node1.rowspan != node2.rowspan):
             return 1.0
         if node1.tag == "td":
             if node1.content or node2.content:
@@ -77,10 +75,9 @@ class TEDS(object):
     # Author: peter.zhong@au1.ibm.com
     # License:  Apache 2.0 License.
     """
+
     def __init__(self, structure_only=False, n_jobs=1, ignore_nodes=None):
-        assert isinstance(n_jobs, int) and (
-            n_jobs >= 1
-        ), "n_jobs must be an integer greather than 1"
+        assert isinstance(n_jobs, int) and (n_jobs >= 1), "n_jobs must be an integer greather than 1"
         self.structure_only = structure_only
         self.n_jobs = n_jobs
         self.ignore_nodes = ignore_nodes
@@ -131,6 +128,7 @@ class TEDS(object):
         """
         # try_import("lxml")
         from lxml import etree, html
+
         if (not pred) or (not true):
             return 0.0
 
@@ -148,9 +146,7 @@ class TEDS(object):
             n_nodes = max(n_nodes_pred, n_nodes_true)
             tree_pred = self.load_html_tree(pred)
             tree_true = self.load_html_tree(true)
-            distance = APTED(
-                tree_pred, tree_true, CustomConfig()
-            ).compute_edit_distance()
+            distance = APTED(tree_pred, tree_true, CustomConfig()).compute_edit_distance()
             return 1.0 - (float(distance) / n_nodes)
         else:
             return 0.0
@@ -161,15 +157,15 @@ class ParsingEvaluator(BaseMetric):
         return response_text
 
     def evaluate(self, response_info, gt_info, **kwargs):
-        op = kwargs['op']
-        if op == 'doc':
+        op = kwargs["op"]
+        if op == "doc":
             score = self.eval_doc(response_info, gt_info)
-        elif op == 'table':
+        elif op == "table":
             score = self.eval_table(response_info, gt_info)
-        elif op in ['molecular', "formula"]:
+        elif op in ["molecular", "formula"]:
             score = self.eval_formula(response_info, gt_info, op_name=op)
         else:
-            raise ValueError(f'doc parsing unsupported op: {op}')
+            raise ValueError(f"doc parsing unsupported op: {op}")
 
         # summary info
         eval_info = {"summary": {"score": score}}
@@ -184,18 +180,18 @@ class ParsingEvaluator(BaseMetric):
 
             pred = response_info[img_name]
             for pattern in patterns:
-                pred = re.sub(pattern, '', pred)
+                pred = re.sub(pattern, "", pred)
 
             try:
-                pred = pred.split('```')[1]
+                pred = pred.split("```")[1]
             except:
                 pass
 
-            pred = pred.replace('```latex', '')
-            pred = pred.replace('```', '')
+            pred = pred.replace("```latex", "")
+            pred = pred.replace("```", "")
 
-            pred = pred.replace(' ', '').replace('\n', '')
-            gt = gt.replace(' ', '').replace('\n', '')
+            pred = pred.replace(" ", "").replace("\n", "")
+            gt = gt.replace(" ", "").replace("\n", "")
 
             edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
             results.append(1 - edit_dist)
@@ -213,25 +209,25 @@ class ParsingEvaluator(BaseMetric):
 
             pred = response_info[img_name]
             for pattern in patterns:
-                pred = re.sub(pattern, '', pred)
+                pred = re.sub(pattern, "", pred)
 
             try:
-                pred = pred.split('```html')[1]
+                pred = pred.split("```html")[1]
             except:
                 pass
 
-            pred = pred.replace('```', '')
-            pred = pred.replace(' ', '').replace('\n', '').replace('，', ',')
-            gt = gt.replace(' ', '').replace('\n', '')
+            pred = pred.replace("```", "")
+            pred = pred.replace(" ", "").replace("\n", "").replace("，", ",")
+            gt = gt.replace(" ", "").replace("\n", "")
 
-            pred_html = '<html><body>{}</body></html>'.format(pred)
-            gt_html = '<html><body>{}</body></html>'.format(gt)
+            pred_html = "<html><body>{}</body></html>".format(pred)
+            gt_html = "<html><body>{}</body></html>".format(gt)
             results.append(teds.evaluate(pred_html, gt_html))
 
         score = sum(results) / len(results)
         return score
 
-    def eval_formula(self, response_info, gt_info, op_name='formula'):
+    def eval_formula(self, response_info, gt_info, op_name="formula"):
         results = []
         for img_name, gt in tqdm(gt_info.items()):
             if img_name not in response_info:
@@ -240,10 +236,16 @@ class ParsingEvaluator(BaseMetric):
 
             pred = response_info[img_name]
 
-            if op_name == 'formula':
-                pred = pred.replace("\n", " ").replace("```latex", "").replace("```", "").replace("\t", " ").replace(" ", "")  # noqa: E501
+            if op_name == "formula":
+                pred = (
+                    pred.replace("\n", " ")
+                    .replace("```latex", "")
+                    .replace("```", "")
+                    .replace("\t", " ")
+                    .replace(" ", "")
+                )  # noqa: E501
                 gt = gt.replace(" ", "")
-            elif op_name == 'molecular':
+            elif op_name == "molecular":
                 pred = pred.replace("\n", "").replace(" ", "").replace("<smiles>", "").replace("</smiles>", "")
                 gt = gt.replace(" ", "")
             edit_dist = nltk.edit_distance(pred, gt) / max(len(pred), len(gt))
@@ -252,5 +254,5 @@ class ParsingEvaluator(BaseMetric):
         return score
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

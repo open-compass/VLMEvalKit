@@ -10,11 +10,11 @@ from .image_base import ImageBaseDataset
 from ..smp import *
 
 # should be the same as  FAIL_MSG definded in vlmeval/inference.py
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 
 class CCOCRDataset(ImageBaseDataset):
-    TYPE = 'VQA'
+    TYPE = "VQA"
     DATASET_URL_MODELSCOPE = {
         "CCOCR_DocParsing_DocPhotoChn": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/doc_parsing/doc/doc_photo_chn_75.tsv",
         "CCOCR_DocParsing_DocPhotoEng": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/doc_parsing/doc/doc_photo_eng_75.tsv",
@@ -54,7 +54,7 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_ZhScene": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/scene_text/zh_scene_450.tsv",
         "CCOCR_MultiSceneOcr_UgcLaion": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
-        "CCOCR_MultiSceneOcr_ZhVertical": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_vertical_100.tsv"
+        "CCOCR_MultiSceneOcr_ZhVertical": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
     }
 
     DATASET_URL_HUGGINGFACE = {
@@ -96,7 +96,7 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_ZhScene": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/scene_text/zh_scene_450.tsv",
         "CCOCR_MultiSceneOcr_UgcLaion": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
-        "CCOCR_MultiSceneOcr_ZhVertical": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_vertical_100.tsv"
+        "CCOCR_MultiSceneOcr_ZhVertical": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
     }
 
     # define data path
@@ -140,41 +140,41 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_ZhScene": "9295152a66e6f117db8bfbb20a9013e6",
         "CCOCR_MultiSceneOcr_UgcLaion": "8e9ea1fbf9d56532157e807eabf39b21",
         "CCOCR_MultiSceneOcr_ZhDense": "de8f48ee0c8a2cf8ed7f2b3a81e6322d",
-        "CCOCR_MultiSceneOcr_ZhVertical": "4892b4aec6e7fd11e39aaea23712709b"
+        "CCOCR_MultiSceneOcr_ZhVertical": "4892b4aec6e7fd11e39aaea23712709b",
     }
 
     # It returns a DataFrame
     def evaluate(self, eval_file, **judge_kwargs):
-        """
-        """
+        """ """
         df = load(eval_file)
-        dict_list = df.to_dict(orient='records')
+        dict_list = df.to_dict(orient="records")
 
-        required_colume_list = ['answer', 'prediction', "category", "image_name", "l2-category", "split"]
+        required_colume_list = ["answer", "prediction", "category", "image_name", "l2-category", "split"]
         for required_colume in required_colume_list:
             assert required_colume in df, "required_colume: {} NOT found".format(required_colume)
 
         gt_info, ptd_info = {}, {}
         for data_info in dict_list:
-            image_name = data_info['image_name']
-            gt_info[image_name] = data_info['answer']
+            image_name = data_info["image_name"]
+            gt_info[image_name] = data_info["answer"]
 
             # warning the FAIL samples
-            if data_info['prediction'] != FAIL_MSG:
-                ptd_info[image_name] = data_info['prediction']
+            if data_info["prediction"] != FAIL_MSG:
+                ptd_info[image_name] = data_info["prediction"]
 
         # assert eval_file is a single dataset
-        group_name = set([str(x) for x in df['category']]).pop()
-        op_name = set([str(x) for x in df['l2-category']]).pop()
-        data_name = set([str(x) for x in df['split']]).pop()
+        group_name = set([str(x) for x in df["category"]]).pop()
+        op_name = set([str(x) for x in df["l2-category"]]).pop()
+        data_name = set([str(x) for x in df["split"]]).pop()
 
-        data_info = {"op": op_name, "group": group_name, "dataset": data_name,  "num": len(gt_info)}
+        data_info = {"op": op_name, "group": group_name, "dataset": data_name, "num": len(gt_info)}
         try:
             from .utils.ccocr_evaluator import evaluator_map_info as ccocr_evaluator_map
         except ImportError as err:
             import warnings
-            warnings.warn('The dependency of CCOCR evaluator is not properly installed')
-            warnings.warn(f'{type(err)}: {err}')
+
+            warnings.warn("The dependency of CCOCR evaluator is not properly installed")
+            warnings.warn(f"{type(err)}: {err}")
         eval_func = ccocr_evaluator_map.get(group_name, None)
         if eval_func is None:
             raise ValueError("error: evaluator not defined for: {}".format(group_name))

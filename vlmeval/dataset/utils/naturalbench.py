@@ -18,7 +18,7 @@ def extract_answer(output_string, task_type="yes_no"):
     """
 
     def find_word_position(string, word):
-        pattern = r'\b' + re.escape(word) + r'\b'
+        pattern = r"\b" + re.escape(word) + r"\b"
         match = re.search(pattern, string, re.IGNORECASE)
         if match:
             return match.start()
@@ -136,10 +136,10 @@ def get_scores(scores):
             G_Acc += calculate_group(result)
 
     results = {
-        'Q_Acc': Q_Acc / float(num_samples * 2),
-        'I_Acc': I_Acc / float(num_samples * 2),
-        'Acc': Acc / float(num_samples * 4),
-        'G_Acc': G_Acc / num_samples
+        "Q_Acc": Q_Acc / float(num_samples * 2),
+        "I_Acc": I_Acc / float(num_samples * 2),
+        "Acc": Acc / float(num_samples * 4),
+        "G_Acc": G_Acc / num_samples,
     }
 
     return results

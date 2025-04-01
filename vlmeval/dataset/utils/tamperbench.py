@@ -14,14 +14,14 @@ import numpy as np
 import re
 
 
-def get_dimension_rating(data_path, category_type='task_type'):
+def get_dimension_rating(data_path, category_type="task_type"):
     data = load(data_path)
     result_board = {}
     for idx, item in data.iterrows():
         if item[category_type] not in result_board:
             result_board[item[category_type]] = [0, 0]
         result_board[item[category_type]][1] += 1
-        if item['score']:
+        if item["score"]:
             result_board[item[category_type]][0] += 1
 
     correct = 0
@@ -29,14 +29,14 @@ def get_dimension_rating(data_path, category_type='task_type'):
     for key, value in result_board.items():
         correct += value[0]
         total += value[1]
-        result_board[key].append(f'{value[0] / value[1] * 100:.2f}%')
+        result_board[key].append(f"{value[0] / value[1] * 100:.2f}%")
 
-    result_board['overall'] = [correct, total, f'{correct / total * 100:.2f}%']
+    result_board["overall"] = [correct, total, f"{correct / total * 100:.2f}%"]
 
     return result_board
 
 
-def process_results(score_file,model_name):
+def process_results(score_file, model_name):
     from sklearn.metrics import (
         accuracy_score,
         precision_score,
@@ -44,27 +44,28 @@ def process_results(score_file,model_name):
         f1_score,
         classification_report,
         confusion_matrix,
-        roc_auc_score
+        roc_auc_score,
     )
+
     data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
-    data['prediction'] = data.apply(
-        lambda row: row['answer'] if row['score'] == 1 else ('Yes' if row['answer'] == 'No' else 'No'), axis=1
+    data["prediction"] = data.apply(
+        lambda row: row["answer"] if row["score"] == 1 else ("Yes" if row["answer"] == "No" else "No"), axis=1
     )
 
     # Recompute metrics for tamper types including 'original' in the calculations but exclude 'original' from the output
     grouped_metrics_with_original_excluding_original = {}
 
-    original_group = data[data['tamper_type'] == 'original']
+    original_group = data[data["tamper_type"] == "original"]
 
-    for tamper_type, group in data[data['tamper_type'] != 'original'].groupby('tamper_type'):
+    for tamper_type, group in data[data["tamper_type"] != "original"].groupby("tamper_type"):
         # Combine the current group with the 'original' group
         combined_group = pd.concat([group, original_group])
 
         # Extract ground truth and predictions for the combined group
-        y_true_group = combined_group['answer'].map({'Yes': 1, 'No': 0})
-        y_pred_group = combined_group['prediction'].map({'Yes': 1, 'No': 0})
+        y_true_group = combined_group["answer"].map({"Yes": 1, "No": 0})
+        y_pred_group = combined_group["prediction"].map({"Yes": 1, "No": 0})
 
         # Calculate metrics for the combined group
         accuracy = accuracy_score(y_true_group, y_pred_group)
@@ -79,7 +80,7 @@ def process_results(score_file,model_name):
             "Precision": precision,
             "Recall": recall,
             "F1 Score": f1,
-            "Confusion Matrix": conf_matrix.tolist()  # Convert to list for JSON compatibility
+            "Confusion Matrix": conf_matrix.tolist(),  # Convert to list for JSON compatibility
         }
 
         # Add the Macro Average row to the Dictionary
@@ -87,7 +88,7 @@ def process_results(score_file,model_name):
 
     # Display the metrics in a dataframe for clarity
     df_grouped_metrics_with_original_excluding_original = pd.DataFrame.from_dict(
-        grouped_metrics_with_original_excluding_original, orient='index'
+        grouped_metrics_with_original_excluding_original, orient="index"
     )
 
     # Compute Macro Averages for Accuracy, Precision, Recall, and F1 Score
@@ -96,7 +97,7 @@ def process_results(score_file,model_name):
         "Precision": df_grouped_metrics_with_original_excluding_original["Precision"].mean(),
         "Recall": df_grouped_metrics_with_original_excluding_original["Recall"].mean(),
         "F1 Score": df_grouped_metrics_with_original_excluding_original["F1 Score"].mean(),
-        "Confusion Matrix": "N/A"  # Macro average doesn't have a meaningful confusion matrix
+        "Confusion Matrix": "N/A",  # Macro average doesn't have a meaningful confusion matrix
     }
 
     # # Add the Macro Average row to the DataFrame
@@ -107,14 +108,14 @@ def process_results(score_file,model_name):
     # Process Model Level Metrics
     formatted_data = []
     for task, task_metrics in metrics_dict.items():
-        task_metrics['Model'] = model_name
-        task_metrics['Task'] = task
+        task_metrics["Model"] = model_name
+        task_metrics["Task"] = task
         formatted_data.append(task_metrics)
 
     df_metrics = pd.DataFrame(formatted_data)
 
     # Reorder columns to make 'Model' and 'Task' appear first
-    columns_order = ['Model', 'Task'] + [col for col in df_metrics.columns if col not in ['Model', 'Task']]
+    columns_order = ["Model", "Task"] + [col for col in df_metrics.columns if col not in ["Model", "Task"]]
     df_metrics = df_metrics[columns_order]
 
     return df_metrics
@@ -128,23 +129,24 @@ def aggregate_metrics_with_macro_average(score_file):
         f1_score,
         classification_report,
         confusion_matrix,
-        roc_auc_score
+        roc_auc_score,
     )
+
     # Load data
     data = pd.read_excel(score_file)
 
     # Create the prediction column based on the Score and Answer columns
-    data['prediction'] = data.apply(
-        lambda row: row['answer'] if row['score'] == 1 else ('Yes' if row['answer'] == 'No' else 'No'), axis=1
+    data["prediction"] = data.apply(
+        lambda row: row["answer"] if row["score"] == 1 else ("Yes" if row["answer"] == "No" else "No"), axis=1
     )
 
     # Initialize a dictionary to store metrics
     task_type_metrics = {}
 
     # Process each task_type separately
-    for task_type, task_group in data.groupby('task_type'):
+    for task_type, task_group in data.groupby("task_type"):
         # Separate the 'original' group for the current task_type
-        original_group = task_group[task_group['tamper_type'] == 'original']
+        original_group = task_group[task_group["tamper_type"] == "original"]
 
         # Skip if there is no 'original' data for this task_type
         if original_group.empty:
@@ -152,14 +154,14 @@ def aggregate_metrics_with_macro_average(score_file):
 
         # Process each tamper type for the current task_type (excluding 'original')
         tamper_metrics = {}
-        for tamper_type, tamper_group in task_group[task_group['tamper_type'] != 'original'].groupby('tamper_type'):
+        for tamper_type, tamper_group in task_group[task_group["tamper_type"] != "original"].groupby("tamper_type"):
 
             # Combine the tamper group with the original group of the current task_type
             combined_group = pd.concat([tamper_group, original_group])
 
             # Map answers and predictions to binary values
-            y_true = combined_group['answer'].map({'Yes': 1, 'No': 0})
-            y_pred = combined_group['prediction'].map({'Yes': 1, 'No': 0})
+            y_true = combined_group["answer"].map({"Yes": 1, "No": 0})
+            y_pred = combined_group["prediction"].map({"Yes": 1, "No": 0})
 
             # Compute metrics
             accuracy = accuracy_score(y_true, y_pred)
@@ -174,7 +176,7 @@ def aggregate_metrics_with_macro_average(score_file):
                 "Precision": precision,
                 "Recall": recall,
                 "F1 Score": f1,
-                "Confusion Matrix": conf_matrix.tolist()  # Convert to list for JSON compatibility
+                "Confusion Matrix": conf_matrix.tolist(),  # Convert to list for JSON compatibility
             }
 
         # Compute Macro Averages for the current task_type
@@ -184,7 +186,7 @@ def aggregate_metrics_with_macro_average(score_file):
             "Precision": metrics_df["Precision"].mean(),
             "Recall": metrics_df["Recall"].mean(),
             "F1 Score": metrics_df["F1 Score"].mean(),
-            "Confusion Matrix": "N/A"  # Macro average doesn't have a meaningful confusion matrix
+            "Confusion Matrix": "N/A",  # Macro average doesn't have a meaningful confusion matrix
         }
 
         # Add the macro average as "overall" for the task_type
@@ -196,21 +198,22 @@ def aggregate_metrics_with_macro_average(score_file):
     # Transform the nested dictionary into a DataFrame
     dataframes = []
     for task_type, metrics in task_type_metrics.items():
-        task_df = pd.DataFrame.from_dict(metrics, orient='index')
-        task_df['task_type'] = task_type  # Add the task_type as a column
+        task_df = pd.DataFrame.from_dict(metrics, orient="index")
+        task_df["task_type"] = task_type  # Add the task_type as a column
         dataframes.append(task_df)
 
     # Combine all task-specific DataFrames into a single DataFrame
-    result_df = pd.concat(dataframes).reset_index().rename(columns={'index': 'tamper_type'})
+    result_df = pd.concat(dataframes).reset_index().rename(columns={"index": "tamper_type"})
     # Reorder the columns to place task_type first, then tamper_type
-    result_df = result_df[['task_type', 'tamper_type', 'Accuracy', 'Precision', 'Recall',
-                           'F1 Score', 'Confusion Matrix']]
+    result_df = result_df[
+        ["task_type", "tamper_type", "Accuracy", "Precision", "Recall", "F1 Score", "Confusion Matrix"]
+    ]
 
     # Select only numeric columns for aggregation
-    numeric_columns = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
+    numeric_columns = ["Accuracy", "Precision", "Recall", "F1 Score"]
 
     # Group by task_type and tamper_type, and calculate the mean for numeric columns
-    average_metrics = result_df.groupby(['task_type', 'tamper_type'])[numeric_columns].mean().reset_index()
+    average_metrics = result_df.groupby(["task_type", "tamper_type"])[numeric_columns].mean().reset_index()
 
     return average_metrics
 
@@ -230,20 +233,20 @@ def check_ans(pred, gt):
     flag = False
 
     # Split prediction into option and content
-    pred_list = pred.lower().strip().split(' ')
-    pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
+    pred_list = pred.lower().strip().split(" ")
+    pred_option, _ = pred_list[0], " ".join(pred_list[1:])
 
     # Split ground truth into option and content
-    gt_list = gt.lower().strip().split(' ')
-    gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
+    gt_list = gt.lower().strip().split(" ")
+    gt_option, gt_content = gt_list[0], " ".join(gt_list[1:])
 
     # Remove trailing period from ground truth content if present
-    if gt_content[-1] == '.':
+    if gt_content[-1] == ".":
         gt_content = gt_content[:-1]
 
     # Check for matching conditions
     # Condition 1: If the predicted option is a substring of the ground truth option
-    if pred_option.replace('.', '') in gt_option:
+    if pred_option.replace(".", "") in gt_option:
         flag = True
     # Condition 2: If the ground truth option is a substring of the predicted option
     elif gt_option in pred_option:
@@ -255,7 +258,7 @@ def check_ans(pred, gt):
     return flag
 
 
-def check_ans_with_model(pred, gt, model, item, dataset_name='MVBench'):
+def check_ans_with_model(pred, gt, model, item, dataset_name="MVBench"):
     """
     Checks if the predicted answer matches the ground truth using a given model.
 
@@ -273,24 +276,24 @@ def check_ans_with_model(pred, gt, model, item, dataset_name='MVBench'):
     flag = False
 
     # Preprocess prediction and ground truth by converting to lowercase and splitting into options and contents
-    pred_list = pred.lower().strip().split(' ')
-    pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
-    gt_list = gt.lower().strip().split(' ')
-    gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
+    pred_list = pred.lower().strip().split(" ")
+    pred_option, _ = pred_list[0], " ".join(pred_list[1:])
+    gt_list = gt.lower().strip().split(" ")
+    gt_option, gt_content = gt_list[0], " ".join(gt_list[1:])
 
     # Remove trailing period from ground truth content if presen
-    if gt_content[-1] == '.':
+    if gt_content[-1] == ".":
         gt_content = gt_content[:-1]
 
     # Check for matching conditions
     # Condition 1: If the predicted option is a substring of the ground truth option
-    if pred_option.replace('.', '') in gt_option:
+    if pred_option.replace(".", "") in gt_option:
         flag = True
     # Condition 2: If the ground truth option is a substring of the predicted option
     elif gt_option in pred_option:
         flag = True
     # Condition 3: Use the provided model to verify the answer
-    elif extract_answer_from_item(model, item, dataset_name)['opt'] == item['answer']:
+    elif extract_answer_from_item(model, item, dataset_name)["opt"] == item["answer"]:
         flag = True
 
     return flag
@@ -298,37 +301,37 @@ def check_ans_with_model(pred, gt, model, item, dataset_name='MVBench'):
 
 def check_ans_advanced(pred, gt):
     number_table = {
-        0: 'zero',
-        1: 'one',
-        2: 'two',
-        3: 'three',
-        4: 'four',
-        5: 'five',
-        6: 'six',
-        7: 'seven',
-        8: 'eight',
-        9: 'nine',
+        0: "zero",
+        1: "one",
+        2: "two",
+        3: "three",
+        4: "four",
+        5: "five",
+        6: "six",
+        7: "seven",
+        8: "eight",
+        9: "nine",
     }
     flag = False
 
-    pred_list = pred.lower().split(' ')
-    pred_option, _ = pred_list[0], ' '.join(pred_list[1:])
-    gt_list = gt.lower().split(' ')
-    gt_option, gt_content = gt_list[0], ' '.join(gt_list[1:])
-    if gt_content[-1] == '.':
+    pred_list = pred.lower().split(" ")
+    pred_option, _ = pred_list[0], " ".join(pred_list[1:])
+    gt_list = gt.lower().split(" ")
+    gt_option, gt_content = gt_list[0], " ".join(gt_list[1:])
+    if gt_content[-1] == ".":
         gt_content = gt_content[:-1]
 
     try:
-        gt_content = number_table[int(gt_content.strip('. \n'))]
+        gt_content = number_table[int(gt_content.strip(". \n"))]
         print(gt_content)
     except:
         pass
 
-    if pred_option.replace('.', '') in gt_option:
+    if pred_option.replace(".", "") in gt_option:
         flag = True
     elif gt_option in pred_option:
         flag = True
-    elif gt_content.lower().strip('. \n') in pred.lower().strip('. \n'):
+    elif gt_content.lower().strip(". \n") in pred.lower().strip(". \n"):
         flag = True
 
     return flag
@@ -352,7 +355,7 @@ class GroupRandomCrop(object):
         y1 = random.randint(0, h - th)
 
         for img in img_group:
-            assert (img.size[0] == w and img.size[1] == h)
+            assert img.size[0] == w and img.size[1] == h
             if w == tw and h == th:
                 out_images.append(img)
             else:
@@ -381,7 +384,7 @@ class MultiGroupRandomCrop(object):
             y1 = random.randint(0, h - th)
 
             for img in img_group:
-                assert (img.size[0] == w and img.size[1] == h)
+                assert img.size[0] == w and img.size[1] == h
                 if w == tw and h == th:
                     out_images.append(img)
                 else:
@@ -399,8 +402,7 @@ class GroupCenterCrop(object):
 
 
 class GroupRandomHorizontalFlip(object):
-    """Randomly horizontally flips the given PIL.Image with a probability of 0.5
-    """
+    """Randomly horizontally flips the given PIL.Image with a probability of 0.5"""
 
     def __init__(self, is_flow=False):
         self.is_flow = is_flow
@@ -435,7 +437,7 @@ class GroupNormalize(object):
 
 
 class GroupScale(object):
-    """ Rescales the input PIL.Image to the given 'size'.
+    """Rescales the input PIL.Image to the given 'size'.
     'size' will be the size of the smaller edge.
     For example, if height > width, then image will be
     rescaled to (size * height / width, size)
@@ -452,8 +454,7 @@ class GroupScale(object):
 
 class GroupOverSample(object):
     def __init__(self, crop_size, scale_size=None, flip=True):
-        self.crop_size = crop_size if not isinstance(
-            crop_size, int) else (crop_size, crop_size)
+        self.crop_size = crop_size if not isinstance(crop_size, int) else (crop_size, crop_size)
 
         if scale_size is not None:
             self.scale_worker = GroupScale(scale_size)
@@ -469,8 +470,7 @@ class GroupOverSample(object):
         image_w, image_h = img_group[0].size
         crop_w, crop_h = self.crop_size
 
-        offsets = GroupMultiScaleCrop.fill_fix_offset(
-            False, image_w, image_h, crop_w, crop_h)
+        offsets = GroupMultiScaleCrop.fill_fix_offset(False, image_w, image_h, crop_w, crop_h)
         oversample_group = list()
         for o_w, o_h in offsets:
             normal_group = list()
@@ -480,7 +480,7 @@ class GroupOverSample(object):
                 normal_group.append(crop)
                 flip_crop = crop.copy().transpose(Image.FLIP_LEFT_RIGHT)
 
-                if img.mode == 'L' and i % 2 == 0:
+                if img.mode == "L" and i % 2 == 0:
                     flip_group.append(ImageOps.invert(flip_crop))
                 else:
                     flip_group.append(flip_crop)
@@ -493,8 +493,7 @@ class GroupOverSample(object):
 
 class GroupFullResSample(object):
     def __init__(self, crop_size, scale_size=None, flip=True):
-        self.crop_size = crop_size if not isinstance(
-            crop_size, int) else (crop_size, crop_size)
+        self.crop_size = crop_size if not isinstance(crop_size, int) else (crop_size, crop_size)
 
         if scale_size is not None:
             self.scale_worker = GroupScale(scale_size)
@@ -528,7 +527,7 @@ class GroupFullResSample(object):
                 if self.flip:
                     flip_crop = crop.copy().transpose(Image.FLIP_LEFT_RIGHT)
 
-                    if img.mode == 'L' and i % 2 == 0:
+                    if img.mode == "L" and i % 2 == 0:
                         flip_group.append(ImageOps.invert(flip_crop))
                     else:
                         flip_group.append(flip_crop)
@@ -540,14 +539,12 @@ class GroupFullResSample(object):
 
 class GroupMultiScaleCrop(object):
 
-    def __init__(self, input_size, scales=None, max_distort=1,
-                 fix_crop=True, more_fix_crop=True):
-        self.scales = scales if scales is not None else [1, .875, .75, .66]
+    def __init__(self, input_size, scales=None, max_distort=1, fix_crop=True, more_fix_crop=True):
+        self.scales = scales if scales is not None else [1, 0.875, 0.75, 0.66]
         self.max_distort = max_distort
         self.fix_crop = fix_crop
         self.more_fix_crop = more_fix_crop
-        self.input_size = input_size if not isinstance(input_size, int) else [
-            input_size, input_size]
+        self.input_size = input_size if not isinstance(input_size, int) else [input_size, input_size]
         self.interpolation = Image.BILINEAR
 
     def __call__(self, img_group):
@@ -555,14 +552,10 @@ class GroupMultiScaleCrop(object):
         im_size = img_group[0].size
 
         crop_w, crop_h, offset_w, offset_h = self._sample_crop_size(im_size)
-        crop_img_group = [
-            img.crop(
-                (offset_w,
-                 offset_h,
-                 offset_w + crop_w,
-                 offset_h + crop_h)) for img in img_group]
-        ret_img_group = [img.resize((self.input_size[0], self.input_size[1]), self.interpolation)
-                         for img in crop_img_group]
+        crop_img_group = [img.crop((offset_w, offset_h, offset_w + crop_w, offset_h + crop_h)) for img in img_group]
+        ret_img_group = [
+            img.resize((self.input_size[0], self.input_size[1]), self.interpolation) for img in crop_img_group
+        ]
         return ret_img_group
 
     def _sample_crop_size(self, im_size):
@@ -571,12 +564,8 @@ class GroupMultiScaleCrop(object):
         # find a crop size
         base_size = min(image_w, image_h)
         crop_sizes = [int(base_size * x) for x in self.scales]
-        crop_h = [
-            self.input_size[1] if abs(
-                x - self.input_size[1]) < 3 else x for x in crop_sizes]
-        crop_w = [
-            self.input_size[0] if abs(
-                x - self.input_size[0]) < 3 else x for x in crop_sizes]
+        crop_h = [self.input_size[1] if abs(x - self.input_size[1]) < 3 else x for x in crop_sizes]
+        crop_w = [self.input_size[0] if abs(x - self.input_size[0]) < 3 else x for x in crop_sizes]
 
         pairs = []
         for i, h in enumerate(crop_h):
@@ -589,14 +578,12 @@ class GroupMultiScaleCrop(object):
             w_offset = random.randint(0, image_w - crop_pair[0])
             h_offset = random.randint(0, image_h - crop_pair[1])
         else:
-            w_offset, h_offset = self._sample_fix_offset(
-                image_w, image_h, crop_pair[0], crop_pair[1])
+            w_offset, h_offset = self._sample_fix_offset(image_w, image_h, crop_pair[0], crop_pair[1])
 
         return crop_pair[0], crop_pair[1], w_offset, h_offset
 
     def _sample_fix_offset(self, image_w, image_h, crop_w, crop_h):
-        offsets = self.fill_fix_offset(
-            self.more_fix_crop, image_w, image_h, crop_w, crop_h)
+        offsets = self.fill_fix_offset(self.more_fix_crop, image_w, image_h, crop_w, crop_h)
         return random.choice(offsets)
 
     @staticmethod
@@ -641,7 +628,7 @@ class GroupRandomSizedCrop(object):
         for attempt in range(10):
             area = img_group[0].size[0] * img_group[0].size[1]
             target_area = random.uniform(0.08, 1.0) * area
-            aspect_ratio = random.uniform(3. / 4, 4. / 3)
+            aspect_ratio = random.uniform(3.0 / 4, 4.0 / 3)
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
@@ -663,10 +650,8 @@ class GroupRandomSizedCrop(object):
             out_group = list()
             for img in img_group:
                 img = img.crop((x1, y1, x1 + w, y1 + h))
-                assert (img.size == (w, h))
-                out_group.append(
-                    img.resize(
-                        (self.size, self.size), self.interpolation))
+                assert img.size == (w, h)
+                out_group.append(img.resize((self.size, self.size), self.interpolation))
             return out_group
         else:
             # Fallback
@@ -680,7 +665,7 @@ class ConvertDataFormat(object):
         self.model_type = model_type
 
     def __call__(self, images):
-        if self.model_type == '2D':
+        if self.model_type == "2D":
             return images
         tc, h, w = images.size()
         t = tc // 3
@@ -695,13 +680,11 @@ class Stack(object):
         self.roll = roll
 
     def __call__(self, img_group):
-        if img_group[0].mode == 'L':
-            return np.concatenate([np.expand_dims(x, 2)
-                                   for x in img_group], axis=2)
-        elif img_group[0].mode == 'RGB':
+        if img_group[0].mode == "L":
+            return np.concatenate([np.expand_dims(x, 2) for x in img_group], axis=2)
+        elif img_group[0].mode == "RGB":
             if self.roll:
-                return np.concatenate([np.array(x)[:, :, ::-1]
-                                       for x in img_group], axis=2)
+                return np.concatenate([np.array(x)[:, :, ::-1] for x in img_group], axis=2)
             else:
                 # print(np.concatenate(img_group, axis=2).shape)
                 # print(img_group[0].shape)
@@ -709,8 +692,8 @@ class Stack(object):
 
 
 class ToTorchFormatTensor(object):
-    """ Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range [0, 255]
-    to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0] """
+    """Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range [0, 255]
+    to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]"""
 
     def __init__(self, div=True):
         self.div = div
@@ -721,9 +704,7 @@ class ToTorchFormatTensor(object):
             img = torch.from_numpy(pic).permute(2, 0, 1).contiguous()
         else:
             # handle PIL Image
-            img = torch.ByteTensor(
-                torch.ByteStorage.from_buffer(
-                    pic.tobytes()))
+            img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
             img = img.view(pic.size[1], pic.size[0], len(pic.mode))
             # put it from HWC to CHW format
             # yikes, this transpose takes 80% of the loading time/CPU

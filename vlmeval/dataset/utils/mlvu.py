@@ -3,7 +3,7 @@ from .multiple_choice import extract_answer_from_item
 from PIL import Image, ImageOps
 import numpy as np
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 system_prompt_sub_scene = """
 ##TASK DESCRIPTION:
@@ -55,19 +55,19 @@ Score 5: Completely accurate with no errors or contradictions; presentation is c
 """  # noqa
 
 
-def check_ans_with_model(pred, gt, model, item, dataset_name='MLVU_MCQ'):
+def check_ans_with_model(pred, gt, model, item, dataset_name="MLVU_MCQ"):
     flag = False
 
     index = gt.index("(")  # noqa
     index2 = gt.index(")")  # noqa
-    gt_option = gt[index + 1: index2]
+    gt_option = gt[index + 1 : index2]
 
     if ")" in pred:
         index3 = pred.index(")")
-        pred = pred[index3 - 1: index3]
+        pred = pred[index3 - 1 : index3]
     if pred == gt_option:
         flag = True
-    elif extract_answer_from_item(model, item, dataset_name)['opt'] == item['answer']:
+    elif extract_answer_from_item(model, item, dataset_name)["opt"] == item["answer"]:
         flag = True
 
     return flag
@@ -95,7 +95,7 @@ def extract_scores_summary(text):
     return scores
 
 
-def check_ans_with_model_summary(pred, gt, model, item, dataset_name='MLVU_OpenEnded'):
+def check_ans_with_model_summary(pred, gt, model, item, dataset_name="MLVU_OpenEnded"):
     user_prompt = f"""
     Please score the respondent's answer according to the steps in the Instructions. You must end with a JSON dict to store the scores.
     Standard Answer: {gt}
@@ -129,7 +129,7 @@ def extract_scores_sub_scene(text):
     return scores
 
 
-def check_ans_with_model_sub_scene(pred, gt, model, item, dataset_name='MLVU_OpenEnded'):
+def check_ans_with_model_sub_scene(pred, gt, model, item, dataset_name="MLVU_OpenEnded"):
     user_prompt = f"""
     Please score the respondent's answer according to the steps in the Instructions. You must end with a JSON dict to store the scores.
     Question: {item['question']}
@@ -143,15 +143,15 @@ def check_ans_with_model_sub_scene(pred, gt, model, item, dataset_name='MLVU_Ope
 
 
 def MLVU_OpenEnded_generate(model, line):
-    task_type = line['task_type']
-    if task_type == 'summary':
+    task_type = line["task_type"]
+    if task_type == "summary":
         user_prompt = (
             f"Please score the respondent's answer according to the steps in the Instructions. "
             f"You must end with a JSON dict to store the scores.\n"
             f"Standard Answer: {line['answer']}\n"
             f"Respondent's Answer: {line['prediction']}\n"
         )
-    elif task_type == 'sub_scene':
+    elif task_type == "sub_scene":
         user_prompt = (
             f"Please score the respondent's answer according to the steps in the Instructions. "
             f"You must end with a JSON dict to store the scores.\n"
@@ -160,20 +160,17 @@ def MLVU_OpenEnded_generate(model, line):
             f"Respondent's Answer: {line['prediction']}\n"
         )
     else:
-        AssertionError(f'MLVU don\'t have {task_type} open ended task!')
+        AssertionError(f"MLVU don't have {task_type} open ended task!")
     result = model.generate(user_prompt)
     return result
 
 
 def MLVU_OpenEnded_extract(gpt_generate_data, org_data):
-    extract_func = {
-        'sub_scene': extract_scores_sub_scene,
-        'summary': extract_scores_summary
-    }
+    extract_func = {"sub_scene": extract_scores_sub_scene, "summary": extract_scores_summary}
     for idx, item in org_data.iterrows():
-        func = extract_func[item['task_type']]
+        func = extract_func[item["task_type"]]
         text = gpt_generate_data[idx]
-        org_data.loc[idx, 'score'] = np.sum(func(text))
+        org_data.loc[idx, "score"] = np.sum(func(text))
 
     return org_data
 
@@ -182,8 +179,8 @@ def get_dimension_rating(data_path):
     data = load(data_path)
     result_dict = {}
     for idx, item in data.iterrows():
-        if item['task_type'] not in result_dict:
-            result_dict[item['task_type']] = [0,0]
-        result_dict[item['task_type']][0] += int(item['score'])
-        result_dict[item['task_type']][1] += 1
+        if item["task_type"] not in result_dict:
+            result_dict[item["task_type"]] = [0, 0]
+        result_dict[item["task_type"]][0] += int(item["score"])
+        result_dict[item["task_type"]][1] += 1
     return result_dict

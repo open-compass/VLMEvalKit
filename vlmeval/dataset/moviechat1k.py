@@ -8,47 +8,46 @@ import json
 import ast
 from glob import glob
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 
 class MovieChat1k(VideoBaseDataset):
 
-    MD5 = '7c0aa7e10de1cddb37af42b4abc9a2dd'
+    MD5 = "7c0aa7e10de1cddb37af42b4abc9a2dd"
 
-    TYPE = 'Video-VQA'
+    TYPE = "Video-VQA"
 
-    def __init__(self, dataset='MovieChat1k', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
+    def __init__(self, dataset="MovieChat1k", pack=False, nframe=0, fps=-1, subset="all", limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
-        if subset == 'all':
+        if subset == "all":
             pass
-        elif subset == 'global':
-            self.data = self.data[self.data['mode'] == 'global']
-        elif subset == 'breakpoint':
-            self.data = self.data[self.data['mode'] == 'breakpoint']
+        elif subset == "global":
+            self.data = self.data[self.data["mode"] == "global"]
+        elif subset == "breakpoint":
+            self.data = self.data[self.data["mode"] == "breakpoint"]
         else:
-            raise ValueError(f'Invalid subset: {subset}')
-        
+            raise ValueError(f"Invalid subset: {subset}")
+
         if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
         elif limit > 1.0 and limit < len(self.data):
             self.data = self.data.iloc[:limit]
         else:
-            raise ValueError(f'Invalid limit: {limit}')
-    
+            raise ValueError(f"Invalid limit: {limit}")
 
     @classmethod
     def supported_datasets(cls):
-        return ['MovieChat1k']
+        return ["MovieChat1k"]
 
-    def prepare_dataset(self, dataset_name='MovieChat1k', repo_id='Enxin/VLMEval-MovieChat1k'):
+    def prepare_dataset(self, dataset_name="MovieChat1k", repo_id="Enxin/VLMEval-MovieChat1k"):
         def check_integrity(pth):
-            data_file = osp.join(pth, f'{dataset_name}.tsv')
+            data_file = osp.join(pth, f"{dataset_name}.tsv")
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
-            for video_pth in data['video']:
+            for video_pth in data["video"]:
                 if not osp.exists(osp.join(pth, video_pth)):
                     return False
             return True
@@ -66,6 +65,7 @@ class MovieChat1k(VideoBaseDataset):
 
                     def untar_video_data(tar_file, cache_dir):
                         import tarfile
+
                         with tarfile.open(tar_file, "r") as tar_ref:
                             tar_ref.extractall(cache_dir)
                             print(f"Extracted all files from {tar_file} to {cache_dir}")
@@ -73,6 +73,7 @@ class MovieChat1k(VideoBaseDataset):
                     def concat_tar_parts(tar_parts, output_tar):
                         with open(output_tar, "wb") as out_tar:
                             from tqdm import tqdm
+
                             for part in tqdm(sorted(tar_parts)):
                                 with open(part, "rb") as part_file:
                                     out_tar.write(part_file.read())
@@ -92,34 +93,34 @@ class MovieChat1k(VideoBaseDataset):
                         print(f"Extracting following tar files: {parts}")
                         output_tar = base_name + ".tar"
                         if not osp.exists(output_tar):
-                            print('Start concatenating tar files')
+                            print("Start concatenating tar files")
 
                             concat_tar_parts(parts, output_tar)
-                            print('Finish concatenating tar files')
+                            print("Finish concatenating tar files")
 
-                        if not osp.exists(osp.join(cache_path, 'videos')):
+                        if not osp.exists(osp.join(cache_path, "videos")):
                             untar_video_data(output_tar, cache_path)
         dataset_path = cache_path
-        self.video_path = osp.join(dataset_path, 'videos/')
-        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+        self.video_path = osp.join(dataset_path, "videos/")
+        data_file = osp.join(dataset_path, f"{dataset_name}.tsv")
 
-        return dict(data_file=data_file, root=osp.join(dataset_path, 'videos')) 
+        return dict(data_file=data_file, root=osp.join(dataset_path, "videos"))
 
     def build_prompt_pack(self, line):
         if isinstance(line, int):
             assert line < len(self)
             video = self.videos[line]
         elif isinstance(line, pd.Series):
-            video = line['video']
+            video = line["video"]
         elif isinstance(line, str):
             video = line
 
         frames = self.save_video_frames(video)
         message = []
         for im in frames:
-            message.append(dict(type='image', value=im))
+            message.append(dict(type="image", value=im))
 
-        message.append(dict(type='text', value=line['question'], role='user'))
+        message.append(dict(type="text", value=line["question"], role="user"))
         return message
 
     def build_prompt_nopack(self, line, video_llm):
@@ -127,19 +128,16 @@ class MovieChat1k(VideoBaseDataset):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-        
+
         if video_llm:
-            video_path = os.path.join(self.video_path, line['video'])
-            return [
-                dict(type='video', value=video_path),  
-                dict(type='text', value=line['question'])
-            ]
+            video_path = os.path.join(self.video_path, line["video"])
+            return [dict(type="video", value=video_path), dict(type="text", value=line["question"])]
         else:
-            frames = self.save_video_frames(line['video'])
+            frames = self.save_video_frames(line["video"])
             message = []
             for im in frames:
-                message.append(dict(type='image', value=im))
-            message.append(dict(type='text', value=line['question']))
+                message.append(dict(type="image", value=im))
+            message.append(dict(type="text", value=line["question"]))
             return message
 
     def build_prompt(self, line, video_llm):
@@ -149,9 +147,9 @@ class MovieChat1k(VideoBaseDataset):
             return self.build_prompt_nopack(line, video_llm)
 
     @staticmethod
-    def remove_side_quote(s, syms=[',', '"', "'"]):
+    def remove_side_quote(s, syms=[",", '"', "'"]):
         if np.all([x in syms for x in s]):
-            return ''
+            return ""
         while s[0] in syms:
             s = s[1:]
         while s[-1] in syms:
@@ -165,15 +163,15 @@ class MovieChat1k(VideoBaseDataset):
             assert len(jsons) == 1
             return jsons[0]
         except:
-            if '{' in s and s.find('{') == s.rfind('{'):
-                sub_str = s[s.find('{') + 1:].strip()
-                lines = sub_str.split('\n')
+            if "{" in s and s.find("{") == s.rfind("{"):
+                sub_str = s[s.find("{") + 1 :].strip()
+                lines = sub_str.split("\n")
                 res = {}
                 for l in lines:
                     l = l.strip()
-                    if ': ' in l:
-                        key = l.split(': ')[0].strip()
-                        val = l.split(': ')[1].strip()
+                    if ": " in l:
+                        key = l.split(": ")[0].strip()
+                        val = l.split(": ")[1].strip()
                         key = MovieChat1k.remove_side_quote(key)
                         val = MovieChat1k.remove_side_quote(val)
                         if len(key) and len(val):
@@ -188,14 +186,14 @@ class MovieChat1k(VideoBaseDataset):
         for k in data_raw:
             ans = data_raw[k].strip()
             if FAIL_MSG in ans:
-                vstats['GEN_FAIL'] += 1
+                vstats["GEN_FAIL"] += 1
                 continue
             res = self.robust_json_load(ans)
             if res is not None:
                 data[k] = res
-                vstats['PARSE_OK'] += 1
+                vstats["PARSE_OK"] += 1
             else:
-                vstats['PARSE_FAIL'] += 1
+                vstats["PARSE_FAIL"] += 1
 
         # return data
         meta = cp.deepcopy(self.data)
@@ -203,12 +201,12 @@ class MovieChat1k(VideoBaseDataset):
         prediction = []
         for i in range(lt):
             line = meta.iloc[i]
-            vid = line['video']
-            idx = str(line['index'])
+            vid = line["video"]
+            idx = str(line["index"])
             prediction.append(data[vid][idx] if idx in data[vid] else None)
-        meta['prediction'] = prediction
-        vstats['VALIDQ'] = len([x for x in prediction if x is not None])
-        vstats['INVALIDQ'] = len([x for x in prediction if x is None])
+        meta["prediction"] = prediction
+        vstats["VALIDQ"] = len([x for x in prediction if x is not None])
+        vstats["INVALIDQ"] = len([x for x in prediction if x is None])
         return meta, vstats
 
     # It returns a dictionary
@@ -216,16 +214,16 @@ class MovieChat1k(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.moviechat1k import get_dimension_rating, prepare_score_prompt
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
-        judge = judge_kwargs.setdefault('model', 'chatgpt-0125')
-        assert judge in ['chatgpt-0125'], f'Invalid judge model for MovieChat1k: {judge}'
-        nproc = judge_kwargs.pop('nproc', 4)
-        _ = judge_kwargs.pop('verbose', None)
-        _ = judge_kwargs.pop('retry', None)
-        
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
-        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        judge = judge_kwargs.setdefault("model", "chatgpt-0125")
+        assert judge in ["chatgpt-0125"], f"Invalid judge model for MovieChat1k: {judge}"
+        nproc = judge_kwargs.pop("nproc", 4)
+        _ = judge_kwargs.pop("verbose", None)
+        _ = judge_kwargs.pop("retry", None)
+
+        tmp_file = eval_file.replace(".xlsx", f"_{judge}_tmp.pkl")
+        tgt_file = eval_file.replace(".xlsx", f"_{judge}_rating.json")
+        score_file = eval_file.replace(".xlsx", f"_{judge}_score.xlsx")
 
         model = build_judge(**judge_kwargs)
 
@@ -234,27 +232,22 @@ class MovieChat1k(VideoBaseDataset):
             res = {k: v for k, v in res.items() if model.fail_msg not in v}
 
             data = load(eval_file)
-            data_un = data[~data['index'].isin(res)]
-            data_un = data_un[~pd.isna(data_un['prediction'])]
+            data_un = data[~data["index"].isin(res)]
+            data_un = data_un[~pd.isna(data_un["prediction"])]
             lt = len(data_un)
             prompts = [prepare_score_prompt(data_un.iloc[i]) for i in range(lt)]
-            indices = [data_un.iloc[i]['index'] for i in range(lt)]
+            indices = [data_un.iloc[i]["index"] for i in range(lt)]
             if len(prompts):
                 _ = track_progress_rich(
-                    model.generate,
-                    prompts,
-                    keys=indices,
-                    save=tmp_file,
-                    nproc=nproc,
-                    chunksize=nproc
+                    model.generate, prompts, keys=indices, save=tmp_file, nproc=nproc, chunksize=nproc
                 )
             score_map = load(tmp_file)
-            data['score'] = [score_map[idx] if idx in score_map else -1 for idx in data['index']]
+            data["score"] = [score_map[idx] if idx in score_map else -1 for idx in data["index"]]
             rejected = [x for x in score_map.values() if FAIL_MSG in x]
             print(
-                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} questions, '
-                f'failed to obtain the score for another {len(rejected)} questions. '
-                f'Those questions will be counted as 0 score in ALL rating, and will not be counted in VALID rating.'
+                f"Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} questions, "
+                f"failed to obtain the score for another {len(rejected)} questions. "
+                f"Those questions will be counted as 0 score in ALL rating, and will not be counted in VALID rating."
             )
 
             dump(data, score_file)

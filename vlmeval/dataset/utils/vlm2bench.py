@@ -20,6 +20,7 @@ import json
 from collections import defaultdict
 from PIL import Image
 
+
 ##########################################
 # 1. General Functions
 ##########################################
@@ -29,11 +30,13 @@ def common_doc_to_text(sample, **kwargs):
     """
     return sample.get("question", "")
 
+
 def common_doc_to_target(sample, **kwargs):
     """
     General: return the "answer" field from the sample as the correct answer.
     """
     return sample.get("answer", "")
+
 
 def common_process_results(results):
     """
@@ -41,6 +44,7 @@ def common_process_results(results):
     directly return the original results without field mapping conversion.
     """
     return results
+
 
 ##########################################
 # 2. TF Pair Task Evaluation (suitable for gc-mat, gc-trk, oc-cpr, pc-cpr)
@@ -50,15 +54,16 @@ def parse_tf_answer(model_answer):
     Extract 'T' or 'F' from the tf type model_answer.
     Supports formats like 'T', 'F', 'True', 'False'; returns an error flag if multiple matches are found.
     """
-    pattern = re.compile(r'\b(t|f|true|false)\b', re.IGNORECASE)
+    pattern = re.compile(r"\b(t|f|true|false)\b", re.IGNORECASE)
     matches = pattern.findall(model_answer)
     extracted = [match.upper()[0] for match in matches]
     if len(extracted) == 1:
         return extracted[0], None
     elif len(extracted) > 1:
-        return None, 'multiple_answers_found'
+        return None, "multiple_answers_found"
     else:
-        return None, 'no_answer_found'
+        return None, "no_answer_found"
+
 
 def tf_pair_aggregate_accuracy(results):
     """
@@ -93,22 +98,48 @@ def tf_pair_aggregate_accuracy(results):
             correct_groups += 1
     return (correct_groups / total_groups) * 100 if total_groups > 0 else 0
 
+
 ##########################################
 # 3. CNT Task Evaluation (suitable for oc-cnt, pc-cnt)
 ##########################################
 NUM_WORDS = {
-    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
-    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
-    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
-    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
-    "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
-    "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100, "thousand": 1000,
+    "zero": 0,
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+    "eleven": 11,
+    "twelve": 12,
+    "thirteen": 13,
+    "fourteen": 14,
+    "fifteen": 15,
+    "sixteen": 16,
+    "seventeen": 17,
+    "eighteen": 18,
+    "nineteen": 19,
+    "twenty": 20,
+    "thirty": 30,
+    "forty": 40,
+    "fifty": 50,
+    "sixty": 60,
+    "seventy": 70,
+    "eighty": 80,
+    "ninety": 90,
+    "hundred": 100,
+    "thousand": 1000,
 }
 PENALTY_FACTOR = 10
 L_MAX = 4
 
+
 def words_to_num(s):
-    s = s.lower().replace('-', ' ').replace('and', ' ')
+    s = s.lower().replace("-", " ").replace("and", " ")
     tokens = s.split()
     total = 0
     current = 0
@@ -128,23 +159,27 @@ def words_to_num(s):
     total += current
     return total if total != 0 else None
 
+
 def extract_numbers(text):
     text = text.lower()
-    digit_numbers = re.findall(r'\d+', text)
+    digit_numbers = re.findall(r"\d+", text)
     digit_numbers = [int(num) for num in digit_numbers]
     word_numbers = []
     pattern = re.compile(
-        r'\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|'
-        r'eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|'
-        r'eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|'
-        r'eighty|ninety|hundred|thousand)\b', re.IGNORECASE)
+        r"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|"
+        r"eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|"
+        r"eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|"
+        r"eighty|ninety|hundred|thousand)\b",
+        re.IGNORECASE,
+    )
     matches = pattern.findall(text)
     if matches:
-        word_phrase = ' '.join(matches)
+        word_phrase = " ".join(matches)
         num = words_to_num(word_phrase)
         if num is not None:
             word_numbers.append(num)
     return digit_numbers + word_numbers
+
 
 def parse_model_answer(model_answer):
     numbers = extract_numbers(model_answer)
@@ -152,6 +187,7 @@ def parse_model_answer(model_answer):
         return numbers[0]
     else:
         return None
+
 
 def cnt_aggregate_metric(results):
     """
@@ -204,8 +240,10 @@ def grp_clean_answer(answer):
         return answer.split(")")[0].strip()
     return answer.strip()
 
+
 def grp_count_options(answer):
-    return len(re.findall(r'\([A-Z]\)', answer))
+    return len(re.findall(r"\([A-Z]\)", answer))
+
 
 def grp_aggregate_accuracy(results):
     """
@@ -224,4 +262,3 @@ def grp_aggregate_accuracy(results):
         if grp_clean_answer(model_ans) == grp_clean_answer(gt_ans):
             correct += 1
     return (correct / total * 100) if total > 0 else 0
-

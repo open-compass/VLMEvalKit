@@ -7,8 +7,7 @@ from tabulate import tabulate
 
 
 def pick_response_text(json_path):
-    """
-    """
+    """ """
     try:
         with open(json_path, "r") as f:
             json_data = json.load(f)
@@ -26,7 +25,13 @@ def pick_response_text(json_path):
 
     response_text = None
     if model_name.startswith("gpt") or model_name.startswith("o1"):
-        response_text = model_response.get("data", {}).get("response", {}).get("choices", [{}])[0].get("message", {}).get("content", None)  # noqa: E501
+        response_text = (
+            model_response.get("data", {})
+            .get("response", {})
+            .get("choices", [{}])[0]
+            .get("message", {})
+            .get("content", None)
+        )  # noqa: E501
     elif model_name.startswith("local_"):
         response_text = model_response
     else:
@@ -35,7 +40,9 @@ def pick_response_text(json_path):
         elif model_name.startswith("gemini"):
             content_list = model_response.get("candidates", [{}])[0].get("content", {}).get("parts", None)
         elif model_name.startswith("qwen"):
-            content_list = model_response.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", None)  # noqa: E501
+            content_list = (
+                model_response.get("output", {}).get("choices", [{}])[0].get("message", {}).get("content", None)
+            )  # noqa: E501
         else:
             raise NotImplementedError("The pick_response_text NOT implemented for model: {}".format(model_name))
 
@@ -48,8 +55,7 @@ def pick_response_text(json_path):
 
 
 def load_response_from_dir(res_dir):
-    """
-    """
+    """ """
     response_info = {}
     for file_name in os.listdir(res_dir):
         file_path = os.path.abspath(os.path.join(res_dir, file_name))
@@ -67,8 +73,10 @@ def load_response_from_dir(res_dir):
 
 
 class BaseMetric(object):
-    """ BaseMetric """
+    """BaseMetric"""
+
     """ OCRMetric """
+
     def __init__(self, group_name, **kwargs):
         self.group_name = group_name
         self.kwargs = kwargs
@@ -107,8 +115,10 @@ class BaseMetric(object):
             response_info[file_name] = single_pdt_str
 
         meta_info = {
-            "gt_total_num": len(gt_info), "pdt_total_num": len(response_info),
-            "post_error_list": post_error_list, "response_error_list": response_error_list,
+            "gt_total_num": len(gt_info),
+            "pdt_total_num": len(response_info),
+            "post_error_list": post_error_list,
+            "response_error_list": response_error_list,
         }
         eval_info = self.evaluate(response_info, gt_info, **kwargs)
 
@@ -120,8 +130,7 @@ class BaseMetric(object):
 
 
 def summary(index_path, exp_dir_base, is_weighted_sum=False):
-    """
-    """
+    """ """
     with open(index_path, "r") as f:
         data_list = json.load(f)
 
@@ -137,8 +146,7 @@ def summary(index_path, exp_dir_base, is_weighted_sum=False):
 
 
 def summary_multi_exp(exp_dir_base, dataset_list=None, is_weighted_sum=False):
-    """
-    """
+    """ """
     if dataset_list is None:
         all_dataset_name = []
         for exp_name in os.listdir(exp_dir_base):
@@ -178,7 +186,9 @@ def summary_multi_exp(exp_dir_base, dataset_list=None, is_weighted_sum=False):
         summary_key_name = "summary(weighted)" if is_weighted_sum else "summary"
         summary_head = [f"exp_name({metric_name}_{formatted_time})"] + dataset_list + [summary_key_name]
         for exp_name, data_eval_info in metric_info.items():
-            summary_line = [exp_name, ]
+            summary_line = [
+                exp_name,
+            ]
 
             all_metric_value = 0
             is_summary_valid, all_total_num, all_weighted_metric = True, 0, 0
@@ -193,13 +203,16 @@ def summary_multi_exp(exp_dir_base, dataset_list=None, is_weighted_sum=False):
                 all_weighted_metric += float(total_num) * float(metric_value)
                 all_metric_value += float(metric_value)
 
-            summary_value_valid = ((all_weighted_metric / (all_total_num + 1e-9)) * 100) if is_weighted_sum \
+            summary_value_valid = (
+                ((all_weighted_metric / (all_total_num + 1e-9)) * 100)
+                if is_weighted_sum
                 else (all_metric_value / (len(dataset_list) + 1e-9) * 100)
+            )
             summary_value = "-" if not is_summary_valid else "{:.2f}".format(summary_value_valid)
             summary_line.append(summary_value)
             summary_line_list.append(summary_line)
 
-        md_table_info = tabulate(summary_line_list, headers=summary_head, tablefmt='pipe')
+        md_table_info = tabulate(summary_line_list, headers=summary_head, tablefmt="pipe")
         all_table_md.append(md_table_info)
 
     print("\n\n".join(all_table_md))
@@ -209,12 +222,12 @@ def summary_multi_exp(exp_dir_base, dataset_list=None, is_weighted_sum=False):
     return summary_path
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python {} exp_base_dir".format(__file__))
         exit(-1)
     else:
-        print('--> info: {}'.format(sys.argv))
+        print("--> info: {}".format(sys.argv))
         exp_base_dir = sys.argv[1]
 
     summary_path = summary_multi_exp(exp_base_dir, dataset_list=None, is_weighted_sum=False)

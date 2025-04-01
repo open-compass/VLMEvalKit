@@ -8,7 +8,7 @@ import json
 import ast
 from glob import glob
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 camera_caption_prompts = [
     "Summary of the view shot, camera movement and changes in shooting angles in the sequence of video frames.",
@@ -26,7 +26,7 @@ camera_caption_prompts = [
     "Describe the camera's movements and angles in detail, explaining how it follows the main subject and changes perspectives.",
     "Based on these frames, provide a detailed description of the camera's actions, including any pans, zooms, angle shifts, and how it captures the scene.",
     "Using these frames, describe the camera's movements, including its tracking of the main subject, changes in angles, and any zooms or pans.",
-    "Provide an elaborate description of the camera movements, covering pans, zooms, and changes in shooting angles as shown in these frames."
+    "Provide an elaborate description of the camera movements, covering pans, zooms, and changes in shooting angles as shown in these frames.",
 ]
 
 detailed_caption_prompts = [
@@ -53,7 +53,7 @@ detailed_caption_prompts = [
     "Visualize the video based on these frames and write a comprehensive description of what happens, describing the beginning, middle, and end in at least three sentences.",
     "Using these frames as a reference, imagine the full video and provide a thorough description of the plot, including key details and actions, in more than three sentences.",
     "Based on the sequence of these frames, describe the entire video in detail, mentioning important aspects such as the context, movements, and transitions in more than three sentences.",
-    "Imagine the video that corresponds to these frames and provide an elaborate description, covering the storyline, visual elements, and any notable features in at least three sentences."
+    "Imagine the video that corresponds to these frames and provide an elaborate description, covering the storyline, visual elements, and any notable features in at least three sentences.",
 ]
 
 background_caption_prompts = [
@@ -72,7 +72,7 @@ background_caption_prompts = [
     "Imagine the environment from these frames and write a detailed description of the background, including objects, location, weather, and time.",
     "Based on these frames, describe the setting in detail, mentioning the objects present, the specific location, the weather conditions, and the time of day.",
     "Provide an elaborate background description based on these frames, covering all aspects of the environment such as objects, location, weather, and time.",
-    "Using these frames as a reference, give a thorough description of the background, including details about the objects, location, weather, and time."
+    "Using these frames as a reference, give a thorough description of the background, including details about the objects, location, weather, and time.",
 ]
 
 short_caption_prompts = [
@@ -91,7 +91,7 @@ short_caption_prompts = [
     "Provide a one-sentence description that highlights the main subject and action depicted in the video.",
     "In one sentence, describe the primary visual and artistic elements of the video.",
     "Write a concise one-sentence summary that encapsulates the main action and visual style of the video.",
-    "Briefly one-sentence Summary of the visual, Photographic and artistic style."
+    "Briefly one-sentence Summary of the visual, Photographic and artistic style.",
 ]
 
 main_object_caption_prompts = [
@@ -110,55 +110,54 @@ main_object_caption_prompts = [
     "Describe the primary object or subject in the video, detailing their attributes, actions, positions, and movements in these frames.",
     "Based on these frames, provide a detailed description of the main subject, including their attributes, actions, positions, and how they navigate through the video.",
     "Using these frames, describe the main subject's attributes, actions, and movements, detailing their positions and how they interact with the environment.",
-    "Provide an elaborate description of the main object in the video, covering their attributes, actions, positions, and movements as shown in these frames."
+    "Provide an elaborate description of the main object in the video, covering their attributes, actions, positions, and movements as shown in these frames.",
 ]
 
 
 class VDC(VideoBaseDataset):
 
-    MD5 = 'df8efe00d7e7a7621807693f762d0016'
+    MD5 = "df8efe00d7e7a7621807693f762d0016"
 
-    TYPE = 'Video-VQA'
+    TYPE = "Video-VQA"
 
-    def __init__(self, dataset='VDC', pack=False, nframe=0, fps=-1, subset='all', limit=1.0):
+    def __init__(self, dataset="VDC", pack=False, nframe=0, fps=-1, subset="all", limit=1.0):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
-        if subset == 'all':
+        if subset == "all":
             pass
-        elif subset == 'breakpoint':
-            self.data = self.data[self.data['caption_type'] == 'breakpoint']
-        elif subset == 'short':
-            self.data = self.data[self.data['caption_type'] == 'short']
-        elif subset == 'detailed':
-            self.data = self.data[self.data['caption_type'] == 'detailed']
-        elif subset == 'background':
-            self.data = self.data[self.data['caption_type'] == 'background']
-        elif subset == 'main_object':
-            self.data = self.data[self.data['caption_type'] == 'main_object']
+        elif subset == "breakpoint":
+            self.data = self.data[self.data["caption_type"] == "breakpoint"]
+        elif subset == "short":
+            self.data = self.data[self.data["caption_type"] == "short"]
+        elif subset == "detailed":
+            self.data = self.data[self.data["caption_type"] == "detailed"]
+        elif subset == "background":
+            self.data = self.data[self.data["caption_type"] == "background"]
+        elif subset == "main_object":
+            self.data = self.data[self.data["caption_type"] == "main_object"]
         else:
-            raise ValueError(f'Invalid subset: {subset}')
-        
+            raise ValueError(f"Invalid subset: {subset}")
+
         if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
         elif limit > 1.0 and limit < len(self.data):
             self.data = self.data.iloc[:limit]
         else:
-            raise ValueError(f'Invalid limit: {limit}')
-    
+            raise ValueError(f"Invalid limit: {limit}")
 
     @classmethod
     def supported_datasets(cls):
-        return ['VDC']
+        return ["VDC"]
 
-    def prepare_dataset(self, dataset_name='VDC', repo_id='Enxin/VLMEval-VDC'):
+    def prepare_dataset(self, dataset_name="VDC", repo_id="Enxin/VLMEval-VDC"):
         def check_integrity(pth):
-            data_file = osp.join(pth, f'{dataset_name}.tsv')
+            data_file = osp.join(pth, f"{dataset_name}.tsv")
             if md5(data_file) != self.MD5:
                 return False
             data = load(data_file)
-            for video_pth in data['video']:
-                if not osp.exists(osp.join(pth, 'videos', video_pth)):
+            for video_pth in data["video"]:
+                if not osp.exists(osp.join(pth, "videos", video_pth)):
                     return False
             return True
 
@@ -175,6 +174,7 @@ class VDC(VideoBaseDataset):
 
                     def untar_video_data(tar_file, cache_dir):
                         import tarfile
+
                         with tarfile.open(tar_file, "r") as tar_ref:
                             tar_ref.extractall(cache_dir)
                             print(f"Extracted all files from {tar_file} to {cache_dir}")
@@ -182,6 +182,7 @@ class VDC(VideoBaseDataset):
                     def concat_tar_parts(tar_parts, output_tar):
                         with open(output_tar, "wb") as out_tar:
                             from tqdm import tqdm
+
                             for part in tqdm(sorted(tar_parts)):
                                 with open(part, "rb") as part_file:
                                     out_tar.write(part_file.read())
@@ -201,44 +202,44 @@ class VDC(VideoBaseDataset):
                         print(f"Extracting following tar files: {parts}")
                         output_tar = base_name + ".tar"
                         if not osp.exists(output_tar):
-                            print('Start concatenating tar files')
+                            print("Start concatenating tar files")
 
                             concat_tar_parts(parts, output_tar)
-                            print('Finish concatenating tar files')
+                            print("Finish concatenating tar files")
 
                         if not osp.exists(osp.join(cache_path, osp.basename(base_name))):
                             untar_video_data(output_tar, cache_path)
         dataset_path = cache_path
-        self.video_path = osp.join(dataset_path, 'videos/')
-        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+        self.video_path = osp.join(dataset_path, "videos/")
+        data_file = osp.join(dataset_path, f"{dataset_name}.tsv")
 
-        return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
+        return dict(data_file=data_file, root=osp.join(dataset_path, "video"))
 
     def build_prompt_pack(self, line):
         if isinstance(line, int):
             assert line < len(self)
             video = self.videos[line]
         elif isinstance(line, pd.Series):
-            video = line['video']
+            video = line["video"]
         elif isinstance(line, str):
             video = line
 
         frames = self.save_video_frames(video)
         message = []
         for im in frames:
-            message.append(dict(type='image', value=im))
+            message.append(dict(type="image", value=im))
 
-        if self.data['caption_type'] == 'short':
+        if self.data["caption_type"] == "short":
             prompt = random.choice(short_caption_prompts)
-        elif self.data['caption_type'] == 'detailed':
+        elif self.data["caption_type"] == "detailed":
             prompt = random.choice(detailed_caption_prompts)
-        elif self.data['caption_type'] == 'background':
+        elif self.data["caption_type"] == "background":
             prompt = random.choice(background_caption_prompts)
-        elif self.data['caption_type'] == 'main_object':
+        elif self.data["caption_type"] == "main_object":
             prompt = random.choice(main_object_caption_prompts)
         else:
             prompt = random.choice(camera_caption_prompts)
-        message.append(dict(type='text', value=prompt, role='user'))
+        message.append(dict(type="text", value=prompt, role="user"))
         return message
 
     def build_prompt_nopack(self, line, video_llm):
@@ -246,33 +247,30 @@ class VDC(VideoBaseDataset):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-        
+
         # 构建提示内容
-        if line['caption_type'] == 'short':
+        if line["caption_type"] == "short":
             prompt = random.choice(short_caption_prompts)
-        elif line['caption_type'] == 'detailed':
+        elif line["caption_type"] == "detailed":
             prompt = random.choice(detailed_caption_prompts)
-        elif line['caption_type'] == 'background':
+        elif line["caption_type"] == "background":
             prompt = random.choice(background_caption_prompts)
-        elif line['caption_type'] == 'main_object':
+        elif line["caption_type"] == "main_object":
             prompt = random.choice(main_object_caption_prompts)
         else:
             prompt = random.choice(camera_caption_prompts)
-        
+
         if video_llm:
             # 对于视频LLM，返回视频路径和文本
-            video_path = os.path.join(self.video_path, line['video'])
-            return [
-                dict(type='video', value=video_path),  # 添加视频信息
-                dict(type='text', value=prompt)
-            ]
+            video_path = os.path.join(self.video_path, line["video"])
+            return [dict(type="video", value=video_path), dict(type="text", value=prompt)]  # 添加视频信息
         else:
             # 如果不是视频LLM，返回帧图像和文本
-            frames = self.save_video_frames(os.path.splitext(line['video'])[0])
+            frames = self.save_video_frames(os.path.splitext(line["video"])[0])
             message = []
             for im in frames:
-                message.append(dict(type='image', value=im))
-            message.append(dict(type='text', value=prompt))
+                message.append(dict(type="image", value=im))
+            message.append(dict(type="text", value=prompt))
             return message
 
     def build_prompt(self, line, video_llm):
@@ -282,9 +280,9 @@ class VDC(VideoBaseDataset):
             return self.build_prompt_nopack(line, video_llm)
 
     @staticmethod
-    def remove_side_quote(s, syms=[',', '"', "'"]):
+    def remove_side_quote(s, syms=[",", '"', "'"]):
         if np.all([x in syms for x in s]):
-            return ''
+            return ""
         while s[0] in syms:
             s = s[1:]
         while s[-1] in syms:
@@ -298,15 +296,15 @@ class VDC(VideoBaseDataset):
             assert len(jsons) == 1
             return jsons[0]
         except:
-            if '{' in s and s.find('{') == s.rfind('{'):
-                sub_str = s[s.find('{') + 1:].strip()
-                lines = sub_str.split('\n')
+            if "{" in s and s.find("{") == s.rfind("{"):
+                sub_str = s[s.find("{") + 1 :].strip()
+                lines = sub_str.split("\n")
                 res = {}
                 for l in lines:
                     l = l.strip()
-                    if ': ' in l:
-                        key = l.split(': ')[0].strip()
-                        val = l.split(': ')[1].strip()
+                    if ": " in l:
+                        key = l.split(": ")[0].strip()
+                        val = l.split(": ")[1].strip()
                         key = VDC.remove_side_quote(key)
                         val = VDC.remove_side_quote(val)
                         if len(key) and len(val):
@@ -321,14 +319,14 @@ class VDC(VideoBaseDataset):
         for k in data_raw:
             ans = data_raw[k].strip()
             if FAIL_MSG in ans:
-                vstats['GEN_FAIL'] += 1
+                vstats["GEN_FAIL"] += 1
                 continue
             res = self.robust_json_load(ans)
             if res is not None:
                 data[k] = res
-                vstats['PARSE_OK'] += 1
+                vstats["PARSE_OK"] += 1
             else:
-                vstats['PARSE_FAIL'] += 1
+                vstats["PARSE_FAIL"] += 1
 
         # return data
         meta = cp.deepcopy(self.data)
@@ -336,29 +334,35 @@ class VDC(VideoBaseDataset):
         prediction = []
         for i in range(lt):
             line = meta.iloc[i]
-            vid = line['video']
-            idx = str(line['index'])
+            vid = line["video"]
+            idx = str(line["index"])
             prediction.append(data[vid][idx] if idx in data[vid] else None)
-        meta['prediction'] = prediction
-        vstats['VALIDQ'] = len([x for x in prediction if x is not None])
-        vstats['INVALIDQ'] = len([x for x in prediction if x is None])
+        meta["prediction"] = prediction
+        vstats["VALIDQ"] = len([x for x in prediction if x is not None])
+        vstats["INVALIDQ"] = len([x for x in prediction if x is None])
         return meta, vstats
 
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.vdc import get_dimension_rating, prepare_response_prompt, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT, SYSTEM_GENER_PRED_PROMPT
+        from .utils.vdc import (
+            get_dimension_rating,
+            prepare_response_prompt,
+            prepare_score_prompt,
+            SYSTEM_CAL_SCORE_PROMPT,
+            SYSTEM_GENER_PRED_PROMPT,
+        )
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
-        judge = judge_kwargs['model']
-        nproc = judge_kwargs.pop('nproc', 4)
-        _ = judge_kwargs.pop('verbose', None)
-        _ = judge_kwargs.pop('retry', None)
-        
-        response_file = eval_file.replace('.xlsx', f'_{judge}_response.pkl')
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
-        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        judge = judge_kwargs["model"]
+        nproc = judge_kwargs.pop("nproc", 4)
+        _ = judge_kwargs.pop("verbose", None)
+        _ = judge_kwargs.pop("retry", None)
+
+        response_file = eval_file.replace(".xlsx", f"_{judge}_response.pkl")
+        tmp_file = eval_file.replace(".xlsx", f"_{judge}_tmp.pkl")
+        tgt_file = eval_file.replace(".xlsx", f"_{judge}_rating.json")
+        score_file = eval_file.replace(".xlsx", f"_{judge}_score.xlsx")
 
         model = build_judge(**judge_kwargs)
 
@@ -367,60 +371,52 @@ class VDC(VideoBaseDataset):
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
-            
+
             expanded_data = []
             for idx, row in data.iterrows():
                 try:
-                    questions = ast.literal_eval(row['question']) if isinstance(row['question'], str) else row['question']
+                    questions = (
+                        ast.literal_eval(row["question"]) if isinstance(row["question"], str) else row["question"]
+                    )
                     for q_dict in questions:
                         new_row = row.copy()
-                        new_row['question'] = q_dict['question']
-                        new_row['answer'] = q_dict['answer']   
+                        new_row["question"] = q_dict["question"]
+                        new_row["answer"] = q_dict["answer"]
                         expanded_data.append(new_row)
                 except Exception as e:
                     print(f"Error parsing questions for row {idx}")
                     print(f"Error message: {str(e)}")
                     continue
-            
+
             # 转换回DataFrame并重置index
             expanded_df = pd.DataFrame(expanded_data).reset_index(drop=True)
-            
+
             # 继续处理展开后的数据
-            data_un = expanded_df[~expanded_df['index'].isin(res)]
-            data_un = data_un[~pd.isna(data_un['prediction'])]
+            data_un = expanded_df[~expanded_df["index"].isin(res)]
+            data_un = data_un[~pd.isna(data_un["prediction"])]
             lt = len(data_un)
-            
+
             response_prompts = [prepare_response_prompt(data_un.iloc[i]) for i in range(lt)]
-            indices = [data_un.iloc[i]['index'] for i in range(lt)]
-            
+            indices = [data_un.iloc[i]["index"] for i in range(lt)]
+
             model.system_prompt = SYSTEM_GENER_PRED_PROMPT
             if len(response_prompts):
                 print(f"Processing {len(response_prompts)} valid prompts out of {lt} total items")
                 _ = track_progress_rich(
-                    model.generate,
-                    response_prompts,
-                    keys=indices,
-                    save=response_file,
-                    nproc=nproc,
-                    chunksize=nproc
+                    model.generate, response_prompts, keys=indices, save=response_file, nproc=nproc, chunksize=nproc
                 )
 
             pred_map = load(response_file)
-            data_un['pred_response'] = [pred_map[idx] for idx in data_un['index']]
+            data_un["pred_response"] = [pred_map[idx] for idx in data_un["index"]]
             score_prompts = [prepare_score_prompt(data_un.iloc[i]) for i in range(lt)]
             model.system_prompt = SYSTEM_CAL_SCORE_PROMPT
             if len(score_prompts):
                 _ = track_progress_rich(
-                    model.generate,
-                    score_prompts,
-                    keys=indices,
-                    save=tmp_file,
-                    nproc=nproc,
-                    chunksize=nproc
+                    model.generate, score_prompts, keys=indices, save=tmp_file, nproc=nproc, chunksize=nproc
                 )
 
             score_map = load(tmp_file)
-            data['score'] = [score_map[idx] for idx in data['index']]
+            data["score"] = [score_map[idx] for idx in data["index"]]
 
             dump(data, score_file)
 

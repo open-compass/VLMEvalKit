@@ -132,7 +132,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                             subtitles.append(sub_text)
 
         if subtitles:
-            subtitles_str = '\n'.join(subtitles)
+            subtitles_str = "\n".join(subtitles)
             return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
         else:
             return ""
@@ -273,8 +273,12 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                             image_paths, frame_indices, vid_fps = self.save_video_frames(
                                 video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
                             )
-                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
-                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                            user_prompt += self.get_subtitles(
+                                line["subtitle_path"],
+                                frame_indices=frame_indices,
+                                fps=vid_fps,
+                                sub_time=self.use_subtitle_time,
+                            )
                         else:
                             user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
                 else:
@@ -288,8 +292,10 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
                     if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                         user_prompt += self.get_subtitles(
-                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
-                            sub_time=self.use_subtitle_time
+                            line["subtitle_path"],
+                            frame_indices=frame_indices,
+                            fps=vid_fps,
+                            sub_time=self.use_subtitle_time,
                         )
 
             elif task_mode == "clue_acc":
@@ -305,8 +311,12 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                             image_paths, frame_indices, vid_fps = self.save_video_frames(
                                 video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
                             )
-                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
-                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                            user_prompt += self.get_subtitles(
+                                line["subtitle_path"],
+                                frame_indices=frame_indices,
+                                fps=vid_fps,
+                                sub_time=self.use_subtitle_time,
+                            )
                         else:
                             user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
                 else:
@@ -327,8 +337,10 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
                     if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                         user_prompt += self.get_subtitles(
-                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
-                            sub_time=self.use_subtitle_time
+                            line["subtitle_path"],
+                            frame_indices=frame_indices,
+                            fps=vid_fps,
+                            sub_time=self.use_subtitle_time,
                         )
 
             question = line["question"]
@@ -548,7 +560,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                                 subtitles.append(sub_text)
 
         if subtitles:
-            subtitles_str = '\n'.join(subtitles)
+            subtitles_str = "\n".join(subtitles)
             return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
         else:
             return ""
@@ -642,8 +654,9 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                     image_paths, frame_indices, vid_fps = self.save_video_frames(
                         video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
                     )
-                    user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
-                                                      fps=vid_fps, sub_time=self.use_subtitle_time)
+                    user_prompt += self.get_subtitles(
+                        line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
+                    )
                 else:
                     user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
         else:
@@ -657,8 +670,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
             if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                 user_prompt += self.get_subtitles(
-                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
-                    sub_time=self.use_subtitle_time
+                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
                 )
 
         question = line["question"]
@@ -1007,7 +1019,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                             subtitles.append(sub_text)
 
         if subtitles:
-            subtitles_str = '\n'.join(subtitles)
+            subtitles_str = "\n".join(subtitles)
             return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
         else:
             return ""
@@ -1153,8 +1165,12 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                             image_paths, frame_indices, vid_fps = self.save_video_frames(
                                 video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
                             )
-                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
-                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                            user_prompt += self.get_subtitles(
+                                line["subtitle_path"],
+                                frame_indices=frame_indices,
+                                fps=vid_fps,
+                                sub_time=self.use_subtitle_time,
+                            )
                         else:
                             user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
                 else:
@@ -1168,8 +1184,10 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
                     if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                         user_prompt += self.get_subtitles(
-                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
-                            sub_time=self.use_subtitle_time
+                            line["subtitle_path"],
+                            frame_indices=frame_indices,
+                            fps=vid_fps,
+                            sub_time=self.use_subtitle_time,
                         )
 
             elif task_mode == "clue_acc":
@@ -1185,8 +1203,12 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                             image_paths, frame_indices, vid_fps = self.save_video_frames(
                                 video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
                             )
-                            user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
-                                                              fps=vid_fps, sub_time=self.use_subtitle_time)
+                            user_prompt += self.get_subtitles(
+                                line["subtitle_path"],
+                                frame_indices=frame_indices,
+                                fps=vid_fps,
+                                sub_time=self.use_subtitle_time,
+                            )
                         else:
                             user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
                 else:
@@ -1207,8 +1229,10 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
                     if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                         user_prompt += self.get_subtitles(
-                            line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
-                            sub_time=self.use_subtitle_time
+                            line["subtitle_path"],
+                            frame_indices=frame_indices,
+                            fps=vid_fps,
+                            sub_time=self.use_subtitle_time,
                         )
 
             question = line["question"]
@@ -1428,7 +1452,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
                                 subtitles.append(sub_text)
 
         if subtitles:
-            subtitles_str = '\n'.join(subtitles)
+            subtitles_str = "\n".join(subtitles)
             return f"The subtitles of the video are as follows:\n\n{subtitles_str}\n\n"
         else:
             return ""
@@ -1489,6 +1513,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
             if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
+
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
@@ -1521,8 +1546,9 @@ class CGBench_OpenEnded(VideoBaseDataset):
                     image_paths, frame_indices, vid_fps = self.save_video_frames(
                         video_path, uid=line["video_uid"], num_frames=self.nframe, fps=self.fps
                     )
-                    user_prompt += self.get_subtitles(line["subtitle_path"], frame_indices=frame_indices,
-                                                      fps=vid_fps, sub_time=self.use_subtitle_time)
+                    user_prompt += self.get_subtitles(
+                        line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
+                    )
                 else:
                     user_prompt += self.get_subtitles(line["subtitle_path"], sub_time=self.use_subtitle_time)
         else:
@@ -1536,8 +1562,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
             if self.use_subtitle and line["subtitle_path"] and not pd.isna(line["subtitle_path"]):
                 user_prompt += self.get_subtitles(
-                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps,
-                    sub_time=self.use_subtitle_time
+                    line["subtitle_path"], frame_indices=frame_indices, fps=vid_fps, sub_time=self.use_subtitle_time
                 )
 
         question = line["question"]
@@ -1669,7 +1694,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
         data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
 
         model_step_1 = build_judge(system_prompt=sys_prompt_open_eval_step_1, **judge_kwargs)
-        nproc = judge_kwargs.pop('nproc', 32)
+        nproc = judge_kwargs.pop("nproc", 32)
 
         lines_step_1 = data_step_1.to_dict("records")
         tups_step_1 = [(model_step_1, line) for line in lines_step_1]
