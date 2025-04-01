@@ -1,10 +1,12 @@
-import torch
-from PIL import Image
 import os.path as osp
 import sys
-from .base import BaseModel
-from ..smp import *
+
+import torch
+from PIL import Image
+
 from ..dataset import DATASET_TYPE
+from ..smp import *
+from .base import BaseModel
 
 
 class llama_vision(BaseModel):
@@ -49,7 +51,7 @@ class llama_vision(BaseModel):
 
     def __init__(self, model_path="meta-llama/Llama-3.2-11B-Vision-Instruct", **kwargs):
         try:
-            from transformers import MllamaForConditionalGeneration, AutoProcessor
+            from transformers import AutoProcessor, MllamaForConditionalGeneration
         except Exception as e:
             logging.critical("Please install transformers>=4.45.0 before using llama_vision.")
             raise e
@@ -132,7 +134,7 @@ class llama_vision(BaseModel):
                 f"Question: {question} Options: {options} Indicate the correct answer at the end."
             )
             for i in range(len(tgt_path)):
-                prompt = prompt.replace(f"<image {i+1}>", "")
+                prompt = prompt.replace(f"<image {i + 1}>", "")
         elif listinstr(["MathVista"], dataset):
             self.kwargs["max_new_tokens"] = 2048
             prompt = f"{question}"

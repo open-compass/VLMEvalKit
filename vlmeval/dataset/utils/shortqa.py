@@ -97,7 +97,7 @@ en_single_ICEs = [
         "answer": "keter",
         "prediction": "ketter",
         "correctness": "no",
-        "reason": "The question requires the model to exactly extract the text on the umbrella. The model response does not contain the exact text on the umbrella (keter). Thus the response is incorrect. ",
+        "reason": "The question requires the model to exactly extract the text on the umbrella. The model response does not contain the exact text on the umbrella (keter). Thus the response is incorrect. ",  # noqa: E501
     },
 ]
 
@@ -107,7 +107,7 @@ en_multiple_ICEs = [
         "answer": "Franklin D. Roosevelt",
         "prediction": "Franklin Roosevelt",
         "correctness": "yes",
-        "reason": "The model response basically align with the ground-truth answer, just omitted the middle name. Thus the response is correct.",
+        "reason": "The model response basically align with the ground-truth answer, just omitted the middle name. Thus the response is correct.",  # noqa: E501
     },
     {
         "question": 'Please tell me the name of the man in this image, in the format of "[First Name] [Given Name]".',
@@ -121,7 +121,7 @@ en_multiple_ICEs = [
         "answer": "['Jordan', 'Israel', 'Palestine']",
         "prediction": "Israel, Jordan",
         "correctness": "no",
-        "reason": "The model response does not contain all the countries besides this lake (missing Palestine). Thus the response is incorrect.",
+        "reason": "The model response does not contain all the countries besides this lake (missing Palestine). Thus the response is incorrect.",  # noqa: E501
     },
     {
         "question": "Name this building, as well as the country that the building located in.",
@@ -140,9 +140,9 @@ en_multiple_ICEs = [
     {
         "question": "Who are the top three players in terms of goals scored for these teams' Top Team Scorers?",
         "answer": "['Mohamed Salah','Erling Haaland','Alexander Isak']",
-        "prediction": "The top three players in terms of goals scored for these teams' Top Team Scorers are: 1. Mohamed Salah - 19 goals (Liverpool) 2. Erling Haaland - 18 goals (Manchester City) 3. Alexander Isak - 17 goals (Newcastle Utd)",
+        "prediction": "The top three players in terms of goals scored for these teams' Top Team Scorers are: 1. Mohamed Salah - 19 goals (Liverpool) 2. Erling Haaland - 18 goals (Manchester City) 3. Alexander Isak - 17 goals (Newcastle Utd)",  # noqa: E501
         "correctness": "yes",
-        "reason": "The model response align with the ground-truth answer, and include some additional information including the team and number of goals of the player. Thus the response is correct.",
+        "reason": "The model response align with the ground-truth answer, and include some additional information including the team and number of goals of the player. Thus the response is correct.",  # noqa: E501
     },
 ]
 
@@ -190,14 +190,14 @@ cn_multiple_ICEs = [
         "answer": "['⁠Ninjas in Pyjamas','Invictus Gaming']",
         "prediction": "根据提供的图片信息，JiaQi在2025年与以下战队交过手：\n- TES Challenger\n- ⁠Ninjas in Pyjamas\n- Invictus Gaming",
         "correctness": "no",
-        "reason": "依据问题与标准答案，JiaQi 在 2025 年应仅与 Ninjas in Pyjamas 与 Invictus Gaming 两支战队交过手。模型回复中，TES Challenger 未在标准答案中提及，因此回答错误。",
+        "reason": "依据问题与标准答案，JiaQi 在 2025 年应仅与 Ninjas in Pyjamas 与 Invictus Gaming 两支战队交过手。模型回复中，TES Challenger 未在标准答案中提及，因此回答错误。",  # noqa: E501
     },
     {
         "question": "根据图中内容，请列出全部在 2022年7月份到10月份间的开源模型？",
         "answer": "['CodeGeeX','GLM','Flan-T5','NLLB']",
         "prediction": "根据图中内容，2022年7月份到10月份间的开源模型有：Tk-Instruct, Luminous, GLM, NLLB",
         "correctness": "no",
-        "reason": "根据问题与标准答案，2022年7月份到10月份间的开源模型有 CodeGeeX, GLM, Flan-T5, NLLB。模型回复中，Tk-Instruct 与 Luminous 未在标准答案中提及，且遗漏了 cODEGeeX 与 Flan-T5，因此回答错误。",
+        "reason": "根据问题与标准答案，2022年7月份到10月份间的开源模型有 CodeGeeX, GLM, Flan-T5, NLLB。模型回复中，Tk-Instruct 与 Luminous 未在标准答案中提及，且遗漏了 cODEGeeX 与 Flan-T5，因此回答错误。",  # noqa: E501
     },
     {
         "question": "图中的景点是什么，位于哪个城市",
@@ -226,7 +226,7 @@ cn_multiple_ICEs = [
 def ICE_builder(ICEs):
     res = ""
     for i, eg in enumerate(ICEs):
-        res += f"Example {i+1}:\n"
+        res += f"Example {i + 1}:\n"
         res += "[Begin Question]" + eg["question"] + "[End Question]\n"
         res += "[Begin Ground-Truth]" + eg["answer"] + "[End Ground-Truth]\n"
         res += "[Begin Response]" + eg["prediction"] + "[End Response]\n"
@@ -247,7 +247,7 @@ def ShortQA_prompt(line):
         answer = [answer]
 
     requirements = {
-        "en_multi": "The provided ground-truth is a list. The answer is correct if the model response contains and only contains all contents in the list (no other answer included)",
+        "en_multi": "The provided ground-truth is a list. The answer is correct if the model response contains and only contains all contents in the list (no other answer included)",  # noqa: E501
         "cn_multi": "题目提供的标准答案是一个列表。如果模型回答包含且仅包含列表中的所有内容，则回答正确",
     }
 

@@ -1,12 +1,13 @@
 import os
-import sys
-import torch
-from PIL import Image
 import os.path as osp
-from .base import BaseModel
-from ..smp import *
+import sys
+
+import torch
 from huggingface_hub import snapshot_download
 from PIL import Image, ImageOps
+
+from ..smp import *
+from .base import BaseModel
 
 
 def get_local_root(repo_id):
@@ -66,8 +67,8 @@ class Emu(BaseModel):
         self.model_path = model_path
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
+        from accelerate import dispatch_model, infer_auto_device_map, init_empty_weights
         from transformers import AutoModelForCausalLM, AutoTokenizer
-        from accelerate import init_empty_weights, infer_auto_device_map, dispatch_model
 
         local_rank = os.environ.get("LOCAL_RANK", 0)
 
@@ -136,7 +137,7 @@ class Emu3_chat(BaseModel):
         assert model_path is not None
         assert tokenizer_path is not None
         try:
-            from transformers import AutoTokenizer, AutoModel, AutoImageProcessor, AutoModelForCausalLM
+            from transformers import AutoImageProcessor, AutoModel, AutoModelForCausalLM, AutoTokenizer
 
             local_root = get_local_root(model_path)
             sys.path.append(local_root)
@@ -206,7 +207,7 @@ class Emu3_gen(BaseModel):
         assert model_path is not None
         assert tokenizer_path is not None
         try:
-            from transformers import AutoTokenizer, AutoModel, AutoImageProcessor, AutoModelForCausalLM
+            from transformers import AutoImageProcessor, AutoModel, AutoModelForCausalLM, AutoTokenizer
 
             local_root = get_local_root(model_path)
             sys.path.append(local_root)

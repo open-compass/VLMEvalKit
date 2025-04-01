@@ -1,10 +1,12 @@
+import warnings
+
 import torch
 from PIL import Image
-import warnings
+from torchvision.transforms import Compose, Lambda, Normalize, Resize, ToTensor
+from transformers import AutoConfig, AutoTokenizer
+
+from ..smp import get_cache_path, splitlen
 from .base import BaseModel
-from ..smp import splitlen, get_cache_path
-from transformers import AutoTokenizer, AutoConfig
-from torchvision.transforms import Compose, Resize, Lambda, ToTensor, Normalize
 
 try:
     from torchvision.transforms import InterpolationMode
@@ -27,8 +29,8 @@ class AKI(BaseModel):
             raise ImportError("Please first install AKIVLM from https://github.com/sony/aki")
 
         # replace GenerationMixin to modify attention mask handling
-        from transformers.generation.utils import GenerationMixin
         from open_flamingo import _aki_update_model_kwargs_for_generation
+        from transformers.generation.utils import GenerationMixin
 
         GenerationMixin._update_model_kwargs_for_generation = _aki_update_model_kwargs_for_generation
 
@@ -79,7 +81,7 @@ class AKI(BaseModel):
             if msg["type"] == "image":
                 img = Image.open(msg["value"]).convert("RGB")
 
-                ## [NOTE]: only use the first image in this work if including multiple images in a sample
+                # [NOTE]: only use the first image in this work if including multiple images in a sample
                 if len(vision_x) == 0:
                     vision_x.append(self.image_proc(img).unsqueeze(0))
                     prompt += "<image>"

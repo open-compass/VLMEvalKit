@@ -1,13 +1,16 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import random
-import json
+# flake8: noqa
 import ast
+import json
+import random
 from glob import glob
+
+from huggingface_hub import snapshot_download
 from tqdm import tqdm
+
+from ..smp import *
+from ..utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = "Failed to obtain answer via API."
 
@@ -100,7 +103,6 @@ class VideoMMLU_CAP(VideoBaseDataset):
 
         def concat_archive_parts(parts, output_file):
             with open(output_file, "wb") as out_file:
-                from tqdm import tqdm
 
                 for part in tqdm(sorted(parts)):
                     with open(part, "rb") as part_file:
@@ -273,11 +275,11 @@ class VideoMMLU_CAP(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.video_mmlu import (
+            SYSTEM_CAL_SCORE_PROMPT_CAP,
+            SYSTEM_GENER_PRED_PROMPT,
             get_dimension_rating,
             prepare_response_prompt,
             prepare_score_prompt,
-            SYSTEM_CAL_SCORE_PROMPT_CAP,
-            SYSTEM_GENER_PRED_PROMPT,
         )
 
         assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
@@ -415,7 +417,6 @@ class VideoMMLU_QA(VideoBaseDataset):
 
                     def concat_tar_parts(tar_parts, output_tar):
                         with open(output_tar, "wb") as out_tar:
-                            from tqdm import tqdm
 
                             for part in tqdm(sorted(tar_parts)):
                                 with open(part, "rb") as part_file:
@@ -556,7 +557,7 @@ class VideoMMLU_QA(VideoBaseDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.video_mmlu import get_dimension_rating, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT_QA
+        from .utils.video_mmlu import SYSTEM_CAL_SCORE_PROMPT_QA, get_dimension_rating, prepare_score_prompt
 
         assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
         judge = judge_kwargs["model"]
