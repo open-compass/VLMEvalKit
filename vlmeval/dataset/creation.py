@@ -1,10 +1,13 @@
-from .image_base import ImageBaseDataset
+# flake8: noqa
+import re
+
 import numpy as np
 import pandas as pd
+
 from ..smp import *
-from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
-import re
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 prompt_dict = {}
 prompt_dict["LiveMMBench_Creation"] = {
@@ -148,7 +151,7 @@ Assistant A Evaluation: [qualitative comment]
 Assistant B Evaluation: [qualitative comment]
 Final Verdict is: [[VERDICT]]
 """,
-    ##### For Visual Factuality
+    # For Visual Factuality
     "objective_without_gt": """
 Please act as an impartial judge and evaluate the **Visual Factuality** of the responses provided by two AI assistants to the user prompt displayed below.
 
@@ -656,7 +659,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
         return tgt_path
 
     def evaluate(self, eval_file, **judge_kwargs):
-        rating_rev = None
+        _ = None
         dual_eval = judge_kwargs.pop("dual_eval", True)
         if dual_eval:
             print("Dual Evaluation Strategy is enabled.")
@@ -667,7 +670,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
             tgt_file_name = eval_file.replace(".xlsx", "_rev.xlsx")
             dump(tgt, tgt_file_name)
             judge_kwargs["dual_eval"] = False
-            rating_rev = self.evaluate(tgt_file_name, **judge_kwargs)
+            _ = self.evaluate(tgt_file_name, **judge_kwargs)
         judge_kwargs.pop("dual_eval", None)
 
         suffix = "." + eval_file.split(".")[-1]
@@ -683,7 +686,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
 
         if not osp.exists(score_file):
             data = load(eval_file)
-            lt = len(data)
+            _ = len(data)
             lines = [data.iloc[i] for i in range(len(data))]
             judge_kwargs["max_tokens"] = 4096
 

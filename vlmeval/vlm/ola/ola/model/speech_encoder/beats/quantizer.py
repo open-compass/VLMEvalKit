@@ -46,9 +46,8 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
         if use_cosine_sim:
             dists = samples @ means.t()
         else:
-            diffs = rearrange(samples, 'n d -> n () d') \
-                    - rearrange(means, 'c d -> () c d')
-            dists = -(diffs ** 2).sum(dim=-1)
+            diffs = rearrange(samples, "n d -> n () d") - rearrange(means, "c d -> () c d")
+            dists = -(diffs**2).sum(dim=-1)
 
         buckets = dists.max(dim=-1).indices
         bins = torch.bincount(buckets, minlength=num_clusters)
@@ -56,7 +55,7 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
         bins_min_clamped = bins.masked_fill(zero_mask, 1)
 
         new_means = buckets.new_zeros(num_clusters, dim, dtype=dtype)
-        new_means.scatter_add_(0, repeat(buckets, 'n -> n d', d=dim), samples)
+        new_means.scatter_add_(0, repeat(buckets, "n -> n d", d=dim), samples)
         new_means = new_means / bins_min_clamped[..., None]
 
         if use_cosine_sim:
@@ -68,24 +67,24 @@ def kmeans(samples, num_clusters, num_iters=10, use_cosine_sim=False):
 
 
 class EmbeddingEMA(nn.Module):
-    def __init__(self, num_tokens, codebook_dim, decay=0.99, eps=1e-5, kmeans_init=True, codebook_init_path=''):
+    def __init__(self, num_tokens, codebook_dim, decay=0.99, eps=1e-5, kmeans_init=True, codebook_init_path=""):
         super().__init__()
         self.num_tokens = num_tokens
         self.codebook_dim = codebook_dim
         self.decay = decay
         self.eps = eps
-        if codebook_init_path == '':
+        if codebook_init_path == "":
             if not kmeans_init:
                 weight = torch.randn(num_tokens, codebook_dim)
                 weight = l2norm(weight)
             else:
                 weight = torch.zeros(num_tokens, codebook_dim)
-            self.register_buffer('initted', torch.Tensor([not kmeans_init]))
+            self.register_buffer("initted", torch.Tensor([not kmeans_init]))
         else:
             print(f"load init codebook weight from {codebook_init_path}")
-            codebook_ckpt_weight = torch.load(codebook_init_path, map_location='cpu')
+            codebook_ckpt_weight = torch.load(codebook_init_path, map_location="cpu")
             weight = codebook_ckpt_weight.clone()
-            self.register_buffer('initted', torch.Tensor([True]))
+            self.register_buffer("initted", torch.Tensor([True]))
 
         self.weight = nn.Parameter(weight, requires_grad=False)
         self.cluster_size = nn.Parameter(torch.zeros(num_tokens), requires_grad=False)
@@ -114,9 +113,7 @@ class EmbeddingEMA(nn.Module):
 
     def weight_update(self, num_tokens):
         n = self.cluster_size.sum()
-        smoothed_cluster_size = (
-                (self.cluster_size + self.eps) / (n + num_tokens * self.eps) * n
-        )
+        smoothed_cluster_size = (self.cluster_size + self.eps) / (n + num_tokens * self.eps) * n
         # normalize embedding average with smoothed cluster size
         embed_normalized = self.embed_avg / smoothed_cluster_size.unsqueeze(1)
         # embed_normalized = l2norm(self.embed_avg / smoothed_cluster_size.unsqueeze(1))
@@ -129,8 +126,17 @@ def norm_ema_inplace(moving_avg, new, decay):
 
 
 class NormEMAVectorQuantizer(nn.Module):
-    def __init__(self, n_embed, embedding_dim, beta, decay=0.99, eps=1e-5,
-                 statistic_code_usage=True, kmeans_init=False, codebook_init_path=''):
+    def __init__(
+        self,
+        n_embed,
+        embedding_dim,
+        beta,
+        decay=0.99,
+        eps=1e-5,
+        statistic_code_usage=True,
+        kmeans_init=False,
+        codebook_init_path="",
+    ):
         super().__init__()
         self.codebook_dim = embedding_dim
         self.num_tokens = n_embed
@@ -142,7 +148,7 @@ class NormEMAVectorQuantizer(nn.Module):
 
         self.statistic_code_usage = statistic_code_usage
         if statistic_code_usage:
-            self.register_buffer('cluster_size', torch.zeros(n_embed))
+            self.register_buffer("cluster_size", torch.zeros(n_embed))
         if distributed.is_available() and distributed.is_initialized():
             print("ddp is enable, so use ddp_reduce to sync the statistic_code_usage for each gpu!")
             self.all_reduce_fn = distributed.all_reduce
@@ -151,7 +157,7 @@ class NormEMAVectorQuantizer(nn.Module):
 
     def reset_cluster_size(self, device):
         if self.statistic_code_usage:
-            self.register_buffer('cluster_size', torch.zeros(self.num_tokens))
+            self.register_buffer("cluster_size", torch.zeros(self.num_tokens))
             self.cluster_size = self.cluster_size.to(device)
 
     def forward(self, z):
@@ -164,9 +170,11 @@ class NormEMAVectorQuantizer(nn.Module):
 
         self.embedding.init_embed_(z_flattened)
 
-        d = z_flattened.pow(2).sum(dim=1, keepdim=True) + \
-            self.embedding.weight.pow(2).sum(dim=1) - 2 * \
-            torch.einsum('bd,nd->bn', z_flattened, self.embedding.weight)  # 'n d -> d n'
+        d = (
+            z_flattened.pow(2).sum(dim=1, keepdim=True)
+            + self.embedding.weight.pow(2).sum(dim=1)
+            - 2 * torch.einsum("bd,nd->bn", z_flattened, self.embedding.weight)
+        )  # 'n d -> d n'
 
         encoding_indices = torch.argmin(d, dim=1)
 
@@ -189,8 +197,8 @@ class NormEMAVectorQuantizer(nn.Module):
             # self.embedding.cluster_size_ema_update(bins)
             ema_inplace(self.cluster_size, bins, self.decay)
 
-            zero_mask = (bins == 0)
-            bins = bins.masked_fill(zero_mask, 1.)
+            zero_mask = bins == 0
+            bins = bins.masked_fill(zero_mask, 1.0)
 
             embed_sum = z_flattened.t() @ encodings
             self.all_reduce_fn(embed_sum)
@@ -198,8 +206,7 @@ class NormEMAVectorQuantizer(nn.Module):
             embed_normalized = (embed_sum / bins.unsqueeze(0)).t()
             embed_normalized = l2norm(embed_normalized)
 
-            embed_normalized = torch.where(zero_mask[..., None], self.embedding.weight,
-                                           embed_normalized)
+            embed_normalized = torch.where(zero_mask[..., None], self.embedding.weight, embed_normalized)
             norm_ema_inplace(self.embedding.weight, embed_normalized, self.decay)
 
         # compute loss for embedding

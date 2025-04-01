@@ -163,11 +163,7 @@ class Attention(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, N, C = x.shape
-        qkv = (
-            self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, self.head_dim)
-            .permute(2, 0, 3, 1, 4)
-        )
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv.unbind(0)
         q, k = self.q_norm(q), self.k_norm(k)
 
@@ -233,9 +229,7 @@ class Block(nn.Module):
             proj_drop=proj_drop,
             norm_layer=norm_layer,
         )
-        self.ls1 = (
-            LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
-        )
+        self.ls1 = LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
         self.drop_path1 = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
         self.norm2 = norm_layer(dim)
@@ -245,9 +239,7 @@ class Block(nn.Module):
             act_layer=act_layer,
             drop=proj_drop,
         )
-        self.ls2 = (
-            LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
-        )
+        self.ls2 = LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
         self.drop_path2 = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -338,16 +330,12 @@ class VisionTransformer(nn.Module):
 
         self.num_classes = num_classes
         self.global_pool = global_pool
-        self.num_features = self.embed_dim = (
-            embed_dim  # num_features for consistency with other models
-        )
+        self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.num_prefix_tokens = 1 if class_token else 0
         self.num_prefix_tokens += reg_tokens
         self.num_reg_tokens = reg_tokens
         self.has_class_token = class_token
-        self.no_embed_class = (
-            no_embed_class  # don't embed prefix positions (includes reg)
-        )
+        self.no_embed_class = no_embed_class  # don't embed prefix positions (includes reg)
         self.dynamic_img_size = dynamic_img_size
         self.grad_checkpointing = False
         self.ignore_head = ignore_head
@@ -367,15 +355,9 @@ class VisionTransformer(nn.Module):
         )
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = (
-            nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
-        )
-        self.reg_token = (
-            nn.Parameter(torch.zeros(1, reg_tokens, embed_dim)) if reg_tokens else None
-        )
-        embed_len = (
-            num_patches if no_embed_class else num_patches + self.num_prefix_tokens
-        )
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
+        self.reg_token = nn.Parameter(torch.zeros(1, reg_tokens, embed_dim)) if reg_tokens else None
+        embed_len = num_patches if no_embed_class else num_patches + self.num_prefix_tokens
         self.pos_embed = nn.Parameter(torch.randn(1, embed_len, embed_dim) * 0.02)
         self.pos_drop = nn.Dropout(p=pos_drop_rate)
         if patch_drop_rate > 0:
@@ -387,9 +369,7 @@ class VisionTransformer(nn.Module):
             self.patch_drop = nn.Identity()
         self.norm_pre = norm_layer(embed_dim) if pre_norm else nn.Identity()
 
-        dpr = [
-            x.item() for x in torch.linspace(0, drop_path_rate, depth)
-        ]  # stochastic depth decay rule
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
         self.blocks = nn.Sequential(
             *[
                 block_fn(
@@ -424,9 +404,7 @@ class VisionTransformer(nn.Module):
             self.attn_pool = None
         self.fc_norm = norm_layer(embed_dim) if use_fc_norm else nn.Identity()
         self.head_drop = nn.Dropout(drop_rate)
-        self.head = (
-            nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
-        )
+        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
         if weight_init != "skip":
             self.init_weights(weight_init)
@@ -463,15 +441,11 @@ class VisionTransformer(nn.Module):
         if global_pool is not None:
             assert global_pool in ("", "avg", "token", "map")
             if global_pool == "map" and self.attn_pool is None:
-                assert (
-                    False
-                ), "Cannot currently add attention pooling in reset_classifier()."
+                assert False, "Cannot currently add attention pooling in reset_classifier()."
             elif global_pool != "map " and self.attn_pool is not None:
                 self.attn_pool = None  # remove attention pooling
             self.global_pool = global_pool
-        self.head = (
-            nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
-        )
+        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
     def _pos_embed(self, x: torch.Tensor) -> torch.Tensor:
         if self.dynamic_img_size:
@@ -512,9 +486,7 @@ class VisionTransformer(nn.Module):
         n: Union[int, Sequence] = 1,
     ) -> List[torch.Tensor]:
         outputs, num_blocks = [], len(self.blocks)
-        take_indices = set(
-            range(num_blocks - n, num_blocks) if isinstance(n, int) else n
-        )
+        take_indices = set(range(num_blocks - n, num_blocks) if isinstance(n, int) else n)
 
         # forward pass
         x = self.patch_embed(x)
@@ -549,9 +521,7 @@ class VisionTransformer(nn.Module):
         if reshape:
             grid_size = self.patch_embed.grid_size
             outputs = [
-                out.reshape(x.shape[0], grid_size[0], grid_size[1], -1)
-                .permute(0, 3, 1, 2)
-                .contiguous()
+                out.reshape(x.shape[0], grid_size[0], grid_size[1], -1).permute(0, 3, 1, 2).contiguous()
                 for out in outputs
             ]
 
@@ -644,9 +614,7 @@ def create_siglip_vit(
     ckpt_path: str = "",
     **kwargs,
 ):
-    assert (
-        model_name in SigLIP_MODEL_CONFIG.keys()
-    ), f"model name should be in {SigLIP_MODEL_CONFIG.keys()}"
+    assert model_name in SigLIP_MODEL_CONFIG.keys(), f"model name should be in {SigLIP_MODEL_CONFIG.keys()}"
 
     vision_cfg = SigLIPVisionCfg(**SigLIP_MODEL_CONFIG[model_name])
 
@@ -673,9 +641,6 @@ def create_siglip_vit(
         state_dict = torch.load(ckpt_path, map_location="cpu")
 
         incompatible_keys = model.load_state_dict(state_dict, strict=False)
-        print(
-            f"SigLIP-ViT restores from {ckpt_path},\n"
-            f"\tincompatible_keys:', {incompatible_keys}."
-        )
+        print(f"SigLIP-ViT restores from {ckpt_path},\n" f"\tincompatible_keys:', {incompatible_keys}.")
 
     return model

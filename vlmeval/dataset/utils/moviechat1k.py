@@ -1,11 +1,12 @@
-from ...smp import *
 import numpy as np
 import pandas as pd
+
+from ...smp import *
 
 FAIL_MSG = "Failed to obtain answer via API."
 
 
-CAL_SCORE_PROMPT = """Please evaluate the following video-based question-answer pair:
+CAL_SCORE_PROMPT = r"""Please evaluate the following video-based question-answer pair:
 
 Question: {question}
 Correct Answer: {answer}
@@ -15,7 +16,7 @@ Provide your evaluation only as a yes/no and score where the score is an integer
 Please generate the response in the form of a Python dictionary string with keys 'pred' and 'score', where value of 'pred' is  a string of 'yes' or 'no' and value of 'score' is in INTEGER, not STRING.
 DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide the Python dictionary string.
 For example, your response should look like this: \{'pred': 'yes', 'score': 4.8\}.
-"""
+"""  # noqa: E501
 
 MOVIECHAT1K_DIMENSIONS = {"global": ["global"], "breakpoint": ["breakpoint"], "overall": []}
 
@@ -95,6 +96,6 @@ def prepare_score_prompt(item):
             Provide your evaluation only as a yes/no and score where the score is an integer value between 0 and 5, with 5 indicating the highest meaningful match.
             Please generate the response in the form of a Python dictionary string with keys 'pred' and 'score', where value of 'pred' is  a string of 'yes' or 'no' and value of 'score' is in INTEGER, not STRING.
             DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide the Python dictionary string.
-                For example, your response should look like this: {{'pred': 'yes', 'score': 4.8}}."""
+                For example, your response should look like this: {{'pred': 'yes', 'score': 4.8}}."""  # noqa: E501
 
     return prompt

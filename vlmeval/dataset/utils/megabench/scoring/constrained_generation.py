@@ -384,7 +384,7 @@ def check_constraint(response, constraint, constraint_val):
         response = response.replace('"', "")
         response = response.replace("-", " ")
         response = response.replace("—", " ")
-        response = re.sub(" *\(\w\) *(?=\n|$)", "", response)  # The parenthesized letter in the rhyming scheme
+        response = re.sub(" *\\(\\w\\) *(?=\n|$)", "", response)  # The parenthesized letter in the rhyming scheme
 
         lines = response.lower().split("\n")
         match constraint:

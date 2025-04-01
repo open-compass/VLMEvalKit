@@ -16,7 +16,7 @@ from .qwen2_vl.prompt import Qwen2VLPromptMixin
 
 def extract_answer_tag(s: str, verbose=False) -> str:
     # Regular expression to match content between <answer> and </answer>
-    matches = re.findall(r'<answer>(.*?)</answer>', s, re.DOTALL)
+    matches = re.findall(r"<answer>(.*?)</answer>", s, re.DOTALL)
     if len(matches) == 0:
         if verbose:
             print("No <answer>...</answer> blocks found.")
@@ -35,8 +35,8 @@ def extract_response_for_eval(s: str, verbose=False):
     if ret is None:
         ret = extract_answer_tag(s, verbose=verbose)
     # </think>
-    elif '</think>' in s:
-        ret = s.split('</think>')[-1]
+    elif "</think>" in s:
+        ret = s.split("</think>")[-1]
     if ret is None:
         ret = s
     return ret
@@ -85,12 +85,14 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         self.model_path = model_path
         MODEL_CLS = None
 
-        if listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
+        if listinstr(["2.5", "2_5", "qwen25"], model_path.lower()):
             from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
         else:
             from transformers import Qwen2VLForConditionalGeneration, Qwen2VLProcessor
+
             MODEL_CLS = Qwen2VLForConditionalGeneration
             self.processor = Qwen2VLProcessor.from_pretrained(model_path)
 
@@ -99,20 +101,20 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         assert max_gpu_mem > 0
 
         # If only one process and GPU memory is less than 40GB
-        if '72b' in self.model_path.lower():
+        if "72b" in self.model_path.lower():
             self.model = MODEL_CLS.from_pretrained(
-                model_path, torch_dtype='auto', device_map=split_model(), attn_implementation='flash_attention_2'
+                model_path, torch_dtype="auto", device_map=split_model(), attn_implementation="flash_attention_2"
             )
             self.model.eval()
         elif auto_split_flag():
-            assert world_size == 1, 'Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL'
+            assert world_size == 1, "Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL"
             # Will Use All GPUs to run one model
             self.model = MODEL_CLS.from_pretrained(
-                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+                model_path, torch_dtype="auto", device_map="auto", attn_implementation="flash_attention_2"
             )
         else:
             self.model = MODEL_CLS.from_pretrained(
-                model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
+                model_path, torch_dtype="auto", device_map="cpu", attn_implementation="flash_attention_2"
             )
             self.model.cuda().eval()
 
@@ -124,35 +126,36 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         """
         content = []
         for s in inputs:
-            if s['type'] == 'image':
-                item = {'type': 'image', 'image': ensure_image_url(s['value'])}
-                if dataset == 'OCRBench':
-                    item['min_pixels'] = 10 * 10 * 28 * 28
+            if s["type"] == "image":
+                item = {"type": "image", "image": ensure_image_url(s["value"])}
+                if dataset == "OCRBench":
+                    item["min_pixels"] = 10 * 10 * 28 * 28
                     warnings.warn(f"OCRBench dataset uses custom min_pixels={item['min_pixels']}")
                     if self.max_pixels is not None:
-                        item['max_pixels'] = self.max_pixels
+                        item["max_pixels"] = self.max_pixels
                 else:
                     if self.min_pixels is not None:
-                        item['min_pixels'] = self.min_pixels
+                        item["min_pixels"] = self.min_pixels
                     if self.max_pixels is not None:
-                        item['max_pixels'] = self.max_pixels
-            elif s['type'] == 'video':
-                item = {'type': 'video', 'video': ensure_video_url(s['value'])}
+                        item["max_pixels"] = self.max_pixels
+            elif s["type"] == "video":
+                item = {"type": "video", "video": ensure_video_url(s["value"])}
                 if self.fps is not None:
-                    item['fps'] = self.fps
+                    item["fps"] = self.fps
                 elif self.nframe is not None:
                     import cv2
-                    video = cv2.VideoCapture(s['value'])
+
+                    video = cv2.VideoCapture(s["value"])
                     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
                     video.release()
                     if frame_count < self.nframe:
                         new_frame_count = frame_count // self.FRAME_FACTOR * self.FRAME_FACTOR
                         print(f"use {new_frame_count} for {s['value']}")
-                        item['nframes'] = new_frame_count
+                        item["nframes"] = new_frame_count
                     else:
-                        item['nframes'] = self.nframe
-            elif s['type'] == 'text':
-                item = {'type': 'text', 'text': s['value']}
+                        item["nframes"] = self.nframe
+            elif s["type"] == "text":
+                item = {"type": "text", "text": s["value"]}
             else:
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
             content.append(item)
@@ -167,23 +170,21 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
 
         messages = []
         if self.system_prompt is not None:
-            messages.append({'role': 'system', 'content': self.system_prompt})
-        messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": self._prepare_content(message, dataset=dataset)})
         if self.verbose:
-            print(f'\033[31m{messages}\033[0m')
+            print(f"\033[31m{messages}\033[0m")
 
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         images, videos = process_vision_info([messages])
-        inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')
-        inputs = inputs.to('cuda')
+        inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors="pt")
+        inputs = inputs.to("cuda")
 
         generated_ids = self.model.generate(
             **inputs,
             **self.generate_kwargs,
         )
-        generated_ids = [
-            output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
-        ]
+        generated_ids = [output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)]
         out = self.processor.tokenizer.batch_decode(
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
@@ -192,5 +193,5 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         if self.post_process:
             response = extract_response_for_eval(raw_response, verbose=self.verbose)
         if self.verbose:
-            print(f'\033[32m{response}\033[0m')
+            print(f"\033[32m{response}\033[0m")
         return response

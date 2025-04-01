@@ -1,4 +1,3 @@
-
 import dataclasses
 from enum import auto, Enum
 from typing import List, Tuple
@@ -6,6 +5,7 @@ from typing import List, Tuple
 
 class SeparatorStyle(Enum):
     """Different separator style."""
+
     SINGLE = auto()
     TWO = auto()
     MPT = auto()
@@ -19,6 +19,7 @@ class SeparatorStyle(Enum):
 @dataclasses.dataclass
 class Conversation:
     """A class that keeps all conversation history."""
+
     system: str
     roles: Tuple[str] = ("USER", "ASSISTANT")
     messages: Tuple[List[str]] = ()
@@ -35,14 +36,14 @@ class Conversation:
             messages = self.messages.copy()
             init_role, init_msg = messages[0].copy()
             init_msg = init_msg[0].replace("<image>", "").strip()
-            if 'mmtag' in self.version:
+            if "mmtag" in self.version:
                 messages[0] = (init_role, init_msg)
                 messages.insert(0, (self.roles[0], "<Image><image></Image>"))
                 messages.insert(1, (self.roles[1], "Received."))
             else:
                 messages[0] = (init_role, "<image>\n" + init_msg)
         if self.sep_style == SeparatorStyle.SINGLE:
-            ret = self.system + self.sep if self.system is not None else ''
+            ret = self.system + self.sep if self.system is not None else ""
             for role, message in messages:
                 if message:
                     if type(message) is tuple:
@@ -52,7 +53,7 @@ class Conversation:
                     ret += role + ":"
         elif self.sep_style == SeparatorStyle.TWO:
             seps = [self.sep, self.sep2]
-            ret = self.system + seps[0] if self.system is not None else ''
+            ret = self.system + seps[0] if self.system is not None else ""
             for i, (role, message) in enumerate(messages):
                 if message:
                     if type(message) is tuple:
@@ -61,7 +62,7 @@ class Conversation:
                 else:
                     ret += role + ":"
         elif self.sep_style == SeparatorStyle.MPT:
-            ret = self.system + self.sep if self.system is not None else ''
+            ret = self.system + self.sep if self.system is not None else ""
             for role, message in messages:
                 if message:
                     if type(message) is tuple:
@@ -132,7 +133,7 @@ class Conversation:
                     ret += ""
         elif self.sep_style == SeparatorStyle.PLAIN:
             seps = [self.sep, self.sep2]
-            ret = self.system if self.system is not None else ''
+            ret = self.system if self.system is not None else ""
             for i, (role, message) in enumerate(messages):
                 if message:
                     if type(message) is tuple:
@@ -153,14 +154,16 @@ class Conversation:
 
     def get_images(self, return_pil=False):
         images = []
-        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     import base64
                     from io import BytesIO
                     from PIL import Image
+
                     msg, image, image_process_mode = msg
                     if image_process_mode == "Pad":
+
                         def expand2square(pil_img, background_color=(122, 116, 104)):
                             width, height = pil_img.size
                             if width == height:
@@ -173,6 +176,7 @@ class Conversation:
                                 result = Image.new(pil_img.mode, (height, height), background_color)
                                 result.paste(pil_img, ((height - width) // 2, 0))
                                 return result
+
                         image = expand2square(image)
                     elif image_process_mode in ["Default", "Crop"]:
                         pass
@@ -203,11 +207,12 @@ class Conversation:
 
     def to_gradio_chatbot(self):
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     import base64
                     from io import BytesIO
+
                     msg, image, image_process_mode = msg
                     max_hw, min_hw = max(image.size), min(image.size)
                     aspect_ratio = max_hw / min_hw
@@ -224,7 +229,7 @@ class Conversation:
                     image.save(buffered, format="JPEG")
                     img_b64_str = base64.b64encode(buffered.getvalue()).decode()
                     img_str = f'<img src="data:image/png;base64,{img_b64_str}" alt="user upload image" />'
-                    msg = img_str + msg.replace('<image>', '').strip()
+                    msg = img_str + msg.replace("<image>", "").strip()
                     ret.append([msg, None])
                 else:
                     ret.append([msg, None])
@@ -241,7 +246,8 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
-            version=self.version)
+            version=self.version,
+        )
 
     def dict(self):
         if len(self.get_images()) > 0:
@@ -265,12 +271,13 @@ class Conversation:
 
 conv_vicuna_v0 = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+    "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("Human", "Assistant"),
     version="v0",
     messages=(
         ("Human", "What are the key differences between renewable and non-renewable energy sources?"),
-        ("Assistant",
+        (
+            "Assistant",
             "Renewable energy sources are those that can be replenished naturally in a relatively "
             "short amount of time, such as solar, wind, hydro, geothermal, and biomass. "
             "Non-renewable energy sources, on the other hand, are finite and will eventually be "
@@ -288,7 +295,8 @@ conv_vicuna_v0 = Conversation(
             "5. Flexibility: Renewable energy sources are often more flexible and can be adapted to different "
             "situations and needs, while non-renewable sources are more rigid and inflexible.\n"
             "6. Sustainability: Renewable energy sources are more sustainable over the long term, while "
-            "non-renewable sources are not, and their depletion can lead to economic and social instability.\n")
+            "non-renewable sources are not, and their depletion can lead to economic and social instability.\n",
+        ),
     ),
     offset=2,
     sep_style=SeparatorStyle.SINGLE,
@@ -324,7 +332,7 @@ correct. If you don't know the answer to a question, please don't share false in
 
 conv_mistral = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+    "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("USER", "ASSISTANT"),
     version="mistral",
     messages=(),
@@ -358,9 +366,9 @@ conv_gemma2 = Conversation(
 
 conv_valley_v1 = Conversation(
     system="You are Valley, a large language and vision assistant trained by ByteDance."
-           "You are able to understand the visual content or video that the user provides, \
+    "You are able to understand the visual content or video that the user provides, \
 and assist the user with a variety of tasks using natural language."
-           "Follow the instructions carefully and explain your answers in detail.",
+    "Follow the instructions carefully and explain your answers in detail.",
     roles=("USER", "ASSISTANT"),
     version="v1",
     messages=(),
@@ -374,13 +382,13 @@ conv_valley_mfe_v1 = Conversation(
     system="You are Valley, a large-scale language and vision assistant designed to aid in \
 the detection of misleading functionality and effect in input visual content. The currently \
 imported video are mainly designed for the e-commerce live streaming field."
-           "You have the ability to understand multiple languages."
-           "You can understand videos and help people determine whether there are misleading \
+    "You have the ability to understand multiple languages."
+    "You can understand videos and help people determine whether there are misleading \
 functionality and effect in input visual content. Misleading functional effects refer to exaggerating \
 before-and-after comparisons in videos, falsely describing curative effects, and violating objective \
 scientific laws. Examples of misleading functional effects include unrealistic before-after comparisons, \
 unrealistic promises, false medical promises, or violations of science.' "
-           "Follow the instructions carefully and explain the reason.",
+    "Follow the instructions carefully and explain the reason.",
     roles=("USER", "ASSISTANT"),
     version="v1",
     messages=(),
@@ -404,12 +412,11 @@ conv_valley_multilabel = Conversation(
 
 conv_llava_v0_mmtag = Conversation(
     system="A chat between a curious user and an artificial intelligence assistant. "
-           "The assistant is able to understand the visual content that the user provides, \
+    "The assistant is able to understand the visual content that the user provides, \
 and assist the user with a variety of tasks using natural language."
-           "The visual content will be provided with the following format: <Image>visual content</Image>.",
+    "The visual content will be provided with the following format: <Image>visual content</Image>.",
     roles=("Human", "Assistant"),
-    messages=(
-    ),
+    messages=(),
     offset=0,
     sep_style=SeparatorStyle.SINGLE,
     sep="###",
@@ -429,7 +436,7 @@ conv_mistral_instruct = Conversation(
 
 conv_llava_v1 = Conversation(
     system="A chat between a curious human and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+    "The assistant gives helpful, detailed, and polite answers to the human's questions.",
     roles=("USER", "ASSISTANT"),
     version="v1",
     messages=(),
@@ -441,8 +448,8 @@ conv_llava_v1 = Conversation(
 
 conv_belle = Conversation(
     system="你是字节跳动训练的大型语言视觉助手 Chinese-Valley。"
-           "你能够理解用户提供的视觉内容或视频，并使用自然语言协助用户完成各种任务。"
-           "请仔细按照人类的指令进行回答，并详细解释你的答案。",
+    "你能够理解用户提供的视觉内容或视频，并使用自然语言协助用户完成各种任务。"
+    "请仔细按照人类的指令进行回答，并详细解释你的答案。",
     roles=("Human", "Assistant"),
     messages=[],
     offset=0,
@@ -450,13 +457,9 @@ conv_belle = Conversation(
     sep="###",
 )
 
-conv_no_system = Conversation(
-    system=None
-)
+conv_no_system = Conversation(system=None)
 
-conv_void_system = Conversation(
-    system=''
-)
+conv_void_system = Conversation(system="")
 
 default_conversation = conv_vicuna_v0
 
@@ -469,8 +472,8 @@ conv_templates = {
     "v0_mmtag": conv_llava_v0_mmtag,
     "llava_v1": conv_llava_v1,
     "belle": conv_belle,
-    'valley_v1': conv_valley_v1,
-    'mistral': conv_mistral,
+    "valley_v1": conv_valley_v1,
+    "mistral": conv_mistral,
     "valley_v1": conv_valley_v1,
     "mistral_instruct": conv_mistral_instruct,
     "qwen2": conv_qwen2,
@@ -482,7 +485,7 @@ prompt_templates = {
     "mfe_v1": conv_valley_mfe_v1,
     "multilabel_v1": conv_valley_multilabel,
     "no": conv_no_system,
-    'void': conv_void_system
+    "void": conv_void_system,
 }
 
 if __name__ == "__main__":

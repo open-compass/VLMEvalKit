@@ -29,7 +29,7 @@ def replace_macrons_with_latex_overline(text: str) -> str:
 
 
 def fix_overline_underscores(text: str) -> str:
-    """Puts underscores that are outside \overline within overline."""
+    r"""Puts underscores that are outside \overline within overline."""
     pattern = r"\\overline\{([^}]*)\}_([^{}\\ ]*)"
     return re.sub(pattern, r"\\overline{\1_\2}", text)
 

@@ -11,24 +11,22 @@ class MiniGPT4(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = False
 
-    def __init__(self,
-                 mode='v2',
-                 root='/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/',
-                 temperature=1,
-                 max_out_len=512):
+    def __init__(
+        self, mode="v2", root="/mnt/petrelfs/share_data/duanhaodong/MiniGPT-4/", temperature=1, max_out_len=512
+    ):
 
         if root is None:
             warnings.warn(
-                'Please set root to the directory of MiniGPT-4, which is cloned from here: '
-                'https://github.com/Vision-CAIR/MiniGPT-4. '
+                "Please set root to the directory of MiniGPT-4, which is cloned from here: "
+                "https://github.com/Vision-CAIR/MiniGPT-4. "
             )
 
-        if mode == 'v2':
-            cfg = 'minigptv2_eval.yaml'
-        elif mode == 'v1_7b':
-            cfg = 'minigpt4_7b_eval.yaml'
-        elif mode == 'v1_13b':
-            cfg = 'minigpt4_13b_eval.yaml'
+        if mode == "v2":
+            cfg = "minigptv2_eval.yaml"
+        elif mode == "v1_7b":
+            cfg = "minigpt4_7b_eval.yaml"
+        elif mode == "v1_13b":
+            cfg = "minigpt4_13b_eval.yaml"
         else:
             raise NotImplementedError
 
@@ -38,7 +36,7 @@ class MiniGPT4(BaseModel):
         self.root = root
         this_dir = osp.dirname(__file__)
 
-        self.cfg = osp.join(this_dir, 'misc', cfg)
+        self.cfg = osp.join(this_dir, "misc", cfg)
         sys.path.append(self.root)
 
         from omegaconf import OmegaConf
@@ -62,15 +60,16 @@ class MiniGPT4(BaseModel):
         self.model = model
         self.vis_processor = vis_processor
 
-        self.CONV_VISION = CONV_VISION_minigptv2 if self.mode == 'v2' else CONV_VISION_Vicuna0
+        self.CONV_VISION = CONV_VISION_minigptv2 if self.mode == "v2" else CONV_VISION_Vicuna0
         stop_words_ids = [[835], [2277, 29937]]
         stop_words_ids = [torch.tensor(ids).to(device) for ids in stop_words_ids]
         self.stopping_criteria = StoppingCriteriaList([StoppingCriteriaSub(stops=stop_words_ids)])
 
     def generate_inner(self, message, dataset=None):
         from minigpt4.conversation.conversation import Chat
+
         prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-        if self.mode == 'v2':
+        if self.mode == "v2":
             chat = Chat(self.model, self.vis_processor, device=self.device)
         else:
             chat = Chat(self.model, self.vis_processor, device=self.device, stopping_criteria=self.stopping_criteria)

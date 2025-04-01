@@ -11,6 +11,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import LayerNorm
+
 # import torchaudio.compliance.kaldi as ta_kaldi
 
 from .kaldi import fbank as kaldi_fbank
@@ -61,8 +62,8 @@ class TokenizersConfig:
         self.gru_rel_pos: bool = False  # apply gated relative position embedding
 
         # quantizer
-        self.quant_n: int = 1024 # codebook number in quantizer
-        self.quant_dim: int = 256    # codebook dimension in quantizer
+        self.quant_n: int = 1024  # codebook number in quantizer
+        self.quant_dim: int = 256  # codebook dimension in quantizer
 
         if cfg is not None:
             self.update(cfg)
@@ -73,8 +74,8 @@ class TokenizersConfig:
 
 class Tokenizers(nn.Module):
     def __init__(
-            self,
-            cfg: TokenizersConfig,
+        self,
+        cfg: TokenizersConfig,
     ) -> None:
         super().__init__()
         logger.info(f"Tokenizers Config: {cfg.__dict__}")
@@ -83,14 +84,13 @@ class Tokenizers(nn.Module):
 
         self.embed = cfg.embed_dim
         self.post_extract_proj = (
-            nn.Linear(self.embed, cfg.encoder_embed_dim)
-            if self.embed != cfg.encoder_embed_dim
-            else None
+            nn.Linear(self.embed, cfg.encoder_embed_dim) if self.embed != cfg.encoder_embed_dim else None
         )
 
         self.input_patch_size = cfg.input_patch_size
-        self.patch_embedding = nn.Conv2d(1, self.embed, kernel_size=self.input_patch_size, stride=self.input_patch_size,
-                                         bias=cfg.conv_bias)
+        self.patch_embedding = nn.Conv2d(
+            1, self.embed, kernel_size=self.input_patch_size, stride=self.input_patch_size, bias=cfg.conv_bias
+        )
 
         self.dropout_input = nn.Dropout(cfg.dropout_input)
 
@@ -99,38 +99,40 @@ class Tokenizers(nn.Module):
         self.layer_norm = LayerNorm(self.embed)
 
         self.quantize = NormEMAVectorQuantizer(
-            n_embed=cfg.quant_n, embedding_dim=cfg.quant_dim, beta=1.0, kmeans_init=True, decay=0.99,
+            n_embed=cfg.quant_n,
+            embedding_dim=cfg.quant_dim,
+            beta=1.0,
+            kmeans_init=True,
+            decay=0.99,
         )
         self.quant_n = cfg.quant_n
         self.quantize_layer = nn.Sequential(
             nn.Linear(cfg.encoder_embed_dim, cfg.encoder_embed_dim),
             nn.Tanh(),
-            nn.Linear(cfg.encoder_embed_dim, cfg.quant_dim)  # for quantize
+            nn.Linear(cfg.encoder_embed_dim, cfg.quant_dim),  # for quantize
         )
 
     def forward_padding_mask(
-            self,
-            features: torch.Tensor,
-            padding_mask: torch.Tensor,
+        self,
+        features: torch.Tensor,
+        padding_mask: torch.Tensor,
     ) -> torch.Tensor:
         extra = padding_mask.size(1) % features.size(1)
         if extra > 0:
             padding_mask = padding_mask[:, :-extra]
-        padding_mask = padding_mask.view(
-            padding_mask.size(0), features.size(1), -1
-        )
+        padding_mask = padding_mask.view(padding_mask.size(0), features.size(1), -1)
         padding_mask = padding_mask.all(-1)
         return padding_mask
 
     def preprocess(
-            self,
-            source: torch.Tensor,
-            fbank_mean: float = 15.41663,
-            fbank_std: float = 6.55582,
+        self,
+        source: torch.Tensor,
+        fbank_mean: float = 15.41663,
+        fbank_std: float = 6.55582,
     ) -> torch.Tensor:
         fbanks = []
         for waveform in source:
-            waveform = waveform.unsqueeze(0) * 2 ** 15
+            waveform = waveform.unsqueeze(0) * 2**15
             fbank = kaldi_fbank(waveform, num_mel_bins=128, sample_frequency=16000, frame_length=25, frame_shift=10)
             fbanks.append(fbank)
         fbank = torch.stack(fbanks, dim=0)
@@ -138,11 +140,11 @@ class Tokenizers(nn.Module):
         return fbank
 
     def extract_labels(
-            self,
-            source: torch.Tensor,
-            padding_mask: Optional[torch.Tensor] = None,
-            fbank_mean: float = 15.41663,
-            fbank_std: float = 6.55582,
+        self,
+        source: torch.Tensor,
+        padding_mask: Optional[torch.Tensor] = None,
+        fbank_mean: float = 15.41663,
+        fbank_std: float = 6.55582,
     ):
         fbank = self.preprocess(source, fbank_mean=fbank_mean, fbank_std=fbank_std)
 

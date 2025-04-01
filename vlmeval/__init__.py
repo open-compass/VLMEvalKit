@@ -13,4 +13,4 @@ from .tools import cli
 
 load_env()
 
-__version__ = '0.2rc1'
+__version__ = "0.2rc1"

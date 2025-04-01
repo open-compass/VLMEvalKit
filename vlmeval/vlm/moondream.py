@@ -172,14 +172,12 @@ class Moondream2(BaseModel):
         if dataset == "ChartQA_TEST":
             prompt = (
                 "Analyze the chart carefully, consider both visual features and data values,"
-                " and provide a precise answer without any additional explanation or formatting. "
-                + question
+                " and provide a precise answer without any additional explanation or formatting. " + question
             )
         elif dataset == "TextVQA_VAL":
             prompt = (
                 "Read the text in the image and provide a brief lowercase answer. "
-                "Respond 'unanswerable' only if there is no plausible answer. "
-                + question
+                "Respond 'unanswerable' only if there is no plausible answer. " + question
             )
         elif dataset == "DocVQA_VAL":
             prompt = question + " The answer should be a short text span taken verbatim from the document."
@@ -190,8 +188,7 @@ class Moondream2(BaseModel):
         elif dataset == "TallyQA" or dataset == "CountbenchQA":
             prompt = (
                 "Look at the image carefully and count the objects. "
-                "Answer with just a number, without any additional text. "
-                + question
+                "Answer with just a number, without any additional text. " + question
             )
 
         elif dataset == "MMVet":

@@ -13,6 +13,7 @@ from .multimodal_projector.builder import build_vision_projector
 
 from ...ola.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
+
 class OlaMetaModel:
 
     def __init__(self, config):
@@ -28,13 +29,13 @@ class OlaMetaModel:
             self.mm_projector = build_vision_projector(config, vision_cfg=self.vision_tower.config)
 
     def get_speech_encoder(self):
-        speech_encoder = getattr(self, 'speech_encoder', None)
+        speech_encoder = getattr(self, "speech_encoder", None)
         if type(speech_encoder) is list:
             speech_encoder = speech_encoder[0]
         return speech_encoder
 
     def get_vision_tower(self):
-        vision_tower = getattr(self, 'vision_tower', None)
+        vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:
             vision_tower = vision_tower[0]
         return vision_tower
@@ -42,9 +43,9 @@ class OlaMetaModel:
     def initialize_speech_modules(self, model_args, fsdp=None):
         self.config.speech_encoder = getattr(model_args, "speech_encoder", None)
         self.config.speech_encoder_type = getattr(model_args, "speech_encoder_type", None)
-        self.config.speech_projector_type = getattr(model_args, 'speech_projector_type', 'linear')
-        self.config.speech_encoder_ds_rate = getattr(model_args, 'speech_encoder_ds_rate', 5)
-        self.config.speech_encoder_hidden_size = getattr(model_args, 'speech_encoder_hidden_size', 1280)
+        self.config.speech_projector_type = getattr(model_args, "speech_projector_type", "linear")
+        self.config.speech_encoder_ds_rate = getattr(model_args, "speech_encoder_ds_rate", 5)
+        self.config.speech_encoder_hidden_size = getattr(model_args, "speech_encoder_hidden_size", 1280)
 
         if self.get_speech_encoder() is None:
             speech_encoder = build_speech_encoder(self.config)
@@ -53,7 +54,7 @@ class OlaMetaModel:
             else:
                 self.speech_encoder = speech_encoder
 
-        if getattr(self, 'speech_projector', None) is None:
+        if getattr(self, "speech_projector", None) is None:
             self.speech_projector = build_speech_projector(self.config)
         else:
             # In case it is frozen by LoRA
@@ -61,12 +62,16 @@ class OlaMetaModel:
                 p.requires_grad = True
 
         if model_args.pretrain_speech_projector is not None:
-            pretrain_speech_projector_weights = torch.load(model_args.pretrain_speech_projector, map_location='cpu')
-            def get_w(weights, keyword):
-                return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
-            print('Loading pretrain speech projector weights')
+            pretrain_speech_projector_weights = torch.load(model_args.pretrain_speech_projector, map_location="cpu")
 
-            msg = self.speech_projector.load_state_dict(get_w(pretrain_speech_projector_weights, 'speech_projector'), strict=False)
+            def get_w(weights, keyword):
+                return {k.split(keyword + ".")[1]: v for k, v in weights.items() if keyword in k}
+
+            print("Loading pretrain speech projector weights")
+
+            msg = self.speech_projector.load_state_dict(
+                get_w(pretrain_speech_projector_weights, "speech_projector"), strict=False
+            )
             print(msg)
 
     def initialize_vision_modules(self, model_args, fsdp=None):
@@ -104,27 +109,31 @@ class OlaMetaModel:
                 p.requires_grad = True
 
         self.config.use_mm_proj = True
-        self.config.mm_projector_type = getattr(model_args, 'mm_projector_type', 'linear')
-        self.config.mm_hidden_size = getattr(vision_resampler, 'hidden_size', vision_tower.hidden_size)
+        self.config.mm_projector_type = getattr(model_args, "mm_projector_type", "linear")
+        self.config.mm_hidden_size = getattr(vision_resampler, "hidden_size", vision_tower.hidden_size)
 
         self.config.mm_vision_select_layer = mm_vision_select_layer
         self.config.mm_vision_select_feature = mm_vision_select_feature
-        
-        if getattr(self, 'mm_projector', None) is None:
+
+        if getattr(self, "mm_projector", None) is None:
             self.mm_projector = build_vision_projector(self.config, vision_cfg=vision_tower.config)
         else:
             for p in self.mm_projector.parameters():
                 p.requires_grad = True
 
         if pretrain_mm_mlp_adapter is not None:
-            mm_projector_weights = torch.load(pretrain_mm_mlp_adapter, map_location='cpu')
+            mm_projector_weights = torch.load(pretrain_mm_mlp_adapter, map_location="cpu")
+
             def get_w(weights, keyword):
-                return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
-            
-            self.mm_projector.load_state_dict(get_w(mm_projector_weights, 'mm_projector'))
-            print('Loading pretrain mm projector weights')
-            incompatible_keys = self.vision_resampler.load_state_dict(get_w(mm_projector_weights, 'vision_resampler'), strict=False)
+                return {k.split(keyword + ".")[1]: v for k, v in weights.items() if keyword in k}
+
+            self.mm_projector.load_state_dict(get_w(mm_projector_weights, "mm_projector"))
+            print("Loading pretrain mm projector weights")
+            incompatible_keys = self.vision_resampler.load_state_dict(
+                get_w(mm_projector_weights, "vision_resampler"), strict=False
+            )
             print(incompatible_keys)
+
 
 class OlaMetaForCausalLM(ABC):
 
@@ -137,7 +146,7 @@ class OlaMetaForCausalLM(ABC):
 
     def get_vision_tower(self):
         return self.get_model().get_vision_tower()
-    
+
     def get_speech_projector(self):
         return self.get_model().speech_projector
 
@@ -157,13 +166,25 @@ class OlaMetaForCausalLM(ABC):
             encoder_outs = speech_projector(encoder_outs)
             speech_lengths = speech_lengths // speech_projector.k
         else:
-            raise ValueError(f'Unknown speech projector: {speech_projector_type}')
+            raise ValueError(f"Unknown speech projector: {speech_projector_type}")
         # speech_features = [encoder_outs[i, :speech_lengths[i]] for i in range(len(encoder_outs))]
         return encoder_outs
 
     def prepare_inputs_labels_for_speech_vision_text(
-        self, input_ids, position_ids, attention_mask, past_key_values, labels,
-        speech, speech_lengths, speech_chunks, speech_wav, images, modalities, image_sizes=None, images_highres=None
+        self,
+        input_ids,
+        position_ids,
+        attention_mask,
+        past_key_values,
+        labels,
+        speech,
+        speech_lengths,
+        speech_chunks,
+        speech_wav,
+        images,
+        modalities,
+        image_sizes=None,
+        images_highres=None,
     ):
         speech_encoder = self.get_speech_encoder()
         vision_tower = self.get_vision_tower()
@@ -188,7 +209,7 @@ class OlaMetaForCausalLM(ABC):
 
         video_idx_in_batch = []
         for modal in range(len(modalities)):
-            if 'video' in modalities[modal]:
+            if "video" in modalities[modal]:
                 video_idx_in_batch.append(modal)
 
         # Fix training with deepspeed zero3
@@ -225,11 +246,13 @@ class OlaMetaForCausalLM(ABC):
             highres_img_sizes.append(highres_img_size)
         image_features = []
         for idx in range(len(modalities)):
-            img_feat = self.get_model().mm_projector(lowres_img_features[idx],
-                                                    lowres_img_sizes[idx],
-                                                    highres_img_features[idx],
-                                                    highres_img_sizes[idx],
-                                                    modalities[idx])
+            img_feat = self.get_model().mm_projector(
+                lowres_img_features[idx],
+                lowres_img_sizes[idx],
+                highres_img_features[idx],
+                highres_img_sizes[idx],
+                modalities[idx],
+            )
             image_features.append(img_feat.flatten(0, 1))
 
         # if max_num_modality > num_modality:
@@ -250,7 +273,9 @@ class OlaMetaForCausalLM(ABC):
 
         # remove the padding using attention_mask -- FIXME
         _input_ids = input_ids
-        input_ids = [cur_input_ids[cur_attention_mask] for cur_input_ids, cur_attention_mask in zip(input_ids, attention_mask)]
+        input_ids = [
+            cur_input_ids[cur_attention_mask] for cur_input_ids, cur_attention_mask in zip(input_ids, attention_mask)
+        ]
         labels = [cur_labels[cur_attention_mask] for cur_labels, cur_attention_mask in zip(labels, attention_mask)]
 
         new_input_embeds = []
@@ -263,32 +288,42 @@ class OlaMetaForCausalLM(ABC):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
 
             num_speech_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum() + (cur_input_ids == SPEECH_TOKEN_INDEX).sum()
-            
+
             if num_speech_images == 0:
                 cur_speech_features = speech_features[cur_speech_idx]
                 cur_images_features = image_features[cur_image_idx]
                 cur_input_embeds_1 = self.get_model().embed_tokens(cur_input_ids)
-                cur_input_embeds = torch.cat([cur_input_embeds_1, cur_speech_features[0:0], cur_images_features[0:0]], dim=0)
+                cur_input_embeds = torch.cat(
+                    [cur_input_embeds_1, cur_speech_features[0:0], cur_images_features[0:0]], dim=0
+                )
                 new_input_embeds.append(cur_input_embeds)
                 new_labels.append(labels[batch_idx])
                 cur_speech_idx += 1
                 cur_image_idx += 1
                 continue
 
-            speech_image_token_indices = [-1] + torch.where((cur_input_ids == SPEECH_TOKEN_INDEX) | (cur_input_ids == IMAGE_TOKEN_INDEX))[0].tolist() + [cur_input_ids.shape[0]]
+            speech_image_token_indices = (
+                [-1]
+                + torch.where((cur_input_ids == SPEECH_TOKEN_INDEX) | (cur_input_ids == IMAGE_TOKEN_INDEX))[0].tolist()
+                + [cur_input_ids.shape[0]]
+            )
 
             cur_input_ids_nospeech_image = []
             cur_labels = labels[batch_idx]
             cur_labels_nospeech_image = []
             for i in range(len(speech_image_token_indices) - 1):
-                cur_input_ids_nospeech_image.append(cur_input_ids[speech_image_token_indices[i]+1:speech_image_token_indices[i+1]])
-                cur_labels_nospeech_image.append(cur_labels[speech_image_token_indices[i]+1:speech_image_token_indices[i+1]])
+                cur_input_ids_nospeech_image.append(
+                    cur_input_ids[speech_image_token_indices[i] + 1 : speech_image_token_indices[i + 1]]
+                )
+                cur_labels_nospeech_image.append(
+                    cur_labels[speech_image_token_indices[i] + 1 : speech_image_token_indices[i + 1]]
+                )
             split_sizes = [x.shape[0] for x in cur_labels_nospeech_image]
             cur_input_embeds = self.get_model().embed_tokens(torch.cat(cur_input_ids_nospeech_image))
             cur_input_embeds_no_speech_image = torch.split(cur_input_embeds, split_sizes, dim=0)
             cur_new_input_embeds = []
             cur_new_labels = []
-            
+
             for i in range(num_speech_images + 1):
                 cur_new_input_embeds.append(cur_input_embeds_no_speech_image[i])
                 cur_new_labels.append(cur_labels_nospeech_image[i])
@@ -297,12 +332,26 @@ class OlaMetaForCausalLM(ABC):
                         cur_images_features = image_features[cur_image_idx]
                         cur_image_idx += 1
                         cur_new_input_embeds.append(cur_images_features)
-                        cur_new_labels.append(torch.full((cur_images_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                        cur_new_labels.append(
+                            torch.full(
+                                (cur_images_features.shape[0],),
+                                IGNORE_INDEX,
+                                device=cur_labels.device,
+                                dtype=cur_labels.dtype,
+                            )
+                        )
                     else:
                         cur_speech_features = speech_features[cur_speech_idx]
                         cur_speech_idx += 1
                         cur_new_input_embeds.append(cur_speech_features)
-                        cur_new_labels.append(torch.full((cur_speech_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                        cur_new_labels.append(
+                            torch.full(
+                                (cur_speech_features.shape[0],),
+                                IGNORE_INDEX,
+                                device=cur_labels.device,
+                                dtype=cur_labels.dtype,
+                            )
+                        )
 
             cur_new_input_embeds = [x.to(self.device) for x in cur_new_input_embeds]
 
@@ -321,7 +370,7 @@ class OlaMetaForCausalLM(ABC):
             new_labels.append(cur_new_labels)
 
         # Truncate sequences to max length as speech features can make the sequence longer
-        tokenizer_model_max_length = getattr(self.config, 'tokenizer_model_max_length', None)
+        tokenizer_model_max_length = getattr(self.config, "tokenizer_model_max_length", None)
         if tokenizer_model_max_length is not None:
             new_input_embeds = [x[:tokenizer_model_max_length] for x in new_input_embeds]
             new_labels = [x[:tokenizer_model_max_length] for x in new_labels]
@@ -331,30 +380,54 @@ class OlaMetaForCausalLM(ABC):
         batch_size = len(new_input_embeds)
 
         new_input_embeds_padded = []
-        new_labels_padded = torch.full((batch_size, max_len), IGNORE_INDEX, dtype=new_labels[0].dtype, device=new_labels[0].device)
+        new_labels_padded = torch.full(
+            (batch_size, max_len), IGNORE_INDEX, dtype=new_labels[0].dtype, device=new_labels[0].device
+        )
         attention_mask = torch.zeros((batch_size, max_len), dtype=attention_mask.dtype, device=attention_mask.device)
         position_ids = torch.zeros((batch_size, max_len), dtype=position_ids.dtype, device=position_ids.device)
 
         for i, (cur_new_embed, cur_new_labels) in enumerate(zip(new_input_embeds, new_labels)):
             cur_len = cur_new_embed.shape[0]
-            if getattr(self.config, 'tokenizer_padding_side', 'right') == "left":
-                new_input_embeds_padded.append(torch.cat((
-                    torch.zeros((max_len - cur_len, cur_new_embed.shape[1]), dtype=cur_new_embed.dtype, device=cur_new_embed.device),
-                    cur_new_embed
-                ), dim=0))
+            if getattr(self.config, "tokenizer_padding_side", "right") == "left":
+                new_input_embeds_padded.append(
+                    torch.cat(
+                        (
+                            torch.zeros(
+                                (max_len - cur_len, cur_new_embed.shape[1]),
+                                dtype=cur_new_embed.dtype,
+                                device=cur_new_embed.device,
+                            ),
+                            cur_new_embed,
+                        ),
+                        dim=0,
+                    )
+                )
                 if cur_len > 0:
                     new_labels_padded[i, -cur_len:] = cur_new_labels
                     attention_mask[i, -cur_len:] = True
-                    position_ids[i, -cur_len:] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
+                    position_ids[i, -cur_len:] = torch.arange(
+                        0, cur_len, dtype=position_ids.dtype, device=position_ids.device
+                    )
             else:
-                new_input_embeds_padded.append(torch.cat((
-                    cur_new_embed,
-                    torch.zeros((max_len - cur_len, cur_new_embed.shape[1]), dtype=cur_new_embed.dtype, device=cur_new_embed.device)
-                ), dim=0))
+                new_input_embeds_padded.append(
+                    torch.cat(
+                        (
+                            cur_new_embed,
+                            torch.zeros(
+                                (max_len - cur_len, cur_new_embed.shape[1]),
+                                dtype=cur_new_embed.dtype,
+                                device=cur_new_embed.device,
+                            ),
+                        ),
+                        dim=0,
+                    )
+                )
                 if cur_len > 0:
                     new_labels_padded[i, :cur_len] = cur_new_labels
                     attention_mask[i, :cur_len] = True
-                    position_ids[i, :cur_len] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
+                    position_ids[i, :cur_len] = torch.arange(
+                        0, cur_len, dtype=position_ids.dtype, device=position_ids.device
+                    )
 
         new_input_embeds = torch.stack(new_input_embeds_padded, dim=0)
 
@@ -386,10 +459,8 @@ class OlaMetaForCausalLM(ABC):
                 input_embeddings = self.get_input_embeddings().weight.data
                 output_embeddings = self.get_output_embeddings().weight.data
 
-                input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(
-                    dim=0, keepdim=True)
-                output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(
-                    dim=0, keepdim=True)
+                input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
+                output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
 
                 input_embeddings[-num_new_tokens:] = input_embeddings_avg
                 output_embeddings[-num_new_tokens:] = output_embeddings_avg
@@ -401,15 +472,17 @@ class OlaMetaForCausalLM(ABC):
                     p.requires_grad = False
 
             if model_args.pretrain_mm_mlp_adapter:
-                mm_projector_weights = torch.load(model_args.pretrain_mm_mlp_adapter, map_location='cpu')
-                embed_tokens_weight = mm_projector_weights['model.embed_tokens.weight']
+                mm_projector_weights = torch.load(model_args.pretrain_mm_mlp_adapter, map_location="cpu")
+                embed_tokens_weight = mm_projector_weights["model.embed_tokens.weight"]
                 assert num_new_tokens == 2
                 if input_embeddings.shape == embed_tokens_weight.shape:
                     input_embeddings[-num_new_tokens:] = embed_tokens_weight[-num_new_tokens:]
                 elif embed_tokens_weight.shape[0] == num_new_tokens:
                     input_embeddings[-num_new_tokens:] = embed_tokens_weight
                 else:
-                    raise ValueError(f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}.")
+                    raise ValueError(
+                        f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}."
+                    )
         elif model_args.mm_use_im_patch_token:
             if model_args.tune_mm_mlp_adapter:
                 for p in self.get_input_embeddings().parameters():

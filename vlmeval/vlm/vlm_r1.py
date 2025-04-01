@@ -44,7 +44,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
             top_k=top_k,
             temperature=temperature,
             repetition_penalty=repetition_penalty,
-            use_cache=True
+            use_cache=True,
         )
         self.system_prompt = system_prompt
         self.verbose = verbose
@@ -85,9 +85,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
             )
             self.model.eval()
         elif auto_split_flag():
-            assert (
-                world_size == 1
-            ), "Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL"
+            assert world_size == 1, "Only support world_size == 1 when AUTO_SPLIT is set for non-72B Qwen2-VL"
             # Will Use All GPUs to run one model
             self.model = MODEL_CLS.from_pretrained(
                 model_path,
@@ -106,24 +104,20 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
 
         torch.cuda.empty_cache()
 
-    def _prepare_content(
-        self, inputs: list[dict[str, str]], dataset: str | None = None
-    ) -> list[dict[str, str]]:
+    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """
         content = []
 
-        post_prompt = '  Output the thinking process in <think> </think> and final answer in <answer> </answer> tags.'
+        post_prompt = "  Output the thinking process in <think> </think> and final answer in <answer> </answer> tags."
 
         for s in inputs:
             if s["type"] == "image":
                 item = {"type": "image", "image": ensure_image_url(s["value"])}
                 if dataset == "OCRBench":
                     item["min_pixels"] = 10 * 10 * 28 * 28
-                    warnings.warn(
-                        f"OCRBench dataset uses custom min_pixels={item['min_pixels']}"
-                    )
+                    warnings.warn(f"OCRBench dataset uses custom min_pixels={item['min_pixels']}")
                     if self.max_pixels is not None:
                         item["max_pixels"] = self.max_pixels
                 else:
@@ -142,9 +136,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
                     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
                     video.release()
                     if frame_count < self.nframe:
-                        new_frame_count = (
-                            frame_count // self.FRAME_FACTOR * self.FRAME_FACTOR
-                        )
+                        new_frame_count = frame_count // self.FRAME_FACTOR * self.FRAME_FACTOR
                         print(f"use {new_frame_count} for {s['value']}")
                         item["nframes"] = new_frame_count
                     else:
@@ -162,9 +154,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         try:
             from qwen_vl_utils import process_vision_info
         except Exception as err:
-            logging.critical(
-                "qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'"
-            )
+            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
             raise err
 
         def extract_answer_content(output_str):
@@ -185,9 +175,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         messages = []
         if self.system_prompt is not None:
             messages.append({"role": "system", "content": self.system_prompt})
-        messages.append(
-            {"role": "user", "content": self._prepare_content(message, dataset=dataset)}
-        )
+        messages.append({"role": "user", "content": self._prepare_content(message, dataset=dataset)})
         from termcolor import colored
 
         print(colored(f"messages: === {messages}", "red"))
@@ -195,14 +183,10 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         if self.verbose:
             print(f"\033[31m{messages}\033[0m")
 
-        text = self.processor.apply_chat_template(
-            [messages], tokenize=False, add_generation_prompt=True
-        )
+        text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
 
         images, videos = process_vision_info([messages])
-        inputs = self.processor(
-            text=text, images=images, videos=videos, padding=True, return_tensors="pt"
-        )
+        inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors="pt")
         inputs = inputs.to("cuda")
 
         generated_ids = self.model.generate(
@@ -210,10 +194,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
             **self.generate_kwargs,
         )
 
-        generated_ids = [
-            output_ids[len(input_ids) :]
-            for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
-        ]
+        generated_ids = [output_ids[len(input_ids) :] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)]
         out = self.processor.tokenizer.batch_decode(
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
@@ -242,15 +223,14 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
 
         if self.save_raw_output:
             os.makedirs(self.output_dir, exist_ok=True)
-            output_file = os.path.join(
-                self.output_dir, f"{self.model_path.split('/')[-1]}_{dataset}.jsonl"
-            )
-            if message[0]['type'] == 'image':
-                id = message[0]['value'].rsplit('/')[-1].split('.')[0]
+            output_file = os.path.join(self.output_dir, f"{self.model_path.split('/')[-1]}_{dataset}.jsonl")
+            if message[0]["type"] == "image":
+                id = message[0]["value"].rsplit("/")[-1].split(".")[0]
             else:
                 id = None
             import jsonlines
-            with jsonlines.open(output_file, mode='a') as writer:
+
+            with jsonlines.open(output_file, mode="a") as writer:
                 writer.write({"id": id, "response": raw_output})
 
         if self.verbose:

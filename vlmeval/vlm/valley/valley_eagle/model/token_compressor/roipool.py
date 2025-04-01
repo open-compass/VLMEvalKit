@@ -40,10 +40,10 @@ class ROIPoolTokenCompressor(nn.Module):
 
     def _inner_forward(self, x):
         B, N, dim = x.shape
-        H = W = int(N ** 0.5)
+        H = W = int(N**0.5)
 
         if self.mode == "single" and N > self.max_vision_token:
-            H_new = W_new = int(self.max_vision_token ** 0.5)
+            H_new = W_new = int(self.max_vision_token**0.5)
             x = x.view(B, H, W, dim).permute(0, 3, 1, 2)
             # different from roi pooling, but in square image, it seems the same
             x = nn.AdaptiveAvgPool2d((H_new, W_new))(x)

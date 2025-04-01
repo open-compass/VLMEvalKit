@@ -20,6 +20,7 @@ from torch.utils.checkpoint import checkpoint
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 try:
     from timm.layers import (
         AttentionPoolLatent,
@@ -32,7 +33,7 @@ try:
     )
     from timm.models._manipulate import checkpoint_seq, named_apply
 except:
-    print('Wrong timm version')
+    print("Wrong timm version")
 
 from flash_attn import flash_attn_func, flash_attn_varlen_func
 
@@ -45,17 +46,19 @@ import torch.nn.functional as F
 
 import deepspeed
 import os
-if 'LOAD_VISION_EARLY' in os.environ:
+
+if "LOAD_VISION_EARLY" in os.environ:
     print("LOAD_VISION_EARLY is set")
     LOAD_VISION_EARLY = True
 else:
     LOAD_VISION_EARLY = False
 
-if 'FORCE_NO_DOWNSAMPLE' in os.environ:
+if "FORCE_NO_DOWNSAMPLE" in os.environ:
     print("FORCE_NO_DOWNSAMPLE is set")
     FORCE_NO_DOWNSAMPLE = True
 else:
     FORCE_NO_DOWNSAMPLE = False
+
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
     # Cut & paste from PyTorch official master until it's in a few official releases - RW
@@ -169,16 +172,12 @@ class Attention(nn.Module):
 
     def forward(self, x: torch.Tensor, cu_slens=None) -> torch.Tensor:
         B, N, C = x.shape
-        qkv = (
-            self.qkv(x)
-            .reshape(B, N, 3, self.num_heads, self.head_dim)
-            .permute(2, 0, 3, 1, 4)
-        )
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv.unbind(0)
         q, k = self.q_norm(q), self.k_norm(k)
 
         if cu_slens is not None:
-            q = q.permute(0, 2, 1, 3)   # B, num_heads, N, C -> B, N, num_heads, C
+            q = q.permute(0, 2, 1, 3)  # B, num_heads, N, C -> B, N, num_heads, C
             k = k.permute(0, 2, 1, 3)
             v = v.permute(0, 2, 1, 3)
             max_seqlen = torch.max(cu_slens[1:] - cu_slens[:-1]).item()
@@ -192,17 +191,17 @@ class Attention(nn.Module):
                 max_seqlen_k=max_seqlen,
                 softmax_scale=self.scale,
                 causal=False,
-                )
+            )
 
             x = x.reshape(B, N, -1)
             x = self.proj(x)
             x = self.proj_drop(x)
 
         else:
-            q = q.permute(0, 2, 1, 3)   # B, num_heads, N, C -> B, N, num_heads, C
+            q = q.permute(0, 2, 1, 3)  # B, num_heads, N, C -> B, N, num_heads, C
             k = k.permute(0, 2, 1, 3)
             v = v.permute(0, 2, 1, 3)
-            x = flash_attn_func(q, k, v, softmax_scale=self.scale) # -> b, n, h, c
+            x = flash_attn_func(q, k, v, softmax_scale=self.scale)  # -> b, n, h, c
 
             x = x.reshape(B, N, -1)
             x = self.proj(x)
@@ -269,9 +268,7 @@ class Block(nn.Module):
             proj_drop=proj_drop,
             norm_layer=norm_layer,
         )
-        self.ls1 = (
-            LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
-        )
+        self.ls1 = LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
         self.drop_path1 = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
         self.norm2 = norm_layer(dim)
@@ -281,9 +278,7 @@ class Block(nn.Module):
             act_layer=act_layer,
             drop=proj_drop,
         )
-        self.ls2 = (
-            LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
-        )
+        self.ls2 = LayerScale(dim, init_values=init_values) if init_values else nn.Identity()
         self.drop_path2 = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
     def forward(self, x: torch.Tensor, cu_slens=None) -> torch.Tensor:
@@ -376,16 +371,12 @@ class VisionTransformer(nn.Module):
 
         self.num_classes = num_classes
         self.global_pool = global_pool
-        self.num_features = self.embed_dim = (
-            embed_dim  # num_features for consistency with other models
-        )
+        self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.num_prefix_tokens = 1 if class_token else 0
         self.num_prefix_tokens += reg_tokens
         self.num_reg_tokens = reg_tokens
         self.has_class_token = class_token
-        self.no_embed_class = (
-            no_embed_class  # don't embed prefix positions (includes reg)
-        )
+        self.no_embed_class = no_embed_class  # don't embed prefix positions (includes reg)
         self.dynamic_img_size = dynamic_img_size
         self.grad_checkpointing = False
         self.ignore_head = ignore_head
@@ -406,23 +397,15 @@ class VisionTransformer(nn.Module):
         )
         num_patches = self.patch_embed.num_patches
 
-        self.cls_token = (
-            nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
-        )
-        self.reg_token = (
-            nn.Parameter(torch.zeros(1, reg_tokens, embed_dim)) if reg_tokens else None
-        )
-        embed_len = (
-            num_patches if no_embed_class else num_patches + self.num_prefix_tokens
-        )
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
+        self.reg_token = nn.Parameter(torch.zeros(1, reg_tokens, embed_dim)) if reg_tokens else None
+        embed_len = num_patches if no_embed_class else num_patches + self.num_prefix_tokens
         self.pos_embed = nn.Parameter(torch.randn(1, embed_len, embed_dim) * 0.02)
-
 
         # deepspeed.zero.register_external_parameter(self, self.pos_embed)
         # deepspeed.zero.register_external_parameter(self, self.patch_embed.proj.weight)
         # deepspeed.zero.register_external_parameter(self, self.patch_embed.proj.bias)
         # print(self.patch_embed.state_dict().keys())
-
 
         self.pos_drop = nn.Dropout(p=pos_drop_rate)
         if patch_drop_rate > 0:
@@ -434,9 +417,7 @@ class VisionTransformer(nn.Module):
             self.patch_drop = nn.Identity()
         self.norm_pre = norm_layer(embed_dim) if pre_norm else nn.Identity()
 
-        dpr = [
-            x.item() for x in torch.linspace(0, drop_path_rate, depth)
-        ]  # stochastic depth decay rule
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
         self.blocks = nn.Sequential(
             *[
                 block_fn(
@@ -457,25 +438,21 @@ class VisionTransformer(nn.Module):
             ]
         )
 
-
         if add_patch2x2:
-            if add_patch2x2 == 'v2':
+            if add_patch2x2 == "v2":
                 self.downsample = nn.Sequential(
-                    nn.Conv2d(embed_dim, embed_dim*2, kernel_size=2, stride=2),
+                    nn.Conv2d(embed_dim, embed_dim * 2, kernel_size=2, stride=2),
                     nn.GELU(),
-                    nn.Conv2d(embed_dim*2, embed_dim*4, 1)
+                    nn.Conv2d(embed_dim * 2, embed_dim * 4, 1),
                 )
             else:
                 mid_dim = embed_dim * 2
                 self.downsample = nn.Sequential(
-                    nn.Conv2d(embed_dim, mid_dim, kernel_size=2, stride=2),
-                    nn.GELU(),
-                    nn.Conv2d(mid_dim, mid_dim, 1)
-            )
+                    nn.Conv2d(embed_dim, mid_dim, kernel_size=2, stride=2), nn.GELU(), nn.Conv2d(mid_dim, mid_dim, 1)
+                )
 
         else:
             self.downsample = None
-
 
         # self.norm = norm_layer(embed_dim) if not use_fc_norm else nn.Identity()
 
@@ -531,25 +508,20 @@ class VisionTransformer(nn.Module):
         if global_pool is not None:
             assert global_pool in ("", "avg", "token", "map")
             if global_pool == "map" and self.attn_pool is None:
-                assert (
-                    False
-                ), "Cannot currently add attention pooling in reset_classifier()."
+                assert False, "Cannot currently add attention pooling in reset_classifier()."
             elif global_pool != "map " and self.attn_pool is not None:
                 self.attn_pool = None  # remove attention pooling
             self.global_pool = global_pool
-        self.head = (
-            nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
-        )
+        self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
     def rescale_positional_embedding(self, out_size):
         h, w = out_size
         pos_embed_shape = int((self.pos_embed.shape[1]) ** 0.5)
         if (h, w) == (pos_embed_shape, pos_embed_shape):
             return self.pos_embed
-        rescaled_positional_embedding = \
-            self.pos_embed.new_zeros(1, h*w, self.pos_embed.shape[2])
+        rescaled_positional_embedding = self.pos_embed.new_zeros(1, h * w, self.pos_embed.shape[2])
         pe_2d = self.pos_embed[0].T.contiguous().view(1, -1, pos_embed_shape, pos_embed_shape)
-        pe_2d = F.interpolate(pe_2d, out_size, mode='bilinear', align_corners=False).view(-1, h*w)
+        pe_2d = F.interpolate(pe_2d, out_size, mode="bilinear", align_corners=False).view(-1, h * w)
         rescaled_positional_embedding[0] = pe_2d.T.contiguous()
         return rescaled_positional_embedding
 
@@ -592,9 +564,7 @@ class VisionTransformer(nn.Module):
         n: Union[int, Sequence] = 1,
     ) -> List[torch.Tensor]:
         outputs, num_blocks = [], len(self.blocks)
-        take_indices = set(
-            range(num_blocks - n, num_blocks) if isinstance(n, int) else n
-        )
+        take_indices = set(range(num_blocks - n, num_blocks) if isinstance(n, int) else n)
 
         # forward pass
         x = self.patch_embed(x)
@@ -629,9 +599,7 @@ class VisionTransformer(nn.Module):
         if reshape:
             grid_size = self.patch_embed.grid_size
             outputs = [
-                out.reshape(x.shape[0], grid_size[0], grid_size[1], -1)
-                .permute(0, 3, 1, 2)
-                .contiguous()
+                out.reshape(x.shape[0], grid_size[0], grid_size[1], -1).permute(0, 3, 1, 2).contiguous()
                 for out in outputs
             ]
 
@@ -645,9 +613,13 @@ class VisionTransformer(nn.Module):
         for x in x_list:
             bs, _, h, w = x.shape
 
-            # fix patch size=14 in datasets 
-            pad_h = (self.patch_embed.patch_size[0] - h % self.patch_embed.patch_size[0]) % self.patch_embed.patch_size[0]
-            pad_w = (self.patch_embed.patch_size[1] - w % self.patch_embed.patch_size[1]) % self.patch_embed.patch_size[1]
+            # fix patch size=14 in datasets
+            pad_h = (self.patch_embed.patch_size[0] - h % self.patch_embed.patch_size[0]) % self.patch_embed.patch_size[
+                0
+            ]
+            pad_w = (self.patch_embed.patch_size[1] - w % self.patch_embed.patch_size[1]) % self.patch_embed.patch_size[
+                1
+            ]
             x = F.pad(x, (0, pad_w, 0, pad_h))
 
             bs, _, h, w = x.shape
@@ -666,7 +638,9 @@ class VisionTransformer(nn.Module):
         slen = [xi.size(1) for xi in x_all]
         x = torch.cat(x_all, dim=1)
 
-        cu_indices = [0, ]
+        cu_indices = [
+            0,
+        ]
         for i in slen:
             cu_indices.append(cu_indices[-1] + i)
 
@@ -676,7 +650,7 @@ class VisionTransformer(nn.Module):
                 x = checkpoint(blk, x, cu_slens, use_reentrant=True)
             else:
                 x = blk(x, cu_slens=cu_slens)
-        feats = x.split(slen, dim=1) #[(1, slen, c)]
+        feats = x.split(slen, dim=1)  # [(1, slen, c)]
 
         if self.downsample is not None:
             new_feats = []
@@ -687,11 +661,10 @@ class VisionTransformer(nn.Module):
                 f = f.reshape(b, h, w, c).permute(0, 3, 1, 2)
                 f = self.downsample(f)
                 b, c, h, w = f.size()
-                f = f.permute(0, 2, 3, 1).reshape(b, h*w, c)
+                f = f.permute(0, 2, 3, 1).reshape(b, h * w, c)
                 new_feats.append(f)
                 new_sizes.append((h, w))
             return new_feats, new_sizes
-
 
         return feats, image_sizes
 
@@ -699,7 +672,7 @@ class VisionTransformer(nn.Module):
         bs, _, h, w = x.shape
         h = h // self.patch_embed.patch_size[0]
         w = w // self.patch_embed.patch_size[1]
-        
+
         x = self.patch_embed(x)
         # x = self._pos_embed(x)
         x = x + self.rescale_positional_embedding(out_size=(h, w))
@@ -715,7 +688,7 @@ class VisionTransformer(nn.Module):
             x = x.reshape(b, h, w, c).permute(0, 3, 1, 2)
             x = self.downsample(x)
             b, c, h, w = x.size()
-            x = x.permute(0, 2, 3, 1).reshape(b, h*w, c)
+            x = x.permute(0, 2, 3, 1).reshape(b, h * w, c)
             new_feats = x
             new_sizes = (h, w)
             return new_feats, new_sizes
@@ -741,6 +714,7 @@ class VisionTransformer(nn.Module):
         else:
             x, image_sizes = self.forward_features(x)
             return x, image_sizes, None
+
 
 @dataclass
 class SigLIPVisionCfg:
@@ -800,17 +774,19 @@ SigLIP_MODEL_CONFIG = {
 }
 
 
-def resize_evaclip_pos_embed(model: VisionTransformer, interpolation: str = 'bicubic'):
+def resize_evaclip_pos_embed(model: VisionTransformer, interpolation: str = "bicubic"):
     # interpolate position embedding
     orig_size = 24
     new_size = 128
     pos_tokens = model.pos_embed
     pos_tokens = pos_tokens.reshape(-1, orig_size, orig_size, model.embed_dim).permute(0, 3, 1, 2)
     pos_tokens = torch.nn.functional.interpolate(
-        pos_tokens, size=(new_size, new_size), mode=interpolation, align_corners=False)
+        pos_tokens, size=(new_size, new_size), mode=interpolation, align_corners=False
+    )
     pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(1, 2)
     model.pos_embed = nn.Parameter(pos_tokens, requires_grad=True)
-    return model 
+    return model
+
 
 def create_siglip_vit(
     model_name: str = "siglip_so400m_patch14_384",
@@ -820,9 +796,7 @@ def create_siglip_vit(
     gradient_checkpointing: bool = False,
     **kwargs,
 ):
-    assert (
-        model_name in SigLIP_MODEL_CONFIG.keys()
-    ), f"model name should be in {SigLIP_MODEL_CONFIG.keys()}"
+    assert model_name in SigLIP_MODEL_CONFIG.keys(), f"model name should be in {SigLIP_MODEL_CONFIG.keys()}"
 
     vision_cfg = SigLIPVisionCfg(**SigLIP_MODEL_CONFIG[model_name])
 
@@ -831,15 +805,13 @@ def create_siglip_vit(
     else:
         layers = min(vision_cfg.layers, select_layer)
 
-    
-    
-    if 'patch2x2' or 'patch4x4' in path:
+    if "patch2x2" or "patch4x4" in path:
         add_patch2x2 = True
     else:
         add_patch2x2 = False
 
-    if 'patch4x4pool' in path or 'patch2x2from4x4' in path:
-        add_patch2x2 = 'v2'
+    if "patch4x4pool" in path or "patch2x2from4x4" in path:
+        add_patch2x2 = "v2"
 
     if FORCE_NO_DOWNSAMPLE:
         add_patch2x2 = False
@@ -858,7 +830,7 @@ def create_siglip_vit(
         ignore_head=kwargs.get("ignore_head", False),
         weight_init=kwargs.get("weight_init", "skip"),
         num_classes=0,
-        add_patch2x2=add_patch2x2
+        add_patch2x2=add_patch2x2,
     )
 
     print("#### Skip loading vision backbone")
@@ -867,8 +839,10 @@ def create_siglip_vit(
         model.set_grad_checkpointing(True)
     return model
 
+
 from transformers import CLIPImageProcessor
 import torch.distributed as dist
+
 
 class SigLIPViTAnysizeWrapper(nn.Module):
     def __init__(self, vision_tower, path, args, delay_load=False):
@@ -881,8 +855,9 @@ class SigLIPViTAnysizeWrapper(nn.Module):
         self.path = path
 
         self.select_layer = -1
-        if self.select_layer < -1: self.select_layer += 1
-        self.select_feature = getattr(args, 'mm_vision_select_feature', 'patch')
+        if self.select_layer < -1:
+            self.select_layer += 1
+        self.select_feature = getattr(args, "mm_vision_select_feature", "patch")
 
         self.output_dim = 1152
 
@@ -895,27 +870,32 @@ class SigLIPViTAnysizeWrapper(nn.Module):
 
     def load_model(self, device_map=None):
         if self.is_loaded:
-            print('{} is already loaded, `load_model` called again, skipping.'.format(self.vision_tower_name))
+            print("{} is already loaded, `load_model` called again, skipping.".format(self.vision_tower_name))
             return
-        
+
         self.image_processor = CLIPImageProcessor.from_pretrained("openai/clip-vit-large-patch14")
-        if self.args.mm_projector_type == "conv_mlp" or self.args.mm_projector_type == "multipath_conv_mlp" or self.args.mm_projector_type == "multipath_conv_mlp_woconv":
-            self.image_processor.crop_size['height'] = 384
-            self.image_processor.crop_size['width'] = 384
-            self.image_processor.size['shortest_edge'] = 384
+        if (
+            self.args.mm_projector_type == "conv_mlp"
+            or self.args.mm_projector_type == "multipath_conv_mlp"
+            or self.args.mm_projector_type == "multipath_conv_mlp_woconv"
+        ):
+            self.image_processor.crop_size["height"] = 384
+            self.image_processor.crop_size["width"] = 384
+            self.image_processor.size["shortest_edge"] = 384
             print("Resizeing clip processor to 384...")
         self.image_processor.image_mean = [0.5, 0.5, 0.5]
         self.image_processor.image_std = [0.5, 0.5, 0.5]
         print("Loading vision model...")
 
-        self.vision_tower = create_siglip_vit(path=self.path, model_name='siglip_so400m_patch16_384',
-                                                gradient_checkpointing=False)
+        self.vision_tower = create_siglip_vit(
+            path=self.path, model_name="siglip_so400m_patch16_384", gradient_checkpointing=False
+        )
         for p in self.vision_tower.parameters():
             p.requires_grad = False
         self.vision_tower.eval()
         self.is_loaded = True
 
-    def train(self, mode = True):
+    def train(self, mode=True):
         self.training = mode
 
         if self.is_loaded:
@@ -930,14 +910,12 @@ class SigLIPViTAnysizeWrapper(nn.Module):
             if h * w <= split_res * split_res:
                 split_images.append(image)
                 sub_images_info.append(
-                    (
-                        1, 1, 1, h // base_size, w // base_size, [(0, h // base_size, 0, w // base_size)]
-                    )
+                    (1, 1, 1, h // base_size, w // base_size, [(0, h // base_size, 0, w // base_size)])
                 )
                 continue
             nsplit_h = math.ceil(h / split_res)
             nsplit_w = math.ceil(w / split_res)
-            sub_h = int(h / nsplit_h  / base_size) * base_size
+            sub_h = int(h / nsplit_h / base_size) * base_size
             sub_w = int(w / nsplit_w / base_size) * base_size
             crop_infos = []
             for i in range(nsplit_h):
@@ -962,60 +940,54 @@ class SigLIPViTAnysizeWrapper(nn.Module):
                     crop_infos.append(
                         (begin_h // base_size, end_h // base_size, begin_w // base_size, end_w // base_size)
                     )
-            
+
             split_images += now_sub_images
             sub_images_info.append(
-                (
-                    len(now_sub_images), nsplit_h, nsplit_w, h // base_size, w // base_size, crop_infos
-                )
+                (len(now_sub_images), nsplit_h, nsplit_w, h // base_size, w // base_size, crop_infos)
             )
-    
-        return split_images, sub_images_info
 
+        return split_images, sub_images_info
 
     def unsplit_images(self, features, sizes, sub_images_info):
         new_features = []
         for feature, size in zip(features, sizes):
             h, w = size
-            new_features.append(
-                feature.reshape(1, h, w, -1)
-            )
-        
+            new_features.append(feature.reshape(1, h, w, -1))
+
         fused_images = []
         images_sizes = []
         sub_count = 0
         for n_split, nsplit_h, nsplit_w, total_h, total_w, crop_infos in sub_images_info:
-            sub_features = new_features[sub_count:sub_count+n_split]
+            sub_features = new_features[sub_count : sub_count + n_split]
             sub_count += n_split
 
             total_feature = new_features[0].new_zeros(1, total_h, total_w, self.hidden_size)
             for feature, (begin_h, end_h, begin_w, end_w) in zip(sub_features, crop_infos):
                 total_feature[:, begin_h:end_h, begin_w:end_w] += feature
-            
+
             fused_images.append(total_feature.reshape(1, total_h * total_w, self.hidden_size))
             images_sizes.append((total_h, total_w))
-        
+
         return fused_images, images_sizes
-
-
 
     def forward_func(self, images, force_fix_size=False, cal_attn_pool=False):
         if type(images) is list:
             xs = [x.to(self.dtype) for x in images]
             image_features, img_size, cls_token = self.vision_tower(xs, cal_attn_pool=cal_attn_pool)
             image_features = [x.to(images[0].dtype) for x in image_features]
-        
+
         else:
-            image_forward_outs, img_size, cls_token = self.vision_tower(images.to(self.dtype), cal_attn_pool=cal_attn_pool)
+            image_forward_outs, img_size, cls_token = self.vision_tower(
+                images.to(self.dtype), cal_attn_pool=cal_attn_pool
+            )
             image_features = image_forward_outs.to(images.dtype)
-           
+
         return image_features, img_size, cls_token
-    
+
     def forward(self, images, cal_attn_pool=False):
         with torch.no_grad():
             image_features, img_size, cls_token = self.forward_func(images, cal_attn_pool=cal_attn_pool)
             return image_features, img_size
-
 
     @property
     def dummy_feature(self):
@@ -1035,7 +1007,11 @@ class SigLIPViTAnysizeWrapper(nn.Module):
 
     @property
     def config(self):
-        return type('LLaVAConfigWrapper', (), {
-            # 'image_size': 224,
-            'patch_size': 16,
-        })()
+        return type(
+            "LLaVAConfigWrapper",
+            (),
+            {
+                # 'image_size': 224,
+                "patch_size": 16,
+            },
+        )()

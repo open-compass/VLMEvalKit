@@ -1,3 +1,4 @@
+# flake8: noqa
 from ...smp import *
 import numpy as np
 import pandas as pd
@@ -13,7 +14,7 @@ Your task is to compare the predicted answer with the correct answer and determi
 - Evaluate the correctness of the prediction compared to the answer.
 """
 
-USER_CAL_SCORE_PROMPT = """Please evaluate the following video-based question-answer pair:
+USER_CAL_SCORE_PROMPT = r"""Please evaluate the following video-based question-answer pair:
 
 Question: {question}
 Correct Answer: {answer}

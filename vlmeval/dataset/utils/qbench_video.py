@@ -1,7 +1,8 @@
+import numpy as np
+from PIL import Image, ImageOps
+
 from ...smp import *
 from .multiple_choice import extract_answer_from_item
-from PIL import Image, ImageOps
-import numpy as np
 
 FAIL_MSG = "Failed to obtain answer via API."
 
@@ -18,7 +19,7 @@ Please rate score 2 if the response completely or almost completely matches the 
 Please rate score 1 if the response partly matches the correct answer on completeness, accuracy, and relevance.
 Please rate score 0 if the response doesn't match the correct answer on completeness, accuracy, and relevance at all.
 Please only provide the result in the following format: Score:'
-"""
+"""  # noqa: E501
 
 
 def check_ans_mcq(pred, ans, correct_choice, correct_answer):

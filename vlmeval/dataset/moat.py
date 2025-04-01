@@ -1,13 +1,13 @@
+import zipfile
+from random import seed, shuffle
+
 from vlmeval.dataset.utils import build_judge
 from vlmeval.smp import *
-from .image_base import ImageBaseDataset
+
+from ..smp import decode_base64_to_image, dump, load
 from ..utils import track_progress_rich
-from ..smp import load, dump, decode_base64_to_image
+from .image_base import ImageBaseDataset
 from .utils import DEBUG_MESSAGE
-
-import zipfile
-from random import shuffle, seed
-
 
 RANDOM_SEED = 0
 
@@ -183,7 +183,7 @@ class MOAT(ImageBaseDataset):
             "result_path": result_path,
             "capability_acc": capability_score_map,
         }
-        score_pth = eval_file.replace(f".{suffix}", f"_score.json")
+        score_pth = eval_file.replace(f".{suffix}", "_score.json")
         dump(metrics, score_pth)
 
         return metrics

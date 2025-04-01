@@ -1,17 +1,19 @@
-import re
 import json
-from math import isclose
+import logging
+import math
+import re
+import sys
 from decimal import Decimal, getcontext
 from fractions import Fraction
-import sys
-import math
+from math import isclose
+
 import timeout_decorator
 
 try:
-    import sympy as sp
-    from sympy import simplify, Eq, sympify, evalf, Pow
-    from sympy.parsing.latex import parse_latex
     import antlr4
+    import sympy as sp
+    from sympy import Eq, Pow, evalf, simplify, sympify
+    from sympy.parsing.latex import parse_latex
 except ImportError:
     logging.warning("sympy or antlr4 is not installed, please install it for OlympiadBench evaluation.")
 

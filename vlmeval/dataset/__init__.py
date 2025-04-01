@@ -1,85 +1,79 @@
 import warnings
 
-from .image_base import img_root_map, ImageBaseDataset
+from ..smp import *
+from .cgbench import CGBench_MCQ_Grounding, CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded, CGBench_OpenEnded_Mini
+from .cmmmu import CMMMU
+from .creation import CreationMMBenchDataset
+from .dude import DUDE
+from .dynamath import Dynamath
+from .emma import EMMADataset
+from .image_base import ImageBaseDataset, img_root_map
 from .image_caption import ImageCaptionDataset
-from .image_yorn import ImageYORNDataset
+from .image_ccocr import CCOCRDataset
 from .image_mcq import (
-    ImageMCQDataset,
-    MMMUDataset,
     CustomMCQDataset,
-    MUIRDataset,
     GMAIMMBenchDataset,
-    MMERealWorld,
     HRBenchDataset,
-    NaturalBenchDataset,
-    WeMath,
+    ImageMCQDataset,
+    MMERealWorld,
+    MMMUDataset,
     MMMUProDataset,
+    MUIRDataset,
+    NaturalBenchDataset,
     VMCBenchDataset,
+    WeMath,
 )
 from .image_mt import MMDUDataset
+from .image_shortqa import ImageShortQADataset
 from .image_vqa import (
+    CRPE,
+    MMNIAH,
+    CustomVQADataset,
     ImageVQADataset,
-    MathVision,
-    OCRBench,
-    MathVista,
     LLaVABench,
+    LogicVista,
+    MathVerse,
+    MathVision,
+    MathVista,
+    MME_CoT,
     MMVet,
     MTVQADataset,
-    TableVQABench,
-    CustomVQADataset,
-    CRPE,
-    MathVerse,
+    OCRBench,
     OlympiadBench,
     QSpatial,
+    TableVQABench,
     VizWiz,
-    MMNIAH,
-    LogicVista,
-    MME_CoT,
 )
-
-from .image_ccocr import CCOCRDataset
-from .image_shortqa import ImageShortQADataset
-from .text_mcq import CustomTextMCQDataset, TextMCQDataset
-
-from .vcr import VCRDataset
-from .mmlongbench import MMLongBench
-from .dude import DUDE
-from .slidevqa import SlideVQA
-from .vl_rewardbench import VLRewardBench
-from .vlm2bench import VLM2Bench
-
-from .mmbench_video import MMBenchVideo
-from .videomme import VideoMME
-from .mvbench import MVBench, MVBench_MP4
-from .tamperbench import MVTamperBench
+from .image_yorn import ImageYORNDataset
+from .longvideobench import LongVideoBench
+from .megabench import MEGABench
 from .miabench import MIABench
 from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
-from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
-from .longvideobench import LongVideoBench
-from .video_concat_dataset import ConcatVideoDataset
-from .mmgenbench import MMGenBench
-from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
-from .megabench import MEGABench
-from .moviechat1k import MovieChat1k
-from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
-from .vdc import VDC
-
-from .worldsense import WorldSense
-from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
-
-from .miabench import MIABench
-from .cmmmu import CMMMU
-from .emma import EMMADataset
-from .wildvision import WildVision
-from .mmmath import MMMath
-from .dynamath import Dynamath
-from .creation import CreationMMBenchDataset
 from .mmalignbench import MMAlignBench
-from .utils import *
-from .video_dataset_config import *
-from ..smp import *
-from .Omnidocbench.omnidocbench import OmniDocBench
+from .mmbench_video import MMBenchVideo
+from .mmgenbench import MMGenBench
+from .mmlongbench import MMLongBench
+from .mmmath import MMMath
 from .moat import MOAT
+from .moviechat1k import MovieChat1k
+from .mvbench import MVBench, MVBench_MP4
+from .Omnidocbench.omnidocbench import OmniDocBench
+from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+from .slidevqa import SlideVQA
+from .tamperbench import MVTamperBench
+from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
+from .text_mcq import CustomTextMCQDataset, TextMCQDataset
+from .utils import *
+from .vcr import VCRDataset
+from .vdc import VDC
+from .video_concat_dataset import ConcatVideoDataset
+from .video_dataset_config import *
+from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
+from .videomme import VideoMME
+from .vl_rewardbench import VLRewardBench
+from .vlm2bench import VLM2Bench
+from .wildvision import WildVision
+from .worldsense import WorldSense
 
 
 class ConcatDataset(ImageBaseDataset):

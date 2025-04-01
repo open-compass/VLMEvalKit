@@ -33,6 +33,6 @@ qwen2vl_vit_config = PretrainedConfig.from_dict(
         "spatial_patch_size": 14,
         "temporal_patch_size": 2,
         "_attn_implementation": "flash_attention_2",
-        "_attn_implementation_internal": "flash_attention_2"
+        "_attn_implementation_internal": "flash_attention_2",
     }
 )

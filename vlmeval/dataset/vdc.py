@@ -1,3 +1,4 @@
+# flake8: noqa
 from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset

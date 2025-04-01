@@ -16,27 +16,27 @@ IMG_TAG_TOKEN = "<image>"
 VID_TAG_TOKEN = "<video>"
 AUD_TAG_TOKEN = "<audio>"
 
-IMG_CONTEXT_TOKEN = '<IMG_CONTEXT>'
-IMG_START_TOKEN = '<img>'
-IMG_END_TOKEN = '</img>'
+IMG_CONTEXT_TOKEN = "<IMG_CONTEXT>"
+IMG_START_TOKEN = "<img>"
+IMG_END_TOKEN = "</img>"
 
-VID_CONTEXT_TOKEN = '<VID_CONTEXT>'
-VID_START_TOKEN = '<vid>'
-VID_END_TOKEN = '</vid>'
+VID_CONTEXT_TOKEN = "<VID_CONTEXT>"
+VID_START_TOKEN = "<vid>"
+VID_END_TOKEN = "</vid>"
 
-PATCH_CONTEXT_TOKEN = '<PATCH_CONTEXT>'
-PATCH_START_TOKEN = '<patch>'
-PATCH_END_TOKEN = '</patch>'
+PATCH_CONTEXT_TOKEN = "<PATCH_CONTEXT>"
+PATCH_START_TOKEN = "<patch>"
+PATCH_END_TOKEN = "</patch>"
 
-AUD_START_TOKEN = '<|begin_of_audio|>'
-AUD_END_TOKEN = '<|end_of_audio|>'
+AUD_START_TOKEN = "<|begin_of_audio|>"
+AUD_END_TOKEN = "<|end_of_audio|>"
 
-QUAD_START_TOKEN = '<quad>'
-QUAD_END_TOKEN = '</quad>'
-REF_START_TOKEN = '<ref>'
-REF_END_TOKEN = '</ref>'
-BOX_START_TOKEN = '<box>'
-BOX_END_TOKEN = '</box>'
+QUAD_START_TOKEN = "<quad>"
+QUAD_END_TOKEN = "</quad>"
+REF_START_TOKEN = "<ref>"
+REF_END_TOKEN = "</ref>"
+BOX_START_TOKEN = "<box>"
+BOX_END_TOKEN = "</box>"
 
 
 IMAGENET_DEFAULT_MEAN = [0.485, 0.456, 0.406]
@@ -76,19 +76,14 @@ def select_best_resolution(original_size, possible_resolutions):
     for width, height in possible_resolutions:
         # Calculate the downscaled size to keep the aspect ratio
         scale = min(width / original_width, height / original_height)
-        downscaled_width, downscaled_height = int(original_width * scale), int(
-            original_height * scale
-        )
+        downscaled_width, downscaled_height = int(original_width * scale), int(original_height * scale)
 
         # Calculate effective and wasted resolutions
-        effective_resolution = min(
-            downscaled_width * downscaled_height, original_width * original_height
-        )
+        effective_resolution = min(downscaled_width * downscaled_height, original_width * original_height)
         wasted_resolution = (width * height) - effective_resolution
 
         if effective_resolution > max_effective_resolution or (
-            effective_resolution == max_effective_resolution
-            and wasted_resolution < min_wasted_resolution
+            effective_resolution == max_effective_resolution and wasted_resolution < min_wasted_resolution
         ):
             max_effective_resolution = effective_resolution
             min_wasted_resolution = wasted_resolution
@@ -189,9 +184,7 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
     target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
 
     # find the closest aspect ratio to the target
-    target_aspect_ratio = find_closest_aspect_ratio(
-        aspect_ratio, target_ratios, orig_width, orig_height, image_size
-    )
+    target_aspect_ratio = find_closest_aspect_ratio(aspect_ratio, target_ratios, orig_width, orig_height, image_size)
 
     # calculate the target width and height
     target_width = image_size * target_aspect_ratio[0]
@@ -221,9 +214,16 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
 
 
 def get_external_inputs(
-        tokens, tokenizer, image_processor, image_list=None, image_path_list=None, video_path_list=None,
-        max_num_frame=4096, max_fps=1, image_token_length=256
-    ):
+    tokens,
+    tokenizer,
+    image_processor,
+    image_list=None,
+    image_path_list=None,
+    video_path_list=None,
+    max_num_frame=4096,
+    max_fps=1,
+    image_token_length=256,
+):
     tokens = tokens.tolist()
 
     IMG_CONTEXT_ID = tokenizer(IMG_CONTEXT_TOKEN, add_special_tokens=False).input_ids
@@ -280,34 +280,36 @@ def get_external_inputs(
         if len(img_positions) == 0:
             continue
         if image_path_list is not None:
-            assert len(img_positions) == len(image_path_list), f"{img_positions} {image_path_list} {IMG_CONTEXT_TOKEN} {IMG_CONTEXT_ID} {tokens}"
+            assert len(img_positions) == len(
+                image_path_list
+            ), f"{img_positions} {image_path_list} {IMG_CONTEXT_TOKEN} {IMG_CONTEXT_ID} {tokens}"
         if image_list is not None:
-            assert len(img_positions) == len(image_list), f"{img_positions} {image_list} {IMG_CONTEXT_TOKEN} {IMG_CONTEXT_ID} {tokens}"
+            assert len(img_positions) == len(
+                image_list
+            ), f"{img_positions} {image_list} {IMG_CONTEXT_TOKEN} {IMG_CONTEXT_ID} {tokens}"
 
         new_input_ids = []
         st = 0
         for img_idx, img_pos in enumerate(img_positions):
             if image_path_list is not None:
-                image_patches, (best_width, best_height) = image_processor.process_images_with_subpatch(image_path_list[img_idx])
+                image_patches, (best_width, best_height) = image_processor.process_images_with_subpatch(
+                    image_path_list[img_idx]
+                )
             if image_list is not None:
-                image_patches, (best_width, best_height) = image_processor.process_images_with_subpatch(image_list[img_idx])
+                image_patches, (best_width, best_height) = image_processor.process_images_with_subpatch(
+                    image_list[img_idx]
+                )
             images.append(image_patches)
 
             new_input_ids += input_ids[st:img_pos]
 
             new_input_ids += [IMG_START_ID]
 
-            image_indice_b = torch.zeros(
-                1, image_token_length, dtype=torch.int64
-            )  # This will change in collate_fn
+            image_indice_b = torch.zeros(1, image_token_length, dtype=torch.int64)  # This will change in collate_fn
             image_indice_s = (
-                torch.arange(len(new_input_ids), len(new_input_ids) + image_token_length)
-                .unsqueeze(0)
-                .repeat(1, 1)
+                torch.arange(len(new_input_ids), len(new_input_ids) + image_token_length).unsqueeze(0).repeat(1, 1)
             )
-            image_indice_b_s = torch.stack(
-                [image_indice_b, image_indice_s], dim=0
-            )  # 2, num_image, image_length
+            image_indice_b_s = torch.stack([image_indice_b, image_indice_s], dim=0)  # 2, num_image, image_length
             image_indices.append(image_indice_b_s)
 
             new_input_ids += [IMG_CONTEXT_ID] * image_token_length
@@ -352,11 +354,17 @@ def get_external_inputs(
         if len(vid_positions) == 0:
             continue
         if video_path_list is not None:
-            assert len(vid_positions) == len(video_path_list), f"{vid_positions} {video_path_list} {VID_CONTEXT_TOKEN} {VID_CONTEXT_ID} {tokens}"
+            assert len(vid_positions) == len(
+                video_path_list
+            ), f"{vid_positions} {video_path_list} {VID_CONTEXT_TOKEN} {VID_CONTEXT_ID} {tokens}"
         if image_path_list is not None:
-            assert len(vid_positions) == len(image_path_list), f"{vid_positions} {image_path_list} {VID_CONTEXT_TOKEN} {VID_CONTEXT_ID} {tokens}"
+            assert len(vid_positions) == len(
+                image_path_list
+            ), f"{vid_positions} {image_path_list} {VID_CONTEXT_TOKEN} {VID_CONTEXT_ID} {tokens}"
         if image_list is not None:
-            assert len(vid_positions) == len(image_list), f"{vid_positions} {image_list} {VID_CONTEXT_TOKEN} {VID_CONTEXT_ID} {tokens}"
+            assert len(vid_positions) == len(
+                image_list
+            ), f"{vid_positions} {image_list} {VID_CONTEXT_TOKEN} {VID_CONTEXT_ID} {tokens}"
 
         new_input_ids = []
         st = 0
@@ -375,17 +383,11 @@ def get_external_inputs(
             for _ in video_frames:
                 new_input_ids += [VID_START_ID]
 
-                image_indice_b = torch.zeros(
-                    1, image_token_length, dtype=torch.int64
-                )  # This will change in collate_fn
+                image_indice_b = torch.zeros(1, image_token_length, dtype=torch.int64)  # This will change in collate_fn
                 image_indice_s = (
-                    torch.arange(len(new_input_ids), len(new_input_ids) + image_token_length)
-                    .unsqueeze(0)
-                    .repeat(1, 1)
+                    torch.arange(len(new_input_ids), len(new_input_ids) + image_token_length).unsqueeze(0).repeat(1, 1)
                 )
-                image_indice_b_s = torch.stack(
-                    [image_indice_b, image_indice_s], dim=0
-                )  # 2, num_image, image_length
+                image_indice_b_s = torch.stack([image_indice_b, image_indice_s], dim=0)  # 2, num_image, image_length
                 image_indices.append(image_indice_b_s)
 
                 new_input_ids += [VID_CONTEXT_ID] * image_token_length
@@ -405,7 +407,7 @@ def get_external_inputs(
     image_indices = torch.cat(image_indices, dim=1)
     image_indices = image_indices.contiguous().to(torch.cuda.current_device())
 
-    tokens = torch.tensor(tokens, dtype=torch.long, device='cuda')
+    tokens = torch.tensor(tokens, dtype=torch.long, device="cuda")
 
     return tokens, images, image_indices
 
@@ -443,9 +445,7 @@ class ImageProcessor:
                 for i in range(min_patch_grid, max_patch_grid + 1)
                 for j in range(min_patch_grid, max_patch_grid + 1)
             ]
-            self.possible_resolutions = [
-                [dim * self.patch_size for dim in pair] for pair in self.grid_pinpoints
-            ]
+            self.possible_resolutions = [[dim * self.patch_size for dim in pair] for pair in self.grid_pinpoints]
 
         if self.process_type == "dynamic":
             max_num = self.max_patch_grid
@@ -459,18 +459,13 @@ class ImageProcessor:
                 if i * j <= max_num and i * j >= min_num
             )
             self.target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
-            self.possible_resolutions = [
-                [dim * self.patch_size for dim in pair] for pair in self.target_ratios
-            ]
+            self.possible_resolutions = [[dim * self.patch_size for dim in pair] for pair in self.target_ratios]
 
     def get_frame_paths(self, frame_root, num_frames=8):
         os.makedirs(frame_root, exist_ok=True)
 
         self.frame_tmpl = "frame-{}-of-{}.jpg"
-        return [
-            os.path.join(frame_root, self.frame_tmpl.format(i, num_frames))
-            for i in range(1, num_frames + 1)
-        ]
+        return [os.path.join(frame_root, self.frame_tmpl.format(i, num_frames)) for i in range(1, num_frames + 1)]
 
     def save_video_frames(self, vid_path, max_fps=1, num_frames=8):
         vid = decord.VideoReader(vid_path, num_threads=1)
@@ -513,15 +508,12 @@ class ImageProcessor:
 
     def process_video(self, video_file_or_dir, max_num_frame=8, max_fps=1):
         import natsort
+
         if os.path.isdir(video_file_or_dir):
             all_filepath = []
             for root, dirs, files in os.walk(video_file_or_dir):
                 for filename in files:
-                    if (
-                        filename.endswith("png")
-                        or filename.endswith("jpeg")
-                        or filename.endswith("jpg")
-                    ):
+                    if filename.endswith("png") or filename.endswith("jpeg") or filename.endswith("jpg"):
                         filepath = os.path.join(root, filename)
                         all_filepath.append(filepath)
 
@@ -541,9 +533,7 @@ class ImageProcessor:
 
             img_or_path_list = selected_filepath
         elif os.path.isfile(video_file_or_dir):
-            img_or_path_list = self.get_video_frames(
-                video_file_or_dir, num_frames=max_num_frame, max_fps=max_fps
-            )
+            img_or_path_list = self.get_video_frames(video_file_or_dir, num_frames=max_num_frame, max_fps=max_fps)
         else:
             raise NotImplementedError
 
@@ -575,9 +565,7 @@ class ImageProcessor:
         for i, image in enumerate(images):
             image = expand2square(image, tuple(int(x * 255) for x in self.mean))
 
-            image = image.resize(
-                (self.image_size, self.image_size), resample=Image.Resampling.BICUBIC
-            )
+            image = image.resize((self.image_size, self.image_size), resample=Image.Resampling.BICUBIC)
 
             image = np.array(image, dtype=np.float32)
             image = image * 1.0 / 255.0
@@ -651,22 +639,22 @@ class ImageProcessor:
 
 
 class LongVITAWrapper(BaseModel):
-    allowed_types = ['text', 'image', 'video']
+    allowed_types = ["text", "image", "video"]
     is_api: bool = False
 
     INTERLEAVE = True
     VIDEO_LLM = True
 
-    def __init__(self, model_path='VITA-MLLM/Long-VITA-16K_HF', max_num_frame=4096, **kwargs):
+    def __init__(self, model_path="VITA-MLLM/Long-VITA-16K_HF", max_num_frame=4096, **kwargs):
         assert model_path is not None
 
         self.default_params = {
-            'top_p': 0,
-            'top_k': 0,
-            'temperature': 1.0,
-            'repetition_penalty': 1.0,
-            'do_sample': False,
-            'max_new_tokens': 1024,
+            "top_p": 0,
+            "top_k": 0,
+            "temperature": 1.0,
+            "repetition_penalty": 1.0,
+            "do_sample": False,
+            "max_new_tokens": 1024,
         }
 
         chat_template = """
@@ -707,7 +695,7 @@ class LongVITAWrapper(BaseModel):
         self.tokenizer = tokenizer
         self.image_processor = image_processor
 
-        max_num_frame = os.environ.get('MAX_NUM_FRAME', default=max_num_frame)
+        max_num_frame = os.environ.get("MAX_NUM_FRAME", default=max_num_frame)
         self.max_num_frame = int(max_num_frame)
         print(f"max_num_frame {self.max_num_frame}")
 
@@ -719,10 +707,10 @@ class LongVITAWrapper(BaseModel):
         text = ""
         image_count = 1
         for i, msg in enumerate(msgs):
-            if msg['type'] == 'text':
-                text += msg['value']
-            elif msg['type'] == 'image':
-                image_path_list.append(msg['value'])
+            if msg["type"] == "text":
+                text += msg["value"]
+            elif msg["type"] == "image":
+                image_path_list.append(msg["value"])
                 if dataset == "Video-MME":
                     if image_count == 1:
                         text += "<video>"
@@ -732,8 +720,8 @@ class LongVITAWrapper(BaseModel):
                     text += "<image>\n"
                 image_count += 1
 
-            elif msg['type'] == 'video':
-                video_path_list.append(msg['value'])
+            elif msg["type"] == "video":
+                video_path_list.append(msg["value"])
                 text += "<video>"
             else:
                 raise ValueError(f"Invalid message type: {msg['type']}, {msg}")
@@ -744,32 +732,46 @@ class LongVITAWrapper(BaseModel):
         if dataset == "OCRBench":
             text += "\nAnswer this question using the text in the image directly without any other context."
 
-        elif dataset in ['MMMU_DEV_VAL', 'MMMU_TEST', "MMStar"]:
+        elif dataset in ["MMMU_DEV_VAL", "MMMU_TEST", "MMStar"]:
             text = text.replace("Please select the correct answer from the options above.", "").strip() + "\n"
             text += "Answer with the option's letter from the given choices directly."
 
-        elif dataset in ['MVBench',]:
+        elif dataset in [
+            "MVBench",
+        ]:
             text = text.replace("Only give the best option.Best option:(", "")
             text += "Answer with the letter."
 
-        elif dataset in ['MMVet',]:
+        elif dataset in [
+            "MMVet",
+        ]:
             pass
 
-        elif dataset in ['MathVista_MINI',]:
+        elif dataset in [
+            "MathVista_MINI",
+        ]:
             text += "\nAnswer the question using a single word or phrase."
 
-        elif dataset is not None and DATASET_TYPE(dataset) in ['Y/N',]:
+        elif dataset is not None and DATASET_TYPE(dataset) in [
+            "Y/N",
+        ]:
             text = text.replace("Answer the question with Yes or No.", "").strip() + "\n"
             text += "Answer yes or no."
 
-        elif dataset is not None and DATASET_TYPE(dataset) in ['MCQ',]:
+        elif dataset is not None and DATASET_TYPE(dataset) in [
+            "MCQ",
+        ]:
             text = text.replace("Please select the correct answer from the options above.", "").strip() + "\n"
             text += "Answer with the letter."
 
-        elif dataset is not None and DATASET_TYPE(dataset) in ['VQA',]:
+        elif dataset is not None and DATASET_TYPE(dataset) in [
+            "VQA",
+        ]:
             pass
 
-        elif dataset is not None and DATASET_TYPE(dataset) in ['Video-MCQ',]:
+        elif dataset is not None and DATASET_TYPE(dataset) in [
+            "Video-MCQ",
+        ]:
             text += "Offer a very short reply."
 
         else:
@@ -803,13 +805,15 @@ class LongVITAWrapper(BaseModel):
         print("input", self.tokenizer.decode(inputs[0], skip_special_tokens=False), flush=True)
 
         inputs, images, image_indices = get_external_inputs(
-            inputs, self.tokenizer, self.image_processor,
+            inputs,
+            self.tokenizer,
+            self.image_processor,
             image_path_list=image_path_list if len(image_path_list) > 0 else None,
             video_path_list=video_path_list if len(video_path_list) > 0 else None,
-            max_num_frame=self.max_num_frame
+            max_num_frame=self.max_num_frame,
         )
         outputs = self.model.generate(inputs=inputs, images=images, image_indices=image_indices, **self.default_params)
-        output = self.tokenizer.decode(outputs[0][len(inputs[0]):], skip_special_tokens=True)
+        output = self.tokenizer.decode(outputs[0][len(inputs[0]) :], skip_special_tokens=True)
         print("output", output, flush=True)
 
         answer = output

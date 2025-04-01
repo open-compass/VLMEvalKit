@@ -30,7 +30,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
 
     def __init__(self, config):
         super(Qwen2ForCausalLM, self).__init__(config)
-        
+
         config.rope_scaling = None
         self.model = OlaQwenModel(config)
         self.vocab_size = config.vocab_size
@@ -66,29 +66,24 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
     ) -> Union[Tuple, CausalLMOutputWithPast]:
 
         if inputs_embeds is None:
-            (
-                input_ids,
-                position_ids,
-                attention_mask,
-                past_key_values,
-                inputs_embeds,
-                labels
-            ) = self.prepare_inputs_labels_for_speech_vision_text(
-                input_ids,
-                position_ids,
-                attention_mask,
-                past_key_values,
-                labels,
-                speech,
-                speech_lengths, 
-                speech_chunks,
-                speech_wav,
-                images,
-                modalities, 
-                image_sizes, 
-                images_highres
+            (input_ids, position_ids, attention_mask, past_key_values, inputs_embeds, labels) = (
+                self.prepare_inputs_labels_for_speech_vision_text(
+                    input_ids,
+                    position_ids,
+                    attention_mask,
+                    past_key_values,
+                    labels,
+                    speech,
+                    speech_lengths,
+                    speech_chunks,
+                    speech_wav,
+                    images,
+                    modalities,
+                    image_sizes,
+                    images_highres,
+                )
             )
-    
+
         if labels is None:
             return super().forward(
                 input_ids=input_ids,
@@ -99,7 +94,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
                 use_cache=use_cache,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-                return_dict=return_dict
+                return_dict=return_dict,
             )
         else:
             return self.forward_llm_efficient(
@@ -112,11 +107,22 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
                 use_cache=use_cache,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-                return_dict=return_dict
+                return_dict=return_dict,
             )
-    
 
-    def forward_llm_efficient(self, input_ids, attention_mask, position_ids, past_key_values, inputs_embeds, labels, use_cache, output_attentions, output_hidden_states, return_dict):
+    def forward_llm_efficient(
+        self,
+        input_ids,
+        attention_mask,
+        position_ids,
+        past_key_values,
+        inputs_embeds,
+        labels,
+        use_cache,
+        output_attentions,
+        output_hidden_states,
+        return_dict,
+    ):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -149,12 +155,10 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
         logits = logits.float()
         loss_fct = nn.CrossEntropyLoss()
         loss = loss_fct(logits, shift_labels)
-        
 
         if not return_dict:
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
-
 
         return CausalLMOutputWithPast(
             loss=loss,
@@ -163,7 +167,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-    
+
     @torch.no_grad()
     def generate(
         self,
@@ -183,14 +187,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
         if "inputs_embeds" in kwargs:
             raise NotImplementedError("`inputs_embeds` is not supported")
 
-        (
-            inputs,
-            position_ids,
-            attention_mask,
-            _,
-            inputs_embeds,
-            _
-        ) = self.prepare_inputs_labels_for_speech_vision_text(
+        (inputs, position_ids, attention_mask, _, inputs_embeds, _) = self.prepare_inputs_labels_for_speech_vision_text(
             inputs,
             position_ids,
             attention_mask,
@@ -198,23 +195,19 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
             None,
             speech,
             speech_lengths,
-            speech_chunks, 
+            speech_chunks,
             speech_wav,
             images,
-            modalities, 
-            image_sizes, 
-            images_highres
+            modalities,
+            image_sizes,
+            images_highres,
         )
 
         return super().generate(
-            position_ids=position_ids,
-            attention_mask=attention_mask,
-            inputs_embeds=inputs_embeds,
-            **kwargs
+            position_ids=position_ids, attention_mask=attention_mask, inputs_embeds=inputs_embeds, **kwargs
         )
 
-    def prepare_inputs_for_generation(self, input_ids, past_key_values=None,
-                                      inputs_embeds=None, **kwargs):
+    def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs):
         speech = kwargs.pop("speech", None)
         speech_lengths = kwargs.pop("speech_lengths", None)
         speech_chunks = kwargs.pop("speech_chunks", None)
@@ -224,14 +217,15 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
             input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs
         )
         if speech is not None:
-            inputs['speech'] = speech
-            inputs['speech_lengths'] = speech_lengths
-            inputs['speech_chunks'] = speech_chunks
+            inputs["speech"] = speech
+            inputs["speech_lengths"] = speech_lengths
+            inputs["speech_chunks"] = speech_chunks
         if images is not None:
             inputs["images"] = images
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
         return inputs
+
 
 AutoConfig.register("ola_qwen", OlaConfigQwen)
 AutoModelForCausalLM.register(OlaConfigQwen, OlaQwenForCausalLM)

@@ -20,9 +20,7 @@ class LLaVA(BaseModel):
             from llava.model.builder import load_pretrained_model
             from llava.mm_utils import get_model_name_from_path
         except Exception as err:
-            logging.critical(
-                "Please install llava from https://github.com/haotian-liu/LLaVA"
-            )
+            logging.critical("Please install llava from https://github.com/haotian-liu/LLaVA")
             raise err
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
@@ -40,13 +38,11 @@ class LLaVA(BaseModel):
             model_name = get_model_name_from_path(model_path)
 
         try:
-            self.tokenizer, self.model, self.image_processor, self.context_len = (
-                load_pretrained_model(
-                    model_path=model_path,
-                    model_base=None,
-                    model_name=model_name,
-                    device_map="cpu",
-                )
+            self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+                model_path=model_path,
+                model_base=None,
+                model_name=model_name,
+                device_map="cpu",
             )
         except Exception as err:
             if "ShareGPT4V" in model_path:
@@ -74,9 +70,7 @@ class LLaVA(BaseModel):
         )  # noqa E501
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(
-            f"Following kwargs received: {self.kwargs}, will use as generation config. "
-        )
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
@@ -94,11 +88,7 @@ class LLaVA(BaseModel):
         if hint is not None:
             question = hint + "\n" + question
 
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
+        options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
         for key, item in options.items():
             question += f"\n{key}. {item}"
         prompt = question
@@ -110,11 +100,7 @@ class LLaVA(BaseModel):
                 else "\nAnswer with the option's letter from the given choices directly."
             )
         else:
-            prompt += (
-                "\n请直接回答问题。"
-                if cn_string(prompt)
-                else "\nAnswer the question directly."
-            )
+            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
 
         message = [dict(type="image", value=s) for s in tgt_path]
         message.append(dict(type="text", value=prompt))
@@ -152,21 +138,13 @@ class LLaVA(BaseModel):
         images = [Image.open(s).convert("RGB") for s in images]
         args = abstractproperty()
         args.image_aspect_ratio = "pad"
-        image_tensor = process_images(images, self.image_processor, args).to(
-            "cuda", dtype=torch.float16
-        )
+        image_tensor = process_images(images, self.image_processor, args).to("cuda", dtype=torch.float16)
 
         input_ids = (
-            tokenizer_image_token(
-                prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
-            )
-            .unsqueeze(0)
-            .cuda()
+            tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
         )
         keywords = [self.stop_str]
-        stopping_criteria = KeywordsStoppingCriteria(
-            keywords, self.tokenizer, input_ids
-        )
+        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
@@ -174,9 +152,7 @@ class LLaVA(BaseModel):
                 stopping_criteria=[stopping_criteria],
                 **self.kwargs,
             )
-        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
-            0
-        ].strip()
+        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return output
 
     def generate_inner(self, message, dataset=None):
@@ -194,25 +170,17 @@ class LLaVA(BaseModel):
         args = abstractproperty()
         args.image_aspect_ratio = "pad"
         if images:
-            image_tensor = process_images(images, self.image_processor, args).to(
-                "cuda", dtype=torch.float16
-            )
+            image_tensor = process_images(images, self.image_processor, args).to("cuda", dtype=torch.float16)
         else:
             image_tensor = None
 
         prompt = self.system_prompt + "USER: " + content + " ASSISTANT: "
 
         input_ids = (
-            tokenizer_image_token(
-                prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt"
-            )
-            .unsqueeze(0)
-            .cuda()
+            tokenizer_image_token(prompt, self.tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).cuda()
         )
         keywords = [self.stop_str]
-        stopping_criteria = KeywordsStoppingCriteria(
-            keywords, self.tokenizer, input_ids
-        )
+        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids,
@@ -221,9 +189,7 @@ class LLaVA(BaseModel):
                 **self.kwargs,
             )
 
-        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
-            0
-        ].strip()
+        output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return output
 
 
@@ -243,9 +209,7 @@ class LLaVA_Next(BaseModel):
 
         self.model_path = model_path
         if "34b" in model_path.lower():
-            self.processor = LlavaNextProcessor.from_pretrained(
-                self.model_path, use_fast=False
-            )
+            self.processor = LlavaNextProcessor.from_pretrained(self.model_path, use_fast=False)
         elif "interleave" in model_path.lower():
             self.processor = AutoProcessor.from_pretrained(self.model_path)
         else:
@@ -285,14 +249,10 @@ class LLaVA_Next(BaseModel):
 
         model = model.eval()
         self.model = model.cuda()
-        kwargs_default = dict(
-            do_sample=False, temperature=0, max_new_tokens=2048, top_p=None, num_beams=1
-        )
+        kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=2048, top_p=None, num_beams=1)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(
-            f"Following kwargs received: {self.kwargs}, will use as generation config. "
-        )
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
 
     def apply_prompt_template(self, prompt):
         model_path = self.model_path.lower()
@@ -310,9 +270,7 @@ class LLaVA_Next(BaseModel):
                 "<|im_start|>assistant\n"
             )
         else:
-            raise NotImplementedError(
-                f"Prompt template for {model_path} not implemented."
-            )
+            raise NotImplementedError(f"Prompt template for {model_path} not implemented.")
 
         prompt = template.replace("PLACEHOLDER", f"<image>\n{prompt}")
         return prompt
@@ -353,11 +311,7 @@ class LLaVA_Next(BaseModel):
         if hint is not None:
             question = hint + "\n" + question
 
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
+        options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
         for key, item in options.items():
             question += f"\n{key}. {item}"
         prompt = question
@@ -369,11 +323,7 @@ class LLaVA_Next(BaseModel):
                 else "\nAnswer with the option's letter from the given choices directly."
             )
         else:
-            prompt += (
-                "\n请直接回答问题。"
-                if cn_string(prompt)
-                else "\nAnswer the question directly."
-            )
+            prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
         message = [dict(type="image", value=s) for s in tgt_path]
         message.append(dict(type="text", value=prompt))
         return message
@@ -392,12 +342,8 @@ class LLaVA_Next(BaseModel):
                 "content": content,
             }
         ]
-        prompt = self.processor.apply_chat_template(
-            conversation, add_generation_prompt=True
-        )
-        inputs = self.processor(prompt, images, return_tensors="pt").to(
-            "cuda", torch.float16
-        )
+        prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
+        inputs = self.processor(prompt, images, return_tensors="pt").to("cuda", torch.float16)
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         answer = self.output_process(answer)
@@ -422,15 +368,11 @@ class LLaVA_Next2(BaseModel):
                 KeywordsStoppingCriteria,
             )
         except Exception as err:
-            logging.critical(
-                "Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`"
-            )
+            logging.critical("Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`")
             raise err
 
         model_name = get_model_name_from_path(model_path)
-        tokenizer, model, image_processor, _ = load_pretrained_model(
-            model_path, None, model_name, device_map=None
-        )
+        tokenizer, model, image_processor, _ = load_pretrained_model(model_path, None, model_name, device_map=None)
         model.cuda().eval()
         model.tie_weights()
 
@@ -458,10 +400,7 @@ class LLaVA_Next2(BaseModel):
 
         preprocess = self.image_processor.preprocess
         image_tokenizer = self.tokenizer_image_token
-        image_tensor = [
-            preprocess(f, return_tensors="pt")["pixel_values"][0].half().cuda()
-            for f in images
-        ]
+        image_tensor = [preprocess(f, return_tensors="pt")["pixel_values"][0].half().cuda() for f in images]
         image_tensor = torch.stack(image_tensor)
 
         conv = copy.deepcopy(self.conv_templates[self.conv_template])
@@ -469,16 +408,12 @@ class LLaVA_Next2(BaseModel):
         conv.append_message(conv.roles[1], None)
         prompt_question = conv.get_prompt()
 
-        input_ids = image_tokenizer(
-            prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors="pt"
-        )
+        input_ids = image_tokenizer(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors="pt")
         input_ids = input_ids.unsqueeze(0).cuda()
 
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
-        stopping_criteria = self.KeywordStoppingCriteria(
-            keywords, self.tokenizer, input_ids
-        )
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
 
         cont = self.model.generate(
             input_ids,
@@ -542,14 +477,10 @@ class LLaVA_OneVision(BaseModel):
                 KeywordsStoppingCriteria,
             )  # noqa: E501
         except Exception as err:
-            logging.critical(
-                "Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`"
-            )
+            logging.critical("Please `pip install git+https://github.com/LLaVA-VL/LLaVA-NeXT.git`")
             raise err
 
-        video_kwargs_default = dict(
-            overwrite=True, mm_spatial_pool_mode="average", force_sample=True
-        )
+        video_kwargs_default = dict(overwrite=True, mm_spatial_pool_mode="average", force_sample=True)
         video_kwargs_default.update(kwargs)
         self.video_kwargs = video_kwargs_default
 
@@ -557,9 +488,7 @@ class LLaVA_OneVision(BaseModel):
         if "video" in model_path.lower():
             if self.video_kwargs["overwrite"]:
                 overwrite_config = {}
-                overwrite_config["mm_spatial_pool_mode"] = self.video_kwargs[
-                    "mm_spatial_pool_mode"
-                ]
+                overwrite_config["mm_spatial_pool_mode"] = self.video_kwargs["mm_spatial_pool_mode"]
 
         rank, world_size = get_rank_and_world_size()
         model_name = get_model_name_from_path(model_path)
@@ -567,8 +496,8 @@ class LLaVA_OneVision(BaseModel):
 
         if device_map is None:
             if auto_split_flag():
-                assert world_size == 1, 'Only support world_size == 1 when AUTO_SPLIT set for non-72B LLaVA-OneVision'
-                logging.warning('Currently, we only support to split the non-72B model across all GPUs.')
+                assert world_size == 1, "Only support world_size == 1 when AUTO_SPLIT set for non-72B LLaVA-OneVision"
+                logging.warning("Currently, we only support to split the non-72B model across all GPUs.")
                 tokenizer, model, image_processor, _ = load_pretrained_model(
                     model_path,
                     None,
@@ -598,7 +527,7 @@ class LLaVA_OneVision(BaseModel):
 
         if "llava" in model_path.lower():
             conv_mode = "qwen_1_5"
-        if 'llava-video' in model_path.lower():
+        if "llava-video" in model_path.lower():
             self.nframe = 64
         else:
             self.nframe = 16
@@ -616,9 +545,7 @@ class LLaVA_OneVision(BaseModel):
         self.model = model
         self.image_processor = image_processor
         self.tokenizer_image_token = tokenizer_image_token
-        self.process_images = (
-            process_images  # Store process_images as a class attribute
-        )
+        self.process_images = process_images  # Store process_images as a class attribute
         self.KeywordStoppingCriteria = KeywordsStoppingCriteria
         self.SeparatorStyle = SeparatorStyle
 
@@ -636,12 +563,8 @@ class LLaVA_OneVision(BaseModel):
                 content += self.DEFAULT_IMAGE_TOKEN + "\n"
 
         # Process images using the class attribute self.process_images
-        image_tensor = self.process_images(
-            images, self.image_processor, self.model.config
-        )
-        image_tensor = [
-            _image.to(dtype=torch.float16, device="cuda") for _image in image_tensor
-        ]
+        image_tensor = self.process_images(images, self.image_processor, self.model.config)
+        image_tensor = [_image.to(dtype=torch.float16, device="cuda") for _image in image_tensor]
 
         conv = copy.deepcopy(self.conv_templates[self.conv_template])
         conv.append_message(conv.roles[0], content)
@@ -655,9 +578,7 @@ class LLaVA_OneVision(BaseModel):
 
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
-        stopping_criteria = self.KeywordStoppingCriteria(
-            keywords, self.tokenizer, input_ids
-        )
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
 
         # Pass image sizes along with other parameters
         cont = self.model.generate(
@@ -683,13 +604,9 @@ class LLaVA_OneVision(BaseModel):
                 visual_content += self.DEFAULT_IMAGE_TOKEN + "\n"
 
         if len(videos) > 1:
-            raise ValueError(
-                "LLaVA-OneVision does not support multiple videos as input."
-            )
+            raise ValueError("LLaVA-OneVision does not support multiple videos as input.")
 
-        video_frames, frame_time, video_time = self.load_video(
-            videos[0], self.nframe, 1, self.force_sample
-        )
+        video_frames, frame_time, video_time = self.load_video(videos[0], self.nframe, 1, self.force_sample)
 
         time_instruciton = (
             f"The video lasts for {video_time:.2f} seconds,"
@@ -704,13 +621,7 @@ class LLaVA_OneVision(BaseModel):
             content = visual_content + text_content
 
         image_tensors = []
-        frames = (
-            self.image_processor.preprocess(video_frames, return_tensors="pt")[
-                "pixel_values"
-            ]
-            .half()
-            .cuda()
-        )
+        frames = self.image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()
         image_tensors.append(frames)
 
         conv = copy.deepcopy(self.conv_templates[self.conv_template])
@@ -727,9 +638,7 @@ class LLaVA_OneVision(BaseModel):
 
         stop_str = conv.sep if conv.sep_style != self.SeparatorStyle.TWO else conv.sep2
         keywords = [stop_str]
-        stopping_criteria = self.KeywordStoppingCriteria(
-            keywords, self.tokenizer, input_ids
-        )
+        stopping_criteria = self.KeywordStoppingCriteria(keywords, self.tokenizer, input_ids)
 
         # Pass image sizes along with other parameters
         cont = self.model.generate(
@@ -759,9 +668,7 @@ class LLaVA_OneVision(BaseModel):
         frame_time = [i / fps for i in frame_idx]
         if len(frame_idx) > max_frames_num or force_sample:
             sample_fps = max_frames_num
-            uniform_sampled_frames = np.linspace(
-                0, total_frame_num - 1, sample_fps, dtype=int
-            )
+            uniform_sampled_frames = np.linspace(0, total_frame_num - 1, sample_fps, dtype=int)
             frame_idx = uniform_sampled_frames.tolist()
             frame_time = [i / vr.get_avg_fps() for i in frame_idx]
         frame_time = ",".join([f"{i:.2f}s" for i in frame_time])
@@ -770,7 +677,7 @@ class LLaVA_OneVision(BaseModel):
         return spare_frames, frame_time, video_time
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if DATASET_MODALITY(dataset) == "VIDEO":
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)
@@ -785,10 +692,11 @@ class LLaVA_OneVision_HF(BaseModel):
 
     def __init__(self, model_path="llava-hf/llava-onevision-qwen2-0.5b-ov-hf", **kwargs):
         from transformers import AutoProcessor, LlavaOnevisionForConditionalGeneration
+
         assert model_path is not None, "Model path must be provided."
         self.model = LlavaOnevisionForConditionalGeneration.from_pretrained(
             model_path, torch_dtype=torch.float16, low_cpu_mem_usage=True
-        ).to('cuda')
+        ).to("cuda")
         self.processor = AutoProcessor.from_pretrained(model_path)
 
         self.video_kwargs = kwargs.get("video_kwargs", {})
@@ -819,10 +727,10 @@ class LLaVA_OneVision_HF(BaseModel):
             }
         ]
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
-        inputs = self.processor(images=images, text=prompt, return_tensors="pt").to('cuda', torch.float16)
+        inputs = self.processor(images=images, text=prompt, return_tensors="pt").to("cuda", torch.float16)
 
         output = self.model.generate(**inputs, max_new_tokens=2048)
-        return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        return self.processor.decode(output[0][inputs.input_ids.shape[1] :], skip_special_tokens=True)
 
     def generate_inner_video(self, message, dataset=None):
         content, text_content, visual_content, videos = "", "", "", []
@@ -857,9 +765,9 @@ class LLaVA_OneVision_HF(BaseModel):
         ]
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
 
-        inputs = self.processor(videos=video_frames, text=prompt, return_tensors="pt").to('cuda', torch.float16)
+        inputs = self.processor(videos=video_frames, text=prompt, return_tensors="pt").to("cuda", torch.float16)
         output = self.model.generate(**inputs, max_new_tokens=2048)
-        return self.processor.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+        return self.processor.decode(output[0][inputs.input_ids.shape[1] :], skip_special_tokens=True)
 
     def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):
         from decord import VideoReader, cpu

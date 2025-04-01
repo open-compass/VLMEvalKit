@@ -8,6 +8,7 @@ from PIL import Image
 
 class SeparatorStyle(Enum):
     """Different separator style."""
+
     TWO = auto()
     PLAIN = auto()
     CHATML = auto()
@@ -19,6 +20,7 @@ class SeparatorStyle(Enum):
 @dataclasses.dataclass
 class Conversation:
     """A class that keeps all conversation history."""
+
     system: str
     roles: List[str]
     messages: List[List[str]]
@@ -51,19 +53,19 @@ class Conversation:
                 else:
                     ret += role + ":"
         elif self.sep_style == SeparatorStyle.QWEN2:
-            start = '<|im_start|>'
-            end = '<|im_end|>\n'
-            ret = start + 'system\n' + self.system + end
+            start = "<|im_start|>"
+            end = "<|im_end|>\n"
+            ret = start + "system\n" + self.system + end
             for i, (role, message) in enumerate(messages):
                 if message:
                     if type(message) is tuple:
                         message, _, _ = message
-                    
-                    if message.endswith('<|endoftext|>'):
-                        message = message.replace('<|endoftext|>', '')
-                        ret += start + role + "\n" + message + end + '<|endoftext|>'                        
+
+                    if message.endswith("<|endoftext|>"):
+                        message = message.replace("<|endoftext|>", "")
+                        ret += start + role + "\n" + message + end + "<|endoftext|>"
                     else:
-                        assert not '<|endoftext|>' in message, f"Invalid message: {message}"
+                        assert "<|endoftext|>" not in message, f"Invalid message: {message}"
                         ret += start + role + "\n" + message + end
                 else:
                     ret += start + role + "\n"
@@ -74,10 +76,10 @@ class Conversation:
 
     def append_message(self, role, message):
         self.messages.append([role, message])
-    
+
     def to_gradio_chatbot(self):
         ret = []
-        for i, (role, msg) in enumerate(self.messages[self.offset:]):
+        for i, (role, msg) in enumerate(self.messages[self.offset :]):
             if i % 2 == 0:
                 if type(msg) is tuple:
                     msg, speech = msg
@@ -97,7 +99,8 @@ class Conversation:
             sep_style=self.sep_style,
             sep=self.sep,
             sep2=self.sep2,
-            version=self.version)
+            version=self.version,
+        )
 
     def dict(self):
         if len(self.get_images()) > 0:
@@ -118,6 +121,7 @@ class Conversation:
             "sep2": self.sep2,
         }
 
+
 conv_qwen_v1 = Conversation(
     system="You are a helpful assistant.",
     roles=("user", "assistant"),
@@ -129,7 +133,7 @@ conv_qwen_v1 = Conversation(
 
 default_conversation = conv_qwen_v1
 conv_templates = {
-    'v1_qwen2': conv_qwen_v1,
+    "v1_qwen2": conv_qwen_v1,
 }
 
 

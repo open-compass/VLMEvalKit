@@ -1,20 +1,21 @@
-import re
+import argparse
 import json
-
-import numpy as np
-import sys
+import logging
 import math
 import os
-import argparse
+import re
+import sys
+
+import numpy as np
 import timeout_decorator
 
-from .image_base import ImageBaseDataset
+from ..smp import dump, load
 from ..utils import track_progress_rich
-from ..smp import load, dump
+from .image_base import ImageBaseDataset
 
 try:
     import sympy as sp
-    from sympy import simplify, Eq, sympify, Pow, pi
+    from sympy import Eq, Pow, pi, simplify, sympify
     from sympy.parsing.latex import parse_latex
 except ImportError:
     logging.warning("sympy is not installed, please install it for MM-Math evaluation.")

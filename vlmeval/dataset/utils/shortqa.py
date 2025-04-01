@@ -1,6 +1,5 @@
 from vlmeval.smp import *
 
-
 EVAL_TMPL = """
 You are an AI assistant tasked with evaluating whether a model's response correctly answers a given visual-language question.
 
@@ -31,7 +30,7 @@ Now please complete the following task:
 [Begin Question]{question}[End Question]
 [Begin Ground-Truth]{ground_truth}[End Ground-Truth]
 [Begin Response]{response}[End Response]
-"""
+"""  # noqa: E501
 
 EVAL_TMPL_CN = """
 你是一名 AI 助理，负责评估模型的回答是否正确回答了给定的视觉语言问题。
@@ -62,7 +61,7 @@ EVAL_TMPL_CN = """
 [Begin Question]{question}[End Question]
 [Begin Ground-Truth]{ground_truth}[End Ground-Truth]
 [Begin Response]{response}[End Response]
-"""
+"""  # noqa: E501
 
 en_single_ICEs = [
     {
@@ -70,7 +69,7 @@ en_single_ICEs = [
         "answer": "Franklin D. Roosevelt",
         "prediction": "Franklin Roosevelt",
         "correctness": "yes",
-        "reason": "The model response basically align with the ground-truth answer, just omitted the middle name. Thus the response is correct.",
+        "reason": "The model response basically align with the ground-truth answer, just omitted the middle name. Thus the response is correct.",  # noqa: E501
     },
     {
         "question": 'Please tell me the name of the man in this image, in the format of "[First Name] [Given Name]".',
@@ -84,7 +83,7 @@ en_single_ICEs = [
         "answer": "Ancient Egypt",
         "prediction": "egypt",
         "correctness": "yes",
-        "reason": "The model response basically align with the ground-truth answer (egypt vs. Ancient Egypt). Thus the response is correct. ",
+        "reason": "The model response basically align with the ground-truth answer (egypt vs. Ancient Egypt). Thus the response is correct. ",  # noqa: E501
     },
     {
         "question": "Name this building",

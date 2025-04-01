@@ -1,11 +1,13 @@
 import os
+
 import pandas as pd
+
 from .image_base import ImageBaseDataset
 from .utils.vlm2bench import (
-    common_process_results,
-    tf_pair_aggregate_accuracy,
     cnt_aggregate_metric,
+    common_process_results,
     grp_aggregate_accuracy,
+    tf_pair_aggregate_accuracy,
 )
 
 
@@ -71,7 +73,7 @@ class VLM2Bench(ImageBaseDataset):
             suffix = eval_file.split(".")[-1]
             storage = eval_file.replace(f".{suffix}", f"_{model}.xlsx")
             score_file = eval_file.replace(f".{suffix}", f"_{model}_score.csv")
-            tmp_file = eval_file.replace(f".{suffix}", f"_{model}.pkl")
+            _ = eval_file.replace(f".{suffix}", f"_{model}.pkl")
             if os.path.exists(storage):
                 if storage.lower().endswith(".xlsx"):
                     data = pd.read_excel(storage)
@@ -96,7 +98,7 @@ class VLM2Bench(ImageBaseDataset):
             if rec.get("category", "").lower() in ["oc-cnt", "pc-cnt"]:
                 try:
                     rec["image_seq_len"] = len(rec["image"])
-                except Exception as e:
+                except Exception:
                     rec["image_seq_len"] = 2
 
         eval_scores = {}

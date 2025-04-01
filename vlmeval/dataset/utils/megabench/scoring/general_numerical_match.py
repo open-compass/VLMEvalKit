@@ -148,7 +148,7 @@ def floatify(num: str):
 
 
 def remove_latex_math_brackets(latex_str):
-    """
+    r"""
     Removes LaTeX math mode delimiters (\( ... \) and \[ ... \]) from a string
     while preserving the contents inside the delimiters.
     If no such delimiters are found, the original string is returned.

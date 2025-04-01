@@ -60,9 +60,7 @@ class MlpProjector(nn.Module):
 
         self.layers = modules
 
-    def forward(
-        self, x_or_tuple: Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]
-    ):
+    def forward(self, x_or_tuple: Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]):
         """
 
         Args:

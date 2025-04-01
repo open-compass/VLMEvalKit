@@ -277,7 +277,7 @@ def normalized_latex_table(text):
         SPECIAL_STRINGS = [
             ["\\\\vspace\\{.*?\\}", ""],
             ["\\\\hspace\\{.*?\\}", ""],
-            ["\\\\rule\{.*?\\}\\{.*?\\}", ""],
+            ["\\\\rule\\{.*?\\}\\{.*?\\}", ""],
             ["\\\\addlinespace\\[.*?\\]", ""],
             ["\\\\addlinespace", ""],
             ["\\\\renewcommand\\{\\\\arraystretch\\}\\{.*?\\}", ""],
