@@ -25,15 +25,17 @@ class AvgPoolTokenCompressor(nn.Module):
     def _inner_forward(self, x):
         scale = self.scale
         B, N, dim = x.shape
-        H = W = int(N ** 0.5)
+        H = W = int(N**0.5)
         x = x.view(B, H, W, dim)
 
-        return x.view(B, H // scale, scale, W // scale, scale, dim) \
-            .permute(0, 1, 3, 5, 2, 4) \
-            .reshape(B, H // scale, W // scale, dim, scale * scale) \
-            .mean(dim=-1) \
-            .squeeze(dim=-1) \
+        return (
+            x.view(B, H // scale, scale, W // scale, scale, dim)
+            .permute(0, 1, 3, 5, 2, 4)
+            .reshape(B, H // scale, W // scale, dim, scale * scale)
+            .mean(dim=-1)
+            .squeeze(dim=-1)
             .reshape(B, -1, dim)
+        )
 
     def forward(self, x):
         if type(x) is list:

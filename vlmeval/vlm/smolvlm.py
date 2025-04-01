@@ -25,9 +25,7 @@ class SmolVLM(BaseModel):
         kwargs_default = {"max_new_tokens": 2048, "use_cache": True}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(
-            f"Following kwargs received: {self.kwargs}, will use as generation config."
-        )
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config.")
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
@@ -66,13 +64,9 @@ class SmolVLM(BaseModel):
             "InfoVQA_TEST",
             "OCRBench",
         ]:
-            formatted_messages, formatted_images = self.build_prompt_default(
-                message, add_brief=True
-            )
+            formatted_messages, formatted_images = self.build_prompt_default(message, add_brief=True)
         elif dataset == "HallusionBench":
-            formatted_messages, formatted_images = self.build_prompt_default(
-                message, add_yes_or_no=True
-            )
+            formatted_messages, formatted_images = self.build_prompt_default(message, add_yes_or_no=True)
         elif dataset in [
             "MMStar",
             "SEEDBench_IMG",
@@ -84,14 +78,8 @@ class SmolVLM(BaseModel):
         else:
             formatted_messages, formatted_images = self.build_prompt_default(message)
 
-        images = (
-            [formatted_images]
-            if isinstance(formatted_images, Image.Image)
-            else formatted_images
-        )
-        inputs = self.processor(
-            text=formatted_messages, images=images, return_tensors="pt"
-        )
+        images = [formatted_images] if isinstance(formatted_images, Image.Image) else formatted_images
+        inputs = self.processor(text=formatted_messages, images=images, return_tensors="pt")
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
 
         generated_ids = self.model.generate(**inputs, **self.kwargs)
@@ -180,9 +168,7 @@ class SmolVLM(BaseModel):
                 if instruction.startswith("Hint:"):
                     hint, question = instruction.split("\nQuestion:")
                     question, choices = question.split("\nChoices:")
-                    instruction = (
-                        "Question:" + question + "\n" + hint + "\nChoices:" + choices
-                    )
+                    instruction = "Question:" + question + "\n" + hint + "\nChoices:" + choices
                 prompt += instruction
         prompt += "<end_of_utterance>\nAssistant: Answer:"
         return prompt, images
@@ -323,22 +309,15 @@ class SmolVLM(BaseModel):
 
     def chat_inner(self, message, dataset=None):
         formatted_messages, formatted_images = self.build_prompt_mt(message)
-        images = (
-            [formatted_images]
-            if isinstance(formatted_images, Image.Image)
-            else formatted_images
-        )
+        images = [formatted_images] if isinstance(formatted_images, Image.Image) else formatted_images
 
         resulting_messages = [
             {
                 "role": "user",
-                "content": [{"type": "image"}]
-                + [{"type": "text", "text": formatted_messages}],
+                "content": [{"type": "image"}] + [{"type": "text", "text": formatted_messages}],
             }
         ]
-        prompt = self.processor.apply_chat_template(
-            resulting_messages, add_generation_prompt=True
-        )
+        prompt = self.processor.apply_chat_template(resulting_messages, add_generation_prompt=True)
 
         inputs = self.processor(text=prompt, images=images, return_tensors="pt")
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
@@ -379,9 +358,7 @@ class SmolVLM2(BaseModel):
         kwargs_default = {"max_new_tokens": 2048, "do_sample": False, "use_cache": True}
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
-        warnings.warn(
-            f"Following kwargs received: {self.kwargs}, will use as generation config."
-        )
+        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config.")
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
@@ -420,13 +397,9 @@ class SmolVLM2(BaseModel):
             "InfoVQA_TEST",
             "OCRBench",
         ]:
-            formatted_messages, formatted_images = self.build_prompt_default(
-                message, add_brief=True
-            )
+            formatted_messages, formatted_images = self.build_prompt_default(message, add_brief=True)
         elif dataset == "HallusionBench":
-            formatted_messages, formatted_images = self.build_prompt_default(
-                message, add_yes_or_no=True
-            )
+            formatted_messages, formatted_images = self.build_prompt_default(message, add_yes_or_no=True)
         elif dataset in [
             "MMStar",
             "SEEDBench_IMG",
@@ -449,23 +422,15 @@ class SmolVLM2(BaseModel):
             "Video-MME",
             "LongVideoBench",
         ]:
-            formatted_messages, formatted_images = self.build_prompt_video(
-                message, dataset
-            )
+            formatted_messages, formatted_images = self.build_prompt_video(message, dataset)
         else:
             formatted_messages, formatted_images = self.build_prompt_default(message)
 
         # Convert to list if single image
-        images = (
-            [formatted_images]
-            if isinstance(formatted_images, Image.Image)
-            else formatted_images
-        )
+        images = [formatted_images] if isinstance(formatted_images, Image.Image) else formatted_images
 
         # Process text and images directly
-        inputs = self.processor(
-            text=formatted_messages, images=images, return_tensors="pt"
-        ).to(self.model.device)
+        inputs = self.processor(text=formatted_messages, images=images, return_tensors="pt").to(self.model.device)
 
         # Generate response
         generated_ids = self.model.generate(**inputs, **self.kwargs)
@@ -521,19 +486,13 @@ class SmolVLM2(BaseModel):
 
         # Find system message first
         system_message = next(
-            (
-                msg
-                for msg in message
-                if msg["type"] == "text" and msg.get("role") == "system"
-            ),
+            (msg for msg in message if msg["type"] == "text" and msg.get("role") == "system"),
             None,
         )
 
         # Add system message with proper format if it exists
         if system_message:
-            prompt_parts.extend(
-                ["<|im_start|>System:", system_message["value"], "<end_of_utterance>\n"]
-            )
+            prompt_parts.extend(["<|im_start|>System:", system_message["value"], "<end_of_utterance>\n"])
         else:
             # Adding default system message
             prompt_parts.extend(
@@ -545,9 +504,7 @@ class SmolVLM2(BaseModel):
             )
 
         # Add User prefix
-        prompt_parts.extend(
-            ["<|im_start|>User:", "Here are some frames sampled from a video:\n"]
-        )
+        prompt_parts.extend(["<|im_start|>User:", "Here are some frames sampled from a video:\n"])
 
         # Process image blocks
         text_messages = []
@@ -560,9 +517,7 @@ class SmolVLM2(BaseModel):
                 if current_block:
                     image_blocks.append(current_block)
                     current_block = []
-                if (
-                    msg.get("role") != "system"
-                ):  # Skip system message as it's already added
+                if msg.get("role") != "system":  # Skip system message as it's already added
                     text_messages.append(msg)
 
         if current_block:
@@ -571,16 +526,12 @@ class SmolVLM2(BaseModel):
         # Process image blocks with sampling if needed
         for block in image_blocks:
             if len(block) > self.sampling_frames:
-                frame_indices = np.linspace(
-                    0, len(block) - 1, self.sampling_frames, dtype=int
-                ).tolist()
+                frame_indices = np.linspace(0, len(block) - 1, self.sampling_frames, dtype=int).tolist()
                 trimmed_block = [block[i] for i in frame_indices]
                 block_timestamps = [f"{i // 60:02}:{i % 60:02}" for i in frame_indices]
             else:
                 trimmed_block = block
-                block_timestamps = [
-                    f"{i // 60:02}:{i % 60:02}" for i in range(len(block))
-                ]
+                block_timestamps = [f"{i // 60:02}:{i % 60:02}" for i in range(len(block))]
 
             # Add frames with optional timestamps
             for img, ts in zip(trimmed_block, block_timestamps):
@@ -703,9 +654,7 @@ class SmolVLM2(BaseModel):
                 if instruction.startswith("Hint:"):
                     hint, question = instruction.split("\nQuestion:")
                     question, choices = question.split("\nChoices:")
-                    instruction = (
-                        "Question:" + question + "\n" + hint + "\nChoices:" + choices
-                    )
+                    instruction = "Question:" + question + "\n" + hint + "\nChoices:" + choices
                 prompt += instruction
         prompt += "<end_of_utterance>\nAssistant: Answer:"
         return prompt, images
@@ -847,16 +796,10 @@ class SmolVLM2(BaseModel):
     def chat_inner(self, message, dataset=None):
         # Use the same build_prompt_mt method as in SmolVLM
         formatted_messages, formatted_images = self.build_prompt_mt(message)
-        images = (
-            [formatted_images]
-            if isinstance(formatted_images, Image.Image)
-            else formatted_images
-        )
+        images = [formatted_images] if isinstance(formatted_images, Image.Image) else formatted_images
 
         # Process text and images directly
-        inputs = self.processor(
-            text=formatted_messages, images=images, return_tensors="pt"
-        ).to(self.model.device)
+        inputs = self.processor(text=formatted_messages, images=images, return_tensors="pt").to(self.model.device)
 
         # Generate response
         generated_ids = self.model.generate(**inputs, **self.kwargs)

@@ -22,17 +22,19 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
-    transform = T.Compose([
-        T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
-        T.Resize((input_size, input_size), interpolation=InterpolationMode.BICUBIC),
-        T.ToTensor(),
-        T.Normalize(mean=MEAN, std=STD)
-    ])
+    transform = T.Compose(
+        [
+            T.Lambda(lambda img: img.convert("RGB") if img.mode != "RGB" else img),
+            T.Resize((input_size, input_size), interpolation=InterpolationMode.BICUBIC),
+            T.ToTensor(),
+            T.Normalize(mean=MEAN, std=STD),
+        ]
+    )
     return transform
 
 
 def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_size):
-    best_ratio_diff = float('inf')
+    best_ratio_diff = float("inf")
     best_ratio = (1, 1)
     area = width * height
     for ratio in target_ratios:
@@ -53,13 +55,16 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
 
     # calculate the existing image aspect ratio
     target_ratios = set(
-        (i, j) for n in range(min_num, max_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
-        i * j <= max_num and i * j >= min_num)
+        (i, j)
+        for n in range(min_num, max_num + 1)
+        for i in range(1, n + 1)
+        for j in range(1, n + 1)
+        if i * j <= max_num and i * j >= min_num
+    )
     target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
 
     # find the closest aspect ratio to the target
-    target_aspect_ratio = find_closest_aspect_ratio(
-        aspect_ratio, target_ratios, orig_width, orig_height, image_size)
+    target_aspect_ratio = find_closest_aspect_ratio(aspect_ratio, target_ratios, orig_width, orig_height, image_size)
 
     # calculate the target width and height
     target_width = image_size * target_aspect_ratio[0]
@@ -74,7 +79,7 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
             (i % (target_width // image_size)) * image_size,
             (i // (target_width // image_size)) * image_size,
             ((i % (target_width // image_size)) + 1) * image_size,
-            ((i // (target_width // image_size)) + 1) * image_size
+            ((i // (target_width // image_size)) + 1) * image_size,
         )
         # split the image
         split_img = resized_img.crop(box)
@@ -87,7 +92,7 @@ def dynamic_preprocess(image, min_num=1, max_num=6, image_size=448, use_thumbnai
 
 
 def load_image(image_file, input_size=448, max_num=6, upscale=False):
-    image = Image.open(image_file).convert('RGB')
+    image = Image.open(image_file).convert("RGB")
     if upscale:
         image = image.resize((image.width * 2, image.height * 2), Image.BILINEAR)
     transform = build_transform(input_size=input_size)
@@ -103,13 +108,13 @@ def get_local_rank_and_local_world_size():
     if not dist.is_initialized():
         return 0, 1
 
-    if 'SLURM_LOCALID' in os.environ:
-        local_rank = int(os.environ['SLURM_LOCALID'])
-        local_world_size = int(os.environ['SLURM_NTASKS_PER_NODE'])
+    if "SLURM_LOCALID" in os.environ:
+        local_rank = int(os.environ["SLURM_LOCALID"])
+        local_world_size = int(os.environ["SLURM_NTASKS_PER_NODE"])
         return local_rank, local_world_size
 
-    if 'LOCAL_RANK' in os.environ and 'LOCAL_WORLD_SIZE' in os.environ:
-        return int(os.environ['LOCAL_RANK']), int(os.environ['LOCAL_WORLD_SIZE'])
+    if "LOCAL_RANK" in os.environ and "LOCAL_WORLD_SIZE" in os.environ:
+        return int(os.environ["LOCAL_RANK"]), int(os.environ["LOCAL_WORLD_SIZE"])
 
     raise NotImplementedError(
         "Fail to get local_rank and local_world_size! "
@@ -126,16 +131,18 @@ def split_model(model_path):
     except:
         local_rank = rank
 
-    if 'GPUS_PER_PROCESS' in os.environ:
-        gpus_per_process = int(os.environ['GPUS_PER_PROCESS'])
+    if "GPUS_PER_PROCESS" in os.environ:
+        gpus_per_process = int(os.environ["GPUS_PER_PROCESS"])
     else:
         gpus_per_process = 8  # default to use 8 GPUs for one model
     gpus_per_process = min(gpus_per_process, num_gpus_per_node // local_world_size)
     start_gpu = local_rank * gpus_per_process
     end_gpu = start_gpu + gpus_per_process
 
-    assert end_gpu <= num_gpus_per_node, f"Process {local_rank} tries to access GPU {end_gpu}, " \
-                                         f"but only {num_gpus_per_node} GPUs are available per node."
+    assert end_gpu <= num_gpus_per_node, (
+        f"Process {local_rank} tries to access GPU {end_gpu}, "
+        f"but only {num_gpus_per_node} GPUs are available per node."
+    )
 
     visible_devices = list(range(start_gpu, end_gpu))
 
@@ -151,37 +158,33 @@ def split_model(model_path):
     layer_cnt = 0
     for i, num_layer in enumerate(num_layers_per_gpu):
         for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = visible_devices[i]
+            device_map[f"language_model.model.layers.{layer_cnt}"] = visible_devices[i]
             layer_cnt += 1
-    device_map['vision_model'] = visible_devices[0]
-    device_map['mlp1'] = visible_devices[0]
-    device_map['language_model.model.tok_embeddings'] = visible_devices[0]
-    device_map['language_model.model.embed_tokens'] = visible_devices[0]
-    device_map['language_model.output'] = visible_devices[0]
-    device_map['language_model.model.norm'] = visible_devices[0]
-    device_map['language_model.model.rotary_emb'] = visible_devices[0]
-    device_map['language_model.lm_head'] = visible_devices[0]
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = visible_devices[0]
+    device_map["vision_model"] = visible_devices[0]
+    device_map["mlp1"] = visible_devices[0]
+    device_map["language_model.model.tok_embeddings"] = visible_devices[0]
+    device_map["language_model.model.embed_tokens"] = visible_devices[0]
+    device_map["language_model.output"] = visible_devices[0]
+    device_map["language_model.model.norm"] = visible_devices[0]
+    device_map["language_model.model.rotary_emb"] = visible_devices[0]
+    device_map["language_model.lm_head"] = visible_devices[0]
+    device_map[f"language_model.model.layers.{num_layers - 1}"] = visible_devices[0]
 
     return device_map, visible_devices
 
 
 def split_model_old(model_name):
     import math
+
     device_map = {}
     num_gpus = torch.cuda.device_count()
     rank, world_size = get_rank_and_world_size()
     num_gpus = num_gpus // world_size
 
-    num_layers_map = {
-        'InternVL2-8B': 32,
-        'InternVL2-26B': 48,
-        'InternVL2-40B': 60,
-        'InternVL2-Llama3-76B': 80
-    }
+    num_layers_map = {"InternVL2-8B": 32, "InternVL2-26B": 48, "InternVL2-40B": 60, "InternVL2-Llama3-76B": 80}
 
     if model_name not in num_layers_map:
-        return 'cuda'
+        return "cuda"
     num_layers = num_layers_map[model_name]
     # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
     num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
@@ -190,17 +193,17 @@ def split_model_old(model_name):
     layer_cnt = 0
     for i, num_layer in enumerate(num_layers_per_gpu):
         for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
+            device_map[f"language_model.model.layers.{layer_cnt}"] = rank + world_size * i
             layer_cnt += 1
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.tok_embeddings'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.output'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map['language_model.model.rotary_emb'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
+    device_map["vision_model"] = rank
+    device_map["mlp1"] = rank
+    device_map["language_model.model.tok_embeddings"] = rank
+    device_map["language_model.model.embed_tokens"] = rank
+    device_map["language_model.output"] = rank
+    device_map["language_model.model.norm"] = rank
+    device_map["language_model.lm_head"] = rank
+    device_map["language_model.model.rotary_emb"] = rank
+    device_map[f"language_model.model.layers.{num_layers - 1}"] = rank
     return device_map
 
 
@@ -212,8 +215,8 @@ def build_mcq_cot_prompt(line, prompt):
         "information provided. Avoid repeating steps indefinitely—provide your best guess even if "
         "unsure. Think step by step logically, considering all relevant information before answering."
     )
-    prompt = prompt.replace("Answer with the option's letter from the given choices directly.", '').strip()
-    prompt = prompt + '\n' + cot_prompt
+    prompt = prompt.replace("Answer with the option's letter from the given choices directly.", "").strip()
+    prompt = prompt + "\n" + cot_prompt
 
     return prompt
 
@@ -227,80 +230,79 @@ def build_qa_cot_prompt(line, prompt):
         "provide your best guess even if unsure. Think step by step logically, considering all "
         "relevant information before answering."
     )
-    prompt = prompt + '\n' + cot_prompt
+    prompt = prompt + "\n" + cot_prompt
 
     return prompt
 
 
 def build_multi_choice_prompt(line, dataset=None):
-    question = line['question']
-    hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+    question = line["question"]
+    hint = line["hint"] if ("hint" in line and not pd.isna(line["hint"])) else None
     if hint is not None:
-        question = hint + '\n' + question
+        question = hint + "\n" + question
 
-    options = {
-        cand: line[cand]
-        for cand in string.ascii_uppercase
-        if cand in line and not pd.isna(line[cand])
-    }
+    options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
     for key, item in options.items():
-        question += f'\n{key}. {item}'
+        question += f"\n{key}. {item}"
     prompt = question
 
     if len(options):
-        prompt += '\n请直接回答选项字母。' if cn_string(
-            prompt) else "\nAnswer with the option's letter from the given choices directly."
+        prompt += (
+            "\n请直接回答选项字母。"
+            if cn_string(prompt)
+            else "\nAnswer with the option's letter from the given choices directly."
+        )
     else:
-        prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+        prompt += "\n请直接回答问题。" if cn_string(prompt) else "\nAnswer the question directly."
 
     return prompt
 
 
 def build_video_prompt(prompt, dataset=None, max_frames=64):
     for start in range(0, max_frames, 8):
-        images_to_remove = ''.join([f'<Image-{i}>' for i in range(start + 1, start + 9)])
-        prompt = prompt.replace(images_to_remove, '')
+        images_to_remove = "".join([f"<Image-{i}>" for i in range(start + 1, start + 9)])
+        prompt = prompt.replace(images_to_remove, "")
     for i in range(max_frames):
-        prompt = prompt.replace(f'Image-{i + 1}', f'Frame-{i + 1}')
-    if listinstr(['MMBench-Video'], dataset):
-        prompt = prompt.replace('\nAnswer:', '')
-    elif listinstr(['Video-MME', 'WorldSense'], dataset):
-        prompt = prompt.replace('\nAnswer:', '')
+        prompt = prompt.replace(f"Image-{i + 1}", f"Frame-{i + 1}")
+    if listinstr(["MMBench-Video"], dataset):
+        prompt = prompt.replace("\nAnswer:", "")
+    elif listinstr(["Video-MME", "WorldSense"], dataset):
+        prompt = prompt.replace("\nAnswer:", "")
         prompt += "\nAnswer with the option's letter from the given choices directly."
-    elif listinstr(['MVBench'], dataset):
-        prompt = prompt.replace('Best option:(', '')
+    elif listinstr(["MVBench"], dataset):
+        prompt = prompt.replace("Best option:(", "")
 
     return prompt
 
 
 def reorganize_prompt(message, image_num, dataset=None):
-    if dataset is not None and listinstr(['MUIRBench'], dataset):
-        prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
-        images_to_remove = ' '.join(['<image>'] * image_num)
-        prompt = prompt.replace(images_to_remove, '')
+    if dataset is not None and listinstr(["MUIRBench"], dataset):
+        prompt = "\n".join([x["value"] for x in message if x["type"] == "text"])
+        images_to_remove = " ".join(["<image>"] * image_num)
+        prompt = prompt.replace(images_to_remove, "")
         for i in range(image_num):
-            prompt = prompt.replace('<image>', f'<Image-{i + 1}>', 1)
-        prompt = ''.join([f'Image-{i + 1}: <image>\n' for i in range(image_num)]) + prompt
+            prompt = prompt.replace("<image>", f"<Image-{i + 1}>", 1)
+        prompt = "".join([f"Image-{i + 1}: <image>\n" for i in range(image_num)]) + prompt
     elif image_num == 1:
-        prompt = '<image>\n' + '\n'.join([x['value'] for x in message if x['type'] == 'text'])
+        prompt = "<image>\n" + "\n".join([x["value"] for x in message if x["type"] == "text"])
     else:
-        prompt, image_idx = '', 1
+        prompt, image_idx = "", 1
         for x in message:
-            if x['type'] == 'text':
-                prompt += x['value']
-            elif x['type'] == 'image':
-                prompt += f'<Image-{image_idx}>'
+            if x["type"] == "text":
+                prompt += x["value"]
+            elif x["type"] == "image":
+                prompt += f"<Image-{image_idx}>"
                 image_idx += 1
-        prompt = ''.join([f'Image-{i + 1}: <image>\n' for i in range(image_num)]) + prompt
-        images_to_remove = ''.join([f'<Image-{i + 1}>' for i in range(image_num)])
-        prompt = prompt.replace(images_to_remove, '')
+        prompt = "".join([f"Image-{i + 1}: <image>\n" for i in range(image_num)]) + prompt
+        images_to_remove = "".join([f"<Image-{i + 1}>" for i in range(image_num)])
+        prompt = prompt.replace(images_to_remove, "")
     return prompt
 
 
 mpo_prompt_with_final_answer = (
     "Your task is to answer the question below. "
     "Give step by step reasoning before you answer, and when you're ready to answer, "
-    "please use the format \"Final answer: ..\""
+    'please use the format "Final answer: .."'
     "\n\n"
     "Question:"
     "\n\n"
@@ -308,51 +310,45 @@ mpo_prompt_with_final_answer = (
 )
 
 mpo_prompt_without_final_answer = (
-    "Your task is to answer the question below. "
-    "Give step by step reasoning. "
-    "\n\n"
-    "Question:"
-    "\n\n"
-    "{question}"
+    "Your task is to answer the question below. " "Give step by step reasoning. " "\n\n" "Question:" "\n\n" "{question}"
 )
 
 
 def mpo_post_processing(response, dataset):
 
     def extract_answer(text):
-        match = re.search(r'(Final answer:|Answer:)\s*(.*)', text, re.IGNORECASE)
+        match = re.search(r"(Final answer:|Answer:)\s*(.*)", text, re.IGNORECASE)
         if match:
             return match.group(2).strip()
         return text
 
-    if dataset is not None and (DATASET_TYPE(dataset) in ['Y/N', 'MCQ'] or listinstr(['CRPE'], dataset)):
+    if dataset is not None and (DATASET_TYPE(dataset) in ["Y/N", "MCQ"] or listinstr(["CRPE"], dataset)):
         response = extract_answer(response).strip()
     return response
 
 
 def build_mpo_prompt(message, line, dataset):
-    if listinstr(['LLaVABench', 'MMVet'], dataset):
+    if listinstr(["LLaVABench", "MMVet"], dataset):
         return message
 
-    question_orig = line['question']
-    if listinstr(['MathVerse', 'MathVision'], dataset):
-        question_orig = question_orig.split('Question:', 1)[-1].strip()
-        question_orig = question_orig.replace('Choices:\n', '').strip()
-    if listinstr(['WeMath'], dataset):
-        question_orig = question_orig.replace('Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>', '').strip()
-    options = {
-        cand: line[cand]
-        for cand in string.ascii_uppercase
-        if cand in line and not pd.isna(line[cand])
-    }
-    options_prompt = ''
+    question_orig = line["question"]
+    if listinstr(["MathVerse", "MathVision"], dataset):
+        question_orig = question_orig.split("Question:", 1)[-1].strip()
+        question_orig = question_orig.replace("Choices:\n", "").strip()
+    if listinstr(["WeMath"], dataset):
+        question_orig = question_orig.replace(
+            "Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>",
+            "",
+        ).strip()
+    options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
+    options_prompt = ""
     for key, item in options.items():
-        options_prompt += f'{key}. {item}\n'
+        options_prompt += f"{key}. {item}\n"
 
     if options_prompt.strip():
-        question_orig = f'{question_orig}\n{options_prompt}'
+        question_orig = f"{question_orig}\n{options_prompt}"
 
     cot_prompt = mpo_prompt_with_final_answer
     prompt = cot_prompt.format(question=question_orig).strip()
-    message[0]['value'] = prompt
+    message[0]["value"] = prompt
     return message

@@ -1,3 +1,4 @@
+# flake8: noqa
 from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
@@ -100,7 +101,6 @@ class VideoMMLU_CAP(VideoBaseDataset):
 
         def concat_archive_parts(parts, output_file):
             with open(output_file, "wb") as out_file:
-                from tqdm import tqdm
 
                 for part in tqdm(sorted(parts)):
                     with open(part, "rb") as part_file:
@@ -415,7 +415,6 @@ class VideoMMLU_QA(VideoBaseDataset):
 
                     def concat_tar_parts(tar_parts, output_tar):
                         with open(output_tar, "wb") as out_tar:
-                            from tqdm import tqdm
 
                             for part in tqdm(sorted(tar_parts)):
                                 with open(part, "rb") as part_file:

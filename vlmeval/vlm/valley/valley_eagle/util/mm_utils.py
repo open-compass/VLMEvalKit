@@ -92,8 +92,7 @@ def process_highres_image_crop_split(image, data_args, processor=None):
     image_crop = resize_and_center_crop(image, crop_resolution)
     image_patches = extract_patches(image_crop, patch_size=split_resolution, overlap_ratio=0)
     image_patches = [
-        processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0]
-        for image_patch in image_patches
+        processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0] for image_patch in image_patches
     ]
     return torch.stack(image_patches, dim=0)
 
@@ -116,8 +115,7 @@ def process_highres_image(image, processor, grid_pinpoints):
     image_patches = extract_patches(image_padded, patch_size=processor.size["shortest_edge"], overlap_ratio=0)
     image_patches = [image_original_resize] + image_patches
     image_patches = [
-        processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0]
-        for image_patch in image_patches
+        processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0] for image_patch in image_patches
     ]
     return torch.stack(image_patches, dim=0)
 
@@ -148,8 +146,9 @@ def select_best_resolution(original_size, possible_resolutions):
         effective_resolution = min(downscaled_width * downscaled_height, original_width * original_height)
         wasted_resolution = (width * height) - effective_resolution
 
-        if effective_resolution > max_effective_resolution or \
-                (effective_resolution == max_effective_resolution and wasted_resolution < min_wasted_resolution):
+        if effective_resolution > max_effective_resolution or (
+            effective_resolution == max_effective_resolution and wasted_resolution < min_wasted_resolution
+        ):
             max_effective_resolution = effective_resolution
             min_wasted_resolution = wasted_resolution
             best_fit = (width, height)
@@ -238,9 +237,7 @@ def get_anyres_image_grid_shape(image_size, grid_pinpoints, patch_size):
         range_end = tuple(map(int, matches[-1]))
         # Generate a matrix of tuples from (range_start[0], range_start[1]) to (range_end[0], range_end[1])
         grid_pinpoints = [
-            (i, j)
-            for i in range(range_start[0], range_end[0] + 1)
-            for j in range(range_start[1], range_end[1] + 1)
+            (i, j) for i in range(range_start[0], range_end[0] + 1) for j in range(range_start[1], range_end[1] + 1)
         ]
         # Multiply all elements by patch_size
         grid_pinpoints = [[dim * patch_size for dim in pair] for pair in grid_pinpoints]
@@ -277,9 +274,7 @@ def process_anyres_image(image, processor, grid_pinpoints):
         range_end = tuple(map(int, matches[-1]))
         # Generate a matrix of tuples from (range_start[0], range_start[1]) to (range_end[0], range_end[1])
         grid_pinpoints = [
-            (i, j)
-            for i in range(range_start[0], range_end[0] + 1)
-            for j in range(range_start[1], range_end[1] + 1)
+            (i, j) for i in range(range_start[0], range_end[0] + 1) for j in range(range_start[1], range_end[1] + 1)
         ]
         # Multiply all elements by patch_size
         grid_pinpoints = [[dim * patch_size for dim in pair] for pair in grid_pinpoints]
@@ -305,8 +300,7 @@ def process_anyres_image(image, processor, grid_pinpoints):
 
     image_patches = [image_original_resize] + patches
     image_patches = [
-        processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0]
-        for image_patch in image_patches
+        processor.preprocess(image_patch, return_tensors="pt")["pixel_values"][0] for image_patch in image_patches
     ]
     # return torch.stack(image_patches, dim=0)
     return image_patches
@@ -405,7 +399,7 @@ class KeywordsStoppingCriteria(StoppingCriteria):
         offset = min(output_ids.shape[1] - self.start_len, 3)
         self.keyword_ids = [keyword_id.to(output_ids.device) for keyword_id in self.keyword_ids]
         for keyword_id in self.keyword_ids:
-            if output_ids[0, -keyword_id.shape[0]:] == keyword_id:
+            if output_ids[0, -keyword_id.shape[0] :] == keyword_id:
                 return True
         outputs = self.tokenizer.batch_decode(output_ids[:, -offset:], skip_special_tokens=True)[0]
         for keyword in self.keywords:
@@ -438,12 +432,12 @@ def unpad_image(tensor, original_size):
         scale_factor = current_width / original_width
         new_height = int(original_height * scale_factor)
         padding = (current_height - new_height) // 2
-        unpadded_tensor = tensor[:, padding: current_height - padding, :]
+        unpadded_tensor = tensor[:, padding : current_height - padding, :]
     else:
         # Padding was added to the width
         scale_factor = current_height / original_height
         new_width = int(original_width * scale_factor)
         padding = (current_width - new_width) // 2
-        unpadded_tensor = tensor[:, :, padding: current_width - padding]
+        unpadded_tensor = tensor[:, :, padding : current_width - padding]
 
     return unpadded_tensor

@@ -30,18 +30,16 @@ class LavitTokenCompressor(nn.Module):
 
         self.norm = nn.LayerNorm(embed_dim, eps=1e-5)
         self.out_conv = nn.Sequential(
-            nn.Linear(embed_dim, inner_dim),
-            nn.GELU(),
-            nn.Linear(inner_dim, 2),
-            nn.LogSoftmax(dim=-1)
+            nn.Linear(embed_dim, inner_dim), nn.GELU(), nn.Linear(inner_dim, 2), nn.LogSoftmax(dim=-1)
         )
 
         self.apply(self._init_weights)
 
     def _init_weights(self, m):
         from timm.models.layers import trunc_normal_
+
         if isinstance(m, nn.Linear):
-            trunc_normal_(m.weight, std=.02)
+            trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -51,8 +49,8 @@ class LavitTokenCompressor(nn.Module):
     def forward_features(self, x, policy):
         x = self.norm(x)
         B, N, C = x.size()
-        local_x = x[:,:, :C // 2]
-        global_x = (x[:,:, C // 2:] * policy).sum(dim=1, keepdim=True) / torch.sum(policy, dim=1, keepdim=True)
+        local_x = x[:, :, : C // 2]
+        global_x = (x[:, :, C // 2 :] * policy).sum(dim=1, keepdim=True) / torch.sum(policy, dim=1, keepdim=True)
         x = torch.cat([local_x, global_x.expand(B, N, C // 2)], dim=-1)
         return self.out_conv(x)
 
@@ -61,12 +59,12 @@ class LavitTokenCompressor(nn.Module):
         mask = torch.ones((B, N, 1), dtype=x.dtype, device=x.device)
         pred_score = self.forward_features(x, mask).reshape(B, -1, 2)
         # Sample from the score distribution
-        hard_keep_decision = F.gumbel_softmax(pred_score, hard=True)[:, :, 0]   # [N, num_patches]
+        hard_keep_decision = F.gumbel_softmax(pred_score, hard=True)[:, :, 0]  # [N, num_patches]
         token_num = hard_keep_decision.long().sum(dim=-1)
         index_select = hard_keep_decision.bool()
 
         # get remained token list
-        remained_token = torch.masked_select(x, index_select[:,:,None])
+        remained_token = torch.masked_select(x, index_select[:, :, None])
         remained_token = remained_token.reshape(-1, C)  # (sum_n, dim)
         remained_token_list = torch.split(remained_token, token_num.tolist())  # [(n1, dim), (n2, dim), ...]
         remained_token_list = list(remained_token_list)

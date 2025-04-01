@@ -13,14 +13,14 @@ from ...ola.constants import SPEECH_TOKEN_INDEX
 
 from packaging import version
 
-IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse('0.14')
+IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse("0.14")
 
 
 def tokenizer_speech_token(prompt, tokenizer, speech_token_index=SPEECH_TOKEN_INDEX, return_tensors=None):
-    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<speech>')]
+    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split("<speech>")]
 
     def insert_separator(X, sep):
-        return [ele for sublist in zip(X, [sep]*len(X)) for ele in sublist][:-1]
+        return [ele for sublist in zip(X, [sep] * len(X)) for ele in sublist][:-1]
 
     input_ids = []
     offset = 0
@@ -32,34 +32,32 @@ def tokenizer_speech_token(prompt, tokenizer, speech_token_index=SPEECH_TOKEN_IN
         input_ids.extend(x[offset:])
 
     if return_tensors is not None:
-        if return_tensors == 'pt':
+        if return_tensors == "pt":
             return torch.tensor(input_ids, dtype=torch.long)
-        raise ValueError(f'Unsupported tensor type: {return_tensors}')
+        raise ValueError(f"Unsupported tensor type: {return_tensors}")
     return input_ids
 
 
-def preprocess_multimodal(
-    sources: Sequence[str],
-    data_args: DataArguments
-) -> Dict:
+def preprocess_multimodal(sources: Sequence[str], data_args: DataArguments) -> Dict:
     is_multimodal = data_args.is_multimodal
     if not is_multimodal:
         return sources
 
     for source in sources:
         for sentence in source:
-            if DEFAULT_SPEECH_TOKEN in sentence['value']:
-                sentence['value'] = sentence['value'].replace(DEFAULT_SPEECH_TOKEN, '').strip()
-                sentence['value'] = DEFAULT_SPEECH_TOKEN + '\n' + sentence['value']
-                sentence['value'] = sentence['value'].strip()
+            if DEFAULT_SPEECH_TOKEN in sentence["value"]:
+                sentence["value"] = sentence["value"].replace(DEFAULT_SPEECH_TOKEN, "").strip()
+                sentence["value"] = DEFAULT_SPEECH_TOKEN + "\n" + sentence["value"]
+                sentence["value"] = sentence["value"].strip()
 
     return sources
 
+
 def tokenizer_image_token(prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX, return_tensors=None):
-    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<image>')]
+    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split("<image>")]
 
     def insert_separator(X, sep):
-        return [ele for sublist in zip(X, [sep]*len(X)) for ele in sublist][:-1]
+        return [ele for sublist in zip(X, [sep] * len(X)) for ele in sublist][:-1]
 
     input_ids = []
     offset = 0
@@ -71,16 +69,19 @@ def tokenizer_image_token(prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX
         input_ids.extend(x[offset:])
 
     if return_tensors is not None:
-        if return_tensors == 'pt':
+        if return_tensors == "pt":
             return torch.tensor(input_ids, dtype=torch.long)
-        raise ValueError(f'Unsupported tensor type: {return_tensors}')
+        raise ValueError(f"Unsupported tensor type: {return_tensors}")
     return input_ids
 
-def tokenizer_speech_image_token(prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX, speech_token_idx=SPEECH_TOKEN_INDEX, return_tensors=None):
-    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split('<speech><image>')]
+
+def tokenizer_speech_image_token(
+    prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX, speech_token_idx=SPEECH_TOKEN_INDEX, return_tensors=None
+):
+    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split("<speech><image>")]
 
     def insert_separator(X, sep):
-        return [ele for sublist in zip(X, [sep]*len(X)) for ele in sublist][:-1]
+        return [ele for sublist in zip(X, [sep] * len(X)) for ele in sublist][:-1]
 
     input_ids = []
     offset = 0
@@ -92,16 +93,21 @@ def tokenizer_speech_image_token(prompt, tokenizer, image_token_index=IMAGE_TOKE
         input_ids.extend(x[offset:])
 
     if return_tensors is not None:
-        if return_tensors == 'pt':
+        if return_tensors == "pt":
             return torch.tensor(input_ids, dtype=torch.long)
-        raise ValueError(f'Unsupported tensor type: {return_tensors}')
+        raise ValueError(f"Unsupported tensor type: {return_tensors}")
     return input_ids
 
-def tokenizer_speech_question_image_token(prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX, speech_token_idx=SPEECH_TOKEN_INDEX, return_tensors=None):
-    prompt_chunks = [tokenizer(chunk).input_ids for chunk in prompt.split("<image>\nUser's question in speech: <speech>\n")]
+
+def tokenizer_speech_question_image_token(
+    prompt, tokenizer, image_token_index=IMAGE_TOKEN_INDEX, speech_token_idx=SPEECH_TOKEN_INDEX, return_tensors=None
+):
+    prompt_chunks = [
+        tokenizer(chunk).input_ids for chunk in prompt.split("<image>\nUser's question in speech: <speech>\n")
+    ]
 
     def insert_separator(X, sep):
-        return [ele for sublist in zip(X, [sep]*len(X)) for ele in sublist][:-1]
+        return [ele for sublist in zip(X, [sep] * len(X)) for ele in sublist][:-1]
 
     input_ids = []
     offset = 0
@@ -117,18 +123,17 @@ def tokenizer_speech_question_image_token(prompt, tokenizer, image_token_index=I
     for x in insert_separator(prompt_chunks, special_chunks):
         input_ids.extend(x[offset:])
 
-    import pdb;pdb.set_trace()
+    import pdb
+
+    pdb.set_trace()
     if return_tensors is not None:
-        if return_tensors == 'pt':
+        if return_tensors == "pt":
             return torch.tensor(input_ids, dtype=torch.long)
-        raise ValueError(f'Unsupported tensor type: {return_tensors}')
+        raise ValueError(f"Unsupported tensor type: {return_tensors}")
     return input_ids
 
-def preprocess_v1(
-    sources,
-    tokenizer: transformers.PreTrainedTokenizer,
-    has_speech: bool = False
-) -> Dict:
+
+def preprocess_v1(sources, tokenizer: transformers.PreTrainedTokenizer, has_speech: bool = False) -> Dict:
     conv = conversation_lib.default_conversation.copy()
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
 
@@ -149,7 +154,9 @@ def preprocess_v1(
     # Tokenize conversations
 
     if has_speech:
-        input_ids = torch.stack([tokenizer_speech_token(prompt, tokenizer, return_tensors='pt') for prompt in conversations], dim=0)
+        input_ids = torch.stack(
+            [tokenizer_speech_token(prompt, tokenizer, return_tensors="pt") for prompt in conversations], dim=0
+        )
     else:
         input_ids = tokenizer(
             conversations,
@@ -200,21 +207,15 @@ def preprocess_v1(
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
                 target[:] = IGNORE_INDEX
-                print(
-                    f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
-                    f" (ignored)"
-                )
+                print(f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}." f" (ignored)")
 
     return dict(
         input_ids=input_ids,
         labels=targets,
     )
 
-def preprocess(
-    sources: Sequence[str],
-    tokenizer: transformers.PreTrainedTokenizer,
-    has_speech: bool = False
-) -> Dict:
+
+def preprocess(sources: Sequence[str], tokenizer: transformers.PreTrainedTokenizer, has_speech: bool = False) -> Dict:
     if conversation_lib.default_conversation.version.startswith("v1"):
         return preprocess_v1(sources, tokenizer, has_speech=has_speech)
     raise NotImplementedError

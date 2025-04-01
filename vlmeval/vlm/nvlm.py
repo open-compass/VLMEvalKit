@@ -29,32 +29,34 @@ def split_model():
 
     for i, num_layer in enumerate(num_layers_per_gpu):
         for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + i * world_size
+            device_map[f"language_model.model.layers.{layer_cnt}"] = rank + i * world_size
             layer_cnt += 1
 
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.model.rotary_emb'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
+    device_map["vision_model"] = rank
+    device_map["mlp1"] = rank
+    device_map["language_model.model.embed_tokens"] = rank
+    device_map["language_model.model.norm"] = rank
+    device_map["language_model.model.rotary_emb"] = rank
+    device_map["language_model.lm_head"] = rank
+    device_map[f"language_model.model.layers.{num_layers - 1}"] = rank
     return device_map
 
 
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
-    transform = T.Compose([
-        T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
-        T.Resize((input_size, input_size), interpolation=InterpolationMode.BICUBIC),
-        T.ToTensor(),
-        T.Normalize(mean=MEAN, std=STD)
-    ])
+    transform = T.Compose(
+        [
+            T.Lambda(lambda img: img.convert("RGB") if img.mode != "RGB" else img),
+            T.Resize((input_size, input_size), interpolation=InterpolationMode.BICUBIC),
+            T.ToTensor(),
+            T.Normalize(mean=MEAN, std=STD),
+        ]
+    )
     return transform
 
 
 def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_size):
-    best_ratio_diff = float('inf')
+    best_ratio_diff = float("inf")
     best_ratio = (1, 1)
     area = width * height
     for ratio in target_ratios:
@@ -75,13 +77,16 @@ def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbna
 
     # calculate the existing image aspect ratio
     target_ratios = set(
-        (i, j) for n in range(min_num, max_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
-        i * j <= max_num and i * j >= min_num)
+        (i, j)
+        for n in range(min_num, max_num + 1)
+        for i in range(1, n + 1)
+        for j in range(1, n + 1)
+        if i * j <= max_num and i * j >= min_num
+    )
     target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
 
     # find the closest aspect ratio to the target
-    target_aspect_ratio = find_closest_aspect_ratio(
-        aspect_ratio, target_ratios, orig_width, orig_height, image_size)
+    target_aspect_ratio = find_closest_aspect_ratio(aspect_ratio, target_ratios, orig_width, orig_height, image_size)
 
     # calculate the target width and height
     target_width = image_size * target_aspect_ratio[0]
@@ -96,7 +101,7 @@ def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbna
             (i % (target_width // image_size)) * image_size,
             (i // (target_width // image_size)) * image_size,
             ((i % (target_width // image_size)) + 1) * image_size,
-            ((i // (target_width // image_size)) + 1) * image_size
+            ((i // (target_width // image_size)) + 1) * image_size,
         )
         # split the image
         split_img = resized_img.crop(box)
@@ -109,7 +114,7 @@ def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbna
 
 
 def load_image(image_file, input_size=448, max_num=12):
-    image = Image.open(image_file).convert('RGB')
+    image = Image.open(image_file).convert("RGB")
     transform = build_transform(input_size=input_size)
     images = dynamic_preprocess(image, image_size=input_size, use_thumbnail=True, max_num=max_num)
     pixel_values = [transform(image) for image in images]
@@ -122,7 +127,7 @@ class NVLM(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self, model_path='nvidia/NVLM-D-72B', **kwargs):
+    def __init__(self, model_path="nvidia/NVLM-D-72B", **kwargs):
         assert model_path is not None
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
@@ -136,9 +141,10 @@ class NVLM(BaseModel):
             low_cpu_mem_usage=True,
             use_flash_attn=False,
             trust_remote_code=True,
-            device_map=split_model()).eval()
+            device_map=split_model(),
+        ).eval()
 
-        logging.info(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
+        logging.info(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):

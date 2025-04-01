@@ -44,10 +44,12 @@ def build_token_compressor(config) -> nn.Sequential:
             compressor = ROIPoolTokenCompressor(**compressor_params)
         elif compressor_type == "minicpm_resampler":
             assert config.mm_projector_type == "identity_patch"
-            compressor = MiniCPMResampler(embed_dim=config.hidden_size,
-                                          num_heads=config.hidden_size // 128,
-                                          kv_dim=config.mm_hidden_size,
-                                          **compressor_params)
+            compressor = MiniCPMResampler(
+                embed_dim=config.hidden_size,
+                num_heads=config.hidden_size // 128,
+                kv_dim=config.mm_hidden_size,
+                **compressor_params,
+            )
         else:
             raise ValueError("Unspported Compressor type!")
 

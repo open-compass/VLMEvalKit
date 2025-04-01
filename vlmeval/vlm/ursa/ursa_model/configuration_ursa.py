@@ -1,15 +1,15 @@
-# Copyright (2025) Bytedance Ltd. and/or its affiliates 
-# Licensed under the Apache License, Version 2.0 (the "License"); 
-# you may not use this file except in compliance with the License. 
-# You may obtain a copy of the License at 
+# Copyright (2025) Bytedance Ltd. and/or its affiliates
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 
-#     http://www.apache.org/licenses/LICENSE-2.0 
+#     http://www.apache.org/licenses/LICENSE-2.0
 
-# Unless required by applicable law or agreed to in writing, software 
-# distributed under the License is distributed on an "AS IS" BASIS, 
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-# See the License for the specific language governing permissions and 
-# limitations under the License. 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import sys
 
@@ -25,7 +25,8 @@ from transformers.configuration_utils import PretrainedConfig
 from transformers.utils import logging
 from transformers import CONFIG_MAPPING
 from attrdict import AttrDict
-logger = logging.get_logger(__name__)
+
+logger = logging.getLogger(__name__)
 
 
 class VisionConfig(PretrainedConfig):
@@ -56,6 +57,7 @@ class AlignerConfig(PretrainedConfig):
             self.cls = self.cls.__name__
 
         self.params = AttrDict(kwargs.get("params", {}))
+
 
 class UrsaConfig(PretrainedConfig):
     model_type = "ursa"
@@ -93,44 +95,28 @@ class UrsaConfig(PretrainedConfig):
             vision_config = VisionConfig()
             vision_config.cls = "HybridVisionTower"
             vision_config.params = {
-                                        "concat_type": "tuple",
-                                        "high_res_cfg": {
-                                            "ckpt_path": "",
-                                            "image_size": 1024,
-                                            "model_name": "sam_b_downsample",
-                                            "output_dim": 1024,
-                                            "pixel_mean": [
-                                            0.48145466,
-                                            0.4578275,
-                                            0.40821073
-                                            ],
-                                            "pixel_std": [
-                                            0.26862954,
-                                            0.26130258,
-                                            0.27577711
-                                            ],
-                                            "select_feature": "same",
-                                            "select_layer": -1
-                                        },
-                                        "low_res_cfg": {
-                                            "ckpt_path": "",
-                                            "image_size": 384,
-                                            "model_name": "siglip_large_patch16_384",
-                                            "output_dim": 1024,
-                                            "pixel_mean": [
-                                            0.5,
-                                            0.5,
-                                            0.5
-                                            ],
-                                            "pixel_std": [
-                                            0.5,
-                                            0.5,
-                                            0.5
-                                            ],
-                                            "select_feature": "same",
-                                            "select_layer": -1
-                                        }
-                                    }
+                "concat_type": "tuple",
+                "high_res_cfg": {
+                    "ckpt_path": "",
+                    "image_size": 1024,
+                    "model_name": "sam_b_downsample",
+                    "output_dim": 1024,
+                    "pixel_mean": [0.48145466, 0.4578275, 0.40821073],
+                    "pixel_std": [0.26862954, 0.26130258, 0.27577711],
+                    "select_feature": "same",
+                    "select_layer": -1,
+                },
+                "low_res_cfg": {
+                    "ckpt_path": "",
+                    "image_size": 384,
+                    "model_name": "siglip_large_patch16_384",
+                    "output_dim": 1024,
+                    "pixel_mean": [0.5, 0.5, 0.5],
+                    "pixel_std": [0.5, 0.5, 0.5],
+                    "select_feature": "same",
+                    "select_layer": -1,
+                },
+            }
         self.vision_config = vision_config
         self.aligner_config = aligner_config
         if isinstance(text_config, dict):

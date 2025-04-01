@@ -8,42 +8,42 @@ from transformers import StoppingCriteria
 import os
 import io
 
-if 'HIGHRES_BASE' in os.environ:
+if "HIGHRES_BASE" in os.environ:
     # highresxpatch
-    HIGHRES_BASE = os.environ['HIGHRES_BASE']
-    highres_base, highres_ps = HIGHRES_BASE.split('x')
+    HIGHRES_BASE = os.environ["HIGHRES_BASE"]
+    highres_base, highres_ps = HIGHRES_BASE.split("x")
     highres_base = int(highres_base)
     highres_ps = int(highres_ps)
     print(f"HIGHRES_BASE is set as {HIGHRES_BASE}, {highres_base}, {highres_ps}")
 else:
     HIGHRES_BASE = None
 
-if 'MAXRES' in os.environ:
+if "MAXRES" in os.environ:
     # highresxpatch
-    MAXRES = int(os.environ['MAXRES'])
+    MAXRES = int(os.environ["MAXRES"])
     print(f"MAXRES is set as {MAXRES}")
 else:
     MAXRES = 1536
 
-if 'MINRES' in os.environ:
+if "MINRES" in os.environ:
     # highresxpatch
-    MINRES = int(os.environ['MINRES'])
+    MINRES = int(os.environ["MINRES"])
     print(f"MINRES is set as {MINRES}")
 else:
     MINRES = 0
 
-if 'PAD2STRIDE' in os.environ:
+if "PAD2STRIDE" in os.environ:
     # highresxpatch
     PAD2STRIDE = True
     print(f"PAD2STRIDE is set")
 else:
     PAD2STRIDE = False
 
-if 'LOWRES_RESIZE' in os.environ:
-    LOWRES_RESIZE = os.environ['LOWRES_RESIZE']
+if "LOWRES_RESIZE" in os.environ:
+    LOWRES_RESIZE = os.environ["LOWRES_RESIZE"]
     print(f"LOWRES_RESIZE is set as {LOWRES_RESIZE}")
-    if 'x' in LOWRES_RESIZE:
-        size, ps = LOWRES_RESIZE.split('x')
+    if "x" in LOWRES_RESIZE:
+        size, ps = LOWRES_RESIZE.split("x")
         size = int(size)
         ps = int(ps)
         LOWRES_RESIZE = (size, ps)
@@ -51,7 +51,7 @@ if 'LOWRES_RESIZE' in os.environ:
         LOWRES_RESIZE = int(LOWRES_RESIZE)
 else:
     LOWRES_RESIZE = None
-    
+
 
 def pad_image(image, target_resolution, value=0):
     """
@@ -67,11 +67,12 @@ def pad_image(image, target_resolution, value=0):
     original_width, original_height = image.size
     target_width, target_height = target_resolution
     # Create a new image with the target size and paste the resized image onto it
-    new_image = Image.new('RGB', (target_width, target_height), (value, value, value))
+    new_image = Image.new("RGB", (target_width, target_height), (value, value, value))
     paste_x = (target_width - original_width) // 2
     paste_y = (target_height - original_height) // 2
     new_image.paste(image, (paste_x, paste_y))
     return new_image
+
 
 def resize_images(image, patch_size=14, base_size=896):
     h, w = image.size
@@ -88,7 +89,6 @@ def resize_images(image, patch_size=14, base_size=896):
         scale = base_size * base_size / (h * w)
         scale = math.sqrt(scale)
 
-
     if scale is not None:
         new_h = int(h * scale / patch_size) * patch_size
         new_w = int(w * scale / patch_size) * patch_size
@@ -100,7 +100,7 @@ def resize_images(image, patch_size=14, base_size=896):
             new_h = h
         else:
             new_h = (h // patch_size + 1) * patch_size
-        
+
         if w % patch_size == 0:
             new_w = w
         else:
@@ -115,6 +115,7 @@ def resize_images(image, patch_size=14, base_size=896):
         image = image.resize((new_h, new_w))
 
     return image
+
 
 def process_anyres_highres_image_genli(image, processor):
     h, w = image.size
@@ -136,16 +137,15 @@ def process_anyres_highres_image_genli(image, processor):
     else:
         image_original_resize = image.resize((384, 384))
 
-    image_patches = processor.preprocess(image_original_resize, return_tensors='pt')['pixel_values'][0]
-    image_padded = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
+    image_patches = processor.preprocess(image_original_resize, return_tensors="pt")["pixel_values"][0]
+    image_padded = processor.preprocess(image, return_tensors="pt")["pixel_values"][0]
     return image_patches.unsqueeze(0), image_padded.unsqueeze(0)
-    
 
 
 def get_model_name_from_path(model_path):
     model_path = model_path.strip("/")
     model_paths = model_path.split("/")
-    if model_paths[-1].startswith('checkpoint-'):
+    if model_paths[-1].startswith("checkpoint-"):
         return model_paths[-2] + "_" + model_paths[-1]
     else:
         return model_paths[-1]
@@ -168,7 +168,7 @@ class KeywordsStoppingCriteria(StoppingCriteria):
         offset = min(output_ids.shape[1] - self.start_len, 3)
         self.keyword_ids = [keyword_id.to(output_ids.device) for keyword_id in self.keyword_ids]
         for keyword_id in self.keyword_ids:
-            if output_ids[0, -keyword_id.shape[0]:] == keyword_id:
+            if output_ids[0, -keyword_id.shape[0] :] == keyword_id:
                 return True
         outputs = self.tokenizer.batch_decode(output_ids[:, -offset:], skip_special_tokens=True)[0]
         for keyword in self.keywords:

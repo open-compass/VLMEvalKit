@@ -23,8 +23,9 @@ from .config import (
     GANDALF_TOKEN_INDEX,
     IGNORE_INDEX,
     IMAGE_TOKEN_INDEX,
-    SEQ_MAX_LEN
+    SEQ_MAX_LEN,
 )
+
 SPLIT_TOKEN = "<SPLIT_TOKEN>"
 
 
@@ -68,7 +69,7 @@ class KeywordsStoppingCriteria(StoppingCriteria):
         if self.start_len is None:
             self.start_len = self.input_ids.shape[1]
         else:
-            outputs = self.tokenizer.batch_decode(output_ids[:, self.start_len:], skip_special_tokens=True)[0]
+            outputs = self.tokenizer.batch_decode(output_ids[:, self.start_len :], skip_special_tokens=True)[0]
             for keyword in self.keywords:
                 if keyword in outputs:
                     return True
@@ -113,7 +114,7 @@ def tokenizer_image_token(
 
     prompt_chunks = split_with_token(prompt, DEFAULT_IMAGE_TOKEN)
     prompt_chunks = sum([split_with_token(chunk, DEFAULT_GANDALF_TOKEN) for chunk in prompt_chunks], [])
-    input_ids, offset = ([tokenizer.bos_token_id], 1) if getattr(tokenizer,'bos_token',None) else ([], 0)
+    input_ids, offset = ([tokenizer.bos_token_id], 1) if getattr(tokenizer, "bos_token", None) else ([], 0)
     token2index = {DEFAULT_IMAGE_TOKEN: image_token_index, DEFAULT_GANDALF_TOKEN: gandalf_token_index}
     for chunk in prompt_chunks:
         if chunk in token2index:
@@ -121,7 +122,7 @@ def tokenizer_image_token(
         else:
             chunk_ids = tokenizer(chunk).input_ids
             # For Qwen2-7B, bos token exists but does not appear in the beginning
-            if chunk_ids[0] != getattr(tokenizer,'bos_token_id', None):
+            if chunk_ids[0] != getattr(tokenizer, "bos_token_id", None):
                 offset = 0
             input_ids.extend(chunk_ids[offset:])
 
@@ -200,7 +201,7 @@ def _mask_targets(target, tokenized_lens, speakers, only_mask_system=False):
     if not only_mask_system:
         for tokenized_len, speaker in zip(tokenized_lens, speakers):
             if speaker == "human":
-                target[cur_idx + 2: cur_idx + tokenized_len] = IGNORE_INDEX
+                target[cur_idx + 2 : cur_idx + tokenized_len] = IGNORE_INDEX
             cur_idx += tokenized_len
 
 
@@ -243,18 +244,16 @@ def preprocess_multimodal(
                 else:
                     video_replace_token = DEFAULT_IMAGE_TOKEN * img_num
                 # video_replace_token = ' '.join(f'Frame {i}: {DEFAULT_IMAGE_TOKEN}' for i in range(img_num))
-                sentence["value"] = sentence['value'].replace(DEFAULT_VIDEO_TOKEN, '').strip()
-                sentence["value"] = video_replace_token + '\n' + sentence["value"]
+                sentence["value"] = sentence["value"].replace(DEFAULT_VIDEO_TOKEN, "").strip()
+                sentence["value"] = video_replace_token + "\n" + sentence["value"]
             else:
                 segs = re.split(DEFAULT_IMAGE_TOKEN, sentence["value"])
                 if data_args.use_special_start_end_token:
-                    sentence["value"] = (
-                        DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
-                    ).join(segs[: img_num + 1]) + "".join(segs[img_num + 1:])
+                    sentence["value"] = (DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN).join(
+                        segs[: img_num + 1]
+                    ) + "".join(segs[img_num + 1 :])
                 else:
-                    sentence["value"] = DEFAULT_IMAGE_TOKEN.join(segs[: img_num + 1]) + "".join(
-                        segs[img_num + 1:]
-                    )
+                    sentence["value"] = DEFAULT_IMAGE_TOKEN.join(segs[: img_num + 1]) + "".join(segs[img_num + 1 :])
         elif data_args.model_class in ["valley-video", "valley-video-mistral"]:
             if DEFAULT_IMAGE_TOKEN in sentence["value"] or DEFAULT_VIDEO_TOKEN in sentence["value"]:
                 sentence["value"] = sentence["value"].replace(DEFAULT_IMAGE_TOKEN, "").strip()
@@ -278,9 +277,9 @@ def preprocess_llama_2(
     inference: bool = False,
     only_mask_system: bool = False,
 ) -> Dict:
-    '''
+    """
     FIXME: support only_mask_system=True; check tokenizer; unwrap sources
-    '''
+    """
     conv = conversation_lib.default_conversation.copy()
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
     sources = [sources]
@@ -305,7 +304,8 @@ def preprocess_llama_2(
 
     if has_image:
         input_ids = torch.stack(
-            [tokenizer_image_token(prompt, tokenizer, return_tensors='pt') for prompt in conversations], dim=0)
+            [tokenizer_image_token(prompt, tokenizer, return_tensors="pt") for prompt in conversations], dim=0
+        )
     else:
         input_ids = tokenizer(
             conversations,
@@ -343,7 +343,7 @@ def preprocess_llama_2(
                 round_len = len(tokenizer(rou).input_ids)
                 instruction_len = len(tokenizer(parts[0]).input_ids) - 2
 
-            target[cur_len: cur_len + instruction_len] = IGNORE_INDEX
+            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
 
             cur_len += round_len
         target[cur_len:] = IGNORE_INDEX
@@ -351,10 +351,7 @@ def preprocess_llama_2(
         if cur_len < tokenizer.model_max_length:
             if cur_len != total_len:
                 target[:] = IGNORE_INDEX
-                print(
-                    f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}."
-                    f" (ignored)"
-                )
+                print(f"WARNING: tokenization mismatch: {cur_len} vs. {total_len}." f" (ignored)")
 
     return dict(
         input_ids=input_ids.squeeze(0),
@@ -438,7 +435,7 @@ def preprocess_mistral(
                 round_len = len(tokenizer(rou).input_ids)
                 instruction_len = len(tokenizer(parts[0]).input_ids) - 1
 
-            target[cur_len: cur_len + instruction_len] = IGNORE_INDEX
+            target[cur_len : cur_len + instruction_len] = IGNORE_INDEX
 
             cur_len += round_len
         if not only_mask_system:
@@ -616,19 +613,19 @@ def preprocess_text(
 
 
 def preprocess_qwen2(
-        source,
-        tokenizer: transformers.PreTrainedTokenizer,
-        has_image: bool = False,
-        inference: bool = False,
-        only_mask_system: bool = False,
+    source,
+    tokenizer: transformers.PreTrainedTokenizer,
+    has_image: bool = False,
+    inference: bool = False,
+    only_mask_system: bool = False,
 ):
-    '''
-      "chat_template":
-      "{% for message in messages %}{% if loop.first and messages[0]['role'] != 'system' %}
-      {{ '<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n' }}{% endif %}{{'<|im_start|>' +
-      message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}
-      {% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}",
-    '''
+    """
+    "chat_template":
+    "{% for message in messages %}{% if loop.first and messages[0]['role'] != 'system' %}
+    {{ '<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n' }}{% endif %}{{'<|im_start|>' +
+    message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}
+    {% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}",
+    """
     conv = conversation_lib.default_conversation.copy()
     assert conv.sep_style == conversation_lib.SeparatorStyle.QWEN2
     roles = {"human": conv.roles[0], "gpt": conv.roles[1]}
@@ -640,7 +637,7 @@ def preprocess_qwen2(
     for j, sentence in enumerate(source):
         role = roles[sentence["from"]]
         assert role == conv.roles[j % 2], f"{j}"
-        messages.append({"role":role, "content":sentence["value"]})
+        messages.append({"role": role, "content": sentence["value"]})
     conversation = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=inference)
     # Mask targets
     rounds = conversation.split(conv.sep2)
@@ -652,19 +649,21 @@ def preprocess_qwen2(
         if (not inference) or (i < (len(rounds) - 1)):
             rou += conv.sep2
         if has_image:
-            cur_input_ids_ = tokenizer_image_token(rou, tokenizer, return_tensors='pt')
+            cur_input_ids_ = tokenizer_image_token(rou, tokenizer, return_tensors="pt")
             input_ids_ = torch.cat([input_ids_, cur_input_ids_], dim=0)
             if only_mask_system:
-                mask_len = len(tokenizer_image_token(re.sub(rf'{conv.roles[0]}\n[\s\S]*', f'{conv.roles[0]}:', rou),
-                                                     tokenizer))
+                mask_len = len(
+                    tokenizer_image_token(re.sub(rf"{conv.roles[0]}\n[\s\S]*", f"{conv.roles[0]}:", rou), tokenizer)
+                )
             else:
-                mask_len = len(tokenizer_image_token(re.sub(rf'{conv.roles[1]}\n[\s\S]*', f'{conv.roles[1]}:', rou),
-                                                     tokenizer))
+                mask_len = len(
+                    tokenizer_image_token(re.sub(rf"{conv.roles[1]}\n[\s\S]*", f"{conv.roles[1]}:", rou), tokenizer)
+                )
             targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
         else:
-            cur_input_ids_ = tokenizer(rou, return_tensors='pt')["input_ids"][0, :]
+            cur_input_ids_ = tokenizer(rou, return_tensors="pt")["input_ids"][0, :]
             input_ids_ = torch.cat([input_ids_, cur_input_ids_], dim=0)
-            mask_len = len(tokenizer(re.sub(rf'{conv.roles[1]}\n[\s\S]*', rf'{conv.roles[1]}:', rou))["input_ids"][:])
+            mask_len = len(tokenizer(re.sub(rf"{conv.roles[1]}\n[\s\S]*", rf"{conv.roles[1]}:", rou))["input_ids"][:])
             # targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
             targets_ = torch.cat([targets_, torch.tensor([-100] * mask_len), cur_input_ids_[mask_len:]], dim=0)
     return {"input_ids": input_ids_, "labels": targets_}
@@ -685,7 +684,13 @@ def preprocess(
     4. Make a deepcopy as the target. Mask human words with IGNORE_INDEX.
     """
     assert conversation_lib.default_conversation.version in [
-        "v0", "v1", "mistral", "llama_2", "plain", 'qwen2','gemma2'
+        "v0",
+        "v1",
+        "mistral",
+        "llama_2",
+        "plain",
+        "qwen2",
+        "gemma2",
     ]
     # v0 is for vicuna-v0, sep is '###'
     # v1 is for vicuna-v1.x, sep is ' ', sep2 is '</s>'
@@ -755,14 +760,18 @@ def find_closest_aspect_ratio(aspect_ratio, min_tile_num, max_tile_num, width, h
     """
     # calculate the existing image aspect ratio
     target_ratios = set(
-        (i, j) for n in range(min_tile_num, max_tile_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
-        i * j <= max_tile_num and i * j >= min_tile_num)
+        (i, j)
+        for n in range(min_tile_num, max_tile_num + 1)
+        for i in range(1, n + 1)
+        for j in range(1, n + 1)
+        if i * j <= max_tile_num and i * j >= min_tile_num
+    )
 
     # sort by aera
     target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
 
     # find the best ratio
-    best_ratio_diff = float('inf')
+    best_ratio_diff = float("inf")
     best_ratio = (1, 1)
     area = width * height
     for ratio in target_ratios:
@@ -808,7 +817,8 @@ def dynamic_preprocess(image, min_num=1, max_num=6, tiled_image_size=448, use_th
 
     # find the closest aspect ratio to the target
     target_aspect_ratio = find_closest_aspect_ratio(
-        aspect_ratio, min_num, max_num, orig_width, orig_height, tiled_image_size)
+        aspect_ratio, min_num, max_num, orig_width, orig_height, tiled_image_size
+    )
 
     # calculate the target width and height
     target_width = tiled_image_size * target_aspect_ratio[0]
@@ -828,7 +838,7 @@ def dynamic_preprocess(image, min_num=1, max_num=6, tiled_image_size=448, use_th
             (i % (target_width // tiled_image_size)) * tiled_image_size,
             (i // (target_width // tiled_image_size)) * tiled_image_size,
             ((i % (target_width // tiled_image_size)) + 1) * tiled_image_size,
-            ((i // (target_width // tiled_image_size)) + 1) * tiled_image_size
+            ((i // (target_width // tiled_image_size)) + 1) * tiled_image_size,
         )
         # split the image
         split_img = resized_img.crop(box)

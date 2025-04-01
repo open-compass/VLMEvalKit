@@ -29,7 +29,7 @@ from transformers.image_processing_utils import BaseImageProcessor, BatchFeature
 from transformers.image_utils import to_numpy_array
 from transformers.utils import logging
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 ImageType = Union[np.ndarray, torch.Tensor, Image.Image]
 IMAGENET_MEAN = (0.48145466, 0.4578275, 0.40821073)

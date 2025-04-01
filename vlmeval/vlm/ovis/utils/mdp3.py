@@ -17,10 +17,10 @@ def timer(hint=""):
     print(f"{hint} runtime: {end - start:.4f} s")
 
 
-INF = 0x7fffffff
+INF = 0x7FFFFFFF
 
 
-class VisualEncoder():
+class VisualEncoder:
 
     def __init__(self, model_path, device="cuda"):
         self.device = device
@@ -34,8 +34,9 @@ class VisualEncoder():
             texts = self.clear_prompt(copy.deepcopy(texts))
 
         with timer("visual processor"):
-            inputs = self.processor(
-                text=texts, images=images, padding="max_length", return_tensors="pt").to(self.model.device)
+            inputs = self.processor(text=texts, images=images, padding="max_length", return_tensors="pt").to(
+                self.model.device
+            )
 
         stride_num = (int(inputs["input_ids"].shape[-1]) + 63) // 64
         stride = (inputs["input_ids"].shape[-1] + stride_num - 1) // stride_num
@@ -43,10 +44,10 @@ class VisualEncoder():
         input_id_heads, input_id_tails = [], []
         l, r = 0, inputs["input_ids"].shape[-1]
         while l < r:
-            input_id_heads.append(inputs["input_ids"][:, l:l + stride])
+            input_id_heads.append(inputs["input_ids"][:, l : l + stride])
             l += stride
             if l < r:
-                input_id_tails.append(inputs["input_ids"][:, r - stride:r])
+                input_id_tails.append(inputs["input_ids"][:, r - stride : r])
                 r -= stride
 
         input_ids = input_id_heads + input_id_tails[::-1]
@@ -55,8 +56,7 @@ class VisualEncoder():
         with timer("extract embeds"):
             with torch.no_grad():
                 with torch.autocast(self.device):
-                    outputs = self.model(
-                        input_ids, pixel_values=inputs["pixel_values"])
+                    outputs = self.model(input_ids, pixel_values=inputs["pixel_values"])
         image_embeds = outputs.image_embeds
         text_embeds = outputs.text_embeds
         return image_embeds, text_embeds.mean(dim=0, keepdim=True)
@@ -66,7 +66,7 @@ class VisualEncoder():
             "Select the best answer to the following multiple-choice question based on the video and the subtitles. Respond with only the letter (A, B, C, or D) of the correct option.",
             "Select the best answer to the following multiple-choice question based on the video. Respond with only the letter (A, B, C, or D) of the correct option.",
             "Carefully watch the video and pay attention to the cause and sequence of events, the detail and movement of objects, and the action and pose of persons. Based on your observations, select the best option that accurately addresses the question.",
-            "Carefully watch this video and pay attention to every detail. Based on your observations, select the best option that accurately addresses the question."
+            "Carefully watch this video and pay attention to every detail. Based on your observations, select the best option that accurately addresses the question.",
         ]
         tails = [
             "Answer with the option's letter from the given choices directly.",
@@ -74,7 +74,7 @@ class VisualEncoder():
             "Answer the question using a single word or phrase.",
             "Only give the best option.",
             "Best option: (",
-            "Please directly give the best option:"
+            "Please directly give the best option:",
         ]
         for head in heads:
             prompt = prompt.split(head)[-1]
@@ -94,8 +94,7 @@ class MDP3:
         self.segment_size = -1
         self.condition_size = 1
 
-        self.kernel = MultiGaussianKernel(
-            alphas=[2 ** k for k in list(range(-3, 2))])
+        self.kernel = MultiGaussianKernel(alphas=[2**k for k in list(range(-3, 2))])
         self.ve = VisualEncoder(model_path=visual_encoder_name_or_path, device=device)
 
     def __call__(self, conversations, frames, clear_prompt=True):
@@ -123,18 +122,16 @@ class MDP3:
                         conv_v.append("<image>")
                     img_cnt += 1
 
-                ret_conversions.append({"from": conv["from"], "value": ''.join(conv_v)})
+                ret_conversions.append({"from": conv["from"], "value": "".join(conv_v)})
 
             ret_frames = [frames[idx] for idx in selected_idx]
 
             return ret_conversions, ret_frames
 
     def cal_obj(self, selected_images_embeds, text_embed):
-        kernel_matrix = self.kernel(
-            torch.cat([text_embed, selected_images_embeds]))
+        kernel_matrix = self.kernel(torch.cat([text_embed, selected_images_embeds]))
         r, S_matrix = kernel_matrix[0:1, 1:], kernel_matrix[1:, 1:]
-        ret_score = (1. / self.lamda * 2 * torch.log(r).sum()) + \
-                    torch.linalg.slogdet(S_matrix).logabsdet
+        ret_score = (1.0 / self.lamda * 2 * torch.log(r).sum()) + torch.linalg.slogdet(S_matrix).logabsdet
         return ret_score
 
     def _select_frames(self, image_embeds, text_embeds):
@@ -145,9 +142,8 @@ class MDP3:
         else:
             segment_size = self.segment_size
         segment_num = (N_image + segment_size - 1) // segment_size
-        dp = [[0.] + [-INF] * self.n_selection for _ in range(segment_num + 1)]
-        trace = [[[] for _ in range(self.n_selection + 1)]
-                 for _ in range(segment_num + 1)]
+        dp = [[0.0] + [-INF] * self.n_selection for _ in range(segment_num + 1)]
+        trace = [[[] for _ in range(self.n_selection + 1)] for _ in range(segment_num + 1)]
 
         for seg_idx in range(1, segment_num + 1):
             for selected_num in range(1, min(self.n_selection, seg_idx * segment_size) + 1):
@@ -156,16 +152,13 @@ class MDP3:
                         text_embeds=text_embeds,
                         image_embeds=image_embeds,
                         conditional_index=trace[seg_idx - 1][selected_num - to_select_num][
-                                          -min(self.condition_size,
-                                               len(trace[seg_idx - 1][selected_num - to_select_num])):],
-                        candidate_index=range(
-                            (seg_idx - 1) * segment_size, seg_idx * segment_size),
-                        to_select_num=to_select_num
+                            -min(self.condition_size, len(trace[seg_idx - 1][selected_num - to_select_num])) :
+                        ],
+                        candidate_index=range((seg_idx - 1) * segment_size, seg_idx * segment_size),
+                        to_select_num=to_select_num,
                     )
-                    cur_score = dp[seg_idx - 1][selected_num -
-                                                to_select_num] + cur_score
-                    cur_trace = trace[
-                                    seg_idx - 1][selected_num - to_select_num] + cur_trace
+                    cur_score = dp[seg_idx - 1][selected_num - to_select_num] + cur_score
+                    cur_trace = trace[seg_idx - 1][selected_num - to_select_num] + cur_trace
                     if cur_score > dp[seg_idx][selected_num]:
                         dp[seg_idx][selected_num] = cur_score
                         trace[seg_idx][selected_num] = cur_trace
@@ -179,52 +172,46 @@ class MDP3:
         else:
             segment_size = self.segment_size
         segment_num = (N_image + segment_size - 1) // segment_size
-        dp = [[0.] + [-INF] * self.n_selection for _ in range(segment_num + 1)]
-        trace = [[[] for _ in range(self.n_selection + 1)]
-                 for _ in range(segment_num + 1)]
+        dp = [[0.0] + [-INF] * self.n_selection for _ in range(segment_num + 1)]
+        trace = [[[] for _ in range(self.n_selection + 1)] for _ in range(segment_num + 1)]
 
         for seg_idx in range(1, segment_num + 1):
-            candidate_index = range(
-                (seg_idx - 1) * segment_size, seg_idx * segment_size)
+            candidate_index = range((seg_idx - 1) * segment_size, seg_idx * segment_size)
             candidate_embeds = [image_embeds[i] for i in candidate_index]
             sim_matrix = self.kernel(torch.stack(candidate_embeds))
 
             for start_selected_num in range(0, min(self.n_selection, (seg_idx - 1) * segment_size) + 1):
                 conditional_index = trace[seg_idx - 1][start_selected_num][
-                                    -min(self.condition_size, len(trace[seg_idx - 1][start_selected_num])):]
+                    -min(self.condition_size, len(trace[seg_idx - 1][start_selected_num])) :
+                ]
                 offset = len(conditional_index)
-                additional_embeds = [text_embeds[
-                                         0].reshape(-1)] + [image_embeds[i] for i in conditional_index]
+                additional_embeds = [text_embeds[0].reshape(-1)] + [image_embeds[i] for i in conditional_index]
                 additional = self.kernel(
-                    torch.stack(additional_embeds),
-                    torch.stack(additional_embeds + candidate_embeds)
+                    torch.stack(additional_embeds), torch.stack(additional_embeds + candidate_embeds)
                 )
-                total_matrix = torch.cat([
-                    additional,  # [add, 32+add]
-                    torch.cat([
-                        additional[:, -len(sim_matrix):].T,  # [32, add]
-                        sim_matrix  # [32, 32]
-                    ], dim=1)  # [32, add + 32]
-                ], dim=0)  # [add+32, add+32]
+                total_matrix = torch.cat(
+                    [
+                        additional,  # [add, 32+add]
+                        torch.cat(
+                            [additional[:, -len(sim_matrix) :].T, sim_matrix], dim=1  # [32, add]  # [32, 32]
+                        ),  # [32, add + 32]
+                    ],
+                    dim=0,
+                )  # [add+32, add+32]
 
-                max_selection = min(self.n_selection -
-                                    start_selected_num, segment_size)
+                max_selection = min(self.n_selection - start_selected_num, segment_size)
 
-                cur_scores, cur_traces = self.seqdpp_select_super_fast(
-                    total_matrix, offset, max_selection)
+                cur_scores, cur_traces = self.seqdpp_select_super_fast(total_matrix, offset, max_selection)
 
                 for to_select_num, (cur_score, cur_trace) in enumerate(zip(cur_scores, cur_traces)):
-                    cur_trace = [i + int((seg_idx - 1) * segment_size)
-                                 for i in cur_trace]
+                    cur_trace = [i + int((seg_idx - 1) * segment_size) for i in cur_trace]
 
                     cur_score = dp[seg_idx - 1][start_selected_num] + cur_score
-                    cur_trace = trace[
-                                    seg_idx - 1][start_selected_num] + cur_trace
+                    cur_trace = trace[seg_idx - 1][start_selected_num] + cur_trace
 
                     if cur_score > dp[seg_idx][start_selected_num + to_select_num]:
                         dp[seg_idx][start_selected_num + to_select_num] = cur_score
-                        trace[seg_idx][start_selected_num +
-                                       to_select_num] = cur_trace
+                        trace[seg_idx][start_selected_num + to_select_num] = cur_trace
         return trace[segment_num][self.n_selection]
 
     def seqdpp_select(self, text_embeds, image_embeds, conditional_index, candidate_index, to_select_num):
@@ -232,11 +219,9 @@ class MDP3:
             return 0.0, []
         conditional_embeds = [image_embeds[i] for i in conditional_index]
         cur_trace = []
-        U_matrix = self.kernel(torch.stack(
-            conditional_embeds + [image_embeds[i] for i in candidate_index]))
+        U_matrix = self.kernel(torch.stack(conditional_embeds + [image_embeds[i] for i in candidate_index]))
         I = torch.diag(
-            torch.tensor([0.] * len(conditional_index) + [1.] *
-                         len(candidate_index), device=U_matrix.device)
+            torch.tensor([0.0] * len(conditional_index) + [1.0] * len(candidate_index), device=U_matrix.device)
         )
         obj_values = -torch.linalg.slogdet(U_matrix + I).logabsdet
         while len(cur_trace) < to_select_num:
@@ -246,9 +231,8 @@ class MDP3:
                 if i in cur_trace:
                     continue
                 cur_obj = self.cal_obj(
-                    selected_images_embeds=torch.stack(
-                        conditional_embeds + [image_embeds[j] for j in cur_trace + [i]]),
-                    text_embed=text_embeds[0].reshape(1, -1)
+                    selected_images_embeds=torch.stack(conditional_embeds + [image_embeds[j] for j in cur_trace + [i]]),
+                    text_embed=text_embeds[0].reshape(1, -1),
                 )
                 cur_obj_gain = cur_obj - obj_values
                 if cur_obj_gain > max_obj_gain:
@@ -273,11 +257,11 @@ class MDP3:
             for i in candidate_index:
                 if i in cur_trace:
                     continue
-                selected_idx = list(range(offset)) + \
-                               [j + offset for j in cur_trace + [i]]
+                selected_idx = list(range(offset)) + [j + offset for j in cur_trace + [i]]
                 cur_S_matrix = S_matrix[selected_idx][:, selected_idx]
-                cur_obj = (1. / self.lamda * 2 * torch.log(
-                    r[:, selected_idx]).sum()) + torch.linalg.slogdet(cur_S_matrix).logabsdet
+                cur_obj = (1.0 / self.lamda * 2 * torch.log(r[:, selected_idx]).sum()) + torch.linalg.slogdet(
+                    cur_S_matrix
+                ).logabsdet
                 cur_obj_gain = cur_obj - obj_values
                 if cur_obj_gain > max_obj_gain:
                     max_obj_gain = cur_obj_gain
@@ -298,8 +282,7 @@ class MDP3:
         conditional_idx = list(range(offset))
         L = None
         if len(conditional_idx) > 0:
-            L = torch.linalg.cholesky(
-                S_matrix[conditional_idx][:, conditional_idx])
+            L = torch.linalg.cholesky(S_matrix[conditional_idx][:, conditional_idx])
 
         while len(cur_trace) < to_select_num:
             max_obj = -INF
@@ -309,18 +292,15 @@ class MDP3:
                 if i in cur_trace:
                     continue
                 cur_idx = i + offset
-                selected_idx = conditional_idx + \
-                               [j + offset for j in cur_trace] + [cur_idx]
+                selected_idx = conditional_idx + [j + offset for j in cur_trace] + [cur_idx]
                 if L is None:
                     cur_sim_v = S_matrix[selected_idx][:, selected_idx]
                     cur_L = torch.sqrt(cur_sim_v).reshape(1, 1)
                     logdet = cur_sim_v.clone().log()
                 else:
-                    cur_sim_v = S_matrix[cur_idx:cur_idx + 1][:, selected_idx]
-                    cur_L, logdet = self.cholesky_update_determinant(
-                        L, cur_sim_v)
-                cur_obj = 1. / self.lamda * 2 * \
-                          torch.log(r[:, selected_idx]).sum() + logdet
+                    cur_sim_v = S_matrix[cur_idx : cur_idx + 1][:, selected_idx]
+                    cur_L, logdet = self.cholesky_update_determinant(L, cur_sim_v)
+                cur_obj = 1.0 / self.lamda * 2 * torch.log(r[:, selected_idx]).sum() + logdet
 
                 if cur_obj > max_obj or cur_selected_idx == -1:
                     max_obj = cur_obj
@@ -353,7 +333,7 @@ class MDP3:
 
 class GaussianKernel(nn.Module):
 
-    def __init__(self, alpha=1.):
+    def __init__(self, alpha=1.0):
         super(GaussianKernel, self).__init__()
         self.alpha = alpha
 
@@ -367,7 +347,7 @@ class MultiGaussianKernel(nn.Module):
     def __init__(self, alphas=None):
         super(MultiGaussianKernel, self).__init__()
         if alphas is None:
-            alphas = [2 ** k for k in list(range(-3, 2))]
+            alphas = [2**k for k in list(range(-3, 2))]
         self.alphas = alphas
 
     def forward(self, X: torch.Tensor, Y: torch.tensor = None) -> int:

@@ -60,8 +60,7 @@ def build_logger(logger_name, logger_filename):
     if handler is None:
         os.makedirs(LOGDIR, exist_ok=True)
         filename = os.path.join(LOGDIR, logger_filename)
-        handler = logging.handlers.TimedRotatingFileHandler(
-            filename, when='D', utc=True, encoding='UTF-8')
+        handler = logging.handlers.TimedRotatingFileHandler(filename, when="D", utc=True, encoding="UTF-8")
         handler.setFormatter(formatter)
 
         for name, item in logging.root.manager.loggerDict.items():
@@ -75,38 +74,40 @@ class StreamToLogger(object):
     """
     Fake file-like stream object that redirects writes to a logger instance.
     """
+
     def __init__(self, logger, log_level=logging.INFO):
         self.terminal = sys.stdout
         self.logger = logger
         self.log_level = log_level
-        self.linebuf = ''
+        self.linebuf = ""
 
     def __getattr__(self, attr):
         return getattr(self.terminal, attr)
 
     def write(self, buf):
         temp_linebuf = self.linebuf + buf
-        self.linebuf = ''
+        self.linebuf = ""
         for line in temp_linebuf.splitlines(True):
             # From the io.TextIOWrapper docs:
             #   On output, if newline is None, any '\n' characters written
             #   are translated to the system default line separator.
             # By default sys.stdout.write() expects '\n' newlines and then
             # translates them so this is still cross platform.
-            if line[-1] == '\n':
+            if line[-1] == "\n":
                 self.logger.log(self.log_level, line.rstrip())
             else:
                 self.linebuf += line
 
     def flush(self):
-        if self.linebuf != '':
+        if self.linebuf != "":
             self.logger.log(self.log_level, self.linebuf.rstrip())
-        self.linebuf = ''
+        self.linebuf = ""
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
     from deepspeed import zero
     from deepspeed.runtime.zero.partition_parameters import ZeroParamStatus
+
     if hasattr(param, "ds_id"):
         if param.ds_status == ZeroParamStatus.NOT_AVAILABLE:
             if not ignore_status:
@@ -157,6 +158,7 @@ def get_speech_projector_state_maybe_zero_3(named_params, keys_to_match):
     to_return = {k: maybe_zero_3(v, ignore_status=True).cpu() for k, v in to_return.items()}
     return to_return
 
+
 def lengths_to_padding_mask(lens):
     bsz, max_lens = lens.size(0), torch.max(lens).item()
     mask = torch.arange(max_lens).to(lens.device).view(1, max_lens)
@@ -173,6 +175,7 @@ def disable_torch_init():
     Disable the redundant torch default initialization to accelerate model creation.
     """
     import torch
+
     setattr(torch.nn.Linear, "reset_parameters", lambda self: None)
     setattr(torch.nn.LayerNorm, "reset_parameters", lambda self: None)
 
@@ -180,7 +183,7 @@ def disable_torch_init():
 def get_model_name_from_path(model_path):
     model_path = model_path.strip("/")
     model_paths = model_path.split("/")
-    if model_paths[-1].startswith('checkpoint-'):
+    if model_paths[-1].startswith("checkpoint-"):
         return model_paths[-2] + "_" + model_paths[-1]
     else:
         return model_paths[-1]
@@ -191,8 +194,7 @@ def violates_moderation(text):
     Check whether the text violates OpenAI moderation API.
     """
     url = "https://api.openai.com/v1/moderations"
-    headers = {"Content-Type": "application/json",
-               "Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]}
+    headers = {"Content-Type": "application/json", "Authorization": "Bearer " + os.environ["OPENAI_API_KEY"]}
     text = text.replace("\n", "")
     data = "{" + '"input": ' + f'"{text}"' + "}"
     data = data.encode("utf-8")

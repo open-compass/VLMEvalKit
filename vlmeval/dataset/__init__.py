@@ -67,7 +67,6 @@ from .vdc import VDC
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
-from .miabench import MIABench
 from .cmmmu import CMMMU
 from .emma import EMMADataset
 from .wildvision import WildVision

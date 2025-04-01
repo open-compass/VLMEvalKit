@@ -92,9 +92,7 @@ class SiliconFlowAPI(BaseAPI):
         for msg in msgs_raw:
             if msg["type"] == "image" and not image_b64:
                 image_b64 = encode_image(msg["value"])
-                message["content"].append(
-                    {"image_url": {"url": image_b64}, "type": "image_url"}
-                )
+                message["content"].append({"image_url": {"url": image_b64}, "type": "image_url"})
             elif msg["type"] == "text":
                 message["content"].append({"text": msg["value"], "type": "text"})
 
@@ -121,8 +119,8 @@ class SiliconFlowAPI(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             msg = resp_struct["choices"][0]["message"]
-            if self.reasoning and 'reasoning_content' in msg:
-                answer = {'content': msg['content'], 'reasoning': msg['reasoning_content']}
+            if self.reasoning and "reasoning_content" in msg:
+                answer = {"content": msg["content"], "reasoning": msg["reasoning_content"]}
             else:
                 answer = resp_struct["choices"][0]["message"]["content"].strip()
         except:
@@ -180,9 +178,7 @@ class TeleMMAPI(SiliconFlowAPI):
             tgt_path = toliststr(line["image_path"])
         return tgt_path
 
-    def _prepare_content(
-        self, inputs: list[dict[str, str]], dataset: str = None
-    ) -> list[dict[str, str]]:
+    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """
@@ -212,7 +208,8 @@ class TeleMMAPI(SiliconFlowAPI):
                     prompt += " Please answer yes or no directly, without any unnecessary explanation."
                 elif dataset == "OCRBench":
                     prompt = (
-                        prompt + "\nExtract the text from the image intactly and "
+                        prompt
+                        + "\nExtract the text from the image intactly and "
                         + "answer the question concisely and clearly if possible."
                     )
 
@@ -247,17 +244,13 @@ class TeleMMAPI(SiliconFlowAPI):
         messages.append(
             {
                 "role": "user",
-                "content": self._prepare_content(
-                    inputs, dataset=kwargs.get("dataset", None)
-                ),
+                "content": self._prepare_content(inputs, dataset=kwargs.get("dataset", None)),
             }
         )
 
         payload = dict(model=self.model, messages=messages, **default_kwargs)
 
-        response = requests.post(
-            self.api_base, headers=self.headers, data=json.dumps(payload)
-        )
+        response = requests.post(self.api_base, headers=self.headers, data=json.dumps(payload))
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
 
