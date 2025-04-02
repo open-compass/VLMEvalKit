@@ -168,6 +168,15 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "ChatGPT4o": partial(
+        GPT4V,
+        model="chatgpt-4o-latest",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
     "GPT4o_MINI": partial(
         GPT4V,
         model="gpt-4o-mini-2024-07-18",
@@ -202,6 +211,9 @@ api_models = {
     ),
     "GeminiPro2-0": partial(
         GeminiProVision, model="gemini-2.0-pro-exp", temperature=0, retry=10
+    ),
+    "GeminiPro2-5": partial(
+        GeminiProVision, model="gemini-2.5-pro-exp-03-25", temperature=0, retry=10
     ),
     "GeminiPro1-5-002": partial(
         GPT4V, model="gemini-1.5-pro-002", temperature=0, retry=10
