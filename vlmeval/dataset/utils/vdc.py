@@ -1,3 +1,4 @@
+# flake8: noqa
 from ...smp import *
 import numpy as np
 import pandas as pd

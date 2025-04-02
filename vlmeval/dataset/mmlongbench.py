@@ -1,11 +1,13 @@
-import re
 import math
+import re
 from urllib.request import urlopen
-from PIL import Image, ImageDraw, ImageFont
+
 import torchvision.transforms as transforms
+from PIL import Image, ImageDraw, ImageFont
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
 from vlmeval.smp import *
+
 from .image_base import ImageBaseDataset
 
 FAIL_MSG = "Failed to obtain answer via API."
@@ -237,7 +239,7 @@ def frame2img(img_path_list, font, save_path=None, idx_start=0):
         for idx, im in enumerate(imgs):
             w, h = im.size
             new_img.paste(im, (0, pad + curr_h))
-            draw.text((0, curr_h), f"<IMAGE {idx+idx_start}>", font=font, fill="black")
+            draw.text((0, curr_h), f"<IMAGE {idx + idx_start}>", font=font, fill="black")
             if idx + 1 < len(imgs):
                 draw.line([(0, pad + curr_h + h + 5), (new_w, pad + curr_h + h + 5)], fill="black", width=2)
             curr_h += h + 10 + pad
@@ -253,7 +255,7 @@ def frame2img(img_path_list, font, save_path=None, idx_start=0):
         for idx, im in enumerate(imgs):
             w, h = im.size
             new_img.paste(im, (curr_w, pad))
-            draw.text((curr_w, 0), f"<IMAGE {idx+idx_start}>", font=font, fill="black")
+            draw.text((curr_w, 0), f"<IMAGE {idx + idx_start}>", font=font, fill="black")
             if idx + 1 < len(imgs):
                 draw.line([(curr_w + w + 5, 0), (curr_w + w + 5, new_h)], fill="black", width=2)
             curr_w += w + 10

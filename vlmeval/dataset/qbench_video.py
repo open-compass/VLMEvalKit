@@ -1,21 +1,24 @@
+# flake8: noqa
+import glob
+import os
+import zipfile
+
+import cv2
 import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_concat_dataset import ConcatVideoDataset
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
+import imageio
+import pandas as pd
 import torchvision.transforms as T
+from decord import VideoReader, cpu
+from huggingface_hub import snapshot_download
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from decord import VideoReader, cpu
-import pandas as pd
-import imageio
-import cv2
-import zipfile
-import os
-import glob
+
+from ..smp import *
+from ..utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
 from .utils.qbench_video import *
+from .video_base import VideoBaseDataset
+from .video_concat_dataset import ConcatVideoDataset
 
 FAIL_MSG = "Failed to obtain answer via API."
 
@@ -89,7 +92,6 @@ Please do not add any other answers beyond this.
         else:
 
             def unzip_videos(pth):
-                import zipfile
 
                 if not osp.exists(osp.join(pth, "video")):
                     zip_file = osp.join(pth, "video.zip")
@@ -245,7 +247,6 @@ Please analyze these frames and provide a detailed and accurate answer from the 
         else:
 
             def unzip_videos(pth):
-                import zipfile
 
                 if not osp.exists(osp.join(pth, "video")):
                     zip_file = osp.join(pth, "video.zip")

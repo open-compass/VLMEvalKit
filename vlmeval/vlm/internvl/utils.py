@@ -1,20 +1,21 @@
 import math
-import pandas as pd
 import random
 import re
 import string
+import warnings
+
+import pandas as pd
 import torch
 import torch.distributed as dist
 import torchvision.transforms as T
 import transformers
-import warnings
 from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-from transformers import AutoTokenizer, AutoConfig, AutoModel, CLIPImageProcessor
+from transformers import AutoConfig, AutoModel, AutoTokenizer, CLIPImageProcessor
 
-from ..base import BaseModel
-from ...dataset import DATASET_TYPE, DATASET_MODALITY
+from ...dataset import DATASET_MODALITY, DATASET_TYPE
 from ...smp import *
+from ..base import BaseModel
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -337,7 +338,7 @@ def build_mpo_prompt(message, line, dataset):
         question_orig = question_orig.replace("Choices:\n", "").strip()
     if listinstr(["WeMath"], dataset):
         question_orig = question_orig.replace(
-            "Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>",
+            "Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>",  # noqa: E501
             "",
         ).strip()
     options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}

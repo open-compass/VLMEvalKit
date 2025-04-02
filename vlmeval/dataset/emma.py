@@ -1,12 +1,13 @@
 from vlmeval import *
-from .image_shortqa import ImageShortQADataset
+
 from .image_mcq import MMMUDataset
+from .image_shortqa import ImageShortQADataset
 
 
 class EMMADataset(ImageShortQADataset):
 
     COT_INST = "Please solve the problem step by step. "
-    DIRECT_INST = "Please ensure that your output only contains the final answer without any additional content (such as intermediate reasoning steps)."
+    DIRECT_INST = "Please ensure that your output only contains the final answer without any additional content (such as intermediate reasoning steps)."  # noqa: E501
     MCQ_FMT = "{context}\n\n{question}\n\n{options}\n\nAnswer with the option's letter from the given choices. "
     OPEN_FMT = "{context}\n\n{question}\n\nAnswer the question using a single word or phrase. "
 
@@ -27,7 +28,7 @@ class EMMADataset(ImageShortQADataset):
         context = line["context"]
         question = line["question"]
         example = ""
-        res_dict = {}
+        _ = {}
         if line["type"] == "MCQ":
             for ch in string.ascii_uppercase:
                 if ch in line and not pd.isna(line[ch]):

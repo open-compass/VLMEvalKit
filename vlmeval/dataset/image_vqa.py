@@ -5,10 +5,10 @@ from functools import partial
 
 import pandas as pd
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -217,7 +217,7 @@ class MathVista(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mathvista import MathVista_auxeval, MathVista_acc
+        from .utils.mathvista import MathVista_acc, MathVista_auxeval
 
         model = judge_kwargs["model"]
         suffix = eval_file.split(".")[-1]
@@ -310,7 +310,11 @@ class MathVerse(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mathverse import MathVerse_auxeval_extract, MathVerse_auxeval_score, MathVerse_acc
+        from .utils.mathverse import (
+            MathVerse_acc,
+            MathVerse_auxeval_extract,
+            MathVerse_auxeval_score,
+        )
 
         model = judge_kwargs["model"]
         suffix = eval_file.split(".")[-1]
@@ -407,7 +411,7 @@ class MathVision(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mathv import MATH_V_auxeval, MATH_V_acc
+        from .utils.mathv import MATH_V_acc, MATH_V_auxeval
 
         if "model" in judge_kwargs:
             model = judge_kwargs["model"]
@@ -832,7 +836,7 @@ class MME_CoT(ImageBaseDataset):
 
         # add cot prompt
         if os.environ.get("USE_COT_PROMPT", "1") == "1":
-            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."
+            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."  # noqa: E501
         else:
             prompt += "\nPlease directly provide the final answer without any other output."
 
@@ -851,7 +855,7 @@ class MME_CoT(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         print(
             "\033[1;31;40m"
-            + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main"
+            + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main"  # noqa: E501
             + "\033[0m"
         )
         dummy_result = dict(dummy_result=0)
@@ -867,9 +871,9 @@ class LLaVABench(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import (
-            build_prompt,
             LLaVABench_atomeval,
             LLaVABench_score,
+            build_prompt,
         )
 
         suffix = "." + eval_file.split(".")[-1]
@@ -908,7 +912,7 @@ class MMVet(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmvet import MMVet_auxeval, MMVet_acc
+        from .utils.mmvet import MMVet_acc, MMVet_auxeval
 
         suffix = eval_file.split(".")[-1]
         model = judge_kwargs["model"]
@@ -1009,7 +1013,12 @@ class TableVQABench(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
-        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        from .utils.tablevqabench import (
+            evaluate_fintabnet,
+            evaluate_tabfact,
+            evaluate_wtq,
+        )
 
         data = load(eval_file)
         assert "answer" in data and "prediction" in data
@@ -1196,6 +1205,7 @@ class QSpatial(ImageBaseDataset):
     # Given the dataset name, return the dataset as a pandas dataframe, can override
     def load_data(self, dataset):
         import io
+
         import pandas as pd
         from datasets import load_dataset
 

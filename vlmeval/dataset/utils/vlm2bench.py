@@ -12,12 +12,13 @@ The categories of each sub-task include:
   gc-mat, gc-trk, oc-cpr, pc-cpr   --> tf pair task (the last character of the same index distinguishes positive or negative with _p or _n)
   oc-cnt, pc-cnt                  --> cnt type
   oc-grp, pc-grp                  --> grp (MCQ) type
-"""
+"""  # noqa: E501
 
+import json
 import os
 import re
-import json
 from collections import defaultdict
+
 from PIL import Image
 
 
@@ -250,7 +251,7 @@ def grp_aggregate_accuracy(results):
     Aggregate evaluation results for the GRP task (MCQ).
     For each sample, if multiple options appear in the prediction, it is considered incorrect; otherwise, compare the cleaned answer letters.
     Return the accuracy.
-    """
+    """  # noqa: E501
     total = 0
     correct = 0
     for item in results:

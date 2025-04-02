@@ -1,5 +1,5 @@
+# flake8: noqa
 from vlmeval.smp import *
-
 
 EVAL_TMPL = """
 You are an AI assistant tasked with evaluating whether a model's response correctly answers a given visual-language question.
@@ -227,7 +227,7 @@ cn_multiple_ICEs = [
 def ICE_builder(ICEs):
     res = ""
     for i, eg in enumerate(ICEs):
-        res += f"Example {i+1}:\n"
+        res += f"Example {i + 1}:\n"
         res += "[Begin Question]" + eg["question"] + "[End Question]\n"
         res += "[Begin Ground-Truth]" + eg["answer"] + "[End Ground-Truth]\n"
         res += "[Begin Response]" + eg["prediction"] + "[End Response]\n"

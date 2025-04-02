@@ -1,19 +1,22 @@
 import os
+
 import pandas as pd
+
 from .image_base import ImageBaseDataset
 from .utils.vlm2bench import (
-    common_process_results,
-    tf_pair_aggregate_accuracy,
     cnt_aggregate_metric,
+    common_process_results,
     grp_aggregate_accuracy,
+    tf_pair_aggregate_accuracy,
 )
 
 
 class VLM2Bench(ImageBaseDataset):
     TYPE = "VQA"
 
+    # all 2860 image cases from VLM2Bench huggingface repo
     DATASET_URL = {
-        "VLM2Bench": "https://huggingface.co/datasets/Sterzhang/vlm2-bench/resolve/main/VLM2Bench_img.tsv"  # all 2860 image cases from VLM2Bench huggingface repo
+        "VLM2Bench": "https://huggingface.co/datasets/Sterzhang/vlm2-bench/resolve/main/VLM2Bench_img.tsv"  # noqa: E501
     }
     # DATASET_MD5
     DATASET_MD5 = {"VLM2Bench": "16f474bfc4e269c583468bf89139da8f"}
@@ -26,7 +29,7 @@ class VLM2Bench(ImageBaseDataset):
         - Call dump_image to process the image and image_path fields to obtain all local paths of the images.
         - Construct the text prompt in the format "Question: {question}".
         - Encapsulate all image paths as image messages and append the text message, returning the final multimodal message list.
-        """
+        """  # noqa: E501
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -39,7 +42,8 @@ class VLM2Bench(ImageBaseDataset):
             # Also update the image field to the list of image encodings
             line["image"] = img_field
 
-        # Call dump_image (implemented in the parent class) to process the image and image_path fields, returning the list of local image paths
+        # Call dump_image (implemented in the parent class) to process the image and image_path fields,
+        # returning the list of local image paths
         img_paths = self.dump_image(line)
         if not isinstance(img_paths, list):
             img_paths = [img_paths]
@@ -65,13 +69,13 @@ class VLM2Bench(ImageBaseDataset):
                 • cnt: suitable for oc-cnt, pc-cnt
                 • grp: suitable for oc-grp, pc-grp
         - Write the scores of each sub-task to a CSV file and return a DataFrame.
-        """
+        """  # noqa: E501
         model = judge_kwargs.get("model")
         if model:
             suffix = eval_file.split(".")[-1]
             storage = eval_file.replace(f".{suffix}", f"_{model}.xlsx")
             score_file = eval_file.replace(f".{suffix}", f"_{model}_score.csv")
-            tmp_file = eval_file.replace(f".{suffix}", f"_{model}.pkl")
+            _ = eval_file.replace(f".{suffix}", f"_{model}.pkl")
             if os.path.exists(storage):
                 if storage.lower().endswith(".xlsx"):
                     data = pd.read_excel(storage)
@@ -91,12 +95,13 @@ class VLM2Bench(ImageBaseDataset):
         results = data.to_dict(orient="records")
         processed = common_process_results(results)
 
-        # For cnt category, calculate image_seq_len (i.e., number of images) based on the list of image encodings stored in the image field
+        # For cnt category, calculate image_seq_len (i.e., number of images)
+        # based on the list of image encodings stored in the image field
         for rec in processed:
             if rec.get("category", "").lower() in ["oc-cnt", "pc-cnt"]:
                 try:
                     rec["image_seq_len"] = len(rec["image"])
-                except Exception as e:
+                except Exception:
                     rec["image_seq_len"] = 2
 
         eval_scores = {}

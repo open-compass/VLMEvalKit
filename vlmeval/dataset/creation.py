@@ -1,10 +1,13 @@
-from .image_base import ImageBaseDataset
+# flake8: noqa
+import re
+
 import numpy as np
 import pandas as pd
+
 from ..smp import *
-from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
-import re
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 prompt_dict = {}
 prompt_dict["LiveMMBench_Creation"] = {
@@ -148,7 +151,7 @@ Assistant A Evaluation: [qualitative comment]
 Assistant B Evaluation: [qualitative comment]
 Final Verdict is: [[VERDICT]]
 """,
-    ##### For Visual Factuality
+    # For Visual Factuality
     "objective_without_gt": """
 Please act as an impartial judge and evaluate the **Visual Factuality** of the responses provided by two AI assistants to the user prompt displayed below.
 

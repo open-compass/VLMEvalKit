@@ -1,13 +1,14 @@
-from vlmeval.smp import *
-from vlmeval.api.base import BaseAPI
+import base64
+import copy
+import json
 import os
 import re
-import json
+from io import BytesIO
 
 from PIL import Image
-import base64
-from io import BytesIO
-import copy
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.smp import *
 
 
 class ChatResponse(dict):
@@ -291,9 +292,9 @@ class TaichuVLRWrapper(BaseAPI):
                 continue
 
         PROMPT = (
-            "First thinks about the reasoning process in the mind and then provides the user with the answer. "
+            "First thinks about the reasoning process in the mind and then provides the user with the answer. "  # noqa: E501
             "Put your final answer within \\boxed{}. "
-            "The response of reasoning and answer are formatted in <think> reasoning </think><answer> \\boxed{answer here} </answer>.\n"
+            "The response of reasoning and answer are formatted in <think> reasoning </think><answer> \\boxed{answer here} </answer>.\n"  # noqa: E501
         )
 
         if self.use_reasoning_prompt:

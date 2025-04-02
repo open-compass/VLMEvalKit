@@ -1,7 +1,8 @@
 import sys
 from collections import deque
-from vlmeval.dataset import SUPPORTED_DATASETS
+
 from vlmeval.config import *
+from vlmeval.dataset import SUPPORTED_DATASETS
 from vlmeval.smp import *
 
 # Define valid modes
@@ -562,7 +563,7 @@ def SCAN_ONE(root, model, dataset):
             ntot = len(fail)
             print(
                 colored(
-                    f"Model {model} x Dataset {dataset} Inference: {nfail} out of {ntot} failed. {nfail / ntot * 100: .2f}%. ",
+                    f"Model {model} x Dataset {dataset} Inference: {nfail} out of {ntot} failed. {nfail / ntot * 100: .2f}%. ",  # noqa: E501
                     "light_red",
                 )
             )

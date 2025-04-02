@@ -1,12 +1,14 @@
+import copy
+import os.path as osp
+import sys
+from abc import abstractproperty
+
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
-from .base import BaseModel
-from ..smp import *
+
 from ..dataset import DATASET_TYPE
-import copy
+from ..smp import *
+from .base import BaseModel
 
 
 # This function is used to split Eagle-X5-34B
@@ -41,8 +43,8 @@ def split_model(model_name):
     device_map[f"model.layers.{num_layers - 1}"] = rank
 
     logging.warning(
-        "Remove L157-L158 in https://github.com/NVlabs/EAGLE/blob/fef95f103b5e9899acbbe2c237e5b99147ab7e8e/eagle/model/builder.py to make it work properly."
-    )  # noqa: E501
+        "Remove L157-L158 in https://github.com/NVlabs/EAGLE/blob/fef95f103b5e9899acbbe2c237e5b99147ab7e8e/eagle/model/builder.py to make it work properly."  # noqa: E501
+    )
     return device_map
 
 
@@ -52,9 +54,9 @@ class Eagle(BaseModel):
 
     def __init__(self, model_path="NVEagle/Eagle-X5-7B", **kwargs):
         try:
+            from eagle.mm_utils import get_model_name_from_path
             from eagle.model.builder import load_pretrained_model
             from eagle.utils import disable_torch_init
-            from eagle.mm_utils import get_model_name_from_path
         except Exception as e:
             logging.critical(
                 '''Please install eagle before using Eagle,
@@ -88,13 +90,17 @@ class Eagle(BaseModel):
         try:
             from eagle import conversation as conversation_lib
             from eagle.constants import (
-                IMAGE_TOKEN_INDEX,
-                DEFAULT_IMAGE_TOKEN,
-                DEFAULT_IM_START_TOKEN,
                 DEFAULT_IM_END_TOKEN,
+                DEFAULT_IM_START_TOKEN,
+                DEFAULT_IMAGE_TOKEN,
+                IMAGE_TOKEN_INDEX,
             )
-            from eagle.conversation import conv_templates, SeparatorStyle
-            from eagle.mm_utils import tokenizer_image_token, process_images, KeywordsStoppingCriteria
+            from eagle.conversation import SeparatorStyle, conv_templates
+            from eagle.mm_utils import (
+                KeywordsStoppingCriteria,
+                process_images,
+                tokenizer_image_token,
+            )
         except Exception as e:
             logging.critical(
                 '''Please install eagle before using Eagle,

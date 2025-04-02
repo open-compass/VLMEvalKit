@@ -1,6 +1,7 @@
-import pandas as pd
-import numpy as np
 import random
+
+import numpy as np
+import pandas as pd
 
 
 def parse_multi_choice_response(response, all_choices, index2ans):
@@ -66,7 +67,7 @@ def get_mc_score(row, use_parse=True):
         response = row["prediction"]
         all_choices = []
         for i in range(9):
-            if chr(65 + i) in row and pd.isna(row[chr(65 + i)]) == False:
+            if chr(65 + i) in row and not pd.isna(row[chr(65 + i)]):
                 all_choices.append(chr(65 + i))
         index2ans = {index: row[index] for index in all_choices}
         pred_index = parse_multi_choice_response(response, all_choices, index2ans)

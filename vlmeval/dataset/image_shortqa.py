@@ -1,9 +1,10 @@
 from vlmeval import *
+
+from ..utils import track_progress_rich
 from .image_base import ImageBaseDataset
 from .utils import build_judge
-from .utils.multiple_choice import report_acc, eval_vanilla, eval_circular_group
+from .utils.multiple_choice import eval_circular_group, eval_vanilla, report_acc
 from .utils.shortqa import ShortQA_prompt
-from ..utils import track_progress_rich
 
 
 def ShortQA_auxeval(model, line):
@@ -84,7 +85,7 @@ class ImageShortQADataset(ImageBaseDataset):
     # It returns a DataFrame
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file)
-        dataset = self.dataset_name
+        _ = self.dataset_name
         assert "answer" in data and "prediction" in data
         data["prediction"] = [str(x) for x in data["prediction"]]
         data["answer"] = [str(x) for x in data["answer"]]
@@ -138,6 +139,6 @@ class ImageShortQADataset(ImageBaseDataset):
         data = load(storage)
         acc = report_acc(data)
 
-        score_file = eval_file.replace(f".xlsx", "_acc.csv")
+        score_file = eval_file.replace(".xlsx", "_acc.csv")
         dump(acc, score_file)
         return acc
