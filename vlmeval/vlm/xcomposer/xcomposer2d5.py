@@ -243,7 +243,7 @@ class XComposer2d5(BaseModel):
             else:
                 if len(image) > 1:
                     im_prompt = ' '.join([
-                        f'Image{im_idx+1}: <IM_POS>;' for im_idx in range(len(image))])
+                        f'Image{im_idx + 1}: <IM_POS>;' for im_idx in range(len(image))])
                 else:
                     im_prompt = '<IM_POS>'
 

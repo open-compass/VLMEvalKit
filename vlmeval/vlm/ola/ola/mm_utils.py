@@ -51,7 +51,7 @@ if 'LOWRES_RESIZE' in os.environ:
         LOWRES_RESIZE = int(LOWRES_RESIZE)
 else:
     LOWRES_RESIZE = None
-    
+
 
 def pad_image(image, target_resolution, value=0):
     """
@@ -100,7 +100,7 @@ def resize_images(image, patch_size=14, base_size=896):
             new_h = h
         else:
             new_h = (h // patch_size + 1) * patch_size
-        
+
         if w % patch_size == 0:
             new_w = w
         else:
@@ -139,7 +139,7 @@ def process_anyres_highres_image_genli(image, processor):
     image_patches = processor.preprocess(image_original_resize, return_tensors='pt')['pixel_values'][0]
     image_padded = processor.preprocess(image, return_tensors='pt')['pixel_values'][0]
     return image_patches.unsqueeze(0), image_padded.unsqueeze(0)
-    
+
 
 
 def get_model_name_from_path(model_path):

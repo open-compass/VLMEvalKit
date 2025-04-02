@@ -339,7 +339,7 @@ def build_mpo_prompt(message, line, dataset):
         question_orig = question_orig.split('Question:', 1)[-1].strip()
         question_orig = question_orig.replace('Choices:\n', '').strip()
     if listinstr(['WeMath'], dataset):
-        question_orig = question_orig.replace('Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>', '').strip()
+        question_orig = question_orig.replace('Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n<Thought process>: <<your thought process>> <Answer>: <<your option>>', '').strip()  # noqa: E501
     options = {
         cand: line[cand]
         for cand in string.ascii_uppercase

@@ -43,7 +43,6 @@ from .vdc import VDC
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
-from .miabench import MIABench
 from .cmmmu import CMMMU
 from .emma import EMMADataset
 from .wildvision import WildVision
@@ -145,23 +144,24 @@ class ConcatDataset(ImageBaseDataset):
 
 # Add new supported dataset class here
 IMAGE_DATASET = [
-    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset, 
-    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet, 
-    MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE, 
-    SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld, 
-    HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench, 
-    OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, 
-    MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, 
-    CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench, 
+    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
+    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet,
+    MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
+    SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
+    HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
+    OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz,
+    MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
+    CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT
 ]
 
 
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench,
+    LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
-    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded, 
+    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     VideoMMLU_CAP, VideoMMLU_QA
 ]

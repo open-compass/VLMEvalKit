@@ -205,7 +205,7 @@ class OpenAIWrapper(BaseAPI):
             payload.pop('temperature')
         else:
             payload['max_tokens'] = max_tokens
-        
+
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)

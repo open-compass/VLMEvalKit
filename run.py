@@ -12,6 +12,7 @@ from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
+
 def build_model_from_config(cfg, model_name):
     import vlmeval.api
     import vlmeval.vlm
@@ -48,7 +49,6 @@ def build_dataset_from_config(cfg, dataset_name):
         return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
-
 
 
 def parse_args():
@@ -248,7 +248,7 @@ def main():
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
                 result_file = osp.join(pred_root, result_file_base)
-                
+
                 # Reuse the previous prediction file if exists
                 if rank == 0 and len(prev_pred_roots):
                     prev_result_files = []
@@ -336,7 +336,9 @@ def main():
                 if args.judge is not None:
                     judge_kwargs['model'] = args.judge
                 else:
-                    if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(['moviechat1k'], dataset_name.lower()):
+                    if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
+                        ['moviechat1k'], dataset_name.lower()
+                    ):
                         if listinstr(['WeMath'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
                         else:

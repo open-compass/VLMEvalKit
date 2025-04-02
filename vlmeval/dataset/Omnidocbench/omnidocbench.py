@@ -12,7 +12,7 @@ from ...smp import *
 
 class OmniDocBench(ImageBaseDataset):
 
-    MODALITY = 'IMAGE' 
+    MODALITY = 'IMAGE'
     TYPE = 'QA'
 
     DATASET_URL = {'OmniDocBench':'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/main/OmniDocBench.tsv'}
@@ -50,14 +50,14 @@ class OmniDocBench(ImageBaseDataset):
         print(f'self.img_root:{self.img_root}')
 
     def build_prompt(self, line):
-     
-        image_path = self.dump_image(line)[0] 
+
+        image_path = self.dump_image(line)[0]
         msg = [
             dict(type='image', value=image_path),
             dict(type='text', value=self.system_prompt)
         ]
         return msg
-        
+
     def evaluate(self, eval_file, **judge_kwargs):
         tsv_path=self.data_path
         End2end_evaluator=end2end_evaluator(eval_file,tsv_path)
@@ -83,16 +83,16 @@ class end2end_evaluator():
         self.references=[]
         self.predictions = load(eval_file)['prediction'].tolist()
         self.dafault_metircs_dict={
-            'text_block': 
+            'text_block':
                 {'metric': ['Edit_dist', 'BLEU', 'METEOR']},
-            'display_formula': 
-                {'metric': ['Edit_dist', 'CDM']}, 
+            'display_formula':
+                {'metric': ['Edit_dist', 'CDM']},
             'table':
-                {'metric': ['TEDS', 'Edit_dist']}, 
-            'reading_order': 
+                {'metric': ['TEDS', 'Edit_dist']},
+            'reading_order':
                 {'metric': ['Edit_dist']}
             }
-        
+
         references = load(tsv_path)['answer'].tolist()
 
         load_success,load_fail=0,0
@@ -105,7 +105,7 @@ class end2end_evaluator():
                 load_fail+=1
                 continue
         print(f'load_success:{load_success},load_fail:{load_fail}')
-           
+
         filtered_gt_samples = []
         if filter_types:
             for gt_sample in self.references:
@@ -118,16 +118,16 @@ class end2end_evaluator():
         else:
             filtered_gt_samples = self.references #[{},{},{}]
         self.references=filtered_gt_samples
-      
+
 
     def score(self)->dict:
         samples=self.get_matched_elements(self.references,self.predictions)
         metrics=self.process_generated_metric_results(samples)
-        return metrics      
+        return metrics
 
     def get_page_elements(self, selected_annos):
-        saved_element_dict = defaultdict(list) 
-        related_truncated = [] 
+        saved_element_dict = defaultdict(list)
+        related_truncated = []
         truncated_all = {}
         for relation in selected_annos["extra"]["relation"]:   # Handle truncated text issues
             if relation["relation_type"] == 'truncated':
@@ -140,14 +140,14 @@ class end2end_evaluator():
                         merge_list.append(relation["target_anno_id"])
                         exist_flag = True
                 if not exist_flag:
-                    related_truncated.append([relation["source_anno_id"], relation["target_anno_id"]])       
-        
+                    related_truncated.append([relation["source_anno_id"], relation["target_anno_id"]])
+
         for item in selected_annos['layout_dets']:
             if item['anno_id'] not in truncated_all.keys():
                 saved_element_dict[item["category_type"]].append(item)
             else:
                 truncated_all[item['anno_id']] = item
-        
+
         for merge_list in related_truncated:
             text_block_list = [truncated_all[key] for key in merge_list]
             sorted_block = sorted(text_block_list, key=lambda x: x['order'])
@@ -157,21 +157,21 @@ class end2end_evaluator():
             merged_block = {
                 "category_type": sorted_block[0]["category_type"], # Directly use information from the first block
                 "order": sorted_block[0]["order"],
-                "anno_id": sorted_block[0]["anno_id"],   
+                "anno_id": sorted_block[0]["anno_id"],
                 "text": text,
                 "merge_list": sorted_block
             }
             saved_element_dict[sorted_block[0]["category_type"]].append(merged_block)
-            
+
         return saved_element_dict
-    
+
     def get_page_elements_list(self, gt_page_elements, category_list):
         element_list = []
         for category_type in category_list:
             if gt_page_elements.get(category_type):
                 element_list.extend(gt_page_elements[category_type])
         return element_list
-    
+
     def get_sorted_text_list(self, selected_annos):
         # txt_type: text, latex, html
         text_list = []
@@ -184,7 +184,7 @@ class end2end_evaluator():
             text_list.append((order, item))
         sorted_text_list = sorted(text_list, key=lambda x: x[0])
         return [_[1] for _ in sorted_text_list]
-    
+
     def filtered_out_ignore(self, items, ignore_category_list):
         filted_items = []
         for item in items:
@@ -195,17 +195,17 @@ class end2end_evaluator():
     def get_order_paired(self, order_match_s, img_name):
         matched = [(item['gt_position'], item['pred_position']) for item in order_match_s if (item['gt_position'] != [""] and item['pred_position'] != "")]
         gt_idx_all = [item['gt_position'] for item in order_match_s if (item['gt_position'] != [""])]
-        read_order_pred = [i[0] for i in sorted(matched, key=lambda x: x[1])]  
+        read_order_pred = [i[0] for i in sorted(matched, key=lambda x: x[1])]
         read_order_gt = sum(gt_idx_all, []) # Convert to one-dimensional list
-        read_order_gt = [x for x in read_order_gt if x]  
-        gt = sorted(read_order_gt) 
+        read_order_gt = [x for x in read_order_gt if x]
+        gt = sorted(read_order_gt)
         pred = sum(read_order_pred, [])
         pred = [x for x in pred if x]
         if len(pred) > 0 or len(gt) > 0:
             import Levenshtein
             edit = Levenshtein.distance(gt, pred)/ max(len(pred), len(gt))
             return {
-                'gt': gt,  
+                'gt': gt,
                 'pred': pred,
                 'img_id': img_name,
                 'edit': edit
@@ -218,7 +218,7 @@ class end2end_evaluator():
         for i, item in enumerate(formula_matches):
             item["img_id"] = img_name + '_' + str(i)
         return formula_matches
-            
+
     def get_matched_elements(self,references:list,predictions:list)->dict:
         from .metrics import recogition_end2end_base_dataset, recogition_end2end_table_dataset
 
@@ -227,12 +227,12 @@ class end2end_evaluator():
         html_table_match = []
         latex_table_match = []
         order_match = []
-  
+
 
         for i,sample in enumerate(references):
             img_name = os.path.basename(sample["page_info"]["image_path"])
             pred_content = predictions[i]
-            result = self.process_get_matched_elements(sample, pred_content, img_name) 
+            result = self.process_get_matched_elements(sample, pred_content, img_name)
             [plain_text_match_clean, formated_display_formula, latex_table_match_s, html_table_match_s, order_match_single] = result
 
             if order_match_single:
@@ -246,7 +246,7 @@ class end2end_evaluator():
             if html_table_match_s:
                 html_table_match.extend(html_table_match_s)
 
-        if len(latex_table_match) > len(html_table_match): 
+        if len(latex_table_match) > len(html_table_match):
             table_match = latex_table_match
             table_format = 'latex'
         else:
@@ -259,13 +259,13 @@ class end2end_evaluator():
             "table": recogition_end2end_table_dataset(table_match, table_format),
             "reading_order": recogition_end2end_base_dataset(order_match)
         }
-        
+
         return matched_samples_all
-    
+
     def process_get_matched_elements(self, sample, pred_content, img_name):
         from .utils import match_gt2pred_simple, match_gt2pred_no_split, match_gt2pred_quick, md_tex_filter
         from func_timeout import FunctionTimedOut, func_timeout
-        
+
         if self.match_method == 'simple_match':   # add match choice
             match_gt2pred = match_gt2pred_simple
         elif self.match_method == 'quick_match':
@@ -278,12 +278,12 @@ class end2end_evaluator():
 
         pred_dataset = md_tex_filter(pred_content)
         gt_page_elements = self.get_page_elements(sample)
-        
+
         text_all = self.get_page_elements_list(gt_page_elements, ['text_block', 'title', 'code_txt', 'code_txt_caption', 'reference', 'equation_caption',
                                                 'figure_caption', 'figure_footnote', 'table_caption', 'table_footnote', 'code_algorithm', 'code_algorithm_caption',
                                                 'header', 'footer', 'page_footnote', 'page_number'])
 
-        
+
         display_formula_match_s = []
         plain_text_match_clean = []
         latex_table_match_s = []
@@ -300,39 +300,39 @@ class end2end_evaluator():
                 plain_text_match_s = match_gt2pred_simple(gt_text_list, pred_dataset['text_all'], 'text', img_name)
             except Exception as e:
                 print(str(e))
-                sys.exit()     
+                sys.exit()
 
             if not plain_text_match_s:
                 print(f'No text match of {img_name}. The plain text match will be empty.')
             else:
                 plain_text_match_clean = self.filtered_out_ignore(plain_text_match_s, ['figure_caption', 'figure_footnote', 'table_caption', 'table_footnote', 'code_algorithm', 'code_algorithm_caption', 'header', 'footer', 'page_footnote', 'page_number', 'equation_caption'])
-            
+
 
         if gt_page_elements.get('equation_isolated'):
             gt_display_list = self.get_sorted_text_list(gt_page_elements['equation_isolated'])
             display_formula_match_s = match_gt2pred(gt_display_list, pred_dataset['equation_isolated'], 'formula', img_name)
-            display_formula_match_s = [x for x in display_formula_match_s if x['gt_idx'] != [""]]  
+            display_formula_match_s = [x for x in display_formula_match_s if x['gt_idx'] != [""]]
             if not display_formula_match_s:
                 print(f'No display_formula_match of {img_name}. The display_formula_match will be empty.')
-      
+
         if gt_page_elements.get('table'):
             gt_table_list = self.get_sorted_text_list(gt_page_elements['table'])
             if pred_dataset['latex_table']:
-                latex_table_match_s = match_gt2pred_simple(gt_table_list, pred_dataset['latex_table'], 'latex_table', img_name) 
-                latex_table_match_s = [x for x in latex_table_match_s if x['gt_idx'] != [""]] 
-            if pred_dataset['html_table']:  
-                html_table_match_s = match_gt2pred_simple(gt_table_list, pred_dataset['html_table'], 'html_table', img_name) 
-                html_table_match_s = [x for x in html_table_match_s if x['gt_idx'] != [""]]  
+                latex_table_match_s = match_gt2pred_simple(gt_table_list, pred_dataset['latex_table'], 'latex_table', img_name)
+                latex_table_match_s = [x for x in latex_table_match_s if x['gt_idx'] != [""]]
+            if pred_dataset['html_table']:
+                html_table_match_s = match_gt2pred_simple(gt_table_list, pred_dataset['html_table'], 'html_table', img_name)
+                html_table_match_s = [x for x in html_table_match_s if x['gt_idx'] != [""]]
             else:
-                html_table_match_s = match_gt2pred_simple(gt_table_list, [], 'html_table', img_name) 
-                html_table_match_s = [x for x in html_table_match_s if x['gt_idx'] != [""]]  
+                html_table_match_s = match_gt2pred_simple(gt_table_list, [], 'html_table', img_name)
+                html_table_match_s = [x for x in html_table_match_s if x['gt_idx'] != [""]]
 
 
         order_match_s = plain_text_match_clean
         if order_match_s:
             order_match_single = self.get_order_paired(order_match_s, img_name)
-            
-        return [plain_text_match_clean, display_formula_match_s, latex_table_match_s, html_table_match_s, order_match_single]  
+
+        return [plain_text_match_clean, display_formula_match_s, latex_table_match_s, html_table_match_s, order_match_single]
 
     def process_generated_metric_results(self,samples,save_name:str='end2end_quick_match'):
         from .metrics import show_result, get_full_labels_results, get_page_split, METRIC_REGISTRY
@@ -341,13 +341,13 @@ class end2end_evaluator():
         page_info={}
         metircs_dict=self.dafault_metircs_dict
         pages=self.references #gt_samples list
-       
+
         for page in pages:
                 img_path=os.path.basename(page['page_info']['image_path'])
                 page_info[img_path]=page['page_info']['page_attribute']
 
         for element in metircs_dict.keys():
-           
+
             result={}
             group_info=metircs_dict[element].get('group',[])
             # samples = samples.get(element) ##
@@ -359,13 +359,13 @@ class end2end_evaluator():
                 cur_samples,result_s = metric_val(cur_samples).evaluate(group_info, f"{save_name}_{element}")
                 if result_s:
                     result.update(result_s)
-  
+
             if result:
                 print(f"{element}")
                 show_result(result)
             result_all[element]={}
 
-        
+
             group_result=get_full_labels_results(cur_samples)
             page_result=get_page_split(cur_samples,page_info)
 
@@ -403,7 +403,7 @@ class end2end_evaluator():
             if metric == "Edit_dist":
                 en_overall.append(result_all[category_type]["page"][metric].get("language: english", np.nan))
                 ch_overall.append(result_all[category_type]["page"][metric].get("language: simplified_chinese",np.nan))
-        
+
         save_dict['overall_EN'] = sum(en_overall) / len(en_overall)
         save_dict['overall_CH'] = sum(ch_overall) / len(ch_overall)
         dict_list.append(save_dict)
@@ -429,23 +429,23 @@ class table_evalutor():
         self.category_type='table'
         self.metircs_list=['TEDS','Edit_dist']
         self.gt_samples,self.table_samples=self.load_data(eval_file,tsv_path,pred_key,gt_key)
-        
+
     def load_data(self,eval_file,gt_file,pred_key,gt_key):
         from .data_preprocess import clean_string, normalized_formula, textblock2unicode, normalized_table
         samples=[]
         preds=[]
         predictions=pd.read_excel(eval_file)['prediction'].tolist()
         gt_samples=pd.read_csv(gt_file,sep='\t')['answer'].tolist()
-        load_success,load_fail=0,0        
+        load_success,load_fail=0,0
         for i,gt_sample in tqdm(enumerate(gt_samples),desc='Loading data'):
             try:
                 ans=json.loads(gt_sample)
                 for item in ans['layout_dets']:
-                    if item['category_type']=="table": 
+                    if item['category_type']=="table":
                         item['pred']=predictions[i]
                         load_success+=1
                         preds.append(ans)
-                
+
             except json.JSONDecodeError as e:
                 load_fail+=1
                 continue
@@ -491,13 +491,13 @@ class table_evalutor():
                     "norm_pred": norm_pred,
                     'img_id': img_name
                 })
-        
+
         print(f'Cannot find pred for {count} samples.')
         return preds,samples
-        
+
     def score(self)->dict:
         metrics=self.process_generated_metric_results()
-        return metrics  
+        return metrics
 
     def process_generated_metric_results(self,save_name:str='OmniDocBench_table'):
         from .metrics import show_result, get_full_labels_results, get_page_split, METRIC_REGISTRY
@@ -507,7 +507,7 @@ class table_evalutor():
         no_page_flag=False
         samples=self.table_samples
         pages=self.gt_samples
-       
+
         for page in pages:
             if 'page_info' not in page:
                 no_page_flag=True
@@ -535,14 +535,14 @@ class table_evalutor():
 
         with open(os.path.join(self.result_foler,f'{save_name}_metric_result.json'),'w',encoding='utf-8') as f:
             json.dump(result_all,f,indent=4,ensure_ascii=False)
-        
+
         dict_list=[]
         dict_list.append(result_all["group"]["TEDS"])
 
         df4 = pd.DataFrame(dict_list, index=['OmniDocBench_table'])
         df4 = df4 * 100
         df4 = df4.round(1)
-        selected_columns = df4[["language: table_en", "language: table_simplified_chinese", "language: table_en_ch_mixed", "line: full_line", "line: less_line", "line: fewer_line", "line: wireless_line", 
+        selected_columns = df4[["language: table_en", "language: table_simplified_chinese", "language: table_en_ch_mixed", "line: full_line", "line: less_line", "line: fewer_line", "line: wireless_line",
                         "with_span: True", "with_span: False", "include_equation: True", "include_equation: False", "include_background: True", "include_background: False", "table_layout: vertical", "table_layout: horizontal"]]
 
         selected_columns.to_csv(os.path.join(self.result_foler,'table_attribute.csv'))
