@@ -17,7 +17,7 @@ class InternVL2_PromptUtil:
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         assert DATASET_MODALITY(dataset) != 'VIDEO', 'not supported'
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
@@ -27,6 +27,8 @@ class InternVL2_PromptUtil:
             return True
 
     def build_prompt(self, line, dataset=None):
+        use_mpo_prompt = self.use_mpo_prompt and (self.use_cot or dataset in ['MMStar', 'HallusionBench', 'OCRBench'])
+
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         from ..vlm.internvl.utils import (build_multi_choice_prompt,
@@ -75,7 +77,7 @@ class InternVL2_PromptUtil:
         # TODO：support upscale_flag
         message.extend([dict(type='image', value=s, max_dynamic_patch=max_num) for s in tgt_path])
 
-        if self.use_mpo_prompt:
+        if use_mpo_prompt:
             message = build_mpo_prompt(message, line, dataset)
 
         # reorganize_prompt
@@ -85,14 +87,17 @@ class InternVL2_PromptUtil:
         return message
 
     def get_max_num(self, dataset):
-        assert dataset is not None
+        self.total_max_num = 64
+        if dataset is None:
+            self.max_num = 6
+            return None
         res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'VCR_EN', 'VCR_ZH', 'OCRVQA']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
-        if listinstr(res_1_datasets, dataset):
-            return 1
+        if DATASET_MODALITY(dataset) == 'VIDEO':
+            self.max_num = 1
         elif listinstr(res_12_datasets, dataset):
             return 12
         elif listinstr(res_18_datasets, dataset):
