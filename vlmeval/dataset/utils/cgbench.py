@@ -3,6 +3,7 @@ from .multiple_choice import extract_answer_from_item
 import pandas as pd
 import numpy as np
 import re
+import zipfile
 
 FAIL_MSG = "Failed to obtain answer via API."
 
@@ -582,101 +583,34 @@ def get_chunk_number(filename):
         return float('inf')
 
 
-def unzip_hf_zip(pth):
+def unzip_hf_zip(target_dir):
+    target_dir = Path(target_dir)
 
-    import zipfile
+    videos_dir = target_dir / "cg_videos_720p"
+    clue_videos_dir = target_dir / "cg_clue_videos"
+    subtitles_dir = target_dir / "cg_subtitles"
 
-    target_dir = pth
-
-    if os.path.exists(f"{target_dir}/cg_videos_720p") and os.path.exists(f"{target_dir}/cg_subtitles")\
-            and os.path.exists(f"{target_dir}/cg_clue_videos"):
-        print("all exists")
+    if videos_dir.exists() and clue_videos_dir.exists() and subtitles_dir.exists():
+        print("all target dirs exist, skip.")
         return
 
-    video_zip_files = [
-        os.path.join(target_dir, file)
-        for file in os.listdir(target_dir)
-        if file.endswith(".zip") and file.startswith("video")
-    ]
+    videos_dir.mkdir(parents=True, exist_ok=True)
+    clue_videos_dir.mkdir(parents=True, exist_ok=True)
+    subtitles_dir.mkdir(parents=True, exist_ok=True)
 
-    video_zip_files = sorted(video_zip_files, key=lambda x: get_chunk_number(os.path.basename(x)))
+    video_zips = sorted(target_dir.glob("video_chunk_*.zip"))
+    for zip_path in tqdm(video_zips, desc="unzip videos"):
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(videos_dir)
 
-    videos_temp_zip = os.path.join(target_dir, "videos_merged.zip")
+    clue_zips = sorted(target_dir.glob("clue_video_chunk_*.zip"))
+    for zip_path in tqdm(clue_zips, desc="unzip clue videos"):
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            zip_ref.extractall(clue_videos_dir)
 
-    print("Merging video files ...")
+    subtitles_zip = target_dir / "subtitles.zip"
+    with zipfile.ZipFile(subtitles_zip, "r") as zip_ref:
+        for file in tqdm(zip_ref.namelist(), desc="unzip subtitles"):
+            zip_ref.extract(file, subtitles_dir)
 
-    with open(videos_temp_zip, "wb") as outfile:
-        for video_zip_file in tqdm(video_zip_files, desc="Merging videos"):
-            with open(video_zip_file, "rb") as infile:
-                outfile.write(infile.read())
-
-    print("Extracting video files...")
-
-    try:
-        with zipfile.ZipFile(videos_temp_zip, "r") as zip_ref:
-
-            total_files = len(zip_ref.namelist())
-
-            for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                zip_ref.extract(file, target_dir)
-
-        print(f"Successfully extracted to {target_dir}")
-    except Exception as e:
-        print(f"Error during extraction: {e}")
-    finally:
-
-        if os.path.exists(videos_temp_zip):
-            os.remove(videos_temp_zip)
-            print("Cleaned up temporary video file")
-
-    clue_video_zip_files = [
-        os.path.join(target_dir, file)
-        for file in os.listdir(target_dir)
-        if file.endswith(".zip") and file.startswith("clue_video")
-    ]
-
-    clue_video_zip_files = sorted(clue_video_zip_files, key=lambda x: get_chunk_number(os.path.basename(x)))
-
-    clue_videos_temp_zip = os.path.join(target_dir, "clue_videos_merged.zip")
-
-    print("Merging clue video files ...")
-
-    with open(clue_videos_temp_zip, "wb") as outfile:
-        for clue_video_zip_file in tqdm(clue_video_zip_files, desc="Merging clue_videos"):
-            with open(clue_video_zip_file, "rb") as infile:
-                outfile.write(infile.read())
-
-    print("Extracting clue video files...")
-
-    try:
-        with zipfile.ZipFile(clue_videos_temp_zip, "r") as zip_ref:
-
-            total_files = len(zip_ref.namelist())
-
-            for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                zip_ref.extract(file, target_dir)
-
-        print(f"Successfully extracted to {target_dir}")
-    except Exception as e:
-        print(f"Error during extraction: {e}")
-    finally:
-
-        if os.path.exists(clue_videos_temp_zip):
-            os.remove(clue_videos_temp_zip)
-            print("Cleaned up temporary clue video file")
-
-    print("Extracting subtitle files ...")
-
-    subtitles_zip = os.path.join(target_dir, "subtitles.zip")
-
-    try:
-        with zipfile.ZipFile(subtitles_zip, "r") as zip_ref:
-
-            total_files = len(zip_ref.namelist())
-
-            for file in tqdm(zip_ref.namelist(), desc="Extracting", total=total_files):
-                zip_ref.extract(file, target_dir)
-
-        print(f"Successfully extracted to {target_dir}")
-    except Exception as e:
-        print(f"Error during extraction: {e}")
+    print("sucessfully unzip all files.")
