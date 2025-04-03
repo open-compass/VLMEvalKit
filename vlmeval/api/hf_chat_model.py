@@ -83,7 +83,6 @@ class HFChatModel:
                 os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
 
         from transformers import AutoTokenizer, AutoModelForCausalLM, AutoModel
-        from transformers.generation import GenerationConfig
 
         if model_path not in validated_llms:
             self.logger.warning(f'{model_path} not in validated LLMs, may have inference troubles. ')
@@ -107,17 +106,16 @@ class HFChatModel:
         cuda_devices = os.environ.get('CUDA_VISIBLE_DEVICES', '0')
         if ',' in cuda_devices:
             device_ids = [int(x) for x in cuda_devices.split(',')]
-            device_map = {i: i for i in range(len(device_ids))}
+            _ = {i: i for i in range(len(device_ids))}
         else:
-            device_map = {'': 0}
+            _ = {'': 0}
 
         if 'llama' in self.model_path.lower():
             from lmdeploy import pipeline, GenerationConfig, TurbomindEngineConfig
             print(f"Loading model {model_path} with {num_gpu} GPUs")
             backend_config = TurbomindEngineConfig(tp=num_gpu)
             self.gen_config = GenerationConfig(max_new_tokens=256)
-            model = pipeline(model_path,
-                            backend_config=backend_config)
+            model = pipeline(model_path, backend_config=backend_config)
         else:
             model = LoadModel.from_pretrained(model_path, trust_remote_code=True, device_map='cpu', **precision)
             model = model.eval()
@@ -125,6 +123,7 @@ class HFChatModel:
             if device != 'cpu':
                 model = model.to(f'cuda:{device}' if isinstance(device, int) else 'cuda')
             try:
+                from transformers.generation import GenerationConfig
                 model.generation_config = GenerationConfig.from_pretrained(
                     model_path, trust_remote_code=True, device_map=device)
             except Exception as err:
@@ -260,4 +259,3 @@ class HFChatModel:
             return self.generate_str(inputs, **kwargs)
         elif isinstance(inputs, list):
             return self.generate_list(inputs, **kwargs)
-        

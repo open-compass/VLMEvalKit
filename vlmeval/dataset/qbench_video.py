@@ -1,3 +1,4 @@
+# flake8: noqa
 import huggingface_hub
 from huggingface_hub import snapshot_download
 from ..smp import *
@@ -43,17 +44,17 @@ class QBench_Video_MCQ(VideoBaseDataset):
     MD5 = '9d6760d75fa80aa9fd5e5cf1ea274ace'
 
     FRAMES_TMPL_SYS = """
-You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video. 
-Please analyze these frames and answer the question based on your observations. 
+You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
+Please analyze these frames and answer the question based on your observations.
 """
 
     FRAMES_TMPL_SYS_4VIDEO_LLM = """
-You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video. 
-Please analyze these frames and answer the question based on your observations. 
+You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
+Please analyze these frames and answer the question based on your observations.
 """
 
     POST_PROMPT = """
-Please answer the question in the following format: the uppercase letter of the correct answer option itself. 
+Please answer the question in the following format: the uppercase letter of the correct answer option itself.
 Please do not add any other answers beyond this.
 """
 
@@ -83,13 +84,11 @@ Please do not add any other answers beyond this.
                     return False
             return True
 
-
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
             def unzip_videos(pth):
-                import zipfile
                 if not osp.exists(osp.join(pth, 'video')):
                     zip_file = osp.join(pth, 'video.zip')
                     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
@@ -204,15 +203,14 @@ class QBench_Video_VQA(VideoBaseDataset):
     MD5 = '49e6181b341c934d0b33ec78bdcc0a3d'
 
     FRAMES_TMPL_SYS = """
-You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video. 
+You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
 Please analyze these frames and provide a detailed and accurate answer from the perspective of visual quality based on your observations.
 """
 
     FRAMES_TMPL_SYS_4VIDEO_LLM = """
-You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video. 
+You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
 Please analyze these frames and provide a detailed and accurate answer from the perspective of visual quality based on your observations.
 """
-
 
     TYPE = 'Video-VQA'
 
@@ -240,13 +238,11 @@ Please analyze these frames and provide a detailed and accurate answer from the 
                     return False
             return True
 
-
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
             def unzip_videos(pth):
-                import zipfile
                 if not osp.exists(osp.join(pth, 'video')):
                     zip_file = osp.join(pth, 'video.zip')
                     with zipfile.ZipFile(zip_file, 'r') as zip_ref:

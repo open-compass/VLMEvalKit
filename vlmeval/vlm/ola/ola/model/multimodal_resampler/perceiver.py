@@ -13,13 +13,13 @@ class DynamicCompressor(nn.Module):
 
         self.vlm_query_projector  = nn.Linear(self.out_channels, self.mid_channel)
         self.vlm_key_projector  = nn.Linear(self.out_channels, self.mid_channel)
-    
+
     def downsample(self, x):
         return F.avg_pool2d(x, 2, 2)
-    
+
     def downsample_4(self, x):
         return F.avg_pool2d(x, 4, 4)
-    
+
     def forward(self, image_features, forward_type, image_size=None):
         if image_size is None:
             ori_W = int(math.sqrt(image_features.shape[1]))

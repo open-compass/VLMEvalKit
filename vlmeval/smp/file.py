@@ -358,7 +358,7 @@ def parquet_to_tsv(file_path):
     data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
 
 
-def fetch_aux_files(eval_file): 
+def fetch_aux_files(eval_file):
     file_root = osp.dirname(eval_file)
     file_name = osp.basename(eval_file)
 
@@ -367,7 +367,7 @@ def fetch_aux_files(eval_file):
         model_name = osp.basename(osp.dirname(file_root))
     else:
         model_name = eval_id
-    
+
     dataset_name = osp.splitext(file_name)[0][len(model_name) + 1:]
     from vlmeval.dataset import SUPPORTED_DATASETS
     to_handle = []

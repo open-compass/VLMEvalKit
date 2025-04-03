@@ -53,7 +53,7 @@ class Gemma3(BaseModel):
         logging.info(
             "Please install transformers via \n"
             "pip install git+https://github.com/huggingface/transformers@v4.49.0-Gemma-3"
-        ) 
+        )
         try:
             from transformers import AutoProcessor, Gemma3ForConditionalGeneration
             import torch
@@ -71,7 +71,7 @@ class Gemma3(BaseModel):
         self.system_prompt = kwargs.pop('system_prompt', 'You are a helpful assistant. ')
 
         default_kwargs = {
-            'do_sample': False, 
+            'do_sample': False,
             'max_new_tokens': 2048
         }
         default_kwargs.update(kwargs)
@@ -100,7 +100,7 @@ class Gemma3(BaseModel):
         ).to(self.device, dtype=torch.bfloat16)
 
         input_len = inputs['input_ids'].shape[-1]
-        
+
         with torch.inference_mode():
             generation = self.model.generate(**inputs, **self.kwargs)
             generation = generation[0][input_len:]

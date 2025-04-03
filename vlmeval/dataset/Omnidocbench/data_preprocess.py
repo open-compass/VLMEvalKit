@@ -89,7 +89,7 @@ def textblock2unicode(text):
                 removal_positions.append((position[0], position[1], unicode_content))
         except:
             continue
-    
+
     # Remove inline formulas from original text
     for start, end, unicode_content in sorted(removal_positions, reverse=True):
         text = text[:start] + unicode_content.strip() + text[end:]
@@ -98,20 +98,20 @@ def textblock2unicode(text):
 
 def normalized_formula(text):
     # Normalize math formulas before matching
-    filter_list = ['\\mathbf', '\\mathrm', '\\mathnormal', '\\mathit', '\\mathbb', '\\mathcal', '\\mathscr', '\\mathfrak', '\\mathsf', '\\mathtt', 
+    filter_list = ['\\mathbf', '\\mathrm', '\\mathnormal', '\\mathit', '\\mathbb', '\\mathcal', '\\mathscr', '\\mathfrak', '\\mathsf', '\\mathtt',
                    '\\textbf', '\\text', '\\boldmath', '\\boldsymbol', '\\operatorname', '\\bm',
                    '\\symbfit', '\\mathbfcal', '\\symbf', '\\scriptscriptstyle', '\\notag',
                    '\\setlength', '\\coloneqq', '\\space', '\\thickspace', '\\thinspace', '\\medspace', '\\nobreakspace', '\\negmedspace',
                    '\\quad', '\\qquad', '\\enspace', '\\substackw', ' ']
                 #    '\\left', '\\right', '{', '}', ' ']
-    
+
     # delimiter_filter
     pattern = re.compile(r"\\\[(.+?)(?<!\\)\\\]")
     match = pattern.search(text)
 
     if match:
         text = match.group(1).strip()
-    
+
     tag_pattern = re.compile(r"\\tag\{.*?\}")
     text = tag_pattern.sub('', text)
     hspace_pattern = re.compile(r"\\hspace\{.*?\}")
@@ -123,10 +123,10 @@ def normalized_formula(text):
     col_sep = re.compile(r"\\arraycolsep.*?\}")
     text = col_sep.sub('', text)
     text = text.strip('.')
-    
+
     for filter_text in filter_list:
         text = text.replace(filter_text, '')
-        
+
     # text = normalize_text(delimiter_filter(text))
     # text = delimiter_filter(text)
     text = text.lower()
@@ -172,7 +172,7 @@ def normalized_html_table(text):
             table_res = re.sub('( align=".*?")', "", table_res)
             table_res = re.sub('( class=".*?")', "", table_res)
             table_res = re.sub('</?tbody>',"",table_res)
-            
+
             table_res = re.sub(r'\s+', " ", table_res)
             table_res_no_space = '<html><body><table border="1" >' + table_res.replace(' ','') + '</table></body></html>'
             # table_res_no_space = re.sub(' (style=".*?")',"",table_res_no_space)
@@ -186,7 +186,7 @@ def normalized_html_table(text):
             # table_flow_no_space.append(table_res_no_space)
 
         return table_res, table_res_no_space
-    
+
     def clean_table(input_str,flag=True):
         if flag:
             input_str = input_str.replace('<sup>', '').replace('</sup>', '')
@@ -197,13 +197,13 @@ def normalized_html_table(text):
             input_str = input_str.replace('<spandata-span-identity="">', '')
             input_str = re.sub('<colgroup>.*?</colgroup>','',input_str)
         return input_str
-    
+
     norm_text, _ = process_table_html(text)
     norm_text = clean_table(norm_text)
     return norm_text
 
 def normalized_latex_table(text):
-    def latex_template(latex_code):  
+    def latex_template(latex_code):
         template = r'''
         \documentclass[border=20pt]{article}
         \usepackage{subcaption}
@@ -224,7 +224,7 @@ def normalized_latex_table(text):
         latex_code + \
         r'''
         \end{document}'''
-    
+
         return template
 
     def process_table_latex(latex_code):
@@ -269,7 +269,7 @@ def normalized_latex_table(text):
             latex_code = re.sub(fr'{special_str[0]}', fr'{special_str[1]}', latex_code)
 
         return latex_code
-    
+
     def convert_latex_to_html(latex_content, cache_dir='./temp'):
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
@@ -289,13 +289,13 @@ def normalized_latex_table(text):
             tables = re.findall(pattern, html_content, re.DOTALL | re.IGNORECASE)
             tables = [f'<table>{table}</table>' for table in tables]
             html_content = '\n'.join(tables)
-        
+
         except Exception as e:
             html_content = ''
-        
+
         shutil.rmtree(cache_dir)
         return html_content
-    
+
     html_text = convert_latex_to_html(text)
     normlized_tables = normalized_html_table(html_text)
     return normlized_tables
@@ -318,7 +318,7 @@ def textblock_with_norm_formula(text):
 
         norm_content = normalized_formula(content)
         removal_positions.append((position[0], position[1], norm_content))
-    
+
     # Remove inline formulas from original text
     for start, end, norm_content in sorted(removal_positions, reverse=True):
         text = text[:start] + norm_content.strip() + text[end:]
@@ -329,17 +329,17 @@ def textblock_with_norm_formula(text):
 #     # Ensure text is string type
 #     if not isinstance(text, str):
 #         text = str(text)
-    
+
 #     # Convert LaTeX content to Unicode representation
 #     text = LatexNodes2Text().latex_to_text(text)
-    
+
 #     inline_array = []
 #     inline_matches = inline_reg.finditer(text)
-    
+
 #     for match in inline_matches:
 #         position = [match.start(), match.end()]
 #         content = match.group(1) if match.group(1) is not None else match.group(2)
-        
+
 #         # Remove escape characters \
 #         clean_content = re.sub(r'\\([\\_&%^])', '', content)
 
@@ -360,7 +360,7 @@ def textblock_with_norm_formula(text):
 #         #     'position': position,
 #         #     'content': content,
 #         # })
-        
+
 #         # # Remove matched formula from original text, can choose to replace with spaces or remove directly
 #         # text = text[:position[0]] + ' '*(position[1]-position[0]) + text[position[1]:]
 
@@ -370,7 +370,7 @@ def inline_filter_unicode(text):
     # Ensure text is string type
     if not isinstance(text, str):
         text = str(text)
-    
+
     # Replace inline formula boundary markers
     #print('--------text-------',text)
     placeholder = '__INLINE_FORMULA_BOUNDARY__'
@@ -381,12 +381,12 @@ def inline_filter_unicode(text):
     #print('--------text_copy---unicode----',text_copy)
     # Restore boundary markers
     text_copy = text_copy.replace(placeholder, '$')
-    
+
     inline_array = []
     inline_matches = inline_reg.finditer(text_copy)
     # Record positions of inline formulas to be removed
     removal_positions = []
-    
+
     for match in inline_matches:
         position = [match.start(), match.end()]
         content = match.group(1) if match.group(1) is not None else match.group(2)
@@ -402,7 +402,7 @@ def inline_filter_unicode(text):
                 'content': content,
             })
             removal_positions.append((position[0], position[1]))
-    
+
     # Remove inline formulas from original text
     for start, end in sorted(removal_positions, reverse=True):
         text = text[:start] + text[end:]
@@ -413,15 +413,15 @@ def inline_filter(text):
     # Ensure text is string type
     if not isinstance(text, str):
         text = str(text)
-    
+
     inline_array = []
     inline_matches = inline_reg.finditer(text)
-    
+
     for match in inline_matches:
         position = [match.start(), match.end()]
         content = match.group(1) if match.group(1) is not None else match.group(2)
         # print('inline_content: ', content)
-        
+
         # Remove escape characters \
         clean_content = re.sub(r'\\([\\_&%^])', '', content)
 

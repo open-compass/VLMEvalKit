@@ -29,7 +29,7 @@ class Ola(BaseModel):
     def __init__(self,
                  model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
-        
+
         from .ola.model.builder import load_pretrained_model
         from .ola.mm_utils import get_model_name_from_path
 
@@ -42,13 +42,13 @@ class Ola(BaseModel):
             model_base=None,
             use_flash_attn=True,
         )
-        
+
         if self.image_processor is None:
             self.image_processor = CLIPImageProcessor.from_pretrained("openai/clip-vit-large-patch14")
             print('Using default image processor. ')
 
         self._config = self.model.config
-    
+
 
         self.model = self.model.cuda()
         self.conv_mode = 'v1_qwen2'
@@ -154,7 +154,7 @@ class Ola(BaseModel):
         speech_lengths = [torch.LongTensor([3000]).to('cuda')]
         speech_wavs = [torch.zeros([1, 480000]).to('cuda')]
         speech_chunks = [torch.LongTensor([1]).to('cuda')]
-        
+
         with torch.inference_mode():
             output_ids = self.model.generate(
                 input_ids, images=image_tensor, images_highres=image_highres_tensor, image_sizes=image_sizes,

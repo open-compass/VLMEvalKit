@@ -12,7 +12,7 @@ The categories of each sub-task include:
   gc-mat, gc-trk, oc-cpr, pc-cpr   --> tf pair task (the last character of the same index distinguishes positive or negative with _p or _n)
   oc-cnt, pc-cnt                  --> cnt type
   oc-grp, pc-grp                  --> grp (MCQ) type
-"""
+"""  # noqa: E501
 
 import os
 import re
@@ -23,17 +23,21 @@ from PIL import Image
 ##########################################
 # 1. General Functions
 ##########################################
+
+
 def common_doc_to_text(sample, **kwargs):
     """
     General: directly return the "question" field from the sample.
     """
     return sample.get("question", "")
 
+
 def common_doc_to_target(sample, **kwargs):
     """
     General: return the "answer" field from the sample as the correct answer.
     """
     return sample.get("answer", "")
+
 
 def common_process_results(results):
     """
@@ -45,6 +49,8 @@ def common_process_results(results):
 ##########################################
 # 2. TF Pair Task Evaluation (suitable for gc-mat, gc-trk, oc-cpr, pc-cpr)
 ##########################################
+
+
 def parse_tf_answer(model_answer):
     """
     Extract 'T' or 'F' from the tf type model_answer.
@@ -59,6 +65,7 @@ def parse_tf_answer(model_answer):
         return None, 'multiple_answers_found'
     else:
         return None, 'no_answer_found'
+
 
 def tf_pair_aggregate_accuracy(results):
     """
@@ -96,6 +103,8 @@ def tf_pair_aggregate_accuracy(results):
 ##########################################
 # 3. CNT Task Evaluation (suitable for oc-cnt, pc-cnt)
 ##########################################
+
+
 NUM_WORDS = {
     "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
     "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
@@ -106,6 +115,7 @@ NUM_WORDS = {
 }
 PENALTY_FACTOR = 10
 L_MAX = 4
+
 
 def words_to_num(s):
     s = s.lower().replace('-', ' ').replace('and', ' ')
@@ -128,6 +138,7 @@ def words_to_num(s):
     total += current
     return total if total != 0 else None
 
+
 def extract_numbers(text):
     text = text.lower()
     digit_numbers = re.findall(r'\d+', text)
@@ -146,12 +157,14 @@ def extract_numbers(text):
             word_numbers.append(num)
     return digit_numbers + word_numbers
 
+
 def parse_model_answer(model_answer):
     numbers = extract_numbers(model_answer)
     if len(numbers) == 1:
         return numbers[0]
     else:
         return None
+
 
 def cnt_aggregate_metric(results):
     """
@@ -199,20 +212,24 @@ def cnt_aggregate_metric(results):
 ##########################################
 # 4. GRP Task Evaluation (suitable for oc-grp, pc-grp)
 ##########################################
+
+
 def grp_clean_answer(answer):
     if ")" in answer:
         return answer.split(")")[0].strip()
     return answer.strip()
 
+
 def grp_count_options(answer):
     return len(re.findall(r'\([A-Z]\)', answer))
+
 
 def grp_aggregate_accuracy(results):
     """
     Aggregate evaluation results for the GRP task (MCQ).
     For each sample, if multiple options appear in the prediction, it is considered incorrect; otherwise, compare the cleaned answer letters.
     Return the accuracy.
-    """
+    """  # noqa: E501
     total = 0
     correct = 0
     for item in results:
@@ -224,4 +241,3 @@ def grp_aggregate_accuracy(results):
         if grp_clean_answer(model_ans) == grp_clean_answer(gt_ans):
             correct += 1
     return (correct / total * 100) if total > 0 else 0
-

@@ -7,6 +7,7 @@ import math
 import os
 import argparse
 import timeout_decorator
+import logging
 
 from .image_base import ImageBaseDataset
 from ..utils import track_progress_rich

@@ -58,10 +58,10 @@ class Conversation:
                 if message:
                     if type(message) is tuple:
                         message, _, _ = message
-                    
+
                     if message.endswith('<|endoftext|>'):
                         message = message.replace('<|endoftext|>', '')
-                        ret += start + role + "\n" + message + end + '<|endoftext|>'                        
+                        ret += start + role + "\n" + message + end + '<|endoftext|>'
                     else:
                         assert not '<|endoftext|>' in message, f"Invalid message: {message}"
                         ret += start + role + "\n" + message + end
@@ -74,7 +74,7 @@ class Conversation:
 
     def append_message(self, role, message):
         self.messages.append([role, message])
-    
+
     def to_gradio_chatbot(self):
         ret = []
         for i, (role, msg) in enumerate(self.messages[self.offset:]):

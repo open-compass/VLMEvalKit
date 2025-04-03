@@ -121,7 +121,9 @@ class Claude_Wrapper(BaseAPI):
         if self.system_prompt is not None:
             payload['system'] = self.system_prompt
 
-        response = requests.request('POST', self.url, headers=self.headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+        response = requests.request(
+            'POST', self.url, headers=self.headers, data=json.dumps(payload), timeout=self.timeout * 1.1
+        )
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg

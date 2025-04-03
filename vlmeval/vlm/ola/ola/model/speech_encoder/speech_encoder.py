@@ -8,7 +8,7 @@ import whisper
 from ....ola.model.speech_encoder.beats.BEATs import BEATsConfig, BEATs
 
 class WhisperWrappedEncoder:
-    
+
     @classmethod
     def load(cls, model_config):
 
@@ -26,14 +26,14 @@ class WhisperWrappedEncoder:
         encoder = whisper.load_model(name=model_config.speech_encoder, device='cpu').encoder
         replace_layer_norm(encoder)
         return encoder
-    
+
 class DualWrappedEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
         self.whisper_model = self.load_whisper(config)
         self.beats_model = self.load_beats(config)
-    
+
     def load_whisper(cls, model_config):
 
         def replace_layer_norm(module):

@@ -27,10 +27,10 @@ class DoubaoVLWrapper(BaseAPI):
                  temperature: float = 0,
                  timeout: int = 60,
                  max_tokens: int = 4096,
-                 api_base: str = 'https://ark.cn-beijing.volces.com/api/v3',#使用系统推荐的服务区域地址
+                 api_base: str = 'https://ark.cn-beijing.volces.com/api/v3',  # 使用系统推荐的服务区域地址
                  **kwargs):
 
-        self.model = model# This variable is unused
+        self.model = model  # This variable is unused
         self.cur_idx = 0
         self.fail_msg = 'Failed to obtain answer via API. '
         self.temperature = temperature
@@ -52,10 +52,9 @@ class DoubaoVLWrapper(BaseAPI):
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
-
         self.client = OpenAI(
-            api_key = self.key,
-            base_url = self.api_base,
+            api_key=self.key,
+            base_url=self.api_base,
         )
 
         self.logger.info(f'Using API Base: {self.api_base}; End Point: {self.endpoint}; API Key: {self.key}')
@@ -101,9 +100,8 @@ class DoubaoVLWrapper(BaseAPI):
         else:
             return False
 
-
     def build_prompt(self, line, dataset: str) -> list[dict[str, str]]:
-        
+
         if dataset in {'MathVerse_MINI_Vision_Only'}:
             return self. _build_mathVerse_mini_vision_only_prompt(line, dataset)
         raise ValueError(f'Unsupported dataset: {dataset}')
@@ -115,8 +113,8 @@ class DoubaoVLWrapper(BaseAPI):
         tgt_path = self.dump_image(line, dataset)
 
         question = line['question']
-        
-        ###remove 'directly' from the prompt, so the model will answer the question in Chain-of-Thought (CoT) manner
+
+        # remove 'directly' from the prompt, so the model will answer the question in Chain-of-Thought (CoT) manner
         prompt = question.replace('directly','',1)
 
         msgs = []
@@ -165,12 +163,11 @@ class DoubaoVLWrapper(BaseAPI):
 
     def generate_inner(self, inputs, **kwargs) -> str:
 
-
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
-        ret_code = -1 
+        ret_code = -1
         answer = self.fail_msg
         response = None
         try:
@@ -189,15 +186,17 @@ class DoubaoVLWrapper(BaseAPI):
 
         return ret_code, answer, response
 
+
 class DoubaoVL(DoubaoVLWrapper):
 
     def generate(self, message, dataset=None):
         return super(DoubaoVL, self).generate(message)
 
+
 if __name__ == '__main__':
-    #export DOUBAO_VL_KEY=''
-    #export DOUBAO_VL_ENDPOINT=''
-    model = DoubaoVLWrapper( verbose=True)
+    # export DOUBAO_VL_KEY=''
+    # export DOUBAO_VL_ENDPOINT=''
+    model = DoubaoVLWrapper(verbose=True)
     inputs = [
         {'type': 'image', 'value': './assets/apple.jpg'},
         {'type': 'text', 'value': '请详细描述一下这张图片。'},

@@ -44,7 +44,7 @@ class SimpleResBlock(nn.Module):
 class OlaMLP(nn.Module):
     def __init__(self, in_channels, out_channels, twoview=False):
         super().__init__()
-        
+
         self.proj1 = nn.Linear(in_channels, out_channels)
         self.proj2 = nn.Linear(out_channels, out_channels)
         self.act = nn.GELU()
@@ -60,7 +60,7 @@ class OlaMLP(nn.Module):
         self.image_end = nn.Parameter(
             torch.randn(out_channels) * embed_std
         )
-        
+
         if twoview:
             self.image_sep = nn.Parameter(
                 torch.randn(out_channels) * embed_std
@@ -104,7 +104,7 @@ class OlaMLP(nn.Module):
                     x = x2
                 else:
                     x = torch.cat([x, sep, x2], dim=1)
-            
+
             begin = self.image_begin.reshape(1, 1, -1).expand(b, 1, c).to(dtype)
             end = self.image_end.reshape(1, 1, -1).expand(b, 1, c).to(dtype)
             x = torch.cat([begin, x, end], dim=1)
@@ -151,7 +151,7 @@ def build_vision_projector(config, delay_load=False, **kwargs):
 
     if projector_type == 'linear':
         return nn.Linear(config.mm_hidden_size, config.hidden_size)
-    
+
     elif projector_type == 'ola_mlp':
         return OlaMLP(config.mm_hidden_size, config.hidden_size, twoview=True)
 

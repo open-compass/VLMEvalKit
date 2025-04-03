@@ -25,6 +25,7 @@ CLIP_STD = (0.2686295, 0.2613025, 0.2757711)
 SIGLIP_MEAN = (0.5, 0.5, 0.5)
 SIGLIP_STD = (0.5, 0.5, 0.5)
 
+
 def build_transform(input_size, normalize_type='imagenet'):
     if normalize_type == 'imagenet':
         MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
@@ -107,6 +108,7 @@ def load_image(image_file, input_size=448, max_num=6, upscale=False, normalize_t
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
+
 
 def extract_answer(text):
     match = re.search(r'(Final answer:|Answer:)\s*(.*)', text, re.IGNORECASE)
@@ -298,7 +300,7 @@ class Ristretto(BaseModel):
             max_patch_num = int(os.environ.get("MAX_PATCH_NUM", None))
             self.max_num = max_patch_num
             return None
-            
+
         if dataset is None:
             self.max_num = 6
             return None
@@ -342,7 +344,9 @@ class Ristretto(BaseModel):
             for image_idx, file_name in enumerate(image_path):
                 upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
                 curr_pixel_values = load_image(
-                    file_name, input_size=self.image_size, max_num=self.max_num, upscale=upscale_flag, normalize_type=self.normalize_type).to(self.device).to(torch.bfloat16)
+                    file_name, input_size=self.image_size, max_num=self.max_num,
+                    upscale=upscale_flag, normalize_type=self.normalize_type
+                ).to(self.device).to(torch.bfloat16)
                 num_patches_list.append(curr_pixel_values.size(0))
                 pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
@@ -350,7 +354,9 @@ class Ristretto(BaseModel):
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
             upscale_flag = dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset)
             pixel_values = load_image(
-                image_path, input_size=self.image_size, max_num=self.max_num, upscale=upscale_flag, normalize_type=self.normalize_type).to(self.device).to(torch.bfloat16)
+                image_path, input_size=self.image_size, max_num=self.max_num,
+                upscale=upscale_flag, normalize_type=self.normalize_type
+            ).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None
@@ -389,4 +395,3 @@ class Ristretto(BaseModel):
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)
         return self._generate(message, dataset)
-

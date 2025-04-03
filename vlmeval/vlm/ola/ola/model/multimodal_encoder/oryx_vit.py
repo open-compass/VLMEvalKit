@@ -645,7 +645,7 @@ class VisionTransformer(nn.Module):
         for x in x_list:
             bs, _, h, w = x.shape
 
-            # fix patch size=14 in datasets 
+            # fix patch size=14 in datasets
             pad_h = (self.patch_embed.patch_size[0] - h % self.patch_embed.patch_size[0]) % self.patch_embed.patch_size[0]
             pad_w = (self.patch_embed.patch_size[1] - w % self.patch_embed.patch_size[1]) % self.patch_embed.patch_size[1]
             x = F.pad(x, (0, pad_w, 0, pad_h))
@@ -699,7 +699,7 @@ class VisionTransformer(nn.Module):
         bs, _, h, w = x.shape
         h = h // self.patch_embed.patch_size[0]
         w = w // self.patch_embed.patch_size[1]
-        
+
         x = self.patch_embed(x)
         # x = self._pos_embed(x)
         x = x + self.rescale_positional_embedding(out_size=(h, w))
@@ -810,7 +810,7 @@ def resize_evaclip_pos_embed(model: VisionTransformer, interpolation: str = 'bic
         pos_tokens, size=(new_size, new_size), mode=interpolation, align_corners=False)
     pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(1, 2)
     model.pos_embed = nn.Parameter(pos_tokens, requires_grad=True)
-    return model 
+    return model
 
 def create_siglip_vit(
     model_name: str = "siglip_so400m_patch14_384",
@@ -831,8 +831,8 @@ def create_siglip_vit(
     else:
         layers = min(vision_cfg.layers, select_layer)
 
-    
-    
+
+
     if 'patch2x2' or 'patch4x4' in path:
         add_patch2x2 = True
     else:
@@ -897,7 +897,7 @@ class SigLIPViTAnysizeWrapper(nn.Module):
         if self.is_loaded:
             print('{} is already loaded, `load_model` called again, skipping.'.format(self.vision_tower_name))
             return
-        
+
         self.image_processor = CLIPImageProcessor.from_pretrained("openai/clip-vit-large-patch14")
         if self.args.mm_projector_type == "conv_mlp" or self.args.mm_projector_type == "multipath_conv_mlp" or self.args.mm_projector_type == "multipath_conv_mlp_woconv":
             self.image_processor.crop_size['height'] = 384
@@ -962,14 +962,14 @@ class SigLIPViTAnysizeWrapper(nn.Module):
                     crop_infos.append(
                         (begin_h // base_size, end_h // base_size, begin_w // base_size, end_w // base_size)
                     )
-            
+
             split_images += now_sub_images
             sub_images_info.append(
                 (
                     len(now_sub_images), nsplit_h, nsplit_w, h // base_size, w // base_size, crop_infos
                 )
             )
-    
+
         return split_images, sub_images_info
 
 
@@ -980,7 +980,7 @@ class SigLIPViTAnysizeWrapper(nn.Module):
             new_features.append(
                 feature.reshape(1, h, w, -1)
             )
-        
+
         fused_images = []
         images_sizes = []
         sub_count = 0
@@ -991,10 +991,10 @@ class SigLIPViTAnysizeWrapper(nn.Module):
             total_feature = new_features[0].new_zeros(1, total_h, total_w, self.hidden_size)
             for feature, (begin_h, end_h, begin_w, end_w) in zip(sub_features, crop_infos):
                 total_feature[:, begin_h:end_h, begin_w:end_w] += feature
-            
+
             fused_images.append(total_feature.reshape(1, total_h * total_w, self.hidden_size))
             images_sizes.append((total_h, total_w))
-        
+
         return fused_images, images_sizes
 
 
@@ -1004,13 +1004,13 @@ class SigLIPViTAnysizeWrapper(nn.Module):
             xs = [x.to(self.dtype) for x in images]
             image_features, img_size, cls_token = self.vision_tower(xs, cal_attn_pool=cal_attn_pool)
             image_features = [x.to(images[0].dtype) for x in image_features]
-        
+
         else:
             image_forward_outs, img_size, cls_token = self.vision_tower(images.to(self.dtype), cal_attn_pool=cal_attn_pool)
             image_features = image_forward_outs.to(images.dtype)
-           
+
         return image_features, img_size, cls_token
-    
+
     def forward(self, images, cal_attn_pool=False):
         with torch.no_grad():
             image_features, img_size, cls_token = self.forward_func(images, cal_attn_pool=cal_attn_pool)

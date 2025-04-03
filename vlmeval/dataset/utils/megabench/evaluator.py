@@ -127,7 +127,7 @@ class MEGABenchEvaluator:
                     query,
                     task,
                 )
-                
+
                 if idx in exist_records[task_name]:
                     query["scores"] = exist_records[task_name][idx]
                 else:
@@ -161,7 +161,7 @@ class MEGABenchEvaluator:
                             query,
                             is_aux=True,
                         )
-                        
+
                     exist_records[task_name][idx] = query["scores"]
                     if idx % 10 == 0 or idx == len(task["query_response"]) - 1:
                         dump(exist_records, self.tmp_output_file)

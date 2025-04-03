@@ -25,14 +25,14 @@ from collections import defaultdict
 def read_md_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         content = file.read()
-    
-    return content 
+
+    return content
 
 def save_paired_result(preds, gts, save_path):
     save_result = []
     formula_id = 0
     for gt, pred in zip(gts, preds):
-        save_result.append({ 
+        save_result.append({
             "gt": gt,
             "pred": pred,
             "img_id": formula_id
@@ -100,7 +100,7 @@ def textblock2unicode(text):
                 removal_positions.append((position[0], position[1], unicode_content))
         except:
             continue
-    
+
     # Remove inline formulas from original text
     for start, end, unicode_content in sorted(removal_positions, reverse=True):
         text = text[:start] + unicode_content.strip() + text[end:]
@@ -109,20 +109,20 @@ def textblock2unicode(text):
 
 def normalized_formula(text):
     # Normalize math formulas before matching
-    filter_list = ['\\mathbf', '\\mathrm', '\\mathnormal', '\\mathit', '\\mathbb', '\\mathcal', '\\mathscr', '\\mathfrak', '\\mathsf', '\\mathtt', 
+    filter_list = ['\\mathbf', '\\mathrm', '\\mathnormal', '\\mathit', '\\mathbb', '\\mathcal', '\\mathscr', '\\mathfrak', '\\mathsf', '\\mathtt',
                    '\\textbf', '\\text', '\\boldmath', '\\boldsymbol', '\\operatorname', '\\bm',
                    '\\symbfit', '\\mathbfcal', '\\symbf', '\\scriptscriptstyle', '\\notag',
                    '\\setlength', '\\coloneqq', '\\space', '\\thickspace', '\\thinspace', '\\medspace', '\\nobreakspace', '\\negmedspace',
                    '\\quad', '\\qquad', '\\enspace', '\\substackw', ' ']
                 #    '\\left', '\\right', '{', '}', ' ']
-    
+
     # delimiter_filter
     pattern = re.compile(r"\\\[(.+?)(?<!\\)\\\]")
     match = pattern.search(text)
 
     if match:
         text = match.group(1).strip()
-    
+
     tag_pattern = re.compile(r"\\tag\{.*?\}")
     text = tag_pattern.sub('', text)
     hspace_pattern = re.compile(r"\\hspace\{.*?\}")
@@ -134,10 +134,10 @@ def normalized_formula(text):
     col_sep = re.compile(r"\\arraycolsep.*?\}")
     text = col_sep.sub('', text)
     text = text.strip('.')
-    
+
     for filter_text in filter_list:
         text = text.replace(filter_text, '')
-        
+
     # text = normalize_text(delimiter_filter(text))
     # text = delimiter_filter(text)
     text = text.lower()
@@ -183,7 +183,7 @@ def normalized_html_table(text):
             table_res = re.sub('( align=".*?")', "", table_res)
             table_res = re.sub('( class=".*?")', "", table_res)
             table_res = re.sub('</?tbody>',"",table_res)
-            
+
             table_res = re.sub(r'\s+', " ", table_res)
             table_res_no_space = '<html><body><table border="1" >' + table_res.replace(' ','') + '</table></body></html>'
             # table_res_no_space = re.sub(' (style=".*?")',"",table_res_no_space)
@@ -197,7 +197,7 @@ def normalized_html_table(text):
             # table_flow_no_space.append(table_res_no_space)
 
         return table_res, table_res_no_space
-    
+
     def clean_table(input_str,flag=True):
         if flag:
             input_str = input_str.replace('<sup>', '').replace('</sup>', '')
@@ -208,13 +208,13 @@ def normalized_html_table(text):
             input_str = input_str.replace('<spandata-span-identity="">', '')
             input_str = re.sub('<colgroup>.*?</colgroup>','',input_str)
         return input_str
-    
+
     norm_text, _ = process_table_html(text)
     norm_text = clean_table(norm_text)
     return norm_text
 
 def normalized_latex_table(text):
-    def latex_template(latex_code):  
+    def latex_template(latex_code):
         template = r'''
         \documentclass[border=20pt]{article}
         \usepackage{subcaption}
@@ -235,7 +235,7 @@ def normalized_latex_table(text):
         latex_code + \
         r'''
         \end{document}'''
-    
+
         return template
 
     def process_table_latex(latex_code):
@@ -280,7 +280,7 @@ def normalized_latex_table(text):
             latex_code = re.sub(fr'{special_str[0]}', fr'{special_str[1]}', latex_code)
 
         return latex_code
-    
+
     def convert_latex_to_html(latex_content, cache_dir='./temp'):
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir)
@@ -300,13 +300,13 @@ def normalized_latex_table(text):
             tables = re.findall(pattern, html_content, re.DOTALL | re.IGNORECASE)
             tables = [f'<table>{table}</table>' for table in tables]
             html_content = '\n'.join(tables)
-        
+
         except Exception as e:
             html_content = ''
-        
+
         shutil.rmtree(cache_dir)
         return html_content
-    
+
     html_text = convert_latex_to_html(text)
     normlized_tables = normalized_html_table(html_text)
     return normlized_tables
@@ -329,7 +329,7 @@ def textblock_with_norm_formula(text):
 
         norm_content = normalized_formula(content)
         removal_positions.append((position[0], position[1], norm_content))
-    
+
     # Remove inline formulas from original text
     for start, end, norm_content in sorted(removal_positions, reverse=True):
         text = text[:start] + norm_content.strip() + text[end:]
@@ -341,7 +341,7 @@ def inline_filter_unicode(text):
     # Ensure text is string type
     if not isinstance(text, str):
         text = str(text)
-    
+
     # Replace inline formula boundary markers
     #print('--------text-------',text)
     placeholder = '__INLINE_FORMULA_BOUNDARY__'
@@ -352,12 +352,12 @@ def inline_filter_unicode(text):
     #print('--------text_copy---unicode----',text_copy)
     # Restore boundary markers
     text_copy = text_copy.replace(placeholder, '$')
-    
+
     inline_array = []
     inline_matches = inline_reg.finditer(text_copy)
     # Record positions of inline formulas to be removed
     removal_positions = []
-    
+
     for match in inline_matches:
         position = [match.start(), match.end()]
         content = match.group(1) if match.group(1) is not None else match.group(2)
@@ -373,7 +373,7 @@ def inline_filter_unicode(text):
                 'content': content,
             })
             removal_positions.append((position[0], position[1]))
-    
+
     # Remove inline formulas from original text
     for start, end in sorted(removal_positions, reverse=True):
         text = text[:start] + text[end:]
@@ -384,15 +384,15 @@ def inline_filter(text):
     # Ensure text is string type
     if not isinstance(text, str):
         text = str(text)
-    
+
     inline_array = []
     inline_matches = inline_reg.finditer(text)
-    
+
     for match in inline_matches:
         position = [match.start(), match.end()]
         content = match.group(1) if match.group(1) is not None else match.group(2)
         # print('inline_content: ', content)
-        
+
         # Remove escape characters \
         clean_content = re.sub(r'\\([\\_&%^])', '', content)
 
@@ -425,14 +425,14 @@ def extract_tabular(text):
     positions = []
     current_pos = 0
     stack = []
-    
+
     while current_pos < len(text):
         begin_match = re.search(begin_pattern, text[current_pos:])
         end_match = re.search(end_pattern, text[current_pos:])
-        
+
         if not begin_match and not end_match:
             break
-            
+
         if begin_match and (not end_match or begin_match.start() < end_match.start()):
             stack.append(current_pos + begin_match.start())
             current_pos += begin_match.start() + len(end_pattern)
@@ -447,7 +447,7 @@ def extract_tabular(text):
             current_pos += end_match.start() + len(end_pattern)
         else:
             current_pos += 1
-    
+
     if stack:
         new_start = stack[0] + len(begin_pattern)
         new_tabulars, new_positions = extract_tabular(text[new_start:])
@@ -465,7 +465,7 @@ display_reg = re.compile(
     r'\$\$(.*?)\$\$|'
     r'\\\[(.*?)\\\]|'
     r'\$(.*?)\$|'
-    r'\\\((.*?)\\\)',  
+    r'\\\((.*?)\\\)',
     re.DOTALL
 )
 
@@ -478,14 +478,14 @@ inline_reg = re.compile(
     r'\\\((.*?)\\\)',
 )
 
-# table 
+# table
 table_reg = re.compile(
     r'\\begin{table\*?}(.*?)\\end{table\*?}|'
     r'\\begin{tabular\*?}(.*?)\\end{tabular\*?}',
-    re.DOTALL 
+    re.DOTALL
 )
 md_table_reg = re.compile(
-    r'\|\s*.*?\s*\|\n', 
+    r'\|\s*.*?\s*\|\n',
     re.DOTALL)
 html_table_reg = re.compile(
     r'(<table.*?</table>)',
@@ -494,7 +494,7 @@ html_table_reg = re.compile(
 
 # title
 title_reg = re.compile(
-    r'^\s*#.*$', 
+    r'^\s*#.*$',
     re.MULTILINE)
 
 # img
@@ -515,8 +515,8 @@ def md_tex_filter(content):
     content = re.sub(img_pattern, '', content)  # remove image
     content = remove_markdown_fences(content)   # remove markdown fences
     content = replace_repeated_chars(content) # replace all consecutive characters
-    
-   
+
+
 
     pred_all = []
     latex_table_array, table_positions = extract_tex_table(content)
@@ -529,8 +529,8 @@ def md_tex_filter(content):
         })
         content = content[:position[0]] + ' '*(position[1]-position[0]) + content[position[1]:]  # replace latex table with space
 
-    
-    # extract html table  
+
+    # extract html table
     html_table_array, table_positions = extract_html_table(content)
     for html_table, position in zip(html_table_array, table_positions):
         position = [position[0], position[0]+len(html_table)]
@@ -575,7 +575,7 @@ def md_tex_filter(content):
                     'content': single_line,
                     'fine_category_type': 'equation_inline'
                 })
-         
+
 
     # extract md table with ||
     md_table_mathces = md_table_reg.findall(content+'\n')
@@ -647,7 +647,7 @@ def md_tex_filter(content):
                     'position': position,
                     'content': text,
                 })
-         
+
             elif text.startswith('$') and text.endswith('$'):
                 if text.replace('$', '').strip():
                     pred_all.append({
@@ -705,14 +705,14 @@ def extract_html_table(text):
     positions = []
     current_pos = 0
     stack = []
-    
+
     while current_pos < len(text):
         begin_match = re.search(begin_pattern, text[current_pos:])
         end_match = re.search(end_pattern, text[current_pos:])
-        
+
         if not begin_match and not end_match:
             break
-            
+
         if begin_match and (not end_match or begin_match.start() < end_match.start()):
             stack.append(current_pos + begin_match.start())
             current_pos += begin_match.start() + len(end_pattern)
@@ -727,7 +727,7 @@ def extract_html_table(text):
             current_pos += end_match.start() + len(end_pattern)
         else:
             current_pos += 1
-    
+
     if stack:
         new_start = stack[0] + len(begin_pattern)
         new_tabulars, new_positions = extract_html_table(text[new_start:])
@@ -765,7 +765,7 @@ def extract_node_content(node):
         return node.specials_chars
     else:
         return ""
-        
+
 def get_node_end_pos(node):
     """Recursively determine the end position of a node"""
     if hasattr(node, 'nodelist') and node.nodelist:
@@ -806,7 +806,7 @@ def compute_edit_distance_matrix_new(gt_lines, matched_lines):
         for i, gt_line in enumerate(gt_lines):
             for j, matched_line in enumerate(matched_lines):
                 if len(gt_line) == 0 and len(matched_line) == 0:
-                    distance_matrix[i][j] = 0  
+                    distance_matrix[i][j] = 0
                 else:
                     distance_matrix[i][j] = Levenshtein.distance(gt_line, matched_line) / max(len(matched_line), len(gt_line))
         return distance_matrix
@@ -814,7 +814,7 @@ def compute_edit_distance_matrix_new(gt_lines, matched_lines):
         #print("ZeroDivisionError occurred. Outputting norm_gt_lines and norm_pred_lines:")
         # print("norm_gt_lines:", gt_lines)
         # print("norm_pred_lines:", matched_lines)
-        raise  
+        raise
 
 def get_gt_pred_lines(gt_items, pred_items, line_type):
     norm_html_lines = []
@@ -837,10 +837,10 @@ def get_gt_pred_lines(gt_items, pred_items, line_type):
         elif line_type == 'latex_table':
             gt_lines.append(str(item['latex']))
             norm_html_lines.append(str(item['html']))
-        
+
     pred_lines = [str(item['content']) for item in pred_items]
 
-    
+
     if line_type == 'formula':
         norm_gt_lines = [normalized_formula(_) for _ in gt_lines]
         norm_pred_lines = [normalized_formula(_) for _ in pred_lines]
@@ -854,10 +854,10 @@ def get_gt_pred_lines(gt_items, pred_items, line_type):
     else:
         norm_gt_lines = gt_lines
         norm_pred_lines = pred_lines
-    
+
     if line_type == 'latex_table':
         gt_lines = norm_html_lines
-    
+
 
     filtered_lists = [(a, b, c) for a, b, c in zip(gt_lines, norm_gt_lines, gt_cat_list) if a and b]
 
@@ -895,7 +895,7 @@ def get_gt_pred_lines(gt_items, pred_items, line_type):
 def match_gt2pred_simple(gt_items, pred_items, line_type, img_name):
 
     gt_lines, norm_gt_lines, gt_cat_list, pred_lines, norm_pred_lines = get_gt_pred_lines(gt_items, pred_items, line_type)
-    
+
     match_list = []
     if not norm_gt_lines: # not matched pred should be concatenated
         # print("One of the lists is empty. Returning an empty gt result.")
@@ -905,7 +905,7 @@ def match_gt2pred_simple(gt_items, pred_items, line_type, img_name):
             'gt_idx': [""],
             'gt': "",
             'pred_idx': pred_idx_list,
-            'pred': ''.join(pred_lines[_] for _ in pred_idx_list), 
+            'pred': ''.join(pred_lines[_] for _ in pred_idx_list),
             'gt_position': [""],
             'pred_position': pred_items[pred_idx_list[0]]['position'][0],  # get the first pred's position
             'norm_gt': "",
@@ -936,12 +936,12 @@ def match_gt2pred_simple(gt_items, pred_items, line_type, img_name):
                 'img_id': img_name
             })
         return match_list
-    
+
     cost_matrix = compute_edit_distance_matrix_new(norm_gt_lines, norm_pred_lines)
 
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
-    
+
     for gt_idx in range(len(norm_gt_lines)):
         if gt_idx in row_ind:
             row_i = list(row_ind).index(gt_idx)
@@ -958,7 +958,7 @@ def match_gt2pred_simple(gt_items, pred_items, line_type, img_name):
             pred_line = ""
             norm_pred_line = ""
             edit = 1
-        
+
         match_list.append({
             'gt_idx': [gt_idx],
             'gt': gt_lines[gt_idx],
@@ -976,14 +976,14 @@ def match_gt2pred_simple(gt_items, pred_items, line_type, img_name):
         })
         # print('-'*10)
         # [([0,1], 0),(2, 1), (1,2)] --> [0,2,1]/[0,1,2]
-    
+
     pred_idx_list = [pred_idx for pred_idx in range(len(norm_pred_lines)) if pred_idx not in col_ind] # get not matched preds
     if pred_idx_list: # if there are still remaining pred_idx, concatenate all preds
         match_list.append({
             'gt_idx': [""],
             'gt': "",
             'pred_idx': pred_idx_list,
-            'pred': ''.join(pred_lines[_] for _ in pred_idx_list), 
+            'pred': ''.join(pred_lines[_] for _ in pred_idx_list),
             'gt_position': [""],
             'pred_position': pred_items[pred_idx_list[0]]['position'][0],  # get the first pred's position
             'norm_gt': "",
@@ -1032,7 +1032,7 @@ def match_gt2pred_no_split(gt_items, pred_items, line_type, img_name):
     else:
         return []
 
-    
+
 from scipy.optimize import linear_sum_assignment
 # from rapidfuzz.distance import Levenshtein
 import Levenshtein
@@ -1048,9 +1048,9 @@ from Levenshtein import distance as Levenshtein_distance
 def match_gt2pred_quick(gt_items, pred_items, line_type, img_name):
 
     gt_lines, norm_gt_lines, gt_cat_list, pred_lines, norm_pred_lines= get_gt_pred_lines(gt_items, pred_items, line_type)
-    all_gt_indices = set(range(len(norm_gt_lines)))  
-    all_pred_indices = set(range(len(norm_pred_lines)))  
-    
+    all_gt_indices = set(range(len(norm_gt_lines)))
+    all_pred_indices = set(range(len(norm_pred_lines)))
+
     if not norm_gt_lines:
         match_list = []
         for pred_idx in range(len(norm_pred_lines)):
@@ -1107,30 +1107,30 @@ def match_gt2pred_quick(gt_items, pred_items, line_type, img_name):
             'edit': normalized_edit_distance,
             'img_id': img_name
         }]
- 
+
     cost_matrix = compute_edit_distance_matrix_new(norm_gt_lines, norm_pred_lines)
-    
+
     matched_col_idx, row_ind, cost_list = cal_final_match(cost_matrix, norm_gt_lines, norm_pred_lines)
-    
+
     gt_lens_dict, pred_lens_dict = initialize_indices(norm_gt_lines, norm_pred_lines)
-    
+
     matches, unmatched_gt_indices, unmatched_pred_indices = process_matches(matched_col_idx, row_ind, cost_list, norm_gt_lines, norm_pred_lines, pred_lines)
-    
+
     matching_dict = fuzzy_match_unmatched_items(unmatched_gt_indices, norm_gt_lines, norm_pred_lines)
-    
+
     final_matches = merge_matches(matches, matching_dict)
-    
+
     recalculate_edit_distances(final_matches, gt_lens_dict, norm_gt_lines, norm_pred_lines)
-    
+
     converted_results = convert_final_matches(final_matches, norm_gt_lines, norm_pred_lines)
-    
+
     merged_results = merge_duplicates_add_unmatched(converted_results, norm_gt_lines, norm_pred_lines, gt_lines, pred_lines, all_gt_indices, all_pred_indices)
 
     for entry in merged_results:
             entry['gt_idx'] = [entry['gt_idx']] if not isinstance(entry['gt_idx'], list) else entry['gt_idx']
             entry['pred_idx'] = [entry['pred_idx']] if not isinstance(entry['pred_idx'], list) else entry['pred_idx']
             entry['gt_position'] = [gt_items[_].get('order') if gt_items[_].get('order') else gt_items[_].get('position', [""])[0] for _ in entry['gt_idx']] if entry['gt_idx'] != [""] else [""]
-            entry['pred_position'] = pred_items[entry['pred_idx'][0]]['position'][0] if entry['pred_idx'] != [""] else "" 
+            entry['pred_position'] = pred_items[entry['pred_idx'][0]]['position'][0] if entry['pred_idx'] != [""] else ""
             entry['gt'] = ''.join([gt_lines[_] for _ in entry['gt_idx']]) if entry['gt_idx'] != [""] else ""
             entry['pred'] = ''.join([pred_lines[_] for _ in entry['pred_idx']]) if entry['pred_idx'] != [""] else ""
             entry['norm_gt'] = ''.join([norm_gt_lines[_] for _ in entry['gt_idx']]) if entry['gt_idx'] != [""] else ""
@@ -1138,17 +1138,17 @@ def match_gt2pred_quick(gt_items, pred_items, line_type, img_name):
 
             if entry['gt_idx'] != [""]:
                 ignore_type = ['figure_caption', 'figure_footnote', 'table_caption', 'table_footnote', 'code_algorithm', 'code_algorithm_caption', 'header', 'footer', 'page_footnote', 'page_number', 'equation_caption']
-                gt_cagegory_clean = [gt_cat_list[_] for _ in entry['gt_idx'] if gt_cat_list[_] not in ignore_type] 
+                gt_cagegory_clean = [gt_cat_list[_] for _ in entry['gt_idx'] if gt_cat_list[_] not in ignore_type]
                 if gt_cagegory_clean:
-                    entry['gt_category_type'] = Counter(gt_cagegory_clean).most_common(1)[0][0] 
+                    entry['gt_category_type'] = Counter(gt_cagegory_clean).most_common(1)[0][0]
                 else:
-                    entry['gt_category_type'] = Counter([gt_cat_list[_] for _ in entry['gt_idx']]).most_common(1)[0][0] 
+                    entry['gt_category_type'] = Counter([gt_cat_list[_] for _ in entry['gt_idx']]).most_common(1)[0][0]
             else:
                 entry['gt_category_type'] = ""
             entry['pred_category_type'] = get_pred_category_type(entry['pred_idx'][0], pred_items) if entry['pred_idx'] != [""] else ""
-            entry['gt_attribute'] = [gt_items[_].get("attribute", {}) for _ in entry['gt_idx']] if entry['gt_idx'] != [""] else [{}] 
+            entry['gt_attribute'] = [gt_items[_].get("attribute", {}) for _ in entry['gt_idx']] if entry['gt_idx'] != [""] else [{}]
             entry['img_id'] = img_name
-        
+
     return merged_results
 
 
@@ -1210,14 +1210,14 @@ def merge_lists_with_sublists(main_list, sub_lists):
     main_list_final = list(copy.deepcopy(main_list))
     for sub_list in sub_lists:
         pop_idx = main_list_final.index(sub_list[0])
-        for _ in sub_list: 
+        for _ in sub_list:
             main_list_final.pop(pop_idx)
-        main_list_final.insert(pop_idx, sub_list) 
-    return main_list_final   
+        main_list_final.insert(pop_idx, sub_list)
+    return main_list_final
 
 
 def sub_pred_fuzzy_matching(gt, pred):
-    
+
     min_d = float('inf')
     # pos = -1
 
@@ -1235,31 +1235,31 @@ def sub_pred_fuzzy_matching(gt, pred):
         return min_d
     else:
         return False
-        
-def sub_gt_fuzzy_matching(pred, gt):  
-    
-    min_d = float('inf')  
-    pos = ""  
-    matched_sub = ""  
-    gt_len = len(gt)  
-    pred_len = len(pred)  
-    
-    if pred_len >= gt_len and gt_len > 0:  
-        for i in range(pred_len - gt_len + 1):  
-            sub = pred[i:i + gt_len]  
+
+def sub_gt_fuzzy_matching(pred, gt):
+
+    min_d = float('inf')
+    pos = ""
+    matched_sub = ""
+    gt_len = len(gt)
+    pred_len = len(pred)
+
+    if pred_len >= gt_len and gt_len > 0:
+        for i in range(pred_len - gt_len + 1):
+            sub = pred[i:i + gt_len]
             dist = Levenshtein.distance(sub, gt)  /gt_len
-            if dist < min_d:  
-                min_d = dist  
-                pos = i  
-                matched_sub = sub  
-        return min_d, pos, gt_len, matched_sub  
-    else:  
-        return 1, "", gt_len, "" 
-        
-        
+            if dist < min_d:
+                min_d = dist
+                pos = i
+                matched_sub = sub
+        return min_d, pos, gt_len, matched_sub
+    else:
+        return 1, "", gt_len, ""
+
+
 def get_final_subset(subset_certain, subset_certain_cost):
     if not subset_certain or not subset_certain_cost:
-        return []  
+        return []
 
     subset_turple = sorted([(a, b) for a, b in zip(subset_certain, subset_certain_cost)], key=lambda x: x[0][0])
 
@@ -1284,13 +1284,13 @@ def get_final_subset(subset_certain, subset_certain_cost):
 
     final_subset = []
     for _, group in group_list.items():
-        if len(group) == 1: 
+        if len(group) == 1:
             final_subset.append(group[0][0])
         else:
             path_dict = defaultdict(list)
             path_idx = 0
             path_dict[path_idx].append(group[0])
-            
+
             for subset in group[1:]:
                 new_path = True
                 for path_idx_s, path_items in path_dict.items():
@@ -1318,7 +1318,7 @@ def get_final_subset(subset_certain, subset_certain_cost):
                     path_dict[path_idx].append(subset)
 
             saved_cost = float('inf')
-            saved_subset = []  
+            saved_subset = []
             for path_idx, path in path_dict.items():
                 avg_cost = sum([i[1] for i in path]) / len(path)
                 if avg_cost < saved_cost:
@@ -1335,10 +1335,10 @@ def judge_pred_merge(gt_list, pred_list, threshold=0.6):
 
     cur_pred = ' '.join(pred_list[:-1])
     merged_pred = ' '.join(pred_list)
-    
+
     cur_dist = Levenshtein.distance(gt_list[0], cur_pred) / max(len(gt_list[0]), len(cur_pred))
     merged_dist = Levenshtein.distance(gt_list[0], merged_pred) / max(len(gt_list[0]), len(merged_pred))
-    
+
     if merged_dist > cur_dist:
         return False, False
 
@@ -1354,7 +1354,7 @@ def judge_pred_merge(gt_list, pred_list, threshold=0.6):
     continue_flag = len(merged_pred) <= len(gt_list[0])
 
     return merged_pred_flag, continue_flag
-    
+
 def deal_with_truncated(cost_matrix, norm_gt_lines, norm_pred_lines):
     matched_first = np.argwhere(cost_matrix < 0.25)
     masked_gt_idx = [i[0] for i in matched_first]
@@ -1370,7 +1370,7 @@ def deal_with_truncated(cost_matrix, norm_gt_lines, norm_pred_lines):
         check_merge_subset = []
         merged_dist = []
 
-        for pred_idx in unmasked_pred_idx: 
+        for pred_idx in unmasked_pred_idx:
             step = 1
             merged_pred = [norm_pred_lines[pred_idx]]
 
@@ -1379,7 +1379,7 @@ def deal_with_truncated(cost_matrix, norm_gt_lines, norm_pred_lines):
                     break
                 else:
                     merged_pred.append(norm_pred_lines[pred_idx + step])
-                    merged_pred_flag, continue_flag = judge_pred_merge([norm_gt_lines[gt_idx]], merged_pred) 
+                    merged_pred_flag, continue_flag = judge_pred_merge([norm_gt_lines[gt_idx]], merged_pred)
                     if not merged_pred_flag:
                         break
                     else:
@@ -1414,7 +1414,7 @@ def deal_with_truncated(cost_matrix, norm_gt_lines, norm_pred_lines):
 
     subset_certain_final = get_final_subset(subset_certain, subset_certain_cost)
 
-    if not subset_certain_final:  
+    if not subset_certain_final:
         return cost_matrix, norm_pred_lines, range(len(norm_pred_lines))
 
     final_pred_idx_list = merge_lists_with_sublists(range(len(norm_pred_lines)), subset_certain_final)
@@ -1423,7 +1423,7 @@ def deal_with_truncated(cost_matrix, norm_gt_lines, norm_pred_lines):
     new_cost_matrix = compute_edit_distance_matrix_new(norm_gt_lines, final_norm_pred_lines)
 
     return new_cost_matrix, final_norm_pred_lines, final_pred_idx_list
-    
+
 def cal_move_dist(gt, pred):
     assert len(gt) == len(pred), 'Not right length'
     step = 0
@@ -1513,7 +1513,7 @@ def fuzzy_match_unmatched_items(unmatched_gt_indices, norm_gt_lines, norm_pred_l
 
 def merge_matches(matches, matching_dict):
     final_matches = {}
-    processed_gt_indices = set() 
+    processed_gt_indices = set()
 
     for gt_idx, match_info in matches.items():
         pred_indices = match_info['pred_indices']
@@ -1548,7 +1548,7 @@ def merge_matches(matches, matching_dict):
             processed_gt_indices.update(final_matches[pred_key]['gt_indices'])
 
     return final_matches
-    
+
 
 
 def recalculate_edit_distances(final_matches, gt_lens_dict, norm_gt_lines, norm_pred_lines):
@@ -1592,7 +1592,7 @@ def convert_final_matches(final_matches, norm_gt_lines, norm_pred_lines):
 
     for pred_key, info in final_matches.items():
         pred_content = ' '.join(norm_pred_lines[pred_idx] for pred_idx in pred_key if isinstance(pred_idx, int))
-        
+
         for gt_idx in sorted(set(info['gt_indices'])):
             result_entry = {
                 'gt_idx': int(gt_idx),
@@ -1602,7 +1602,7 @@ def convert_final_matches(final_matches, norm_gt_lines, norm_pred_lines):
                 'edit': info['edit_distance']
             }
             converted_results.append(result_entry)
-    
+
     matched_gt_indices = set().union(*[set(info['gt_indices']) for info in final_matches.values()])
     unmatched_gt_indices = all_gt_indices - matched_gt_indices
     matched_pred_indices = set(idx for pred_key in final_matches.keys() for idx in pred_key if isinstance(idx, int))
@@ -1657,14 +1657,14 @@ import json
 def read_md_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         content = file.read()
-    
-    return content 
+
+    return content
 
 def save_paired_result(preds, gts, save_path):
     save_result = []
     formula_id = 0
     for gt, pred in zip(gts, preds):
-        save_result.append({ 
+        save_result.append({
             "gt": gt,
             "pred": pred,
             "img_id": formula_id

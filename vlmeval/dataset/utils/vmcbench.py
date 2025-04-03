@@ -11,7 +11,7 @@ def parse_multi_choice_response(response, all_choices, index2ans):
     response = str(response)
     for char in [',', '.', '!', '?', ';', ':', "'"]:
         response = response.strip(char)
-    response = " " + response + " " # add space to avoid partial match
+    response = " " + response + " "  # add space to avoid partial match
 
     index_ans = True
     ans_with_brack = False
@@ -22,7 +22,7 @@ def parse_multi_choice_response(response, all_choices, index2ans):
             ans_with_brack = True
 
     if len(candidates) == 0:
-        for choice in all_choices: # e.g., A B C D
+        for choice in all_choices:  # e.g., A B C D
             if f' {choice} ' in response:
                 candidates.append(choice)
 
@@ -31,17 +31,17 @@ def parse_multi_choice_response(response, all_choices, index2ans):
         for index, ans in index2ans.items():
             if ans.lower() in response.lower():
                 candidates.append(index)
-                index_ans = False # it's content ans.
+                index_ans = False  # it's content ans.
 
     if len(candidates) == 0:  # still not get answer, randomly choose one.
         pred_index = random.choice(all_choices)
     elif len(candidates) > 1:
         start_indexes = []
         if index_ans:
-            if ans_with_brack: 
+            if ans_with_brack:
                 for can in candidates:
                     index = response.rfind(f'({can})')
-                    start_indexes.append(index) # -1 will be ignored anyway
+                    start_indexes.append(index)  # -1 will be ignored anyway
                 # start_indexes = [generated_response.index(f'({can})') for can in candidates]
             else:
                 for can in candidates:
@@ -53,32 +53,33 @@ def parse_multi_choice_response(response, all_choices, index2ans):
                 start_indexes.append(index)
         # get the last one
         pred_index = candidates[np.argmax(start_indexes)]
-    else: # if only one candidate, use it.
+    else:  # if only one candidate, use it.
         pred_index = candidates[0]
 
     return pred_index
 
-def get_mc_score(row, use_parse = True):
+
+def get_mc_score(row, use_parse=True):
     if use_parse:
         if pd.isna(row["A"]):
             return False
         response = row["prediction"]
         all_choices = []
         for i in range(9):
-            if chr(65+i) in row and pd.isna(row[chr(65+i)])== False:
-                all_choices.append(chr(65+i))
+            if chr(65 + i) in row and not pd.isna(row[chr(65 + i)]):
+                all_choices.append(chr(65 + i))
         index2ans = {index: row[index] for index in all_choices}
         pred_index = parse_multi_choice_response(response, all_choices, index2ans)
     else:
         pred_index = row["output"]
     return int(pred_index == row["answer"])
 
+
 def report_vmc_acc(data):
-    general_datasets = ["SEEDBench", "MMStar", "A-OKVQA", "VizWiz", "MMVet", 
-                      "VQAv2", "OKVQA"]
-    reason_datasets = ["MMMU", "MathVista", "ScienceQA", "RealWorldQA",  "GQA", "MathVision"]
+    general_datasets = ["SEEDBench", "MMStar", "A-OKVQA", "VizWiz", "MMVet", "VQAv2", "OKVQA"]
+    reason_datasets = ["MMMU", "MathVista", "ScienceQA", "RealWorldQA", "GQA", "MathVision"]
     ocr_datasets = ["TextVQA", "OCRVQA"]
-    doc_datasets = ["AI2D", "ChartQA","DocVQA", "InfoVQA",  "TableVQABench"]
+    doc_datasets = ["AI2D", "ChartQA","DocVQA", "InfoVQA", "TableVQABench"]
     results = {}
     for category in data['category'].unique():
         results[category] = data[data['category'] == category]['hit'].mean()
@@ -89,8 +90,7 @@ def report_vmc_acc(data):
     results['OCR'] = results[ocr_datasets].mean(axis=1)
     results['Doc & Chart'] = results[doc_datasets].mean(axis=1)
     for key in results:
-        results[key] = round(results[key]*100, 2)
-    results = results[['Overall', 'General', 'Reasoning', 'OCR', 'Doc & Chart'] 
+        results[key] = round(results[key] * 100, 2)
+    results = results[['Overall', 'General', 'Reasoning', 'OCR', 'Doc & Chart']
                       + general_datasets + reason_datasets + ocr_datasets + doc_datasets]
     return results
-    

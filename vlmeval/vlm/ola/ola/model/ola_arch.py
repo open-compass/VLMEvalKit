@@ -109,7 +109,7 @@ class OlaMetaModel:
 
         self.config.mm_vision_select_layer = mm_vision_select_layer
         self.config.mm_vision_select_feature = mm_vision_select_feature
-        
+
         if getattr(self, 'mm_projector', None) is None:
             self.mm_projector = build_vision_projector(self.config, vision_cfg=vision_tower.config)
         else:
@@ -120,7 +120,7 @@ class OlaMetaModel:
             mm_projector_weights = torch.load(pretrain_mm_mlp_adapter, map_location='cpu')
             def get_w(weights, keyword):
                 return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
-            
+
             self.mm_projector.load_state_dict(get_w(mm_projector_weights, 'mm_projector'))
             print('Loading pretrain mm projector weights')
             incompatible_keys = self.vision_resampler.load_state_dict(get_w(mm_projector_weights, 'vision_resampler'), strict=False)
@@ -137,7 +137,7 @@ class OlaMetaForCausalLM(ABC):
 
     def get_vision_tower(self):
         return self.get_model().get_vision_tower()
-    
+
     def get_speech_projector(self):
         return self.get_model().speech_projector
 
@@ -263,7 +263,7 @@ class OlaMetaForCausalLM(ABC):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
 
             num_speech_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum() + (cur_input_ids == SPEECH_TOKEN_INDEX).sum()
-            
+
             if num_speech_images == 0:
                 cur_speech_features = speech_features[cur_speech_idx]
                 cur_images_features = image_features[cur_image_idx]
@@ -288,7 +288,7 @@ class OlaMetaForCausalLM(ABC):
             cur_input_embeds_no_speech_image = torch.split(cur_input_embeds, split_sizes, dim=0)
             cur_new_input_embeds = []
             cur_new_labels = []
-            
+
             for i in range(num_speech_images + 1):
                 cur_new_input_embeds.append(cur_input_embeds_no_speech_image[i])
                 cur_new_labels.append(cur_labels_nospeech_image[i])

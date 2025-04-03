@@ -53,7 +53,7 @@ def load_pretrained_model(model_path, model_base, is_lora=False, s2s=False, load
         tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
         cfg_pretrained = AutoConfig.from_pretrained(model_path)
         model = model_cls.from_pretrained(model_base, low_cpu_mem_usage=False, config=cfg_pretrained, **kwargs)
-        
+
         speech_projector_weights = torch.load(os.path.join(model_path, 'speech_projector.bin'), map_location='cpu')
         speech_projector_weights = {k: v.to(torch.float16) for k, v in speech_projector_weights.items()}
         model.load_state_dict(speech_projector_weights, strict=False)
@@ -82,7 +82,7 @@ def load_pretrained_model(model_path, model_base, is_lora=False, s2s=False, load
         vision_tower.to(device="cuda:0", dtype=torch.bfloat16)
     image_processor = vision_tower.image_processor
     print("Loading vision tower succeeded.")
-    
+
     if hasattr(model.config, "max_sequence_length"):
         context_len = model.config.max_sequence_length
     else:

@@ -28,6 +28,7 @@ EVAL_SYSTEM_PROMPT = json.dumps({
     ]
 })
 
+
 def str2json(s: str):
     try:
         return json.loads(s)
@@ -35,6 +36,7 @@ def str2json(s: str):
         if s.startswith('```json') and s.endswith('```'):
             return json.loads(s[6:-3])
         return s
+
 
 class MOAT(ImageBaseDataset):
     TYPE = 'VQA'
@@ -47,7 +49,7 @@ class MOAT(ImageBaseDataset):
 
     def __init__(self, dataset, **kwargs):
         super().__init__(dataset, **kwargs)
-        seed(RANDOM_SEED) # seed the random number generator to ensure reproducibility
+        seed(RANDOM_SEED)  # seed the random number generator to ensure reproducibility
 
     def post_build(self, dataset):
         assert dataset == "MOAT", f"Wrong dataset name {dataset}"
@@ -63,7 +65,7 @@ class MOAT(ImageBaseDataset):
         else:
             warnings.warn('The dataset tsv is not downloaded')
             download_file(zip_url, zip_path)
-        
+
         # Extract images
         self.img_root = osp.join(ROOT, 'MOAT_images')
         if not osp.exists(self.img_root):
@@ -93,7 +95,7 @@ class MOAT(ImageBaseDataset):
         for img in outside_knowledge_images:
             msgs.append({'type': 'image', 'value': osp.join(self.img_root, img)})
         return msgs
-    
+
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs['model']
@@ -129,7 +131,7 @@ class MOAT(ImageBaseDataset):
             def verdict_one(model, line):
                 prediction = extract_prediction(line['prediction'])
                 answer = line['answer']
-                prompt = EVAL_SYSTEM_PROMPT + '\n' + f'The answer to evaluate is {prediction}\nThe ground truth answer is {answer}'
+                prompt = EVAL_SYSTEM_PROMPT + '\n' + f'The answer to evaluate is {prediction}\nThe ground truth answer is {answer}'  # noqa: E501
                 res = model.generate(prompt)
                 return extract_verdict(res)
 
@@ -141,7 +143,7 @@ class MOAT(ImageBaseDataset):
             )
             data['verdict'] = verdict_list
             dump(data, result_path)
-        
+
         data = load(result_path)
         overall_acc = data['verdict'].mean()
         capability_set = set()
@@ -153,14 +155,16 @@ class MOAT(ImageBaseDataset):
             capabilities = toliststr(line['capability'])
             verdict = line['verdict']
             for capability in capabilities:
-                capability_score_map[capability] = (capability_score_map[capability][0] + verdict, capability_score_map[capability][1] + 1)
+                capability_score_map[capability] = (
+                    capability_score_map[capability][0] + verdict, capability_score_map[capability][1] + 1
+                )
         capability_score_map = {capability: score[0] / score[1] for capability, score in capability_score_map.items()}
-        metrics = { 
+        metrics = {
             'overall_acc': overall_acc,
             'result_path': result_path,
             'capability_acc': capability_score_map,
         }
-        score_pth = eval_file.replace(f'.{suffix}', f"_score.json")
-        dump(metrics, score_pth) 
-        
+        score_pth = eval_file.replace(f'.{suffix}', "_score.json")
+        dump(metrics, score_pth)
+
         return metrics

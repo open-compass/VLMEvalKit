@@ -1,3 +1,4 @@
+# flake8: noqa
 from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
@@ -60,7 +61,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
             self.data = self.data[self.data['discipline'] == 'chemistry']
         else:
             raise ValueError(f'Invalid subset: {subset}')
-        
+
         if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
@@ -68,7 +69,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
             self.data = self.data.iloc[:limit]
         else:
             raise ValueError(f'Invalid limit: {limit}')
-    
+
 
     @classmethod
     def supported_datasets(cls):
@@ -117,7 +118,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
                     # 查找所有的压缩文件
                     tar_files = glob(osp.join(cache_path, "**/*.tar*"), recursive=True)
                     zip_files = glob(osp.join(cache_path, "**/*.zip*"), recursive=True)
-                    
+
                     parts_dict = {}
                     # 分组处理tar文件
                     for f in tar_files:
@@ -125,7 +126,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
                         if base_name not in parts_dict:
                             parts_dict[base_name] = {'type': 'tar', 'parts': []}
                         parts_dict[base_name]['parts'].append(f)
-                    
+
                     # 分组处理zip文件
                     for f in zip_files:
                         base_name = f.split(".zip")[0]
@@ -138,10 +139,10 @@ class VideoMMLU_CAP(VideoBaseDataset):
                         print(f"Processing archive: {base_name}")
                         archive_type = info['type']
                         parts = info['parts']
-                        
+
                         # 设置输出文件名
                         output_file = base_name + (".tar" if archive_type == 'tar' else ".zip")
-                        
+
                         # 如果有多个部分，先合并
                         if len(parts) > 1 and not osp.exists(output_file):
                             print('Start concatenating archive parts')
@@ -186,13 +187,13 @@ class VideoMMLU_CAP(VideoBaseDataset):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-        
+
         prompt = random.choice(detailed_caption_prompts)
 
         if video_llm:
             video_path = os.path.join(self.video_path, line['video'])
             return [
-                dict(type='video', value=video_path),  
+                dict(type='video', value=video_path),
                 dict(type='text', value=prompt)
             ]
         else:
@@ -280,7 +281,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)
-        
+
         response_file = eval_file.replace('.xlsx', f'_{judge}_response.pkl')
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
         tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
@@ -294,7 +295,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
-            
+
             expanded_data = []
             for idx, row in data.iterrows():
                 try:
@@ -302,22 +303,22 @@ class VideoMMLU_CAP(VideoBaseDataset):
                     for q_dict in questions:
                         new_row = row.copy()
                         new_row['question'] = q_dict['question']
-                        new_row['answer'] = q_dict['answer']   
+                        new_row['answer'] = q_dict['answer']
                         expanded_data.append(new_row)
                 except Exception as e:
                     print(f"Error parsing questions for row {idx}")
                     print(f"Error message: {str(e)}")
                     continue
-            
+
             expanded_df = pd.DataFrame(expanded_data).reset_index(drop=True)
-            
+
             data_un = expanded_df[~expanded_df['index'].isin(res)]
             data_un = data_un[~pd.isna(data_un['prediction'])]
             lt = len(data_un)
-            
+
             response_prompts = [prepare_response_prompt(data_un.iloc[i]) for i in range(lt)]
             indices = [data_un.iloc[i]['index'] for i in range(lt)]
-            
+
             model.system_prompt = SYSTEM_GENER_PRED_PROMPT
             if len(response_prompts):
                 print(f"Processing {len(response_prompts)} valid prompts out of {lt} total items")
@@ -374,7 +375,7 @@ class VideoMMLU_QA(VideoBaseDataset):
             self.data = self.data[self.data['discipline'] == 'chemistry']
         else:
             raise ValueError(f'Invalid subset: {subset}')
-        
+
         if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
@@ -382,7 +383,7 @@ class VideoMMLU_QA(VideoBaseDataset):
             self.data = self.data.iloc[:limit]
         else:
             raise ValueError(f'Invalid limit: {limit}')
-    
+
 
     @classmethod
     def supported_datasets(cls):
@@ -474,13 +475,13 @@ class VideoMMLU_QA(VideoBaseDataset):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-        
+
         prompt = line['question'] + '\nAnswer briefly and directly in one sentence.'
 
         if video_llm:
             video_path = os.path.join(self.video_path, line['video'])
             return [
-                dict(type='video', value=video_path),  
+                dict(type='video', value=video_path),
                 dict(type='text', value=prompt)
             ]
         else:
@@ -568,7 +569,7 @@ class VideoMMLU_QA(VideoBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)
-        
+
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
         tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
         score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
@@ -610,5 +611,3 @@ class VideoMMLU_QA(VideoBaseDataset):
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
-
-

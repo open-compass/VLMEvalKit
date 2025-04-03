@@ -30,7 +30,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
 
     def __init__(self, config):
         super(Qwen2ForCausalLM, self).__init__(config)
-        
+
         config.rope_scaling = None
         self.model = OlaQwenModel(config)
         self.vocab_size = config.vocab_size
@@ -80,15 +80,15 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
                 past_key_values,
                 labels,
                 speech,
-                speech_lengths, 
+                speech_lengths,
                 speech_chunks,
                 speech_wav,
                 images,
-                modalities, 
-                image_sizes, 
+                modalities,
+                image_sizes,
                 images_highres
             )
-    
+
         if labels is None:
             return super().forward(
                 input_ids=input_ids,
@@ -114,7 +114,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
                 output_hidden_states=output_hidden_states,
                 return_dict=return_dict
             )
-    
+
 
     def forward_llm_efficient(self, input_ids, attention_mask, position_ids, past_key_values, inputs_embeds, labels, use_cache, output_attentions, output_hidden_states, return_dict):
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
@@ -149,7 +149,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
         logits = logits.float()
         loss_fct = nn.CrossEntropyLoss()
         loss = loss_fct(logits, shift_labels)
-        
+
 
         if not return_dict:
             output = (logits,) + outputs[1:]
@@ -163,7 +163,7 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-    
+
     @torch.no_grad()
     def generate(
         self,
@@ -198,11 +198,11 @@ class OlaQwenForCausalLM(Qwen2ForCausalLM, OlaMetaForCausalLM):
             None,
             speech,
             speech_lengths,
-            speech_chunks, 
+            speech_chunks,
             speech_wav,
             images,
-            modalities, 
-            image_sizes, 
+            modalities,
+            image_sizes,
             images_highres
         )
 

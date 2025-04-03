@@ -29,7 +29,7 @@ def ShortQA_auxeval(model, line):
                 return None, None
         else:
             return None, None
-        
+
     prompt = ShortQA_prompt(line)
     retry = 3
     for i in range(retry):
@@ -45,7 +45,7 @@ def ShortQA_auxeval(model, line):
 def Comprehensive_auxeval(model, data):
     def valid(record, key_name):
         return key_name in record and (not pd.isna(record[key_name])) and record[key_name] != ''
-    
+
     if isinstance(data, pd.DataFrame) and len(data) > 1:
         # Should Adopt CircularEval
         assert valid(data.iloc[0], 'A')
@@ -58,7 +58,7 @@ def Comprehensive_auxeval(model, data):
             return eval_vanilla(model, item)
         else:
             return ShortQA_auxeval(model, item)
-        
+
 
 class ImageShortQADataset(ImageBaseDataset):
     TYPE = 'Short'
@@ -84,7 +84,7 @@ class ImageShortQADataset(ImageBaseDataset):
     # It returns a DataFrame
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file)
-        dataset = self.dataset_name
+        _ = self.dataset_name
         assert 'answer' in data and 'prediction' in data
         data['prediction'] = [str(x) for x in data['prediction']]
         data['answer'] = [str(x) for x in data['answer']]
@@ -92,10 +92,10 @@ class ImageShortQADataset(ImageBaseDataset):
         storage = eval_file.replace('.xlsx', '_judge.xlsx')
         tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        
+
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
-            
+
             model = judge_kwargs.get('model', 'gpt-4o-mini')
             if model == 'exact_matching':
                 model = None
@@ -118,7 +118,7 @@ class ImageShortQADataset(ImageBaseDataset):
                 else:
                     main_data = data[[x == y for x, y in zip(data['index'], data['g_index'])]]
                     lines = [data[data['g_index'] == x] for x in main_data['index']]
-                    indices = [x.iloc[0]['g_index'] for x in lines if x.iloc[0]['g_index'] not in ans_map] 
+                    indices = [x.iloc[0]['g_index'] for x in lines if x.iloc[0]['g_index'] not in ans_map]
                     lines = [x for x in lines if x.iloc[0]['g_index'] not in ans_map]
                     tups = [(model, x) for x in lines]
                     data = main_data
@@ -133,10 +133,10 @@ class ImageShortQADataset(ImageBaseDataset):
             data['hit'] = [x['hit'] for x in judge_results]
             data['log'] = [x['log'] for x in judge_results]
             dump(data, storage)
-        
+
         data = load(storage)
         acc = report_acc(data)
-        
-        score_file = eval_file.replace(f'.xlsx', '_acc.csv')
+
+        score_file = eval_file.replace('.xlsx', '_acc.csv')
         dump(acc, score_file)
         return acc
