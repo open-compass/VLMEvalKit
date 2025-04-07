@@ -701,7 +701,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
                         sublist.append(image_path)
                     image_list.append(sublist)
             else:
-                image_list = [[] * len(lines)]
+                image_list = [[] for _ in range(len(lines))]
             tups = [(model, image, prompt) for prompt, image in zip(prompts, image_list)]
 
             ans = {}
