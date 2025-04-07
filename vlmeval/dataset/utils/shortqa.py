@@ -242,7 +242,7 @@ def ShortQA_prompt(line):
     question = line['question']
     is_cn = cn_string(question)
     answer = line['answer']
-    answer_type = line['answer_type']
+    answer_type = line.get('answer_type', 'listofstr')
     if answer[0] == '[' and answer[-1] == ']' and answer_type not in ('exactMatch', 'multipleChoice'):
         answer = eval(answer)
     else:
