@@ -189,8 +189,10 @@ def build_prompt_wemath(question, options, prediction):
         'Question: <start>\n{}\nOptions: {}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
     )
     question = question.replace(
-        ("Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
-        "<Thought process>: <<your thought process>> <Answer>: <<your option>>"),
+        (
+            "Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
+            "<Thought process>: <<your thought process>> <Answer>: <<your option>>"
+        ),
         '',
     )
     return tmpl.format(question, options, prediction)
@@ -335,7 +337,7 @@ def eval_circular_group(model, sub_data, dataset_name=None):
     prefetched = prefetch_circular_group(sub_data, verbose=True)
     if isinstance(prefetched, dict) and 'hit' in prefetched:
         return prefetched
-    
+
     res, GT, PRED = prefetch_circular_group(sub_data, verbose=True)
     if res is not None:
         return res
@@ -416,11 +418,11 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
     # Only keep those lines in the meta data
     data = data[data['index'].isin(answer_map)]
     data['GT'] = [answer_map[idx] for idx in data['index']]
-    
+
     data['tmp_flag'] = [x == y for x, y in zip(data['index'], data['g_index'])]
     data_main = data[data['tmp_flag']]
     data_main.pop('tmp_flag')
-    
+
     data_groups = []
     for i in range(len(data_main)):
         # Dealing with the normal part

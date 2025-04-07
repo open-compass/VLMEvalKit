@@ -16,7 +16,7 @@ def build_prompt_logicvista(line):
         "choice is correct to the given question.\n"
         "What letter did the following answer choose? If the answer did not select a letter answer choice, "
         "first try to infer the answer based off the given choices.\n"
-        "If it does not seem like the given answer corresponds to an answer choice OR if there is no selected answer, please just respond with Z.\n"
+        "If it does not seem like the given answer corresponds to an answer choice OR if there is no selected answer, please just respond with Z.\n"  # noqa: E501
         "Make sure you answer with ONLY the letters chosen.\n"
         'Example 1: \n'
         'Question: <start>\nWhat is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n<end>\n'
@@ -26,7 +26,7 @@ def build_prompt_logicvista(line):
         'Answer: <start>\nSpider\n<end>\nYour output: Z\n'
         'Example 3: \n'
         'Question: <start>\nWhich figure is a rotation of the object?\n<end>\n'
-        'Answer: <start>\nThe figure on the right, labeled "D," is a rotation of the object shown in the top left corner.\n<end>\nYour output: D\n'
+        'Answer: <start>\nThe figure on the right, labeled "D," is a rotation of the object shown in the top left corner.\n<end>\nYour output: D\n'  # noqa: E501
         'Example 4: \n'
         'Question: <start>\nWhich of the boxes comes next in the sequence? Select from A-E\n<end>\n'
         'Answer: <start>\nThe sequence of the boxes is A, B, C, D, E.\n<end>\nYour output: ABCDE\n'
@@ -79,8 +79,8 @@ def evaluate_logicvista(file_path):
     hit = defaultdict(lambda: 0)
     acc = defaultdict(lambda: 0)
 
-    lt = len(df)
-    skill_list = []
+    _ = len(df)
+    _ = []
 
     df_tot = df
 

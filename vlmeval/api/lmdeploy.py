@@ -59,7 +59,8 @@ class InternVL2_PromptUtil:
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
-                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial', 'WeMath', 'LogicVista'], dataset):
+                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath',
+                            'QSpatial', 'WeMath', 'LogicVista'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt)

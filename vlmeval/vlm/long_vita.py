@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 import math
 import numpy as np
@@ -399,7 +400,7 @@ def get_external_inputs(tokens, tokenizer, image_processor, image_list=None, ima
 
     image_indices = torch.cat(image_indices, dim=1)
     image_indices = image_indices.contiguous().to(torch.cuda.current_device())
-    
+
     tokens = torch.tensor(tokens, dtype=torch.long, device='cuda')
 
     return tokens, images, image_indices

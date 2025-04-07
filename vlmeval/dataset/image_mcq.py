@@ -361,7 +361,7 @@ class MMMUProDataset(MMMUDataset):
             tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line)
-        
+
         if 'MMMU_Pro_V' in self.dataset_name:
             question = 'Answer the following multiple-choice question in the image. '
             if 'COT' in self.dataset_name:
@@ -430,11 +430,11 @@ class MMMUProDataset(MMMUDataset):
             dump(data, tgt)
             res = super().evaluate(tgt, **judge_kwargs)
             acc_org = eval_file.replace('.xlsx', '_acc.csv')
-            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv') 
+            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv')
             shutil.copy(acc_now, acc_org)
             return res
         else:
-            return super().evaluate(eval_file, **judge_kwargs)  
+            return super().evaluate(eval_file, **judge_kwargs)
 
 
 class MUIRDataset(ImageMCQDataset):
@@ -1127,7 +1127,8 @@ class WeMath(ImageBaseDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(combine_score, score_pth)
         return combine_score
-    
+
+
 class VMCBenchDataset(ImageBaseDataset):
 
     TYPE = 'MCQ'
@@ -1139,6 +1140,7 @@ class VMCBenchDataset(ImageBaseDataset):
 
     DATASET_MD5 = {
     }
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -1161,7 +1163,7 @@ class VMCBenchDataset(ImageBaseDataset):
         if len(options):
             prompt += options_prompt
             prompt += "Answer with the option's letter from the given choices directly. \n"
-            
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])

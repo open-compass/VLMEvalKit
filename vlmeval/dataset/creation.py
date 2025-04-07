@@ -1,3 +1,4 @@
+# flake8: noqa
 from .image_base import ImageBaseDataset
 import numpy as np
 import pandas as pd
@@ -17,7 +18,7 @@ Your task is to carefully assess two responses based on provided instructions an
 Suggested Steps for Evaluation:
 1. Review both responses independently and then carefully compare their strengths and weaknesses. A good response should feature good language quality, follow the user instruction and meet as many criteria as possible.
 2. After completing the first evaluation, swap the positions of response A and B and repeat Step 1 and get the 2nd evaluation outcome. This helps to mitigate the potential position bias.
-3. After completing both evaluations (in the original and reversed order), combine your analysis and provide a final conclusion based on the overall assessment. If both responses are relatively similar, or the differences are minimal and hard to distinguish, your conclusion should indicate a tie ([[A=B]]). 
+3. After completing both evaluations (in the original and reversed order), combine your analysis and provide a final conclusion based on the overall assessment. If both responses are relatively similar, or the differences are minimal and hard to distinguish, your conclusion should indicate a tie ([[A=B]]).
 
 Your **conclusion** should be one of the following options (A, B are of the original order):
 1. [[A>>B]]: Response A is clearly better than Response B.
@@ -43,10 +44,10 @@ Reasoning Process: [REASONING]\n
 
     # Criteria Alignment w/o GT
     'objective_without_gt':"""
-Please act as an impartial judge and evaluate the **Criteria Alignment** of the two responses provided by AI assistants to the user prompt. The responses were generated based on the provided instructions and visual input from images. 
+Please act as an impartial judge and evaluate the **Criteria Alignment** of the two responses provided by AI assistants to the user prompt. The responses were generated based on the provided instructions and visual input from images.
 
 Suggested Steps for Evaluation:
-1. Evaluate **Criteria Alignment** of both responses based on the criteria.   
+1. Evaluate **Criteria Alignment** of both responses based on the criteria.
     • If a criterion consist of **X aspects**, each aspect is worth **10 / X points**.
     • For each aspect, there may be multiple sub-criteria. If there are **Y sub-criteria for the aspect**, each sub-criterion worths **10 / (X * Y) points**.
 2. Assign a total score out of 10 for each response.
@@ -64,11 +65,11 @@ Response B Alignment Score: Y/10\n
 
     # Criteria Alignment w. GT
     'objective_with_gt':"""
-Please act as an impartial judge and evaluate the **Criteria Alignment** of the two responses provided by AI assistants to the user prompt. The responses were generated based on the provided instructions and visual input from images. There is also a ground truth corresponding to the instructions provided for reference. 
+Please act as an impartial judge and evaluate the **Criteria Alignment** of the two responses provided by AI assistants to the user prompt. The responses were generated based on the provided instructions and visual input from images. There is also a ground truth corresponding to the instructions provided for reference.
 Take this context into account when making your judgment.
 
 Steps for Evaluation:
-1. Evaluate **Criteria Alignment** of both responses based on the criteria and the ground truth.   
+1. Evaluate **Criteria Alignment** of both responses based on the criteria and the ground truth.
     • If a criterion consist of **X aspects**, each aspect is worth **10 / X points**.
     • For each aspect, there may be multiple sub-criteria. If there are **Y sub-criteria for the aspect**, each sub-criterion worths **10 / (X * Y) points**.
 2. Assign a total score out of 10 for each response.
@@ -192,8 +193,8 @@ Response B Visual Factuality Score: Y/10
     'objective_with_gt':"""
 Please act as an impartial judge and evaluate the **Visual Factuality** of the responses provided by two AI assistants to the user prompt displayed below.
 
-The responses were generated based on the provided instructions and visual input from images. 
-There is a provided ground truth for the instructions, but the ground truth was not given to the AI assistants when generating their responses. 
+The responses were generated based on the provided instructions and visual input from images.
+There is a provided ground truth for the instructions, but the ground truth was not given to the AI assistants when generating their responses.
 Take this context into account when making your judgment.
 
 Steps for Evaluation:
@@ -237,11 +238,11 @@ Response B Visual Factuality Score: Y/10
 creation_mmbench_category_dict = {
     'CATEGORY_Literary_Writing': [
         'story_continue',
-        'landscape_to_poem',  
-        'historical_story_creation',  
-        'story_novel_creation',  
-        'prose_writing_scenery',  
-        'art_inspired_prose',  
+        'landscape_to_poem',
+        'historical_story_creation',
+        'story_novel_creation',
+        'prose_writing_scenery',
+        'art_inspired_prose',
         'daily_conversation_creation',
         'children_book_illustration_dialogue_creation'
     ],
@@ -250,7 +251,7 @@ creation_mmbench_category_dict = {
         'travel_journal',
         'short_video_scripts_for_social_media',
         'social_media_travel_content',
-        'daily_achievement_show_off', 
+        'daily_achievement_show_off',
         'scientific_research_simple_promotion',
         'twitter_comment_on_daily_news',
         'personal_event_summaries',
@@ -297,7 +298,7 @@ creation_mmbench_category_dict = {
 
 }
 
-def is_criteria_valid(criteria):     
+def is_criteria_valid(criteria):
     import re
     for value in criteria.values():
         if value == '\\' or value == '' or not re.search('[a-zA-Z]', value):
@@ -339,13 +340,13 @@ def build_prompt(line, dataset_name):
             if 'subjective' in k.lower():
                 new_criteria['subjective'] = criteria[k]
             else:
-                new_criteria['objective'] = criteria[k] 
+                new_criteria['objective'] = criteria[k]
     else:
         assert isinstance(criteria, str)
         new_criteria = {'subjective': criteria}
     criteria = new_criteria
     assert 'subjective' in criteria, 'No subjective criteria found in the criteria dict'
-    
+
     prompts = {}
     if listinstr(['Creation_MMBench'], dataset_name):
         dataset_name = 'Creation_MMBench'
@@ -371,7 +372,7 @@ def build_prompt(line, dataset_name):
                 prediction=line['prediction'])
     return prompts
 
-  
+
 def Generate_Creation_MMBench_judge(model, image_list, prompt):
     assert isinstance(prompt, dict)
     response = {}
@@ -381,9 +382,9 @@ def Generate_Creation_MMBench_judge(model, image_list, prompt):
             for img_path in image_list:
                 if read_ok(img_path):
                     input_msg.append({'type': 'image', 'value': img_path})
-                else: 
+                else:
                     raise ValueError(f"Image not found: {img_path}")
-            input_msg.append({'type': 'text', 'value': prompt[key]}) 
+            input_msg.append({'type': 'text', 'value': prompt[key]})
             # print(f'using image {image_list} and text')
             response[key] = model.generate(input_msg)
         else:
@@ -403,7 +404,7 @@ def extract_subjective(inp, dataset_name):
             rem = line.split(mapping_dict[dataset_name])[1].strip()
             rem = rem.split('[[')[1].split(']]')[0].strip()
             cands = [
-                'A>>B', 'A>B', 'A=B', 'B>A', 'B>>A', 
+                'A>>B', 'A>B', 'A=B', 'B>A', 'B>>A',
                 'B<<A', 'B<A', 'B=A', 'A<B', 'A<<B'
             ]
             if rem in cands:
@@ -415,11 +416,11 @@ def extract_objective(inp, dataset_name):
     # Response A Alignment Score: X/10
     mapping_dict = {
         'LiveMMBench_Creation': {
-            'A': 'RESPONSE A ALIGNMENT SCORE:', 
+            'A': 'RESPONSE A ALIGNMENT SCORE:',
             'B': 'RESPONSE B ALIGNMENT SCORE:'
         },
         'Creation_MMBench': {
-            'A': 'RESPONSE A VISUAL FACTUALITY SCORE:', 
+            'A': 'RESPONSE A VISUAL FACTUALITY SCORE:',
             'B': 'RESPONSE B VISUAL FACTUALITY SCORE:'
         },
     }
@@ -445,10 +446,10 @@ def extract_objective(inp, dataset_name):
             except:
                 continue
     if a_score is not None and b_score is not None and (0 <= a_score <= 10) and (0 <= b_score <= 10):
-        return f'{a_score}|{b_score}' 
+        return f'{a_score}|{b_score}'
     else:
         return None
-    
+
 
 def Creation_MMBench_extract(judge_response_pkl, org_data, dataset_name):
     import copy as cp
@@ -474,7 +475,7 @@ def get_dimension_rating(score_file_name, rev=False):
             return -2
         else:
             return None
-        
+
     score_file = load(score_file_name)
     base_dict = {'sub_valid': 0, 'sub_missing': 0, 'sub_score': [], 'obj_valid': 0, 'obj_missing': 0, 'obj_ref_score': [], 'obj_score': []}
     return_dict = {'overall': cp.deepcopy(base_dict)}
@@ -483,7 +484,7 @@ def get_dimension_rating(score_file_name, rev=False):
         task_name = item['task_name']
         if task_name not in return_dict.keys():
             return_dict[task_name] = cp.deepcopy(base_dict)
-        
+
         if not pd.isna(item['subjective_score']):
             for k in ['overall', task_name]:
                 return_dict[k]['sub_valid'] += 1
@@ -505,9 +506,9 @@ def get_dimension_rating(score_file_name, rev=False):
         else:
             return_dict['overall']['obj_missing'] += 1
             return_dict[task_name]['obj_missing'] += 1
-            
+
     final_res = {}
-    
+
     for k, v in return_dict.items():
         res = {}
         res['sub_parse_ok'] = v['sub_valid'] / (v['sub_valid'] + v['sub_missing'])
@@ -518,7 +519,7 @@ def get_dimension_rating(score_file_name, rev=False):
         if v['sub_valid']:
             res['sub_dist'] = {k: dist[k] / v['sub_valid'] for k in [-2, -1, 0, 1, 2]}
             res['sub_reward'] = (-100 * dist[-2] - 50 * dist[-1] + 50 * dist[1] + 100 * dist[2]) / v['sub_valid']
-    
+
         if v['obj_valid'] + v['obj_missing']:
             res['obj_parse_ok'] = v['obj_valid'] / (v['obj_valid'] + v['obj_missing'])
             if v['obj_valid']:
@@ -536,7 +537,7 @@ def merge_dual(raw, raw_dual, dataset_name):
     for k, v in raw.items():
         # merge dual: {'sub_valid': 0, 'sub_missing': 0, 'sub_score': [], 'obj_valid': 0, 'obj_missing': 0, 'obj_ref_score': [], 'obj_score': []}
         dual_v = raw_dual[k]
-        v['sub_valid'] += dual_v['sub_valid'] 
+        v['sub_valid'] += dual_v['sub_valid']
         v['sub_missing'] += dual_v['sub_missing']
         v['sub_score'].extend([-x for x in dual_v['sub_score']])
         v['obj_valid'] += dual_v['obj_valid']
@@ -680,12 +681,12 @@ class CreationMMBenchDataset(ImageBaseDataset):
             lt = len(data)
             lines = [data.iloc[i] for i in range(len(data))]
             judge_kwargs['max_tokens'] = 4096
-            
+
             model = build_judge(model=model, **judge_kwargs)
             assert model.working(), ('CreationMMBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
 
             prompts = [build_prompt(line, self.dataset_name) for line in lines]
-            
+
             indices = [line['index'] for line in lines]
 
             if listinstr(['Creation_MMBench'], self.dataset_name):

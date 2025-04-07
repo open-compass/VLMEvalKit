@@ -131,7 +131,7 @@ class llama_vision(BaseModel):
                 f'Question: {question} Options: {options} Indicate the correct answer at the end.'
             )
             for i in range(len(tgt_path)):
-                prompt = prompt.replace(f'<image {i+1}>', '')
+                prompt = prompt.replace(f'<image {i + 1}>', '')
         elif listinstr(['MathVista'], dataset):
             self.kwargs['max_new_tokens'] = 2048
             prompt = f'{question}'

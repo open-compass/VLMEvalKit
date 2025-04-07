@@ -7,6 +7,7 @@ import json
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 class WorldSense(VideoBaseDataset):
 
     MD5 = 'bfc25490be4080aa5494b883370b6b1f'
@@ -113,7 +114,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                     print('The subtitle file has been restored and stored from the zip file.')
                 else:
                     print('The subtitle file already exists.')
-                
+
                 audio_target_dir = os.path.join(base_dir, 'audios')
                 if not os.path.exists(audio_target_dir):
                     os.makedirs(audio_target_dir, exist_ok=True)
@@ -130,21 +131,24 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                 else:
                     print('The audio file already exists.')
 
-
             def generate_tsv(pth):
 
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
-                print (data_file, md5(data_file))
+                print(data_file, md5(data_file))
                 if os.path.exists(data_file) and md5(data_file) == self.MD5:
                     return
-                
+
                 with open(osp.join(pth, 'worldsense_qa.json'), 'rb') as file:
                     json_data = json.load(file)
-                
+
                 videos = list(json_data.keys())
                 qa_index = 0
                 data_list = []
-                data_list.append(['index', 'video', 'video_path', 'duration', 'domain', 'candidates', 'sub_category', 'audio_class', 'task_domain', 'task_type', 'subtitle_path', 'audio_path', 'video_caption', 'question', 'answer'])
+                data_list.append([
+                    'index', 'video', 'video_path', 'duration', 'domain', 'candidates',
+                    'sub_category', 'audio_class', 'task_domain', 'task_type', 'subtitle_path',
+                    'audio_path', 'video_caption', 'question', 'answer'
+                ])
                 for video in videos:
                     video_data = json_data[video]
                     tasks_data = list(video_data.keys())

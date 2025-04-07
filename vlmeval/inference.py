@@ -56,7 +56,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
                 dump(ans_map, out_file)
             except Exception as err:
                 print(type(err), err)
-                
+
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
