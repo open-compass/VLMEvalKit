@@ -299,6 +299,7 @@ class MedXpertQA_MM_test(ImageMCQDataset):
         'MedXpertQA_MM_test': '3fa0495baad925fa50b54575b9423bda',
     }
 
+
 class MMMUDataset(ImageMCQDataset):
 
     DATASET_URL = {
@@ -1198,6 +1199,7 @@ class VMCBenchDataset(ImageBaseDataset):
 
         return acc
 
+
 class LEGO(ImageMCQDataset):
 
     DATASET_URL = {
@@ -1227,8 +1229,6 @@ class LEGO(ImageMCQDataset):
             segs.append(dict(type='image', value=images[image_idx]))
             segs.append(dict(type='text', value=seg[2:]))
         return segs
-    
-    
 
     def build_prompt_sort(self, line):
 
@@ -1256,7 +1256,10 @@ class LEGO(ImageMCQDataset):
         prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
-            prompt += 'Please respond with only the sequence of letters (e.g., ‘BDAC’) that correctly orders the steps. \n'
+            prompt += (
+                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "that correctly orders the steps.\n"
+            )
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -1266,7 +1269,7 @@ class LEGO(ImageMCQDataset):
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
-        
+
     def build_prompt(self, line):
         if line['question_type'] == 'sort':
             msgs = self.build_prompt_sort(line)

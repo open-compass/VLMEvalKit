@@ -247,6 +247,7 @@ def build_prompt_cn(question, options, prediction):
     )
     return tmpl.format(question, options, prediction)
 
+
 def build_prompt_LEGO(question, options, prediction,question_type):
     if question_type == 'sort':
         tmpl = (
@@ -266,11 +267,12 @@ def build_prompt_LEGO(question, options, prediction,question_type):
             'Output: ABCD\n\n'
             'Example 3:\n'
             'Question: {}\nOptions: {}\nAnswer: {}\nOutput:'
-        )    
+        )
         return tmpl.format(question, options, prediction)
     else:
         return build_prompt(question, options, prediction)
-    
+
+
 def build_choices(item):
     ret = {}
     for ch in string.ascii_uppercase:
