@@ -92,7 +92,7 @@ class InternVL2_PromptUtil:
         if dataset is None:
             self.max_num = 6
             return None
-        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']
+        _ = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'VCR_EN', 'VCR_ZH', 'OCRVQA']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']
