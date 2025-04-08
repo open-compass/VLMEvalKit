@@ -27,7 +27,8 @@ class InternVL2_PromptUtil:
             return True
 
     def build_prompt(self, line, dataset=None):
-        use_mpo_prompt = self.use_mpo_prompt and (self.use_cot or dataset in ['MMStar', 'HallusionBench', 'OCRBench'])
+        use_cot = (os.getenv('USE_COT') == '1')
+        use_mpo_prompt = self.use_mpo_prompt and (use_cot or dataset in ['MMStar', 'HallusionBench', 'OCRBench'])
 
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -92,7 +93,7 @@ class InternVL2_PromptUtil:
         if dataset is None:
             self.max_num = 6
             return None
-        _ = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']
+        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']  # noqa: F841
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'VCR_EN', 'VCR_ZH', 'OCRVQA']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']
@@ -219,7 +220,7 @@ class LMDeployWrapper(BaseAPI):
             self.max_tokens = 2048
             self.temperature = 0.0
             self.custom_prompt = 'cogvlm2'
-        if 'InternVL2'.lower() in model_name.lower():
+        if 'internvl2' in model_name.lower() or 'internvl3' in model_name.lower():
             self.max_tokens = 1024
             self.temperature = 0.0
             if 'mpo' in model_name.lower():

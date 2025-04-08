@@ -289,6 +289,16 @@ class ImageMCQDataset(ImageBaseDataset):
         return acc
 
 
+class MedXpertQA_MM_test(ImageMCQDataset):
+
+    DATASET_URL = {
+        'MedXpertQA_MM_test': 'https://opencompass.openxlab.space/utils/VLMEval/MedXpertQA_MM_test.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MedXpertQA_MM_test': '3fa0495baad925fa50b54575b9423bda',
+    }
+
 class MMMUDataset(ImageMCQDataset):
 
     DATASET_URL = {
