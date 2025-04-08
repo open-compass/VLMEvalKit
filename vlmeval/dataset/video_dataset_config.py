@@ -59,6 +59,9 @@ tempcompass_dataset = {
 # use_subtitle, use_subtitle_time and use_frame_time need to be set to True.
 # When measuring clue-related results, if the number of frames used is greater
 # than 32, the frame capture limit will be set to 32.
+# We implement the metrics long_acc, clue_acc, miou, CRR, acc@iou and rec@iou
+# in the CGBench_MCQ_Grounding_Mini and CGBench_MCQ_Grounding datasets;
+# the metric open-ended is implemented in the CGBench_OpenEnded_Mini and CGBench_OpenEnded datasets.
 cgbench_dataset = {
     'CGBench_MCQ_Grounding_Mini_8frame_subs_subt': partial(
         CGBench_MCQ_Grounding_Mini,
