@@ -36,7 +36,7 @@ To address this, VLMEvalKit provides a more flexible config system. The user can
             "dataset": "Video-MME",
             "nframe": 16,
             "use_subtitle": true
-        },
+        }
     }
 }
 ```

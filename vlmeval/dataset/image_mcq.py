@@ -101,6 +101,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ccvl/3DSRBench/'
             'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
         ),
+        'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -158,6 +159,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
         '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
+        'MMCR': '9052635f2c3835bdb87755ef73564f5e',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -215,7 +217,7 @@ class ImageMCQDataset(ImageBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         circular = False
-        if listinstr(['mmbench', 'ccbench', 'circular'], dataset.lower()):
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
             data = load(eval_file)
             data['index'] = [int(x) for x in data['index']]
             dump(data, eval_file)
@@ -359,7 +361,7 @@ class MMMUProDataset(MMMUDataset):
             tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line)
-        
+
         if 'MMMU_Pro_V' in self.dataset_name:
             question = 'Answer the following multiple-choice question in the image. '
             if 'COT' in self.dataset_name:
@@ -428,11 +430,11 @@ class MMMUProDataset(MMMUDataset):
             dump(data, tgt)
             res = super().evaluate(tgt, **judge_kwargs)
             acc_org = eval_file.replace('.xlsx', '_acc.csv')
-            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv') 
+            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv')
             shutil.copy(acc_now, acc_org)
             return res
         else:
-            return super().evaluate(eval_file, **judge_kwargs)  
+            return super().evaluate(eval_file, **judge_kwargs)
 
 
 class MUIRDataset(ImageMCQDataset):
@@ -1125,7 +1127,8 @@ class WeMath(ImageBaseDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(combine_score, score_pth)
         return combine_score
-    
+
+
 class VMCBenchDataset(ImageBaseDataset):
 
     TYPE = 'MCQ'
@@ -1137,6 +1140,7 @@ class VMCBenchDataset(ImageBaseDataset):
 
     DATASET_MD5 = {
     }
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -1159,7 +1163,7 @@ class VMCBenchDataset(ImageBaseDataset):
         if len(options):
             prompt += options_prompt
             prompt += "Answer with the option's letter from the given choices directly. \n"
-            
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])

@@ -123,12 +123,12 @@ class LongVideoBench(VideoBaseDataset):
             repo_id = "AI-ModelScope/LongVideoBench"
 
         cache_path = get_cache_path(repo_id)
-        
+
         if cache_path is None:
             cache_path = osp.expanduser("~/.cache/huggingface/hub/datasets--longvideobench--LongVideoBench")
             if not osp.exists(cache_path):
                 os.makedirs(cache_path)
-        
+
         if check_integrity(cache_path):
             dataset_path = cache_path
         else:

@@ -743,6 +743,7 @@ class LogicVista(ImageBaseDataset):
 
             return accuracy_scores
 
+
 class MME_CoT(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -778,7 +779,7 @@ class MME_CoT(ImageBaseDataset):
                 segs.append(dict(type='text', value=seg))
 
         return segs
-    
+
     def dump_image(self, line):
         os.makedirs(self.img_root, exist_ok=True)
 
@@ -820,10 +821,10 @@ class MME_CoT(ImageBaseDataset):
             if cand in line and not pd.isna(line[cand])
         }
         prompt = prompt + '\n' + '\n'.join([f'{key}. {item}' for key, item in options.items()])
-        
+
         # add cot prompt
         if os.environ.get('USE_COT_PROMPT', '1') == '1':
-            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."
+            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."  # noqa: E501
         else:
             prompt += "\nPlease directly provide the final answer without any other output."
 
@@ -840,12 +841,11 @@ class MME_CoT(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")
+        print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")  # noqa: E501
         dummy_result = dict(
             dummy_result=0
         )
         return pd.DataFrame(dummy_result, index=[0])
-
 
 
 class LLaVABench(ImageBaseDataset):

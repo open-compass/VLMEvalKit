@@ -89,7 +89,7 @@ class MEGABench(VideoBaseDataset):
             return self.ZIP_MD5 != md5(zip_file)
 
         def unzip_hf_zip(pth, hub_pth):
-            dataset_path = osp.join(pth, 'images') # LMUData/images
+            dataset_path = osp.join(pth, 'images')  # LMUData/images
             os.makedirs(dataset_path, exist_ok=True)
 
             # 解压到megabench目录
@@ -238,7 +238,7 @@ class MEGABench(VideoBaseDataset):
             current_path = image_path   # 跟踪当前处理阶段的路径
             image = None
             rgba_transform = False
-            
+
             try:
                 # 第一阶段：RGBA 转换
                 image = Image.open(current_path)
@@ -255,10 +255,10 @@ class MEGABench(VideoBaseDataset):
                         print(f"Warning: Failed to convert RGBA image {current_path}: {e}")
                         # 使用原始图像继续处理
                         image = Image.open(original_path)
-                
+
                 if rgba_transform:
                     original_path = current_path
-                
+
                 # 第二阶段：调整大小
                 resize_scale = self.max_side / max(image.size)
                 if resize_scale < 1:
@@ -272,9 +272,9 @@ class MEGABench(VideoBaseDataset):
                     except Exception as e:
                         print(f"Warning: Failed to resize image {current_path}: {e}")
                         return original_path  # 返回当前路径（可能是 RGB 转换后的）
-                
+
                 return current_path
-            
+
             except Exception as e:
                 print(f"Warning: Critical error processing image {original_path}: {e}")
                 return original_path  # 任何严重错误都返回原始路径

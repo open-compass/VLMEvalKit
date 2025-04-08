@@ -21,7 +21,7 @@ class GLMVisionWrapper(BaseAPI):
                  max_tokens: int = 4096,
                  proxy: str = None,
                  **kwargs):
-                 
+
         from zhipuai import ZhipuAI
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '

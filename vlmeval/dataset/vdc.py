@@ -1,3 +1,4 @@
+# flake8: noqa
 from huggingface_hub import snapshot_download
 from ..smp import *
 from .video_base import VideoBaseDataset
@@ -137,7 +138,7 @@ class VDC(VideoBaseDataset):
             self.data = self.data[self.data['caption_type'] == 'main_object']
         else:
             raise ValueError(f'Invalid subset: {subset}')
-        
+
         if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
@@ -145,7 +146,6 @@ class VDC(VideoBaseDataset):
             self.data = self.data.iloc[:limit]
         else:
             raise ValueError(f'Invalid limit: {limit}')
-    
 
     @classmethod
     def supported_datasets(cls):
@@ -246,7 +246,7 @@ class VDC(VideoBaseDataset):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-        
+
         # 构建提示内容
         if line['caption_type'] == 'short':
             prompt = random.choice(short_caption_prompts)
@@ -258,7 +258,7 @@ class VDC(VideoBaseDataset):
             prompt = random.choice(main_object_caption_prompts)
         else:
             prompt = random.choice(camera_caption_prompts)
-        
+
         if video_llm:
             # 对于视频LLM，返回视频路径和文本
             video_path = os.path.join(self.video_path, line['video'])
@@ -354,7 +354,7 @@ class VDC(VideoBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)
-        
+
         response_file = eval_file.replace('.xlsx', f'_{judge}_response.pkl')
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
         tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
@@ -367,7 +367,7 @@ class VDC(VideoBaseDataset):
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
-            
+
             expanded_data = []
             for idx, row in data.iterrows():
                 try:
@@ -375,24 +375,24 @@ class VDC(VideoBaseDataset):
                     for q_dict in questions:
                         new_row = row.copy()
                         new_row['question'] = q_dict['question']
-                        new_row['answer'] = q_dict['answer']   
+                        new_row['answer'] = q_dict['answer']
                         expanded_data.append(new_row)
                 except Exception as e:
                     print(f"Error parsing questions for row {idx}")
                     print(f"Error message: {str(e)}")
                     continue
-            
+
             # 转换回DataFrame并重置index
             expanded_df = pd.DataFrame(expanded_data).reset_index(drop=True)
-            
+
             # 继续处理展开后的数据
             data_un = expanded_df[~expanded_df['index'].isin(res)]
             data_un = data_un[~pd.isna(data_un['prediction'])]
             lt = len(data_un)
-            
+
             response_prompts = [prepare_response_prompt(data_un.iloc[i]) for i in range(lt)]
             indices = [data_un.iloc[i]['index'] for i in range(lt)]
-            
+
             model.system_prompt = SYSTEM_GENER_PRED_PROMPT
             if len(response_prompts):
                 print(f"Processing {len(response_prompts)} valid prompts out of {lt} total items")
