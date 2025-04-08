@@ -32,6 +32,8 @@ class Qwen2VLPromptMixin:
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True
         if dataset_type == 'MCQ':
+            if dataset == 'LEGO':
+                return False
             return True
         if dataset_type == 'Y/N' and dataset in {'HallusionBench', 'POPE'}:  # MME has it's own prompt
             return True
