@@ -48,7 +48,7 @@ class llama_vision(BaseModel):
 
     def __init__(self, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct', **kwargs):
         try:
-            from transformers import MllamaForConditionalGeneration, AutoProcessor
+            from transformers import MllamaForConditionalGeneration, AutoProcessor, Llama4ForConditionalGeneration
         except Exception as e:
             logging.critical('Please install transformers>=4.45.0 before using llama_vision.')
             raise e
@@ -70,6 +70,12 @@ class llama_vision(BaseModel):
                 torch_dtype=torch.bfloat16,
                 device_map=device_map,
             ).eval()
+        elif '17b' in model_path.lower():
+            self.model = Llama4ForConditionalGeneration.from_pretrained(
+                model_path,
+                device_map="auto",
+                torch_dtype=torch.bfloat16,
+            )
         else:
             self.model = MllamaForConditionalGeneration.from_pretrained(
                 model_path,
