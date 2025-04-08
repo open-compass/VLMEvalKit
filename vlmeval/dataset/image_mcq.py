@@ -299,6 +299,7 @@ class MedXpertQA_MM_test(ImageMCQDataset):
         'MedXpertQA_MM_test': '3fa0495baad925fa50b54575b9423bda',
     }
 
+
 class MMMUDataset(ImageMCQDataset):
 
     DATASET_URL = {
