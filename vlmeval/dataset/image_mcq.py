@@ -1198,3 +1198,82 @@ class VMCBenchDataset(ImageBaseDataset):
         dump(acc, score_file)
 
         return acc
+
+
+class LEGO(ImageMCQDataset):
+
+    DATASET_URL = {
+        'LEGO': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO.tsv',
+    }
+    DATASET_MD5 = {'LEGO': 'd595f50e1fb4d4eb12cbc95297893ffc'}
+
+    @staticmethod
+    def split_LEGO(msgs):
+        text, images = None, []
+        for s in msgs:
+            if s['type'] == 'image':
+                images.append(s['value'])
+            elif s['type'] == 'text':
+                assert text is None
+                text = s['value']
+        text_segs = text.split('<image ')
+        if len(text_segs) == 1:
+            return msgs
+
+        segs = [dict(type='text', value=text_segs[0])]
+        for i, seg in enumerate(text_segs):
+            if i == 0:
+                continue
+            assert istype(seg[0], int) and seg[1] == '>'
+            image_idx = int(seg[0]) - 1
+            segs.append(dict(type='image', value=images[image_idx]))
+            segs.append(dict(type='text', value=seg[2:]))
+        return segs
+
+    def build_prompt_sort(self, line):
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += (
+                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "that correctly orders the steps.\n"
+            )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def build_prompt(self, line):
+        if line['question_type'] == 'sort':
+            msgs = self.build_prompt_sort(line)
+        else:
+            msgs = super().build_prompt(line)
+        msgs = self.split_LEGO(msgs)
+        return msgs

@@ -1,5 +1,5 @@
 import pandas as pd
-from ...utils import can_infer, track_progress_rich
+from ...utils import can_infer, track_progress_rich, can_infer_sequence, can_infer_lego
 from ...smp import *
 import numpy as np
 import re
@@ -248,6 +248,31 @@ def build_prompt_cn(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
+def build_prompt_LEGO(question, options, prediction,question_type):
+    if question_type == 'sort':
+        tmpl = (
+            'You are an AI assistant who will help me to arrange options in the correct order. '
+            'You are provided with a question, four options, and an answer. '
+            'You need to determine the correct ordering of options based on the answer. '
+            'Output should be a permutation of ABCD (like DCBA or BADC).\n'
+            'Example 1:\n'
+            'Question: Arrange these historical events chronologically\n'
+            'Options: A. Renaissance B. Middle Ages C. Industrial Revolution D. Digital Age\n'
+            'Answer: From Middle Ages to Renaissance, then Industrial Revolution, finally Digital Age\n'
+            'Output: BACD\n\n'
+            'Example 2:\n'
+            'Question: Sort colors by wavelength (longest to shortest)\n'
+            'Options: A. Red B. Green C. Blue D. Violet\n'
+            'Answer: Red has longest wavelength, followed by green then blue, shortest is violet\n'
+            'Output: ABCD\n\n'
+            'Example 3:\n'
+            'Question: {}\nOptions: {}\nAnswer: {}\nOutput:'
+        )
+        return tmpl.format(question, options, prediction)
+    else:
+        return build_prompt(question, options, prediction)
+
+
 def build_choices(item):
     ret = {}
     for ch in string.ascii_uppercase:
@@ -273,11 +298,16 @@ def extract_answer_from_item(model, item, dataset_name=None):
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
+    elif dataset_name == 'LEGO':
+        prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'],item['question_type'])
     else:
         prompt = build_prompt(item['question'], option_str, item['prediction'])
     retry = 3
 
-    ret = can_infer(item['prediction'], choices)
+    if dataset_name == 'LEGO':
+        ret = can_infer_lego(item['prediction'], item['question_type'], choices)
+    else:
+        ret = can_infer(item['prediction'], choices)
     if ret:
         return dict(opt=ret, log=item['prediction'])
     if model is None:
@@ -288,7 +318,10 @@ def extract_answer_from_item(model, item, dataset_name=None):
         if 'Failed to obtain answer via API' in ans:
             logger.warning('GPT API failed to answer. ')
         else:
-            ret = can_infer(ans, choices)
+            if dataset_name == 'LEGO':
+                ret = can_infer_lego(ans, item['question_type'], choices)
+            else:
+                ret = can_infer(ans, choices)
             if ret:
                 return dict(opt=ret, log=ans)
             else:
