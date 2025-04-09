@@ -120,6 +120,9 @@ def decode_base64_to_image(base64_string, target_size=-1):
 
 def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
     image = decode_base64_to_image(base64_string, target_size=target_size)
+    base_dir = osp.dirname(image_path)
+    if not osp.exists(base_dir):
+        os.makedirs(base_dir, exist_ok=True)
     image.save(image_path)
 
 
