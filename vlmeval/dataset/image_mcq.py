@@ -880,6 +880,116 @@ class MMERealWorld(ImageMCQDataset):
         return rating
 
 
+class CVBench(ImageMCQDataset):
+    DATASET_URL = {
+        "CV-Bench-2D": "https://huggingface.co/datasets/maosong/CV-Bench/resolve/main/CV-Bench-2D.tsv",
+        "CV-Bench-3D": "https://huggingface.co/datasets/maosong/CV-Bench/resolve/main/CV-Bench-3D.tsv",
+    }
+
+    DATASET_MD5 = {
+        "CV-Bench-2D": "248e2b2145d75bdfa0ebd9bc9eabcbd2",
+        "CV-Bench-3D": "55eabb3cd98fff3b9b998a7d7367bb1b",
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line["image_path"])
+        else:
+            tgt_path = self.dump_image(line)
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type="image", value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type="image", value=tgt_path)]
+        msgs.append(dict(type="text", value=line["prompt"]))
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
+
+        nproc = judge_kwargs.pop("nproc", 4)
+
+        suffix = eval_file.split(".")[-1]
+        model = judge_kwargs.get("model", "extract_matching")
+
+        if model == "exact_matching":
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn(
+                    "OPENAI API is not working properly, will use exact matching for evaluation"
+                )
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn(
+                "OPENAI_API_KEY is not set properly, will use exact matching for evaluation"
+            )
+            model = None
+
+        result_file = eval_file.replace(f".{suffix}", f"_{model}_result.pkl")
+
+        data = load(eval_file)
+        data = data.sort_values(by="index")
+        data["prediction"] = [str(x) for x in data["prediction"]]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(
+                k
+            )
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta["index"], meta["question"])}
+        data_map = {x: y for x, y in zip(data["index"], data["question"])}
+        for k in data_map:
+            assert (
+                k in meta_q_map
+            ), f"eval_file should be the same as or a subset of dataset {self.dataset_name}"
+
+        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
+
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+        data = mcq_vanilla_eval(
+            model, data, meta, nproc, result_file, self.dataset_name
+        )
+        dump(data, eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
+        data = load(eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
+
+        if all(data["split"] == "2D"): # 2D
+            acc = self.report_accuracy(data)
+        else:  # 3D
+            acc = report_acc(data)
+
+        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
+        dump(acc, score_file)
+
+        return acc
+
+    def report_accuracy(self, data):
+        res = defaultdict(list)
+
+        splits = list(set(data["split"]))
+        res["split"] = splits
+
+        sources = list(set(data["source"]))
+
+        for source in sources:
+            sub_df = data[data["source"] == source]
+            res[source] = [
+                np.mean(sub_df[sub_df["split"] == sp]["hit"]) for sp in res["split"]
+            ]
+        res["Overall"] = [
+            np.mean(data[data["split"] == sp]["hit"]) for sp in res["split"]
+        ]
+        return pd.DataFrame(res)
+
 class HRBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {
