@@ -77,7 +77,6 @@ class KimiVL(BaseModel):
         messages = [
             {'role': 'user', 'content': prompt}
         ]
-        print("messages: ", messages)
         text = self.processor.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt")
         inputs = self.processor(
             images=images, text=text,
