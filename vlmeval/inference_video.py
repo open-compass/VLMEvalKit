@@ -48,7 +48,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     return res
 
 
-def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4):
+def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False):
     res = load(out_file) if osp.exists(out_file) else {}
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
@@ -61,8 +61,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     if np.all([idx in res for idx in sample_indices_sub]):
         return model
     sample_indices_subrem = [x for x in sample_indices_sub if x not in res]
-
-    model = supported_VLM[model_name]() if isinstance(model, str) else model
+    model = supported_VLM[model_name](use_vllm=use_vllm) if isinstance(model, str) else model
 
     is_api = getattr(model, 'is_api', False)
     if is_api:
@@ -137,7 +136,8 @@ def infer_data_job_video(
         dataset,
         result_file_name,
         verbose=False,
-        api_nproc=4):
+        api_nproc=4,
+        use_vllm=False):
 
     dataset_name = dataset.dataset_name
     rank, world_size = get_rank_and_world_size()
@@ -156,7 +156,8 @@ def infer_data_job_video(
         dataset=dataset,
         out_file=out_file,
         verbose=verbose,
-        api_nproc=api_nproc)
+        api_nproc=api_nproc,
+        use_vllm=use_vllm)
 
     if world_size > 1:
         dist.barrier()

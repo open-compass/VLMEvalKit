@@ -74,7 +74,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     return res
 
 
-def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4):
+def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, api_nproc=4, use_vllm=False):
     dataset_name = dataset.dataset_name
     res = {}
     if osp.exists(out_file):
@@ -101,7 +101,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     data = data[~data['index'].isin(res)]
     lt = len(data)
 
-    model = supported_VLM[model_name]() if isinstance(model, str) else model
+    model = supported_VLM[model_name](use_vllm=use_vllm) if isinstance(model, str) else model
     assert hasattr(model, 'chat_inner')
 
     is_api = getattr(model, 'is_api', False)
@@ -149,7 +149,9 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
 
 # A wrapper for infer_data, do the pre & post processing
-def infer_data_job_mt(model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False):
+def infer_data_job_mt(
+    model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False, use_vllm=False
+):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
     result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.tsv')
@@ -158,8 +160,8 @@ def infer_data_job_mt(model, work_dir, model_name, dataset, verbose=False, api_n
     out_file = tmpl.format(rank)
 
     model = infer_data(
-        model=model, model_name=model_name,work_dir=work_dir, dataset=dataset,
-        out_file=out_file, verbose=verbose, api_nproc=api_nproc)
+        model=model, work_dir=work_dir, model_name=model_name, dataset=dataset,
+        out_file=out_file, verbose=verbose, api_nproc=api_nproc, use_vllm=use_vllm)
     if world_size > 1:
         dist.barrier()
 

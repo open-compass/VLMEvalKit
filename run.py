@@ -148,6 +148,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--reuse', action='store_true')
     # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
     parser.add_argument('--reuse-aux', type=bool, default=True, help='reuse auxiliary evaluation files')
+    parser.add_argument('--use-vllm', action='store_true', help='use vllm to generate')
 
     args = parser.parse_args()
     return args
@@ -302,7 +303,8 @@ def main():
                         dataset=dataset,
                         result_file_name=result_file_base,
                         verbose=args.verbose,
-                        api_nproc=args.api_nproc)
+                        api_nproc=args.api_nproc,
+                        use_vllm=args.use_vllm)
                 elif dataset.TYPE == 'MT':
                     model = infer_data_job_mt(
                         model,
@@ -311,7 +313,8 @@ def main():
                         dataset=dataset,
                         verbose=args.verbose,
                         api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore)
+                        ignore_failed=args.ignore,
+                        use_vllm=args.use_vllm)
                 else:
                     model = infer_data_job(
                         model,
@@ -320,7 +323,8 @@ def main():
                         dataset=dataset,
                         verbose=args.verbose,
                         api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore)
+                        ignore_failed=args.ignore,
+                        use_vllm=args.use_vllm)
 
                 # Set the judge kwargs first before evaluation or dumping
 

@@ -6,6 +6,7 @@ from ..dataset import DATASET_TYPE
 from io import BytesIO
 import base64
 from mimetypes import guess_type
+from vllm import LLM, SamplingParams
 
 
 class llama4(BaseModel):
@@ -19,11 +20,46 @@ class llama4(BaseModel):
         except Exception as e:
             logging.critical('Please install transformers>=4.51.0 before using llama4.')
             raise e
-        self.model = Llama4ForConditionalGeneration.from_pretrained(
-            model_path,
-            device_map="auto",
-            torch_dtype=torch.bfloat16,
-        )
+
+        self.use_vllm = kwargs.get('use_vllm', False)
+        self.limit_mm_per_prompt = 10  # vLLM support max 10 images per prompt for Llama 4
+        if self.use_vllm:
+            # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
+            gpu_count = torch.cuda.device_count()
+            if gpu_count >= 8:
+                tp_size = 8
+            elif gpu_count >= 4:
+                tp_size = 4
+            elif gpu_count >= 2:
+                tp_size = 2
+            else:
+                tp_size = 1
+            logging.info(
+                f'Using vLLM for Llama4 inference with {tp_size} GPUs (available: {gpu_count})'
+            )
+            import os
+            if os.environ.get('VLLM_WORKER_MULTIPROC_METHOD') != 'spawn':
+                logging.warning(
+                    'VLLM_WORKER_MULTIPROC_METHOD is not set to spawn.'
+                    'Use \'export VLLM_WORKER_MULTIPROC_METHOD=spawn\' to avoid potential multi-process issues'
+                )
+            self.llm = LLM(
+                model=model_path,
+                max_num_seqs=4,
+                max_model_len=32768,
+                limit_mm_per_prompt={"image": self.limit_mm_per_prompt},
+                tensor_parallel_size=tp_size,
+                gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
+            )
+            # export VLLM_WORKER_MULTIPROC_METHOD=spawn
+        else:
+            self.model = Llama4ForConditionalGeneration.from_pretrained(
+                model_path,
+                attn_implementation="flash_attention_2",
+                device_map="auto",
+                torch_dtype=torch.bfloat16,
+            )
+
         self.device = 'cuda'
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.model_name = model_path
@@ -71,6 +107,7 @@ class llama4(BaseModel):
             )
         else:
             raise NotImplementedError(f'Dataset {dataset}) not supported.')
+
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
@@ -84,7 +121,9 @@ class llama4(BaseModel):
         # Handle the alpha channel
         if image.mode == "RGBA":
             image = self._rgba_to_rgb(image)
+
         encoded_image = self._encode_image(image, image_format)
+
         return encoded_image
 
     def _encode_image(self, image, image_format):
@@ -111,11 +150,11 @@ class llama4(BaseModel):
                 encoded_image = self.encode_image(image_path)
                 processed_message.append({
                     "type": "image",
-                    "url": f"{encoded_image}"
+                    "url": f"{encoded_image}",
                 })
         return processed_message
 
-    def generate_inner(self, message, dataset=None):
+    def generate_inner_transformers(self, message, dataset=None):
         prompt = self.message_to_promptimg(message, dataset=dataset)
         messages = [
             {'role': 'user', 'content': prompt}
@@ -125,7 +164,7 @@ class llama4(BaseModel):
             add_generation_prompt=True,
             tokenize=True,
             return_dict=True,
-            return_tensors="pt"
+            return_tensors="pt",
         ).to(self.model.device)
         max_new_tokens = 8192
         outputs = self.model.generate(**inputs, max_new_tokens=max_new_tokens)
@@ -135,3 +174,70 @@ class llama4(BaseModel):
         if generated_text.endswith("<|eot|>"):
             generated_text = generated_text[:-7]
         return generated_text
+
+    def message_to_promptimg_vllm(self, message, dataset=None):
+        print("message", message)
+        processed_message = []
+        images = []
+        num_images = 0
+        for item in message:
+            if item['type'] == 'text':
+                processed_message.append({
+                    "type": "text",
+                    "text": item['value']
+                })
+            elif item['type'] == 'image':
+                if num_images < self.limit_mm_per_prompt:
+                    image_path = item['value']
+                    encoded_image = self.encode_image(image_path)
+                    image = Image.open(BytesIO(base64.b64decode(encoded_image)))
+                    image.load()
+                    processed_message.append({
+                        "type": "image",
+                        "url": "",
+                    })
+                    images.append(image)
+                    num_images += 1
+        if num_images >= self.limit_mm_per_prompt:
+            logging.warning(
+                f"Number of images exceeds the limit of {self.limit_mm_per_prompt}."
+                f"Only the first {self.limit_mm_per_prompt} images will be used."
+            )
+        return processed_message, images
+
+    def generate_inner_vllm(self, message, dataset=None):
+        prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
+        messages = [
+            {'role': 'user', 'content': prompt}
+        ]
+        prompt = self.processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True
+        )
+        sampling_params = SamplingParams(temperature=0.0,
+                                         max_tokens=4096)
+
+        outputs = self.llm.generate(
+            {
+                "prompt": prompt,
+                "multi_modal_data": {
+                    "image": images
+                },
+            },
+            sampling_params=sampling_params
+        )
+
+        for o in outputs:
+            generated_text = o.outputs[0].text
+
+        if generated_text.endswith("<|eot|>"):
+            generated_text = generated_text[:-7]  # 删除末尾的<|eot|>
+
+        return generated_text
+
+    def generate_inner(self, message, dataset=None):
+        if self.use_vllm:
+            return self.generate_inner_vllm(message, dataset=dataset)
+        else:
+            return self.generate_inner_transformers(message, dataset=dataset)
