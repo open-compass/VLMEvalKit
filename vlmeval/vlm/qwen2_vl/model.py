@@ -152,7 +152,12 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                     if self.max_pixels is not None:
                         item['max_pixels'] = self.max_pixels
             elif s['type'] == 'video':
-                item = {'type': 'video', 'video': ensure_video_url(s['value'])}
+                item = {
+                    'type': 'video',
+                    'video': ensure_video_url(s['value']),
+                    'min_pixels': self.min_pixels,
+                    'max_pixels': self.max_pixels
+                }
                 if self.fps is not None:
                     item['fps'] = self.fps
                 elif self.nframe is not None:
