@@ -176,7 +176,6 @@ class llama4(BaseModel):
         return generated_text
 
     def message_to_promptimg_vllm(self, message, dataset=None):
-        print("message", message)
         processed_message = []
         images = []
         num_images = 0
