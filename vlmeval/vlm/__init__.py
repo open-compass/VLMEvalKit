@@ -94,3 +94,4 @@ from .vlm_r1 import VLMR1Chat
 from .aki import AKI
 from .ristretto import Ristretto
 from .vlaa_thinker import VLAAThinkerChat
+from .kimi_vl import KimiVL

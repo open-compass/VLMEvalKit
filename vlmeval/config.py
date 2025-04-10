@@ -1174,6 +1174,11 @@ gemma_series = {
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
 }
 
+kimi_series = {
+    'Kimi-VL-A3B-Thinking': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking'),
+    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct')
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -1228,6 +1233,7 @@ model_groups = [
     gemma_series,
     long_vita_series,
     ristretto_series,
+    kimi_series,
 ]
 
 for grp in model_groups:
