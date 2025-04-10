@@ -6,7 +6,6 @@ from ..dataset import DATASET_TYPE
 from io import BytesIO
 import base64
 from mimetypes import guess_type
-from vllm import LLM, SamplingParams
 
 
 class llama4(BaseModel):
@@ -24,6 +23,7 @@ class llama4(BaseModel):
         self.use_vllm = kwargs.get('use_vllm', False)
         self.limit_mm_per_prompt = 10  # vLLM support max 10 images per prompt for Llama 4
         if self.use_vllm:
+            from vllm import LLM, SamplingParams
             # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
             gpu_count = torch.cuda.device_count()
             if gpu_count >= 8:
@@ -205,6 +205,7 @@ class llama4(BaseModel):
         return processed_message, images
 
     def generate_inner_vllm(self, message, dataset=None):
+        from vllm import LLM, SamplingParams
         prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
         messages = [
             {'role': 'user', 'content': prompt}
@@ -216,7 +217,6 @@ class llama4(BaseModel):
         )
         sampling_params = SamplingParams(temperature=0.0,
                                          max_tokens=4096)
-
         outputs = self.llm.generate(
             {
                 "prompt": prompt,
