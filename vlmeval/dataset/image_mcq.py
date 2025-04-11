@@ -102,6 +102,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
         ),
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
+        "MMVP": "https://huggingface.co/datasets/MaoSong2022/MMVP/resolve/main/MMVP.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -160,6 +161,7 @@ class ImageMCQDataset(ImageBaseDataset):
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
         '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
+        "MMVP": "8cb732b141a0cba5b42159df2839e557",
     }
 
     DATASET_URL.update(MMMB_URLS)
