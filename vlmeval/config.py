@@ -599,7 +599,7 @@ long_vita_series = {
     ),
 }
 
-internvl_series = {
+internvl = {
     "InternVL-Chat-V1-1": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-1", version="V1.1"
     ),
@@ -609,19 +609,23 @@ internvl_series = {
     "InternVL-Chat-V1-2-Plus": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-2-Plus", version="V1.2"
     ),
-    # InternVL1.5 series
     "InternVL-Chat-V1-5": partial(
         InternVLChat,
         model_path="OpenGVLab/InternVL-Chat-V1-5",
         version="V1.5",
-    ),
+    )
+}
+
+mini_internvl = {
     "Mini-InternVL-Chat-2B-V1-5": partial(
         InternVLChat, model_path="OpenGVLab/Mini-InternVL-Chat-2B-V1-5", version="V1.5"
     ),
     "Mini-InternVL-Chat-4B-V1-5": partial(
         InternVLChat, model_path="OpenGVLab/Mini-InternVL-Chat-4B-V1-5", version="V1.5"
     ),
-    # InternVL2 series
+}
+
+internvl2 = {
     "InternVL2-1B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2-1B", version="V2.0"
     ),
@@ -643,7 +647,6 @@ internvl_series = {
     "InternVL2-76B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2-Llama3-76B", version="V2.0"
     ),
-    # InternVL2 MPO series
     "InternVL2-8B-MPO": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2-8B-MPO", version="V2.0"
     ),
@@ -653,7 +656,9 @@ internvl_series = {
         version="V2.0",
         use_mpo_prompt=True,
     ),
-    # InternVL2.5 series
+}
+
+internvl2_5 = {
     "InternVL2_5-1B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-1B", version="V2.0"
     ),
@@ -680,7 +685,9 @@ internvl_series = {
         InternVLChat, model_path="OpenGVLab/InternVL2_5-8B", version="V2.0",
         best_of_n=8, reward_model_path="OpenGVLab/VisualPRM-8B",
     ),
-    # InternVL2.5-MPO series
+}
+
+internvl2_5_mpo = {
     "InternVL2_5-1B-MPO": partial(
         InternVLChat,
         model_path="OpenGVLab/InternVL2_5-1B-MPO",
@@ -722,6 +729,30 @@ internvl_series = {
         model_path="OpenGVLab/InternVL2_5-78B-MPO",
         version="V2.0",
         use_mpo_prompt=True,
+    ),
+}
+
+internvl3 = {
+    "InternVL3-1B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-1B", version="V2.0"
+    ),
+    "InternVL3-2B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
+    ),
+    "InternVL3-8B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0"
+    ),
+    "InternVL3-9B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"
+    ),
+    "InternVL3-14B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-14B", version="V2.0"
+    ),
+    "InternVL3-38B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-38B", version="V2.0"
+    ),
+    "InternVL3-78B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-78B", version="V2.0"
     ),
 }
 
@@ -1177,57 +1208,18 @@ gemma_series = {
 supported_VLM = {}
 
 model_groups = [
-    ungrouped,
-    o1_apis,
-    api_models,
-    xtuner_series,
-    qwen_series,
-    llava_series,
-    internvl_series,
-    yivl_series,
-    xcomposer_series,
-    minigpt4_series,
-    idefics_series,
-    instructblip_series,
-    deepseekvl_series,
-    deepseekvl2_series,
-    janus_series,
-    minicpm_series,
-    cogvlm_series,
-    wemm_series,
-    cambrian_series,
-    chameleon_series,
-    video_models,
-    ovis_series,
-    vila_series,
-    mantis_series,
-    mmalaya_series,
-    phi3_series,
-    phi4_series, 
-    xgen_mm_series,
-    qwen2vl_series,
-    slime_series,
-    eagle_series,
-    moondream_series,
-    llama_series,
-    molmo_series,
-    kosmos_series,
-    points_series,
-    nvlm_series,
-    vintern_series,
-    h2ovl_series,
-    aria_series,
-    smolvlm_series,
-    sail_series,
-    valley_series,
-    vita_series,
-    ross_series,
-    emu_series,
-    ola_series,
-    ursa_series,
-    gemma_series,
-    long_vita_series,
-    ristretto_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series,
+    internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
+    internvl3, yivl_series, xcomposer_series, minigpt4_series, idefics_series,
+    instructblip_series, deepseekvl_series, deepseekvl2_series, janus_series,
+    minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
+    chameleon_series, video_models, ovis_series, vila_series, mantis_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,
+    slime_series, eagle_series, moondream_series, llama_series, molmo_series,
+    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
+    aria_series, smolvlm_series, sail_series, valley_series, vita_series,
+    ross_series, emu_series, ola_series, ursa_series, gemma_series,
+    long_vita_series, ristretto_series
 ]
 
 for grp in model_groups:
