@@ -102,7 +102,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
         ),
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
-        "MMVP": "https://huggingface.co/datasets/MaoSong2022/MMVP/resolve/main/MMVP.tsv",
+        "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
