@@ -107,7 +107,10 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     data = data[~data['index'].isin(res)]
     lt = len(data)
 
-    model = supported_VLM[model_name](use_vllm=use_vllm) if isinstance(model, str) else model
+    kwargs = {}
+    if model_name is not None and 'Llama-4' in model_name:
+        kwargs = {'use_vllm': use_vllm}
+    model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
 
     is_api = getattr(model, 'is_api', False)
     if is_api:
