@@ -406,7 +406,7 @@ def extract_subjective(inp, dataset_name):
     for line in lines:
         line_upper = line.upper()
         if mapping_dict[dataset_name] in line_upper:
- 
+
             match = re.search(r'\[\[\s*(.*?)\s*\]\]', line_upper)
             if match:
                 rem = match.group(1).replace(' ', '')
