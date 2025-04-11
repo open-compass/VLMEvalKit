@@ -1205,14 +1205,21 @@ gemma_series = {
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
 }
 
+internvl_groups = [
+    internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
+    internvl3,
+]
+internvl_series = {}
+for group in internvl_groups:
+    internvl_series.update(group)
+
 supported_VLM = {}
 
 model_groups = [
     ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series,
-    internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
-    internvl3, yivl_series, xcomposer_series, minigpt4_series, idefics_series,
-    instructblip_series, deepseekvl_series, deepseekvl2_series, janus_series,
-    minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
+    internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
+    idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
+    janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
     mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
