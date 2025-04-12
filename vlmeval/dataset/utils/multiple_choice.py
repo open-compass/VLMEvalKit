@@ -151,6 +151,30 @@ def report_acc_MMT(df):
     return pd.DataFrame(res)
 
 
+def report_acc_MMSci(df):
+
+    df_filtered = df[df['setting'].isin(['Fig2Cap', 'SubFig2Cap', 'SubCap2Fig'])]
+
+    subject_acc = df_filtered.groupby(['subject', 'setting'])['hit'].mean().unstack(fill_value=0)
+    subject_acc['Avg'] = subject_acc.mean(axis=1)
+    subject_acc.reset_index(inplace=True)
+
+    category_acc = df_filtered.groupby(['category', 'setting'])['hit'].mean().unstack(fill_value=0)
+    category_acc['Avg'] = category_acc.mean(axis=1)
+    category_acc.reset_index(inplace=True)
+    category_acc['category'] = 'CATEGORY_' + category_acc['category']
+    category_acc.rename(columns={'category': 'subject'}, inplace=True)
+
+    overall_acc = df_filtered.groupby(['setting'])['hit'].mean().to_frame().T
+    overall_acc['Avg'] = overall_acc.mean(axis=1)
+    overall_acc['subject'] = 'Overall'
+
+    full_acc_df = pd.concat([subject_acc, category_acc, overall_acc], ignore_index=True)
+    column_order = ['subject', 'Fig2Cap', 'SubFig2Cap', 'SubCap2Fig', 'Avg']
+    full_acc_df = full_acc_df[column_order]
+    return full_acc_df
+
+
 def build_prompt(question, options, prediction):
     tmpl = (
         'You are an AI assistant who will help me to match '
