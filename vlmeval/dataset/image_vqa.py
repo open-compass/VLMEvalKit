@@ -1593,9 +1593,6 @@ class MMSci_Captioning(ImageBaseDataset):
         # calculate g-eval metrics
         if not osp.exists(g_eval_metrics_output_file):
 
-            for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
-                os.environ.pop(var, None)
-
             data = load(eval_file)
             answers = {}
             for idx, item in data.iterrows():
