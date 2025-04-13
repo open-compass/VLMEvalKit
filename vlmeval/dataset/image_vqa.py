@@ -1534,3 +1534,161 @@ class MMNIAH(ImageBaseDataset):
             if element['value'] == '':
                 msgs.remove(element)
         return msgs
+
+
+class MMSci_Captioning(ImageBaseDataset):
+
+    TYPE = 'MMSci_Captioning'
+    DATASET_URL = {
+        'MMSci_DEV_Captioning_image_only': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
+        'MMSci_DEV_Captioning_with_abs': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_with_abs.tsv'  # noqa: E501
+    }
+
+    DATASET_MD5 = {
+        'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
+        'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmsci import (
+            get_all_metrics_for_g_eval_score, get_all_metrics_for_reference_based_metrics,
+            merge_rating, fact_score_generate
+        )
+        refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
+        g_eval_metrics_output_file = eval_file.replace('.xlsx', '_g_eval_metrics.xlsx')
+        fact_score_metrics_output_file = eval_file.replace('.xlsx', '_fact_score.xlsx')
+
+        # calculate reference-based metrics
+        if not osp.exists(refer_based_metrics_output_file):
+            data = load(eval_file)
+            old_candidates = {}
+            old_references = {}
+            for idx, item in data.iterrows():
+                image_id = item["image_id"]
+                old_candidates[image_id] = [item["prediction"]]
+                old_references[image_id] = [item["caption"]]
+
+            candidates = []
+            references = []
+            image_id_list = []
+            image_ids = old_references.keys()
+            for cid in image_ids:
+                if cid in old_candidates:
+                    candidates.append(old_candidates[cid][0])
+                    references.append(old_references[cid])
+                    image_id_list.append(cid)
+
+            if isinstance(references[0], str):
+                references = [[r] for r in references]
+
+            reference_based_metrics_file = eval_file.replace('.xlsx', '_reference_based_metrics.pkl')
+            existing_data = get_all_metrics_for_reference_based_metrics(
+                references, candidates, image_id_list, reference_based_metrics_file
+            )
+            for idx, item in data.iterrows():
+                reference_based_metrics = str(existing_data[item["image_id"]])
+                data.loc[idx, 'reference_based_metrics'] = reference_based_metrics
+            dump(data, refer_based_metrics_output_file)
+
+        # calculate g-eval metrics
+        if not osp.exists(g_eval_metrics_output_file):
+
+            data = load(eval_file)
+            answers = {}
+            for idx, item in data.iterrows():
+                answers[item["abstract"]] = item["caption"]
+
+            old_candidates = {}
+            old_references = {}
+            for idx, item in data.iterrows():
+                caption = item['caption']
+                if not caption:
+                    caption = answers[item['abstract']]
+
+                image_id = item['image_id']
+                old_candidates[image_id] = [item["prediction"]]
+                old_references[image_id] = [caption]
+
+            candidates = []
+            references = []
+            image_id_list = []
+            image_ids = old_references.keys()
+            for cid in image_ids:
+                if cid in old_candidates:
+                    candidates.append(old_candidates[cid][0])
+                    references.append(old_references[cid])
+                    image_id_list.append(cid)
+
+            if isinstance(references[0], str):
+                references = [[r] for r in references]
+
+            model = judge_kwargs.pop('model', 'gpt-4o-0806')
+            nproc = judge_kwargs.pop('nproc', 4)
+            # not supported gemini-1.5-pro-exp-0801 as judge model yet、
+            assert model in ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
+            judge_model = build_judge(model=model, **judge_kwargs)
+
+            assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            suffix = '.' + eval_file.split('.')[-1]
+            tmp_file = eval_file.replace(suffix, f'_{model}_G_eval.pkl')
+
+            tmp_result = get_all_metrics_for_g_eval_score(
+                references, candidates, evaluator=judge_model, tmp_file=tmp_file, nproc=nproc
+            )
+
+            indices = range(len(references))
+            image_id_dict = {}
+            for ind, img_id in zip(indices, image_id_list):
+                image_id_dict[img_id] = ind
+
+            for idx, item in data.iterrows():
+                g_eval_metrics = tmp_result[image_id_dict[item["image_id"]]]
+                data.loc[idx, 'g_eval_metrics'] = g_eval_metrics
+            dump(data, g_eval_metrics_output_file)
+
+        # fact score, not align with official score, so now skip it
+        # if not osp.exists(fact_score_metrics_output_file):
+        #     for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
+        #         os.environ.pop(var, None)
+        #     data = load(eval_file)
+        #     suffix = '.' + eval_file.split('.')[-1]
+
+        #     lines = [data.iloc[i] for i in range(len(data))]
+        #     model = judge_kwargs.pop('model', 'gpt-4o')
+        #     tmp_file = eval_file.replace(suffix, f'_{model}_fact_score.pkl')
+        #     nproc = judge_kwargs.pop('nproc', 4)
+        #     assert model in ['gpt-4o-0806', 'gpt-4o']
+        #     judge_model = build_judge(model=model, **judge_kwargs)
+        #     assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+
+        #     tups = [(judge_model, line) for line in lines]
+        #     indices = [line['index'] for line in lines]
+
+        #     ans = {}
+        #     if osp.exists(tmp_file):
+        #         ans = load(tmp_file)
+        #     ans = {k: v for k, v in ans.items() if model.fail_msg not in str(v)}
+        #     tups = [x for x, i in zip(tups, indices) if i not in ans]
+        #     indices = [i for i in indices if i not in ans]
+        #     if len(indices):
+        #         _ = track_progress_rich(
+        #             fact_score_generate,
+        #             tups,
+        #             nproc=nproc,
+        #             chunksize=nproc,
+        #             keys=indices,
+        #             save=tmp_file,
+        #         )
+        #     ans = load(tmp_file)
+        #     for idx, item in data.iterrows():
+        #         fact_score_metrics = str(ans[item["index"]])
+        #         data.loc[idx, 'fact_score_metrics'] = fact_score_metrics
+        #     dump(data, fact_score_metrics_output_file)
+
+        rating = merge_rating(
+            refer_based_metrics_output_file,
+            g_eval_metrics_output_file,
+            fact_score_metrics_output_file
+        )
+        dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
+        return rating

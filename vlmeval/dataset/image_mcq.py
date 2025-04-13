@@ -102,6 +102,7 @@ class ImageMCQDataset(ImageBaseDataset):
             'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
         ),
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
+        'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
         "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
@@ -161,6 +162,7 @@ class ImageMCQDataset(ImageBaseDataset):
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
         '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
+        'MMSci_DEV_MCQ': '71c82f81920a84526803574f719099a7',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
     }
 
@@ -207,7 +209,9 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, report_acc_MMT, mcq_circular_eval, mcq_vanilla_eval
+        from .utils.multiple_choice import (
+            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+        )
         # assert dataset is not None
         dataset_map = {
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
@@ -272,6 +276,8 @@ class ImageMCQDataset(ImageBaseDataset):
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
             acc = report_acc_MMT(data)
+        elif 'MMSci' in dataset:
+            acc = report_acc_MMSci(data)
         else:
             acc = report_acc(data)
 
