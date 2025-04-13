@@ -102,11 +102,11 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
 
         if listinstr(['omni'], model_path.lower()):
             try:
-                from transformers import Qwen2_5OmniModel, Qwen2_5OmniProcessor
+                from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
             except Exception as err:
                 logging.critical("pip install git+https://github.com/huggingface/transformers@3a1ead0aabed473eafe527915eea8c197d424356")
                 raise err
-            MODEL_CLS = Qwen2_5OmniModel
+            MODEL_CLS = Qwen2_5OmniForConditionalGeneration
             self.processor = Qwen2_5OmniProcessor.from_pretrained(model_path)
         elif listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
             from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
