@@ -421,7 +421,7 @@ class InternVLChat(BaseModel):
             )
         response = response_list[0]
 
-        if not listinstr(['WeMath'], dataset):
+        if dataset is not None and not listinstr(['WeMath'], dataset):
             if use_mpo_prompt:
                 response = mpo_post_processing(response, dataset)
             elif self.use_cot and self.use_postprocess:
