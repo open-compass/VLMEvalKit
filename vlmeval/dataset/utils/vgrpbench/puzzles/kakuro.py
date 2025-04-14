@@ -11,7 +11,11 @@ class ConstraintKakuroSum(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_kakuro_sum"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         # if any of board is str, then convert to int
@@ -19,7 +23,11 @@ class ConstraintKakuroSum(Constraint):
             board = [[int(cell) for cell in row] for row in board]
 
         sums = game_state.get("sums", {"row": [], "col": []})
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         # Check row sums
         for row in range(len(board)):
             if row < len(sums["row"]):
@@ -46,20 +54,34 @@ class ConstraintKakuroAdjacent(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_kakuro_adjacent"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         # if any of board is str, then convert to int
         if any(isinstance(cell, str) for row in board for cell in row):
             board = [[int(cell) for cell in row] for row in board]
+<<<<<<< HEAD
 
         size = len(board)
 
+=======
+            
+        size = len(board)
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         for row in range(size):
             for col in range(size):
                 if board[row][col] == 0:
                     continue
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> f7bcc2c8 (add vgrpbench)
                 # Check adjacent cells (up, down, left, right)
                 if row > 0 and board[row-1][col] == board[row][col]:
                     return False
@@ -69,7 +91,11 @@ class ConstraintKakuroAdjacent(Constraint):
                     return False
                 if col < size-1 and board[row][col+1] == board[row][col]:
                     return False
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> f7bcc2c8 (add vgrpbench)
         return True
 
 class KakuroPuzzleFactory(PuzzleFactory):
@@ -77,7 +103,11 @@ class KakuroPuzzleFactory(PuzzleFactory):
         super().__init__()
         if size < 3 or size > 12:
             raise ValueError("Grid size must be between 3 and 12")
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> f7bcc2c8 (add vgrpbench)
         self.game_name = "kakuro"
         self.size = size
         self.constraints = [
@@ -85,12 +115,20 @@ class KakuroPuzzleFactory(PuzzleFactory):
             ConstraintKakuroAdjacent()
         ]
         self.all_possible_values = [i for i in range(1, size + 1)]
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def get_possible_values(self, game_state: Dict[str, Any], row: int, col: int) -> List[int]:
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):

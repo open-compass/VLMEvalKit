@@ -10,7 +10,11 @@ class ConstraintRowNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_row_no_repeat"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for row in board:
@@ -23,7 +27,11 @@ class ConstraintColNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_col_no_repeat"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
@@ -37,11 +45,19 @@ class ConstraintAdjacency(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_adjacency"
+<<<<<<< HEAD
 
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
 
+=======
+    
+    def check(self, game_state: Dict[str, Any]) -> bool:
+        board = game_state["board"]
+        size = len(board)
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         # Get hints with proper default structure
         # default_hints = {
         #     "row": [['0' for _ in range(size - 1)] for _ in range(size)],
@@ -49,13 +65,21 @@ class ConstraintAdjacency(Constraint):
         # }
         # always use hints from the game state
         hints = game_state.get("hints") # , default_hints)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         # Ensure hints have proper dimensions
         if len(hints.get("row", [])) < size:
             hints["row"] = [['0' for _ in range(size - 1)] for _ in range(size)]
         if len(hints.get("col", [])) < size - 1:
             hints["col"] = [['0' for _ in range(size)] for _ in range(size - 1)]
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         # convert board to int
         board_copy = copy.deepcopy(board)
         for i in range(size):
@@ -71,7 +95,11 @@ class ConstraintAdjacency(Constraint):
                         continue
                     if abs(board_copy[row][col] - board_copy[row][col + 1]) != 1:
                         return False
+<<<<<<< HEAD
 
+=======
+                        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         # Check column adjacency hints
         for row in range(size - 1):
             for col in range(size):
@@ -80,7 +108,11 @@ class ConstraintAdjacency(Constraint):
                         continue
                     if abs(board_copy[row][col] - board_copy[row + 1][col]) != 1:
                         return False
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         return True
 
 
@@ -91,7 +123,11 @@ class RenzokuPuzzleFactory(PuzzleFactory):
         super().__init__()
         if size < 4 or size > 12:
             raise ValueError("Grid size must be between 4 and 12")
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> f7bcc2c8 (add vgrpbench)
         self.game_name = "renzoku"
         self.size = size
         self.constraints = [
@@ -106,7 +142,11 @@ class RenzokuPuzzleFactory(PuzzleFactory):
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):

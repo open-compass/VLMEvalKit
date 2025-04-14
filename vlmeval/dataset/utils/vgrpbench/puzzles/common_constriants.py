@@ -3,7 +3,11 @@ from typing import Dict, Any
 class Constraint():
     def __init__(self) -> None:
         self.name = ""
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         pass
 
@@ -11,7 +15,11 @@ class ConstraintRowNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_row_no_repeat"
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for row in board:
@@ -24,7 +32,11 @@ class ConstraintColNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_col_no_repeat"
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for col in range(len(board[0])):
@@ -37,7 +49,11 @@ class ConstraintSubGridNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_sub_grid_no_repeat"
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         assert len(board) == len(board[0]), "board is not square"
@@ -53,4 +69,8 @@ class ConstraintSubGridNoRepeat(Constraint):
                 ]
                 if len(set(sub_grid)) != len(sub_grid):
                     return False
+<<<<<<< HEAD
         return True
+=======
+        return True
+>>>>>>> f7bcc2c8 (add vgrpbench)

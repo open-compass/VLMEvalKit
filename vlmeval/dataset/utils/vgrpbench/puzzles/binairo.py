@@ -12,7 +12,11 @@ class ConstraintRowBalance(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_row_balance"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
@@ -32,7 +36,11 @@ class ConstraintColBalance(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_col_balance"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
@@ -51,6 +59,7 @@ class ConstraintNoTripleAdjacent(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_no_triple_adjacent"
+<<<<<<< HEAD
 
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
@@ -67,6 +76,24 @@ class ConstraintNoTripleAdjacent(Constraint):
         for col in range(size):
             for row in range(size - 2):
                 if (board[row][col] != 0 and
+=======
+    
+    def check(self, game_state: Dict[str, Any]) -> bool:
+        board = game_state["board"]
+        size = len(board)
+        
+        # Check rows
+        for row in range(size):
+            for col in range(size - 2):
+                if (board[row][col] != 0 and 
+                    board[row][col] == board[row][col + 1] == board[row][col + 2]):
+                    return False
+        
+        # Check columns
+        for col in range(size):
+            for row in range(size - 2):
+                if (board[row][col] != 0 and 
+>>>>>>> f7bcc2c8 (add vgrpbench)
                     board[row][col] == board[row + 1][col] == board[row + 2][col]):
                     return False
         return True
@@ -77,7 +104,11 @@ class BinairoPuzzleFactory(PuzzleFactory):
         super().__init__()
         if size < 4 or size % 2 != 0:
             raise ValueError("Size must be an even number greater than or equal to 4")
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> f7bcc2c8 (add vgrpbench)
         self.game_name = "binairo"
         self.size = size
         self.constraints = [
@@ -86,14 +117,22 @@ class BinairoPuzzleFactory(PuzzleFactory):
             ConstraintNoTripleAdjacent(),
             # ConstraintUniqueLines()
         ]
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         self.all_possible_values = ['w', 'b']  # 'w' for white, 'b' for black
 
     def get_possible_values(self, game_state: Dict[str, Any], row: int, col: int) -> List[int]:
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):
