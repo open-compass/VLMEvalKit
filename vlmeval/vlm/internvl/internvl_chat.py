@@ -26,6 +26,75 @@ from ...dataset import DATASET_TYPE, DATASET_MODALITY
 from ...smp import *
 
 
+R1_SYSTEM_PROMPT = """
+You are an AI assistant that rigorously follows this response protocol:
+
+1. First, conduct a detailed analysis of the question. Consider different \
+angles, potential solutions, and reason through the problem step-by-step. \
+Enclose this entire thinking process within <think> and </think> tags.
+
+2. After the thinking section, provide a clear, concise, and direct answer to \
+the user's question. Separate the answer from the think section with a newline.
+
+Ensure that the thinking process is thorough but remains focused on the \
+query. The final answer should be standalone and not reference the thinking \
+section.
+""".strip()
+
+
+def prepare_messages_list(prompt, image_path, system_prompt=None):
+    from lmdeploy.vl.constants import IMAGE_TOKEN
+    content = [{'type': 'text', 'text': prompt.replace('<image>', IMAGE_TOKEN)}]
+
+    if isinstance(image_path, str):
+        image_path = [image_path]
+
+    for image in image_path:
+        img = Image.open(image).convert('RGB')
+        b64 = encode_image_to_base64(img)
+        img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
+        content.append(dict(type='image_url', image_url=img_struct))
+
+    messages = []
+
+    if system_prompt is not None:
+        messages.append({'role': 'system', 'content': system_prompt})
+
+    messages.append({
+        'role': 'user',
+        'content': content,
+    })
+
+    return [messages]
+
+
+def extract_boxed_content(ans: str):
+    idx = ans.rfind(r'\boxed{')
+    if idx == -1:
+        return ans
+
+    idx += len(r'\boxed{')
+    brace_level = 1
+    content_start = idx
+    i = idx
+
+    while i < len(ans):
+        if ans[i] == '{':
+            brace_level += 1
+        elif ans[i] == '}':
+            brace_level -= 1
+            if brace_level == 0:
+                break
+        i += 1
+
+    if brace_level != 0:
+        # Unbalanced braces
+        return ans
+
+    content = ans[content_start:i]
+    return content
+
+
 class InternVLChat(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
@@ -38,14 +107,42 @@ class InternVLChat(BaseModel):
                  # Best-of-N parameters
                  best_of_n=1,
                  reward_model_path=None,
+                 # R1 parameters
+                 cot_prompt_version='v1',
+                 #
+                 use_lmdeploy=True,
+                 use_postprocess=False,
                  **kwargs):
 
         assert best_of_n >= 1
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.37.2', 'ge')
 
+        self.use_lmdeploy = use_lmdeploy
+        self.cot_prompt_version = cot_prompt_version
         self.use_mpo_prompt = use_mpo_prompt
         self.use_cot = (os.getenv('USE_COT') == '1')
+        self.use_postprocess = use_postprocess
+
+        if cot_prompt_version == 'r1':
+            self.system_prompt = R1_SYSTEM_PROMPT
+            self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
+        elif cot_prompt_version == 'v2':
+            self.system_prompt = None
+            self.cot_prompt = "Answer the preceding multiple-choice question \
+            by carefully analyzing the provided image. \nPlease answer with \
+            carefully thought step by step. Apply the thinking process \
+            recursively at both macro and micro levels. \nVerify consistency \
+            of reasoning and look for potential flaws or gaps during \
+            thinking. \nWhen realize mistakes, explain why the previous \
+            thinking was incorrect, fix it and then continue thinking.\nThe \
+            last line of your response should follow this format: 'Answer: \
+            \\boxed{$LETTER}' (without quotes), where LETTER is one of the \
+            options\n\n"
+        else:
+            assert cot_prompt_version == 'v1'
+            self.system_prompt = None
+            self.cot_prompt = None
 
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
@@ -63,7 +160,21 @@ class InternVLChat(BaseModel):
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
 
-        if auto_split_flag():
+        if use_lmdeploy:
+            from lmdeploy import TurbomindEngineConfig, VisionConfig, pipeline, ChatTemplateConfig
+            vision_config = VisionConfig(max_batch_size=4)
+            self.model = pipeline(
+                model_path,
+                vision_config=vision_config,
+                chat_template_config=ChatTemplateConfig(model_name='internvl2_5'),
+                backend_config=TurbomindEngineConfig(
+                    session_len=16384,
+                    cache_max_entry_count=0.1,
+                    tp=int(os.environ['TP']))
+            )
+            torch.cuda.set_device(int(os.environ['RANK']) % torch.cuda.device_count())
+            self.device = 'cuda'
+        elif auto_split_flag():
             device_map, visible_devices = split_model(model_path=model_path)
             self.device = visible_devices[0]
             self.model = AutoModel.from_pretrained(
@@ -93,8 +204,7 @@ class InternVLChat(BaseModel):
                 rm_kwargs = {}
 
             self.reward_tokenizer = AutoTokenizer.from_pretrained(
-                reward_model_path, trust_remote_code=True, use_fast=False
-            )
+                reward_model_path, trust_remote_code=True, use_fast=False)
             self.reward_model = AutoModel.from_pretrained(
                 reward_model_path,
                 torch_dtype=torch.bfloat16,
@@ -112,7 +222,7 @@ class InternVLChat(BaseModel):
 
             print(f'Enable Best-of-N evaluation with PRM: {reward_model_path}')
 
-        self.image_size = self.model.config.vision_config.image_size
+        # self.image_size = self.model.config.vision_config.image_size
         self.version = version
         self.best_of_n = best_of_n
         kwargs_default = dict(do_sample=False, max_new_tokens=4096, top_p=None)
@@ -150,7 +260,7 @@ class InternVLChat(BaseModel):
         elif dataset is not None and DATASET_TYPE(dataset) == 'MCQ':
             prompt = build_multi_choice_prompt(line, dataset)
             if os.getenv('USE_COT') == '1':
-                prompt = build_mcq_cot_prompt(line, prompt)
+                prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
         elif dataset is not None and DATASET_TYPE(dataset) == 'VQA':
             question = line['question']
             if listinstr(['LLaVABench', 'WildVision'], dataset):
@@ -163,14 +273,14 @@ class InternVLChat(BaseModel):
                             'WeMath', 'LogicVista'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
-                    prompt = build_qa_cot_prompt(line, prompt)
+                    prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
             else:
                 prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             # VQA_ex_prompt: OlympiadBench, VizWiz
             prompt = line['question']
             if os.getenv('USE_COT') == '1':
-                prompt = build_qa_cot_prompt(line, prompt)
+                prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
 
         message = [dict(type='text', value=prompt)]
         message.extend([dict(type='image', value=s) for s in tgt_path])
@@ -280,14 +390,25 @@ class InternVLChat(BaseModel):
             kwargs_default['temperature'] = 0.7
             kwargs_default['top_p'] = 0.95
 
-            response = self.model.chat(
-                self.tokenizer,
-                pixel_values=pixel_values,
-                num_patches_list=num_patches_list,
-                question=prompt,
-                generation_config=kwargs_default,
-                verbose=idx == 0,
-            )
+            if self.use_lmdeploy:
+                from lmdeploy import GenerationConfig
+                gen_config = GenerationConfig(**kwargs_default)
+                gen_config.random_seed = None
+                messages_list = prepare_messages_list(prompt, image_path, system_prompt=self.system_prompt)
+                assert len(messages_list) == 1
+                response = self.model(messages_list, gen_config=gen_config)[0]
+                response = response.text
+            else:
+                if self.system_prompt is not None:
+                    self.model.system_message = self.system_prompt
+                response = self.model.chat(
+                    self.tokenizer,
+                    pixel_values=pixel_values,
+                    num_patches_list=num_patches_list,
+                    question=prompt,
+                    generation_config=kwargs_default,
+                    verbose=idx == 0,
+                )
             response_list.append(response)
 
         if self.best_of_n > 1:
@@ -300,8 +421,12 @@ class InternVLChat(BaseModel):
             )
         response = response_list[0]
 
-        if use_mpo_prompt:
-            response = mpo_post_processing(response, dataset)
+        if not listinstr(['WeMath'], dataset):
+            if use_mpo_prompt:
+                response = mpo_post_processing(response, dataset)
+            elif self.use_cot and self.use_postprocess:
+                response = extract_boxed_content(response)
+
         return response
 
     def generate_inner(self, message, dataset=None):
