@@ -110,7 +110,7 @@ class InternVLChat(BaseModel):
                  # R1 parameters
                  cot_prompt_version='v1',
                  #
-                 use_lmdeploy=True,
+                 use_lmdeploy=False,
                  use_postprocess=False,
                  **kwargs):
 
