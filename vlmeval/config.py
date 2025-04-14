@@ -1135,7 +1135,7 @@ llama_series = {
         llama_vision, model_path="meta-llama/Llama-3.2-90B-Vision-Instruct"
     ),
     "Llama-4-Scout-17B-16E-Instruct": partial(
-        llama4, model_path="meta-llama/Llama-4-Scout-17B-16E-Instruct"
+        llama4, model_path="meta-llama/Llama-4-Scout-17B-16E-Instruct", use_vllm=True
     ),
 }
 
