@@ -904,8 +904,8 @@ class CVBench(ImageMCQDataset):
     }
 
     DATASET_MD5 = {
-        "CV-Bench-2D": "248e2b2145d75bdfa0ebd9bc9eabcbd2",
-        "CV-Bench-3D": "55eabb3cd98fff3b9b998a7d7367bb1b",
+        "CV-Bench-2D": "a7cff4cc2857cc237ee2b89e62bccb2d",
+        "CV-Bench-3D": "bb94c0d568d652d15b60e001ac40a170",
     }
 
     def build_prompt(self, line):
