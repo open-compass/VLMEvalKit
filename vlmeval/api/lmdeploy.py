@@ -165,6 +165,7 @@ class LMDeployWrapper(BaseAPI):
     }
 
     def __init__(self,
+                 model: str = None,
                  retry: int = 5,
                  wait: int = 5,
                  key: str = 'sk-123456',
@@ -189,7 +190,8 @@ class LMDeployWrapper(BaseAPI):
 
         model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
         resp = requests.get(model_url)
-        self.model = resp.json()['data'][0]['id']
+        model_id_list = [str(data['id']) for data in resp.json()['data']]
+        self.model = model if model in model_id_list else model_id_list[0]
         self.logger.info(f'lmdeploy evaluate model: {self.model}')
         self.set_prompt_pattern(self.model)
         if hasattr(self, 'custom_prompt'):
