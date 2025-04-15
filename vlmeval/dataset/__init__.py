@@ -53,6 +53,9 @@ from .video_dataset_config import *
 from ..smp import *
 from .Omnidocbench.omnidocbench import OmniDocBench
 from .moat import MOAT
+from .GUI.screenspot import ScreenSpot
+from .GUI.screenspot_v2 import ScreenSpotV2
+from .GUI.screenspot_pro import ScreenSpot_Pro
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -150,7 +153,7 @@ IMAGE_DATASET = [
     OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz, 
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset, 
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench, 
-    VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT
+    VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, ScreenSpot_Pro, ScreenSpot, ScreenSpotV2,
 ]
 
 
@@ -248,6 +251,11 @@ def build_dataset(dataset_name, **kwargs):
     else:
         warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ')
         return CustomVQADataset(dataset=dataset_name, **kwargs)
+
+
+def infer_dataset_basename(dataset_name):
+    basename = "_".join(dataset_name.split("_")[:-1])
+    return basename
 
 
 __all__ = [

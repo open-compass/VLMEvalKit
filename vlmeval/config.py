@@ -1,6 +1,7 @@
 from vlmeval.vlm import *
 from vlmeval.api import *
 from functools import partial
+import os
 
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
@@ -652,7 +653,7 @@ internvl_series = {
         InternVLChat, model_path="OpenGVLab/InternVL2_5-4B", version="V2.0"
     ),
     "InternVL2_5-8B": partial(
-        InternVLChat, model_path="OpenGVLab/InternVL2_5-8B", version="V2.0"
+        InternVLChat, model_path="/fs-computility/llm/shared/mllm/hub/models--OpenGVLab--InternVL2_5-8B/snapshots/2233bf9af3b3111505264aa293a672543bea3481/", version="V2.0"
     ),
     "InternVL2_5-26B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-26B", version="V2.0"
@@ -710,6 +711,13 @@ internvl_series = {
         model_path="OpenGVLab/InternVL2_5-78B-MPO",
         version="V2.0",
         use_mpo_prompt=True,
+    ),
+    "InternVL2_5-8B-GUI": partial(
+        InternVLChat,
+        model_path="/fs-computility/mllm1/shared/zhaoxiangyu/models/internvl2_5_8b_internlm2_5_7b_dynamic_res_stage1", 
+        version="V2.0", 
+        max_new_tokens=512,
+        screen_parse=False,
     ),
 }
 
@@ -1116,6 +1124,20 @@ gemma_series = {
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
 }
 
+aguvis_series = {
+    "aguvis_7b": partial(
+        Qwen2VLChatAguvis,
+        model_path=os.getenv(
+            "EVAL_MODEL",
+            "/root/.cache/huggingface/hub/models--xlangai--Aguvis-7B-720P/snapshots/6dd54127b5b84b9ee89172a5065ab6be576f0db9",
+        ),
+        min_pixels=256 * 28 * 28,
+        max_pixels=46 * 26 * 28 * 28,
+        use_custom_prompt=False,
+        mode='grounding',
+    )
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -1169,6 +1191,7 @@ model_groups = [
     ursa_series,
     gemma_series,
     long_vita_series,
+    aguvis_series,
 ]
 
 for grp in model_groups:
