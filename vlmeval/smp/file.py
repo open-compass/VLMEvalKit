@@ -183,13 +183,6 @@ def load(f, fmt=None):
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
 
-    import validators
-    if validators.url(f):
-        tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
-        if not osp.exists(tgt):
-            download_file(f, tgt)
-        f = tgt
-
     handlers = dict(pkl=load_pkl, json=load_json, jsonl=load_jsonl, xlsx=load_xlsx, csv=load_csv, tsv=load_tsv)
     if fmt is not None:
         return handlers[fmt](f)
@@ -199,9 +192,8 @@ def load(f, fmt=None):
 
 
 def download_file(url, filename=None):
-    import requests
+    import urllib.request
     from tqdm import tqdm
-    import logging
 
     class DownloadProgressBar(tqdm):
         def update_to(self, b=1, bsize=1, tsize=None):
@@ -214,16 +206,9 @@ def download_file(url, filename=None):
 
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
-            response = requests.get(url, stream=True, verify=False)
-            response.raise_for_status()
-            file_size = int(response.headers.get('Content-Length', 0))
-            t.total = file_size
-            block_size = 1024
-            with open(filename, 'wb') as out_file:
-                for buffer in response.iter_content(block_size):
-                    out_file.write(buffer)
-                    t.update(len(buffer))
+            urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
     except Exception as e:
+        import logging
         logging.warning(f'{type(e)}: {e}')
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
@@ -313,9 +298,6 @@ def parse_file(s):
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            return ('image/webp', s)
         mime = mimetypes.types_map.get(suffix, 'unknown')
         return (mime, s)
     elif s.startswith('data:image/'):
@@ -332,10 +314,7 @@ def parse_file(s):
         return parse_file(tgt)
     elif validators.url(s):
         suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            mime = 'image/webp'
-        elif suffix in mimetypes.types_map:
+        if suffix in mimetypes.types_map:
             mime = mimetypes.types_map[suffix]
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
@@ -344,7 +323,6 @@ def parse_file(s):
             return (mime, tgt)
         else:
             return ('url', s)
-
     else:
         return (None, s)
 
@@ -366,7 +344,7 @@ def parquet_to_tsv(file_path):
     data.to_csv(osp.join(pth, f'{data_name}.tsv'), sep='\t', index=False)
 
 
-def fetch_aux_files(eval_file):
+def fetch_aux_files(eval_file): 
     file_root = osp.dirname(eval_file)
     file_name = osp.basename(eval_file)
 
@@ -375,7 +353,7 @@ def fetch_aux_files(eval_file):
         model_name = osp.basename(osp.dirname(file_root))
     else:
         model_name = eval_id
-
+    
     dataset_name = osp.splitext(file_name)[0][len(model_name) + 1:]
     from vlmeval.dataset import SUPPORTED_DATASETS
     to_handle = []
