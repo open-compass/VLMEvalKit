@@ -196,6 +196,33 @@ api_models = {
         retry=10, 
         verbose=False,
     ),
+    "gpt-4.1-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-mini-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-mini-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-nano-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-nano-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         GeminiProVision, model="gemini-1.0-pro", temperature=0, retry=10
