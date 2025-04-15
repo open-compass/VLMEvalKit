@@ -784,7 +784,9 @@ internvl3 = {
 }
 
 sail_series = {
-    "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B")
+    "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
+    "SAIL-VL1.5-2B": partial(SailVL, model_path="/mnt/bn/iesqa-aigc-yg/users/yinweijie/Univl_series/UniVL-Aimv2-huge-2B-Instruct-pro-merge-aio-know-v2", use_msac = True),
+    "SAIL-VL1.5-8B": partial(SailVL, model_path="/mnt/bn/iesqa-aigc-yg/users/yinweijie/Univl_series/UniVL-7B-merge-aio-know-v78910", use_msac = True)
 }
 
 ristretto_series = {

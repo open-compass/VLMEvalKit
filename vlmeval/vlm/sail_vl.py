@@ -193,6 +193,104 @@ def reorganize_prompt(message, image_num, dataset=None):
     return prompt
 
 
+def dynamic_preprocess_msac1(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False):
+    orig_width, orig_height = image.size
+    aspect_ratio = orig_width / orig_height
+
+    # calculate the existing image aspect ratio
+    target_ratios = set(
+        (i, j) for n in range(min_num, max_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
+        i * j <= max_num and i * j >= min_num)
+    target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
+
+    # find the closest aspect ratio to the target
+    target_aspect_ratio = find_closest_aspect_ratio(
+        aspect_ratio, target_ratios, orig_width, orig_height, image_size)
+
+    # calculate the target width and height
+    target_width = image_size * target_aspect_ratio[0]
+    target_height = image_size * target_aspect_ratio[1]
+    blocks = target_aspect_ratio[0] * target_aspect_ratio[1]
+
+    # resize the image
+    resized_img = image.resize((target_width, target_height))
+    processed_images = []
+    for i in range(blocks):
+        box = (
+            (i % (target_width // image_size)) * image_size,
+            (i // (target_width // image_size)) * image_size,
+            ((i % (target_width // image_size)) + 1) * image_size,
+            ((i // (target_width // image_size)) + 1) * image_size
+        )
+        # split the image
+        split_img = resized_img.crop(box)
+        processed_images.append(split_img)
+    assert len(processed_images) == blocks
+    if use_thumbnail and len(processed_images) != 1:
+        thumbnail_img = image.resize((image_size, image_size))
+        processed_images.append(thumbnail_img)
+    return processed_images, target_aspect_ratio
+
+def dynamic_preprocess_msac2(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False, prior_aspect_ratio=None):
+    orig_width, orig_height = image.size
+    aspect_ratio = orig_width / orig_height
+
+    # calculate the existing image aspect ratio
+    target_ratios = set(
+        (i, j) for n in range(min_num, max_num + 1) for i in range(1, n + 1) for j in range(1, n + 1) if
+        i * j <= max_num and i * j >= min_num)
+    target_ratios = sorted(target_ratios, key=lambda x: x[0] * x[1])
+
+    new_target_ratios = []
+    if prior_aspect_ratio is not None:
+        for i in target_ratios:
+            if prior_aspect_ratio[0]%i[0] != 0 or prior_aspect_ratio[1]%i[1] != 0:
+                new_target_ratios.append(i)
+            else:
+                continue
+
+    # find the closest aspect ratio to the target
+    target_aspect_ratio = find_closest_aspect_ratio(
+        aspect_ratio, new_target_ratios, orig_width, orig_height, image_size)
+
+    # calculate the target width and height
+    target_width = image_size * target_aspect_ratio[0]
+    target_height = image_size * target_aspect_ratio[1]
+    blocks = target_aspect_ratio[0] * target_aspect_ratio[1]
+
+    # resize the image
+    resized_img = image.resize((target_width, target_height))
+    processed_images = []
+    for i in range(blocks):
+        box = (
+            (i % (target_width // image_size)) * image_size,
+            (i // (target_width // image_size)) * image_size,
+            ((i % (target_width // image_size)) + 1) * image_size,
+            ((i // (target_width // image_size)) + 1) * image_size
+        )
+        # split the image
+        split_img = resized_img.crop(box)
+        processed_images.append(split_img)
+    assert len(processed_images) == blocks
+    if use_thumbnail and len(processed_images) != 1:
+        thumbnail_img = image.resize((image_size, image_size))
+        processed_images.append(thumbnail_img)
+    return processed_images
+
+def load_image_msac(image_file, input_size=448, max_num=10, upscale=False):
+    image = Image.open(image_file).convert('RGB')
+    if upscale:
+        image = image.resize((image.width * 2, image.height * 2), Image.BILINEAR)
+    transform = build_transform(input_size=input_size)
+    images,target_aspect_ratio = dynamic_preprocess_msac1(image, image_size=input_size, use_thumbnail=True, max_num=max_num)
+    images = images[:-1] + dynamic_preprocess_msac2(image,max_num=max_num,image_size=input_size,use_thumbnail=False,prior_aspect_ratio=target_aspect_ratio) + images[-1:]
+
+    pixel_values = [transform(image) for image in images]
+    pixel_values = torch.stack(pixel_values)
+    return pixel_values
+
+
+
 class SailVL(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
@@ -200,13 +298,14 @@ class SailVL(BaseModel):
     def __init__(self,
                  model_path='BytedanceDouyinContent/SAIL-VL-2B',
                  load_in_8bit=False,
+                 use_msac = True,
                  **kwargs):
 
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True, use_fast=False)
-
+        self.use_msac = use_msac
         # Regular expression to match the pattern 'Image' followed by a number, e.g. Image1
         self.pattern = r'Image(\d+)'
         # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
@@ -284,7 +383,7 @@ class SailVL(BaseModel):
         # The total limit on the number of images processed, set to avoid Out-of-Memory issues.
         self.total_max_num = 64
         if dataset is None:
-            self.max_num = 6
+            self.max_num = 10
             return None
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
                            'VCR_EN', 'VCR_ZH', 'OCRVQA']
@@ -299,7 +398,7 @@ class SailVL(BaseModel):
         elif listinstr(res_24_datasets, dataset):
             self.max_num = 24
         else:
-            self.max_num = 6
+            self.max_num = 10
 
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)
@@ -323,8 +422,12 @@ class SailVL(BaseModel):
         elif image_num == 1:
             image_path = [x['value'] for x in message if x['type'] == 'image'][0]
             upscale_flag = dataset is not None and listinstr(['MMMU'], dataset)
-            pixel_values = load_image(
-                image_path, max_num=max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
+            if self.use_msac:
+                pixel_values = load_image_msac(
+                image_path, max_num=self.max_num, upscale=upscale_flag, input_size=self.image_size).cuda().to(torch.bfloat16)
+            else:
+                pixel_values = load_image(
+                    image_path, max_num=max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
             num_patches_list = [pixel_values.size(0)]
         else:
             pixel_values = None

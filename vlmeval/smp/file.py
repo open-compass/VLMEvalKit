@@ -199,8 +199,9 @@ def load(f, fmt=None):
 
 
 def download_file(url, filename=None):
-    import urllib.request
+    import requests
     from tqdm import tqdm
+    import logging
 
     class DownloadProgressBar(tqdm):
         def update_to(self, b=1, bsize=1, tsize=None):
@@ -213,9 +214,16 @@ def download_file(url, filename=None):
 
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
-            urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
+            response = requests.get(url, stream=True, verify=False)
+            response.raise_for_status()
+            file_size = int(response.headers.get('Content-Length', 0))
+            t.total = file_size
+            block_size = 1024
+            with open(filename, 'wb') as out_file:
+                for buffer in response.iter_content(block_size):
+                    out_file.write(buffer)
+                    t.update(len(buffer))
     except Exception as e:
-        import logging
         logging.warning(f'{type(e)}: {e}')
         # Handle Failed Downloads from huggingface.co
         if 'huggingface.co' in url:
