@@ -397,18 +397,21 @@ def extract_subjective(inp, dataset_name):
         'LiveMMBench_Creation': 'FINAL CONCLUSION:',
         'Creation_MMBench': 'FINAL VERDICT IS:'
     }
+    cands = {
+        'A>>B', 'A>B', 'A=B', 'B>A', 'B>>A',
+        'B<<A', 'B<A', 'B=A', 'A<B', 'A<<B'
+    }
+
     lines = inp.split('\n')
     for line in lines:
-        line = line.upper()
-        if line.startswith(mapping_dict[dataset_name]):
-            rem = line.split(mapping_dict[dataset_name])[1].strip()
-            rem = rem.split('[[')[1].split(']]')[0].strip()
-            cands = [
-                'A>>B', 'A>B', 'A=B', 'B>A', 'B>>A',
-                'B<<A', 'B<A', 'B=A', 'A<B', 'A<<B'
-            ]
-            if rem in cands:
-                return rem
+        line_upper = line.upper()
+        if mapping_dict[dataset_name] in line_upper:
+
+            match = re.search(r'\[\[\s*(.*?)\s*\]\]', line_upper)
+            if match:
+                rem = match.group(1).replace(' ', '')
+                if rem in cands:
+                    return rem
     return None
 
 
