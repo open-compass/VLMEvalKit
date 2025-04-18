@@ -200,6 +200,7 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
+        #print("[🧪 DEBUG] 正在调用模型:", self.model) 
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
             payload.pop('temperature')
@@ -219,6 +220,7 @@ class OpenAIWrapper(BaseAPI):
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
+
 
         return ret_code, answer, response
 

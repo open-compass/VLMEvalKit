@@ -1,142 +1,129 @@
+import logging
+import re
+import timeout_decorator
+from sympy import simplify, expand, trigsimp
+from sympy.parsing.latex import parse_latex
 from ...smp import *
 from ...utils import can_infer
-import timeout_decorator
-import logging
-
-try:
-    from latex2sympy2 import latex2sympy
-except Exception as e:
-    logging.critical(f'{type(e)}: {e}')
-    logging.critical('Please install latex2sympy2 by running "pip install latex2sympy2"')
-
+import json
+from collections import defaultdict
+from tqdm import tqdm
+import pandas as pd
+from .physics_eval_utils import extract_final_answer_allform, is_equiv
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+def build_physic_prompt(line):
+    prompt_text = (
+        "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
+        "At the VERY END of your answer, output ONLY the FINAL ANSWER in this format:\n\n"
+        "\\[\n\\boxed{{your_final_answer_here}}\n\\]\n\n"
+        "✅ You MUST put the final answer in the `\\boxed{}` environment.\n"
+        "✅ This applies even if the answer is a text explanation like \"The singlet state is lower in energy.\"\n"
+        "✅ Do NOT include multiple boxes.\n"
+        "✅ Do NOT include \\boxed anywhere else in your reasoning.\n"
+        "✅ The box must appear on the last line of the response.\n\n"
+        "⚠️ WARNING: DO NOT forget to include \boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"
+        "Example:\n\n"
+        "Question: What is the energy difference between n=2 and n=1 in hydrogen?\n"
+        "Answer:\nThe energy levels are E_n = -13.6 / n² (in eV).\n"
+        "E_2 = -13.6 / 4 = -3.4 eV\n"
+        "E_1 = -13.6 eV\n"
+        "ΔE = 13.6 - 3.4 = 10.2 eV\n"
+        "\\[\n\\boxed{10.2\\ \\text{eV}}\n\\]\n\n"
+        "Question: Which energy state is lower in hydrogen molecule?\n"
+        "Answer:\nBased on spin multiplicity, the singlet state lies lower in energy than the triplet.\n"
+        "\\[\n\\boxed{The singlet state is lower in energy}\n\\]\n\n"
+        f"Question: {line['question']}\nAnswer:"
+    )
+    return [{"type": "text", "value": prompt_text}]
 
-def is_equal(asw: str, gt_asw: str) -> bool:
-    if type(asw) != str or type(gt_asw) != str:
-        print('Warning: input is not string')
-        print(asw, gt_asw)
-    asw = str(asw).lower().strip()
-    gt_asw = str(gt_asw).lower().strip()
-    if gt_asw == asw:
-        return True
+def post_check(line, prefetch=False):
     try:
-        a = eval(gt_asw)
-        b = eval(asw)
-        if abs(a - b) < 1e-6:
+        response = line['prediction'] if prefetch else line.get('res', '')
+        if not response or not isinstance(response, str):
+            return False
+
+        pred_boxed = extract_final_answer_allform(response)
+        gt = line['answer'].strip()
+
+        flat_preds = [item.strip() for group in pred_boxed for item in (group if isinstance(group, list) else [group])]
+
+        if gt in flat_preds:
             return True
-    except:
-        pass
-    try:
-        a = latex2sympy(gt_asw)
-        b = latex2sympy(asw)
-        if abs(eval(str(a)) - eval(str(b))) < 1e-6:
-            return True
-        if abs(a - b) < 1e-6:
-            return True
-    except:
-        pass
-    return False
 
+        for pred in flat_preds:
+            if is_equiv(pred, gt):
+                return True
 
-def get_gpt4_physic_ICE():
-    example_1 = """
-Hint: Please answer the question and provide the final answer at the end.
-Question: Which number is missing?
-Model response: The number missing in the sequence is 14.
-Extracted answer: 14
-"""
-
-    example_2 = """
-Hint: Please answer the question and provide the final answer at the end.
-Question: What is the fraction of females facing the camera?
-Model response: The fraction is 0.6.
-Extracted answer: 0.6
-"""
-
-    return [example_1, example_2]
-
-
-def build_physic_gpt4_prompt(line):
-    task_description = "Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.\n"
-    prompt = task_description
-    for example in get_gpt4_physic_ICE():
-        prompt += example + '\n'
-    prompt += "Question: " + line['question'] + '\n'
-    prompt += "Model response: " + str(line['prediction']) + '\n'
-    prompt += "Extracted answer:"
-    return prompt
-
-
-def post_check_physic(line, prefetch=False):
-    res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
-
-    
-    res = str(response).strip()
-    ans = str(ans).strip()
-
-    if is_equal(res, ans):
-        return res if prefetch else True
-    else:
+        return False
+    except Exception as e:
+        logging.warning(f'post_check error: {e}')
         return False
 
+def PHYSIC_auxeval(model, line, i=None):
 
-def PHYSIC_auxeval(model, line):
-    prompt = build_physic_gpt4_prompt(line)
+
     log = ''
-    retry = 5
+    retry = 3
 
-    if post_check_physic(line, prefetch=True):
-        res = post_check_physic(line, prefetch=True)
-        return dict(log='Prefetch succeed', res=res)
+    if post_check(line, prefetch=True):
+        return dict(log='Prefetch succeed', res=line.get("prediction", ""))
 
     for i in range(retry):
-        prediction = line['prediction']
-        res = model.generate(prompt, temperature=i * 0.5)
+       
 
-        if FAIL_MSG in res:
-            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+        prediction = model.generate(line, temperature=0.5*i)
+        
+        line_copy = line.copy()
+        line_copy['res'] = prediction
+
+        if FAIL_MSG in prediction:
+            log += f'Try {i}: output failed to parse.\n'
         else:
-            log += 'Succeed'
-            return dict(log=log, res=res)
+            if post_check(line_copy):
+                return dict(log='Succeed', res=prediction)
+            else:
+                log += f'Try {i}: wrong result.\n'
 
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')
-
+    return dict(log=log, res=prediction)
 
 def PHYSIC_acc(result_file):
-    import pandas as pd
-    from collections import defaultdict
-
     data = load(result_file)
-    tot = defaultdict(lambda: 0)
-    fetch = defaultdict(lambda: 0)
-    hit = defaultdict(lambda: 0)
+    tot = defaultdict(int)
+    fetch = defaultdict(int)
+    hit = defaultdict(int)
     lt = len(data)
 
-    for i in range(lt):
+    for i in tqdm(range(lt)):
         item = data.iloc[i]
-        cate = item['category'] if 'category' in item else 'Overall'
+        cate = item.get('category', 'Overall')
+
         tot['Overall'] += 1
         tot[cate] += 1
-        if item['log'] == 'Prefetch succeed':
+
+        if item.get('log') == 'Prefetch succeed':
             fetch['Overall'] += 1
             fetch[cate] += 1
-        if post_check_physic(item, prefetch=False):
+
+        if post_check(item):
             hit['Overall'] += 1
             hit[cate] += 1
 
+        pred_raw = item.get("res", "")
+        gt = item.get("answer", "").strip()
+        pred_boxed = extract_final_answer_allform(str(pred_raw))
+        flat_pred = [ans.strip() for group in pred_boxed for ans in (group if isinstance(group, list) else [group])]
+
+
+
     res = defaultdict(list)
-    for k in tot.keys():
+    for k in tot:
         res['Subject'].append(k)
         res['tot'].append(tot[k])
         res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])
-        res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
-        res['acc'].append(hit[k] / tot[k] * 100)
+        res['prefetch_rate'].append(fetch[k] / tot[k] * 100 if tot[k] else 0.0)
+        res['acc'].append(hit[k] / tot[k] * 100 if tot[k] else 0.0)
 
-    res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
-    return res
+    return pd.DataFrame(res).sort_values('Subject', ignore_index=True)
