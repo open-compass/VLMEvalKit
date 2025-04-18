@@ -19,12 +19,12 @@ def build_physic_prompt(line):
         "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
         "At the VERY END of your answer, output ONLY the FINAL ANSWER in this format:\n\n"
         "\\[\n\\boxed{{your_final_answer_here}}\n\\]\n\n"
-        "✅ You MUST put the final answer in the `\\boxed{}` environment.\n"
-        "✅ This applies even if the answer is a text explanation like \"The singlet state is lower in energy.\"\n"
-        "✅ Do NOT include multiple boxes.\n"
-        "✅ Do NOT include \\boxed anywhere else in your reasoning.\n"
-        "✅ The box must appear on the last line of the response.\n\n"
-        "⚠️ WARNING: DO NOT forget to include \boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"  # noqa: E501
+        "You MUST put the final answer in the `\\boxed{}` environment.\n"
+        "This applies even if the answer is a text explanation like \"The singlet state is lower in energy.\"\n"
+        "Do NOT include multiple boxes.\n"
+        "Do NOT include \\boxed anywhere else in your reasoning.\n"
+        "The box must appear on the last line of the response.\n\n"
+        "WARNING: DO NOT forget to include \boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"  # noqa: E501
         "Example:\n\n"
         "Question: What is the energy difference between n=2 and n=1 in hydrogen?\n"
         "Answer:\nThe energy levels are E_n = -13.6 / n² (in eV).\n"
@@ -72,8 +72,9 @@ def PHYSIC_auxeval(model, line, i=None):
         return dict(log='Prefetch succeed', res=line.get("prediction", ""))
 
     for i in range(retry):
+        prompt = build_physic_prompt(line)
 
-        prediction = model.generate(line, temperature=0.5 * i)
+        prediction = model.generate(prompt, temperature=0.5 * i)
 
         line_copy = line.copy()
         line_copy['res'] = prediction
