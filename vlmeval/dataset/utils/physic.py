@@ -13,6 +13,9 @@ from .physics_eval_utils import extract_final_answer_allform, is_equiv
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+Judge_SYS_PROMPT = "You are an assistant that compares LaTeX expressions for equivalence."
+
+Judge_USER_PROMPT = "Compare the following LaTeX expressions and check if the numerical parts are equivalent in meaning.\n\nExpression 1:\n{expr1}\n\nExpression 2:\n{expr2}\n\nReturn True if they are equivalent, otherwise return False. Focus on mathematical content."
 
 def build_physic_prompt(line):
     prompt_text = (
@@ -40,11 +43,13 @@ def build_physic_prompt(line):
     return [{"type": "text", "value": prompt_text}]
 
 
-def post_check(line, prefetch=False):
+def PHYSIC_auxeval(model, line):
+    equiv_data = {}
     try:
-        response = line['prediction'] if prefetch else line.get('res', '')
+        response = line['prediction']
         if not response or not isinstance(response, str):
-            return False
+            equiv_data['LOG'] = 'Invalid response format, returning False.'
+            return dict(log = equiv_data, res = False)
 
         pred_boxed = extract_final_answer_allform(response)
         gt = line['answer'].strip()
@@ -52,48 +57,58 @@ def post_check(line, prefetch=False):
         flat_preds = [item.strip() for group in pred_boxed for item in (group if isinstance(group, list) else [group])]
 
         if gt in flat_preds:
-            return True
+            equiv_data['LOG'] = 'GT found in prediction, returning True.'
+            return dict(log = equiv_data, res = True)
 
         for pred in flat_preds:
-            if is_equiv(pred, gt):
-                return True
+            equiv_data = is_equiv(model, pred, gt)
+            if equiv_data['llm_result']:
+                equiv_data['LOG'] = 'Equivalence found, returning True.'
+                return dict(log = equiv_data, res = True)
 
-        return False
+        equiv_data['LOG'] = 'No equivalence found, returning False.'
+        return dict(log = equiv_data, res = False)
     except Exception as e:
         logging.warning(f'post_check error: {e}')
-        return False
+        equiv_data['LOG'] = f'Exception occurred: {e}'
+        return dict(log = equiv_data, res = False)
 
 
-def PHYSIC_auxeval(model, line, i=None):
-    log = ''
-    retry = 3
+# def PHYSIC_auxeval(model, line, i=None):
+#     # Judge_USER_PROMPT.format()
 
-    if post_check(line, prefetch=True):
-        return dict(log='Prefetch succeed', res=line.get("prediction", ""))
+#     # prompt = build_physic_prompt(line)
+#     # return model.generate(prompt)
 
-    for i in range(retry):
-        prompt = build_physic_prompt(line)
+#     model.generate(user_prompt)
+#     log = ''
+#     retry = 3
 
-        prediction = model.generate(prompt, temperature=0.5 * i)
+#     if post_check(line, prefetch=True):
+#         return dict(log='Prefetch succeed', res=line.get("prediction", ""))
 
-        line_copy = line.copy()
-        line_copy['res'] = prediction
+#     for i in range(retry):
+#         prompt = build_physic_prompt(line)
 
-        if FAIL_MSG in prediction:
-            log += f'Try {i}: output failed to parse.\n'
-        else:
-            if post_check(line_copy):
-                return dict(log='Succeed', res=prediction)
-            else:
-                log += f'Try {i}: wrong result.\n'
+#         prediction = model.generate(prompt, temperature=0.5 * i)
 
-    return dict(log=log, res=prediction)
+#         line_copy = line.copy()
+#         line_copy['res'] = prediction
+
+#         if FAIL_MSG in prediction:
+#             log += f'Try {i}: output failed to parse.\n'
+#         else:
+#             if post_check(line_copy):
+#                 return dict(log='Succeed', res=prediction)
+#             else:
+#                 log += f'Try {i}: wrong result.\n'
+
+#     return dict(log=log, res=prediction)
 
 
 def PHYSIC_acc(result_file):
     data = load(result_file)
     tot = defaultdict(int)
-    fetch = defaultdict(int)
     hit = defaultdict(int)
     lt = len(data)
 
@@ -104,11 +119,7 @@ def PHYSIC_acc(result_file):
         tot['Overall'] += 1
         tot[cate] += 1
 
-        if item.get('log') == 'Prefetch succeed':
-            fetch['Overall'] += 1
-            fetch[cate] += 1
-
-        if post_check(item):
+        if item.get('res'):
             hit['Overall'] += 1
             hit[cate] += 1
 
@@ -121,9 +132,7 @@ def PHYSIC_acc(result_file):
     for k in tot:
         res['Subject'].append(k)
         res['tot'].append(tot[k])
-        res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])
-        res['prefetch_rate'].append(fetch[k] / tot[k] * 100 if tot[k] else 0.0)
         res['acc'].append(hit[k] / tot[k] * 100 if tot[k] else 0.0)
 
     return pd.DataFrame(res).sort_values('Subject', ignore_index=True)

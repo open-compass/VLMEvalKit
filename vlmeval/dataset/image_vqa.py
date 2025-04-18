@@ -529,7 +529,8 @@ class Physics_yale(ImageBaseDataset):
 
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=256, **judge_kwargs)
+            judge_kwargs['max_tokens'] = 4096
+            model = build_judge(**judge_kwargs)
             assert model.working(), ('Physics_yale evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
 
             lt = len(data)

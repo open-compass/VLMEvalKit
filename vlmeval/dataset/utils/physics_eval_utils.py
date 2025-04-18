@@ -9,7 +9,9 @@ import timeout_decorator
 
 load_dotenv()
 
+Judge_SYS_PROMPT = "You are an assistant that compares LaTeX expressions for equivalence."
 
+Judge_USER_PROMPT = "Compare the following LaTeX expressions and check if the numerical parts are equivalent in meaning.\n\nExpression 1:\n{expr1}\n\nExpression 2:\n{expr2}\n\nReturn True if they are equivalent, otherwise return False. Focus on mathematical content."
 
 def extract_all_boxed_content(latex_response, latex_wrap=r'\\boxed{([^{}]*|{.*?})}'):
     pattern = re.compile(
@@ -83,7 +85,7 @@ def call_llm_to_compare(expr1: str, expr2: str) -> bool:
         logging.warning(f"LLM comparison failed: {e}")
         return False
 
-def is_equiv(expr1: str, expr2: str, verbose: bool = False) -> dict:
+def is_equiv(model, expr1: str, expr2: str, verbose: bool = False) -> dict:
     result_data = {
         "input_expressions": {"expr1": expr1, "expr2": expr2},
         "preprocessed_expressions": {},
@@ -91,11 +93,17 @@ def is_equiv(expr1: str, expr2: str, verbose: bool = False) -> dict:
         "llm_result": None,
         "final_result": None,
         "error": None,
+        "llm_comparison_result": None,
     }
-
     try:
         if "\text" in expr1 or "\text" in expr2:
-            result_data["llm_result"] = call_llm_to_compare(expr1, expr2)
+            model.sys_prompt = Judge_SYS_PROMPT
+            user_prompt = Judge_USER_PROMPT.format(expr1=expr1, expr2=expr2)
+            generate_result = model.generate(user_prompt)
+            if generate_result and "true" in generate_result.lower():
+                result_data["llm_result"] = 1
+            else:
+                result_data["llm_result"] = 0
             result_data["final_result"] = result_data["llm_result"]
             return result_data
 
@@ -122,7 +130,13 @@ def is_equiv(expr1: str, expr2: str, verbose: bool = False) -> dict:
         if sympy_result:
             result_data["final_result"] = True
         else:
-            result_data["llm_result"] = call_llm_to_compare(expr1, expr2)
+            model.sys_prompt = Judge_SYS_PROMPT
+            user_prompt = Judge_USER_PROMPT.format(expr1=expr1, expr2=expr2)
+            generate_result = model.generate(user_prompt)
+            if generate_result and "true" in generate_result.lower():
+                result_data["llm_result"] = 1
+            else:
+                result_data["llm_result"] = 0
             result_data["final_result"] = result_data["llm_result"]
 
     except Exception as e:
