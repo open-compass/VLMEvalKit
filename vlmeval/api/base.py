@@ -194,7 +194,6 @@ class BaseAPI:
 
         return self.fail_msg if answer in ['', None] else answer
 
-# vlmeval/api/base.py  ── 找到 GPTBase.preprocess_message_with_role
     def preprocess_message_with_role(self, message):
         system_prompt = ''
         new_message = []
@@ -213,14 +212,7 @@ class BaseAPI:
             else:
                 self.system_prompt += '\n' + system_prompt
 
-       
-        final_messages = [
-            {"role": "system", "content": self.system_prompt or ""},
-            {"role": "user",   "content": new_message},
-        ]
-
         return new_message
-
 
     def generate(self, message, **kwargs1):
         """The main function to generate the answer. Will call `generate_inner` with the preprocessed input messages.

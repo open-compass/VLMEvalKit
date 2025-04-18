@@ -454,6 +454,7 @@ class MathVision(ImageBaseDataset):
         dump(score, score_pth)
         return score
 
+
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -463,7 +464,6 @@ class Physics_yale(ImageBaseDataset):
         'optics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
         'quantum_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'test':'https://huggingface.co/datasets/EncSU/yale_physics/resolve/main/test.tsv',#做测试用
     }
     DATASET_MD5 = {
         'atomic_dataset':'b927fae6bcc6163b0bd89041e4421c70',
@@ -472,8 +472,8 @@ class Physics_yale(ImageBaseDataset):
         'optics_dataset':'39ab9028ae4a33c06f78ce8618668172',
         'quantum_dataset':'d2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset':'78242aa2431a477782b5b3de1c18d633',
-        'test':'ee71b64c8d76a4ce6f3675959dd93fe6',
     }
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -492,7 +492,7 @@ class Physics_yale(ImageBaseDataset):
             "Do NOT include multiple boxes.\n"
             "Do NOT include \\boxed anywhere else in your reasoning.\n"
             " The box must appear on the last line of the response.\n\n"
-            "WARNING: DO NOT forget to include \\boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"
+            "WARNING: DO NOT forget to include \\boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"  # noqa: E501
             "Example:\n"
             "Question: What is the energy difference between n=2 and n=1 in hydrogen?\n"
             "Answer: The energy levels are E_n = -13.6 / n² (in eV).\n"
@@ -503,7 +503,6 @@ class Physics_yale(ImageBaseDataset):
             f"Question: {line['question']}\nAnswer:"
         )
 
-      
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([{"type": "image", "value": p} for p in tgt_path])
@@ -513,9 +512,6 @@ class Physics_yale(ImageBaseDataset):
         msgs.append({"type": "text", "value": instruction})
 
         return msgs
-
-
-
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):

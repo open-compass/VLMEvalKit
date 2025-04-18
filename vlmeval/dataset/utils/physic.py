@@ -13,6 +13,7 @@ from .physics_eval_utils import extract_final_answer_allform, is_equiv
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 def build_physic_prompt(line):
     prompt_text = (
         "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -23,7 +24,7 @@ def build_physic_prompt(line):
         "✅ Do NOT include multiple boxes.\n"
         "✅ Do NOT include \\boxed anywhere else in your reasoning.\n"
         "✅ The box must appear on the last line of the response.\n\n"
-        "⚠️ WARNING: DO NOT forget to include \boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"
+        "⚠️ WARNING: DO NOT forget to include \boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"  # noqa: E501
         "Example:\n\n"
         "Question: What is the energy difference between n=2 and n=1 in hydrogen?\n"
         "Answer:\nThe energy levels are E_n = -13.6 / n² (in eV).\n"
@@ -37,6 +38,7 @@ def build_physic_prompt(line):
         f"Question: {line['question']}\nAnswer:"
     )
     return [{"type": "text", "value": prompt_text}]
+
 
 def post_check(line, prefetch=False):
     try:
@@ -61,9 +63,8 @@ def post_check(line, prefetch=False):
         logging.warning(f'post_check error: {e}')
         return False
 
+
 def PHYSIC_auxeval(model, line, i=None):
-
-
     log = ''
     retry = 3
 
@@ -71,10 +72,9 @@ def PHYSIC_auxeval(model, line, i=None):
         return dict(log='Prefetch succeed', res=line.get("prediction", ""))
 
     for i in range(retry):
-       
 
-        prediction = model.generate(line, temperature=0.5*i)
-        
+        prediction = model.generate(line, temperature=0.5 * i)
+
         line_copy = line.copy()
         line_copy['res'] = prediction
 
@@ -87,6 +87,7 @@ def PHYSIC_auxeval(model, line, i=None):
                 log += f'Try {i}: wrong result.\n'
 
     return dict(log=log, res=prediction)
+
 
 def PHYSIC_acc(result_file):
     data = load(result_file)
@@ -111,11 +112,9 @@ def PHYSIC_acc(result_file):
             hit[cate] += 1
 
         pred_raw = item.get("res", "")
-        gt = item.get("answer", "").strip()
+        gt = item.get("answer", "").strip()  # noqa: F841
         pred_boxed = extract_final_answer_allform(str(pred_raw))
-        flat_pred = [ans.strip() for group in pred_boxed for ans in (group if isinstance(group, list) else [group])]
-
-
+        flat_pred = [ans.strip() for group in pred_boxed for ans in (group if isinstance(group, list) else [group])]  # noqa: F841, E501
 
     res = defaultdict(list)
     for k in tot:
