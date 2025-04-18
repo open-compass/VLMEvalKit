@@ -156,7 +156,8 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, CVBench, TDBench, TDBenchGrounding
+    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, 
+    CVBench, TDBench, TDBenchGrounding
 ]
 
 
