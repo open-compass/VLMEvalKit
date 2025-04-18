@@ -11,7 +11,7 @@ from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning
+    MMSci_Captioning, Spatial457
 )
 
 from .image_ccocr import CCOCRDataset
@@ -154,7 +154,8 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning
+    LEGO, MMSci_Captioning,
+    Spatial457
 ]
 
 
@@ -233,7 +234,7 @@ def build_dataset(dataset_name, **kwargs):
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
-
+    import ipdb; ipdb.set_trace()
     data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
     if not osp.exists(data_file):
         warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
