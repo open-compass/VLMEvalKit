@@ -13,9 +13,6 @@ from .physics_eval_utils import extract_final_answer_allform, is_equiv
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
-Judge_SYS_PROMPT = "You are an assistant that compares LaTeX expressions for equivalence."
-
-Judge_USER_PROMPT = "Compare the following LaTeX expressions and check if the numerical parts are equivalent in meaning.\n\nExpression 1:\n{expr1}\n\nExpression 2:\n{expr2}\n\nReturn True if they are equivalent, otherwise return False. Focus on mathematical content."
 
 def build_physic_prompt(line):
     prompt_text = (
@@ -49,7 +46,7 @@ def PHYSIC_auxeval(model, line):
         response = line['prediction']
         if not response or not isinstance(response, str):
             equiv_data['LOG'] = 'Invalid response format, returning False.'
-            return dict(log = equiv_data, res = False)
+            return dict(log=equiv_data, res=False)
 
         pred_boxed = extract_final_answer_allform(response)
         gt = line['answer'].strip()
@@ -58,52 +55,20 @@ def PHYSIC_auxeval(model, line):
 
         if gt in flat_preds:
             equiv_data['LOG'] = 'GT found in prediction, returning True.'
-            return dict(log = equiv_data, res = True)
+            return dict(log=equiv_data, res=True)
 
         for pred in flat_preds:
             equiv_data = is_equiv(model, pred, gt)
             if equiv_data['llm_result']:
                 equiv_data['LOG'] = 'Equivalence found, returning True.'
-                return dict(log = equiv_data, res = True)
+                return dict(log=equiv_data, res=True)
 
         equiv_data['LOG'] = 'No equivalence found, returning False.'
-        return dict(log = equiv_data, res = False)
+        return dict(log=equiv_data, res=False)
     except Exception as e:
         logging.warning(f'post_check error: {e}')
         equiv_data['LOG'] = f'Exception occurred: {e}'
-        return dict(log = equiv_data, res = False)
-
-
-# def PHYSIC_auxeval(model, line, i=None):
-#     # Judge_USER_PROMPT.format()
-
-#     # prompt = build_physic_prompt(line)
-#     # return model.generate(prompt)
-
-#     model.generate(user_prompt)
-#     log = ''
-#     retry = 3
-
-#     if post_check(line, prefetch=True):
-#         return dict(log='Prefetch succeed', res=line.get("prediction", ""))
-
-#     for i in range(retry):
-#         prompt = build_physic_prompt(line)
-
-#         prediction = model.generate(prompt, temperature=0.5 * i)
-
-#         line_copy = line.copy()
-#         line_copy['res'] = prediction
-
-#         if FAIL_MSG in prediction:
-#             log += f'Try {i}: output failed to parse.\n'
-#         else:
-#             if post_check(line_copy):
-#                 return dict(log='Succeed', res=prediction)
-#             else:
-#                 log += f'Try {i}: wrong result.\n'
-
-#     return dict(log=log, res=prediction)
+        return dict(log=equiv_data, res=False)
 
 
 def PHYSIC_acc(result_file):

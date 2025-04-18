@@ -516,7 +516,7 @@ class Physics_yale(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
-        
+
         if 'LOCAL_LLM' in os.environ:
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
             print(f'Using local model as judge model for PHYSICS: {model}')

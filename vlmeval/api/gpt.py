@@ -221,7 +221,6 @@ class OpenAIWrapper(BaseAPI):
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
 
-
         return ret_code, answer, response
 
     def get_image_token_len(self, img_path, detail='low'):
