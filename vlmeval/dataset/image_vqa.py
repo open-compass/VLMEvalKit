@@ -516,11 +516,12 @@ class Physics_yale(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
-
-        if 'model' in judge_kwargs:
-            model = judge_kwargs['model']
-        else:
+        
+        if 'LOCAL_LLM' in os.environ:
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
+            print(f'Using local model as judge model for PHYSICS: {model}')
+        else:
+            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
         tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')

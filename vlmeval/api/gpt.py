@@ -200,7 +200,7 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
-        #print("[🧪 DEBUG] 正在调用模型:", self.model) 
+
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
             payload.pop('temperature')
