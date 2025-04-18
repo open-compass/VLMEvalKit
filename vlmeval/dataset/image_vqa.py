@@ -455,6 +455,119 @@ class MathVision(ImageBaseDataset):
         return score
 
 
+class Physics_yale(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'atomic_dataset': 'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'electro_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'mechanics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'optics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'quantum_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'statistics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+    }
+    DATASET_MD5 = {
+        'atomic_dataset':'b927fae6bcc6163b0bd89041e4421c70',
+        'electro_dataset':'66db62cdbc468bb003e6d09592b94b59',
+        'mechanics_dataset':'11f287a18ccc6227bea15fa89f24de67',
+        'optics_dataset':'39ab9028ae4a33c06f78ce8618668172',
+        'quantum_dataset':'d2610f9938ad1e848259ccbcd5ac3acf',
+        'statistics_dataset':'78242aa2431a477782b5b3de1c18d633',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        instruction = (
+            "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
+            "At the VERY END of your answer, output ONLY the FINAL ANSWER in this format:\n\n"
+            "\\[\n\\boxed{your_final_answer_here}\n\\]\n\n"
+            " You MUST put the final answer in the \\boxed{} environment.\n"
+            " This applies even if the answer is a text explanation like \"The singlet state is lower in energy.\"\n"
+            "Do NOT include multiple boxes.\n"
+            "Do NOT include \\boxed anywhere else in your reasoning.\n"
+            " The box must appear on the last line of the response.\n\n"
+            "WARNING: DO NOT forget to include \\boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"  # noqa: E501
+            "Example:\n"
+            "Question: What is the energy difference between n=2 and n=1 in hydrogen?\n"
+            "Answer: The energy levels are E_n = -13.6 / n² (in eV).\n"
+            "E_2 = -13.6 / 4 = -3.4 eV\n"
+            "E_1 = -13.6 eV\n"
+            "ΔE = 13.6 - 3.4 = 10.2 eV\n"
+            "\\[\n\\boxed{10.2\\ \\text{eV}}\n\\]\n\n"
+            f"Question: {line['question']}\nAnswer:"
+        )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+        else:
+            msgs.append({"type": "image", "value": tgt_path})
+
+        msgs.append({"type": "text", "value": instruction})
+
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
+
+        if 'LOCAL_LLM' in os.environ:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+            print(f'Using local model as judge model for PHYSICS: {model}')
+        else:
+            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage):
+            data = load(eval_file)
+            judge_kwargs['max_tokens'] = 4096
+            model = build_judge(**judge_kwargs)
+            assert model.working(), ('Physics_yale evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    PHYSIC_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = PHYSIC_acc(storage)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
     DATASET_URL = {
