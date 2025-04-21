@@ -17,6 +17,11 @@ class InternVL2_PromptUtil:
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         assert DATASET_MODALITY(dataset) != 'VIDEO', 'not supported'
+        if dataset in [
+            'atomic_dataset', 'electro_dataset', 'mechanics_dataset',
+            'optics_dataset', 'quantum_dataset', 'statistics_dataset'
+        ]:
+            return False
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
