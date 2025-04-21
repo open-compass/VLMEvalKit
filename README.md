@@ -23,45 +23,6 @@ English | [简体中文](/docs/zh-CN/README_zh-CN.md) | [日本語](/docs/ja/REA
 
 **VLMEvalKit** (the python package name is **vlmeval**) is an **open-source evaluation toolkit** of **large vision-language models (LVLMs)**. It enables **one-command evaluation** of LVLMs on various benchmarks, without the heavy workload of data preparation under multiple repositories. In VLMEvalKit, we adopt **generation-based evaluation** for all LVLMs, and provide the evaluation results obtained with both **exact matching** and **LLM-based answer extraction**.
 
-# Update on Spatial457
-
-## 📊 Benchmark
-
-We benchmarked a wide range of state-of-the-art models—including GPT-4o, Gemini, Claude, and several open-source LMMs—across all subsets. The results below have been updated after rerunning the evaluation. While they show minor variance compared to the results in the published paper, the conclusions remain unchanged.
-
-The inference script supports [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) and is run by setting the dataset to `Spatial457`. You can find the detailed inference scripts [here](https://github.com/XingruiWang/VLMEvalKit).
-
-
-### Spatial457 Evaluation Results
-
-| Model                  | L1_single | L2_objects | L3_2d_spatial | L4_occ | L4_pose | L5_6d_spatial | L5_collision |
-|------------------------|-----------|------------|---------------|--------|---------|----------------|---------------|
-| **GPT-4o**             | 72.39     | 64.54      | 58.04         | 48.87  | 43.62   | 43.06          | 44.54         |
-| **GeminiPro-1.5**      | 69.40     | 66.73      | 55.12         | 51.41  | 44.50   | 43.11          | 44.73         |
-| **Claude 3.5 Sonnet**  | 61.04     | 59.20      | 55.20         | 40.49  | 41.38   | 38.81          | 46.27         |
-| **Qwen2-VL-7B-Instruct** | 62.84   | 58.90      | 53.73         | 26.85  | 26.83   | 36.20          | 34.84         |
-
----
-
-## 📚 Citation
-
-```bibtex
-@inproceedings{wang2025spatial457,
-  title     = {Spatial457: A Diagnostic Benchmark for 6D Spatial Reasoning of Large Multimodal Models},
-  author    = {Wang, Xingrui and Ma, Wufei and Zhang, Tiezheng and de Melo, Celso M and Chen, Jieneng and Yuille, Alan},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year      = {2025},
-  url       = {https://arxiv.org/abs/2502.08636}
-}
-```
-
-
-
-
----
-
-
-
 ## 🆕 News
 
 > We have presented a [**comprehensive survey**](https://arxiv.org/pdf/2411.15296) on the evaluation of large multi-modality models, jointly with [**MME Team**](https://github.com/BradyFU/Awesome-Multimodal-Large-Language-Models) and [**LMMs-Lab**](https://lmms-lab.github.io) 🔥🔥🔥
