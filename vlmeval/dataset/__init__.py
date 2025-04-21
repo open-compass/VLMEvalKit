@@ -11,7 +11,7 @@ from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, Spatial457
+    MMSci_Captioning, Physics_yale
 )
 
 from .image_ccocr import CCOCRDataset
@@ -24,6 +24,7 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
+from .spatial457 import Spatial457
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
