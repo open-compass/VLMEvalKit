@@ -127,7 +127,17 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        response = model.generate(message=struct, dataset=dataset_name)
+        try:
+            response = model.generate(message=struct, dataset=dataset_name)
+        except RuntimeError as e:
+            if 'out of memory' in str(e).lower():
+                print(
+                    f"!!!!!!!!!!!!!!!!!!!!!!!![Rank {rank}] OOM at sample {idx}, skip it!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                )
+                torch.cuda.synchronize()
+                response = 'CUDA OOM, skip this sample'
+            else:
+                raise
         torch.cuda.empty_cache()
 
         if verbose:
