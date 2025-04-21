@@ -1136,7 +1136,7 @@ aguvis_series = {
         Qwen2VLChatAguvis,
         model_path=os.getenv(
             "EVAL_MODEL",
-            "/root/.cache/huggingface/hub/models--xlangai--Aguvis-7B-720P/snapshots/6dd54127b5b84b9ee89172a5065ab6be576f0db9",
+            "xlangai/Aguvis-7B-720P",
         ),
         min_pixels=256 * 28 * 28,
         max_pixels=46 * 26 * 28 * 28,
