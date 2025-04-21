@@ -4,6 +4,11 @@ exclude: |
       assets/|
       vlmeval/config.py |
       vlmeval/dataset/utils/wemath.py |
+      vlmeval/dataset/Omnidocbench/ |
+      vlmeval/dataset/utils/megabench/ |
+      vlmeval/vlm/ola/ |
+      vlmeval/vlm/ursa/ |
+      vlmeval/vlm/ovis/
   )
 repos:
   - repo: https://github.com/PyCQA/flake8

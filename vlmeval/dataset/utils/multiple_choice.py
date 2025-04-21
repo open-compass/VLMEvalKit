@@ -1,5 +1,5 @@
 import pandas as pd
-from ...utils import can_infer, track_progress_rich
+from ...utils import can_infer, track_progress_rich, can_infer_sequence, can_infer_lego
 from ...smp import *
 import numpy as np
 import re
@@ -151,6 +151,30 @@ def report_acc_MMT(df):
     return pd.DataFrame(res)
 
 
+def report_acc_MMSci(df):
+
+    df_filtered = df[df['setting'].isin(['Fig2Cap', 'SubFig2Cap', 'SubCap2Fig'])]
+
+    subject_acc = df_filtered.groupby(['subject', 'setting'])['hit'].mean().unstack(fill_value=0)
+    subject_acc['Avg'] = subject_acc.mean(axis=1)
+    subject_acc.reset_index(inplace=True)
+
+    category_acc = df_filtered.groupby(['category', 'setting'])['hit'].mean().unstack(fill_value=0)
+    category_acc['Avg'] = category_acc.mean(axis=1)
+    category_acc.reset_index(inplace=True)
+    category_acc['category'] = 'CATEGORY_' + category_acc['category']
+    category_acc.rename(columns={'category': 'subject'}, inplace=True)
+
+    overall_acc = df_filtered.groupby(['setting'])['hit'].mean().to_frame().T
+    overall_acc['Avg'] = overall_acc.mean(axis=1)
+    overall_acc['subject'] = 'Overall'
+
+    full_acc_df = pd.concat([subject_acc, category_acc, overall_acc], ignore_index=True)
+    column_order = ['subject', 'Fig2Cap', 'SubFig2Cap', 'SubCap2Fig', 'Avg']
+    full_acc_df = full_acc_df[column_order]
+    return full_acc_df
+
+
 def build_prompt(question, options, prediction):
     tmpl = (
         'You are an AI assistant who will help me to match '
@@ -189,8 +213,10 @@ def build_prompt_wemath(question, options, prediction):
         'Question: <start>\n{}\nOptions: {}\n<end>\nAnswer: <start>\n{}\n<end>\nYour output: '
     )
     question = question.replace(
-        ("Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
-        "<Thought process>: <<your thought process>> <Answer>: <<your option>>"),
+        (
+            "Regarding the format, please answer following the template below, and be sure to include two <> symbols:\n"
+            "<Thought process>: <<your thought process>> <Answer>: <<your option>>"
+        ),
         '',
     )
     return tmpl.format(question, options, prediction)
@@ -246,6 +272,31 @@ def build_prompt_cn(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
+def build_prompt_LEGO(question, options, prediction,question_type):
+    if question_type == 'sort':
+        tmpl = (
+            'You are an AI assistant who will help me to arrange options in the correct order. '
+            'You are provided with a question, four options, and an answer. '
+            'You need to determine the correct ordering of options based on the answer. '
+            'Output should be a permutation of ABCD (like DCBA or BADC).\n'
+            'Example 1:\n'
+            'Question: Arrange these historical events chronologically\n'
+            'Options: A. Renaissance B. Middle Ages C. Industrial Revolution D. Digital Age\n'
+            'Answer: From Middle Ages to Renaissance, then Industrial Revolution, finally Digital Age\n'
+            'Output: BACD\n\n'
+            'Example 2:\n'
+            'Question: Sort colors by wavelength (longest to shortest)\n'
+            'Options: A. Red B. Green C. Blue D. Violet\n'
+            'Answer: Red has longest wavelength, followed by green then blue, shortest is violet\n'
+            'Output: ABCD\n\n'
+            'Example 3:\n'
+            'Question: {}\nOptions: {}\nAnswer: {}\nOutput:'
+        )
+        return tmpl.format(question, options, prediction)
+    else:
+        return build_prompt(question, options, prediction)
+
+
 def build_choices(item):
     ret = {}
     for ch in string.ascii_uppercase:
@@ -271,11 +322,16 @@ def extract_answer_from_item(model, item, dataset_name=None):
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
+    elif dataset_name == 'LEGO':
+        prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'],item['question_type'])
     else:
         prompt = build_prompt(item['question'], option_str, item['prediction'])
     retry = 3
 
-    ret = can_infer(item['prediction'], choices)
+    if dataset_name == 'LEGO':
+        ret = can_infer_lego(item['prediction'], item['question_type'], choices)
+    else:
+        ret = can_infer(item['prediction'], choices)
     if ret:
         return dict(opt=ret, log=item['prediction'])
     if model is None:
@@ -286,7 +342,10 @@ def extract_answer_from_item(model, item, dataset_name=None):
         if 'Failed to obtain answer via API' in ans:
             logger.warning('GPT API failed to answer. ')
         else:
-            ret = can_infer(ans, choices)
+            if dataset_name == 'LEGO':
+                ret = can_infer_lego(ans, item['question_type'], choices)
+            else:
+                ret = can_infer(ans, choices)
             if ret:
                 return dict(opt=ret, log=ans)
             else:
@@ -335,7 +394,7 @@ def eval_circular_group(model, sub_data, dataset_name=None):
     prefetched = prefetch_circular_group(sub_data, verbose=True)
     if isinstance(prefetched, dict) and 'hit' in prefetched:
         return prefetched
-    
+
     res, GT, PRED = prefetch_circular_group(sub_data, verbose=True)
     if res is not None:
         return res
@@ -416,11 +475,11 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
     # Only keep those lines in the meta data
     data = data[data['index'].isin(answer_map)]
     data['GT'] = [answer_map[idx] for idx in data['index']]
-    
+
     data['tmp_flag'] = [x == y for x, y in zip(data['index'], data['g_index'])]
     data_main = data[data['tmp_flag']]
     data_main.pop('tmp_flag')
-    
+
     data_groups = []
     for i in range(len(data_main)):
         # Dealing with the normal part

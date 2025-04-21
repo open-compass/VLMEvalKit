@@ -12,6 +12,7 @@ from vlmeval.inference_mt import infer_data_job_mt
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
+
 def build_model_from_config(cfg, model_name):
     import vlmeval.api
     import vlmeval.vlm
@@ -48,7 +49,6 @@ def build_dataset_from_config(cfg, dataset_name):
         return cls(**valid_params)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.dataset`')
-
 
 
 def parse_args():
@@ -148,6 +148,8 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--reuse', action='store_true')
     # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
     parser.add_argument('--reuse-aux', type=bool, default=True, help='reuse auxiliary evaluation files')
+    parser.add_argument(
+        '--use-vllm', action='store_true', help='use vllm to generate, the flag is only supported in Llama4 for now')
 
     args = parser.parse_args()
     return args
@@ -248,7 +250,7 @@ def main():
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
                 result_file = osp.join(pred_root, result_file_base)
-                
+
                 # Reuse the previous prediction file if exists
                 if rank == 0 and len(prev_pred_roots):
                     prev_result_files = []
@@ -302,7 +304,8 @@ def main():
                         dataset=dataset,
                         result_file_name=result_file_base,
                         verbose=args.verbose,
-                        api_nproc=args.api_nproc)
+                        api_nproc=args.api_nproc,
+                        use_vllm=args.use_vllm)
                 elif dataset.TYPE == 'MT':
                     model = infer_data_job_mt(
                         model,
@@ -311,7 +314,8 @@ def main():
                         dataset=dataset,
                         verbose=args.verbose,
                         api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore)
+                        ignore_failed=args.ignore,
+                        use_vllm=args.use_vllm)
                 else:
                     model = infer_data_job(
                         model,
@@ -320,7 +324,8 @@ def main():
                         dataset=dataset,
                         verbose=args.verbose,
                         api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore)
+                        ignore_failed=args.ignore,
+                        use_vllm=args.use_vllm)
 
                 # Set the judge kwargs first before evaluation or dumping
 
@@ -336,7 +341,9 @@ def main():
                 if args.judge is not None:
                     judge_kwargs['model'] = args.judge
                 else:
-                    if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(['moviechat1k'], dataset_name.lower()):
+                    if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
+                        ['moviechat1k'], dataset_name.lower()
+                    ):
                         if listinstr(['WeMath'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
                         else:
@@ -347,6 +354,10 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['VDC'], dataset_name):
+                        judge_kwargs['model'] = 'llama31-8b'
+                    elif listinstr(['VideoMMLU_QA', 'VideoMMLU_CAP'], dataset_name):
+                        judge_kwargs['model'] = 'qwen-72b'
 
                 if rank == 0:
                     logger.info(judge_kwargs)

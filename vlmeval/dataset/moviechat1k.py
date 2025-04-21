@@ -28,7 +28,7 @@ class MovieChat1k(VideoBaseDataset):
             self.data = self.data[self.data['mode'] == 'breakpoint']
         else:
             raise ValueError(f'Invalid subset: {subset}')
-        
+
         if limit <= 1.0 and limit > 0:
             sample_num = int(limit * len(self.data))
             self.data = self.data.iloc[:sample_num]
@@ -36,7 +36,6 @@ class MovieChat1k(VideoBaseDataset):
             self.data = self.data.iloc[:limit]
         else:
             raise ValueError(f'Invalid limit: {limit}')
-    
 
     @classmethod
     def supported_datasets(cls):
@@ -103,7 +102,7 @@ class MovieChat1k(VideoBaseDataset):
         self.video_path = osp.join(dataset_path, 'videos/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
-        return dict(data_file=data_file, root=osp.join(dataset_path, 'videos')) 
+        return dict(data_file=data_file, root=osp.join(dataset_path, 'videos'))
 
     def build_prompt_pack(self, line):
         if isinstance(line, int):
@@ -127,11 +126,11 @@ class MovieChat1k(VideoBaseDataset):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
-        
+
         if video_llm:
             video_path = os.path.join(self.video_path, line['video'])
             return [
-                dict(type='video', value=video_path),  
+                dict(type='video', value=video_path),
                 dict(type='text', value=line['question'])
             ]
         else:
@@ -222,7 +221,7 @@ class MovieChat1k(VideoBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)
-        
+
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
         tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
         score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')

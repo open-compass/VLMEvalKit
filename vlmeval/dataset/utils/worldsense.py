@@ -175,7 +175,7 @@ def get_dimension_rating(data_path):
         for _audio_ctg in audio_ctg:
             duration_rating['overall']['audio_class'][_audio_ctg].append(score)
             duration_rating[duration]['audio_class'][_audio_ctg].append(score)
-            
+
     for duration in ['overall'] + DURATIONS:
 
         overall_res_dur = f'{np.mean([x for x in sum(duration_rating[duration]["domain"].values(), []) if x >= 0]):.3f}'
@@ -192,7 +192,7 @@ def get_dimension_rating(data_path):
         for task_ctg in TASK_DOMAINS:
             task_res_dur = f'{np.mean([x for x in duration_rating[duration]["task_domain"][task_ctg] if x >= 0]):.3f}'
             duration_rating[duration]['task_domain'][task_ctg] = task_res_dur
-        
+
         for task_ctg in TASK_CATEGORIES:
             task_res_dur = f'{np.mean([x for x in duration_rating[duration]["task_type"][task_ctg] if x >= 0]):.3f}'
             duration_rating[duration]['task_type'][task_ctg] = task_res_dur
