@@ -37,6 +37,8 @@ class GeminiWrapper(BaseAPI):
         if backend == 'genai':
             # We have not evaluated Gemini-1.5 w. GenAI backend
             assert key is not None  # Vertex does not require API Key
+            from google import genai
+            self.client = genai.Client(api_key=key)
 
         self.backend = backend
         self.project_id = project_id
@@ -67,23 +69,18 @@ class GeminiWrapper(BaseAPI):
 
     def generate_inner(self, inputs, **kwargs) -> str:
         if self.backend == 'genai':
-            import google.generativeai as genai
+            from google.genai import types
             assert isinstance(inputs, list)
-            pure_text = np.all([x['type'] == 'text' for x in inputs])
-            genai.configure(api_key=self.api_key)
-
-            if pure_text and self.model == 'gemini-1.0-pro':
-                model = genai.GenerativeModel('gemini-1.0-pro')
-            else:
-                model = genai.GenerativeModel(self.model)
-
+            model = self.model
             messages = self.build_msgs_genai(inputs)
             gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
             gen_config.update(kwargs)
             try:
-                answer = model.generate_content(
-                    messages,
-                    generation_config=genai.types.GenerationConfig(**gen_config)).text
+                resp = self.client.models.generate_content(
+                    model=model,
+                    contents=messages,
+                    config=types.GenerateContentConfig(**gen_config))
+                answer = resp.text
                 return 0, answer, 'Succeeded! '
             except Exception as err:
                 if self.verbose:

@@ -455,6 +455,119 @@ class MathVision(ImageBaseDataset):
         return score
 
 
+class Physics_yale(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'atomic_dataset': 'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'electro_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'mechanics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'optics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'quantum_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'statistics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+    }
+    DATASET_MD5 = {
+        'atomic_dataset':'b927fae6bcc6163b0bd89041e4421c70',
+        'electro_dataset':'66db62cdbc468bb003e6d09592b94b59',
+        'mechanics_dataset':'11f287a18ccc6227bea15fa89f24de67',
+        'optics_dataset':'39ab9028ae4a33c06f78ce8618668172',
+        'quantum_dataset':'d2610f9938ad1e848259ccbcd5ac3acf',
+        'statistics_dataset':'78242aa2431a477782b5b3de1c18d633',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        instruction = (
+            "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
+            "At the VERY END of your answer, output ONLY the FINAL ANSWER in this format:\n\n"
+            "\\[\n\\boxed{your_final_answer_here}\n\\]\n\n"
+            " You MUST put the final answer in the \\boxed{} environment.\n"
+            " This applies even if the answer is a text explanation like \"The singlet state is lower in energy.\"\n"
+            "Do NOT include multiple boxes.\n"
+            "Do NOT include \\boxed anywhere else in your reasoning.\n"
+            " The box must appear on the last line of the response.\n\n"
+            "WARNING: DO NOT forget to include \\boxed{} with the final answer. Responses without it will be considered INVALID.\n\n"  # noqa: E501
+            "Example:\n"
+            "Question: What is the energy difference between n=2 and n=1 in hydrogen?\n"
+            "Answer: The energy levels are E_n = -13.6 / n² (in eV).\n"
+            "E_2 = -13.6 / 4 = -3.4 eV\n"
+            "E_1 = -13.6 eV\n"
+            "ΔE = 13.6 - 3.4 = 10.2 eV\n"
+            "\\[\n\\boxed{10.2\\ \\text{eV}}\n\\]\n\n"
+            f"Question: {line['question']}\nAnswer:"
+        )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+        else:
+            msgs.append({"type": "image", "value": tgt_path})
+
+        msgs.append({"type": "text", "value": instruction})
+
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
+
+        if 'LOCAL_LLM' in os.environ:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+            print(f'Using local model as judge model for PHYSICS: {model}')
+        else:
+            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage):
+            data = load(eval_file)
+            judge_kwargs['max_tokens'] = 4096
+            model = build_judge(**judge_kwargs)
+            assert model.working(), ('Physics_yale evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    PHYSIC_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = PHYSIC_acc(storage)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
     DATASET_URL = {
@@ -743,6 +856,7 @@ class LogicVista(ImageBaseDataset):
 
             return accuracy_scores
 
+
 class MME_CoT(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -778,7 +892,7 @@ class MME_CoT(ImageBaseDataset):
                 segs.append(dict(type='text', value=seg))
 
         return segs
-    
+
     def dump_image(self, line):
         os.makedirs(self.img_root, exist_ok=True)
 
@@ -820,10 +934,10 @@ class MME_CoT(ImageBaseDataset):
             if cand in line and not pd.isna(line[cand])
         }
         prompt = prompt + '\n' + '\n'.join([f'{key}. {item}' for key, item in options.items()])
-        
+
         # add cot prompt
         if os.environ.get('USE_COT_PROMPT', '1') == '1':
-            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."
+            prompt += "\nPlease generate a step by step answer, include all your intermediate reasoning process, and provide the final answer at the end."  # noqa: E501
         else:
             prompt += "\nPlease directly provide the final answer without any other output."
 
@@ -840,12 +954,11 @@ class MME_CoT(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")
+        print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")  # noqa: E501
         dummy_result = dict(
             dummy_result=0
         )
         return pd.DataFrame(dummy_result, index=[0])
-
 
 
 class LLaVABench(ImageBaseDataset):
@@ -1534,3 +1647,161 @@ class MMNIAH(ImageBaseDataset):
             if element['value'] == '':
                 msgs.remove(element)
         return msgs
+
+
+class MMSci_Captioning(ImageBaseDataset):
+
+    TYPE = 'MMSci_Captioning'
+    DATASET_URL = {
+        'MMSci_DEV_Captioning_image_only': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
+        'MMSci_DEV_Captioning_with_abs': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_with_abs.tsv'  # noqa: E501
+    }
+
+    DATASET_MD5 = {
+        'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
+        'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmsci import (
+            get_all_metrics_for_g_eval_score, get_all_metrics_for_reference_based_metrics,
+            merge_rating, fact_score_generate
+        )
+        refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
+        g_eval_metrics_output_file = eval_file.replace('.xlsx', '_g_eval_metrics.xlsx')
+        fact_score_metrics_output_file = eval_file.replace('.xlsx', '_fact_score.xlsx')
+
+        # calculate reference-based metrics
+        if not osp.exists(refer_based_metrics_output_file):
+            data = load(eval_file)
+            old_candidates = {}
+            old_references = {}
+            for idx, item in data.iterrows():
+                image_id = item["image_id"]
+                old_candidates[image_id] = [item["prediction"]]
+                old_references[image_id] = [item["caption"]]
+
+            candidates = []
+            references = []
+            image_id_list = []
+            image_ids = old_references.keys()
+            for cid in image_ids:
+                if cid in old_candidates:
+                    candidates.append(old_candidates[cid][0])
+                    references.append(old_references[cid])
+                    image_id_list.append(cid)
+
+            if isinstance(references[0], str):
+                references = [[r] for r in references]
+
+            reference_based_metrics_file = eval_file.replace('.xlsx', '_reference_based_metrics.pkl')
+            existing_data = get_all_metrics_for_reference_based_metrics(
+                references, candidates, image_id_list, reference_based_metrics_file
+            )
+            for idx, item in data.iterrows():
+                reference_based_metrics = str(existing_data[item["image_id"]])
+                data.loc[idx, 'reference_based_metrics'] = reference_based_metrics
+            dump(data, refer_based_metrics_output_file)
+
+        # calculate g-eval metrics
+        if not osp.exists(g_eval_metrics_output_file):
+
+            data = load(eval_file)
+            answers = {}
+            for idx, item in data.iterrows():
+                answers[item["abstract"]] = item["caption"]
+
+            old_candidates = {}
+            old_references = {}
+            for idx, item in data.iterrows():
+                caption = item['caption']
+                if not caption:
+                    caption = answers[item['abstract']]
+
+                image_id = item['image_id']
+                old_candidates[image_id] = [item["prediction"]]
+                old_references[image_id] = [caption]
+
+            candidates = []
+            references = []
+            image_id_list = []
+            image_ids = old_references.keys()
+            for cid in image_ids:
+                if cid in old_candidates:
+                    candidates.append(old_candidates[cid][0])
+                    references.append(old_references[cid])
+                    image_id_list.append(cid)
+
+            if isinstance(references[0], str):
+                references = [[r] for r in references]
+
+            model = judge_kwargs.pop('model', 'gpt-4o-0806')
+            nproc = judge_kwargs.pop('nproc', 4)
+            # not supported gemini-1.5-pro-exp-0801 as judge model yet、
+            assert model in ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
+            judge_model = build_judge(model=model, **judge_kwargs)
+
+            assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            suffix = '.' + eval_file.split('.')[-1]
+            tmp_file = eval_file.replace(suffix, f'_{model}_G_eval.pkl')
+
+            tmp_result = get_all_metrics_for_g_eval_score(
+                references, candidates, evaluator=judge_model, tmp_file=tmp_file, nproc=nproc
+            )
+
+            indices = range(len(references))
+            image_id_dict = {}
+            for ind, img_id in zip(indices, image_id_list):
+                image_id_dict[img_id] = ind
+
+            for idx, item in data.iterrows():
+                g_eval_metrics = tmp_result[image_id_dict[item["image_id"]]]
+                data.loc[idx, 'g_eval_metrics'] = g_eval_metrics
+            dump(data, g_eval_metrics_output_file)
+
+        # fact score, not align with official score, so now skip it
+        # if not osp.exists(fact_score_metrics_output_file):
+        #     for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
+        #         os.environ.pop(var, None)
+        #     data = load(eval_file)
+        #     suffix = '.' + eval_file.split('.')[-1]
+
+        #     lines = [data.iloc[i] for i in range(len(data))]
+        #     model = judge_kwargs.pop('model', 'gpt-4o')
+        #     tmp_file = eval_file.replace(suffix, f'_{model}_fact_score.pkl')
+        #     nproc = judge_kwargs.pop('nproc', 4)
+        #     assert model in ['gpt-4o-0806', 'gpt-4o']
+        #     judge_model = build_judge(model=model, **judge_kwargs)
+        #     assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+
+        #     tups = [(judge_model, line) for line in lines]
+        #     indices = [line['index'] for line in lines]
+
+        #     ans = {}
+        #     if osp.exists(tmp_file):
+        #         ans = load(tmp_file)
+        #     ans = {k: v for k, v in ans.items() if model.fail_msg not in str(v)}
+        #     tups = [x for x, i in zip(tups, indices) if i not in ans]
+        #     indices = [i for i in indices if i not in ans]
+        #     if len(indices):
+        #         _ = track_progress_rich(
+        #             fact_score_generate,
+        #             tups,
+        #             nproc=nproc,
+        #             chunksize=nproc,
+        #             keys=indices,
+        #             save=tmp_file,
+        #         )
+        #     ans = load(tmp_file)
+        #     for idx, item in data.iterrows():
+        #         fact_score_metrics = str(ans[item["index"]])
+        #         data.loc[idx, 'fact_score_metrics'] = fact_score_metrics
+        #     dump(data, fact_score_metrics_output_file)
+
+        rating = merge_rating(
+            refer_based_metrics_output_file,
+            g_eval_metrics_output_file,
+            fact_score_metrics_output_file
+        )
+        dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
+        return rating

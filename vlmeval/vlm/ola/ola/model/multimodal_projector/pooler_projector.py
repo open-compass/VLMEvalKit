@@ -46,7 +46,7 @@ class NormalizedDwPooler(nn.Module):
             nn.GELU(),
             nn.Linear(dim, dim),
         )
-    
+
     def forward(self, x, forward_type='2x'):
         B, H, W, C = x.shape
 
@@ -61,7 +61,7 @@ class NormalizedDwPooler(nn.Module):
             new_x = x.reshape(B, H//4, 4, W//4, 4, C).permute(0, 1, 3, 2, 4, 5).reshape(B, H//4, W//4, 16, C)
             pooled_x = new_x.mean(-2, keepdim=True).expand(-1, -1, -1, 16, -1)
             fused_x = torch.cat([new_x, pooled_x], dim=-1)
-        
+
         score = self.predictor(fused_x)
         normalized_score = F.softmax(score, dim=-2)
         new_x = (new_x * normalized_score).sum(dim=-2)

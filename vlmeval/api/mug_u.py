@@ -4,6 +4,8 @@ import requests
 from ..dataset import DATASET_TYPE, DATASET_MODALITY
 from vlmeval.api.base import BaseAPI
 from vlmeval.smp import *
+
+
 class MUGUWrapper(BaseAPI):
 
     is_api: bool = True
@@ -31,7 +33,7 @@ class MUGUWrapper(BaseAPI):
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
-        resp = requests.get(model_url)
+        _ = requests.get(model_url)
         self.model = model
         if hasattr(self, 'custom_prompt'):
             self.logger.info(f'using custom prompt {self.custom_prompt}')
@@ -46,7 +48,7 @@ class MUGUWrapper(BaseAPI):
 
     def set_dump_image(self, dump_image_func):
         self.dump_image_func = dump_image_func
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         assert DATASET_MODALITY(dataset) != 'VIDEO', 'not supported'
@@ -108,7 +110,8 @@ class MUGUWrapper(BaseAPI):
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
-                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial', 'WeMath', 'LogicVista'], dataset):
+                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath',
+                            'QSpatial', 'WeMath', 'LogicVista'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt)
@@ -178,7 +181,7 @@ class MUGUWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         self.logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
-        
+
         headers = {'Content-Type': 'application/json'}
         payload = dict(
             model=self.model,
@@ -189,7 +192,7 @@ class MUGUWrapper(BaseAPI):
             temperature=temperature,
             stream=False,
             **kwargs)
-        
+
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)

@@ -299,11 +299,11 @@ class TaichuVLRWrapper(BaseAPI):
                 )
             else:
                 continue
-        
+
         PROMPT = (
             "First thinks about the reasoning process in the mind and then provides the user with the answer. "
             "Put your final answer within \\boxed{}. "
-            "The response of reasoning and answer are formatted in <think> reasoning </think><answer> \\boxed{answer here} </answer>.\n"
+            "The response of reasoning and answer are formatted in <think> reasoning </think><answer> \\boxed{answer here} </answer>.\n"  # noqa: E501
         )
 
         if self.use_reasoning_prompt:
@@ -348,7 +348,7 @@ class TaichuVLRWrapper(BaseAPI):
                 result = self.post_process_func(result)
             if self.verbose:
                 print(f'\033[32m{result}\033[0m')
-            
+
             return 0, result, 'Succeeded! '
         except Exception as err:
             if self.verbose:

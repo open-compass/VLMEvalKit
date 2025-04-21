@@ -2,6 +2,7 @@ import string
 import copy as cp
 import os
 from ..smp import *
+import re
 
 
 def can_infer_option(answer, choices):
@@ -48,6 +49,51 @@ def can_infer_option(answer, choices):
     return False
 
 
+def can_infer_sequence(answer, choices=None):
+    answer_upper = answer.upper()
+
+    sequence_match = re.search(r'\b([A-D]{4})\b', answer_upper)
+    if sequence_match:
+        candidate = sequence_match.group(1)
+        if len(set(candidate)) == 4:
+            return candidate
+
+    order_patterns = [
+        r'(?:first|1st|首先|第一步).*?([A-D])',
+        r'(?:second|2nd|其次|第二步).*?([A-D])',
+        r'(?:third|3rd|再次|第三步).*?([A-D])',
+        r'(?:fourth|4th|最后|第四步).*?([A-D])'
+    ]
+
+    sequence = []
+    for pattern in order_patterns:
+        match = re.search(pattern, answer_upper, re.IGNORECASE)
+        if match:
+            option = match.group(1).upper()
+            if option not in sequence:
+                sequence.append(option)
+
+    if len(sequence) == 4:
+        return ''.join(sequence)
+
+    step_pattern = (
+        r'(?:step\s*[\d一二三四]+|'
+        r'步骤\s*[\d一二三四]+|'
+        r'第\s*[\d一二三四]\s*步)'
+        r'.*?([A-D])'
+    )
+    step_matches = re.findall(step_pattern, answer_upper, re.IGNORECASE)
+    if len(step_matches) >= 4:
+        unique = []
+        for m in step_matches[:4]:
+            if m.upper() not in unique:
+                unique.append(m.upper())
+        if len(unique) == 4:
+            return ''.join(unique)
+
+    return False
+
+
 def can_infer_text(answer, choices):
     answer = answer.lower()
     assert isinstance(choices, dict)
@@ -66,4 +112,13 @@ def can_infer_text(answer, choices):
 def can_infer(answer, choices):
     answer = str(answer)
     copt = can_infer_option(answer, choices)
+    return copt if copt else can_infer_text(answer, choices)
+
+
+def can_infer_lego(answer, question_type, choices):
+    answer = str(answer)
+    if question_type == 'sort':
+        copt = can_infer_sequence(answer, choices)
+    else:  # multiple-choice
+        copt = can_infer_option(answer, choices)  # option
     return copt if copt else can_infer_text(answer, choices)

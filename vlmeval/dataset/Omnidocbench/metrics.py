@@ -103,7 +103,7 @@ def get_page_split(samples, page_info):   # Page level metric
                         'score': score,
                         'upper_len': max(len(gt), len(pred))
                     })
-    
+
     # Page level logic, accumulation is only done within pages, and mean operation is performed between pages
     result = {}
     if result_list.get('Edit_dist'):
@@ -156,7 +156,7 @@ class Registry:
         return self._registry[name]
     def list_items(self):
         return list(self._registry.keys())
-    
+
 METRIC_REGISTRY = Registry()
 
 
@@ -205,7 +205,7 @@ class call_TEDS():
             else:
                 result[group_name] = 'NaN'
                 print(f'Warning: Empyty matched samples for {group_name}.')
-        
+
         structure_only_result = {}
         for group_name, scores in group_scores_structure_only.items():
             if len(scores) > 0:
@@ -220,7 +220,7 @@ class call_TEDS():
 @METRIC_REGISTRY.register("BLEU")
 class call_BLEU():
     def __init__(self, samples):
-        self.samples = samples 
+        self.samples = samples
     def evaluate(self, group_info=[], save_name='default'):
         group_samples = get_groups(self.samples, group_info)
         result = {}
@@ -244,7 +244,7 @@ class call_BLEU():
                 bleu_score = 0
 
         result[group_name] = bleu_score
-        
+
         return self.samples,{'BLEU': result}
 
 @METRIC_REGISTRY.register("METEOR")
@@ -264,7 +264,7 @@ class call_METEOR():
             meteor = evaluate.load('meteor', keep_in_memory=True, experiment_id=random.randint(1,1e8))
             meteor_results = meteor.compute(predictions=predictions, references=references)
             result[group_name] = meteor_results['meteor']
-        
+
         return self.samples,{'METEOR': result}
 
 
@@ -292,17 +292,17 @@ class call_Edit_dist():
             saved_samples = samples
         else:
             saved_samples = samples.samples
-        
+
         if not saved_samples:
             return {'Edit_dist': {'ALL_page_avg': 'NaN'}}
 
         df = pd.DataFrame(saved_samples)
         up_total_avg = df.groupby("image_name").apply(lambda x: x['Edit_num'].sum() / x['upper_len'].sum()) # page level, sum of edits divided by sum of max(gt,pred) lengths for each sample
-        per_img_score = up_total_avg.to_dict()       
+        per_img_score = up_total_avg.to_dict()
 
         return samples,{'Edit_dist': {'ALL_page_avg': up_total_avg.mean()}}
-    
-   
+
+
 @METRIC_REGISTRY.register("CDM")
 class call_CDM():
     def __init__(self, samples):
@@ -318,7 +318,7 @@ class call_CDM():
             sample['gt'] = sample['gt'].lstrip("$$").rstrip("$$").strip()
             sample['pred'] = sample['pred'].split("```latex")[-1].split("```")[0]
             sample['pred'] = sample['pred'].lstrip("$$").rstrip("$$").strip()
-            
+
         return  self.samples,False
 
 
@@ -484,7 +484,3 @@ class recogition_end2end_table_dataset(recogition_end2end_base_dataset):
             img_id += 1
 
         return samples
-
-
-
-

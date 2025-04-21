@@ -1,12 +1,11 @@
 import os
 import sys
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 import os.path as osp
 from .base import BaseModel
 from ..smp import *
 from huggingface_hub import snapshot_download
-from PIL import Image, ImageOps
 
 
 def get_local_root(repo_id):
@@ -23,11 +22,11 @@ def get_local_root(repo_id):
 def pad_image_to_aspect_ratio(img, max_aspect_ratio=5):
     """
     Pad an image to ensure its aspect ratio (width/height or height/width) is less than the given value.
-    
+
     Parameters:
         img (PIL.Image): The input PIL Image object.
         max_aspect_ratio (float): The maximum allowed aspect ratio.
-    
+
     Returns:
         PIL.Image: The padded image.
     """

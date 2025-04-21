@@ -211,6 +211,7 @@ class BaseAPI:
                 self.system_prompt = system_prompt
             else:
                 self.system_prompt += '\n' + system_prompt
+
         return new_message
 
     def generate(self, message, **kwargs1):

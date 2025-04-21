@@ -745,7 +745,7 @@ class LLaVA_OneVision(BaseModel):
         text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0]
         return text_outputs
 
-    def load_video(self, video_path, max_frames_num, force_sample=False, fps=1):
+    def load_video(self, video_path, max_frames_num, fps=1, force_sample=False):
         from decord import VideoReader, cpu
         import numpy as np
 
