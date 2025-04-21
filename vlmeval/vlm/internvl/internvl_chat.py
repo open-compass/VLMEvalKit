@@ -297,18 +297,18 @@ class InternVLChat(BaseModel):
             ds = build_dataset(dataset, skeleton=True)
             action_space = ds.get_action_space()
             traj_dict = ds.get_trajectory(line)
-            
+
             prompt_config = GUI_TEMPLATE[ds_basename]
             if 'history' in prompt_config["placeholders"]:
                 traj_dict['history'] = pile_action_history(traj_dict['history'])
             prompt = format_nav_prompt(
                 (
-                    "Please provide the bounding box coordinate of the region this sentence describes: <ref>{task}</ref>"
+                    "Please provide the bounding box coordinate of the region this sentence describes: <ref>{task}</ref>"  # noqa: E501
                     if self.screen_parse
                     else prompt_config["template"]
-                ), 
-                prompt_config["placeholders"], 
-                action_space=action_space, 
+                ),
+                prompt_config["placeholders"],
+                action_space=action_space,
                 **traj_dict,
             )
         else:
@@ -463,18 +463,17 @@ class InternVLChat(BaseModel):
                 response = mpo_post_processing(response, dataset)
             elif self.use_cot and self.use_postprocess:
                 response = extract_boxed_content(response)
-        
+
         if dataset is not None and DATASET_TYPE(dataset) == 'GUI' and self.screen_parse:
             # Parse the bounding box coordinates from the response
             response = parse_bbox_internvl(response)
             # Normalize the coordinates to the range [0, 1]
             if isinstance(response, list):
-                response = [ item / 1000 for item in response ]
+                response = [item / 1000 for item in response]
                 # Convert the coordinates to the format required by the GUI
                 response = f"x={response[0]}, y={response[1]}"
-        
-        return response
 
+        return response
 
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)

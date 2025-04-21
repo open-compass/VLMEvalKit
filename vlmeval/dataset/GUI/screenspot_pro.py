@@ -15,27 +15,27 @@ from ipdb import set_trace as st
 logger = get_logger("RUN")
 
 """
-{   
-    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png", 
-    "bbox": [42, 1102, 197, 70], 
-    "question": "view the details of the item", 
-    "data_type": "text", 
-    "data_source": "shop"
-}, 
 {
-    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png", 
-    "bbox": [93, 74, 86, 132], 
-    "question": "view the previous photo", 
-    "data_type": "icon", 
+    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png",
+    "bbox": [42, 1102, 197, 70],
+    "question": "view the details of the item",
+    "data_type": "text",
+    "data_source": "shop"
+},
+{
+    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png",
+    "bbox": [93, 74, 86, 132],
+    "question": "view the previous photo",
+    "data_type": "icon",
     "data_source": "shop"
 }
 """
 
-SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task."""
+SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task."""  # noqa: E501
 
-USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""
+USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""  # noqa: E501
 
-SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`."""
+SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`."""  # noqa: E501
 USER_INSTRUCTION_V2 = """Please click the following target element using `pyautogui.click`:\n{description}"""
 
 
@@ -46,7 +46,6 @@ def parse_bbox_aguvis(response):
     else:
         click_point = [0.0, 0.0]
     return click_point
-
 
 
 def compute_iou(box1, box2):
@@ -210,9 +209,9 @@ class ScreenSpot_Pro(ImageBaseDataset):
         data["index"] = [str(idx + 1) for idx, x in enumerate(data["bbox"])]
 
         self.meta_only = True
-        self.parse_response_func = parse_bbox_aguvis  # TODO: parse function can be specified through kwargs when initializing the dataset
+        self.parse_response_func = parse_bbox_aguvis  # TODO: parse function can be specified through kwargs when initializing the dataset # noqa: E501
 
-        # The image field can store the base64 encoded image or another question index (for saving space)
+        # The image field can store the base64 encoded image or another question index (for saving space) # noqa: E501
         if "image" in data:
             data["image"] = [str(x) for x in data["image"]]
             image_map = {x: y for x, y in zip(data["index"], data["image"])}
@@ -325,7 +324,6 @@ class ScreenSpot_Pro(ImageBaseDataset):
 
         result = []
         data = load(eval_file)
-        dataset = self.dataset_name
         assert "bbox" in data and "prediction" in data
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
@@ -376,7 +374,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
         if failure_cases_path is not None:
             failure_cases = [res for res in result if not res["match"] and res["is_wrong_format"]]
             failure_cases.sort(key=lambda r: r["num_matched"], reverse=True)
-            
+
             with open(failure_cases_path, "w") as f:
                 json.dump(failure_cases, f, indent=4, ensure_ascii=False)
         return results_dict
@@ -425,7 +423,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
 
             if any([x < 0 or x > 1 for x in bbox]):
                 raise ValueError(f"bbox out of range: {bbox} | {line['bbox']} | {img_size}")
-            
+
             prediction = str(line["prediction"])
             try:
                 click_point = self.parse_response_func(prediction)
@@ -461,7 +459,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
                         )
                     )
                 is_wrong_format = False
-                
+
             except Exception as e:
                 logger.warning(f"exception in screenspot eval:{e}")
                 SCREENSPOT_result["num_wrong_format"] += 1
@@ -482,7 +480,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
                     "parsed_bbox": bbox,
                     "type": line["ui_type"],
                     "source": line["application"],
-                    "match": match, 
+                    "match": match,
                     "is_wrong_format": is_wrong_format,
                     "pred": click_point,
                 }
@@ -523,10 +521,10 @@ class ScreenSpot_Pro(ImageBaseDataset):
                 x1, y1, x2, y2 = bbox
                 xc, yc = (x1 + x2) / 2, (y1 + y2) / 2
                 w, h = x2 - x1, y2 - y1
-                abs_shift_to_center = [abs(x - xc), abs(y - yc)]
-                width_outside, height_outside = [max(0, abs_shift_to_center[0] - w / 2), max(0, abs_shift_to_center[1] - h / 2)]
-                return (width_outside ** 2 + height_outside ** 2) ** 0.5
-                
+                abs_shift_to_center = [abs(x - xc), abs(y - yc)]  # noqa: E501
+                width_outside, height_outside = [max(0, abs_shift_to_center[0] - w / 2), max(0, abs_shift_to_center[1] - h / 2)]  # noqa: E501
+                return (width_outside ** 2 + height_outside ** 2) ** 0.5  # noqa: E501
+
             wrong_format_result = [res for res in result if res["is_wrong_format"]]
             missed_result = [res for res in result if not res["match"] and not res["is_wrong_format"]]
             missed_result.sort(key=lambda r: click_distance(r["parsed_bbox"], r["pred"]), reverse=True)
@@ -537,15 +535,15 @@ class ScreenSpot_Pro(ImageBaseDataset):
 
         successful_cases_path = os.environ.get("SUCCESSFUL_CASES_PATH", None)
         if successful_cases_path is not None:
-            def click_distance(bbox, click_point):
+            def _click_distance(bbox, click_point):
                 x, y = click_point
                 x1, y1, x2, y2 = bbox
                 xc, yc = (x1 + x2) / 2, (y1 + y2) / 2
                 x_shift, y_shift = x - xc, y - yc
                 return (x_shift ** 2 + y_shift ** 2) ** 0.5
-            
+
             successful_cases = [res for res in result if res["match"]]
-            successful_cases.sort(key=lambda r: click_distance(r["parsed_bbox"], r["pred"]), reverse=True)
+            successful_cases.sort(key=lambda r: _click_distance(r["parsed_bbox"], r["pred"]), reverse=True)
             with open(successful_cases_path, "w") as f:
                 json.dump(successful_cases, f, indent=4, ensure_ascii=False)
         return final_score_dict

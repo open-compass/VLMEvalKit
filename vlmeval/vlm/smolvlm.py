@@ -96,7 +96,7 @@ class SmolVLM(BaseModel):
 
         generated_ids = self.model.generate(**inputs, **self.kwargs)
         generated_text = self.processor.batch_decode(
-            generated_ids[:, inputs["input_ids"].size(1) :], skip_special_tokens=True
+            generated_ids[:, inputs["input_ids"].size(1):], skip_special_tokens=True
         )[0]
 
         return generated_text.strip()
@@ -345,7 +345,7 @@ class SmolVLM(BaseModel):
 
         generated_ids = self.model.generate(**inputs, **self.kwargs)
         generated_text = self.processor.batch_decode(
-            generated_ids[:, inputs["input_ids"].size(1) :], skip_special_tokens=True
+            generated_ids[:, inputs["input_ids"].size(1):], skip_special_tokens=True
         )[0]
 
         return generated_text.strip()
@@ -472,7 +472,7 @@ class SmolVLM2(BaseModel):
 
         # Decode only the new tokens, not the entire sequence
         generated_text = self.processor.batch_decode(
-            generated_ids[:, inputs["input_ids"].size(1) :], skip_special_tokens=True
+            generated_ids[:, inputs["input_ids"].size(1):], skip_special_tokens=True
         )[0]
 
         return generated_text.strip()
@@ -863,7 +863,7 @@ class SmolVLM2(BaseModel):
 
         # Decode only the new tokens, not the entire sequence
         generated_text = self.processor.batch_decode(
-            generated_ids[:, inputs["input_ids"].size(1) :], skip_special_tokens=True
+            generated_ids[:, inputs["input_ids"].size(1):], skip_special_tokens=True
         )[0]
 
         return generated_text.strip()

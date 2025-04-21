@@ -1,8 +1,12 @@
+accelerate
 decord; platform_machine != 'arm64'
+dotenv
+einops
 eva-decord; platform_machine == 'arm64'
 gradio
 huggingface_hub
 imageio
+ipdb
 matplotlib
 numpy
 omegaconf
@@ -14,6 +18,7 @@ pillow
 portalocker
 protobuf
 python-dotenv
+qwen_vl_utils
 requests
 rich
 sentencepiece
@@ -22,6 +27,7 @@ sty
 tabulate
 tiktoken
 timeout-decorator
+timm
 torch
 torchvision
 tqdm
@@ -29,9 +35,3 @@ transformers
 typing_extensions
 validators
 xlsxwriter
-accelerate
-ipdb
-qwen_vl_utils
-timm
-dotenv
-einops

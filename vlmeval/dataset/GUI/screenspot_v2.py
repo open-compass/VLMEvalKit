@@ -16,27 +16,27 @@ from ipdb import set_trace as st
 logger = get_logger("RUN")
 
 """
-{   
-    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png", 
-    "bbox": [42, 1102, 197, 70], 
-    "instruction": "view the details of the item", 
-    "data_type": "text", 
-    "data_source": "shop"
-}, 
 {
-    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png", 
-    "bbox": [93, 74, 86, 132], 
-    "instruction": "view the previous photo", 
-    "data_type": "icon", 
+    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png",
+    "bbox": [42, 1102, 197, 70],
+    "instruction": "view the details of the item",
+    "data_type": "text",
+    "data_source": "shop"
+},
+{
+    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png",
+    "bbox": [93, 74, 86, 132],
+    "instruction": "view the previous photo",
+    "data_type": "icon",
     "data_source": "shop"
 }
 """
 
-SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task."""
+SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task."""  # noqa: E501
 
-USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""
+USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""  # noqa: E501
 
-SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`."""
+SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`."""  # noqa: E501
 USER_INSTRUCTION_V2 = """Please click the following target element using `pyautogui.click`:\n{description}"""
 
 
@@ -47,7 +47,6 @@ def parse_bbox_aguvis(response):
     else:
         click_point = [0.0, 0.0]
     return click_point
-
 
 
 def compute_iou(box1, box2):
@@ -173,7 +172,7 @@ class ScreenSpotV2(ScreenSpot):
         data["index"] = [str(idx + 1) for idx, x in enumerate(data["bbox"])]
 
         self.meta_only = True
-        self.parse_response_func = parse_bbox_aguvis  # TODO: parse function can be specified through kwargs when initializing the dataset
+        self.parse_response_func = parse_bbox_aguvis  # TODO: parse function can be specified through kwargs when initializing the dataset # noqa: E501
 
         # The image field can store the base64 encoded image or another question index (for saving space)
         if "image" in data:

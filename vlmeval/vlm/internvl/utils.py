@@ -331,7 +331,6 @@ def mpo_post_processing(response, dataset):
         response = extract_answer(response).strip()
     return response
 
-    
 
 def parse_bbox_internvl(response):
     # 使用正则表达式匹配bounding box
@@ -344,6 +343,7 @@ def parse_bbox_internvl(response):
         return [(x1 + x2) / 2, (y1 + y2) / 2]
     else:
         return response
+
 
 def build_mpo_prompt(message, line, dataset):
     if listinstr(['LLaVABench', 'MMVet'], dataset):
@@ -372,13 +372,15 @@ def build_mpo_prompt(message, line, dataset):
     message[0]['value'] = prompt
     return message
 
+
 def format_nav_prompt(template, placeholders, **kwargs):
-     prompt = template
-     for placeholder in placeholders:
-         value = kwargs.get(placeholder, '')
-         prompt = prompt.replace(f"{{{placeholder}}}", str(value))
-     return prompt
- 
+    prompt = template
+    for placeholder in placeholders:
+        value = kwargs.get(placeholder, '')
+        prompt = prompt.replace(f"{{{placeholder}}}", str(value))
+    return prompt
+
+
 def pile_action_history(history, max_num=4):
     if len(history) > 0:
         return '\n'.join(history[-max_num:])

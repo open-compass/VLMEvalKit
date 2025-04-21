@@ -59,6 +59,7 @@ def split_model():
     device_map['lm_head'] = last_gpu
     return device_map
 
+
 class KeywordsStoppingCriteria(StoppingCriteria):
     def __init__(self, keywords, tokenizer, input_ids):
         self.keywords = keywords
@@ -86,7 +87,7 @@ class KeywordsStoppingCriteria(StoppingCriteria):
             keyword_id.to(output_ids.device) for keyword_id in self.keyword_ids
         ]
         for keyword_id in self.keyword_ids:
-            if (output_ids[0, -keyword_id.shape[0] :] == keyword_id).all():
+            if (output_ids[0, -keyword_id.shape[0]:] == keyword_id).all():
                 return True
         outputs = self.tokenizer.batch_decode(
             output_ids[:, -offset:], skip_special_tokens=True
@@ -96,9 +97,11 @@ class KeywordsStoppingCriteria(StoppingCriteria):
                 return True
         return False
 
-CHAT_TEMPLATE = "{% set image_count = namespace(value=0) %}{% set video_count = namespace(value=0) %}{% for message in messages %}<|im_start|>{{ message['role'] }}\n{% if message['content'] is string %}{{ message['content'] }}<|im_end|>\n{% else %}{% for content in message['content'] %}{% if content['type'] == 'image' or 'image' in content or 'image_url' in content %}{% set image_count.value = image_count.value + 1 %}{% if add_vision_id %}Picture {{ image_count.value }}: {% endif %}<|vision_start|><|image_pad|><|vision_end|>{% elif content['type'] == 'video' or 'video' in content %}{% set video_count.value = video_count.value + 1 %}{% if add_vision_id %}Video {{ video_count.value }}: {% endif %}<|vision_start|><|video_pad|><|vision_end|>{% elif 'text' in content %}{{ content['text'] }}{% endif %}{% endfor %}<|im_end|>\n{% endif %}{% endfor %}{% if add_generation_prompt %}<|im_start|>assistant\n{% endif %}"
+
+CHAT_TEMPLATE = "{% set image_count = namespace(value=0) %}{% set video_count = namespace(value=0) %}{% for message in messages %}<|im_start|>{{ message['role'] }}\n{% if message['content'] is string %}{{ message['content'] }}<|im_end|>\n{% else %}{% for content in message['content'] %}{% if content['type'] == 'image' or 'image' in content or 'image_url' in content %}{% set image_count.value = image_count.value + 1 %}{% if add_vision_id %}Picture {{ image_count.value }}: {% endif %}<|vision_start|><|image_pad|><|vision_end|>{% elif content['type'] == 'video' or 'video' in content %}{% set video_count.value = video_count.value + 1 %}{% if add_vision_id %}Video {{ video_count.value }}: {% endif %}<|vision_start|><|video_pad|><|vision_end|>{% elif 'text' in content %}{{ content['text'] }}{% endif %}{% endfor %}<|im_end|>\n{% endif %}{% endfor %}{% if add_generation_prompt %}<|im_start|>assistant\n{% endif %}"  # noqa: E501
 
 UNTIL = ["<|diff_marker|>"]
+
 
 class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     INSTALL_REQ = False
@@ -316,11 +319,11 @@ class Qwen2VLChatAguvis(Qwen2VLChat):
             chat_template=CHAT_TEMPLATE,
         )
         # TODO: provide current action's low-level instruction
-        if False:
-            # If low-level instruction is provided
-            # We enforce using "Action: {low_level_instruction} to guide generation"
-            recipient_text = f"<|im_start|>assistant<|recipient|>all\nAction: {low_level_instruction}\n"
-        elif self.mode == "force-plan":
+        # if False:
+        #     # If low-level instruction is provided
+        #     # We enforce using "Action: {low_level_instruction} to guide generation"
+        #     recipient_text = f"<|im_start|>assistant<|recipient|>all\nAction: {low_level_instruction}\n"
+        if self.mode == "force-plan":
             recipient_text = "<|im_start|>assistant<|recipient|>all\nThought: "
         elif self.mode == "force-plan-l1":
             recipient_text = "<|im_start|>assistant<|recipient|>all\nAction: "
@@ -355,7 +358,7 @@ class Qwen2VLChatAguvis(Qwen2VLChat):
             # stopping_criteria=[stopping_criteria],
         )
         generated_ids = [
-            output_ids[len(input_ids) :]
+            output_ids[len(input_ids):]
             for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
         ]
         out = self.processor.tokenizer.batch_decode(
