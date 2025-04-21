@@ -6,7 +6,7 @@ def get_score(model, dataset):
     file_name = f'{model}/{model}_{dataset}'
     if listinstr([
         'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 
-        'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK'
+        'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK',  'VisOnlyQA-VLMEvalKit'
     ], dataset):
         file_name += '_acc.csv'
     elif listinstr(['MME', 'Hallusion', 'LLaVABench'], dataset):
@@ -66,7 +66,6 @@ def get_score(model, dataset):
                         "L4_pose", "L5_6d_spatial", "L5_collision"]:
             ret[f"{dataset} - {level}"] = data[f"{level}_score"] * 100
     return ret
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
