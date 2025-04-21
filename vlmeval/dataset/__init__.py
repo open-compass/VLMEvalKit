@@ -233,7 +233,6 @@ def build_dataset(dataset_name, **kwargs):
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
-    import ipdb; ipdb.set_trace()
     data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
     if not osp.exists(data_file):
         warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
