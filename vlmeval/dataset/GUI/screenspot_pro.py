@@ -18,14 +18,14 @@ logger = get_logger("RUN")
 {   
     "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png", 
     "bbox": [42, 1102, 197, 70], 
-    "instruction": "view the details of the item", 
+    "question": "view the details of the item", 
     "data_type": "text", 
     "data_source": "shop"
 }, 
 {
     "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png", 
     "bbox": [93, 74, 86, 132], 
-    "instruction": "view the previous photo", 
+    "question": "view the previous photo", 
     "data_type": "icon", 
     "data_source": "shop"
 }
@@ -141,40 +141,46 @@ class ScreenSpot_Pro(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Pro_Development": [
-            "vscode_macos",
-            "pycharm_macos",
-            "android_studio_macos",
-            "quartus_windows",
-            "vmware_macos",
-        ],
-        "ScreenSpot_Pro_Creative": [
-            "photoshop_windows",
-            "premiere_windows",
-            "illustrator_windows",
-            "blender_windows",
-            "fruitloops_windows",
-            "unreal_engine_windows",
-            "davinci_macos",
-        ],
-        "ScreenSpot_Pro_CAD": [
-            "autocad_windows",
-            "solidworks_windows",
-            "inventor_windows",
-            "vivado_windows",
-        ],
-        "ScreenSpot_Pro_Scientific": [
-            "matlab_macos",
-            "origin_windows",
-            "stata_windows",
-            "eviews_windows",
-        ],
-        "ScreenSpot_Pro_Office": ["word_macos", "excel_macos", "powerpoint_windows"],
-        "ScreenSpot_Pro_OS": [
-            "macos_common_macos",
-            "windows_common_windows",
-            "linux_common_linux",
-        ],
+        "ScreenSpot_Pro_Development": "ScreenSpot_Pro_Development",
+        "ScreenSpot_Pro_Creative": "ScreenSpot_Pro_Creative",
+        "ScreenSpot_Pro_CAD": "ScreenSpot_Pro_CAD",
+        "ScreenSpot_Pro_Scientific": "ScreenSpot_Pro_Scientific",
+        "ScreenSpot_Pro_Office": "ScreenSpot_Pro_Office",
+        "ScreenSpot_Pro_OS": "ScreenSpot_Pro_OS",
+        # "ScreenSpot_Pro_Development": [
+        #     "vscode_macos",
+        #     "pycharm_macos",
+        #     "android_studio_macos",
+        #     "quartus_windows",
+        #     "vmware_macos",
+        # ],
+        # "ScreenSpot_Pro_Creative": [
+        #     "photoshop_windows",
+        #     "premiere_windows",
+        #     "illustrator_windows",
+        #     "blender_windows",
+        #     "fruitloops_windows",
+        #     "unreal_engine_windows",
+        #     "davinci_macos",
+        # ],
+        # "ScreenSpot_Pro_CAD": [
+        #     "autocad_windows",
+        #     "solidworks_windows",
+        #     "inventor_windows",
+        #     "vivado_windows",
+        # ],
+        # "ScreenSpot_Pro_Scientific": [
+        #     "matlab_macos",
+        #     "origin_windows",
+        #     "stata_windows",
+        #     "eviews_windows",
+        # ],
+        # "ScreenSpot_Pro_Office": ["word_macos", "excel_macos", "powerpoint_windows"],
+        # "ScreenSpot_Pro_OS": [
+        #     "macos_common_macos",
+        #     "windows_common_windows",
+        #     "linux_common_linux",
+        # ],
     }  # path
     DATASET_MD5 = {}
     EVAL_TYPE = "point"  # point or rectangle
@@ -191,7 +197,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
-        self.img_root = osp.join(ROOT, "ScreenSpot-Pro", "images")
+        self.img_root = osp.join(ROOT, "ScreenSpot_Pro", "images")
         self.RE_TYPE = re_type
         if skeleton:
             return
@@ -239,11 +245,11 @@ class ScreenSpot_Pro(ImageBaseDataset):
         data_root = LMUDataRoot()
         for single_url in url:
             data_path = osp.join(
-                data_root, "ScreenSpot-Pro", single_url + ".tsv"
+                data_root, "ScreenSpot_Pro", single_url + ".tsv"
             )
             task_data = load(data_path)
             data.extend(task_data)
-        return pd.DataFrame(data)
+        return pd.DataFrame(task_data)
 
     # actually retrieve the image path
     def dump_image(self, line):
@@ -259,7 +265,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
     def get_trajectory(self, line):
         traj_dict = {}
         if self.RE_TYPE == "functional":
-            traj_dict["task"] = line["instruction"]
+            traj_dict["task"] = line["question"]
         else:
             traj_dict["task"] = line["description"]
         return traj_dict
@@ -270,7 +276,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
         tgt_path = self.dump_image(line)
 
         if self.RE_TYPE == "functional":
-            user_instruction = USER_INSTRUCTION.format(instruction=line["instruction"])
+            user_instruction = USER_INSTRUCTION.format(instruction=line["question"])
         else:
             user_instruction = USER_INSTRUCTION_V2.format(
                 description=line["description"]
@@ -348,7 +354,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
             result.append(
                 {
                     "img_path": os.path.join(self.img_root, line["image_path"]),
-                    "text": line["instruction"],
+                    "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
                     "type": line["ui_type"],
@@ -471,7 +477,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
             result.append(
                 {
                     "img_path": os.path.join(self.img_root, line["image_path"]),
-                    "text": line["instruction"],
+                    "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
                     "type": line["ui_type"],

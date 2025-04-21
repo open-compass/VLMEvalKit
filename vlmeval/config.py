@@ -653,7 +653,7 @@ internvl_series = {
         InternVLChat, model_path="OpenGVLab/InternVL2_5-4B", version="V2.0"
     ),
     "InternVL2_5-8B": partial(
-        InternVLChat, model_path="/fs-computility/llm/shared/mllm/hub/models--OpenGVLab--InternVL2_5-8B/snapshots/2233bf9af3b3111505264aa293a672543bea3481/", version="V2.0"
+        InternVLChat, model_path="OpenGVLab/InternVL2_5-8B", version="V2.0"
     ),
     "InternVL2_5-26B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-26B", version="V2.0"
@@ -715,6 +715,13 @@ internvl_series = {
     "InternVL2_5-8B-GUI": partial(
         InternVLChat,
         model_path="/fs-computility/mllm1/shared/zhaoxiangyu/models/internvl2_5_8b_internlm2_5_7b_dynamic_res_stage1", 
+        version="V2.0", 
+        max_new_tokens=512,
+        screen_parse=False,
+    ),
+     "InternVL3-7B-GUI": partial(
+        InternVLChat,
+        model_path="/fs-computility/mllm1/shared/zhaoxiangyu/GUI/checkpoints/internvl3_7b_dynamic_res_stage1_56/", 
         version="V2.0", 
         max_new_tokens=512,
         screen_parse=False,
