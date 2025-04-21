@@ -29,3 +29,9 @@ transformers
 typing_extensions
 validators
 xlsxwriter
+accelerate
+ipdb
+qwen_vl_utils
+timm
+dotenv
+einops
