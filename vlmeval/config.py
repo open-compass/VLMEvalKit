@@ -196,6 +196,33 @@ api_models = {
         retry=10, 
         verbose=False,
     ),
+    "gpt-4.1-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-mini-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-mini-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-nano-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-nano-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         GeminiProVision, model="gemini-1.0-pro", temperature=0, retry=10
@@ -757,7 +784,9 @@ internvl3 = {
 }
 
 sail_series = {
-    "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B")
+    "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
+    "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
+    "SAIL-VL-1.5-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-8B", use_msac = True)
 }
 
 ristretto_series = {

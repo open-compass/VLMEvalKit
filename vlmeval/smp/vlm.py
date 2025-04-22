@@ -111,7 +111,7 @@ def encode_image_file_to_base64(image_path, target_size=-1):
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
-    if image.mode in ('RGBA', 'P'):
+    if image.mode in ('RGBA', 'P', 'LA'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))

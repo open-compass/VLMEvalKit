@@ -110,7 +110,7 @@ class InternVLChat(BaseModel):
                  # R1 parameters
                  cot_prompt_version='v1',
                  #
-                 use_lmdeploy=True,
+                 use_lmdeploy=False,
                  use_postprocess=False,
                  **kwargs):
 
@@ -233,6 +233,11 @@ class InternVLChat(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
+        if dataset in [
+            'atomic_dataset', 'electro_dataset', 'mechanics_dataset',
+            'optics_dataset', 'quantum_dataset', 'statistics_dataset'
+        ]:
+            return False
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
@@ -421,7 +426,7 @@ class InternVLChat(BaseModel):
             )
         response = response_list[0]
 
-        if not listinstr(['WeMath'], dataset):
+        if dataset is not None and not listinstr(['WeMath'], dataset):
             if use_mpo_prompt:
                 response = mpo_post_processing(response, dataset)
             elif self.use_cot and self.use_postprocess:
