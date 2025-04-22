@@ -4,6 +4,7 @@ gradio
 huggingface_hub
 imageio
 matplotlib
+nltk
 numpy
 omegaconf
 openai
