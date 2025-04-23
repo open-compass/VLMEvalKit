@@ -326,8 +326,10 @@ class MMIFEval(ImageBaseDataset):
     TYPE = "VQA"
 
     # TODO: add dataset url and md5
-    DATASET_URL = {"MMIFEval": "https://2024-dsy.s3.bitiful.net/MM-IFEval.tsv"}
-    DATASET_MD5 = {"MMIFEval": None}
+    DATASET_URL = {"MM-IFEval": 'https://opencompass.openxlab.space/utils/VLMEval/MM-IFEval.tsv'}
+    DATASET_MD5 = {
+        "MM-IFEval": '973bb839961a449565073a5ee70ae7a6'
+    }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     # Actually, all lines have single image
@@ -361,11 +363,7 @@ class MMIFEval(ImageBaseDataset):
     # @classmethod
 
     def evaluate(self, eval_file, **judge_kwargs):
-        raw_bench_data = MMIFEval("MMIFEval").data
-        # print(f"raw_bench_data:\n{raw_bench_data}")
-        # print(len(raw_bench_data))
-        # breakpoint()
-        # print(type(raw_bench_data))
+        raw_bench_data = MMIFEval("MM-IFEval").data
         global aux_data_dict
         suffix = eval_file.split(".")[-1]
         model = judge_kwargs["model"]
@@ -383,9 +381,7 @@ class MMIFEval(ImageBaseDataset):
                 main_data.append(line)
             else:
                 aux_data.append(line)
-            # print(f"raw_bench_data.iloc[i]:\n{raw_bench_data.iloc[i]}")
-            # print(f"type(raw_bench_data.iloc[i]):\n{type(raw_bench_data.iloc[i])}")
-            # breakpoint()
+
             line["image"] = raw_bench_data.iloc[i]["image"]
 
         aux_data_dict = {}
@@ -431,9 +427,6 @@ class MMIFEval(ImageBaseDataset):
                 )
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
-                    # print(f"k:\n{k}")
-                    # print(f"v:\n{v}")
-                    # breakpoint()
                     ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
             else:
                 for k, v in ans.items():
@@ -444,10 +437,7 @@ class MMIFEval(ImageBaseDataset):
             for item in main_data:
                 item.pop("image")
             print(f"ans:\n{ans}")
-            # print(f"type(ans[0]):\n{type(ans[0])}")
-            # print(f"type(ans):\n{type(ans)}")
-            # print(f"main_data:\n{main_data}")
-            # breakpoint()
+
             for item in main_data:
                 item["eval_ret_code"] = ans[item["id"]]["eval_ret_code"]
                 item["eval_msg"] = ans[item["id"]]["eval_msg"]
