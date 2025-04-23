@@ -63,7 +63,11 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     sample_indices_subrem = [x for x in sample_indices_sub if x not in res]
 
     kwargs = {}
-    if model_name is not None and 'Llama-4' in model_name:
+    if model_name is not None and (
+        'Llama-4' in model_name
+        or 'Qwen2-VL' in model_name
+        or 'Qwen2.5-VL' in model_name
+    ):
         kwargs = {'use_vllm': use_vllm}
     model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
 
