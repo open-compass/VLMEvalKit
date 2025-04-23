@@ -873,6 +873,7 @@ deepseekvl2_series = {
 
 janus_series = {
     "Janus-1.3B": partial(Janus, model_path="deepseek-ai/Janus-1.3B"),
+    "Janus-Pro-1B": partial(Janus, model_path="deepseek-ai/Janus-Pro-1B"),
     "Janus-Pro-7B": partial(Janus, model_path="deepseek-ai/Janus-Pro-7B"),
 }
 
