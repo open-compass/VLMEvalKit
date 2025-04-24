@@ -163,6 +163,8 @@ class InternVLChat(BaseModel):
         if use_lmdeploy:
             from lmdeploy import TurbomindEngineConfig, VisionConfig, pipeline, ChatTemplateConfig
             vision_config = VisionConfig(max_batch_size=4)
+            NGPU = torch.cuda.device_count()
+
             self.model = pipeline(
                 model_path,
                 vision_config=vision_config,
@@ -170,9 +172,9 @@ class InternVLChat(BaseModel):
                 backend_config=TurbomindEngineConfig(
                     session_len=16384,
                     cache_max_entry_count=0.1,
-                    tp=int(os.environ['TP']))
+                    tp=NGPU)
             )
-            torch.cuda.set_device(int(os.environ['RANK']) % torch.cuda.device_count())
+            torch.cuda.set_device(0)
             self.device = 'cuda'
         elif auto_split_flag():
             device_map, visible_devices = split_model(model_path=model_path)

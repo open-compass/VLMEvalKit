@@ -1,4 +1,16 @@
+import os
 import json
+
+rank = int(os.environ.get('RANK', 0))
+world_size = int(os.environ.get('WORLD_SIZE', 1))
+
+NGPU = 8
+GPU_PER_PROC = NGPU // world_size
+
+DEVICE_START_IDX = GPU_PER_PROC * rank
+CUDA_VISIBLE_DEVICES = [str(i) for i in range(DEVICE_START_IDX, DEVICE_START_IDX + GPU_PER_PROC)]
+os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(CUDA_VISIBLE_DEVICES)
+print('CUDA_VISIBLE_DEVICES', os.environ['CUDA_VISIBLE_DEVICES'])
 
 import torch
 import torch.distributed as dist
@@ -187,8 +199,8 @@ def main():
                 supported_VLM[k] = v
 
     if world_size > 1:
-        local_rank = os.environ.get('LOCAL_RANK', 0)
-        torch.cuda.set_device(int(local_rank))
+        # local_rank = os.environ.get('LOCAL_RANK', 0)
+        # torch.cuda.set_device(int(local_rank))
         dist.init_process_group(
             backend='nccl',
             timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
