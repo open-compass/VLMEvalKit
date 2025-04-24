@@ -57,6 +57,7 @@ from .video_dataset_config import *
 from ..smp import *
 from .Omnidocbench.omnidocbench import OmniDocBench
 from .moat import MOAT
+from .mmifeval import MMIFEval
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -155,7 +156,7 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, Spatial457
+    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457
 ]
 
 
