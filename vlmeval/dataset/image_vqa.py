@@ -1864,8 +1864,8 @@ class TDBenchGrounding(ImageVQADataset):
         score_df.to_csv(score_file, index=False)
         re_result = rotational_eval(result_file)
         if method == 'centroid' and re_result is not None and re_result is not False:
-            file_addr = result_file.split('_rot')[0] + '_REresult.csv'
-            link_addr = osp.join(osp.dirname(result_file), osp.basename(file_addr))
+            file_addr = osp.abspath(result_file.split('_rot')[0] + '_REresult.csv')
+            link_addr = osp.join(osp.dirname(osp.dirname(result_file)), osp.basename(file_addr))
             re_result.to_csv(file_addr, index=True)
             print(tabulate(re_result, headers="keys"))
             if osp.exists(link_addr) or osp.islink(link_addr):
