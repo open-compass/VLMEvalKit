@@ -11,14 +11,14 @@ class ConstraintRegionNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_region_no_repeat"
-    
+
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         regions = game_state.get("regions", None)
-        
+
         if regions is None:
             return True
-            
+
         region_groups = {}
         for i in range(len(board)):
             for j in range(len(board[0])):
@@ -27,7 +27,7 @@ class ConstraintRegionNoRepeat(Constraint):
                     region_groups[region] = []
                 if board[i][j] != 0:
                     region_groups[region].append(board[i][j])
-        
+
         for region_values in region_groups.values():
             if len(set(region_values)) != len(region_values):
                 return False
@@ -50,24 +50,24 @@ class JigsawSudokuPuzzleFactory(PuzzleFactory):
         """Get possible values for a cell based on row, column, and region constraints."""
         if game_state["board"][row][col] != 0:
             return []
-            
+
         possible_values = []
         for value in self.all_possible_values:
             # Try the value
             original_value = game_state["board"][row][col]
             game_state["board"][row][col] = value
-            
+
             # Check if it's valid according to all constraints
             valid = True
             for constraint in self.constraints:
                 if not constraint.check(game_state):
                     valid = False
                     break
-            
+
             # Restore original value
             game_state["board"][row][col] = original_value
-            
+
             if valid:
                 possible_values.append(value)
-                
+
         return possible_values

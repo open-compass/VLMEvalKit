@@ -27,10 +27,10 @@ class ConstraintAquariumFill(Constraint):
             for r, c in aquarium:
                 if board[r][c] == "s":
                     highest_water_row = min(highest_water_row, r)
-            
+
             if highest_water_row == float('inf'):
                 continue  # No water in this aquarium
-            
+
             # Check all cells at or below highest water level
             for r, c in aquarium:
                 if r >= highest_water_row:  # if cell is at same height or lower than highest water

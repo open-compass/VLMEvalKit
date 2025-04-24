@@ -3,7 +3,7 @@ from typing import Dict, Any
 class Constraint():
     def __init__(self) -> None:
         self.name = ""
-    
+
     def check(self, game_state: Dict[str, Any]) -> bool:
         pass
 
@@ -11,7 +11,7 @@ class ConstraintRowNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_row_no_repeat"
-        
+
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for row in board:
@@ -24,7 +24,7 @@ class ConstraintColNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_col_no_repeat"
-        
+
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for col in range(len(board[0])):
@@ -37,7 +37,7 @@ class ConstraintSubGridNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_sub_grid_no_repeat"
-        
+
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         assert len(board) == len(board[0]), "board is not square"

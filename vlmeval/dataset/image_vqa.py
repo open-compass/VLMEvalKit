@@ -999,10 +999,11 @@ class LLaVABench(ImageBaseDataset):
         dump(ret, score_file)
         return ret
 
+
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
-    
-    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}
+
+    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}  # noqa: E501
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -1020,14 +1021,17 @@ class VGRPBench(ImageBaseDataset):
         score_file = eval_file.replace(suffix, '_score.csv')
 
         nproc = judge_kwargs.pop('nproc', 4)
-        
+
         if not osp.exists(record_file):
             data = load(eval_file)
             lines = [data.iloc[i] for i in range(len(data))]
 
             system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
-            
-            models = [build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs) for system_prompt in system_prompts]
+
+            models = [
+                build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs)
+                for system_prompt in system_prompts
+            ]
 
             prompts = [build_prompt(line) for line in lines]
 
@@ -1047,6 +1051,7 @@ class VGRPBench(ImageBaseDataset):
         dump(ret, score_file)
 
         return ret
+
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'

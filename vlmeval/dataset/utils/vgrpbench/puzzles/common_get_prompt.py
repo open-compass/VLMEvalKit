@@ -1,37 +1,37 @@
 def get_prompt(game_type: str, thinking_format: str) -> str:
     if game_type == "sudoku":
-        from puzzles.sudoku import SYSTEM_PROMPT 
+        from puzzles.sudoku import SYSTEM_PROMPT
     elif game_type == "coloredsudoku":
-        from puzzles.coloredsudoku import SYSTEM_PROMPT 
+        from puzzles.coloredsudoku import SYSTEM_PROMPT
     elif game_type == "binairo":
-        from puzzles.binairo import SYSTEM_PROMPT 
+        from puzzles.binairo import SYSTEM_PROMPT
     elif game_type == "futoshiki":
-        from puzzles.futoshiki import SYSTEM_PROMPT 
+        from puzzles.futoshiki import SYSTEM_PROMPT
     elif game_type == "hitori":
-        from puzzles.hitori import SYSTEM_PROMPT 
+        from puzzles.hitori import SYSTEM_PROMPT
     elif game_type == "kakuro":
-        from puzzles.kakuro import SYSTEM_PROMPT 
+        from puzzles.kakuro import SYSTEM_PROMPT
     elif game_type == "killersudoku":
-        from puzzles.killersudoku import SYSTEM_PROMPT 
+        from puzzles.killersudoku import SYSTEM_PROMPT
     elif game_type == "renzoku":
-        from puzzles.renzoku import SYSTEM_PROMPT 
+        from puzzles.renzoku import SYSTEM_PROMPT
     elif game_type == "skyscraper":
-        from puzzles.skyscraper import SYSTEM_PROMPT 
+        from puzzles.skyscraper import SYSTEM_PROMPT
     elif game_type == "starbattle":
-        from puzzles.starbattle import SYSTEM_PROMPT 
+        from puzzles.starbattle import SYSTEM_PROMPT
     elif game_type == "sudoku":
-        from puzzles.sudoku import SYSTEM_PROMPT 
+        from puzzles.sudoku import SYSTEM_PROMPT
     elif game_type == "treesandtents":
-        from puzzles.treesandtents import SYSTEM_PROMPT 
+        from puzzles.treesandtents import SYSTEM_PROMPT
     elif game_type == "thermometers":
-        from puzzles.thermometers import SYSTEM_PROMPT 
+        from puzzles.thermometers import SYSTEM_PROMPT
     elif game_type == "kakurasu":
-        from puzzles.kakurasu import SYSTEM_PROMPT 
+        from puzzles.kakurasu import SYSTEM_PROMPT
     elif game_type == "aquarium":
-        from puzzles.aquarium import SYSTEM_PROMPT 
+        from puzzles.aquarium import SYSTEM_PROMPT
     elif game_type == "oddevensudoku":
-        from puzzles.oddevensudoku import SYSTEM_PROMPT 
-    
+        from puzzles.oddevensudoku import SYSTEM_PROMPT
+
     elif game_type == "battleships":
         from puzzles.battleships import SYSTEM_PROMPT
     elif game_type == "fieldexplore":
@@ -41,7 +41,7 @@ def get_prompt(game_type: str, thinking_format: str) -> str:
     elif game_type == "nonogram":
         from puzzles.nonogram import SYSTEM_PROMPT
     elif game_type == "lightup":
-        from puzzles.lightup import SYSTEM_PROMPT 
+        from puzzles.lightup import SYSTEM_PROMPT
 
     else:
         raise ValueError(f"Unknown game type: {game_type}")

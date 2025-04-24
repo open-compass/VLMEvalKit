@@ -15,7 +15,7 @@ class ConstraintAdjacentNumbers(Constraint):
         board = game_state["board"]
 
         size = len(board)
-        
+
         for i in range(size):
             for j in range(size):
                 if isinstance(board[i][j], int) and board[i][j] != 0:  # If cell is a revealed number
@@ -24,15 +24,15 @@ class ConstraintAdjacentNumbers(Constraint):
                     i_end = min(size, i+2)
                     j_start = max(0, j-1)
                     j_end = min(size, j+2)
-                    
-                    adjacent_mines = sum(1 for r in range(i_start, i_end) 
-                                      for c in range(j_start, j_end) 
+
+                    adjacent_mines = sum(1 for r in range(i_start, i_end)
+                                      for c in range(j_start, j_end)
                                       if board[r][c] == 's')
-                    
-                    adjacent_undefined = sum(1 for r in range(i_start, i_end) 
-                                          for c in range(j_start, j_end) 
+
+                    adjacent_undefined = sum(1 for r in range(i_start, i_end)
+                                          for c in range(j_start, j_end)
                                           if board[r][c] == 0)
-                    
+
                     # Check if current mines <= number <= potential mines (current + undefined)
                     if adjacent_mines > board[i][j] or adjacent_mines + adjacent_undefined < board[i][j]:
                         return False
@@ -56,7 +56,7 @@ class FieldExplorePuzzleFactory(PuzzleFactory):
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
-        
+
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):

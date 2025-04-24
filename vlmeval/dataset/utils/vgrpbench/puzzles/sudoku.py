@@ -12,7 +12,7 @@ from .common_constriants import Constraint, ConstraintRowNoRepeat, ConstraintCol
 class SudokuPuzzleFactory(PuzzleFactory):
     def __init__(self, size: int) -> None:
         super().__init__()
-        
+
         self.game_name = "sudoku"
         self.size = size
 
@@ -21,7 +21,7 @@ class SudokuPuzzleFactory(PuzzleFactory):
         self.constraints.append(ConstraintSubGridNoRepeat())
 
         self.all_possible_values = [i for i in range(1, size + 1)]
-    
+
     def get_possible_values(self, game_state: Dict[str, Any], row: int, col: int) -> List[int]:
         possible_values = []
         board = game_state["board"]
