@@ -116,6 +116,7 @@ def VisuLogic_acc(result_file):
             hit[cate] += 1
     res = defaultdict(list)
     for k in categories:
+        res['category'].append(k)
         res['tot'].append(tot[k])
         res['hit'].append(hit[k])
         res['acc'].append(hit[k] / tot[k] * 100)
