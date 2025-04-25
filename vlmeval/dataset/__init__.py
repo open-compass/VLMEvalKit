@@ -24,6 +24,7 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
+from .spatial457 import Spatial457
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -155,7 +156,7 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, MMIFEval
+    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457
 ]
 
 
@@ -234,7 +235,6 @@ def build_dataset(dataset_name, **kwargs):
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
-
     data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
     if not osp.exists(data_file):
         warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
