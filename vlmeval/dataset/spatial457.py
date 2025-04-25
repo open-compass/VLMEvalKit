@@ -13,6 +13,8 @@ from ..utils import track_progress_rich
 
 class Spatial457(ImageBaseDataset):
     TYPE = "VQA"
+    # When ROBUST is True, if the models does not follow the format, all of the response will be treated as answers.
+    ROBUST = True
 
     DATASET_URL = {
         "Spatial457": "https://huggingface.co/datasets/RyanWW/Spatial457/resolve/main/vlm_eval_kit_tsv/Spatial457.tsv",
@@ -75,8 +77,10 @@ class Spatial457(ImageBaseDataset):
             elif pred_try_3:
                 pred = pred_try_3.group(1)
             else:
-                pred = self.dataset_utils.get_random_answer(answers)
-
+                if self.ROBUST:
+                    pred = line['prediction']
+                else:
+                    pred = self.dataset_utils.get_random_answer(answers)
                 all_results["format_error"] += 1
 
             reasoning_try_1 = re.search(r"Reasoning': '(.*?)'", line["prediction"])
@@ -87,7 +91,10 @@ class Spatial457(ImageBaseDataset):
             elif reasoning_try_2:
                 reasoning = reasoning_try_2.group(1)
             else:
-                reasoning = "Format Error. Guess a random answer."
+                if self.ROBUST:
+                    reasoning = "Format Error. All of the resposne as the answer."
+                else:
+                    reasoning = "Format Error. Guess a random answer."
 
             correct = self.dataset_utils.is_correct(answers, pred)
 
