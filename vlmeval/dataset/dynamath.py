@@ -15,6 +15,7 @@ from ..smp import load, dump, d2df, toliststr
 
 
 def preprocess(str1):
+    str1 = str(str1)
     if 0 <= str1.find("{") < str1.rfind("}"):
         str1 = str1[str1.find("{"): str1.rfind("}") + 1]
     str2 = str1.replace("\\", "")

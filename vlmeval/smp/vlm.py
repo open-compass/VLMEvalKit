@@ -92,7 +92,7 @@ def mmqa_display(question, target_size=-1):
 def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
-    if img.mode in ('RGBA', 'P'):
+    if img.mode in ('RGBA', 'P', 'LA'):
         img = img.convert('RGB')
     if target_size > 0:
         img.thumbnail((target_size, target_size))
@@ -111,7 +111,7 @@ def encode_image_file_to_base64(image_path, target_size=-1):
 def decode_base64_to_image(base64_string, target_size=-1):
     image_data = base64.b64decode(base64_string)
     image = Image.open(io.BytesIO(image_data))
-    if image.mode in ('RGBA', 'P'):
+    if image.mode in ('RGBA', 'P', 'LA'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
@@ -120,6 +120,9 @@ def decode_base64_to_image(base64_string, target_size=-1):
 
 def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
     image = decode_base64_to_image(base64_string, target_size=target_size)
+    base_dir = osp.dirname(image_path)
+    if not osp.exists(base_dir):
+        os.makedirs(base_dir, exist_ok=True)
     image.save(image_path)
 
 

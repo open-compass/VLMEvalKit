@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 import pandas as pd
 from .image_base import ImageBaseDataset
@@ -58,7 +59,7 @@ class VLM2Bench(ImageBaseDataset):
         Evaluation function:
         - Automatically read the model prediction result file (xlsx or TSV), which contains fields: index, question, answer, category, prediction
         - Directly use the original fields for evaluation without additional conversion;
-        - For categories "oc-cnt" or "pc-cnt", calculate image_seq_len based on the "image" field (stored as a regular multi-image encoding) 
+        - For categories "oc-cnt" or "pc-cnt", calculate image_seq_len based on the "image" field (stored as a regular multi-image encoding)
           and write it into each record;
         - Group by category and use different evaluation functions to calculate metrics for each sub-task:
                 • tf pair: suitable for gc-mat, gc-trk, oc-cpr, pc-cpr
@@ -87,10 +88,10 @@ class VLM2Bench(ImageBaseDataset):
                 data = pd.read_excel(eval_file)
             else:
                 data = pd.read_csv(eval_file, sep="\t", encoding="latin1", engine="python")
-        
+
         results = data.to_dict(orient="records")
         processed = common_process_results(results)
-        
+
         # For cnt category, calculate image_seq_len (i.e., number of images) based on the list of image encodings stored in the image field
         for rec in processed:
             if rec.get("category", "").lower() in ["oc-cnt", "pc-cnt"]:

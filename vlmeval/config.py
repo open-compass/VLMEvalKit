@@ -168,6 +168,15 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "ChatGPT4o": partial(
+        GPT4V,
+        model="chatgpt-4o-latest",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
     "GPT4o_MINI": partial(
         GPT4V,
         model="gpt-4o-mini-2024-07-18",
@@ -187,6 +196,33 @@ api_models = {
         retry=10, 
         verbose=False,
     ),
+    "gpt-4.1-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-mini-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-mini-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-nano-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-nano-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         GeminiProVision, model="gemini-1.0-pro", temperature=0, retry=10
@@ -202,6 +238,9 @@ api_models = {
     ),
     "GeminiPro2-0": partial(
         GeminiProVision, model="gemini-2.0-pro-exp", temperature=0, retry=10
+    ),
+    "GeminiPro2-5": partial(
+        GeminiProVision, model="gemini-2.5-pro-exp-03-25", temperature=0, retry=10
     ),
     "GeminiPro1-5-002": partial(
         GPT4V, model="gemini-1.5-pro-002", temperature=0, retry=10
@@ -587,7 +626,7 @@ long_vita_series = {
     ),
 }
 
-internvl_series = {
+internvl = {
     "InternVL-Chat-V1-1": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-1", version="V1.1"
     ),
@@ -597,19 +636,23 @@ internvl_series = {
     "InternVL-Chat-V1-2-Plus": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-2-Plus", version="V1.2"
     ),
-    # InternVL1.5 series
     "InternVL-Chat-V1-5": partial(
         InternVLChat,
         model_path="OpenGVLab/InternVL-Chat-V1-5",
         version="V1.5",
-    ),
+    )
+}
+
+mini_internvl = {
     "Mini-InternVL-Chat-2B-V1-5": partial(
         InternVLChat, model_path="OpenGVLab/Mini-InternVL-Chat-2B-V1-5", version="V1.5"
     ),
     "Mini-InternVL-Chat-4B-V1-5": partial(
         InternVLChat, model_path="OpenGVLab/Mini-InternVL-Chat-4B-V1-5", version="V1.5"
     ),
-    # InternVL2 series
+}
+
+internvl2 = {
     "InternVL2-1B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2-1B", version="V2.0"
     ),
@@ -631,7 +674,6 @@ internvl_series = {
     "InternVL2-76B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2-Llama3-76B", version="V2.0"
     ),
-    # InternVL2 MPO series
     "InternVL2-8B-MPO": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2-8B-MPO", version="V2.0"
     ),
@@ -641,7 +683,9 @@ internvl_series = {
         version="V2.0",
         use_mpo_prompt=True,
     ),
-    # InternVL2.5 series
+}
+
+internvl2_5 = {
     "InternVL2_5-1B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-1B", version="V2.0"
     ),
@@ -668,7 +712,9 @@ internvl_series = {
         InternVLChat, model_path="OpenGVLab/InternVL2_5-8B", version="V2.0",
         best_of_n=8, reward_model_path="OpenGVLab/VisualPRM-8B",
     ),
-    # InternVL2.5-MPO series
+}
+
+internvl2_5_mpo = {
     "InternVL2_5-1B-MPO": partial(
         InternVLChat,
         model_path="OpenGVLab/InternVL2_5-1B-MPO",
@@ -713,8 +759,39 @@ internvl_series = {
     ),
 }
 
+internvl3 = {
+    "InternVL3-1B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-1B", version="V2.0"
+    ),
+    "InternVL3-2B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
+    ),
+    "InternVL3-8B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0"
+    ),
+    "InternVL3-9B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"
+    ),
+    "InternVL3-14B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-14B", version="V2.0"
+    ),
+    "InternVL3-38B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-38B", version="V2.0"
+    ),
+    "InternVL3-78B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3-78B", version="V2.0"
+    ),
+}
+
 sail_series = {
-    "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B")
+    "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
+    "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
+    "SAIL-VL-1.5-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-8B", use_msac = True),
+    "SAIL-VL-1.6-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d6-8B", use_msac = True)
+}
+
+ristretto_series = {
+    "Ristretto-3B": partial(Ristretto, model_path="LiAutoAD/Ristretto-3B"),
 }
 
 yivl_series = {
@@ -796,6 +873,7 @@ deepseekvl2_series = {
 
 janus_series = {
     "Janus-1.3B": partial(Janus, model_path="deepseek-ai/Janus-1.3B"),
+    "Janus-Pro-1B": partial(Janus, model_path="deepseek-ai/Janus-Pro-1B"),
     "Janus-Pro-7B": partial(Janus, model_path="deepseek-ai/Janus-Pro-7B"),
 }
 
@@ -997,6 +1075,13 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+    "Qwen2.5-VL-32B-Instruct": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-VL-32B-Instruct",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
     "Qwen2.5-VL-72B-Instruct": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
@@ -1011,13 +1096,6 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
-    'VLM-R1': partial(
-        VLMR1Chat, 
-        model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
-        min_pixels=1280*28*28, 
-        max_pixels=16384*28*28, 
-        use_custom_prompt=False,
-    ),
     "Qwen2.5-Omni-7B": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-Omni-7B",
@@ -1025,7 +1103,44 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
-
+    'VLM-R1': partial(
+        VLMR1Chat, 
+        model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False),
+    'VLAA-Thinker-Qwen2.5VL-3B': partial(
+        VLAAThinkerChat, 
+        model_path='UCSC-VLAA/VLAA-Thinker-Qwen2.5VL-3B', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False,
+        post_process=True, # post processing for evaluation
+        system_prompt=(''
+                    "You are VL-Thinking🤔, a helpful assistant with excellent reasoning ability."
+                    " A user asks you a question, and you should try to solve it."
+                    " You should first think about the reasoning process in the mind and then provides the user with the answer."
+                    " The reasoning process and answer are enclosed within <think> </think> and"
+                    "<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think>"
+                    "<answer> answer here </answer>"
+                ),
+    ),
+    'VLAA-Thinker-Qwen2.5VL-7B': partial(
+        VLAAThinkerChat, 
+        model_path='UCSC-VLAA/VLAA-Thinker-Qwen2.5VL-7B', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False,
+        post_process=True, # post processing for evaluation
+        system_prompt=(''
+                    "You are VL-Thinking🤔, a helpful assistant with excellent reasoning ability."
+                    " A user asks you a question, and you should try to solve it."
+                    " You should first think about the reasoning process in the mind and then provides the user with the answer."
+                    " The reasoning process and answer are enclosed within <think> </think> and"
+                    "<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think>"
+                    "<answer> answer here </answer>"
+                ),
+    ),
 }
 
 slime_series = {
@@ -1056,6 +1171,9 @@ llama_series = {
     "LLaVA-CoT": partial(llama_vision, model_path="Xkev/Llama-3.2V-11B-cot"),
     "Llama-3.2-90B-Vision-Instruct": partial(
         llama_vision, model_path="meta-llama/Llama-3.2-90B-Vision-Instruct"
+    ),
+    "Llama-4-Scout-17B-16E-Instruct": partial(
+        llama4, model_path="meta-llama/Llama-4-Scout-17B-16E-Instruct", use_vllm=True
     ),
 }
 
@@ -1125,59 +1243,33 @@ gemma_series = {
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
 }
 
+kimi_series = {
+    'Kimi-VL-A3B-Thinking': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking'),
+    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct')
+}
+
+internvl_groups = [
+    internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
+    internvl3,
+]
+internvl_series = {}
+for group in internvl_groups:
+    internvl_series.update(group)
+
 supported_VLM = {}
 
 model_groups = [
-    ungrouped,
-    o1_apis,
-    api_models,
-    xtuner_series,
-    qwen_series,
-    llava_series,
-    internvl_series,
-    yivl_series,
-    xcomposer_series,
-    minigpt4_series,
-    idefics_series,
-    instructblip_series,
-    deepseekvl_series,
-    deepseekvl2_series,
-    janus_series,
-    minicpm_series,
-    cogvlm_series,
-    wemm_series,
-    cambrian_series,
-    chameleon_series,
-    video_models,
-    ovis_series,
-    vila_series,
-    mantis_series,
-    mmalaya_series,
-    phi3_series,
-    phi4_series, 
-    xgen_mm_series,
-    qwen2vl_series,
-    slime_series,
-    eagle_series,
-    moondream_series,
-    llama_series,
-    molmo_series,
-    kosmos_series,
-    points_series,
-    nvlm_series,
-    vintern_series,
-    h2ovl_series,
-    aria_series,
-    smolvlm_series,
-    sail_series,
-    valley_series,
-    vita_series,
-    ross_series,
-    emu_series,
-    ola_series,
-    ursa_series,
-    gemma_series,
-    long_vita_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series,
+    internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
+    idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
+    janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
+    chameleon_series, video_models, ovis_series, vila_series, mantis_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,
+    slime_series, eagle_series, moondream_series, llama_series, molmo_series,
+    kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
+    aria_series, smolvlm_series, sail_series, valley_series, vita_series,
+    ross_series, emu_series, ola_series, ursa_series, gemma_series,
+    long_vita_series, ristretto_series, kimi_series
 ]
 
 for grp in model_groups:

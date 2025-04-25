@@ -37,7 +37,7 @@
             "dataset": "Video-MME",
             "nframe": 16,
             "use_subtitle": true
-        },
+        }
     }
 }
 ```

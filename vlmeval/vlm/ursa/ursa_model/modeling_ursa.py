@@ -1,15 +1,15 @@
-# Copyright (2025) Bytedance Ltd. and/or its affiliates 
-# Licensed under the Apache License, Version 2.0 (the "License"); 
-# you may not use this file except in compliance with the License. 
-# You may obtain a copy of the License at 
+# Copyright (2025) Bytedance Ltd. and/or its affiliates
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 
-#     http://www.apache.org/licenses/LICENSE-2.0 
+#     http://www.apache.org/licenses/LICENSE-2.0
 
-# Unless required by applicable law or agreed to in writing, software 
-# distributed under the License is distributed on an "AS IS" BASIS, 
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-# See the License for the specific language governing permissions and 
-# limitations under the License. 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Union
@@ -73,7 +73,7 @@ class UrsaPreTrainedModel(PreTrainedModel):
         SDPA or not.
         """
         return self.language_model._supports_sdpa
-    
+
 
 class UrsaForConditionalGeneration(UrsaPreTrainedModel):
     def __init__(self, config: UrsaConfig):
@@ -199,7 +199,7 @@ class UrsaForConditionalGeneration(UrsaPreTrainedModel):
             final_labels = None
 
         return final_embedding, final_attention_mask, final_labels, position_ids
-    
+
     def forward(
         self,
         input_ids: torch.LongTensor = None,
@@ -328,7 +328,7 @@ class UrsaForConditionalGeneration(UrsaPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-    
+
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, inputs_embeds=None, pixel_values=None, attention_mask=None, **kwargs
     ):
@@ -513,7 +513,7 @@ class UrsaForTokenClassification(UrsaPreTrainedModel):
             final_labels = None
 
         return final_embedding, final_attention_mask, final_labels, position_ids
-    
+
     def forward(
         self,
         input_ids: torch.LongTensor = None,
@@ -611,13 +611,13 @@ class UrsaForTokenClassification(UrsaPreTrainedModel):
             return_dict=return_dict,
             output_hidden_states=True
         )
-        
+
         # logits = outputs[0]
         logits = outputs.hidden_states[-1]
         logits = self.dropout(logits)
         logits = self.score(logits)
 
-        
+
         loss = None
         if labels is not None:
             # Shift so that tokens < n predict n
@@ -634,7 +634,7 @@ class UrsaForTokenClassification(UrsaPreTrainedModel):
             #     shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1).to(shift_logits.device)
             # )
             # loss_fct = nn.CrossEntropyLoss()
-            # loss = loss_fct(logits.view(-1, 1), labels.view(-1))    
+            # loss = loss_fct(logits.view(-1, 1), labels.view(-1))
             loss = None
         if not return_dict:
             output = (logits,) + outputs[1:]
@@ -648,7 +648,7 @@ class UrsaForTokenClassification(UrsaPreTrainedModel):
             labels=labels
             # attentions=outputs.attentions,
         )
-    
+
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, inputs_embeds=None, pixel_values=None, attention_mask=None, **kwargs
     ):

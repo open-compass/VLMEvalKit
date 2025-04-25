@@ -15,9 +15,10 @@ def get_score(model, dataset):
         file_name += '_gpt-4-turbo_score.csv'
     elif listinstr(['COCO', 'OCRBench'], dataset):
         file_name += '_score.json'
+    elif listinstr(['Spatial457'], dataset):
+            file_name += '_score.json'
     else:
         raise NotImplementedError
-    
     if not osp.exists(file_name):
         return {}
     
@@ -59,10 +60,14 @@ def get_score(model, dataset):
         ret[dataset] = float(data['Relative Score (main)'])
     elif 'OCRBench' in dataset:
         ret[dataset] = data['Final Score']
-    elif dataset == 'VisOnlyQA-VLMEvalKit':
+    elif dataset == "VisOnlyQA-VLMEvalKit":
         for n, a in zip(data['split'], data['Overall']):
             ret[f'VisOnlyQA-VLMEvalKit_{n}'] = a * 100
-     
+    elif 'Spatial457' in dataset:
+        ret["All"] = data["score"] * 100
+        for level in ["L1_single", "L2_objects", "L3_2d_spatial", "L4_occ",
+                        "L4_pose", "L5_6d_spatial", "L5_collision"]:
+            ret[f"{dataset} - {level}"] = data[f"{level}_score"] * 100
     return ret
 
 def parse_args():

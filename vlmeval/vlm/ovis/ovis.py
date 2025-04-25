@@ -490,7 +490,7 @@ class Ovis2(BaseModel):
         # preprocess inputs
         if DATASET_MODALITY(dataset) == 'VIDEO':
             max_partition = 1
-        elif any(
+        elif (dataset != None) and any(
             dataset.startswith(prefix) for prefix in
             ('HallusionBench', 'TextVQA', 'ChartQA', 'OCRBench', 'InfoVQA', 'DocVQA', 'MTVQA')):
             max_partition = 12
