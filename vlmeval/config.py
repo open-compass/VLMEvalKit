@@ -873,6 +873,7 @@ deepseekvl2_series = {
 
 janus_series = {
     "Janus-1.3B": partial(Janus, model_path="deepseek-ai/Janus-1.3B"),
+    "Janus-Pro-1B": partial(Janus, model_path="deepseek-ai/Janus-Pro-1B"),
     "Janus-Pro-7B": partial(Janus, model_path="deepseek-ai/Janus-Pro-7B"),
 }
 
@@ -1091,6 +1092,13 @@ qwen2vl_series = {
     "Qwen2.5-VL-72B-Instruct-AWQ": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct-AWQ",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen2.5-Omni-7B": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-Omni-7B",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,

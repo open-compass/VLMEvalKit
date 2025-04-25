@@ -206,7 +206,15 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.model_path = model_path
         MODEL_CLS = None
 
-        if listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
+        if listinstr(['omni'], model_path.lower()):
+            try:
+                from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
+            except Exception as err:
+                logging.critical("pip install git+https://github.com/huggingface/transformers@3a1ead0aabed473eafe527915eea8c197d424356")  # noqa: E501
+                raise err
+            MODEL_CLS = Qwen2_5OmniForConditionalGeneration
+            self.processor = Qwen2_5OmniProcessor.from_pretrained(model_path)
+        elif listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
             from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
@@ -265,9 +273,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 )
             else:
                 self.model = MODEL_CLS.from_pretrained(
-                    model_path, torch_dtype='auto', device_map='cpu', attn_implementation='flash_attention_2'
+                    model_path, torch_dtype='auto', device_map='cuda', attn_implementation='flash_attention_2'
                 )
-                self.model.cuda().eval()
+                self.model.eval()
 
         torch.cuda.empty_cache()
 
@@ -400,11 +408,19 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         return content
 
     def generate_inner_transformers(self, message, dataset=None):
-        try:
-            from qwen_vl_utils import process_vision_info
-        except Exception as err:
-            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            raise err
+        if listinstr(['omni'], self.model_path.lower()):
+            try:
+                from qwen_omni_utils import process_mm_info
+            except Exception as err:
+                logging.critical("qwen_omni_utils not found, please install it via 'pip install qwen-omni-utils[decord]'")  # noqa: E501
+                raise err
+        else:
+            try:
+                from qwen_vl_utils import process_vision_info
+            except Exception as err:
+                logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")  # noqa: E501
+                raise err
+
         messages = []
         if self.system_prompt is not None:
             messages.append({'role': 'system', 'content': self.system_prompt})
@@ -413,10 +429,16 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             print(f'\033[31m{messages}\033[0m')
 
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
-        images, videos = process_vision_info([messages])
+        if listinstr(['omni'], self.model_path.lower()):
+            _, images, videos = process_mm_info([messages], use_audio_in_video=False)
+        else:
+            images, videos = process_vision_info([messages])
         inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')
         inputs = inputs.to('cuda')
 
+        if listinstr(['omni'], self.model_path.lower()):
+            self.generate_kwargs['use_audio_in_video'] = False
+            self.generate_kwargs['return_audio'] = False
         generated_ids = self.model.generate(
             **inputs,
             **self.generate_kwargs,
@@ -452,11 +474,20 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
 
     def generate_inner_vllm(self, message, dataset=None):
         from vllm import SamplingParams
-        try:
-            from qwen_vl_utils import process_vision_info
-        except Exception as err:
-            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            raise err
+
+        if listinstr(['omni'], self.model_path.lower()):
+            try:
+                from qwen_omni_utils import process_mm_info
+            except Exception as err:
+                logging.critical("qwen_omni_utils not found, please install it via 'pip install qwen-omni-utils[decord]'")  # noqa: E501
+                raise err
+        else:
+            try:
+                from qwen_vl_utils import process_vision_info
+            except Exception as err:
+                logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")  # noqa: E501
+                raise err
+
         messages = []
         if self.system_prompt is not None:
             messages.append({'role': 'system', 'content': self.system_prompt})
