@@ -18,16 +18,16 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
     import vlmeval.vlm
 
     config = cp.deepcopy(cfg[model_name])
-    config["use_vllm"] = use_vllm
-    if "class" not in config:
+    config['use_vllm'] = use_vllm
+    if 'class' not in config:
         return supported_VLM[model_name](**config)
-    cls_name = config.pop("class")
+    cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
         return getattr(vlmeval.api, cls_name)(**config)
     elif hasattr(vlmeval.vlm, cls_name):
         return getattr(vlmeval.vlm, cls_name)(**config)
     else:
-        raise ValueError(f"Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`")
+        raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
 
 
 def build_dataset_from_config(cfg, dataset_name):
@@ -212,7 +212,7 @@ def main():
             os.makedirs(pred_root, exist_ok=True)
 
         if use_config:
-            model = build_model_from_config(cfg["model"], model_name, args.use_vllm)
+            model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
 
         for _, dataset_name in enumerate(args.data):
             if world_size > 1:
