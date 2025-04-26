@@ -19,7 +19,7 @@ from .utils import (build_multi_choice_prompt,
                     build_qa_cot_prompt,
                     mpo_post_processing,
                     reorganize_prompt,
-                    split_model, load_image)
+                    load_image)
 from .utils import mpo_prompt_with_final_answer, mpo_prompt_without_final_answer
 from ..base import BaseModel
 from ...dataset import DATASET_TYPE, DATASET_MODALITY
@@ -163,45 +163,28 @@ class InternVLChat(BaseModel):
         if use_lmdeploy:
             from lmdeploy import TurbomindEngineConfig, VisionConfig, pipeline, ChatTemplateConfig
             vision_config = VisionConfig(max_batch_size=4)
+            num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,
                 vision_config=vision_config,
                 chat_template_config=ChatTemplateConfig(model_name='internvl2_5'),
-                backend_config=TurbomindEngineConfig(
-                    session_len=16384,
-                    cache_max_entry_count=0.1,
-                    tp=int(os.environ['TP']))
+                backend_config=TurbomindEngineConfig(session_len=16384, cache_max_entry_count=0.1, tp=num_gpus)
             )
-            torch.cuda.set_device(int(os.environ['RANK']) % torch.cuda.device_count())
+            torch.cuda.set_device(0)
             self.device = 'cuda'
-        elif auto_split_flag():
-            device_map, visible_devices = split_model(model_path=model_path)
-            self.device = visible_devices[0]
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                device_map=device_map).eval()
         else:
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
-                low_cpu_mem_usage=True).eval().cuda()
+                low_cpu_mem_usage=True,
+                device_map='auto').eval()
             self.device = 'cuda'
 
         if best_of_n > 1:
             assert version == 'V2.0', 'only support BoN evaluation with version==V2.0'
             assert reward_model_path is not None
-
-            if auto_split_flag():
-                rm_device_map, visible_devices = split_model(model_path=reward_model_path)
-                rm_kwargs = {'device_map': rm_device_map}
-            else:
-                rm_kwargs = {}
 
             self.reward_tokenizer = AutoTokenizer.from_pretrained(
                 reward_model_path, trust_remote_code=True, use_fast=False)
@@ -210,10 +193,8 @@ class InternVLChat(BaseModel):
                 torch_dtype=torch.bfloat16,
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
-                low_cpu_mem_usage=True, **rm_kwargs).eval()
-
-            if not auto_split_flag():
-                self.reward_model = self.reward_model.to(self.device)
+                low_cpu_mem_usage=True,
+                device_map='auto').eval()
 
             if not self.use_cot:
                 os.environ['USE_COT'] = '1'

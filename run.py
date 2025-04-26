@@ -4,24 +4,29 @@ import subprocess
 
 
 # GET the number of GPUs on the node without importing libs like torch
-def get_gpu_num():
+def get_gpu_list():
+    CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES', '')
+    if CUDA_VISIBLE_DEVICES != '':
+        gpu_list = [int(x) for x in CUDA_VISIBLE_DEVICES.split(',')]
+        return gpu_list
     try:
         ps = subprocess.Popen(('nvidia-smi', '--list-gpus'), stdout=subprocess.PIPE)
         output = subprocess.check_output(('wc', '-l'), stdin=ps.stdout)
-        return int(output)
+        return list(range(int(output)))
     except:
-        return None
+        return []
 
 
 # Set Device when WORLD SIZE > 1, Only Single Node Scenario Considered Now
 RANK = int(os.environ.get('RANK', 0))
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
-NGPU = get_gpu_num()
-if WORLD_SIZE > 1 and NGPU is not None:
+GPU_LIST = get_gpu_list()
+if WORLD_SIZE > 1 and len(GPU_LIST):
+    NGPU = len(GPU_LIST)
+    assert NGPU >= WORLD_SIZE, "The number of processes should be less than or equal to the number of GPUs"
     GPU_PER_PROC = NGPU // WORLD_SIZE
-    assert GPU_PER_PROC >= 1, "The number of processes should be less than or equal to the number of GPUs"
     DEVICE_START_IDX = GPU_PER_PROC * RANK
-    CUDA_VISIBLE_DEVICES = [str(i) for i in range(DEVICE_START_IDX, DEVICE_START_IDX + GPU_PER_PROC)]
+    CUDA_VISIBLE_DEVICES = [str(i) for i in GPU_LIST[DEVICE_START_IDX: DEVICE_START_IDX + GPU_PER_PROC]]
     CUDA_VISIBLE_DEVICES = ','.join(CUDA_VISIBLE_DEVICES)
     # Set CUDA_VISIBLE_DEVICES
     os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
