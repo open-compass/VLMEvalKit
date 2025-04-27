@@ -22,6 +22,15 @@ class ImageYORNDataset(ImageBaseDataset):
         'AMBER': '970d94c0410916166e0a76ba75da7934',
     }
 
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        if self.dataset_name == 'AMBER':
+            assert sum([x['type'] == 'text' for x in msgs]) == 1
+            for item in msgs:
+                if item['type'] == 'text' :
+                    item['value'] += '\nPlease answer yes or no.'
+        return msgs
+
     # It returns a dataframe
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.yorn import YOrN_Extraction, YOrN_auxeval
