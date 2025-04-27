@@ -25,6 +25,7 @@ from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
 from .spatial457 import Spatial457
+from .charxiv import CharXiv
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -156,7 +157,7 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic,
+    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, CharXiv
 ]
 
 
