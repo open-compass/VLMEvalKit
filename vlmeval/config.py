@@ -225,22 +225,13 @@ api_models = {
     ),
     # Gemini
     "GeminiPro1-0": partial(
-        GeminiProVision, model="gemini-1.0-pro", temperature=0, retry=10
+        Gemini, model="gemini-1.0-pro", temperature=0, retry=10
     ),  # now GeminiPro1-0 is only supported by vertex backend
     "GeminiPro1-5": partial(
-        GeminiProVision, model="gemini-1.5-pro", temperature=0, retry=10
+        Gemini, model="gemini-1.5-pro", temperature=0, retry=10
     ),
     "GeminiFlash1-5": partial(
-        GeminiProVision, model="gemini-1.5-flash", temperature=0, retry=10
-    ),
-    "GeminiFlash2-0": partial(
-        GeminiProVision, model="gemini-2.0-flash", temperature=0, retry=10
-    ),
-    "GeminiPro2-0": partial(
-        GeminiProVision, model="gemini-2.0-pro-exp", temperature=0, retry=10
-    ),
-    "GeminiPro2-5": partial(
-        GeminiProVision, model="gemini-2.5-pro-exp-03-25", temperature=0, retry=10
+        Gemini, model="gemini-1.5-flash", temperature=0, retry=10
     ),
     "GeminiPro1-5-002": partial(
         GPT4V, model="gemini-1.5-pro-002", temperature=0, retry=10
@@ -248,6 +239,21 @@ api_models = {
     "GeminiFlash1-5-002": partial(
         GPT4V, model="gemini-1.5-flash-002", temperature=0, retry=10
     ),  # Internal Use Only
+    "GeminiFlash2-0": partial(
+        Gemini, model="gemini-2.0-flash", temperature=0, retry=10
+    ),
+    "GeminiFlashLite2-0": partial(
+        Gemini, model="gemini-2.0-flash-lite", temperature=0, retry=10
+    ),
+    "GeminiPro2-0": partial(
+        Gemini, model="gemini-2.0-pro-exp", temperature=0, retry=10
+    ),
+    "GeminiFlash2-5": partial(
+        Gemini, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
+    ),
+    "GeminiPro2-5": partial(
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -1092,13 +1098,6 @@ qwen2vl_series = {
     "Qwen2.5-VL-72B-Instruct-AWQ": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct-AWQ",
-        min_pixels=1280 * 28 * 28,
-        max_pixels=16384 * 28 * 28,
-        use_custom_prompt=False,
-    ),
-    "Qwen2.5-Omni-7B": partial(
-        Qwen2VLChat,
-        model_path="Qwen/Qwen2.5-Omni-7B",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
