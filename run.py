@@ -18,7 +18,8 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
     import vlmeval.vlm
 
     config = cp.deepcopy(cfg[model_name])
-    config['use_vllm'] = use_vllm
+    if use_vllm:
+        config['use_vllm'] = use_vllm
     if 'class' not in config:
         return supported_VLM[model_name](**config)
     cls_name = config.pop('class')
