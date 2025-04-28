@@ -134,7 +134,7 @@ class SenseChatVisionWrapper(BaseAPI):
         for key, item in options.items():
             question += f'\n{key}. {item}'
         prompt = {
-'multiple-choice': 'You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Your output should be divided into two parts: First, reason about the correct answer. Then write the answer in the following format where X is exactly one of the choices given by the problem: "ANSWER: X". If you are uncertain of the correct answer, guess the most likely one.',  # noqa: E501, E122
+'multiple-choice': "You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Answer the preceding multiple choice question. The last line of your response should follow this format: 'Answer: \\boxed LETTER', where LETTER is one of the options. If you are uncertain or the problem is too complex, make a reasoned guess based on the information provided. Avoid repeating steps indefinitely—provide your best guess even if unsure. Think step by step logically, considering all relevant information before answering.",  # noqa: E501, E122
 'open': 'You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Your output should be divided into two parts: First, reason about the correct answer. Then write the answer in the following format where X is only the answer and nothing else: "ANSWER: X"'  # noqa: E501, E122
         }
         subject = '_'.join(line['id'].split('_')[1:-1])
