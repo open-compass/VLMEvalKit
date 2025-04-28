@@ -183,6 +183,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         system_prompt: str | None = None,
         post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
         verbose: bool = False,
+        use_audio_in_video: bool = False,
+        nframe: int | None = None
         **kwargs,
     ):
         super().__init__(use_custom_prompt=use_custom_prompt)
@@ -199,7 +201,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.verbose = verbose
         self.post_process = post_process
         self.fps = 2.0
-        self.nframe = 64
+        self.nframe = nframe
+        self.use_audio_in_video = use_audio_in_video
         self.FRAME_FACTOR = 2
         rank, world_size = get_rank_and_world_size()
         assert model_path is not None
@@ -319,6 +322,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                         item['nframes'] = self.nframe
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
+            elif s['type'] == 'audio':
+                item = {'type':'audio','audio':s['value']}
             else:
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
             content.append(item)
@@ -430,14 +435,14 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
 
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         if listinstr(['omni'], self.model_path.lower()):
-            _, images, videos = process_mm_info([messages], use_audio_in_video=False)
+            audios, images, videos = process_mm_info([messages], use_audio_in_video=self.use_audio_in_video)
         else:
             images, videos = process_vision_info([messages])
-        inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')
+        inputs = self.processor(text=text, images=images,audio=audios, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video)
         inputs = inputs.to('cuda')
 
         if listinstr(['omni'], self.model_path.lower()):
-            self.generate_kwargs['use_audio_in_video'] = False
+            self.generate_kwargs['use_audio_in_video'] = self.use_audio_in_video
             self.generate_kwargs['return_audio'] = False
         generated_ids = self.model.generate(
             **inputs,
