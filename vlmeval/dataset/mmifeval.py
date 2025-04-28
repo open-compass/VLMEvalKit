@@ -194,7 +194,7 @@ def extract_score_from_cmp_gpt_resp(response_text):
 # <<< gpt >>>
 
 
-def run_once_with_image(pt, image, retry=3):
+def run_once_with_image(pt, image, retry=4):
     global judge_model
     prefix = "data:image/jpeg;base64,"
     img = prefix + image
@@ -227,99 +227,105 @@ def run_once_without_image(pt, retry=3):
 # <<< score >>>
 
 
-def judge_one_item(item):
+def judge_one_item(item, retry=3):
     global aux_data_dict
     item = json.loads(item)
-    if item.get("tag", None) == "P-Level":
-        # in tsv file, answer is a string, need to be converted to list
-        pt = generate_eval_pt_p_level(item["question"], item["prediction"], json.loads(item["answer"]))
-        gpt_resp = run_once_without_image(pt)
-        try:
-            score = extract_score_from_p_level_gpt_resp(gpt_resp)
-            return (
-                0,
-                "success",
-                {
-                    "total_score": score,
-                    "gpt_resp": gpt_resp,
-                },
-            )
-        except Exception as e:
-            logger.error(f"\nError:\n{e}\nItem:\n{item}\ngpt_resp:\n{gpt_resp}\n")
-            return 1, "P-Level, fail in extract score", {}
-    else:  # process C-Level data
-        # split into direct_gpt and other
-        # direct_gpt can be processed in batch
-        # other needs to be processed one by one
-        constraint_direct_gpt = []
-        constraint_other = []
-        for constraint in json.loads(item["constraints"]):
-            method = constraint["judge"]["method"]
-            if method == "direct_gpt":
-                constraint_direct_gpt.append(constraint)
-            else:
-                constraint_other.append(constraint)
-        score_dict = {}
-        # 1. process direct_gpt: if there is no direct_gpt, instruction is also
-        # needed
-        if len(constraint_direct_gpt) > 0:
-            pt_direct_gpt = generate_eval_pt_c_level(constraint_direct_gpt, item["prediction"])
-            gpt_resp = run_once_with_image(pt_direct_gpt, item["image"])
+    num_retry = 0
+    while num_retry < retry:
+        if item.get("tag", None) == "P-Level":
+            # in tsv file, answer is a string, need to be converted to list
+            pt = generate_eval_pt_p_level(item["question"], item["prediction"], json.loads(item["answer"]))
+            gpt_resp = run_once_without_image(pt)
             try:
-                direct_gpt_score_dict = extract_score_from_direct_gpt_resp(gpt_resp)
-                score_dict["gpt_resp_direct_gpt"] = gpt_resp
-                for i, constraint in enumerate(constraint_direct_gpt):
-                    score_dict[constraint["key"]] = direct_gpt_score_dict[f"constraint_{i + 1}"]
-            except Exception as e:
-                logger.error(
-                    f"\nError:\n{e}\nItem:\n{item}\npt_direct_gpt:\n{pt_direct_gpt}\ngpt_resp:\n{gpt_resp}\nfull_resp:\n{full_resp}"
+                score = extract_score_from_p_level_gpt_resp(gpt_resp)
+                return (
+                    0,
+                    "success",
+                    {
+                        "total_score": score,
+                        "gpt_resp": gpt_resp,
+                    },
                 )
-                return 1, "C-Level, direct_gpt, fail in extract score", {}
-        # 2. process rule_based
-        for constraint in constraint_other:
-            if constraint["judge"]["method"] == "rule_based":
-                # call function according to constraint["judge"]["verify_funcs"]
-                # maybe a list of function names (str)
-                # func in function_and_compare.py
-                # example: {"method": "rule_based", "verify_funcs": [{"func":
-                # "check_whether_response_paragraph_number_in_range", "params":
-                # [3, 3]}]}}
-                score = 1.0
-                # breakpoint()
-                for func_dict in constraint["judge"]["verify_funcs"]:
-                    func = globals()[func_dict["func"]]
-                    # use * to unpack the list, ** is used for dict
-                    judge_result = func(item["prediction"], *func_dict["params"])
-                    # breakpoint()
-                    if not judge_result:  # False -> score = 0
-                        score = 0.0
-                        break
-                # breakpoint()
-                score_dict[constraint["key"]] = score
-        # 3. process cmp_gpt
-        for constraint in constraint_other:
-            if constraint["judge"]["method"] == "cmp_gpt":
-                del_cons_prediction = aux_data_dict[item["id"]][constraint["key"]]
-                pt = generate_cmp_pt(constraint["value"], item["prediction"], del_cons_prediction)
-                gpt_resp = run_once_without_image(pt)
-                try:
-                    score = extract_score_from_cmp_gpt_resp(gpt_resp)
-                    score_dict[constraint["key"]] = score
-                    score_dict[f"gpt_resp_cmp_gpt_{constraint['key']}"] = gpt_resp
-                except Exception as e:
-                    logger.error(f"\nError:\n{e}\nItem:\n{item}\ngpt_resp:\n{gpt_resp}")
-                    return 1, "C-Level, cmp_gpt, fail in extract score", {}
-        # add total_score
-        total_score = 0.0
-        cnt = 0
-        for key, value in score_dict.items():
-            if key.startswith("gpt_resp_"):
+            except Exception as e:
+                logger.error(f"\nError:\n{e}\nItem:\n{item}\ngpt_resp:\n{gpt_resp}\n")
+                num_retry += 1
                 continue
-            total_score += value
-            cnt += 1
-        score_dict["total_score"] = total_score / cnt
-        logger.info(f"score_dict:\n{score_dict}")
-        return 0, "success", score_dict
+        else:  # process C-Level data
+            # split into direct_gpt and other
+            # direct_gpt can be processed in batch
+            # other needs to be processed one by one
+            constraint_direct_gpt = []
+            constraint_other = []
+            for constraint in json.loads(item["constraints"]):
+                method = constraint["judge"]["method"]
+                if method == "direct_gpt":
+                    constraint_direct_gpt.append(constraint)
+                else:
+                    constraint_other.append(constraint)
+            score_dict = {}
+            # 1. process direct_gpt: if there is no direct_gpt, instruction is also
+            # needed
+            if len(constraint_direct_gpt) > 0:
+                pt_direct_gpt = generate_eval_pt_c_level(constraint_direct_gpt, item["prediction"])
+                gpt_resp = run_once_with_image(pt_direct_gpt, item["image"])
+                try:
+                    direct_gpt_score_dict = extract_score_from_direct_gpt_resp(gpt_resp)
+                    score_dict["gpt_resp_direct_gpt"] = gpt_resp
+                    for i, constraint in enumerate(constraint_direct_gpt):
+                        score_dict[constraint["key"]] = direct_gpt_score_dict[f"constraint_{i + 1}"]
+                except Exception as e:
+                    logger.error(
+                        f"\nError:\n{e}\nItem:\n{item}\npt_direct_gpt:\n{pt_direct_gpt}\ngpt_resp:\n{gpt_resp}"
+                    )
+                    num_retry += 1
+                    continue
+            # 2. process rule_based
+            for constraint in constraint_other:
+                if constraint["judge"]["method"] == "rule_based":
+                    # call function according to constraint["judge"]["verify_funcs"]
+                    # maybe a list of function names (str)
+                    # func in function_and_compare.py
+                    # example: {"method": "rule_based", "verify_funcs": [{"func":
+                    # "check_whether_response_paragraph_number_in_range", "params":
+                    # [3, 3]}]}}
+                    score = 1.0
+                    # breakpoint()
+                    for func_dict in constraint["judge"]["verify_funcs"]:
+                        func = globals()[func_dict["func"]]
+                        # use * to unpack the list, ** is used for dict
+                        judge_result = func(item["prediction"], *func_dict["params"])
+                        # breakpoint()
+                        if not judge_result:  # False -> score = 0
+                            score = 0.0
+                            break
+                    # breakpoint()
+                    score_dict[constraint["key"]] = score
+            # 3. process cmp_gpt
+            for constraint in constraint_other:
+                if constraint["judge"]["method"] == "cmp_gpt":
+                    del_cons_prediction = aux_data_dict[item["id"]][constraint["key"]]
+                    pt = generate_cmp_pt(constraint["value"], item["prediction"], del_cons_prediction)
+                    gpt_resp = run_once_without_image(pt)
+                    try:
+                        score = extract_score_from_cmp_gpt_resp(gpt_resp)
+                        score_dict[constraint["key"]] = score
+                        score_dict[f"gpt_resp_cmp_gpt_{constraint['key']}"] = gpt_resp
+                    except Exception as e:
+                        logger.error(f"\nError:\n{e}\nItem:\n{item}\ngpt_resp:\n{gpt_resp}")
+                        num_retry += 1
+                        continue
+            # add total_score
+            total_score = 0.0
+            cnt = 0
+            for key, value in score_dict.items():
+                if key.startswith("gpt_resp_"):
+                    continue
+                total_score += value
+                cnt += 1
+            score_dict["total_score"] = total_score / cnt
+            logger.info(f"score_dict:\n{score_dict}")
+            return 0, "success", score_dict
+    return 1, "C-Level, fail in judge", {}
 
 
 class MMIFEval(ImageBaseDataset):
