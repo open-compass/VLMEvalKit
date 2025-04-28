@@ -624,3 +624,76 @@ def get_dimension_rating(data_path):
         results[task]['Avg'] = acc_task
     results['Overall'] = succ_all / sum_all
     return results
+
+
+def check_is_number(string):
+    """
+    Check if the given string a number.
+    """
+    try:
+        float(string.replace(',', ''))
+        return True
+    except ValueError:
+        # check if there's comma inside
+        return False
+
+
+def normalize_str(string):
+    """
+    Normalize the str to lower case and make them float numbers if possible.
+    """
+    # check if characters in the string
+
+    # if number, numerize it.
+    string = string.strip()
+
+    is_number = check_is_number(string)
+
+    if is_number:
+        string = string.replace(',', '')
+        string = float(string)
+        # leave 2 decimal
+        string = round(string, 2)
+        return [string]
+    else:  # it's likely to be a string
+        # lower it
+        string = string.lower()
+        if len(string) == 1:
+            return [" " + string, string + " "]  # avoid trivial matches
+        return [string]
+
+
+def mmmu_evaluation(model, line, dataset_name):
+    if 'question_type' in line and line['question_type'] == 'open':
+        hit = 0
+        match_log = 'Failed to match'
+        if isinstance(line['answer'], list):
+            # use float to avoid trivial matches
+            norm_answers = []
+            for answer in line['answer']:
+                norm_answers.extend(normalize_str(answer))
+        else:
+            norm_answers = normalize_str(line['answer'])
+        for pred in line['prediction']:  # pred is already normalized in parse response phase
+            if isinstance(pred, str):  # if it's a string, then find if ans in the pred_i
+                for norm_ans in norm_answers:
+                    # only see if the string answer in the string pred
+                    if isinstance(norm_ans, str) and norm_ans in pred:
+                        if not hit:
+                            hit = 1
+                            match_log = 'answer in pred'
+                        break
+            else:  # it's a float number
+                if pred in norm_answers:
+                    if not hit:
+                        hit = True
+                        match_log = 'pred is float, hit the answer'
+                    break
+        return dict(hit=hit, log=f'Match Log: {match_log}. ')
+    else:
+        res = extract_answer_from_item(model, line, dataset_name=dataset_name)
+        opt, match_log = res['opt'], res['log']
+        if opt == line['answer']:
+            return dict(hit=1, log=f'Match Log: {match_log}. ')
+        else:
+            return dict(hit=0, log=f'Match Log: {match_log}. ')
