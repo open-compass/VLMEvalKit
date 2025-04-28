@@ -405,6 +405,11 @@ class MMIFEval(ImageBaseDataset):
         ans = {}
         if os.path.exists(tmp_file):
             ans = load(tmp_file)
+            for k, v in ans.items():
+                if v[0] == 0:
+                    ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
+                else:
+                    ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
             # ans is a dict
             logger.info(f"Loaded {len(ans)} data from {tmp_file}")
 
@@ -431,7 +436,6 @@ class MMIFEval(ImageBaseDataset):
                     keys=indices,
                     save=tmp_file,
                 )
-                ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
             else:
