@@ -438,7 +438,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             audios, images, videos = process_mm_info([messages], use_audio_in_video=self.use_audio_in_video)
         else:
             images, videos = process_vision_info([messages])
-        inputs = self.processor(text=text, images=images,audio=audios, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video)
+        inputs = self.processor(text=text, images=images,audio=audios, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video) # noqa: E501
         inputs = inputs.to('cuda')
 
         if listinstr(['omni'], self.model_path.lower()):
