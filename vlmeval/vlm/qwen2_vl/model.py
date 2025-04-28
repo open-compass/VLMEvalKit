@@ -184,7 +184,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
         verbose: bool = False,
         use_audio_in_video: bool = False,
-        nframe: int | None = None
+        nframe: int | None = None,
         **kwargs,
     ):
         super().__init__(use_custom_prompt=use_custom_prompt)
