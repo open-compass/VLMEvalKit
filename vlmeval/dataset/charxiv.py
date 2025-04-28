@@ -22,7 +22,8 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
     Returns:
         Dict containing evaluation results with extract_answer and score
     """
-    prompt = line["grading_query"]
+    failure_result = {"extract_answer": "Failed to parse response", "score": 0.0}
+    prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
     retry = kwargs.get("retry", 10)
     max_tokens = kwargs.get("max_tokens", 256)
     temperature = kwargs.get("temperature", 0)
@@ -39,11 +40,15 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 top_p=top_p,
             )
             content = json.loads(response)
+            if not isinstance(content, dict):
+                return failure_result
+            if "score" not in content or "extract_answer" not in content:
+                return failure_result
             return content
         except Exception:
             continue
 
-    return {"extract_answer": "Failed to parse response", "score": 0.0}
+    return failure_result
 
 
 def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
