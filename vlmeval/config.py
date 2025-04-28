@@ -362,10 +362,10 @@ api_models = {
     # SenseNova
     "SenseNova-V6-Pro": partial(
         SenseChatVisionAPI, model="SenseNova-V6-Pro", temperature=0, retry=10
-    )
+    ),
     "SenseNova-V6-Reasoner": partial(
         SenseChatVisionAPI, model="SenseNova-V6-Reasoner", temperature=0, retry=10
-    ),,
+    ),
     "HunYuan-Vision": partial(
         HunyuanVision, model="hunyuan-vision", temperature=0, retry=10
     ),
