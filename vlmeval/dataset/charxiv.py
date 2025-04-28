@@ -24,6 +24,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
     """
     failure_result = {"extract_answer": "Failed to parse response", "score": 0.0}
     prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
+
     retry = kwargs.get("retry", 10)
     max_tokens = kwargs.get("max_tokens", 256)
     temperature = kwargs.get("temperature", 0)
@@ -106,8 +107,8 @@ class CharXiv(ImageBaseDataset):
         "CharXiv_reasoning_val": "https://huggingface.co/datasets/MaoSong2022/CharXiv/resolve/main/CharXiv_reasoning_val.tsv",
     }
     DATASET_MD5 = {
-        "CharXiv_descriptive_val": "b29b2b7f59b965a70fab779a0752d29a",
-        "CharXiv_reasoning_val": "0ba6dd2e09cd9ec5438a2c7e2e951989",
+        "CharXiv_descriptive_val": "e165037032f169a59dd09ea5d7ad3073",
+        "CharXiv_reasoning_val": "98eeff269b40726982627b19338ccd45",
     }
 
     def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
@@ -214,6 +215,10 @@ class CharXiv(ImageBaseDataset):
             return score
 
         data = file.load(eval_file)
+        if "score" not in data.columns:
+            data["score"] = 0
+        if "extract_answer" not in data.columns:
+            data["extract_answer"] = ""
 
         # Load intermediate results if available
         processed_results = {}
@@ -238,16 +243,11 @@ class CharXiv(ImageBaseDataset):
             )
             processed_results = file.load(temp_result_file)
 
-        # Initialize columns if they don't exist
-        if "score" not in data.columns:
-            data["score"] = 0
-        if "extract_answer" not in data.columns:
-            data["extract_answer"] = ""
-
         # Update data with evaluation results
-        for idx in indices:
-            data.loc[idx, "score"] = processed_results[idx]["score"]
-            data.loc[idx, "extract_answer"] = processed_results[idx]["extract_answer"]
+        data["score"] = data.apply(lambda x: processed_results[x.name]["score"], axis=1)
+        data["extract_answer"] = data.apply(
+            lambda x: processed_results[x.name]["extract_answer"], axis=1
+        )
 
         # Save results and return scores
         file.dump(data, result_file)
