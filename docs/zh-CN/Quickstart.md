@@ -37,9 +37,8 @@ pip install -e .
   # CongRong API
   CW_API_BASE=
   CW_API_KEY=
-  # SenseChat-V API
-  SENSECHAT_AK=
-  SENSECHAT_SK=
+  # SenseNova API
+  SENSENOVA_API_KEY=
   # Hunyuan-Vision API
   HUNYUAN_SECRET_KEY=
   HUNYUAN_SECRET_ID=
