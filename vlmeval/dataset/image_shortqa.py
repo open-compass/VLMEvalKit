@@ -140,3 +140,23 @@ class ImageShortQADataset(ImageBaseDataset):
         score_file = eval_file.replace('.xlsx', '_acc.csv')
         dump(acc, score_file)
         return acc
+
+
+class PathVQA_VAL(ImageShortQADataset):
+    DATASET_URL = {
+        'PathVQA_VAL': 'https://huggingface.co/datasets/Pfei111/PathVQA/resolve/main/PathVQA_VAL.tsv',
+    }
+
+    DATASET_MD5 = {
+        'PathVQA_VAL': None,
+    }
+
+
+class PathVQA_TEST(ImageShortQADataset):
+    DATASET_URL = {
+        'PathVQA_TEST': 'https://huggingface.co/datasets/Pfei111/PathVQA/resolve/main/PathVQA_TEST.tsv',
+    }
+
+    DATASET_MD5 = {
+        'PathVQA_TEST': None,
+    }

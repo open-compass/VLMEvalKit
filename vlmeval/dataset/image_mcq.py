@@ -1479,3 +1479,33 @@ class VisuLogic(ImageMCQDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(combine_score, score_pth)
         return combine_score
+
+
+class CMMU_MCQ(ImageMCQDataset):
+    DATASET_URL = {
+        'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
+    }
+
+    DATASET_MD5 = {
+        'CMMU_MCQ': None,
+    }
+
+
+class PathMMU_VAL(ImageMCQDataset):
+    DATASET_URL = {
+        'PathMMU_VAL': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_VAL.tsv',
+    }
+
+    DATASET_MD5 = {
+        'PathMMU_VAL': None,
+    }
+
+
+class PathMMU_TEST(ImageMCQDataset):
+    DATASET_URL = {
+        'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
+    }
+
+    DATASET_MD5 = {
+        'PathMMU_TEST': None,
+    }
