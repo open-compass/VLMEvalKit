@@ -157,43 +157,13 @@ def load_image2(image_file, input_size=448, target_aspect_ratio=(1, 1), min_num=
     return pixel_values
 
 
-# This function is used to split InternVL2-Llama3-76B
-def split_model(model_name):
-    import math
-    device_map = {}
-    num_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    num_gpus = num_gpus // world_size
-
-    num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.8 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.2))
-    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.8)
-    layer_cnt = 0
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
-            layer_cnt += 1
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.tok_embeddings'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.output'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
-    return device_map
-
-
 # To revert changes
 class MiniMonkey(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path='mx262/MiniMokney', load_in_8bit=False, **kwargs):
+    def __init__(self, model_path='mx262/MiniMokney', **kwargs):
         assert model_path is not None
         assert version_cmp(transformers.__version__, '4.36.2', 'ge')
 
@@ -213,25 +183,13 @@ class MiniMonkey(BaseModel):
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
 
-        if listinstr(['InternVL2-Llama3-76B'], model_path):
-            device_map = split_model(model_path.split('/')[-1])
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                device_map=device_map).eval()
-        else:
-            device = torch.cuda.current_device()
-            self.device = device
-            self.model = AutoModel.from_pretrained(
-                model_path,
-                torch_dtype=torch.bfloat16,
-                trust_remote_code=True,
-                load_in_8bit=load_in_8bit).eval()
-            if not load_in_8bit:
-                self.model = self.model.to(device)
+        self.device = 'cuda'
+        self.model = AutoModel.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
+            load_in_8bit=False,
+            device_map='cuda').eval()
 
         self.image_size = self.model.config.vision_config.image_size
         self.kwargs = kwargs

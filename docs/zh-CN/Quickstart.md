@@ -142,15 +142,25 @@ def use_custom_prompt(self, dataset: str) -> bool:
 通过这种方式，您可以根据具体需求灵活地控制哪些benchmark使用模型自定义的prompt构建逻辑，从而更好地适配不同模型和任务的需求。
 
 #### 模型切分
-对于一些参数量较大的模型，如InternVL2-78B，由于其参数量较大，单个 GPU 可能无法容纳整个模型进行推理。
-在这种情况下，您可以定义环境变量`AUTO_SPLIT=1`，对于支持`split_model()`函数的模型，模型将会自动切分并分配到多个GPU上进行运行。
 
-例如，在一台配备 8 块 GPU 的机器上，您可以使用以下命令来运行模型：：
+目前 VLMEvalKit 的启动方式自动支持同机上进程间 GPU 资源的划分与模型切分。该功能在推理后端为 `lmdeploy` 或 `transformers` 时被支持，具体行为如下：
+
+- 基于 `python` 命令启动时，模型默认分配到所有可用的 GPU 上，如想指定使用哪些 GPU，可以使用 `CUDA_VISIBLE_DEVICES` 环境变量。
+- 基于 `torchrun` 命令启动时，每个模型实例会被分配到 `N_GPU // N_PROC` 个 GPU 上，`N_PROC` 为 torchrun 命令中的 `--nproc-per-node` 参数所指定的进程数。`N_GPU` 的取值为：
+    - 如 `CUDA_VISIBLE_DEVICES` 环境变量未设置，`N_GPU` 为全部可用 GPU 数量。
+    - 如 `CUDA_VISIBLE_DEVICES` 环境变量被设置，`N_GPU` 为 `CUDA_VISIBLE_DEVICES` 环境变量所指定的 GPU 数量，并且，仅有指定的 GPU 会被利用。
+
+下面提供了，在一台配备 8 块 GPU 的机器上运行评测任务的具体示例：
+```bash
+# <!-- 起两个模型实例数据并行，每个实例用 4 GPU -->
+torchrun --nproc-per-node=2 run.py --data MMBench_DEV_EN --model InternVL3-78B
+# <!-- 起一个模型实例，每个实例用 8 GPU -->
+python run.py --data MMBench_DEV_EN --model InternVL3-78B
+# <!-- 起三个模型实例，每个实例用 2 GPU，0 号、7 号 GPU 未被使用 -->
+CUDA_VISIBLE_DEVICES=1,2,3,4,5,6 torchrun --nproc-per-node=3 run.py --data MMBench_DEV_EN --model InternVL3-38B
 ```
-# 对于八卡机器
-AUTO_SPLIT=1 torchrun --nproc-per-node=1 run.py --data MMBench_DEV_EN --model InternVL2-76B --verbose
-```
-这会将InternVL2-76B模型切分为 8 份，分别分配到 8 块 GPU 上进行推理。
+
+注：此方式不支持 `vllm` 后端，基于 `vllm` 后端起评测任务时，请用 `python` 命令启动，默认调用所有可见的 GPU。
 
 #### 性能差距
 在不同的运行环境中，模型的性能表现可能会有所差异。因此，在评估过程中，您可能会发现自己的评测结果与VLMEvalKit官方榜单上的结果存在差距。这种差异可能与`transformers`, `cuda`, `torch`等版本的变化有关。

@@ -24,6 +24,8 @@
 **VLMEvalKit** (python 包名为 **vlmeval**) 是一款专为大型视觉语言模型 (Large Vision-Language Models， LVLMs) 评测而设计的开源工具包。该工具支持在各种基准测试上对大型视觉语言模型进行**一键评估**，无需进行繁重的数据准备工作，让评估过程更加简便。在 VLMEvalKit 中，我们对所有大型视觉语言模型生成的结果进行评测，并提供基于**精确匹配**与基于 **LLM 的答案提取**两种评测结果。
 
 ## 🆕 更新
+
+- **[2025-04-29]** 优化 `torchrun` 启动逻辑：目前 `torchrun` 启动时，若进程数为 M，机器 GPU 卡数为 N，将会自动调整每个进程分配的 GPU 数量为 `N // M`。目前此分配方式适用于 `transformers`, `lmdeploy` 推理后端，`vllm` 推理后端仅支持使用 python 启动 🔥🔥🔥
 - **[2025-02-20]** 支持新模型：**InternVL2.5 series, QwenVL2.5 series, QVQ-72B, Doubao-VL, Janus-Pro-7B, MiniCPM-o-2.6, InternVL2-MPO, LLaVA-CoT, Hunyuan-Standard-Vision, Ovis2, Valley, SAIL-VL, Ross, Long-VITA, EMU3, SmolVLM**。支持新基准：**MMMU-Pro, WeMath, 3DSRBench, LogicVista, VL-RewardBench, CC-OCR, CG-Bench, CMMMU, WorldSense**。请参考[**VLMEvalKit Features**](https://aicarrier.feishu.cn/wiki/Qp7wwSzQ9iK1Y6kNUJVcr6zTnPe?table=tblsdEpLieDoCxtb)以获取更多信息。感谢社区的各位贡献者 🔥🔥🔥
 - **[2024-11-21]** 集成了一个新的配置系统，以实现更灵活的评估设置。查看[文档](/docs/zh-CN/ConfigSystem.md)或运行`python run.py --help`了解更多详情 🔥🔥🔥
 - **[2024-11-21]** 支持 **[QSpatial](https://andrewliao11.github.io/spatial_prompt/)**，一个用于定量空间推理的多模态基准（例如，确定大小/距离），感谢 **[andrewliao11](https://github.com/andrewliao11)** 提供官方支持 🔥🔥🔥
@@ -33,8 +35,6 @@
 - **[2024-11-13]** 支持 **[MIA-Bench](https://arxiv.org/abs/2407.01509)**，一个多模态指令跟随基准 🔥🔥🔥
 - **[2024-11-08]** 支持 **[Aria](https://arxiv.org/abs/2410.05993)**，一个多模态原生 MoE 模型，感谢 **[teowu](https://github.com/teowu)** 🔥🔥🔥
 - **[2024-11-04]** 支持 **[WorldMedQA-V](https://www.arxiv.org/abs/2410.12722)**，该基准包含 1000 多个医学 VQA 问题，涵盖巴西、以色列、日本、西班牙等四个国家的语言，以及它们的英文翻译 🔥🔥🔥
-- **[2024-11-01]** 支持 `AUTO_SPLIT` 标志 (https://github.com/open-compass/VLMEvalKit/pull/566)，用于在低配置 GPU 上进行评估。设置后，模型将自动拆分到多个 GPU（流水线并行）以减少 GPU 内存使用（目前仅支持部分 VLMs：Qwen2-VL、Llama-3.2、LLaVA-OneVision 等） 🔥🔥🔥
-- **[2024-10-30]** 支持评估 **[MLVU](https://github.com/JUNJIE99/MLVU)** 和 **[TempCompass](https://arxiv.org/abs/2403.00476v1)**。这两个基准将很快被纳入 **[OpenVLM 视频排行榜](https://huggingface.co/spaces/opencompass/openvlm_video_leaderboard)** 🔥🔥🔥
 
 ## 🏗️ 快速开始 <a id="quickstart"></a>
 

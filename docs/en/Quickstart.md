@@ -148,15 +148,25 @@ With this approach, you can flexibly control which benchmarks use the model's cu
 
 #### Model Splitting
 
-For large models with substantial parameter counts, such as InternVL2-78B, a single GPU may not be able to accommodate the entire model during inference. In such cases, you can define the environment variable `AUTO_SPLIT=1`. For models that support the `split_model()` function, the model will automatically be split and distributed across multiple GPUs.
+Currently, VLMEvalKit automatically supports GPU resource allocation and model splitting between processes on the same machine. This feature is supported when the inference backend is `lmdeploy` or `transformers`, with the following behaviors:
 
-For example, on a machine equipped with 8 GPUs, you can run the model using the following command:
+- When launching with `python` command, the model is by default allocated to all available GPUs. If you want to specify which GPUs to use, you can use `CUDA_VISIBLE_DEVICES` environment variable.
+- When starting with `torchrun` command, each model instance will be allocated to `N_GPU // N_PROC` GPUs, where `N_PROC` is the number of processes specified by the `--nproc-per-node` parameter in the torchrun command. The value of `N_GPU` is determined as follows:
+  - If `CUDA_VISIBLE_DEVICES` environment variable is not set, `N_GPU` will be the total number of available GPUs.
+  - If `CUDA_VISIBLE_DEVICES` environment variable is set, `N_GPU` will be the number of GPUs specified by the `CUDA_VISIBLE_DEVICES` environment variable, and only the specified GPUs will be utilized.
+Below are specific examples of running evaluation tasks on a machine equipped with 8 GPUs:
 
 ```bash
-# For an 8-GPU machine
-AUTO_SPLIT=1 torchrun --nproc-per-node=1 run.py --data MMBench_DEV_EN --model InternVL2-76B --verbose
+<!-- Launch two model instances in data parallel, each instance using 4 GPUs -->
+torchrun --nproc-per-node=2 run.py --data MMBench_DEV_EN --model InternVL3-78B
+<!-- Launch one model instance, using all 8 GPUs -->
+python run.py --data MMBench_DEV_EN --model InternVL3-78B
+<!-- Launch three model instances, each instance using 2 GPUs, GPU 0 and 7 are not used -->
+CUDA_VISIBLE_DEVICES=1,2,3,4,5,6 torchrun --nproc-per-node=3 run.py --data MMBench_DEV_EN --model InternVL3-38B
 ```
-This command will automatically split the InternVL2-76B model into 8 parts and run each part on a separate GPU.
+
+PS: The feature is not compatible with `vllm` backend. When you evaluate a model with `vllm` backend, please use `python` to launch, and all visible GPU devices will be used.
+
 #### Performance Discrepancies
 
 Model performance may vary across different environments. As a result, you might observe discrepancies between your evaluation results and those listed on the official VLMEvalKit leaderboard. These differences could be attributed to variations in versions of libraries such as `transformers`, `cuda`, and `torch`.
