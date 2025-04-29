@@ -899,8 +899,8 @@ class CVBench(ImageMCQDataset):
         See [Cambrian-1](https://arxiv.org/pdf/2406.16860) Appendix C
     """
     DATASET_URL = {
-        "CV-Bench-2D": "https://huggingface.co/datasets/maosong/CV-Bench/resolve/main/CV-Bench-2D.tsv",
-        "CV-Bench-3D": "https://huggingface.co/datasets/maosong/CV-Bench/resolve/main/CV-Bench-3D.tsv",
+        "CV-Bench-2D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-2D.tsv",
+        "CV-Bench-3D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-3D.tsv",
     }
 
     DATASET_MD5 = {
