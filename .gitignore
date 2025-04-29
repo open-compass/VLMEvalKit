@@ -167,6 +167,7 @@ cache_dir/*
 outputs/*
 demo.ipynb
 *json
+!vlmeval/dataset/utils/vgrpbench/configs/formating-prompt/**/*.json
 .vscode
 *.swp
 GPT4o_MINI/
