@@ -1479,3 +1479,98 @@ class VisuLogic(ImageMCQDataset):
         score_pth = storage.replace('.xlsx', '_score.csv')
         dump(combine_score, score_pth)
         return combine_score
+
+
+class TDBench(ImageMCQDataset):
+    DATASET_URL = {
+        'tdbench_rot0': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot0.tsv',
+        'tdbench_rot90': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot90.tsv',
+        'tdbench_rot180': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot180.tsv',
+        'tdbench_rot270': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot270.tsv',
+        'tdbench_cs_zoom': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_zoom_in.tsv',
+        'tdbench_cs_height': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_height.tsv',
+        'tdbench_cs_integrity': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_integrity.tsv',  # noqa: E501
+        'tdbench_cs_depth': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_depth.tsv',
+    }
+
+    DATASET_MD5 = {
+        'tdbench_rot0': '98d58436f01ca2bf2f1db1b9bfd7a947',
+        'tdbench_rot90': 'd4afebfd0a4776242069e43269779f41',
+        'tdbench_rot180': 'd54dd9f418f83ed612b02fd5f42f65c7',
+        'tdbench_rot270': 'f95304455582de5635ff10c0400562ac',
+        'tdbench_cs_zoom': '2a01618c9c1e7d1a9d86af545e943392',
+        'tdbench_cs_height': 'ecbe1c5802e25749558417208164bcb3',
+        'tdbench_cs_integrity': '05b2045cae2016f6edc400da48e2df4b',
+        'tdbench_cs_depth': '449dbe4b24a43a06a9f680811deae517',
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        acc, result_file = self.do_evaluate(eval_file, **judge_kwargs)
+        # For case studies (cs_x), do not do rotation eval
+        if '_rot' not in self.dataset_name:
+            return acc
+
+        from .utils.tdbench import rotational_eval
+        re_result = rotational_eval(result_file)
+        if re_result is not None and re_result is not False:
+            file_addr = osp.abspath(result_file.split('_rot')[0] + '_REresult.csv')
+            link_addr = osp.join(osp.dirname(osp.dirname(result_file)), osp.basename(file_addr))
+            re_result.to_csv(file_addr, index=True)
+            print(tabulate(re_result, headers="keys"))
+            if osp.exists(link_addr) or osp.islink(link_addr):
+                os.remove(link_addr)
+            os.symlink(file_addr, link_addr)
+
+        return acc
+
+    def do_evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125', 'gpt-4o-mini']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+
+        # Save evaluation results
+        judged_result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        dump(data, judged_result_file)
+
+        acc = report_acc(data)
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        return acc, judged_result_file
