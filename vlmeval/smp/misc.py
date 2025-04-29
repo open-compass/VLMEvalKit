@@ -112,6 +112,13 @@ def get_rank_and_world_size():
     world_size = int(os.environ.get('WORLD_SIZE', 1))
     return rank, world_size
 
+def get_cuda_visible_devices():
+    devices = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+    if devices is None:
+        return None
+    devices = [int(x) for x in devices.split(',')]
+    return devices
+
 def splitlen(s, sym='/'):
     return len(s.split(sym))
 
@@ -273,19 +280,3 @@ def get_gpu_memory():
     except Exception as e:
         print(f'{type(e)}: {str(e)}')
         return []
-
-
-def auto_split_flag():
-    flag = os.environ.get('AUTO_SPLIT', '0')
-    if flag == '1':
-        return True
-    _, world_size = get_rank_and_world_size()
-    try:
-        import torch
-        device_count = torch.cuda.device_count()
-        if device_count > world_size and device_count % world_size == 0:
-            return True
-        else:
-            return False
-    except:
-        return False
