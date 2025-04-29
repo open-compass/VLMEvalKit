@@ -131,7 +131,6 @@ def extract_score_from_direct_gpt_resp(raw_score):
 
     # If no valid score matches found, print and raise an exception
     if not score_matches:
-        print(f"raw_score:\n{raw_score}")
         raise ValueError("raw_score format is incorrect, cannot parse scores")
 
     score_dict = {}
@@ -404,9 +403,12 @@ class MMIFEval(ImageBaseDataset):
 
         ans = {}
         if os.path.exists(tmp_file):
-            ans = load(tmp_file)
+            ans_tuples = load(tmp_file)
+            for k, v in ans_tuples.items():
+                if v[0] == 0:
+                    ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
             # ans is a dict
-            logger.info(f"Loaded {len(ans)} data from {tmp_file}")
+            logger.info(f"Tmp file exists, loaded {len(ans)} data from {tmp_file}")
 
         tups = [x for x, i in zip(params_all, indices_all) if i not in ans]
         indices = [i for i in indices_all if i not in ans]
@@ -431,18 +433,14 @@ class MMIFEval(ImageBaseDataset):
                     keys=indices,
                     save=tmp_file,
                 )
-                ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
             else:
                 for k, v in ans.items():
-                    # print(f"k:\n{k}")
-                    # print(f"v:\n{v}")
-                    # breakpoint()
-                    ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
+                    if isinstance(v, tuple):
+                        ans[k] = {"eval_ret_code": v[0], "eval_msg": v[1], "eval_score_dict": v[2]}
             for item in main_data:
                 item.pop("image")
-            print(f"ans:\n{ans}")
 
             for item in main_data:
                 item["eval_ret_code"] = ans[item["id"]]["eval_ret_code"]
