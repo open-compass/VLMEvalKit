@@ -10,11 +10,6 @@ from .common_constriants import Constraint, ConstraintRowNoRepeat, ConstraintCol
 class ConstraintRowNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for row in board:
@@ -26,11 +21,6 @@ class ConstraintRowNoRepeat(Constraint):
 class ConstraintColNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
@@ -43,11 +33,6 @@ class ConstraintColNoRepeat(Constraint):
 class ConstraintVisibility(Constraint):
     def __init__(self) -> None:
         super().__init__()
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def calculate_visible_buildings(self, line: List[int]) -> int:
         visible = 0
         max_height = 0
@@ -56,20 +41,10 @@ class ConstraintVisibility(Constraint):
                 visible += 1
                 max_height = int(height)
         return visible
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         clues = game_state["clues"]
         size = len(board)
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
 
         # Check all directions
         for i in range(size):
@@ -78,39 +53,19 @@ class ConstraintVisibility(Constraint):
                 col = [board[row][i] for row in range(size)]
                 if 0 not in col and self.calculate_visible_buildings(col) != clues["top"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
             # Bottom clues
             if clues["bottom"][i] != 0:
                 col = [board[row][i] for row in range(size-1, -1, -1)]
                 if 0 not in col and self.calculate_visible_buildings(col) != clues["bottom"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
             # Left clues
             if clues["left"][i] != 0:
                 if 0 not in board[i] and self.calculate_visible_buildings(board[i]) != clues["left"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
             # Right clues
             if clues["right"][i] != 0:
                 if 0 not in board[i] and self.calculate_visible_buildings(board[i][::-1]) != clues["right"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         return True
 
 class SkyscraperPuzzleFactory(PuzzleFactory):
@@ -118,11 +73,6 @@ class SkyscraperPuzzleFactory(PuzzleFactory):
         super().__init__()
         if size < 4 or size > 12:
             raise ValueError("Grid size must be between 4 and 12")
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         self.game_name = "skyscraper"
         self.size = size
         self.constraints = [
@@ -137,11 +87,6 @@ class SkyscraperPuzzleFactory(PuzzleFactory):
         board = game_state["board"]
         original_value = board[row][col]
         possible_values = []
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):

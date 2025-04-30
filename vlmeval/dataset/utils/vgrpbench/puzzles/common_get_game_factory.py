@@ -39,10 +39,5 @@ def get_game_factory(game_type):
         from .lightup import LightUpPuzzleFactory as GameFactory
     elif game_type == "nonogram":
         from .nonogram import NonogramPuzzleFactory as GameFactory
-<<<<<<< HEAD
 
     return GameFactory
-=======
-        
-    return GameFactory
->>>>>>> f7bcc2c8 (add vgrpbench)

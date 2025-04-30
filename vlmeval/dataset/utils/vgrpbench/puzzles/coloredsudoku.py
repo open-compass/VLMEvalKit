@@ -11,7 +11,6 @@ class ConstraintColorNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_color_no_repeat"
-<<<<<<< HEAD
 
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
@@ -21,17 +20,6 @@ class ConstraintColorNoRepeat(Constraint):
         if colors is None:
             return True
 
-=======
-    
-    def check(self, game_state: Dict[str, Any]) -> bool:
-        board = game_state["board"]
-        colors = game_state.get("colors", None)
-        
-        # If no colors are specified, skip this constraint
-        if colors is None:
-            return True
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         color_groups = {}
         for i in range(len(board)):
             for j in range(len(board[0])):
@@ -40,11 +28,6 @@ class ConstraintColorNoRepeat(Constraint):
                     color_groups[color] = []
                 if board[i][j] != 0:
                     color_groups[color].append(board[i][j])
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for color_values in color_groups.values():
             if len(set(color_values)) != len(color_values):
                 return False
@@ -67,11 +50,6 @@ class ColoredSudokuPuzzleFactory(PuzzleFactory):
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):
