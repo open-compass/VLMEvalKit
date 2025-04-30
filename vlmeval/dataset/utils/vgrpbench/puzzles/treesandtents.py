@@ -17,11 +17,6 @@ class ConstraintRowTents(Constraint):
         clues = game_state.get("clues", None)
         if not clues:
             return True
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         for i, row in enumerate(board):
             if 0 not in row:  # If row is complete
                 tent_count = row.count("tt")
@@ -40,11 +35,6 @@ class ConstraintColTents(Constraint):
         clues = game_state.get("clues", None)
         if not clues:
             return True
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         size = len(board)
         for j in range(size):
             col = [board[i][j] for i in range(size)]
@@ -68,17 +58,10 @@ class ConstraintTentTree(Constraint):
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
-<<<<<<< HEAD
 
         # Keep track of which trees are paired with which tents
         tree_tent_pairs = {}  # tree position -> tent position
 
-=======
-        
-        # Keep track of which trees are paired with which tents
-        tree_tent_pairs = {}  # tree position -> tent position
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # First, check each tent has exactly one adjacent tree
         for i in range(size):
             for j in range(size):
@@ -92,15 +75,9 @@ class ConstraintTentTree(Constraint):
                     # Each tent must have exactly one adjacent tree
                     if len(adjacent_trees) != 1:
                         return False
-<<<<<<< HEAD
 
                     tree_pos = adjacent_trees[0]
 
-=======
-                    
-                    tree_pos = adjacent_trees[0]
-                    
->>>>>>> f7bcc2c8 (add vgrpbench)
                     tree_tent_pairs[tree_pos] = (i, j)
 
         # Then, check each tree
@@ -135,11 +112,6 @@ class ConstraintAdjacentTents(Constraint):
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Check tents are not adjacent (including diagonally)
         for i in range(size):
             for j in range(size):
@@ -163,7 +135,6 @@ class ConstraintTentTreeCount(Constraint):
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
-<<<<<<< HEAD
 
         num_trees = sum(row.count("tr") for row in board)
         num_tents = sum(row.count("tt") for row in board)
@@ -173,17 +144,6 @@ class ConstraintTentTreeCount(Constraint):
         if num_unallocated == 0:
             return num_tents == num_trees
 
-=======
-        
-        num_trees = sum(row.count("tr") for row in board)
-        num_tents = sum(row.count("tt") for row in board)
-        num_unallocated = sum(row.count(0) for row in board)
-        
-        # If board is complete (no unallocated cells)
-        if num_unallocated == 0:
-            return num_tents == num_trees
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # During solving, ensure we can still potentially place enough tents
         return (num_tents + num_unallocated) >= num_trees
 
@@ -194,11 +154,6 @@ class TreesAndTentsPuzzleFactory(PuzzleFactory):
         self.game_name = "treesandtents"
         self.size = size
         assert size >= 3, "Size must be at least 3"
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         self.constraints = [
             ConstraintRowTents(),
             ConstraintColTents(),
@@ -206,11 +161,6 @@ class TreesAndTentsPuzzleFactory(PuzzleFactory):
             ConstraintAdjacentTents(),
             ConstraintTentTreeCount()
         ]
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         self.all_possible_values = ["tt", 'e']
         self.num_generator_processes = max(os.cpu_count() // 2, 1)  # Limit to 4 processes or CPU count
 
@@ -219,11 +169,6 @@ class TreesAndTentsPuzzleFactory(PuzzleFactory):
         board = game_state["board"]
         if board[row][col] != 0:  # If cell is already filled
             return []
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         possible = []
         original_value = board[row][col]
         for value in self.all_possible_values:

@@ -23,7 +23,6 @@ GRID_SIZE = None
 def extract_perception_and_answer(model_output):
     """
     Extract both perception and answer from model output.
-<<<<<<< HEAD
 
     Parses the model's output to extract the perceived initial state and the solution.
     Handles different output formats and section headers.
@@ -31,15 +30,6 @@ def extract_perception_and_answer(model_output):
     Args:
         model_output (str): The raw output from the model
 
-=======
-    
-    Parses the model's output to extract the perceived initial state and the solution.
-    Handles different output formats and section headers.
-    
-    Args:
-        model_output (str): The raw output from the model
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     Returns:
         tuple: (initial_state, solution) where both are 2D arrays or None if parsing fails
     """
@@ -54,11 +44,6 @@ def extract_perception_and_answer(model_output):
 
         if len(parts) != 2:
             return None, None
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         content = parts[1]
 
         if "Answer" in content:
@@ -67,21 +52,12 @@ def extract_perception_and_answer(model_output):
             perception_answer = content.split('\nSolution\n')
         else:
             return None, None
-<<<<<<< HEAD
 
         if len(perception_answer) != 2:
             return None, None
 
         perception, answer = perception_answer
 
-=======
-        
-        if len(perception_answer) != 2:
-            return None, None
-            
-        perception, answer = perception_answer
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         if perception.strip() == "Wrong":
             initial_state = None
             # Remove outer brackets and split into rows
@@ -102,11 +78,6 @@ def extract_perception_and_answer(model_output):
         initial_state = [[cell if cell != '*' else 0 for cell in row] for row in initial_state]
 
         return initial_state, solution
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     except Exception as e:
         print(f"Error parsing output: {e}")
         return None, None
@@ -115,26 +86,14 @@ def extract_perception_and_answer(model_output):
 def check_perception(thoughts, init_board, game_type):
     """
     Check if model's perception matches the initial board.
-<<<<<<< HEAD
 
     Compares the model's understanding of the initial state with the actual initial state,
     with game-specific adjustments for different puzzle types.
 
-=======
-    
-    Compares the model's understanding of the initial state with the actual initial state,
-    with game-specific adjustments for different puzzle types.
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     Args:
         thoughts (list): 2D array representing the model's perception of the initial state
         init_board (list): 2D array representing the actual initial state
         game_type (str): Type of puzzle game
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     Returns:
         bool: True if perception matches initial board, False otherwise
     """
@@ -152,11 +111,6 @@ def check_perception(thoughts, init_board, game_type):
     if game_type == "fieldexplore":
         # Convert -1 to 0 in init_board
         init_board = [[0 if cell == -1 else cell for cell in row] for row in init_board]
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Convert string representation to 2D grid if needed
     if isinstance(init_board, str):
         init_grid = [[c for c in row] for row in init_board.strip().split('\n')]
@@ -166,11 +120,6 @@ def check_perception(thoughts, init_board, game_type):
     # Check dimensions match
     if len(thoughts) != len(init_grid) or any(len(row) != len(init_grid[0]) for row in thoughts):
         return False
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Check cell by cell
     for i in range(len(init_grid)):
         for j in range(len(init_grid[0])):
@@ -182,44 +131,23 @@ def check_perception(thoughts, init_board, game_type):
 def check_answer(answer, init_board, game_factory):
     """
     Verify if the model's answer is correct for the given puzzle.
-<<<<<<< HEAD
 
     Performs game-specific validations and uses the game factory to check solution correctness.
 
-=======
-    
-    Performs game-specific validations and uses the game factory to check solution correctness.
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     Args:
         answer (list): 2D array representing the model's solution
         init_board (list): 2D array representing the initial state
         game_factory (GameFactory): Factory object for the specific game type
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     Returns:
         bool: True if the answer is correct, False otherwise
     """
     global GRID_SIZE
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Game-specific preprocessing for answers
     if game_factory.game_name in ["treesandtents", "starbattle", "hitori", "aquarium", "kakurasu"]:
         for i in range(len(answer)):
             for j in range(len(answer[i])):
                 if answer[i][j] in [0, '0']:
                     answer[i][j] = 'e'
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     if game_factory.game_name == "oddevensudoku":
         for i in range(len(answer)):
             for j in range(len(answer[i])):
@@ -227,32 +155,17 @@ def check_answer(answer, init_board, game_factory):
                     answer[i][j] = int(answer[i][j])
                 except Exception as e:
                     return False
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     if game_factory.game_name == "lightup":
         # Convert '0' to 'e'
         for i in range(len(answer)):
             for j in range(len(answer[i])):
                 if answer[i][j] == '0':
                     answer[i][j] = 'e'
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Convert string representation to 2D grid if needed
     if isinstance(init_board, str):
         init_grid = [[c for c in row] for row in init_board.strip().split('\n')]
     else:
         init_grid = init_board
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Check dimensions
     if len(answer) != GRID_SIZE or any(len(row) != GRID_SIZE for row in answer):
         return False
@@ -293,11 +206,6 @@ def check_answer(answer, init_board, game_factory):
             for j in range(GRID_SIZE):
                 if init_grid[i][j] not in [0, '0', 'e'] and str(init_grid[i][j]) != str(answer[i][j]):
                     return False
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Prepare game state for validation
     game_state = {
         "board": answer,
@@ -337,11 +245,6 @@ def check_answer(answer, init_board, game_factory):
         game_state["wall_numbers"] = game_factory.wall_numbers
     elif game_factory.game_name == "battleships":
         game_state["hints"] = game_factory.hints
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Validate the solution using the game factory
     try:
         return game_factory.check(game_state)
@@ -353,7 +256,6 @@ def check_answer(answer, init_board, game_factory):
 def calculate_group_statistics(outcomes, num_groups=5):
     """
     Calculate group-wise means and the standard deviation between groups.
-<<<<<<< HEAD
 
     Splits outcomes into groups and calculates statistics to estimate variance.
 
@@ -363,22 +265,10 @@ def calculate_group_statistics(outcomes, num_groups=5):
 
     Returns:
         tuple: (group_means, group_std) where group_means is a list of percentages
-=======
-    
-    Splits outcomes into groups and calculates statistics to estimate variance.
-    
-    Args:
-        outcomes (list): Binary outcomes (0 or 1) for each puzzle
-        num_groups (int): Number of groups to split the data into
-        
-    Returns:
-        tuple: (group_means, group_std) where group_means is a list of percentages 
->>>>>>> f7bcc2c8 (add vgrpbench)
                and group_std is the standard deviation between groups
     """
     if not outcomes:
         return [], 0.0
-<<<<<<< HEAD
 
     # Convert to numpy array for easier manipulation
     outcomes = np.array(outcomes)
@@ -386,15 +276,6 @@ def calculate_group_statistics(outcomes, num_groups=5):
     # Calculate number of items per group
     group_size = len(outcomes) // num_groups
 
-=======
-    
-    # Convert to numpy array for easier manipulation
-    outcomes = np.array(outcomes)
-    
-    # Calculate number of items per group
-    group_size = len(outcomes) // num_groups
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Split into groups and calculate mean for each group
     group_means = []
     for i in range(num_groups):
@@ -402,43 +283,24 @@ def calculate_group_statistics(outcomes, num_groups=5):
         end_idx = start_idx + group_size if i < num_groups - 1 else len(outcomes)
         group = outcomes[start_idx:end_idx]
         group_means.append(np.mean(group) * 100)  # Convert to percentage
-<<<<<<< HEAD
 
     # Calculate standard deviation between group means
     group_std = np.std(group_means)
 
-=======
-    
-    # Calculate standard deviation between group means
-    group_std = np.std(group_means)
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     return group_means, group_std
 
 
 def evaluate_single_puzzle(model_output, puzzle_data, game_type):
     """
     Evaluate a single puzzle solution.
-<<<<<<< HEAD
 
     Processes model output and puzzle data to determine if the model correctly
     understood the puzzle and provided a valid solution.
 
-=======
-    
-    Processes model output and puzzle data to determine if the model correctly
-    understood the puzzle and provided a valid solution.
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     Args:
         model_output (str): The raw output from the model
         puzzle_data (dict): Puzzle data including initialization
         game_type (str): Type of puzzle game (e.g., "thermometers", "sudoku")
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
     Returns:
         dict: Evaluation results including perception_correct, answer_correct, and score
     """
@@ -447,7 +309,6 @@ def evaluate_single_puzzle(model_output, puzzle_data, game_type):
     puzzle_dir = os.path.join(curr_dir, "puzzles")
     if puzzle_dir not in sys.path:
         sys.path.append(puzzle_dir)
-<<<<<<< HEAD
 
     # Initialize the appropriate game factory for the puzzle type
     GameFactory = get_game_factory.get_game_factory(game_type)
@@ -456,16 +317,6 @@ def evaluate_single_puzzle(model_output, puzzle_data, game_type):
 
     game_factory = GameFactory(size=4)
 
-=======
-    
-    # Initialize the appropriate game factory for the puzzle type
-    GameFactory = get_game_factory.get_game_factory(game_type)
-    
-    init_board = puzzle_data['initialization']
-    
-    game_factory = GameFactory(size=4)
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Game-specific initialization handling
     if game_type == "coloredsudoku":
         colors = puzzle_data.get('colors', None)
@@ -527,22 +378,12 @@ def evaluate_single_puzzle(model_output, puzzle_data, game_type):
     elif game_type == "lightup":
         init_board = puzzle_data.get('initialization', None)
         game_factory.wall_numbers = puzzle_data.get('wall_numbers', None)
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Set grid size
     global GRID_SIZE
     GRID_SIZE = len(init_board) if GRID_SIZE is None else GRID_SIZE
 
     # Extract model's perception and answer from its output
     thoughts, answer = extract_perception_and_answer(model_output)
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     # Early return if parsing failed
     if thoughts is None or answer is None:
         return {
@@ -560,11 +401,6 @@ def evaluate_single_puzzle(model_output, puzzle_data, game_type):
                         thoughts[i][j] = "0"
     except Exception as e:
         print(f"starbattle: Error converting thoughts to 0: {e}")
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     try:
         if game_type == "killersudoku":
             answer = [[int(cell) for cell in row] for row in answer]
@@ -580,30 +416,17 @@ def evaluate_single_puzzle(model_output, puzzle_data, game_type):
                     thoughts[i][j] = 'tt'
                 elif thoughts[i][j] == 'r':
                     thoughts[i][j] = 'tr'
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for i in range(len(answer)):
             for j in range(len(answer[i])):
                 if answer[i][j] == 't':
                     answer[i][j] = 'tt'
                 elif answer[i][j] == 'r':
                     answer[i][j] = 'tr'
-<<<<<<< HEAD
 
     # Check perception and answer
     perception_correct = check_perception(thoughts, init_board, game_type)
     answer_correct = check_answer(answer, init_board, game_factory) if perception_correct else False
 
-=======
-    
-    # Check perception and answer
-    perception_correct = check_perception(thoughts, init_board, game_type)
-    answer_correct = check_answer(answer, init_board, game_factory) if perception_correct else False
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     return {
         "perception_correct": perception_correct,
         "answer_correct": answer_correct,

@@ -11,19 +11,11 @@ class ConstraintCageSum(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_cage_sum"
-<<<<<<< HEAD
 
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         cages = game_state.get("cages", [])  # Default to empty list if no cages
 
-=======
-    
-    def check(self, game_state: Dict[str, Any]) -> bool:
-        board = game_state["board"]
-        cages = game_state.get("cages", [])  # Default to empty list if no cages
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for cage in cages:
             cells = cage["cells"]
             target_sum = cage["sum"]
@@ -56,19 +48,11 @@ class KillerSudokuPuzzleFactory(PuzzleFactory):
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
-<<<<<<< HEAD
 
         # Ensure cages exist in game_state
         if "cages" not in game_state:
             game_state["cages"] = []
 
-=======
-        
-        # Ensure cages exist in game_state
-        if "cages" not in game_state:
-            game_state["cages"] = []
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):

@@ -36,11 +36,6 @@ class PuzzleFactory():
             col = cell % len(board[0])
             new_board[row][col] = board[row][col]  # Copy only the sampled cells from original board
         return new_board
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def save_puzzles(self, puzzles: List[Dict[str, Any]], save_path: str = "datasets/", filename: str = None) -> None:
         """
         Save the generated puzzles to JSON files, split into train, val, and ablation sets.
@@ -62,38 +57,18 @@ class PuzzleFactory():
 
         # Sort groups (common groups first to validation set) by size for better distribution
         sorted_groups = sorted(solution_groups.items(), key=lambda x: len(x[1]), reverse=True)
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Calculate target sizes based on ratios
         total_puzzles = len(puzzles)
         target_val_size = total_puzzles * self.val_ratio // 10
         target_ablation_size = total_puzzles * self.ablation_ratio // 10
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Initialize sets
         train_puzzles = []
         val_puzzles = []
         ablation_puzzles = []
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # First, fill validation set with complete groups
         val_solutions = set()
         current_val_size = 0
         val_group_idx = 0
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         while val_group_idx < len(sorted_groups) and current_val_size < target_val_size:
             group = sorted_groups[val_group_idx][1]
             if current_val_size + len(group) <= target_val_size * 1.2:  # Allow 20% overflow
@@ -101,7 +76,6 @@ class PuzzleFactory():
                 val_solutions.add(sorted_groups[val_group_idx][0])
                 current_val_size += len(group)
             val_group_idx += 1
-<<<<<<< HEAD
 
         # Fill train and ablation sets with remaining groups
         train_solutions = set()
@@ -111,17 +85,6 @@ class PuzzleFactory():
             if solution in val_solutions:
                 continue
 
-=======
-        
-        # Fill train and ablation sets with remaining groups
-        train_solutions = set()
-        current_ablation_size = 0
-        
-        for solution, group in sorted_groups:
-            if solution in val_solutions:
-                continue
-                
->>>>>>> f7bcc2c8 (add vgrpbench)
             train_solutions.add(solution)
             # Randomly split each remaining group between train and ablation
             if current_ablation_size < target_ablation_size:
@@ -129,11 +92,6 @@ class PuzzleFactory():
                 space_left = target_ablation_size - current_ablation_size
                 # Take up to 20% of the current group for ablation
                 ablation_count = min(max(1, len(group) // 5), space_left)
-<<<<<<< HEAD
-
-=======
-                
->>>>>>> f7bcc2c8 (add vgrpbench)
                 # Randomly select puzzles for ablation
                 ablation_indices = random.sample(range(len(group)), ablation_count)
                 for i in range(len(group)):
@@ -162,11 +120,6 @@ class PuzzleFactory():
             split_path = f"{base_path}_{split_name}.json"
             with open(split_path, "w") as f:
                 json.dump(split_puzzles, f, indent=2)
-<<<<<<< HEAD
-
-=======
- 
->>>>>>> f7bcc2c8 (add vgrpbench)
         print(f"\nSplit and saved {len(puzzles)} puzzles:")
         print(f"Train: {len(train_puzzles)} puzzles ({len(train_solutions)} unique solutions)")
         print(f"Val: {len(val_puzzles)} puzzles ({len(val_solutions)} unique solutions)")
@@ -178,14 +131,6 @@ class PuzzleFactory():
             if not constraint.check(game_state):
                 return False
         return True
-<<<<<<< HEAD
 
     def get_possible_values(self, game_state: Dict[str, Any], row: int, col: int) -> List[int]:
         pass
-=======
-    
-    def get_possible_values(self, game_state: Dict[str, Any], row: int, col: int) -> List[int]:
-        pass
-
-
->>>>>>> f7bcc2c8 (add vgrpbench)

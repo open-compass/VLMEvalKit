@@ -11,7 +11,6 @@ class ConstraintOddEven(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_odd_even"
-<<<<<<< HEAD
 
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
@@ -21,17 +20,6 @@ class ConstraintOddEven(Constraint):
         if cell_types is None:
             return True
 
-=======
-    
-    def check(self, game_state: Dict[str, Any]) -> bool:
-        board = game_state["board"]
-        cell_types = game_state.get("cell_types", None)
-        
-        # If no cell types are specified, skip this constraint
-        if cell_types is None:
-            return True
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         for i in range(len(board)):
             for j in range(len(board[0])):
                 if board[i][j] != 0:  # Skip empty cells
@@ -45,11 +33,6 @@ class ConstraintRowNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_row_no_repeat"
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         for row in board:
@@ -64,11 +47,6 @@ class ConstraintColNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_col_no_repeat"
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
@@ -84,20 +62,10 @@ class ConstraintSubGridNoRepeat(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_sub_grid_no_repeat"
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         size = len(board)
         sub_size = int(size ** 0.5)  # Size of sub-grid (2 for 4x4, 3 for 9x9)
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Check each sub-grid
         for box_row in range(0, size, sub_size):
             for box_col in range(0, size, sub_size):
@@ -131,21 +99,12 @@ class OddEvenSudokuPuzzleFactory(PuzzleFactory):
         board = game_state["board"]
         cell_types = game_state.get("cell_types", None)
         original_value = board[row][col]
-<<<<<<< HEAD
 
         # Filter values based on odd/even constraint
         if cell_types:
             cell_type = cell_types[row][col]
             filtered_values = [v for v in self.all_possible_values if
                              (cell_type == 'w' and v % 2 == 0) or
-=======
-        
-        # Filter values based on odd/even constraint
-        if cell_types:
-            cell_type = cell_types[row][col]
-            filtered_values = [v for v in self.all_possible_values if 
-                             (cell_type == 'w' and v % 2 == 0) or 
->>>>>>> f7bcc2c8 (add vgrpbench)
                              (cell_type == 'b' and v % 2 == 1)]
         else:
             filtered_values = self.all_possible_values

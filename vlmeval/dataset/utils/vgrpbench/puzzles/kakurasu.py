@@ -12,21 +12,11 @@ class ConstraintKakurasuSum(Constraint):
     def __init__(self) -> None:
         super().__init__()
         self.name = "constraint_kakurasu_sum"
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> f7bcc2c8 (add vgrpbench)
     def check(self, game_state: Dict[str, Any]) -> bool:
         board = game_state["board"]
         clues = game_state.get("clues", {"row_clues": [], "col_clues": []})
         size = len(board)
         weights = [i + 1 for i in range(size)]
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Check row sums
         for i in range(size):
             row_sum = sum(weights[j] for j in range(size) if board[i][j] == "s")
@@ -39,21 +29,11 @@ class ConstraintKakurasuSum(Constraint):
                 # 1. Current sum must not exceed clue
                 if row_sum > clues["row_clues"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
                 # 2. Check if remaining undefined cells can potentially reach the clue
                 undefined_cells = [j for j in range(size) if board[i][j] == 0]
                 max_possible_sum = row_sum + sum(weights[j] for j in undefined_cells)
                 if max_possible_sum < clues["row_clues"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Check column sums
         for i in range(size):
             col_sum = sum(weights[j] for j in range(size) if board[j][i] == "s")
@@ -66,21 +46,11 @@ class ConstraintKakurasuSum(Constraint):
                 # 1. Current sum must not exceed clue
                 if col_sum > clues["col_clues"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> f7bcc2c8 (add vgrpbench)
                 # 2. Check if remaining undefined cells can potentially reach the clue
                 undefined_cells = [j for j in range(size) if board[j][i] == 0]
                 max_possible_sum = col_sum + sum(weights[j] for j in undefined_cells)
                 if max_possible_sum < clues["col_clues"][i]:
                     return False
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> f7bcc2c8 (add vgrpbench)
         return True
 
 class KakurasuPuzzleFactory(PuzzleFactory):
@@ -88,11 +58,6 @@ class KakurasuPuzzleFactory(PuzzleFactory):
         super().__init__()
         if size < 3:
             raise ValueError("Grid size must be at least 3")
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         self.game_name = "kakurasu"
         self.size = size
         self.constraints = [
@@ -105,11 +70,6 @@ class KakurasuPuzzleFactory(PuzzleFactory):
         possible_values = []
         board = game_state["board"]
         original_value = board[row][col]
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):

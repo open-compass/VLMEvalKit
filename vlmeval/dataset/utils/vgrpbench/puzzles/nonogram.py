@@ -13,11 +13,6 @@ class ConstraintBase:
         runs = []  # Will store lengths of consecutive filled cells
         count = 0  # Counter for current run length
         current_run = []  # Track cells in current run for debugging/future use
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
 
         if hints == [0]:
             # the line should not contain 's'
@@ -39,28 +34,15 @@ class ConstraintBase:
         # Don't forget to add the last run if it exists
         if count > 0:
             runs.append(count)
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         # Calculate cell statistics
         filled_cells = line.count("s")     # Number of definitely filled cells
         undefined_cells = line.count(0)     # Number of cells yet to be determined
         required_cells = sum(hints)         # Total number of cells that should be filled according to hints
-<<<<<<< HEAD
 
         # Early failure: Check if we have enough cells to satisfy hints
         if filled_cells + undefined_cells < required_cells:
             return False
 
-=======
-        
-        # Early failure: Check if we have enough cells to satisfy hints
-        if filled_cells + undefined_cells < required_cells:
-            return False
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         # For completely defined lines (no undefined cells)
         if undefined_cells == 0:
             # Simple comparison: runs must exactly match hints
@@ -81,11 +63,6 @@ class ConstraintBase:
                         break
             if count > 0:
                 definite_runs.append(count)
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
             # Validate the definite runs we've found
             if definite_runs:
                 # Can't have more runs than hints
@@ -103,11 +80,6 @@ class ConstraintRowHints(ConstraintBase):
         hints = game_state.get("hints", None)
         if not hints:
             raise ValueError("Hints are not provided")
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> f7bcc2c8 (add vgrpbench)
         row_hints = hints["row_hints"]
 
         for i, row in enumerate(board):
@@ -121,17 +93,10 @@ class ConstraintColHints(ConstraintBase):
         hints = game_state.get("hints", None)
         if not hints:
             raise ValueError("Hints are not provided")
-<<<<<<< HEAD
 
         col_hints = hints["col_hints"]
         size = len(board)
 
-=======
-            
-        col_hints = hints["col_hints"]
-        size = len(board)
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for j in range(size):
             col = [board[i][j] for i in range(size)]
             if not self._check_line_hints(col, col_hints[j]):
@@ -143,37 +108,20 @@ class NonogramPuzzleFactory(PuzzleFactory):
         super().__init__()
         self.game_name = "nonogram"
         self.size = size
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         self.constraints = [
             ConstraintRowHints(),
             ConstraintColHints()
         ]
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         self.all_possible_values = ["e", "s"]  # Consistent with paper
 
     def get_possible_values(self, game_state: Dict[str, Any], row: int, col: int) -> List[str]:
         board = game_state["board"]
         if board[row][col] != 0:  # If cell is already filled
             return []
-<<<<<<< HEAD
 
         possible_values = []
         original_value = board[row][col]
 
-=======
-            
-        possible_values = []
-        original_value = board[row][col]
-        
->>>>>>> f7bcc2c8 (add vgrpbench)
         for value in self.all_possible_values:
             board[row][col] = value
             if self.check(game_state):
