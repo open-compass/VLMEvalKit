@@ -5,7 +5,8 @@ from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
-    NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench
+    NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
+    CMMU_MCQ, PathMMU_VAL, PathMMU_TEST
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -15,7 +16,7 @@ from .image_vqa import (
 )
 
 from .image_ccocr import CCOCRDataset
-from .image_shortqa import ImageShortQADataset
+from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
@@ -156,8 +157,9 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic,
-    CVBench, TDBench, TDBenchGrounding
+    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, CVBench,
+    CMMU_MCQ, PathVQA_VAL, PathVQA_TEST, PathMMU_VAL, PathMMU_TEST, TDBench, TDBenchGrounding
+
 ]
 
 
