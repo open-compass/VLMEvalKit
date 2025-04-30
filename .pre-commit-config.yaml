@@ -6,6 +6,7 @@ exclude: |
       vlmeval/dataset/utils/wemath.py |
       vlmeval/dataset/Omnidocbench/ |
       vlmeval/dataset/utils/megabench/ |
+      vlmeval/dataset/utils/vgrpbench/ |
       vlmeval/vlm/ola/ |
       vlmeval/vlm/ursa/ |
       vlmeval/vlm/ovis/

@@ -999,6 +999,107 @@ class LLaVABench(ImageBaseDataset):
         dump(ret, score_file)
         return ret
 
+class VGRPBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    
+    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        print("VGRPBench evaluation")
+
+        from .utils.vgrpbench.evaluation import (
+            build_prompt,
+            VGRPBench_atomeval,
+            VGRPBench_score,
+            VGRPBench_get_system_prompt,
+        )
+
+        suffix = '.' + eval_file.split('.')[-1]
+        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
+        score_file = eval_file.replace(suffix, '_score.csv')
+
+        nproc = judge_kwargs.pop('nproc', 4)
+        
+        if not osp.exists(record_file):
+            data = load(eval_file)
+            lines = [data.iloc[i] for i in range(len(data))]
+
+            system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
+            
+            models = [build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs) for system_prompt in system_prompts]
+
+            prompts = [build_prompt(line) for line in lines]
+
+            tups = [(model, prompt, line) for model, prompt, line in zip(models, prompts, lines)]
+
+            # Original parallel processing
+            scores = track_progress_rich(VGRPBench_atomeval, tups, nproc=nproc, chunksize=nproc)
+
+            data['perception_correct'] = [x['perception_correct'] for x in scores]
+            data['answer_correct'] = [x['answer_correct'] for x in scores]
+            data['number_of_samples'] = [x['number_of_samples'] for x in scores]
+            dump(data, record_file)
+
+        data = load(record_file)
+
+        ret = VGRPBench_score(data).round(1)
+        dump(ret, score_file)
+
+        return ret
+
+class VGRPBench(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}  # noqa: E501
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        print("VGRPBench evaluation")
+
+        from .utils.vgrpbench.evaluation import (
+            build_prompt,
+            VGRPBench_atomeval,
+            VGRPBench_score,
+            VGRPBench_get_system_prompt,
+        )
+
+        suffix = '.' + eval_file.split('.')[-1]
+        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
+        score_file = eval_file.replace(suffix, '_score.csv')
+
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(record_file):
+            data = load(eval_file)
+            lines = [data.iloc[i] for i in range(len(data))]
+
+            system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
+
+            models = [
+                build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs)
+                for system_prompt in system_prompts
+            ]
+
+            prompts = [build_prompt(line) for line in lines]
+
+            tups = [(model, prompt, line) for model, prompt, line in zip(models, prompts, lines)]
+
+            # Original parallel processing
+            scores = track_progress_rich(VGRPBench_atomeval, tups, nproc=nproc, chunksize=nproc)
+
+            data['perception_correct'] = [x['perception_correct'] for x in scores]
+            data['answer_correct'] = [x['answer_correct'] for x in scores]
+            data['number_of_samples'] = [x['number_of_samples'] for x in scores]
+            dump(data, record_file)
+
+        data = load(record_file)
+
+        ret = VGRPBench_score(data).round(1)
+        dump(ret, score_file)
+
+        return ret
+
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
