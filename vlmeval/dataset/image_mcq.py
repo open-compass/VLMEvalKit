@@ -1481,7 +1481,6 @@ class VisuLogic(ImageMCQDataset):
         return combine_score
 
 
-
 class CMMU_MCQ(ImageMCQDataset):
     DATASET_URL = {
         'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
@@ -1605,4 +1604,3 @@ class TDBench(ImageMCQDataset):
         dump(acc, score_file)
 
         return acc, judged_result_file
-
