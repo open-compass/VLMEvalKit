@@ -436,9 +436,11 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         if listinstr(['omni'], self.model_path.lower()):
             audios, images, videos = process_mm_info([messages], use_audio_in_video=self.use_audio_in_video)
+            inputs = self.processor(text=text, images=images,audio=audios, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video) # noqa: E501
         else:
             images, videos = process_vision_info([messages])
-        inputs = self.processor(text=text, images=images,audio=audios, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video) # noqa: E501
+            inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt',use_audio_in_video=self.use_audio_in_video) # noqa: E501
+        
         inputs = inputs.to('cuda')
 
         if listinstr(['omni'], self.model_path.lower()):
