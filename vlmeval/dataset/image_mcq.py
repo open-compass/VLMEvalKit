@@ -1481,7 +1481,6 @@ class VisuLogic(ImageMCQDataset):
         return combine_score
 
 
-
 class CMMU_MCQ(ImageMCQDataset):
     DATASET_URL = {
         'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
@@ -1606,3 +1605,13 @@ class TDBench(ImageMCQDataset):
 
         return acc, judged_result_file
 
+
+class MicroVQA(ImageMCQDataset):
+
+    DATASET_URL = {
+        'MicroVQA': 'https://huggingface.co/datasets/KKYYKK/MicroVQA_VLM/resolve/main/MicroVQA.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MicroVQA': None,
+    }
