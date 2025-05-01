@@ -1937,3 +1937,21 @@ class TDBenchGrounding(ImageVQADataset):
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
         return msgs
+
+
+class CAPTURE(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {'CAPTURE_real': '', 
+                   'CAPTURE_synthetic': ''}
+    DATASET_MD5 = {'CAPTURE_real': '', 
+                   'CAPTURE_synthetic': ''}
+    
+    def create_tsv_from_hf(self):
+        pass
+
+    def build_prompt(self, line):
+        pass
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        pass
