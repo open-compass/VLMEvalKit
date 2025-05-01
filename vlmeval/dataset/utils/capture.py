@@ -32,7 +32,7 @@ def create_tsv_real():
     os.rename(f"{data_dir}/dataset", f"{data_dir}/real_dataset")
 
     real_meta = hf_hub_download(repo_id="atinp/CAPTURe", filename="real_metadata.json", repo_type="dataset")
-    out_file = os.path.join(data_dir, 'CAPTURE_real.tsv')
+    out_file = os.path.join(data_root, 'CAPTURE_real.tsv')
     create_csv_from_meta(real_meta, 'object', data_dir, out_file)
     return out_file
     
@@ -46,6 +46,46 @@ def create_tsv_synthetic():
         zip_ref.extractall(data_dir)
     
     synth_meta = hf_hub_download(repo_id="atinp/CAPTURe", filename="synthetic_metadata.json", repo_type="dataset")
-    out_file = os.path.join(data_dir, 'CAPTURE_synthetic.tsv')
+    out_file = os.path.join(data_root, 'CAPTURE_synthetic.tsv')
     create_csv_from_meta(synth_meta, 'dot_shape', data_dir, out_file)
     return out_file
+
+def safe_string_to_int(s):
+    try:
+        return int(s)
+    except ValueError:
+        return -1
+    
+def CAPTURE_atomeval(model, line):
+    ans = model.generate_str(line['prediction'])
+    return safe_string_to_int(ans)
+
+def CAPTURE_smape(data):
+    total_percentage_error = 0
+    count = 0
+    skip = 0
+
+    for i in range(len(data)):
+        row = data.iloc[i]
+        ground_truth = int(row['answer'])
+        answer = row['extracted_answer']
+
+        if answer == -1:
+            skip+=1
+            total_percentage_error+=100
+            count+=1
+            continue
+
+        # Compute sMAPE (Symmetric Mean Absolute Percentage Error)
+        numerator = abs(answer - ground_truth)
+        denominator = (abs(answer) + abs(ground_truth))
+        smape = (numerator / denominator) * 100
+
+    
+        # Add to total percentage error
+        total_percentage_error += smape
+        count += 1
+
+    # Calculate MAPE
+    mape = total_percentage_error / count if count != 0 else 0
+    return pd.DataFrame([dict(SMAPE=mape, skip=skip)])

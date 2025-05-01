@@ -1949,9 +1949,35 @@ class CAPTURE(ImageBaseDataset):
     def create_tsv_from_hf(self):
         pass
 
-    def build_prompt(self, line):
-        pass
-
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        pass
+        from .utils.capture import CAPTURE_atomeval, CAPTURE_smape
+
+        model = judge_kwargs['model']
+        suffix = '.' + eval_file.split('.')[-1]
+        record_file = eval_file.replace(suffix, f'_{model}.{suffix}')
+        score_file = eval_file.replace(suffix, '_score.csv')
+        nproc = judge_kwargs.pop('nproc', 4)
+        system_prompt = "You are an answer extractor. When given someone's answer to some question, you will only extract their final number answer and will respond with just the number. If there is no exact number answer, respond with -1"
+
+        if not osp.exists(record_file):
+            data = load(eval_file)
+            model = build_judge(**judge_kwargs, system_prompt=system_prompt)
+            assert model.working(), ('CAPTURE evaluation requires a working {model}\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+
+
+            extracted_answers = track_progress_rich(
+                CAPTURE_atomeval,
+                tups,
+                nproc=nproc,
+                chunksize=nproc,
+            )
+            data['extracted_answer'] = extracted_answers
+            dump(data, record_file)
+
+        score = CAPTURE_smape(record_file)
+        dump(score, score_file)
+        return score
