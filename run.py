@@ -393,7 +393,7 @@ def main():
                         judge_kwargs['model'] = 'llama31-8b'
                     elif listinstr(['VideoMMLU_QA', 'VideoMMLU_CAP'], dataset_name):
                         judge_kwargs['model'] = 'qwen-72b'
-                    elif listinstr(['CAPTURE_real, CAPTURE_synthetic'], dataset_name):
+                    elif listinstr(['CAPTURE_real', 'CAPTURE_synthetic'], dataset_name):
                         judge_kwargs['model'] = 'llama31-8b'
 
                 if RANK == 0:

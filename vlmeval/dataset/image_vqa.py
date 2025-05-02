@@ -1940,12 +1940,12 @@ class TDBenchGrounding(ImageVQADataset):
 
 
 class CAPTURE(ImageBaseDataset):
-    TYPE = 'VQA'
-    DATASET_URL = {'CAPTURE_real': '', 
+    TYPE = ''
+    DATASET_URL = {'CAPTURE_real': '',
                    'CAPTURE_synthetic': ''}
-    DATASET_MD5 = {'CAPTURE_real': '', 
-                   'CAPTURE_synthetic': ''}
-    
+    DATASET_MD5 = {'CAPTURE_real': None,
+                   'CAPTURE_synthetic': None}
+
     def create_tsv_from_hf(self):
         pass
 
@@ -1958,16 +1958,18 @@ class CAPTURE(ImageBaseDataset):
         record_file = eval_file.replace(suffix, f'_{model}.{suffix}')
         score_file = eval_file.replace(suffix, '_score.csv')
         nproc = judge_kwargs.pop('nproc', 4)
-        system_prompt = "You are an answer extractor. When given someone's answer to some question, you will only extract their final number answer and will respond with just the number. If there is no exact number answer, respond with -1"
-
+        system_prompt = (
+            "You are an answer extractor. When given someone's answer to "
+            "some question, you will only extract their final number answer "
+            "and will respond with just the number. If there is no exact "
+            "number answer, respond with -1"
+        )
         if not osp.exists(record_file):
             data = load(eval_file)
             model = build_judge(**judge_kwargs, system_prompt=system_prompt)
-            assert model.working(), ('CAPTURE evaluation requires a working {model}\n' + DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
-
 
             extracted_answers = track_progress_rich(
                 CAPTURE_atomeval,
@@ -1978,6 +1980,7 @@ class CAPTURE(ImageBaseDataset):
             data['extracted_answer'] = extracted_answers
             dump(data, record_file)
 
-        score = CAPTURE_smape(record_file)
+        data = load(record_file)
+        score = CAPTURE_smape(data)
         dump(score, score_file)
         return score
