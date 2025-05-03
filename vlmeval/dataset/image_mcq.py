@@ -1605,13 +1605,13 @@ class TDBench(ImageMCQDataset):
 
         return acc, judged_result_file
 
-      
+
 class MicroVQA(ImageMCQDataset):
 
     DATASET_URL = {
-        'MicroVQA': 'https://huggingface.co/datasets/KKYYKK/MicroVQA_VLM/resolve/main/MicroVQA.tsv',
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
     }
 
     DATASET_MD5 = {
-        'MicroVQA': None,
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
     }
