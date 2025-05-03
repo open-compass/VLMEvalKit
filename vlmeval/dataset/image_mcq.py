@@ -1414,7 +1414,7 @@ class LEGO(ImageMCQDataset):
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VisuLogic': 'https://huggingface.co/datasets/VisuLogic/VisuLogic/resolve/main/data.tsv'
+        'VisuLogic': 'http://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
     }
     DATASET_MD5 = {
         'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
