@@ -1604,3 +1604,14 @@ class TDBench(ImageMCQDataset):
         dump(acc, score_file)
 
         return acc, judged_result_file
+
+
+class MicroVQA(ImageMCQDataset):
+
+    DATASET_URL = {
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
+    }
