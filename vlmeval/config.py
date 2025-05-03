@@ -701,6 +701,9 @@ internvl2_5 = {
     "InternVL2_5-2B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-2B", version="V2.0"
     ),
+    "QTuneVL1-2B": partial(
+        InternVLChat, model_path="hanchaow/QTuneVL1-2B", version="V2.0"
+    ),
     "InternVL2_5-4B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-4B", version="V2.0"
     ),
