@@ -134,8 +134,8 @@ class SenseChatVisionWrapper(BaseAPI):
         for key, item in options.items():
             question += f'\n{key}. {item}'
         prompt = {
-'multiple-choice': "You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Answer the preceding multiple choice question. The last line of your response should follow this format: 'Answer: \\boxed LETTER', where LETTER is one of the options. If you are uncertain or the problem is too complex, make a reasoned guess based on the information provided. Avoid repeating steps indefinitely—provide your best guess even if unsure. Think step by step logically, considering all relevant information before answering.",  # noqa: E501, E122
-'open': 'You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Your output should be divided into two parts: First, reason about the correct answer. Then write the answer in the following format where X is only the answer and nothing else: "ANSWER: X"'  # noqa: E501, E122
+'multiple-choice': "You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Answer the preceding multiple choice question. The last line of your response should follow this format: 'Answer: \\boxed LETTER', where LETTER is one of the options. If you are uncertain or the problem is too complex, make a reasoned guess based on the information provided. Avoid repeating steps indefinitely—provide your best guess even if unsure. Think step by step logically, considering all relevant information before answering.",  # noqa: E122, E501
+'open': 'You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Your output should be divided into two parts: First, reason about the correct answer. Then write the answer in the following format where X is only the answer and nothing else: "ANSWER: X"'  # noqa: E122, E501
         }
         subject = '_'.join(line['id'].split('_')[1:-1])
         prompt = prompt[line['question_type']].format(subject, subject) + '\n' + question
@@ -167,13 +167,7 @@ class SenseChatVisionWrapper(BaseAPI):
                 question = line["question"]
                 prompt = question + "\nAnswer this question in detail."
             elif listinstr(["MMVet"], dataset):
-                prompt = (
-                    "You are a general expert in many fields. Now I will give you some questions, "
-                    "please answer the question carefully with your knowledge in corresponding fields. "
-                    "Here is the question that I will give you: "
-                    f"{line['question']}"
-                    "Now please answer my question carefully with your knowledge, thanks."
-                )
+                prompt = line["question"]
             else:
                 question = line["question"]
                 prompt = (
@@ -247,12 +241,15 @@ class SenseChatVisionWrapper(BaseAPI):
                 "type": "text",
             }
         )
-
-        message = [{"content": content, "role": "user"}]
+        message = [{
+            "role": "system",
+            "content": [{"text": " ", "type": "text"}]
+        }]
+        message.append({"content": content, "role": "user"})
         data = {
             "messages": message,
             "max_new_tokens": self.max_new_tokens,  # 1024
-            "temperature": 1.0,
+            "temperature": 1e-5,
             "top_k": 1,
             "top_p": 0.99,
             "repetition_penalty": 1.05,

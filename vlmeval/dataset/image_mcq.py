@@ -1414,7 +1414,7 @@ class LEGO(ImageMCQDataset):
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VisuLogic': 'https://huggingface.co/datasets/VisuLogic/VisuLogic/resolve/main/data.tsv'
+        'VisuLogic': 'http://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
     }
     DATASET_MD5 = {
         'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
@@ -1646,3 +1646,14 @@ class Microbench(ImageMCQDataset):
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
         return data
+
+      
+class MicroVQA(ImageMCQDataset):
+
+    DATASET_URL = {
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
+    }
