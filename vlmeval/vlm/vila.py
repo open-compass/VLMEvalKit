@@ -128,6 +128,33 @@ class NVILA(BaseModel):
         assert dataset is not None
         return False
 
+    def _extract_model_response(self, output):
+        """
+        Extract the actual model response from the command output,
+        filtering out log messages and other noise.
+        """
+        if not output:
+            return ""
+
+        lines = output.strip().split("\n")
+        filtered_lines = []
+
+        for line in lines:
+            # Skip common log lines and progress messages
+            if line.startswith('[20') and ('[INFO]' in line or '[WARNING]' in line or '[ERROR]' in line):
+                continue
+            if 'Setting ds_accelerator' in line:
+                continue
+            if line.startswith('Infer ') and ('Rank' in line):
+                continue
+            if '%|' in line and 'it/s]' in line:  # Progress bars
+                continue
+
+            # Keep the rest as actual model output
+            filtered_lines.append(line)
+
+        return "\n".join(filtered_lines).strip()
+
     def generate_inner(self, message, dataset=None):
         import shutil
 
@@ -184,7 +211,10 @@ class NVILA(BaseModel):
             if result.returncode != 0:
                 raise Exception(f"vila-infer command failed: {result.stderr}")
 
-            return result.stdout.strip()
+            # Process the plain text output to filter log messages
+            # TODO: This is a temporary workaround. A more elegant solution is needed
+            # to robustly filter out log messages from the model output.
+            return self._extract_model_response(result.stdout)
 
         finally:
             # Clean up the temporary directory and its contents
