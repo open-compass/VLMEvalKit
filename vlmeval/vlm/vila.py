@@ -139,16 +139,16 @@ class NVILA(BaseModel):
 
         # Create a unique temporary directory for this inference call
         temp_dir = tempfile.mkdtemp(prefix='nvila_')
-        
+
         # Verify that the directory is new and empty
         assert os.path.exists(temp_dir), f"Failed to create temporary directory: {temp_dir}"
         assert os.listdir(temp_dir) == [], f"Temporary directory is not empty: {temp_dir}"
-        
+
         try:
             # Extract images and text content
             image_paths = []
             text_content = ''
-            
+
             for msg in message:
                 if msg['type'] == 'image':
                     # Generate a unique filename using timestamp and random hash
@@ -179,12 +179,12 @@ class NVILA(BaseModel):
 
             # Run the command
             result = subprocess.run(cmd, capture_output=True, text=True)
-            
+
             if result.returncode != 0:
                 raise Exception(f"vila-infer command failed: {result.stderr}")
-            
+
             return result.stdout.strip()
-            
+
         finally:
             # Clean up the temporary directory and its contents
             try:
