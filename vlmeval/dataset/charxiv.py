@@ -192,7 +192,7 @@ class CharXiv(ImageBaseDataset):
         if "LOCAL_LLM" in os.environ:
             judge_model = os.path.basename(os.environ.get("LOCAL_LLM"))
         else:
-            judge_model = judge_kwargs.get("judge_model", "gpt-4o")
+            judge_model = judge_kwargs.get("model", "gpt-4o-mini")
 
         if judge_model != "gpt-4o-mini":
             warnings.warn(
