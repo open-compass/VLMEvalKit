@@ -112,6 +112,7 @@ class VILA(BaseModel):
             output = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
         return output
 
+
 class NVILA(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
