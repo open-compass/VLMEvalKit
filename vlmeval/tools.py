@@ -101,7 +101,7 @@ models = {
 # SKIP_MODELS will be skipped in report_missing and run APIs
 SKIP_MODELS = [
     'MGM_7B', 'GPT4V_HIGH', 'GPT4V', 'flamingov2', 'PandaGPT_13B',
-    'GeminiProVision', 'Step1V-0701', 'SenseChat-5-Vision',
+    'GeminiProVision', 'Step1V-0701', 'SenseNova-V6',
     'llava_v1_7b', 'sharegpt4v_7b', 'sharegpt4v_13b',
     'llava-v1.5-7b-xtuner', 'llava-v1.5-13b-xtuner',
     'cogvlm-grounding-generalist', 'InternVL-Chat-V1-1',

@@ -254,6 +254,9 @@ api_models = {
     "GeminiPro2-5": partial(
         Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
+    "GeminiPro2-5-0506": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -359,9 +362,12 @@ api_models = {
     ),
     # CongRong
     "CloudWalk": partial(CWWrapper, model="cw-congrong-v1.5", temperature=0, retry=10),
-    # SenseChat-V
-    "SenseChat-Vision": partial(
-        SenseChatVisionAPI, model="SenseChat-Vision", temperature=0, retry=10
+    # SenseNova
+    "SenseNova-V6-Pro": partial(
+        SenseChatVisionAPI, model="SenseNova-V6-Pro", temperature=0, retry=10
+    ),
+    "SenseNova-V6-Reasoner": partial(
+        SenseChatVisionAPI, model="SenseNova-V6-Reasoner", temperature=0, retry=10
     ),
     "HunYuan-Vision": partial(
         HunyuanVision, model="hunyuan-vision", temperature=0, retry=10
@@ -698,6 +704,9 @@ internvl2_5 = {
     "InternVL2_5-2B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-2B", version="V2.0"
     ),
+    "QTuneVL1-2B": partial(
+        InternVLChat, model_path="hanchaow/QTuneVL1-2B", version="V2.0"
+    ),
     "InternVL2_5-4B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-4B", version="V2.0"
     ),
@@ -773,7 +782,7 @@ internvl3 = {
         InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
     ),
     "InternVL3-8B": partial(
-        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0"
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0", use_lmdeploy=True
     ),
     "InternVL3-9B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"

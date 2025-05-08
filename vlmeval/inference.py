@@ -101,7 +101,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     if all_finished:
         res = {k: res[k] for k in data_indices}
         dump(res, out_file)
-        return
+        return model
 
     # Data need to be inferred
     data = data[~data['index'].isin(res)]

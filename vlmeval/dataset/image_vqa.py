@@ -1000,6 +1000,59 @@ class LLaVABench(ImageBaseDataset):
         return ret
 
 
+class VGRPBench(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}  # noqa: E501
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        print("VGRPBench evaluation")
+
+        from .utils.vgrpbench.evaluation import (
+            build_prompt,
+            VGRPBench_atomeval,
+            VGRPBench_score,
+            VGRPBench_get_system_prompt,
+        )
+
+        suffix = '.' + eval_file.split('.')[-1]
+        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
+        score_file = eval_file.replace(suffix, '_score.csv')
+
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(record_file):
+            data = load(eval_file)
+            lines = [data.iloc[i] for i in range(len(data))]
+
+            system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
+
+            models = [
+                build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs)
+                for system_prompt in system_prompts
+            ]
+
+            prompts = [build_prompt(line) for line in lines]
+
+            tups = [(model, prompt, line) for model, prompt, line in zip(models, prompts, lines)]
+
+            # Original parallel processing
+            scores = track_progress_rich(VGRPBench_atomeval, tups, nproc=nproc, chunksize=nproc)
+
+            data['perception_correct'] = [x['perception_correct'] for x in scores]
+            data['answer_correct'] = [x['answer_correct'] for x in scores]
+            data['number_of_samples'] = [x['number_of_samples'] for x in scores]
+            dump(data, record_file)
+
+        data = load(record_file)
+
+        ret = VGRPBench_score(data).round(1)
+        dump(ret, score_file)
+
+        return ret
+
+
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -1805,3 +1858,82 @@ class MMSci_Captioning(ImageBaseDataset):
         )
         dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
         return rating
+
+
+class TDBenchGrounding(ImageVQADataset):
+    DATASET_URL = {
+        'tdbench_grounding_rot0': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot0.tsv',  # noqa: E501
+        'tdbench_grounding_rot90': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot90.tsv',  # noqa: E501
+        'tdbench_grounding_rot180': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot180.tsv',  # noqa: E501
+        'tdbench_grounding_rot270': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot270.tsv',  # noqa: E501
+    }
+
+    DATASET_MD5 = {
+        'tdbench_grounding_rot0': '4c2e16c797dfc27f23c06dbb82993a1e',
+        'tdbench_grounding_rot90': '1c75f08b0db07a655333217bf32052c3',
+        'tdbench_grounding_rot180': '794d15f88392a3b8ae5399e58b0f7327',
+        'tdbench_grounding_rot270': '76005a412b49f54eedb6ef963cd0affb',
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.tdbench import evaluate_bbox, extract_bbox_from_string, rotational_eval
+        suffix = eval_file.split('.')[-1]
+        method = judge_kwargs.get('model', 'centroid')
+        assert method in ['centroid', 'iou'], '--judge should be either centroid or iou'
+
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answer']]
+        indexes = [str(x) for x in data['index']]
+
+        scores = []
+
+        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+            try:
+                pred_bbox = extract_bbox_from_string(pred)
+                gt_bbox = extract_bbox_from_string(ans)
+
+                score = evaluate_bbox(pred_bbox, gt_bbox, method)
+                scores.append(score)
+            except Exception as e:
+                print(f"Error calculating {method} for index {index}. Marking as incorrect: {e}")
+                scores.append(0.0)
+
+        avg_score = sum(scores) / len(scores) if scores else 0
+
+        data['hit'] = scores
+        data['category'] = 'visual_grounding'
+        result_file = eval_file.replace(f'.{suffix}', f'_{method}_result.xlsx')
+        data.to_excel(result_file, index=False)
+
+        metric_name = 'Average Centroid Containment' if method == 'centroid' else 'Average IoU'
+        summary_scores = {
+            metric_name: avg_score,
+            'Total Samples': len(scores)
+        }
+
+        score_df = pd.DataFrame(list(summary_scores.items()), columns=['Metric', 'Score'])
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_df.to_csv(score_file, index=False)
+        re_result = rotational_eval(result_file)
+        if method == 'centroid' and re_result is not None and re_result is not False:
+            file_addr = osp.abspath(result_file.split('_rot')[0] + '_REresult.csv')
+            link_addr = osp.join(osp.dirname(osp.dirname(result_file)), osp.basename(file_addr))
+            re_result.to_csv(file_addr, index=True)
+            print(tabulate(re_result, headers="keys"))
+            if osp.exists(link_addr) or osp.islink(link_addr):
+                os.remove(link_addr)
+            os.symlink(file_addr, link_addr)
+        return summary_scores
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        obj = line['question']
+        question = f'\nPlease output the coordinates of the {obj} in the image in the format [x1, y1, x2, y2]. Do not include any additional text. Respond with relative coordinates between 0 and 1, with top left corner (0, 0), top right (1, 0) and bottom right (1, 1).'   # noqa: E501
+        tgt_path = self.dump_image(line)
+
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        msgs.append(dict(type='text', value=question))
+        return msgs

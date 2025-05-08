@@ -14,34 +14,6 @@ IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
-def split_model():
-    device_map = {}
-
-    num_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    num_gpus = num_gpus // world_size
-    num_layers = 80
-    # Since the first GPU will be used for ViT, treat it as half a GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
-    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
-    layer_cnt = 0
-
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + i * world_size
-            layer_cnt += 1
-
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.model.rotary_emb'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
-    return device_map
-
-
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
     transform = T.Compose([
@@ -136,7 +108,7 @@ class NVLM(BaseModel):
             low_cpu_mem_usage=True,
             use_flash_attn=False,
             trust_remote_code=True,
-            device_map=split_model()).eval()
+            device_map='auto').eval()
 
         logging.info(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()

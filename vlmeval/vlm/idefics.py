@@ -72,8 +72,8 @@ class IDEFICS2(BaseModel):
             model_path,
             torch_dtype=torch.bfloat16,
             _attn_implementation='flash_attention_2',
-            device_map='cpu')
-        self.model = model.to('cuda')
+            device_map='auto')
+        self.model = model
 
         kwargs_default = {'max_new_tokens': 1024}
         kwargs_default.update(kwargs)
