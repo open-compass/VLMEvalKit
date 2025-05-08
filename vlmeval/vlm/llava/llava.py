@@ -532,7 +532,9 @@ class LLaVA_OneVision(BaseModel):
 
         rank, world_size = get_rank_and_world_size()
         model_name = get_model_name_from_path(model_path)
-
+        import warnings
+        # filter warning align with official code
+        warnings.filterwarnings("ignore")
         tokenizer, model, image_processor, _ = load_pretrained_model(
             model_path,
             None,
