@@ -305,7 +305,7 @@ class ScreenSpot(ImageBaseDataset):
                     if score_key != "IoU":
                         match[score_key.replace("ACC", "match")] = score
                     results_dict[score_key].append(score)
-                    if line["data_type"] == "text":
+                    if line["ui_type"] == "text":
                         results_dict[score_key + "_text"].append(score)
                     else:
                         results_dict[score_key + "_icon"].append(score)
@@ -382,7 +382,7 @@ class ScreenSpot(ImageBaseDataset):
                     (bbox[1] <= click_point[1] <= bbox[3])
                 if match:
                     SCREENSPOT_result["corr_action"] += 1
-                    if line["data_type"] == "text":
+                    if line["ui_type"] == "text":
                         SCREENSPOT_result["text_correct"].append(1)
                         SCREENSPOT_result["text_num"] += 1
                     else:
@@ -396,7 +396,7 @@ class ScreenSpot(ImageBaseDataset):
                         )
                     )
                 else:
-                    if line["data_type"] == "text":
+                    if line["ui_type"] == "text":
                         SCREENSPOT_result["text_correct"].append(0)
                         SCREENSPOT_result["text_num"] += 1
                     else:
@@ -414,7 +414,7 @@ class ScreenSpot(ImageBaseDataset):
             except Exception as e:
                 logger.warning(f"exception in screenspot eval:{e}")
                 SCREENSPOT_result["num_wrong_format"] += 1
-                if line["data_type"] == "text":
+                if line["ui_type"] == "text":
                     SCREENSPOT_result["text_correct"].append(0)
                     SCREENSPOT_result["text_num"] += 1
                 else:
@@ -429,7 +429,7 @@ class ScreenSpot(ImageBaseDataset):
                     "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
-                    "type": line["data_type"],
+                    "type": line["ui_type"],
                     "source": line["data_source"],
                     "match": match,
                     "is_wrong_format": is_wrong_format,
