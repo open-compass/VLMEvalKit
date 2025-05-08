@@ -254,6 +254,9 @@ api_models = {
     "GeminiPro2-5": partial(
         Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
+    "GeminiPro2-5-0506": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
