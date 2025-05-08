@@ -10,9 +10,28 @@ from .image_mcq import (
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, TDBenchGrounding
+    ImageVQADataset,
+    VizWiz,
+    OCRBench,
+    OCRBenchV2,
+    MathVista,
+    MathVerse,
+    MathVision,
+    Physics_yale,
+    OlympiadBench,
+    LogicVista,
+    MME_CoT,
+    LLaVABench,
+    VGRPBench,
+    MMVet,
+    MTVQADataset,
+    TableVQABench,
+    CustomVQADataset,
+    CRPE,
+    QSpatial,
+    MMNIAH,
+    MMSci_Captioning,
+    TDBenchGrounding
 )
 
 from .image_ccocr import CCOCRDataset
@@ -149,7 +168,7 @@ class ConcatDataset(ImageBaseDataset):
 # Add new supported dataset class here
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
-    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet,
+    MathVision, MMMUDataset, OCRBench, OCRBenchV2, MathVista, LLaVABench, VGRPBench, MMVet,
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,

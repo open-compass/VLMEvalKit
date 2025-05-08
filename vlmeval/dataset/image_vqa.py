@@ -205,6 +205,621 @@ class OCRBench(ImageBaseDataset):
         return final_score_dict
 
 
+class OCRBenchV2(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'OCRBenchV2': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2.tsv',
+    }
+    DATASET_MD5 = {None}
+
+    @classmethod
+    def calculate_average(self, scores_dict):
+        averages = {
+            key: sum(values) / len(values)
+            for key, values in scores_dict.items()
+            if len(values) > 0
+        }
+        return averages
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from vlmeval.dataset.utils.OCRBenchV2.TEDS_metric import TEDS
+        from vlmeval.dataset.utils.OCRBenchV2.vqa_metric import (
+            vqa_evaluation_case_sensitive,
+            cn_vqa_evaluation,
+            counting_evaluation,
+            cn_math_expression_evaluation,
+            math_expression_evaluation,
+            vqa_evaluation
+        )
+        from vlmeval.dataset.utils.OCRBenchV2.IoUscore_metric import (
+            calculate_iou,
+            extract_coordinates,
+            vqa_with_position_evaluation
+        )
+        from vlmeval.dataset.utils.OCRBenchV2.TEDS_metric import (
+            compute_f1_score,
+            convert_markdown_table_to_html,
+            convert_str_to_dict,
+            convert_str_to_multi_dict,
+            dict_to_html,
+            doc_parsing_evaluation,
+            generate_combinations,
+            wrap_html_table
+        )
+        from vlmeval.dataset.utils.OCRBenchV2.page_ocr_metric import cal_per_metrics
+        from vlmeval.dataset.utils.OCRBenchV2.spotting_metric import (
+            extract_bounding_boxes_robust,
+            spotting_evaluation
+        )
+        import ast
+
+        eval_file_data = load(eval_file)
+        teds = TEDS(n_jobs=32)
+
+        # Convert eval_file to list of dictionaries if it's not already
+        if isinstance(eval_file_data, pd.DataFrame):
+            eval_file_data = eval_file_data.to_dict('records')
+        elif isinstance(eval_file_data, str):
+            eval_file_data = [eval_file_data]
+
+        res_data_list = []
+
+        for idx, data_item in enumerate(tqdm(eval_file_data)):
+            if isinstance(data_item, str):
+                data_item = {"type": data_item}  # Create a basic dictionary if it's a string
+
+            if data_item["type"] in [
+                "APP agent en",
+                "ASCII art classification en",
+                "math QA en",
+                "reasoning VQA en",
+                "science QA en",
+                "text recognition en",
+                "document classification en",
+                "cognition VQA en",
+                "diagram QA en"
+            ]:
+                if "eval" in data_item.keys():
+                    if data_item["eval"] == "multiple choice":
+                        if not isinstance(data_item["answers"], list):
+                            data_item["answers"] = [data_item["answers"]]
+
+                        if not isinstance(data_item["prediction"], str):
+                            data_item["score"] = 0
+                        else:
+                            predict = ''.join(c for c in data_item["prediction"] if c.isalpha())
+
+                            if predict == data_item["answers"][0]:
+                                data_item["score"] = 1
+                            else:
+                                data_item["score"] = 0
+                    elif data_item["eval"] == "case sensitive":
+                        data_item["score"] = vqa_evaluation_case_sensitive(
+                            data_item["prediction"],
+                            data_item["answers"]
+                        )
+                    else:
+                        data_item["score"] = vqa_evaluation(
+                            data_item["prediction"],
+                            data_item["answers"]
+                        )
+                else:
+                    data_item["score"] = vqa_evaluation(
+                        data_item["prediction"],
+                        data_item["answers"]
+                    )
+
+            elif data_item["type"] in ["cognition VQA cn", "reasoning VQA cn"]:
+                if "eval" in data_item.keys():
+                    if data_item["eval"] == "multiple choice":
+                        if isinstance(data_item["answers"], str):
+                            data_item["answers"] = eval(data_item["answers"])
+                        assert len(data_item["answers"]) == 1
+                        predict = ''.join(c for c in data_item["prediction"] if c.isalpha())
+
+                        if predict == data_item["answers"][0]:
+                            data_item["score"] = 1
+                        else:
+                            data_item["score"] = 0
+                    elif data_item["eval"] == "case sensitive":
+                        data_item["score"] = vqa_evaluation_case_sensitive(
+                            data_item["prediction"],
+                            data_item["answers"]
+                        )
+                    else:
+                        data_item["score"] = cn_vqa_evaluation(
+                            data_item["prediction"],
+                            data_item["answers"]
+                        )
+                else:
+                    data_item["score"] = cn_vqa_evaluation(
+                        data_item["prediction"],
+                        data_item["answers"]
+                    )
+
+            elif data_item["type"] == "handwritten answer extraction cn":
+                if "简答" in data_item["question"]:
+                    ocr_metric = cal_per_metrics(
+                        data_item["prediction"],
+                        data_item["answers"][0]
+                    )
+                    data_item["score"] = (
+                        self.get_value_or_zero(ocr_metric["bleu"]) +  # noqa: W504
+                        self.get_value_or_zero(ocr_metric["meteor"]) +  # noqa: W504
+                        self.get_value_or_zero(ocr_metric["f_measure"]) +  # noqa: W504
+                        (1 - self.get_value_or_zero(ocr_metric["edit_dist"]))  # noqa: W504
+                    ) / 4
+                else:
+                    if isinstance(data_item["answers"], str):
+                        data_item["answers"] = eval(data_item["answers"])
+                    assert len(data_item["answers"]) == 1
+                    answer = data_item["answers"][0]
+                    chars = list(answer)
+                    if len(answer) > 1:
+                        answer_list = [
+                            "".join(chars),
+                            ".".join(chars),
+                            ". ".join(chars),
+                            ",".join(chars),
+                            ", ".join(chars),
+                            "、".join(chars),
+                            ";".join(chars),
+                            "; ".join(chars),
+                            " ".join(chars),
+                            "和".join(chars)
+                        ]
+                        max_score = 0
+                        for answer in answer_list:
+                            if answer in data_item["prediction"]:
+                                temp_score = 1
+                            else:
+                                temp_score = 0
+                            if temp_score > max_score:
+                                max_score = temp_score
+                        data_item["score"] = max_score
+                    else:
+                        if data_item["answers"][0] in data_item["prediction"]:
+                            data_item["score"] = 1
+                        else:
+                            data_item["score"] = 0
+
+            elif data_item["type"] == "formula recognition cn":
+                if self.is_nan_value(data_item["prediction"]):
+                    data_item["score"] = 0
+                else:
+                    data_item["score"] = cn_math_expression_evaluation(
+                        data_item["prediction"],
+                        data_item["answers"]
+                    )
+
+            elif data_item["type"] == "text counting en":
+                data_item["score"] = counting_evaluation(
+                    data_item["prediction"],
+                    data_item["answers"],
+                    data_item["eval"]
+                )
+
+            elif data_item["type"] == "formula recognition en":
+                data_item["score"] = math_expression_evaluation(
+                    data_item["prediction"],
+                    data_item["answers"]
+                )
+
+            elif data_item["type"] == "table parsing en":
+                if isinstance(data_item["answers"], str):
+                    data_item["answers"] = eval(data_item["answers"])
+                if isinstance(data_item["answers"], list) and len(data_item["answers"]) == 1:
+                    if not isinstance(data_item["prediction"], str):
+                        data_item["score"] = 0
+                    elif not isinstance(data_item["question"], str):
+                        data_item["ignore"] = "True"
+                        data_item["score"] = 0
+                    elif "html" in data_item["question"].lower():
+                        no_find = False
+                        predict_table = data_item["prediction"].replace('\n', '')
+                        if "<body" in predict_table:
+                            predict_table = re.findall('<body.*', predict_table)[0]
+                        elif "<table" in predict_table:
+                            predict_table = re.findall('<table.*', predict_table)[0]
+                        else:
+                            no_find = True
+
+                        if no_find:
+                            data_item["score"] = 0
+                        else:
+                            pred_table_html = wrap_html_table(predict_table)
+                            gold_table_html = wrap_html_table(data_item["answers"][0])
+                            try:
+                                data_item["score"] = teds.evaluate(
+                                    pred_table_html,
+                                    gold_table_html
+                                )
+                            except:
+                                data_item["score"] = 0
+                    elif "markdown" in data_item["question"].lower():
+                        if not isinstance(data_item["prediction"], str):
+                            prediction = str(data_item["prediction"])
+                            pred_table_html = convert_markdown_table_to_html(prediction)
+                            gt_table_html = convert_markdown_table_to_html(
+                                data_item["answers"][0]
+                            )
+                            data_item["score"] = teds.evaluate(
+                                pred_table_html,
+                                gt_table_html
+                            )
+                        else:
+                            pred_table_html = convert_markdown_table_to_html(
+                                data_item["prediction"]
+                            )
+                            gt_table_html = convert_markdown_table_to_html(
+                                data_item["answers"][0]
+                            )
+                            data_item["score"] = teds.evaluate(
+                                pred_table_html,
+                                gt_table_html
+                            )
+                else:
+                    raise ValueError
+
+            elif data_item["type"] == "table parsing cn":
+                if not isinstance(data_item["prediction"], str):
+                    data_item["score"] = 0
+                else:
+                    no_find = False
+                    predict_table = data_item["prediction"].replace('\n', '')
+                    if "<body" in predict_table:
+                        predict_table = re.findall('<body.*', predict_table)[0]
+                    elif "<table" in predict_table:
+                        predict_table = re.findall('<table.*', predict_table)[0]
+                    else:
+                        no_find = True
+
+                    if no_find:
+                        data_item["score"] = 0
+                    else:
+                        pred_table_html = wrap_html_table(predict_table)
+                        gold_table_html = wrap_html_table(data_item["answers"][0])
+                        try:
+                            data_item["score"] = teds.evaluate(
+                                pred_table_html,
+                                gold_table_html
+                            )
+                        except:
+                            data_item["score"] = 0
+                            print("error")
+
+            elif data_item["type"] == "chart parsing en":
+                if isinstance(data_item["answers"], str):
+                    data_item["answers"] = eval(data_item["answers"])
+                answer = data_item["answers"][0]
+                if data_item["prediction"]:
+                    pred_chart_dict = convert_str_to_multi_dict(data_item["prediction"])
+                    if len(pred_chart_dict) == 0:
+                        data_item["score"] = 0
+                    else:
+                        pred_chart_html = dict_to_html(pred_chart_dict)
+                        gt_chart_html = dict_to_html(answer)
+                        data_item["score"] = teds.evaluate(
+                            pred_chart_html,
+                            gt_chart_html
+                        )
+                else:
+                    data_item["score"] = 0
+
+            elif data_item["type"] == "document parsing en":
+                if isinstance(data_item["answers"], str):
+                    data_item["answers"] = eval(data_item["answers"])
+                assert isinstance(data_item["answers"], list) and len(data_item["answers"]) == 1
+                data_item["score"] = doc_parsing_evaluation(
+                    data_item["prediction"],
+                    data_item["answers"][0]
+                )
+
+            elif data_item["type"] == "document parsing cn":
+                if isinstance(data_item["answers"], str):
+                    data_item["answers"] = eval(data_item["answers"])
+                assert isinstance(data_item["answers"], list) and len(data_item["answers"]) == 1
+                data_item["score"] = doc_parsing_evaluation(
+                    data_item["prediction"],
+                    data_item["answers"][0]
+                )
+
+            elif data_item["type"] in ["key information extraction en", "key information mapping en"]:
+                if isinstance(data_item["answers"], str):
+                    data_item["answers"] = eval(data_item["answers"])
+                assert len(data_item["answers"]) == 1
+                answers = generate_combinations(data_item["answers"][0])
+
+                if isinstance(answers, list) and len(answers) == 1:
+                    if not isinstance(data_item["prediction"], str):
+                        data_item["score"] = 0
+                    else:
+                        pred_kie_dict = convert_str_to_dict(data_item["prediction"])
+                        data_item["score"] = compute_f1_score(pred_kie_dict, answers[0])
+                else:
+                    max_score = 0
+                    for answer in answers:
+                        pred_kie_dict = convert_str_to_dict(data_item["prediction"])
+                        data_item["score"] = compute_f1_score(pred_kie_dict, answer)
+
+                        if data_item["score"] > max_score:
+                            max_score = data_item["score"]
+                    data_item["score"] = max_score
+
+            elif data_item["type"] == "key information extraction cn":
+                if isinstance(data_item["answers"], str):
+                    data_item["answers"] = eval(data_item["answers"])
+                assert len(data_item["answers"]) == 1
+                answers = ast.literal_eval(data_item["answers"][0])
+                answers = {k: v if isinstance(v, list) else [v] for k, v in answers.items()}
+                answers = generate_combinations(answers)
+                if isinstance(answers, list) and len(answers) == 1:
+                    if not isinstance(data_item["prediction"], str):
+                        data_item["score"] = 0
+                    else:
+                        pred_kie_dict = convert_str_to_dict(data_item["prediction"])
+                        data_item["score"] = compute_f1_score(pred_kie_dict, answers[0])
+                else:
+                    max_score = 0
+                    for answer in answers:
+                        pred_kie_dict = convert_str_to_dict(data_item["prediction"])
+                        data_item["score"] = compute_f1_score(pred_kie_dict, answer)
+
+                        if data_item["score"] > max_score:
+                            max_score = data_item["score"]
+                    data_item["score"] = max_score
+
+            elif data_item["type"] == "VQA with position en":
+                if not isinstance(data_item["prediction"], str):
+                    data_item["score"] = 0
+                else:
+                    pred_dict = convert_str_to_dict(data_item["prediction"])
+                    data_item["score"] = vqa_with_position_evaluation(pred_dict, data_item)
+
+            elif data_item["type"] == "text translation cn":
+                if len(data_item["prediction"]) == 0:
+                    data_item["score"] = 0
+                elif len(data_item["answers"][0]) == 0:
+                    data_item["score"] = 0
+                    data_item["ignore"] = "True"
+                else:
+                    ocr_metric = cal_per_metrics(
+                        data_item["prediction"],
+                        data_item["answers"][0]
+                    )
+                    data_item["score"] = (
+                        ocr_metric["bleu"] +  # noqa: W504
+                        ocr_metric["meteor"] +  # noqa: W504
+                        ocr_metric["f_measure"] +  # noqa: W504
+                        (1 - ocr_metric["edit_dist"])  # noqa: W504
+                    ) / 4
+
+            elif data_item["type"] == "fine-grained text recognition en":
+                if not isinstance(data_item["prediction"], str):
+                    data_item["score"] = 0
+                elif len(data_item["prediction"]) == 0:
+                    data_item["score"] = 0
+                else:
+                    ocr_metric = cal_per_metrics(
+                        data_item["prediction"],
+                        data_item["answers"][0]
+                    )
+                    data_item["score"] = (
+                        self.get_value_or_zero(ocr_metric["bleu"]) +  # noqa: W504
+                        self.get_value_or_zero(ocr_metric["meteor"]) +  # noqa: W504
+                        self.get_value_or_zero(ocr_metric["f_measure"]) +  # noqa: W504
+                        (1 - self.get_value_or_zero(ocr_metric["edit_dist"]))  # noqa: W504
+                    ) / 4
+
+            elif data_item["type"] == "full-page OCR en":
+                if not data_item["prediction"]:
+                    data_item["score"] = 0
+                else:
+                    ocr_metric = cal_per_metrics(
+                        data_item["prediction"],
+                        data_item["answers"][0]
+                    )
+                    data_item["score"] = (
+                        self.get_value_or_zero(ocr_metric["bleu"]) +  # noqa: W504
+                        self.get_value_or_zero(ocr_metric["meteor"]) +  # noqa: W504
+                        self.get_value_or_zero(ocr_metric["f_measure"]) +  # noqa: W504
+                        (1 - self.get_value_or_zero(ocr_metric["edit_dist"]))  # noqa: W504
+                    ) / 4
+
+            elif data_item["type"] == "full-page OCR cn":
+                if not isinstance(data_item["prediction"], str):
+                    data_item["score"] = 0
+                else:
+                    if len(data_item["prediction"]) == 0:
+                        data_item["score"] = 0
+                    else:
+                        ocr_metric = cal_per_metrics(
+                            data_item["prediction"],
+                            data_item["answers"][0]
+                        )
+                        data_item["score"] = (
+                            ocr_metric["bleu"] +  # noqa: W504
+                            ocr_metric["meteor"] +  # noqa: W504
+                            ocr_metric["f_measure"] +  # noqa: W504
+                            (1 - ocr_metric["edit_dist"])  # noqa: W504
+                        ) / 4
+
+            elif data_item["type"] == "text grounding en":
+                if not isinstance(data_item["prediction"], str):
+                    data_item["score"] = 0
+                else:
+                    predict_bbox = extract_coordinates(data_item["prediction"])
+                    if not predict_bbox:
+                        data_item["score"] = 0
+                    else:
+                        data_item["score"] = calculate_iou(
+                            predict_bbox,
+                            data_item["answers"]
+                        )
+
+            elif data_item["type"] == "text spotting en":
+                if not isinstance(data_item["prediction"], str):
+                    data_item["score"] = 0
+                else:
+                    predict_bbox = extract_bounding_boxes_robust(data_item["prediction"])
+                    if not predict_bbox:
+                        data_item["score"] = 0
+                    else:
+                        if isinstance(predict_bbox, str):
+                            predict_bbox = eval(predict_bbox)
+                        data_item["score"] = spotting_evaluation(
+                            predict_bbox,
+                            data_item
+                        )
+            else:
+                raise ValueError("Unknown task type!")
+
+            res_data_list.append(data_item)
+
+        eval_new_file = eval_file.replace('.xlsx', '_new.xlsx')
+        df = pd.DataFrame(res_data_list)
+        df.to_excel(eval_new_file, index=False)
+        data_new_list = pd.read_excel(eval_new_file).to_dict('records')
+
+        en_text_recognition_list = []
+        en_text_detection_list = []
+        en_text_spotting_list = []
+        en_relationship_extraction_list = []
+        en_element_parsing_list = []
+        en_mathematical_calculation_list = []
+        en_visual_text_understanding_list = []
+        en_knowledge_reasoning_list = []
+        cn_text_recognition_list = []
+        cn_relationship_extraction_list = []
+        cn_element_parsing_list = []
+        cn_visual_text_understanding_list = []
+        cn_knowledge_reasoning_list = []
+
+        for item in data_new_list:
+            if "ignore" in item.keys():
+                assert item["ignore"] == "True"
+            elif item["type"] in [
+                "text recognition en",
+                "fine-grained text recognition en",
+                "full-page OCR en"
+            ]:
+                en_text_recognition_list.append(item["score"])
+            elif item["type"] in ["text grounding en", "VQA with position en"]:
+                en_text_detection_list.append(item["score"])
+            elif item["type"] == "text spotting en":
+                en_text_spotting_list.append(item["score"])
+            elif item["type"] in ["key information extraction en", "key information mapping en"]:
+                en_relationship_extraction_list.append(item["score"])
+            elif item["type"] in [
+                "document parsing en",
+                "chart parsing en",
+                "table parsing en",
+                "formula recognition en"
+            ]:
+                en_element_parsing_list.append(item["score"])
+            elif item["type"] in ["math QA en", "text counting en"]:
+                en_mathematical_calculation_list.append(item["score"])
+            elif item["type"] in [
+                "document classification en",
+                "cognition VQA en",
+                "diagram QA en"
+            ]:
+                en_visual_text_understanding_list.append(item["score"])
+            elif item["type"] in [
+                "reasoning VQA en",
+                "science QA en",
+                "APP agent en",
+                "ASCII art classification en"
+            ]:
+                en_knowledge_reasoning_list.append(item["score"])
+            elif item["type"] == "full-page OCR cn":
+                cn_text_recognition_list.append(item["score"])
+            elif item["type"] in [
+                "key information extraction cn",
+                "handwritten answer extraction cn"
+            ]:
+                cn_relationship_extraction_list.append(item["score"])
+            elif item["type"] in [
+                "document parsing cn",
+                "table parsing cn",
+                "formula recognition cn"
+            ]:
+                cn_element_parsing_list.append(item["score"])
+            elif item["type"] == "cognition VQA cn":
+                cn_visual_text_understanding_list.append(item["score"])
+            elif item["type"] in ["reasoning VQA cn", "text translation cn"]:
+                cn_knowledge_reasoning_list.append(item["score"])
+            else:
+                raise ValueError("Unknown task type!")
+
+        en_scores = {
+            "text_recognition": en_text_recognition_list,
+            "text_detection": en_text_detection_list,
+            "text_spotting": en_text_spotting_list,
+            "relationship_extraction": en_relationship_extraction_list,
+            "element_parsing": en_element_parsing_list,
+            "mathematical_calculation": en_mathematical_calculation_list,
+            "visual_text_understanding": en_visual_text_understanding_list,
+            "knowledge_reasoning": en_knowledge_reasoning_list
+        }
+
+        cn_scores = {
+            "text_recognition": cn_text_recognition_list,
+            "relationship_extraction": cn_relationship_extraction_list,
+            "element_parsing": cn_element_parsing_list,
+            "visual_text_understanding": cn_visual_text_understanding_list,
+            "knowledge_reasoning": cn_knowledge_reasoning_list
+        }
+
+        en_averages = self.calculate_average(en_scores)
+        cn_averages = self.calculate_average(cn_scores)
+
+        print("English Scores:")
+        for key, score in en_averages.items():
+            print(f"{key}: {score:.3f} (Count: {len(en_scores[key])})")
+
+        print("\nChinese Scores:")
+        for key, score in cn_averages.items():
+            print(f"{key}: {score:.3f} (Count: {len(cn_scores[key])})")
+
+        score_en_overall = sum(en_averages.values()) / len(en_averages)
+        score_cn_overall = sum(cn_averages.values()) / len(cn_averages)
+
+        print("\nOverall Scores:")
+        print(f"English Overall Score: {score_en_overall:.3f}")
+        print(f"Chinese Overall Score: {score_cn_overall:.3f}")
+
+        print("End of Code!")
+
+        combined_scores = {
+            "en": en_averages,
+            "cn": cn_averages,
+            "en_overall": score_en_overall,
+            "cn_overall": score_cn_overall
+        }
+
+        return combined_scores
+
+    @classmethod
+    def is_nan_value(cls, value):
+        if value is None:
+            return True
+        if isinstance(value, str) and value.lower() == 'nan':
+            return True
+        try:
+            import pandas as pd
+            if pd.isna(value):
+                return True
+        except:
+            pass
+        return False
+
+    @classmethod
+    def get_value_or_zero(cls, value):
+        return 0.0 if value is None else value
+
+
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -626,8 +1241,7 @@ class OlympiadBench(ImageBaseDataset):
                     unit_text = '，注意答案的单位不要放在\\boxed{}中'
                 prompt = (
                     f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。'
-                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”'
-                    f'显式给出结果{unit_text}。'
+                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以"所以最终答案是{multiple_answer_text}。"显式给出结果{unit_text}。'
                 )
         else:
             subject_content = 'Math' if self.is_math else 'Physics'
