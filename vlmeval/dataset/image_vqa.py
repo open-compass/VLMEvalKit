@@ -210,7 +210,7 @@ class OCRBenchV2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBenchV2': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2.tsv',
     }
-    DATASET_MD5 = {None}
+    DATASET_MD5 = {'OCRBenchV2': '12cf360e5ccf276358cb38789d00ffa4'}
 
     @classmethod
     def calculate_average(self, scores_dict):
