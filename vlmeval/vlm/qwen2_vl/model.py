@@ -474,7 +474,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         if self.verbose:
             print(f'\033[32m{response}\033[0m')
         return response
-      
+
     def generate_inner_vllm(self, message, dataset=None):
         from vllm import SamplingParams
 
