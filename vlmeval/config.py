@@ -929,6 +929,8 @@ vila_series = {
     ),
     "VILA1.5-13b": partial(VILA, model_path="Efficient-Large-Model/VILA1.5-13b"),
     "VILA1.5-40b": partial(VILA, model_path="Efficient-Large-Model/VILA1.5-40b"),
+    "NVILA-8B": partial(NVILA, model_path="Efficient-Large-Model/NVILA-8B"),
+    "NVILA-15B": partial(NVILA, model_path="Efficient-Large-Model/NVILA-15B"),
 }
 
 ovis_series = {
