@@ -1,8 +1,8 @@
+apted
+distance
 editdistance
 ipdb
-distance
-apted
-lxml
-zss
 jieba
+lxml
 Polygon3
+zss
