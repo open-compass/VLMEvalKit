@@ -1081,8 +1081,8 @@ qwen2vl_series = {
     "Qwen2.5-VL-7B-Instruct": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-7B-Instruct",
-        min_pixels=None,
-        max_pixels=None,
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
     "Qwen2.5-VL-7B-Instruct-AWQ": partial(

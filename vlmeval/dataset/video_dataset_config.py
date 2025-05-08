@@ -6,9 +6,7 @@ mmbench_video_dataset = {
     'MMBench_Video_8frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=True),
     'MMBench_Video_16frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=16, pack=False),
     'MMBench_Video_64frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=64, pack=False),
-    'MMBench_Video_128frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=128, pack=False),
     'MMBench_Video_1fps_nopack': partial(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=False),
-    'MMBench_Video_2fps_nopack': partial(MMBenchVideo, dataset='MMBench-Video', fps=2.0, pack=False),
     'MMBench_Video_1fps_pack': partial(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=True)
 }
 
