@@ -1606,9 +1606,11 @@ class TDBench(ImageMCQDataset):
         return acc, judged_result_file
 
 
-class Microbench(ImageMCQDataset):
+class MicroBench(ImageMCQDataset):
 
-    DATASET_URL = {
+    DATASET_URL = {'MicroBench': ''}
+
+    DATASET_PART_URL = {
         'part_1': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_1.tsv',
         'part_2': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_2.tsv',
         'part_3': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_3.tsv',
@@ -1623,16 +1625,15 @@ class Microbench(ImageMCQDataset):
         'part_12': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_12.tsv',
         'part_13': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_13.tsv',
         'part_14': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_14.tsv',
-
     }
 
-    def load_data(self, dataset="Microbench", repo_id="xuxuxuxuxu/Microbench"):
+    def load_data(self, dataset="MicroBench", repo_id="xuxuxuxuxu/MicroBench"):
 
         dfs = []
         for part_num in range(1, 15):
             part_name = f'part_{part_num}'
-            url = self.DATASET_URL[part_name]
-            tsv_path = osp.join(LMUDataRoot(), f'{part_name}.tsv')
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'microbench_{part_name}.tsv')
             if not osp.exists(tsv_path):
                 download_file(url, filename=tsv_path)
             local_path = tsv_path.replace('.tsv', '_local.tsv')
@@ -1647,7 +1648,7 @@ class Microbench(ImageMCQDataset):
         data = pd.concat(dfs, ignore_index=True)
         return data
 
-      
+
 class MicroVQA(ImageMCQDataset):
 
     DATASET_URL = {
