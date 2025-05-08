@@ -226,22 +226,13 @@ api_models = {
     ),
     # Gemini
     "GeminiPro1-0": partial(
-        GeminiProVision, model="gemini-1.0-pro", temperature=0, retry=10
+        Gemini, model="gemini-1.0-pro", temperature=0, retry=10
     ),  # now GeminiPro1-0 is only supported by vertex backend
     "GeminiPro1-5": partial(
-        GeminiProVision, model="gemini-1.5-pro", temperature=0, retry=10
+        Gemini, model="gemini-1.5-pro", temperature=0, retry=10
     ),
     "GeminiFlash1-5": partial(
-        GeminiProVision, model="gemini-1.5-flash", temperature=0, retry=10
-    ),
-    "GeminiFlash2-0": partial(
-        GeminiProVision, model="gemini-2.0-flash", temperature=0, retry=10
-    ),
-    "GeminiPro2-0": partial(
-        GeminiProVision, model="gemini-2.0-pro-exp", temperature=0, retry=10
-    ),
-    "GeminiPro2-5": partial(
-        GeminiProVision, model="gemini-2.5-pro-exp-03-25", temperature=0, retry=10
+        Gemini, model="gemini-1.5-flash", temperature=0, retry=10
     ),
     "GeminiPro1-5-002": partial(
         GPT4V, model="gemini-1.5-pro-002", temperature=0, retry=10
@@ -249,6 +240,24 @@ api_models = {
     "GeminiFlash1-5-002": partial(
         GPT4V, model="gemini-1.5-flash-002", temperature=0, retry=10
     ),  # Internal Use Only
+    "GeminiFlash2-0": partial(
+        Gemini, model="gemini-2.0-flash", temperature=0, retry=10
+    ),
+    "GeminiFlashLite2-0": partial(
+        Gemini, model="gemini-2.0-flash-lite", temperature=0, retry=10
+    ),
+    "GeminiPro2-0": partial(
+        Gemini, model="gemini-2.0-pro-exp", temperature=0, retry=10
+    ),
+    "GeminiFlash2-5": partial(
+        Gemini, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
+    ),
+    "GeminiPro2-5": partial(
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
+    ),
+    "GeminiPro2-5-0506": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -354,9 +363,12 @@ api_models = {
     ),
     # CongRong
     "CloudWalk": partial(CWWrapper, model="cw-congrong-v1.5", temperature=0, retry=10),
-    # SenseChat-V
-    "SenseChat-Vision": partial(
-        SenseChatVisionAPI, model="SenseChat-Vision", temperature=0, retry=10
+    # SenseNova
+    "SenseNova-V6-Pro": partial(
+        SenseChatVisionAPI, model="SenseNova-V6-Pro", temperature=0, retry=10
+    ),
+    "SenseNova-V6-Reasoner": partial(
+        SenseChatVisionAPI, model="SenseNova-V6-Reasoner", temperature=0, retry=10
     ),
     "HunYuan-Vision": partial(
         HunyuanVision, model="hunyuan-vision", temperature=0, retry=10
@@ -693,6 +705,9 @@ internvl2_5 = {
     "InternVL2_5-2B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-2B", version="V2.0"
     ),
+    "QTuneVL1-2B": partial(
+        InternVLChat, model_path="hanchaow/QTuneVL1-2B", version="V2.0"
+    ),
     "InternVL2_5-4B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-4B", version="V2.0"
     ),
@@ -782,7 +797,7 @@ internvl3 = {
         InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
     ),
     "InternVL3-8B": partial(
-        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0"
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0", use_lmdeploy=True
     ),
     "InternVL3-9B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"
@@ -801,7 +816,8 @@ internvl3 = {
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
-    "SAIL-VL-1.5-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-8B", use_msac = True)
+    "SAIL-VL-1.5-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-8B", use_msac = True),
+    "SAIL-VL-1.6-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d6-8B", use_msac = True)
 }
 
 ristretto_series = {
@@ -887,6 +903,7 @@ deepseekvl2_series = {
 
 janus_series = {
     "Janus-1.3B": partial(Janus, model_path="deepseek-ai/Janus-1.3B"),
+    "Janus-Pro-1B": partial(Janus, model_path="deepseek-ai/Janus-Pro-1B"),
     "Janus-Pro-7B": partial(Janus, model_path="deepseek-ai/Janus-Pro-7B"),
 }
 
@@ -927,6 +944,8 @@ vila_series = {
     ),
     "VILA1.5-13b": partial(VILA, model_path="Efficient-Large-Model/VILA1.5-13b"),
     "VILA1.5-40b": partial(VILA, model_path="Efficient-Large-Model/VILA1.5-40b"),
+    "NVILA-8B": partial(NVILA, model_path="Efficient-Large-Model/NVILA-8B"),
+    "NVILA-15B": partial(NVILA, model_path="Efficient-Large-Model/NVILA-15B"),
 }
 
 ovis_series = {

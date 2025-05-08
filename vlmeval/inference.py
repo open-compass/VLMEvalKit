@@ -101,14 +101,18 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     if all_finished:
         res = {k: res[k] for k in data_indices}
         dump(res, out_file)
-        return
+        return model
 
     # Data need to be inferred
     data = data[~data['index'].isin(res)]
     lt = len(data)
 
     kwargs = {}
-    if model_name is not None and 'Llama-4' in model_name:
+    if model_name is not None and (
+        'Llama-4' in model_name
+        or 'Qwen2-VL' in model_name
+        or 'Qwen2.5-VL' in model_name
+    ):
         kwargs = {'use_vllm': use_vllm}
     model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
 
@@ -131,7 +135,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     else:
         model.set_dump_image(dataset.dump_image)
 
-    for i in tqdm(range(lt)):
+    for i in tqdm(range(lt), desc=f'Infer {model_name}/{dataset_name}, Rank {rank}/{world_size}'):
         idx = data.iloc[i]['index']
         if idx in res:
             continue

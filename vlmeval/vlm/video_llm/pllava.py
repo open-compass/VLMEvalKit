@@ -44,7 +44,7 @@ class PLLaVA(BaseModel):
         )
 
         #  position embedding
-        self.model = self.model.to(torch.device(rank))
+        self.model = self.model.to('cuda')
         self.model = self.model.eval()
 
     def load_video(self, video_path, num_segments=8, resolution=336):

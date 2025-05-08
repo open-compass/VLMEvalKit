@@ -5,17 +5,18 @@ from .image_caption import ImageCaptionDataset
 from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
-    NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO
+    NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
+    CMMU_MCQ, PathMMU_VAL, PathMMU_TEST, MicroVQA, MicroBench
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, MMVet, MTVQADataset, TableVQABench,
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale
+    MMSci_Captioning, Physics_yale, TDBenchGrounding
 )
 
 from .image_ccocr import CCOCRDataset
-from .image_shortqa import ImageShortQADataset
+from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
@@ -24,6 +25,7 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
+from .spatial457 import Spatial457
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -59,6 +61,7 @@ from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.screenspot_pro import ScreenSpot_Pro
+from .mmifeval import MMIFEval
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -149,7 +152,7 @@ class ConcatDataset(ImageBaseDataset):
 # Add new supported dataset class here
 IMAGE_DATASET = [
     ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
-    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, MMVet,
+    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet,
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
@@ -157,7 +160,10 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, ScreenSpotV2
+    LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot, ScreenSpotV2,
+    MMIFEval, Spatial457, VisuLogic, CVBench,
+    CMMU_MCQ, PathVQA_VAL, PathVQA_TEST, PathMMU_VAL, PathMMU_TEST, TDBench, TDBenchGrounding,
+    MicroVQA, MicroBench
 ]
 
 
@@ -236,7 +242,6 @@ def build_dataset(dataset_name, **kwargs):
             return cls(dataset=dataset_name, **kwargs)
 
     warnings.warn(f'Dataset {dataset_name} is not officially supported. ')
-
     data_file = osp.join(LMUDataRoot(), f'{dataset_name}.tsv')
     if not osp.exists(data_file):
         warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')

@@ -886,6 +886,130 @@ class MMERealWorld(ImageMCQDataset):
         return rating
 
 
+class CVBench(ImageMCQDataset):
+    """CV-Bench, composed of two sub datasets:
+    CV-Bench-2D: 2D computer vision tasks
+    CV-Bench-3D: 3D computer vision tasks
+
+    Reference:
+    - https://cambrian-mllm.github.io/
+    - https://huggingface.co/datasets/nyu-visionx/CV-Bench
+
+    Evaluation strategy:
+        See [Cambrian-1](https://arxiv.org/pdf/2406.16860) Appendix C
+    """
+    DATASET_URL = {
+        "CV-Bench-2D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-2D.tsv",
+        "CV-Bench-3D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-3D.tsv",
+    }
+
+    DATASET_MD5 = {
+        "CV-Bench-2D": "a7cff4cc2857cc237ee2b89e62bccb2d",
+        "CV-Bench-3D": "bb94c0d568d652d15b60e001ac40a170",
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line["image_path"])
+        else:
+            tgt_path = self.dump_image(line)
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type="image", value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type="image", value=tgt_path)]
+        # use the prompt provided by the dataset
+        msgs.append(dict(type="text", value=line["prompt"]))
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
+
+        nproc = judge_kwargs.pop("nproc", 4)
+
+        suffix = eval_file.split(".")[-1]
+        model_name = judge_kwargs.get("model", "extract_matching")
+
+        if model_name == "exact_matching":
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn(
+                "OPENAI_API_KEY is not set properly, will use exact matching for evaluation"
+            )
+            model = None
+
+        result_file = eval_file.replace(f".{suffix}", f"_{model_name}_result.pkl")
+
+        data = load(eval_file)
+        data = data.sort_values(by="index")
+        data["prediction"] = [str(x) for x in data["prediction"]]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(
+                k
+            )
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta["index"], meta["question"])}
+        data_map = {x: y for x, y in zip(data["index"], data["question"])}
+        for k in data_map:
+            assert (
+                k in meta_q_map
+            ), f"eval_file should be the same as or a subset of dataset {self.dataset_name}"
+
+        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
+
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+        data = mcq_vanilla_eval(
+            model, data, meta, nproc, result_file, self.dataset_name
+        )
+        dump(data, eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
+        data = load(eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
+
+        if all(data["split"] == "2D"):  # 2D
+            acc = self.report_accuracy(data)
+        else:  # 3D, use default evaluation strategy
+            acc = report_acc(data)
+
+        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
+        dump(acc, score_file)
+
+        return acc
+
+    def report_accuracy(self, data):
+        # CV-Bench-2D evaluation strategy
+        # first calculate the accuracy for each source
+        # then calculate the overall accuracy by averaging across all sources
+        res = defaultdict(list)
+
+        splits = list(set(data["split"]))
+        res["split"] = splits
+
+        sources = set(data["source"])
+        for source in sources:
+            sub_df = data[data["source"] == source]
+            res[source] = [
+                np.mean(sub_df[sub_df["split"] == sp]["hit"]) for sp in res["split"]
+            ]
+        res = pd.DataFrame(res)
+        res["Overall"] = 0
+        for source in sources:
+            res["Overall"] += res[source]
+        res["Overall"] = res["Overall"] / len(sources)
+        return res
+
+
 class HRBenchDataset(ImageMCQDataset):
 
     DATASET_URL = {
@@ -1285,3 +1409,252 @@ class LEGO(ImageMCQDataset):
             msgs = super().build_prompt(line)
         msgs = self.split_LEGO(msgs)
         return msgs
+
+
+class VisuLogic(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'VisuLogic': 'http://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
+    }
+    DATASET_MD5 = {
+        'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        prompt = ''
+        prompt += question
+        prompt += "\nSolve the complex visual logical reasoning problem through step-by-step reasoning."
+        prompt += "Think about the reasoning process first "
+        prompt += "and answer the question following this format: Answer: \\boxed{$LETTER}"
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.visulogic import VisuLogic_acc
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+
+        if osp.exists(storage):
+            accuracy_scores = VisuLogic_acc(storage)
+        else:
+            accuracy_scores = VisuLogic_acc(eval_file)
+        combine_score = {**accuracy_scores,}
+        combine_score = pd.DataFrame(combine_score)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(combine_score, score_pth)
+        return combine_score
+
+
+class CMMU_MCQ(ImageMCQDataset):
+    DATASET_URL = {
+        'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
+    }
+
+    DATASET_MD5 = {
+        'CMMU_MCQ': None,
+    }
+
+
+class PathMMU_VAL(ImageMCQDataset):
+    DATASET_URL = {
+        'PathMMU_VAL': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_VAL.tsv',
+    }
+
+    DATASET_MD5 = {
+        'PathMMU_VAL': None,
+    }
+
+
+class PathMMU_TEST(ImageMCQDataset):
+    DATASET_URL = {
+        'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
+    }
+
+    DATASET_MD5 = {
+        'PathMMU_TEST': None,
+    }
+
+
+class TDBench(ImageMCQDataset):
+    DATASET_URL = {
+        'tdbench_rot0': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot0.tsv',
+        'tdbench_rot90': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot90.tsv',
+        'tdbench_rot180': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot180.tsv',
+        'tdbench_rot270': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot270.tsv',
+        'tdbench_cs_zoom': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_zoom_in.tsv',
+        'tdbench_cs_height': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_height.tsv',
+        'tdbench_cs_integrity': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_integrity.tsv',  # noqa: E501
+        'tdbench_cs_depth': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/case_study_depth.tsv',
+    }
+
+    DATASET_MD5 = {
+        'tdbench_rot0': '98d58436f01ca2bf2f1db1b9bfd7a947',
+        'tdbench_rot90': 'd4afebfd0a4776242069e43269779f41',
+        'tdbench_rot180': 'd54dd9f418f83ed612b02fd5f42f65c7',
+        'tdbench_rot270': 'f95304455582de5635ff10c0400562ac',
+        'tdbench_cs_zoom': '2a01618c9c1e7d1a9d86af545e943392',
+        'tdbench_cs_height': 'ecbe1c5802e25749558417208164bcb3',
+        'tdbench_cs_integrity': '05b2045cae2016f6edc400da48e2df4b',
+        'tdbench_cs_depth': '449dbe4b24a43a06a9f680811deae517',
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        acc, result_file = self.do_evaluate(eval_file, **judge_kwargs)
+        # For case studies (cs_x), do not do rotation eval
+        if '_rot' not in self.dataset_name:
+            return acc
+
+        from .utils.tdbench import rotational_eval
+        re_result = rotational_eval(result_file)
+        if re_result is not None and re_result is not False:
+            file_addr = osp.abspath(result_file.split('_rot')[0] + '_REresult.csv')
+            link_addr = osp.join(osp.dirname(osp.dirname(result_file)), osp.basename(file_addr))
+            re_result.to_csv(file_addr, index=True)
+            print(tabulate(re_result, headers="keys"))
+            if osp.exists(link_addr) or osp.islink(link_addr):
+                os.remove(link_addr)
+            os.symlink(file_addr, link_addr)
+
+        return acc
+
+    def do_evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125', 'gpt-4o-mini']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+
+        # Save evaluation results
+        judged_result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        dump(data, judged_result_file)
+
+        acc = report_acc(data)
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+
+        return acc, judged_result_file
+
+
+class MicroBench(ImageMCQDataset):
+
+    DATASET_URL = {'MicroBench': ''}
+
+    DATASET_PART_URL = {
+        'part_1': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_1.tsv',
+        'part_2': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_2.tsv',
+        'part_3': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_3.tsv',
+        'part_4': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_4.tsv',
+        'part_5': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_5.tsv',
+        'part_6': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_6.tsv',
+        'part_7': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_7.tsv',
+        'part_8': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_8.tsv',
+        'part_9': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_9.tsv',
+        'part_10': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_10.tsv',
+        'part_11': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_11.tsv',
+        'part_12': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_12.tsv',
+        'part_13': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_13.tsv',
+        'part_14': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_14.tsv',
+    }
+
+    def load_data(self, dataset="MicroBench", repo_id="xuxuxuxuxu/MicroBench"):
+
+        dfs = []
+        for part_num in range(1, 15):
+            part_name = f'part_{part_num}'
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'microbench_{part_name}.tsv')
+            if not osp.exists(tsv_path):
+                download_file(url, filename=tsv_path)
+            local_path = tsv_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
+                from ..tools import LOCALIZE
+                LOCALIZE(tsv_path, local_path)
+            tsv_path = local_path
+            # 加载数据
+            df = load(tsv_path)
+            dfs.append(df)
+        # 合并所有数据
+        data = pd.concat(dfs, ignore_index=True)
+        return data
+
+
+class MicroVQA(ImageMCQDataset):
+
+    DATASET_URL = {
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
+    }
+
+    DATASET_MD5 = {
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
+    }

@@ -25,11 +25,11 @@ class MMAlaya(BaseModel):
             model_path, trust_remote_code=True
         )
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, device_map='cpu', trust_remote_code=True
+            model_path, device_map='auto', trust_remote_code=True
         ).eval()
         # need initialize tokenizer
         model.initialize_tokenizer(self.tokenizer)
-        self.model = model.cuda()
+        self.model = model
 
         self.kwargs = kwargs
         warnings.warn(
@@ -157,39 +157,6 @@ def load_image(image_file, input_size=448, max_num=6, upscale=False):
     return pixel_values
 
 
-# This function is used to split InternVL2-Llama3-76B
-def split_model(model_name):
-    import math
-    device_map = {}
-    num_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    num_gpus = num_gpus // world_size
-    assert num_gpus >= 1
-    if num_gpus == 1:
-        return device_map
-
-    num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                  'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
-    # Since the first GPU will be used for ViT, treat it as 0.5 GPU.
-    num_layers_per_gpu = math.ceil(num_layers / (num_gpus - 0.5))
-    num_layers_per_gpu = [num_layers_per_gpu] * num_gpus
-    num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
-    layer_cnt = 0
-    for i, num_layer in enumerate(num_layers_per_gpu):
-        for j in range(num_layer):
-            device_map[f'language_model.model.layers.{layer_cnt}'] = rank + world_size * i
-            layer_cnt += 1
-    device_map['vision_model'] = rank
-    device_map['mlp1'] = rank
-    device_map['language_model.model.tok_embeddings'] = rank
-    device_map['language_model.model.embed_tokens'] = rank
-    device_map['language_model.output'] = rank
-    device_map['language_model.model.norm'] = rank
-    device_map['language_model.lm_head'] = rank
-    device_map[f'language_model.model.layers.{num_layers - 1}'] = rank
-    return device_map
-
-
 class MMAlaya2(BaseModel):
     """
     This implementation fine-tunes 20 LoRA modules based on the InternVL-Chat-V1-5 model.
@@ -228,16 +195,12 @@ class MMAlaya2(BaseModel):
         # Replacement pattern to remove the hyphen (Image-1 -> Image1)
         self.reverse_replacement = r'Image\1'
 
-        device_map = split_model('InternVL2-26B')
-        if len(device_map) == 0:
-            device_map = {'': 'cuda'}
-
         self.model = AutoModel.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
             load_in_8bit=load_in_8bit,
-            device_map=device_map
+            device_map='auto'
         ).eval()
 
         self.image_size = self.model.config.vision_config.image_size

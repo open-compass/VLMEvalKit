@@ -1,7 +1,37 @@
 import json
+import os
+import subprocess
 
-import torch
-import torch.distributed as dist
+
+# GET the number of GPUs on the node without importing libs like torch
+def get_gpu_list():
+    CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES', '')
+    if CUDA_VISIBLE_DEVICES != '':
+        gpu_list = [int(x) for x in CUDA_VISIBLE_DEVICES.split(',')]
+        return gpu_list
+    try:
+        ps = subprocess.Popen(('nvidia-smi', '--list-gpus'), stdout=subprocess.PIPE)
+        output = subprocess.check_output(('wc', '-l'), stdin=ps.stdout)
+        return list(range(int(output)))
+    except:
+        return []
+
+
+# Set Device when WORLD SIZE > 1, Only Single Node Scenario Considered Now
+RANK = int(os.environ.get('RANK', 0))
+WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
+GPU_LIST = get_gpu_list()
+if WORLD_SIZE > 1 and len(GPU_LIST):
+    NGPU = len(GPU_LIST)
+    assert NGPU >= WORLD_SIZE, "The number of processes should be less than or equal to the number of GPUs"
+    GPU_PER_PROC = NGPU // WORLD_SIZE
+    DEVICE_START_IDX = GPU_PER_PROC * RANK
+    CUDA_VISIBLE_DEVICES = [str(i) for i in GPU_LIST[DEVICE_START_IDX: DEVICE_START_IDX + GPU_PER_PROC]]
+    CUDA_VISIBLE_DEVICES = ','.join(CUDA_VISIBLE_DEVICES)
+    # Set CUDA_VISIBLE_DEVICES
+    os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
+    print(f'RANK: {RANK}, WORLD_SIZE: {WORLD_SIZE}, CUDA_VISIBLE_DEVICES: {CUDA_VISIBLE_DEVICES}')
+
 
 from vlmeval.config import supported_VLM
 from vlmeval.dataset.video_dataset_config import supported_video_datasets
@@ -13,13 +43,15 @@ from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
-def build_model_from_config(cfg, model_name):
+def build_model_from_config(cfg, model_name, use_vllm=False):
     import vlmeval.api
     import vlmeval.vlm
+
     config = cp.deepcopy(cfg[model_name])
-    if config == {}:
-        return supported_VLM[model_name]()
-    assert 'class' in config
+    if use_vllm:
+        config['use_vllm'] = use_vllm
+    if 'class' not in config:
+        return supported_VLM[model_name](**config)
     cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
         return getattr(vlmeval.api, cls_name)(**config)
@@ -157,7 +189,6 @@ You can launch the evaluation by setting either --data and --model or --config.
 
 def main():
     logger = get_logger('RUN')
-    rank, world_size = get_rank_and_world_size()
     args = parse_args()
     use_config, cfg = False, None
     if args.config is not None:
@@ -168,7 +199,7 @@ def main():
     else:
         assert len(args.data), '--data should be a list of data files'
 
-    if rank == 0:
+    if RANK == 0:
         if not args.reuse:
             logger.warning('--reuse is not set, will not reuse previous (before one day) temporary files')
         else:
@@ -186,9 +217,8 @@ def main():
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
 
-    if world_size > 1:
-        local_rank = os.environ.get('LOCAL_RANK', 0)
-        torch.cuda.set_device(int(local_rank))
+    if WORLD_SIZE > 1:
+        import torch.distributed as dist
         dist.init_process_group(
             backend='nccl',
             timeout=datetime.timedelta(seconds=int(os.environ.get('DIST_TIMEOUT', 3600)))
@@ -211,18 +241,18 @@ def main():
             os.makedirs(pred_root, exist_ok=True)
 
         if use_config:
-            model = build_model_from_config(cfg['model'], model_name)
+            model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
 
         for _, dataset_name in enumerate(args.data):
-            if world_size > 1:
+            if WORLD_SIZE > 1:
                 dist.barrier()
 
             try:
                 result_file_base = f'{model_name}_{dataset_name}.xlsx'
 
                 if use_config:
-                    if world_size > 1:
-                        if rank == 0:
+                    if WORLD_SIZE > 1:
+                        if RANK == 0:
                             dataset = build_dataset_from_config(cfg['data'], dataset_name)
                         dist.barrier()
                     dataset = build_dataset_from_config(cfg['data'], dataset_name)
@@ -235,8 +265,8 @@ def main():
                         dataset_kwargs['model'] = model_name
 
                     # If distributed, first build the dataset on the main process for doing preparation works
-                    if world_size > 1:
-                        if rank == 0:
+                    if WORLD_SIZE > 1:
+                        if RANK == 0:
                             dataset = build_dataset(dataset_name, **dataset_kwargs)
                         dist.barrier()
 
@@ -252,7 +282,7 @@ def main():
                 result_file = osp.join(pred_root, result_file_base)
 
                 # Reuse the previous prediction file if exists
-                if rank == 0 and len(prev_pred_roots):
+                if RANK == 0 and len(prev_pred_roots):
                     prev_result_files = []
                     prev_pkl_file_list = []
                     for root in prev_pred_roots[::-1]:
@@ -289,7 +319,7 @@ def main():
                             else:
                                 logger.warning(f'File already exists: {target_path}')
 
-                if world_size > 1:
+                if WORLD_SIZE > 1:
                     dist.barrier()
 
                 if model is None:
@@ -341,32 +371,37 @@ def main():
                 if args.judge is not None:
                     judge_kwargs['model'] = args.judge
                 else:
+                    print(dataset_name)
                     if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
                         ['moviechat1k'], dataset_name.lower()
                     ):
                         if listinstr(['WeMath'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
+                        elif listinstr(['VisuLogic'], dataset_name):
+                            judge_kwargs['model'] = 'exact_matching'
                         else:
                             judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4-turbo'
+                    elif listinstr(['VGRPBench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench'], dataset_name):  # noqa: E501
+                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['VDC'], dataset_name):
                         judge_kwargs['model'] = 'llama31-8b'
                     elif listinstr(['VideoMMLU_QA', 'VideoMMLU_CAP'], dataset_name):
                         judge_kwargs['model'] = 'qwen-72b'
 
-                if rank == 0:
+                if RANK == 0:
                     logger.info(judge_kwargs)
 
-                if world_size > 1:
+                if WORLD_SIZE > 1:
                     dist.barrier()
 
-                # Only Rank 0 handles the evaluation part
-                if rank == 0:
+                # Only RANK 0 handles the evaluation part
+                if RANK == 0:
                     # Prepare Submission Files for MMMU_TEST AND MMT-Bench_ALL
                     if dataset_name in ['MMMU_TEST']:
                         result_json = MMMU_result_transfer(result_file)
@@ -444,7 +479,7 @@ def main():
                                  'skipping this combination.')
                 continue
 
-    if world_size > 1:
+    if WORLD_SIZE > 1:
         dist.destroy_process_group()
 
 

@@ -107,7 +107,7 @@ class GeminiWrapper(BaseAPI):
                 return -1, '', ''
 
 
-class GeminiProVision(GeminiWrapper):
+class Gemini(GeminiWrapper):
 
     def generate(self, message, dataset=None):
-        return super(GeminiProVision, self).generate(message)
+        return super(Gemini, self).generate(message)
