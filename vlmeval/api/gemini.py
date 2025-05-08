@@ -20,7 +20,7 @@ class GeminiWrapper(BaseAPI):
                  proxy: str = None,
                  backend='genai',
                  project_id='vlmeval',
-                 thinking_budget: int = None, # range from 0 to 24576
+                 thinking_budget: int = None,  # range from 0 to 24576
                  # see https://ai.google.dev/gemini-api/docs/thinking
                  **kwargs):
 
@@ -83,20 +83,21 @@ class GeminiWrapper(BaseAPI):
             assert isinstance(inputs, list)
             model = self.model
             messages = self.build_msgs_genai(inputs)
-            
+
             # Configure generation parameters
             config_args = {
                 "temperature": self.temperature,
                 "max_output_tokens": self.max_tokens
             }
-            
+
             # If thinking_budget is specified, add thinking_config
-            # By default, Gemini 2.5 Pro will automatically select a thinking budget not exceeding 8192 if not specified.
+            # By default, Gemini 2.5 Pro will automatically select
+            # a thinking budget not exceeding 8192 if not specified.
             if self.thinking_budget is not None:
                 config_args["thinking_config"] = types.ThinkingConfig(
                     thinking_budget=self.thinking_budget
                 )
-            
+
             try:
                 resp = self.client.models.generate_content(
                     model=model,
