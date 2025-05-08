@@ -97,6 +97,7 @@ class GeminiWrapper(BaseAPI):
                 config_args["thinking_config"] = types.ThinkingConfig(
                     thinking_budget=self.thinking_budget
                 )
+            config_args.update(kwargs)
 
             try:
                 resp = self.client.models.generate_content(
