@@ -23,7 +23,6 @@ from .utils import (build_multi_choice_prompt,
                     format_nav_prompt,
                     pile_action_history,
                     reorganize_prompt,
-                    split_model,
                     load_image)
 from .utils import mpo_prompt_with_final_answer, mpo_prompt_without_final_answer, parse_bbox_internvl
 
