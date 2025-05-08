@@ -91,6 +91,7 @@ class GeminiWrapper(BaseAPI):
             }
             
             # If thinking_budget is specified, add thinking_config
+            # By default, Gemini 2.5 Pro will automatically select a thinking budget not exceeding 8192 if not specified.
             if self.thinking_budget is not None:
                 config_args["thinking_config"] = types.ThinkingConfig(
                     thinking_budget=self.thinking_budget

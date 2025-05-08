@@ -252,16 +252,16 @@ api_models = {
         Gemini, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
     ),
     "GeminiPro2-5": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=0
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
     "GeminiPro2-5-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=1024
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
     ),
     "GeminiPro2-5-0506": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=0
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
     "GeminiPro2-5-0506-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=1024
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
     ),
     
     # Qwen-VL

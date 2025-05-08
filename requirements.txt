@@ -30,3 +30,5 @@ transformers
 typing_extensions
 validators
 xlsxwriter
+# for gemini api
+google-genai
