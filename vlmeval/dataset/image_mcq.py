@@ -1658,3 +1658,15 @@ class MicroVQA(ImageMCQDataset):
     DATASET_MD5 = {
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
     }
+    
+    
+class OmniMedVQA(ImageMCQDataset):
+
+    DATASET_URL = {
+        'OmniMedVQA': 'https://huggingface.co/datasets/KKYYKK/OmniMed_VLM/resolve/main/OmniMed.tsv',
+    }
+
+    DATASET_MD5 = {
+        'OmniMedVQA': None,
+    }
+    
