@@ -1658,3 +1658,52 @@ class MicroVQA(ImageMCQDataset):
     DATASET_MD5 = {
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
     }
+
+
+
+class SCAM(ImageMCQDataset):
+
+    DATASET_URL = {
+        'SCAM': 'None',
+    }
+
+    DATASET_MD5 = {
+        'SCAM': 'None',
+    }
+
+    def load_data(self, dataset):
+        import base64
+        from io import BytesIO
+        from datasets import load_dataset
+
+        # Load dataset
+        ds = load_dataset("BLISS-e-V/SCAM", split="train").take(100)
+
+        # Function to convert dataset to VLMEvalKit format
+        def convert_to_vlmeval_format(example):
+            # Convert image to base64
+            buffer = BytesIO()
+            example['image'].save(buffer, format="PNG")
+            img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            
+            # Format options
+            options = {
+                'A': example['object_label'],  # Original object label
+                'B': example['attack_word']    # Attack word
+            }
+            
+            return {
+                'image_base64': img_base64,
+                'question': 'What object is shown in this image?',
+                'A': options['A'],
+                'B': options['B'], 
+                'answer': 'A',  # Original label is always correct answer
+                'category': example['type'],
+            }
+
+        # Convert dataset
+        ds = ds.map(convert_to_vlmeval_format, remove_columns=ds.column_names, num_proc=8)  # Use 8 workers for parallel processing
+        df = ds.to_pandas()
+        df.rename(columns={'image_base64': 'image'}, inplace=True)
+        df['index'] = range(1, len(df) + 1)
+        return df
