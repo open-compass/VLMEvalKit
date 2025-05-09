@@ -1677,7 +1677,7 @@ class SCAM(ImageMCQDataset):
         from datasets import load_dataset
 
         # Load dataset
-        ds = load_dataset("BLISS-e-V/SCAM", split="train").take(100)
+        ds = load_dataset("BLISS-e-V/SCAM", split="train")
 
         # Function to convert dataset to VLMEvalKit format
         def convert_to_vlmeval_format(example):
