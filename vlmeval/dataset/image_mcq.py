@@ -1686,17 +1686,11 @@ class SCAM(ImageMCQDataset):
             example['image'].save(buffer, format="PNG")
             img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
             
-            # Format options
-            options = {
-                'A': example['object_label'],  # Original object label
-                'B': example['attack_word']    # Attack word
-            }
-            
             return {
                 'image_base64': img_base64,
                 'question': 'What object is shown in this image?',
-                'A': options['A'],
-                'B': options['B'], 
+                'A': example['object_label'],
+                'B': example['attack_word'], 
                 'answer': 'A',  # Original label is always correct answer
                 'category': example['type'],
             }
@@ -1704,6 +1698,6 @@ class SCAM(ImageMCQDataset):
         # Convert dataset
         ds = ds.map(convert_to_vlmeval_format, remove_columns=ds.column_names, num_proc=8)  # Use 8 workers for parallel processing
         df = ds.to_pandas()
-        df.rename(columns={'image_base64': 'image'}, inplace=True)
+        df.rename(columns={'image_base64': 'image'}, inplace=True)  # rename df column, because using `image` with a hf ds has different functionality
         df['index'] = range(1, len(df) + 1)
         return df
