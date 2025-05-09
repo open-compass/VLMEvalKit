@@ -1414,7 +1414,7 @@ class LEGO(ImageMCQDataset):
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VisuLogic': 'https://huggingface.co/datasets/VisuLogic/VisuLogic/resolve/main/data.tsv'
+        'VisuLogic': 'http://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
     }
     DATASET_MD5 = {
         'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
@@ -1606,17 +1606,60 @@ class TDBench(ImageMCQDataset):
         return acc, judged_result_file
 
 
+class MicroBench(ImageMCQDataset):
+
+    DATASET_URL = {'MicroBench': ''}
+
+    DATASET_PART_URL = {
+        'part_1': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_1.tsv',
+        'part_2': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_2.tsv',
+        'part_3': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_3.tsv',
+        'part_4': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_4.tsv',
+        'part_5': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_5.tsv',
+        'part_6': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_6.tsv',
+        'part_7': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_7.tsv',
+        'part_8': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_8.tsv',
+        'part_9': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_9.tsv',
+        'part_10': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_10.tsv',
+        'part_11': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_11.tsv',
+        'part_12': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_12.tsv',
+        'part_13': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_13.tsv',
+        'part_14': 'https://huggingface.co/datasets/xuxuxuxuxu/Microbench/resolve/main/part_14.tsv',
+    }
+
+    def load_data(self, dataset="MicroBench", repo_id="xuxuxuxuxu/MicroBench"):
+
+        dfs = []
+        for part_num in range(1, 15):
+            part_name = f'part_{part_num}'
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'microbench_{part_name}.tsv')
+            if not osp.exists(tsv_path):
+                download_file(url, filename=tsv_path)
+            local_path = tsv_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
+                from ..tools import LOCALIZE
+                LOCALIZE(tsv_path, local_path)
+            tsv_path = local_path
+            # 加载数据
+            df = load(tsv_path)
+            dfs.append(df)
+        # 合并所有数据
+        data = pd.concat(dfs, ignore_index=True)
+        return data
+
+
 class MicroVQA(ImageMCQDataset):
 
     DATASET_URL = {
-        'MicroVQA': 'https://huggingface.co/datasets/KKYYKK/MicroVQA_VLM/resolve/main/MicroVQA.tsv',
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
     }
 
     DATASET_MD5 = {
-        'MicroVQA': None,
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
     }
-
-
+    
+    
 class OmniMedVQA(ImageMCQDataset):
 
     DATASET_URL = {
@@ -1626,3 +1669,4 @@ class OmniMedVQA(ImageMCQDataset):
     DATASET_MD5 = {
         'OmniMedVQA': None,
     }
+    

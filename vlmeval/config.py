@@ -254,9 +254,21 @@ api_models = {
     "GeminiPro2-5": partial(
         Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
+    "GeminiPro2-5-Thinking": partial(
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
+    ),
+    "GeminiPro2-5-0506": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
+    ),
+    "GeminiPro2-5-0506-Thinking": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
+    ),
+    
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
+    "QwenVLMax-250408": partial(QwenVLAPI, model="qwen-vl-max-2025-04-08", temperature=0, retry=10),
+
     # Reka
     "RekaEdge": partial(Reka, model="reka-edge-20240208"),
     "RekaFlash": partial(Reka, model="reka-flash-20240226"),
@@ -701,6 +713,9 @@ internvl2_5 = {
     "InternVL2_5-2B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-2B", version="V2.0"
     ),
+    "QTuneVL1-2B": partial(
+        InternVLChat, model_path="hanchaow/QTuneVL1-2B", version="V2.0"
+    ),
     "InternVL2_5-4B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL2_5-4B", version="V2.0"
     ),
@@ -923,6 +938,8 @@ vila_series = {
     ),
     "VILA1.5-13b": partial(VILA, model_path="Efficient-Large-Model/VILA1.5-13b"),
     "VILA1.5-40b": partial(VILA, model_path="Efficient-Large-Model/VILA1.5-40b"),
+    "NVILA-8B": partial(NVILA, model_path="Efficient-Large-Model/NVILA-8B"),
+    "NVILA-15B": partial(NVILA, model_path="Efficient-Large-Model/NVILA-15B"),
 }
 
 ovis_series = {
@@ -1101,6 +1118,22 @@ qwen2vl_series = {
     "Qwen2.5-VL-72B-Instruct-AWQ": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct-AWQ",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen2.5-Omni-7B-ForVideo": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-Omni-7B",
+        min_pixels=128 * 28 * 28,
+        max_pixels=768 * 28 * 28,
+        total_pixels=24576 * 28 * 28,
+        use_custom_prompt=False,
+        use_audio_in_video=True, # set use audio in video
+    ),
+    "Qwen2.5-Omni-7B": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-Omni-7B",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
