@@ -1,10 +1,14 @@
+accelerate
 decord; platform_machine != 'arm64'
+dotenv
+einops
 eva-decord; platform_machine == 'arm64'
 # for gemini api
 google-genai
 gradio
 huggingface_hub
 imageio
+ipdb
 matplotlib
 nltk
 numpy
@@ -17,6 +21,7 @@ pillow
 portalocker
 protobuf
 python-dotenv
+qwen_vl_utils
 requests
 rich
 sentencepiece
@@ -25,6 +30,7 @@ sty
 tabulate
 tiktoken
 timeout-decorator
+timm
 torch
 torchvision
 tqdm
