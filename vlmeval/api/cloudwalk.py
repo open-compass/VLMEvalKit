@@ -63,7 +63,7 @@ class CWWrapper(BaseAPI):
                     content_list.append(dict(type='image_url', image_url=img_struct))
             input_msgs.append(dict(role='user', content=content_list))
         else:
-            assert all([x['type'] == 'text' for x in inputs])  
+            assert all([x['type'] == 'text' for x in inputs])
             text = '\n'.join([x['value'] for x in inputs])
             input_msgs.append(dict(role='user', content=text))
         return input_msgs
