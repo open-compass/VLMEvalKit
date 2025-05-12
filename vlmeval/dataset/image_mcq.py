@@ -1663,41 +1663,37 @@ class MicroVQA(ImageMCQDataset):
 
 class SCAM(ImageMCQDataset):
 
-    DATASET_URL = {
-        'SCAM': 'None',
-    }
-
-    DATASET_MD5 = {
-        'SCAM': 'None',
-    }
+    # Dataset loading is done manually in `load_data`
+    DATASET_URL = {'SCAM': 'None'}
+    DATASET_MD5 = {'SCAM': 'None'}
 
     def load_data(self, dataset):
-        import base64
-        from io import BytesIO
-        from datasets import load_dataset
-
-        # Load dataset
-        ds = load_dataset("BLISS-e-V/SCAM", split="train")
+        import base64, io, datasets, random
+        random.seed(42)
 
         # Function to convert dataset to VLMEvalKit format
         def convert_to_vlmeval_format(example):
             # Convert image to base64
-            buffer = BytesIO()
+            buffer = io.BytesIO()
             example['image'].save(buffer, format="PNG")
             img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-            
+
+            # Shuffle the options
+            shuffle = random.choice([True, False])
             return {
                 'image_base64': img_base64,
                 'question': 'What object is shown in this image?',
-                'A': example['object_label'],
-                'B': example['attack_word'], 
-                'answer': 'A',  # Original label is always correct answer
+                'A': example['attack_word' if shuffle else 'object_label'],
+                'B': example['object_label' if shuffle else 'attack_word'], 
+                'answer': 'B' if shuffle else 'A',
                 'category': example['type'],
             }
 
-        # Convert dataset
+        # Load and convert dataset
+        ds = datasets.load_dataset("BLISS-e-V/SCAM", split="train")
         ds = ds.map(convert_to_vlmeval_format, remove_columns=ds.column_names, num_proc=8)  # Use 8 workers for parallel processing
         df = ds.to_pandas()
         df.rename(columns={'image_base64': 'image'}, inplace=True)  # rename df column, because using `image` with a hf ds has different functionality
-        df['index'] = range(1, len(df) + 1)
+        df['index'] = range(1, len(df) + 1)  # add index column with unique values
+
         return df
