@@ -36,8 +36,8 @@ def process_punctuation(inText):
         ';', r'/', '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-',
         '>', '<', '@', '`', ',', '?', '!'
     ]
-    commaStrip = re.compile('(\d)(,)(\d)')  # noqa: W605
-    periodStrip = re.compile('(?!<=\d)(\.)(?!\d)')  # noqa: W605
+    commaStrip  = re.compile(r'(\d)(,)(\d)')
+    periodStrip = re.compile(r'(?<!\d)\.(?!\d)')
     for p in punct:
         if (p + ' ' in inText or ' ' + p in inText) or (re.search(
                 commaStrip, inText) is not None):
