@@ -439,6 +439,9 @@ api_models = {
     "DoubaoVL": partial(
         DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=10, verbose=False
     ),
+    "Seed1.5-VL": partial(
+        DoubaoVL, model="doubao-1-5-thinking-vision-pro-250428", temperature=0, retry=10, verbose=False
+    ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
         MUGUAPI, 
