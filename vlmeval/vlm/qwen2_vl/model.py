@@ -213,7 +213,10 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
         assert max_gpu_mem > 0
         self.use_vllm = kwargs.get('use_vllm', False)
+        self.use_lmdeploy = kwargs.get('use_lmdeploy', False)
         self.limit_mm_per_prompt = VLLM_MAX_IMAGE_INPUT_NUM
+        assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag between `use_vllm` and `use_lmdeploy` to True"  # noqa: E501
+
         if self.use_vllm:
             from vllm import LLM
             gpu_count = setup_visible_devices_per_rank()
@@ -243,6 +246,15 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
             )
 
+        elif self.use_lmdeploy:
+            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            num_gpus = torch.cuda.device_count()
+            self.model = pipeline(
+                model_path,
+                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus)
+            )
+            torch.cuda.set_device(0)
+            self.device = 'cuda'
         else:
             self.model = MODEL_CLS.from_pretrained(
                 model_path, torch_dtype='auto', device_map="auto", attn_implementation='flash_attention_2'
@@ -458,6 +470,22 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             print(f'\033[32m{response}\033[0m')
         return response
 
+    def generate_inner_lmdeploy(self, message, dataset=None):
+        from lmdeploy import GenerationConfig
+        gen_config = GenerationConfig(
+            max_new_tokens=self.max_new_tokens,
+            top_p=self.generate_kwargs['top_p'],
+            top_k=self.generate_kwargs['top_k'],
+            temperature=self.generate_kwargs['temperature'],
+            repetition_penalty=self.generate_kwargs['repetition_penalty'],
+        )
+        gen_config.random_seed = None
+        messages_list = self.message_to_lmdeploy(message, system_prompt=self.system_prompt)
+        assert len(messages_list) == 1
+        response = self.model(messages_list, gen_config=gen_config)[0]
+        response = response.text
+        return response
+
     def generate_inner_vllm(self, message, dataset=None):
         from vllm import SamplingParams
 
@@ -556,5 +584,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
             return self.generate_inner_vllm(message, dataset=dataset)
+        elif self.use_lmdeploy:
+            return self.generate_inner_lmdeploy(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)

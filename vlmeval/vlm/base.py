@@ -197,3 +197,25 @@ class BaseModel:
         else:
             logging.critical('Model does not support video input.')
             raise NotImplementedError
+
+    def message_to_lmdeploy(self, messages, system_prompt=None):
+        from lmdeploy.vl.constants import IMAGE_TOKEN
+        from PIL import Image
+        prompt, image_path = '', []
+        for msg in messages:
+            if msg['type'] == 'text':
+                prompt += msg['value']
+            elif msg['type'] == 'image':
+                prompt += IMAGE_TOKEN
+                image_path.append(msg['value'])
+        content = [{'type': 'text', 'text': prompt}]
+        for image in image_path:
+            img = Image.open(image).convert('RGB')
+            b64 = encode_image_to_base64(img)
+            img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
+            content.append(dict(type='image_url', image_url=img_struct))
+        ret = []
+        if system_prompt is not None:
+            ret.append(dict(role='system', content=system_prompt))
+        ret.append(dict(role='user', content=content))
+        return [ret]
