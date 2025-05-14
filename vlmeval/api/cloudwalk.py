@@ -8,7 +8,7 @@ class CWWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'cw-congrong-v1.5',
+                 model: str = 'cw-congrong-v2.0',
                  retry: int = 10,
                  wait: int = 5,
                  key: str = None,
@@ -16,9 +16,8 @@ class CWWrapper(BaseAPI):
                  system_prompt: str = None,
                  temperature: float = 0,
                  timeout: int = 600,
-                 api_base: str = 'http://cwapi-vlm01.cw_rb.azurebot.tk/v1/chat/completions',
+                 api_base: str = '',
                  max_tokens: int = 2048,
-                 img_size: int = 512,
                  img_detail: str = 'low',
                  **kwargs):
 
@@ -36,8 +35,6 @@ class CWWrapper(BaseAPI):
         assert self.key is not None, 'API key not provided. Please set CW_API_KEY environment variable or \
             pass it to the constructor.'
 
-        assert img_size > 0 or img_size == -1
-        self.img_size = -1  # allways send full size image
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
 
@@ -61,7 +58,7 @@ class CWWrapper(BaseAPI):
                 elif msg['type'] == 'image':
                     from PIL import Image
                     img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img, target_size=self.img_size)
+                    b64 = encode_image_to_base64(img)
                     img_struct = dict(url=f"data:image/jpeg;base64,{b64}", detail=self.img_detail)
                     content_list.append(dict(type='image_url', image_url=img_struct))
             input_msgs.append(dict(role='user', content=content_list))
@@ -71,7 +68,7 @@ class CWWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=text))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) -> str:
+    def generate_inner(self, inputs, **kwargs) :
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)

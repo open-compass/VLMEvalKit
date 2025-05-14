@@ -1,5 +1,7 @@
 decord; platform_machine != 'arm64'
 eva-decord; platform_machine == 'arm64'
+# for gemini api
+google-genai
 gradio
 huggingface_hub
 imageio
