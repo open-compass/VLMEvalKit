@@ -27,7 +27,7 @@ class ImageYORNDataset(ImageBaseDataset):
         if self.dataset_name == 'AMBER':
             assert sum([x['type'] == 'text' for x in msgs]) == 1
             for item in msgs:
-                if item['type'] == 'text' :
+                if item['type'] == 'text':
                     item['value'] += '\nPlease answer yes or no.'
         return msgs
 

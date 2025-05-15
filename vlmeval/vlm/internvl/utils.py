@@ -246,6 +246,19 @@ def mpo_post_processing(response, dataset):
     return response
 
 
+def parse_bbox_internvl(response):
+    # 使用正则表达式匹配bounding box
+    # pattern = r"<box>\[\[(\d+), (\d+), (\d+), (\d+)\]\]</box>"
+    pattern = r"\[\[(\d+), (\d+), (\d+), (\d+)\]\]"
+    match = re.search(pattern, response)
+    if match:
+        # 提取匹配到的坐标值并转换为整数
+        x1, y1, x2, y2 = map(int, match.groups())
+        return [(x1 + x2) / 2, (y1 + y2) / 2]
+    else:
+        return response
+
+
 def build_mpo_prompt(message, line, dataset):
     if listinstr(['LLaVABench', 'MMVet'], dataset):
         return message
@@ -272,3 +285,18 @@ def build_mpo_prompt(message, line, dataset):
     prompt = cot_prompt.format(question=question_orig).strip()
     message[0]['value'] = prompt
     return message
+
+
+def format_nav_prompt(template, placeholders, **kwargs):
+    prompt = template
+    for placeholder in placeholders:
+        value = kwargs.get(placeholder, '')
+        prompt = prompt.replace(f"{{{placeholder}}}", str(value))
+    return prompt
+
+
+def pile_action_history(history, max_num=4):
+    if len(history) > 0:
+        return '\n'.join(history[-max_num:])
+    else:
+        return 'None'
