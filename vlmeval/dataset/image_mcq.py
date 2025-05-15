@@ -1682,7 +1682,7 @@ class SCAM(ImageMCQDataset):
             shuffle = random.choice([True, False])
             return {
                 'image_base64': img_base64,
-                'question': 'What object is shown in this image?',
+                'question': 'What entity is depicted in the image?',
                 'A': example['attack_word' if shuffle else 'object_label'],
                 'B': example['object_label' if shuffle else 'attack_word'], 
                 'answer': 'B' if shuffle else 'A',
