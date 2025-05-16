@@ -1156,7 +1156,7 @@ class WildDocBenchmark(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {'WildDoc': "https://huggingface.co/datasets/jingqun/wilddoc-vlmeval/resolve/main/WildDoc.tsv"}
     DATASET_MD5 = {'WildDoc': '7b9a95e7ae26dad58be05685f59867aa',}
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
 
@@ -1178,7 +1178,7 @@ class WildDocBenchmark(ImageBaseDataset):
                 raise ValueError(f"Unknown benchmark name {benchmark_name}")
 
         # calculate three subset separately
-        from .utils.vqa_eval import hit_calculate, process_line_WildDoc, calculate_consistency_WildDoc, calculate_overall_accuracy_WildDoc
+        from .utils.vqa_eval import hit_calculate, process_line_WildDoc, calculate_consistency_WildDoc, calculate_overall_accuracy_WildDoc  # noqa: E501
 
         # 1. DocVQA
         data = DocVQA_df
@@ -1205,7 +1205,7 @@ class WildDocBenchmark(ImageBaseDataset):
         hit = hit_calculate(ChartQA_res, "ChartQA")
         ChartQA_overall = np.mean(hit) * 100
         ChartQA_consistency_score = calculate_consistency_WildDoc(ChartQA_res)
-        
+
         # 3. TableVQA
         data = TableVQA_df
         assert 'answer' in data and 'prediction' in data
@@ -1222,7 +1222,7 @@ class WildDocBenchmark(ImageBaseDataset):
             ans = line['answer']
             pred = line["prediction"]
             from .utils.tablevqabench import fintabnet_normalize, tsv_unescape_list, to_value_list, check_denotation
-            
+
             subset = line["index"].split("-")[1]
             if subset == "fintabnetqa":
                 pred, preds = fintabnet_normalize(pred)
@@ -1239,7 +1239,7 @@ class WildDocBenchmark(ImageBaseDataset):
                     correct = 1
                 else:
                     correct = 0
-            elif subset == "vwtq_syn" or subset =="vwtq":
+            elif subset == "vwtq_syn" or subset == "vwtq":
                 pred = str(pred).replace('||', '|')
                 if pred == "nan":
                     pred = ""
@@ -1252,15 +1252,14 @@ class WildDocBenchmark(ImageBaseDataset):
                 correct = 1 if check_denotation(target_values, predicted_values) else 0
             else:
                 raise ValueError(f"Unknown benchmark name {benchmark_name}")
-        
+
             ret["pred"] = pred
             ret["gt"] = gt
             ret["match"] = correct
             TableVQA_res[subset].append(ret)
-            
-        TableVQA_overall = np.mean([np.mean(hit_calculate(x, "TableVQA")) for x in TableVQA_res.values()]) * 100 
-        TableVQA_consistency_score = np.mean([calculate_consistency_WildDoc(x) for x in TableVQA_res.values()])
 
+        TableVQA_overall = np.mean([np.mean(hit_calculate(x, "TableVQA")) for x in TableVQA_res.values()]) * 100
+        TableVQA_consistency_score = np.mean([calculate_consistency_WildDoc(x) for x in TableVQA_res.values()])
 
         eval_results = {
             "DocVQA": {
@@ -1278,7 +1277,9 @@ class WildDocBenchmark(ImageBaseDataset):
             # Overall
             "WildDoc": {
                 "Overall": np.mean([DocVQA_overall, ChartQA_overall, TableVQA_overall]),
-                "Consistency": np.mean([DocVQA_consistency_score, ChartQA_consistency_score, TableVQA_consistency_score])
+                "Consistency": np.mean([
+                    DocVQA_consistency_score, ChartQA_consistency_score, TableVQA_consistency_score
+                ])
             }
         }
 
@@ -1288,9 +1289,7 @@ class WildDocBenchmark(ImageBaseDataset):
             for task, metrics in eval_results.items()
             for metric, score in metrics.items()
         ])
-
         return ret_df
-
 
     # WildDoc adopts a custom prompt for each subset
     def build_prompt(self, line):
@@ -1319,7 +1318,6 @@ class WildDocBenchmark(ImageBaseDataset):
                     item['value'] += '\nAnswer the question using a single word or phrase.'
         print(item)
         return msgs
-
 
 
 class TableVQABench(ImageBaseDataset):

@@ -284,6 +284,7 @@ def process_line(line, method='vqa_score'):
 
     return ret
 
+
 def process_line_WildDoc(line, method='vqa_score'):
     ret = {'index':line["index"]}
     if istype(line['answer'], list):
@@ -325,7 +326,8 @@ def process_line_WildDoc(line, method='vqa_score'):
 
     return ret
 
-def calculate_consistency_WildDoc(result, anls_threshold=0.5):    
+
+def calculate_consistency_WildDoc(result, anls_threshold=0.5):
     ret = 0
     consistency = {}
 
@@ -336,16 +338,17 @@ def calculate_consistency_WildDoc(result, anls_threshold=0.5):
             score = 0.0 if 1 - np.min(line['match']) < anls_threshold else 1 - np.min(line['match'])
         elif dataset_name == "ChartQA" or dataset_name == "TableVQA":
             score = np.max(line['match'])
-        if ((dataset_name=="ChartQA" or dataset_name == "TableVQA" or dataset_name=="TableVQA") and score == 1) or (dataset_name=="DocVQA" and score >0.5):
+        if ((dataset_name == "ChartQA" or dataset_name == "TableVQA" or dataset_name == "TableVQA") and score == 1) or (dataset_name == "DocVQA" and score > 0.5):  # noqa: E501
             if unique_index in consistency:
                 consistency[unique_index] += 1
             else:
                 consistency[unique_index] = 1
 
     for key, value in consistency.items():
-            ret += 1 if value == 4 else 0
+        ret += 1 if value == 4 else 0
 
     return ret / (len(result) / 4) * 100
+
 
 def calculate_overall_accuracy_WildDoc(result, anls_threshold=0.5):
     score = 0
