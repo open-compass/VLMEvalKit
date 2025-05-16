@@ -1154,7 +1154,7 @@ class MTVQADataset(ImageBaseDataset):
 
 class WildDocBenchmark(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = {'WildDoc': "https://opencompass.openxlab.space/utils/VLMEval/WildDoc.tsv"}
+    DATASET_URL = {'WildDoc': "https://huggingface.co/datasets/jingqun/wilddoc-vlmeval/resolve/main/WildDoc.tsv"}
     DATASET_MD5 = {'WildDoc': '7b9a95e7ae26dad58be05685f59867aa',}
     
     def evaluate(self, eval_file, **judge_kwargs):
