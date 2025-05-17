@@ -2,6 +2,7 @@ import warnings
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
+from ..utils import track_progress_rich
 from ..smp import *
 import pandas as pd
 
@@ -347,6 +348,64 @@ class MMMUDataset(ImageMCQDataset):
         msgs = super().build_prompt(line)
         msgs = self.split_MMMU(msgs)
         return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import (
+            mmmu_evaluation, report_acc
+        )
+        nproc = judge_kwargs.pop('nproc', 4)
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        tups = [(model, line, self.dataset_name) for line in lines]
+        indices = [line['index'] for line in lines]
+
+        ans = {}
+        if osp.exists(tmp_file):
+            ans = load(tmp_file)
+        tups = [x for x, i in zip(tups, indices) if i not in ans]
+        indices = [i for i in indices if i not in ans]
+
+        if len(indices):
+            _ = track_progress_rich(
+                mmmu_evaluation,
+                tups,
+                nproc=nproc,
+                chunksize=nproc,
+                keys=indices,
+                save=tmp_file,
+            )
+        ans = load(tmp_file)
+        for key, value in ans.items():
+            data.loc[data['index'] == key, 'hit'] = value['hit']
+            data.loc[data['index'] == key, 'log'] = value['log']
+        dump(data, result_file)
+
+        acc = report_acc(data)
+
+        dump(acc, score_file)
+        return acc
 
 
 class MMMUProDataset(MMMUDataset):
