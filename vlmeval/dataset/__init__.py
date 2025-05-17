@@ -12,7 +12,7 @@ from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, TDBenchGrounding
+    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark
 )
 
 from .image_ccocr import CCOCRDataset
@@ -160,7 +160,7 @@ IMAGE_DATASET = [
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, CVBench,
     CMMU_MCQ, PathVQA_VAL, PathVQA_TEST, PathMMU_VAL, PathMMU_TEST, TDBench, TDBenchGrounding,
-    MicroVQA, MicroBench, CharXiv, OmniMedVQA
+    MicroVQA, MicroBench, CharXiv, OmniMedVQA, WildDocBenchmark
 ]
 
 
