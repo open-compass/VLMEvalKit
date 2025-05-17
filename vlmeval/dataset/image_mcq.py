@@ -1718,12 +1718,12 @@ class OmniMedVQA(ImageMCQDataset):
         data = pd.concat(dfs, ignore_index=True)
         return data
 
+
 class MSEarthMCQ(ImageMCQDataset):
-    
+
     DATASET_URL = {
         'MSEarthMCQ': '',
     }
-
 
     def load_data(self, dataset="MSEarthMCQ", repo_id="MSEarth/MSEarth_MCQ"):
         """
@@ -1738,29 +1738,30 @@ class MSEarthMCQ(ImageMCQDataset):
         from datasets import load_dataset
         # from PIL import Image
         from ..tools import encode_image_to_base64
-        
-        #! 读取huggingface数据
+
+        # 读取huggingface数据
         hf_ds = load_dataset("MSEarth/MSEarth_MCQ", data_dir="data", split='train')
 
-        #! 正则提取
+        # 正则提取
         caption_prefix = r"^\s*<image>\s*Caption:\s*"
         options_prefix = r"\s*Options:\s*"
-        option_pat     = r"\s*([A-D])\.\s*([^\n]+)"
+        option_pat = r"\s*([A-D])\.\s*([^\n]+)"
 
         records = []
         for idx, sample in enumerate(hf_ds):
-            raw_query  = sample["query"]
-            raw_answer = sample["response"]    
+            raw_query = sample["query"]
+            raw_answer = sample["response"]
 
-            #! 解析 answer 只保留字母
+            # 解析 answer 只保留字母
             answer_letter = raw_answer.strip()[0].upper()
 
-            #! 拆分 query: 去掉 Caption 前缀 + 提取 Options
+            # 拆分 query: 去掉 Caption 前缀 + 提取 Options
             q_without_caption = re.sub(caption_prefix, "", raw_query, flags=re.IGNORECASE)
             if "Options:" in q_without_caption:
-                question_part, options_part = re.split(options_prefix, q_without_caption, maxsplit=1, flags=re.IGNORECASE)
+                question_part, options_part = re.split(
+                    options_prefix, q_without_caption, maxsplit=1, flags=re.IGNORECASE)
             else:
-                #! 极端情况，没有 Options 关键字
+                # 极端情况，没有 Options 关键字
                 question_part, options_part = q_without_caption, ""
 
             question_part = question_part.strip()
@@ -1770,43 +1771,43 @@ class MSEarthMCQ(ImageMCQDataset):
                 letter, text = m.groups()
                 options_dict[letter] = text.strip()
 
-            img_pil  = sample["image"]  
+            img_pil = sample["image"]
             img_base = encode_image_to_base64(img_pil)
 
             rec = {
-                "index":    idx,
-                "question": question_part,
-                "A":        options_dict["A"],
-                "B":        options_dict["B"],
-                "C":        options_dict["C"],
-                "D":        options_dict["D"],
-                "answer":   answer_letter,
-                "image":    img_base,      
+                "index":    idx,  # noqa E241
+                "question": question_part,  # noqa E241
+                "A":        options_dict["A"],  # noqa E241
+                "B":        options_dict["B"],  # noqa E241
+                "C":        options_dict["C"],  # noqa E241
+                "D":        options_dict["D"],  # noqa E241
+                "answer":   answer_letter,  # noqa E241
+                "image":    img_base,  # noqa E241
             }
             records.append(rec)
 
         df = pd.DataFrame(records)
         df.reset_index(drop=True, inplace=True)
-        
+
         return df
-        
+
     def build_prompt(self, line):
         '''
-        <image>
-        You are tasked with answering a multiple-choice question about the above given input image.
+<image>
+You are tasked with answering a multiple-choice question about the above given input image.
 
-        Caption:
-        Delineation of hazardous regions for the nine classifications for …
-        Question:
-        Which aquifer shows the highest spread of the Fe-Mn hazard?
-        Options:
-        A. Aquifer 1
-        B. Aquifer 2
-        C. Aquifer 3
-        D. None of the above
-        Based on the image, select the correct option (e.g., 'A', 'B', 'C', 'D') or directly state the correct option content. Do not give any explanation.
-
-        '''
+Caption:
+Delineation of hazardous regions for the nine classifications for …
+Question:
+Which aquifer shows the highest spread of the Fe-Mn hazard?
+Options:
+A. Aquifer 1
+B. Aquifer 2
+C. Aquifer 3
+D. None of the above
+Based on the image, select the correct option (e.g., 'A', 'B', 'C', 'D') or \
+directly state the correct option content. Do not give any explanation.
+'''
 
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -1833,7 +1834,7 @@ class MSEarthMCQ(ImageMCQDataset):
         if len(options):
             prompt += options_prompt
             # prompt += 'Please select the correct answer from the options above. \n'
-            prompt += "Based on the image, select the correct option (e.g., 'A', 'B', 'C', 'D') or directly state the correct option content, Do not give any explaination."
+            prompt += "Based on the image, select the correct option (e.g., 'A', 'B', 'C', 'D') or directly state the correct option content, Do not give any explaination."  # noqa E501
 
         msgs = []
         if isinstance(tgt_path, list):
