@@ -32,3 +32,4 @@ transformers
 typing_extensions
 validators
 xlsxwriter
+json_repair
