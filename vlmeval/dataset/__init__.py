@@ -6,32 +6,13 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
-    CMMU_MCQ, PathMMU_VAL, PathMMU_TEST, MicroVQA
+    CMMU_MCQ, PathMMU_VAL, PathMMU_TEST, MicroVQA, MicroBench, OmniMedVQA, MSEarthMCQ
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset,
-    VizWiz,
-    OCRBench,
-    OCRBenchV2,
-    MathVista,
-    MathVerse,
-    MathVision,
-    Physics_yale,
-    OlympiadBench,
-    LogicVista,
-    MME_CoT,
-    LLaVABench,
-    VGRPBench,
-    MMVet,
-    MTVQADataset,
-    TableVQABench,
-    CustomVQADataset,
-    CRPE,
-    QSpatial,
-    MMNIAH,
-    MMSci_Captioning,
-    TDBenchGrounding
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
+    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCRBenchV2
 )
 
 from .image_ccocr import CCOCRDataset
@@ -45,6 +26,7 @@ from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
 from .spatial457 import Spatial457
+from .charxiv import CharXiv
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -177,8 +159,8 @@ IMAGE_DATASET = [
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, CVBench,
-    CMMU_MCQ, PathVQA_VAL, PathVQA_TEST, PathMMU_VAL, PathMMU_TEST, TDBench, TDBenchGrounding, MicroVQA
-
+    CMMU_MCQ, PathVQA_VAL, PathVQA_TEST, PathMMU_VAL, PathMMU_TEST, TDBench, TDBenchGrounding,
+    MicroVQA, MicroBench, CharXiv, OmniMedVQA, WildDocBenchmark, MSEarthMCQ
 ]
 
 
