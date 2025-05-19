@@ -415,48 +415,62 @@ def get_tl_dict_values_from_array(array, withTranscription=False, withConfidence
     return pointsList, confidencesList, transcriptionsList
 
 
-def main_evaluation(p, default_evaluation_params, validate_data, evaluate_method):
-    """Main evaluation function."""
-    if p is not None:
-        parser = argparse.ArgumentParser(description='Evaluate detection results')
-        parser.add_argument('--gt', type=str, required=True, help='Ground truth file')
-        parser.add_argument('--det', type=str, required=True, help='Detection file')
-        parser.add_argument('--iou', type=float, default=0.5, help='IoU threshold')
-        args = parser.parse_args()
+def main_evaluation(p,default_evaluation_params_fn,validate_data_fn,evaluate_method_fn,show_result=True,per_sample=True): # noqa: 501
+    if (p is None):
+        p = dict([s[1:].split('=') for s in sys.argv[1:]])
+        if (len(sys.argv) < 3):
+            print_help()
 
-        p = {
-            'g': args.gt,
-            's': args.det,
-            'o': args.iou
-        }
+    evalParams = default_evaluation_params_fn()
+    if 'p' in p.keys():
+        evalParams.update(p['p'] if isinstance(p['p'], dict) else json.loads(p['p']))
 
-    if p is None:
-        parser = argparse.ArgumentParser(description='Evaluate detection results')
-        parser.add_argument('--gt', type=str, required=True, help='Ground truth file')
-        parser.add_argument('--det', type=str, required=True, help='Detection file')
-        parser.add_argument('--iou', type=float, default=0.5, help='IoU threshold')
-        args = parser.parse_args()
+    resDict = {'calculated':True,'Message':'','method':'{}','per_sample':'{}'}
+    try:
+        validate_data_fn(p['g'], p['s'], evalParams)
+        evalData = evaluate_method_fn(p['g'], p['s'], evalParams)
+        resDict.update(evalData)
 
-        p = {
-            'g': args.gt,
-            's': args.det,
-            'o': args.iou
-        }
+    except Exception as e:
+        resDict['Message'] = str(e)
+        resDict['calculated'] = False
 
-    eval_params = default_evaluation_params()
     if 'o' in p:
-        eval_params['IOU_CONSTRAINT'] = float(p['o'])
+        if not os.path.exists(p['o']):
+            os.makedirs(p['o'])
 
-    validate_data(p['g'], p['s'], eval_params)
-    res = evaluate_method(p['g'], p['s'], eval_params)
+        resultsOutputname = p['o'] + '/results.zip'
+        outZip = zipfile.ZipFile(resultsOutputname, mode='w', allowZip64=True)
 
-    print('Precision: %.4f' % res['method']['precision'])
-    print('Recall: %.4f' % res['method']['recall'])
-    print('F1: %.4f' % res['method']['hmean'])
-    if 'AP' in res['method']:
-        print('AP: %.4f' % res['method']['AP'])
+        del resDict['per_sample']
+        if 'output_items' in resDict.keys():
+            del resDict['output_items']
 
-    return res
+        outZip.writestr('method.json',json.dumps(resDict))
+
+    if not resDict['calculated']:
+        if show_result:
+            sys.stderr.write('Error!\n' + resDict['Message'] + '\n\n')
+        if 'o' in p:
+            outZip.close()
+        return resDict
+
+    if 'o' in p:
+        if per_sample is True:
+            for k,v in evalData['per_sample'].items():
+                outZip.writestr(k + '.json',json.dumps(v))
+
+        if 'output_items' in evalData.keys():
+            for k, v in evalData['output_items'].items():
+                outZip.writestr(k,v)
+
+        outZip.close()
+
+    if show_result:
+        sys.stdout.write("Calculated!")
+        sys.stdout.write(json.dumps(resDict['method']))
+
+    return resDict
 
 
 def main_validation(default_evaluation_params_fn, validate_data_fn):
