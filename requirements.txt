@@ -5,6 +5,7 @@ google-genai
 gradio
 huggingface_hub
 imageio
+json_repair
 matplotlib
 nltk
 numpy

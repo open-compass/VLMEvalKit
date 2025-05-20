@@ -1003,7 +1003,7 @@ class LLaVABench(ImageBaseDataset):
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}  # noqa: E501
+    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_100_samples.tsv'}  # noqa: E501
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
