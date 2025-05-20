@@ -127,20 +127,20 @@ class VideoMMLU_CAP(VideoBaseDataset):
                             parts_dict[base_name] = {'type': 'tar', 'parts': []}
                         parts_dict[base_name]['parts'].append(f)
 
-  
+
                     for f in zip_files:
                         base_name = f.split(".zip")[0]
                         if base_name not in parts_dict:
                             parts_dict[base_name] = {'type': 'zip', 'parts': []}
                         parts_dict[base_name]['parts'].append(f)
 
- 
+
                     for base_name, info in parts_dict.items():
                         print(f"Processing archive: {base_name}")
                         archive_type = info['type']
                         parts = info['parts']
 
-   
+
                         output_file = base_name + (".tar" if archive_type == 'tar' else ".zip")
 
 

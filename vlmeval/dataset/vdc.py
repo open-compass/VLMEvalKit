@@ -261,7 +261,7 @@ class VDC(VideoBaseDataset):
         if video_llm:
             video_path = os.path.join(self.video_path, line['video'])
             return [
-                dict(type='video', value=video_path),  
+                dict(type='video', value=video_path),
                 dict(type='text', value=prompt)
             ]
         else:
