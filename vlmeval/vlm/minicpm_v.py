@@ -266,17 +266,33 @@ class MiniCPM_V_2_6(BaseModel):
         np.random.seed(0)
         torch.manual_seed(0)
         torch.cuda.manual_seed_all(0)
-
+        self.use_lmdeploy = kwargs.get('use_lmdeploy', False)
         assert model_path is not None
         self.model_path = model_path
         print(f'load from path {self.model_path}')
-        self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
-        self.model = self.model.to(dtype=torch.bfloat16)
-        self.model.eval().cuda()
+        if self.use_lmdeploy:
+            logging.warning(
+                'Currently LMDeploy does not support interleaved text-image prompt. '
+                'All images will be placed at the beginning of the prompt, '
+                'which may lead to performance degradation.'
+            )
+            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            num_gpus = torch.cuda.device_count()
+            self.model = pipeline(
+                model_path,
+                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus)
+            )
+            torch.cuda.set_device(0)
+            self.device = 'cuda'
+        else:
+            self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
+            self.model = self.model.to(dtype=torch.bfloat16)
+            self.model.eval().cuda()
 
-        self.kwargs = kwargs
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
-        torch.cuda.empty_cache()
+            self.kwargs = kwargs
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
+            torch.cuda.empty_cache()
+
         self.num_beams = 3
 
         self.options_suffix_prompt = '''\nAnswer with the option's letter from the given choices directly.'''
@@ -416,7 +432,32 @@ class MiniCPM_V_2_6(BaseModel):
 
         return msgs
 
-    def generate_inner(self, message, dataset=None):
+    def message_to_lmdeploy(self, messages, system_prompt=None):
+        """
+        TODO:
+        Support interleaved text-image prompt
+        after LMDeploy supports it.
+        """
+        from PIL import Image
+        prompt, image_path = '', []
+        for msg in messages:
+            if msg['type'] == 'text':
+                prompt += msg['value']
+            elif msg['type'] == 'image':
+                image_path.append(msg['value'])
+        content = [{'type': 'text', 'text': prompt}]
+        for image in image_path:
+            img = Image.open(image).convert('RGB')
+            b64 = encode_image_to_base64(img)
+            img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
+            content.append(dict(type='image_url', image_url=img_struct))
+        ret = []
+        if system_prompt is not None:
+            ret.append(dict(role='system', content=system_prompt))
+        ret.append(dict(role='user', content=content))
+        return [ret]
+
+    def generate_inner_transformers(self, message, dataset=None):
         if DATASET_MODALITY(dataset) == 'VIDEO':
             max_slice_nums = 1
             use_image_id = False
@@ -471,6 +512,28 @@ class MiniCPM_V_2_6(BaseModel):
             res = res[0]
 
         return res
+
+    def generate_inner_lmdeploy(self, message, dataset=None):
+        from lmdeploy import GenerationConfig
+        gen_config = GenerationConfig(
+            max_new_tokens=2048,
+            top_p=0.001,
+            top_k=1,
+            temperature=0.01,
+            repetition_penalty=1.0,
+        )
+        gen_config.random_seed = None
+        messages_list = self.message_to_lmdeploy(message, system_prompt=None)
+        assert len(messages_list) == 1
+        response = self.model(messages_list, gen_config=gen_config)[0]
+        response = response.text
+        return response
+
+    def generate_inner(self, message, dataset=None):
+        if self.use_lmdeploy:
+            return self.generate_inner_lmdeploy(message, dataset)
+        else:
+            return self.generate_inner_transformers(message, dataset)
 
 
 class MiniCPM_o_2_6(BaseModel):
