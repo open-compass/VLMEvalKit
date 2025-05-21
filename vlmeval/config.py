@@ -1186,7 +1186,6 @@ qwen2vl_series = {
         min_pixels=1280*28*28, 
         max_pixels=16384*28*28, 
         use_custom_prompt=False,
-        post_process=False,
         system_prompt=("You FIRST think about the reasoning process as an internal monologue and then provide the final answer.\nThe reasoning process MUST BE enclosed within <think> </think> tags. The final answer MUST BE enclosed within <answer> </answer> tags."
         ),
     ),
