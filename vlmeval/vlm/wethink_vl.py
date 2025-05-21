@@ -79,7 +79,6 @@ class WeThinkVL(Qwen2VLPromptMixin, BaseModel):
         self.fps = 2.0
         self.nframe = 64
         self.FRAME_FACTOR = 2
-        rank, world_size = get_rank_and_world_size()
         assert model_path is not None
         self.model_path = model_path
         MODEL_CLS = None
@@ -141,7 +140,6 @@ class WeThinkVL(Qwen2VLPromptMixin, BaseModel):
         except Exception as err:
             logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
             raise err
-
         messages = []
         if self.system_prompt is not None:
             if dataset not in ['OCRBench', "AI2D_TEST"]:
@@ -149,12 +147,10 @@ class WeThinkVL(Qwen2VLPromptMixin, BaseModel):
         messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
-
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         images, videos = process_vision_info([messages])
         inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')
         inputs = inputs.to('cuda')
-
         generated_ids = self.model.generate(
             **inputs,
             **self.generate_kwargs,
