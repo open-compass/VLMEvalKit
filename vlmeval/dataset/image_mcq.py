@@ -1844,3 +1844,48 @@ directly state the correct option content. Do not give any explanation.
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
+    
+
+class vlm_blind(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        # 'vlm_blind' : '/fs-computility/mllm1/lixiaozhe/CODE/vlmevalkit/VLMEvalKit/vlm_blind.tsv'
+        'vlm_blind' : ''
+    }
+    DATASET_MD5 = {
+        'vlm_blind': 'e0f960236afe08f9fa48e8ccc908b2a9',
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+
+
+        model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+
+        if osp.exists(storage):
+            accuracy_scores = VisuLogic_acc(storage)
+        else:
+            accuracy_scores = VisuLogic_acc(eval_file)
+        combine_score = {**accuracy_scores,}
+        combine_score = pd.DataFrame(combine_score)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(combine_score, score_pth)
+        return combine_score
