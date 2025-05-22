@@ -19,7 +19,7 @@ def get_gpu_list():
 
 RANK = int(os.environ.get('RANK', 0))
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
-LOCAL_WORLD_SIZE = int(os.environ.get("NPROC_PER_NODE",1))
+LOCAL_WORLD_SIZE = int(os.environ.get("LOCAL_WORLD_SIZE",1))
 LOCAL_RANK = int(os.environ.get("LOCAL_RANK",1))
 
 GPU_LIST = get_gpu_list()
