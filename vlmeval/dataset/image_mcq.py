@@ -1080,6 +1080,16 @@ class HRBenchDataset(ImageMCQDataset):
         return acc
 
 
+class VStarBench(ImageMCQDataset):
+    DATASET_URL = {
+        "VStarBench": "https://huggingface.co/datasets/xjtupanda/VStar_Bench/resolve/main/VStarBench.tsv",
+    }
+
+    DATASET_MD5 = {
+        "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
+    }
+
+
 class CustomMCQDataset(ImageMCQDataset):
 
     def load_data(self, dataset):
