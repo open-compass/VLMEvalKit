@@ -20,12 +20,15 @@ class GeminiWrapper(BaseAPI):
                  proxy: str = None,
                  backend='genai',
                  project_id='vlmeval',
+                 thinking_budget: int = None,  # range from 0 to 24576
+                 # see https://ai.google.dev/gemini-api/docs/thinking
                  **kwargs):
 
         self.model = model
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.thinking_budget = thinking_budget
         if key is None:
             key = os.environ.get('GOOGLE_API_KEY', None)
         # Try to load backend from environment variable
@@ -37,7 +40,14 @@ class GeminiWrapper(BaseAPI):
         if backend == 'genai':
             # We have not evaluated Gemini-1.5 w. GenAI backend
             assert key is not None  # Vertex does not require API Key
-            from google import genai
+            try:
+                from google import genai
+            except ImportError as e:
+                raise ImportError(
+                    "Could not import 'google.genai'. Please install it with:\n"
+                    "    pip install --upgrade google-genai"
+                ) from e
+            self.genai = genai
             self.client = genai.Client(api_key=key)
 
         self.backend = backend
@@ -73,13 +83,28 @@ class GeminiWrapper(BaseAPI):
             assert isinstance(inputs, list)
             model = self.model
             messages = self.build_msgs_genai(inputs)
-            gen_config = dict(max_output_tokens=self.max_tokens, temperature=self.temperature)
-            gen_config.update(kwargs)
+
+            # Configure generation parameters
+            config_args = {
+                "temperature": self.temperature,
+                "max_output_tokens": self.max_tokens
+            }
+
+            # If thinking_budget is specified, add thinking_config
+            # By default, Gemini 2.5 Pro will automatically select
+            # a thinking budget not exceeding 8192 if not specified.
+            if self.thinking_budget is not None:
+                config_args["thinking_config"] = types.ThinkingConfig(
+                    thinking_budget=self.thinking_budget
+                )
+            config_args.update(kwargs)
+
             try:
                 resp = self.client.models.generate_content(
                     model=model,
                     contents=messages,
-                    config=types.GenerateContentConfig(**gen_config))
+                    config=types.GenerateContentConfig(**config_args)
+                )
                 answer = resp.text
                 return 0, answer, 'Succeeded! '
             except Exception as err:

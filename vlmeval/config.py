@@ -255,12 +255,21 @@ api_models = {
     "GeminiPro2-5": partial(
         Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
+    "GeminiPro2-5-Thinking": partial(
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
+    ),
     "GeminiPro2-5-0506": partial(
         Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
+    "GeminiPro2-5-0506-Thinking": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
+    ),
+    
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
+    "QwenVLMax-250408": partial(QwenVLAPI, model="qwen-vl-max-2025-04-08", temperature=0, retry=10),
+
     # Reka
     "RekaEdge": partial(Reka, model="reka-edge-20240208"),
     "RekaFlash": partial(Reka, model="reka-flash-20240226"),
@@ -362,7 +371,8 @@ api_models = {
         retry=10,
     ),
     # CongRong
-    "CloudWalk": partial(CWWrapper, model="cw-congrong-v1.5", temperature=0, retry=10),
+    "CongRong-v1.5": partial(CWWrapper, model="cw-congrong-v1.5", temperature=0, retry=10),
+    "CongRong-v2.0": partial(CWWrapper, model="cw-congrong-v2.0", temperature=0, retry=10),
     # SenseNova
     "SenseNova-V6-Pro": partial(
         SenseChatVisionAPI, model="SenseNova-V6-Pro", temperature=0, retry=10
@@ -429,6 +439,9 @@ api_models = {
     # doubao_vl
     "DoubaoVL": partial(
         DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=10, verbose=False
+    ),
+    "Seed1.5-VL": partial(
+        DoubaoVL, model="doubao-1-5-thinking-vision-pro-250428", temperature=0, retry=10, verbose=False
     ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
@@ -1128,6 +1141,22 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+    "Qwen2.5-Omni-7B-ForVideo": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-Omni-7B",
+        min_pixels=128 * 28 * 28,
+        max_pixels=768 * 28 * 28,
+        total_pixels=24576 * 28 * 28,
+        use_custom_prompt=False,
+        use_audio_in_video=True, # set use audio in video
+    ),
+    "Qwen2.5-Omni-7B": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-Omni-7B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
     'VLM-R1': partial(
         VLMR1Chat, 
         model_path='omlab/VLM-R1-Qwen2.5VL-3B-Math-0305', 
@@ -1165,6 +1194,15 @@ qwen2vl_series = {
                     "<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think>"
                     "<answer> answer here </answer>"
                 ),
+    ),
+    'WeThink-Qwen2.5VL-7B': partial(
+        WeThinkVL, 
+        model_path='yangjie-cv/WeThink-Qwen2.5VL-7B', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False,
+        system_prompt=("You FIRST think about the reasoning process as an internal monologue and then provide the final answer.\nThe reasoning process MUST BE enclosed within <think> </think> tags. The final answer MUST BE enclosed within <answer> </answer> tags."
+        ),
     ),
 }
 

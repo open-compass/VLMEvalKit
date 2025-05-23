@@ -283,3 +283,81 @@ def process_line(line, method='vqa_score'):
         ret['match'] = [x == ret['pred'] for x in ret['gt']]
 
     return ret
+
+
+def process_line_WildDoc(line, method='vqa_score'):
+    ret = {'index':line["index"]}
+    if istype(line['answer'], list):
+        answers = eval(line['answer'])
+    else:
+        answers = [line['answer']]
+    if method == 'vqa_score':
+        ret['gt'] = [process_answer(x) for x in answers]
+        ret['pred'] = process_answer(line['prediction'])
+        ret['match'] = []
+        for current_idx, gtAnsDatum in enumerate(ret['gt']):
+            otherGTAns = [
+                item for ret_gt_idx, item in enumerate(ret['gt'])
+                if ret_gt_idx != current_idx
+            ]
+            matchingAns = [
+                item for item in otherGTAns if item == ret['pred']
+            ]
+            acc = min(1, float(len(matchingAns)) / 3)
+            ret['match'].append(acc)
+    elif method == 'anls':
+        ret['gt'] = answers
+        ret['pred'] = line['prediction']
+        # import pdb
+        # pdb.set_trace()
+        ret['match'] = [anls_compute(x, ret['pred']) for x in ret['gt']]
+    elif method == 'relaxed_accuracy':
+        ret['gt'] = answers
+        ret['pred'] = line['prediction'].strip()
+        ret['match'] = [relaxed_correctness(ret['pred'], x) for x in ret['gt']]
+    elif method == 'accuracy':
+        ret['gt'] = answers
+        ret['pred'] = line['prediction'].strip()
+        ret['match'] = [(1.0 if (x.strip().lower() == ret['pred'].strip().lower()) else 0.0) for x in ret['gt']]
+    else:  # default using vqa_score to calculate score
+        ret['gt'] = [process_answer(x) for x in answers]
+        ret['pred'] = process_answer(line['prediction'])
+        ret['match'] = [x == ret['pred'] for x in ret['gt']]
+
+    return ret
+
+
+def calculate_consistency_WildDoc(result, anls_threshold=0.5):
+    ret = 0
+    consistency = {}
+
+    for line in result:
+        unique_index = "-".join([line["index"].split("-")[0], line["index"].split("-")[1], line["index"].split("-")[3]])
+        dataset_name = line["index"].split("-")[0]
+        if dataset_name == "DocVQA":
+            score = 0.0 if 1 - np.min(line['match']) < anls_threshold else 1 - np.min(line['match'])
+        elif dataset_name == "ChartQA" or dataset_name == "TableVQA":
+            score = np.max(line['match'])
+        if ((dataset_name == "ChartQA" or dataset_name == "TableVQA" or dataset_name == "TableVQA") and score == 1) or (dataset_name == "DocVQA" and score > 0.5):  # noqa: E501
+            if unique_index in consistency:
+                consistency[unique_index] += 1
+            else:
+                consistency[unique_index] = 1
+
+    for key, value in consistency.items():
+        ret += 1 if value == 4 else 0
+
+    return ret / (len(result) / 4) * 100
+
+
+def calculate_overall_accuracy_WildDoc(result, anls_threshold=0.5):
+    score = 0
+    for line in result:
+        benchmark_name = line["index"].split("-")[0]
+        if benchmark_name == "DocVQA":
+            score += 0.0 if 1 - np.min(line['match']) < anls_threshold else 1 - np.min(line['match'])
+        elif benchmark_name == "ChartQA" or benchmark_name == "TableVQA":
+            score += np.max(line['match'])
+        else:
+            score += np.mean(line['match'])
+    return score / len(result) * 100
