@@ -2105,3 +2105,71 @@ class TDBenchGrounding(ImageVQADataset):
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
         return msgs
+
+
+class OCR_Reasoning(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'OCR_Reasoning': 'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
+    }
+    DATASET_MD5 = {'OCR_Reasoning': 'cf95ace31742170cf669ef45e0dae267'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.ocr_reasoning import OcrR_auxeval, OcrR_acc
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        nproc = 1
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    OcrR_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            data['reason_score'] = [ans[idx]['reason_score'] for idx in data['index']]
+            dump(data, storage)
+        score = OcrR_acc(storage)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert sum([x['type'] == 'text' for x in msgs]) == 1
+        for item in msgs:
+            if item['type'] == 'text':
+                if 'English' in line['language']:
+                    item['value'] += f"\nSolve the complex problem through step-by-step reasoning. The composition of the final answer should be: '{line['format']}'." # noqa e501
+                else:
+                    item['value'] += f"\n通过一步一步的推理解决这个复杂的问题。最后的回答的组成应该是: '{line['format']}'."
+        return msgs
