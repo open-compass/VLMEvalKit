@@ -117,7 +117,7 @@ main_object_caption_prompts = [
 
 class VDC(VideoBaseDataset):
 
-    MD5 = 'df8efe00d7e7a7621807693f762d0016'
+    MD5 = ''
 
     TYPE = 'Video-VQA'
 
@@ -247,7 +247,6 @@ class VDC(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        # 构建提示内容
         if line['caption_type'] == 'short':
             prompt = random.choice(short_caption_prompts)
         elif line['caption_type'] == 'detailed':
@@ -260,14 +259,12 @@ class VDC(VideoBaseDataset):
             prompt = random.choice(camera_caption_prompts)
 
         if video_llm:
-            # 对于视频LLM，返回视频路径和文本
             video_path = os.path.join(self.video_path, line['video'])
             return [
-                dict(type='video', value=video_path),  # 添加视频信息
+                dict(type='video', value=video_path),
                 dict(type='text', value=prompt)
             ]
         else:
-            # 如果不是视频LLM，返回帧图像和文本
             frames = self.save_video_frames(os.path.splitext(line['video'])[0])
             message = []
             for im in frames:
@@ -382,10 +379,8 @@ class VDC(VideoBaseDataset):
                     print(f"Error message: {str(e)}")
                     continue
 
-            # 转换回DataFrame并重置index
             expanded_df = pd.DataFrame(expanded_data).reset_index(drop=True)
 
-            # 继续处理展开后的数据
             data_un = expanded_df[~expanded_df['index'].isin(res)]
             data_un = data_un[~pd.isna(data_un['prediction'])]
             lt = len(data_un)
