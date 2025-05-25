@@ -8,7 +8,6 @@ from ..utils import track_progress_rich
 import torchvision.transforms as T
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from decord import VideoReader, cpu
 from .utils.tempcompass import *
 
 
@@ -150,6 +149,7 @@ class TempCompass_MCQ(VideoBaseDataset):
 
     def save_video_frames(self, line):
         vid_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
+        import decord
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
@@ -345,6 +345,7 @@ class TempCompass_Captioning(VideoBaseDataset):
 
     def save_video_frames(self, line):
         vid_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
+        import decord
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
@@ -537,6 +538,7 @@ class TempCompass_YorN(VideoBaseDataset):
 
     def save_video_frames(self, line):
         vid_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
+        import decord
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
