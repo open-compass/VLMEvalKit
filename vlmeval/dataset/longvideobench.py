@@ -201,6 +201,7 @@ class LongVideoBench(VideoBaseDataset):
     def save_video_frames(self, video_path, video_llm=False):
 
         vid_path = osp.join(self.data_root, video_path)
+        import decord
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
