@@ -127,30 +127,30 @@ class VideoMMLU_CAP(VideoBaseDataset):
                             parts_dict[base_name] = {'type': 'tar', 'parts': []}
                         parts_dict[base_name]['parts'].append(f)
 
-                    # 分组处理zip文件
+
                     for f in zip_files:
                         base_name = f.split(".zip")[0]
                         if base_name not in parts_dict:
                             parts_dict[base_name] = {'type': 'zip', 'parts': []}
                         parts_dict[base_name]['parts'].append(f)
 
-                    # 处理所有压缩文件
+
                     for base_name, info in parts_dict.items():
                         print(f"Processing archive: {base_name}")
                         archive_type = info['type']
                         parts = info['parts']
 
-                        # 设置输出文件名
+
                         output_file = base_name + (".tar" if archive_type == 'tar' else ".zip")
 
-                        # 如果有多个部分，先合并
+
                         if len(parts) > 1 and not osp.exists(output_file):
                             print('Start concatenating archive parts')
                             concat_archive_parts(parts, output_file)
                         elif len(parts) == 1:
                             output_file = parts[0]
 
-                        # 解压文件
+
                         if not osp.exists(osp.join(cache_path, osp.basename(base_name))):
                             if archive_type == 'tar':
                                 untar_video_data(output_file, cache_path)
@@ -162,7 +162,7 @@ class VideoMMLU_CAP(VideoBaseDataset):
         self.video_path = osp.join(dataset_path, 'youtube_videos/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
-        return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
+        return dict(data_file=data_file, root=osp.join(dataset_path, 'youtube_videos'))
 
     def build_prompt_pack(self, line):
         if isinstance(line, int):
@@ -450,7 +450,7 @@ class VideoMMLU_QA(VideoBaseDataset):
         self.video_path = osp.join(dataset_path, 'youtube_videos/')
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
-        return dict(data_file=data_file, root=osp.join(dataset_path, 'video'))
+        return dict(data_file=data_file, root=osp.join(dataset_path, 'youtube_videos'))
 
     def build_prompt_pack(self, line):
         if isinstance(line, int):
