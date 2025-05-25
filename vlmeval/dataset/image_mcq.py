@@ -108,6 +108,11 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
         'AI2D_MINI': 'https://opencompass.openxlab.space/utils/TEST/AI2D_MINI.tsv',
+        "VStarBench": "https://huggingface.co/datasets/xjtupanda/VStar_Bench/resolve/main/VStarBench.tsv",
+        'PathMMU_VAL': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_VAL.tsv',
+        'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
+        'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
     }
 
     DATASET_MD5 = {
@@ -164,6 +169,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '71c82f81920a84526803574f719099a7',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
+        "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -1080,16 +1087,6 @@ class HRBenchDataset(ImageMCQDataset):
         return acc
 
 
-class VStarBench(ImageMCQDataset):
-    DATASET_URL = {
-        "VStarBench": "https://huggingface.co/datasets/xjtupanda/VStar_Bench/resolve/main/VStarBench.tsv",
-    }
-
-    DATASET_MD5 = {
-        "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
-    }
-
-
 class CustomMCQDataset(ImageMCQDataset):
 
     def load_data(self, dataset):
@@ -1491,36 +1488,6 @@ class VisuLogic(ImageMCQDataset):
         return combine_score
 
 
-class CMMU_MCQ(ImageMCQDataset):
-    DATASET_URL = {
-        'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
-    }
-
-    DATASET_MD5 = {
-        'CMMU_MCQ': None,
-    }
-
-
-class PathMMU_VAL(ImageMCQDataset):
-    DATASET_URL = {
-        'PathMMU_VAL': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_VAL.tsv',
-    }
-
-    DATASET_MD5 = {
-        'PathMMU_VAL': None,
-    }
-
-
-class PathMMU_TEST(ImageMCQDataset):
-    DATASET_URL = {
-        'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
-    }
-
-    DATASET_MD5 = {
-        'PathMMU_TEST': None,
-    }
-
-
 class TDBench(ImageMCQDataset):
     DATASET_URL = {
         'tdbench_rot0': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot0.tsv',
@@ -1657,17 +1624,6 @@ class MicroBench(ImageMCQDataset):
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
         return data
-
-
-class MicroVQA(ImageMCQDataset):
-
-    DATASET_URL = {
-        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
-    }
-
-    DATASET_MD5 = {
-        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
-    }
 
 
 class OmniMedVQA(ImageMCQDataset):

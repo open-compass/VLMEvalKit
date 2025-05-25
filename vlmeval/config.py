@@ -1295,7 +1295,10 @@ ross_series = {
     "ross-qwen2-7b": partial(Ross, model_path="HaochenWang/ross-qwen2-7b"),
 }
 
-ursa_series = {"URSA-8B": partial(UrsaChat, model_path="URSA-MATH/URSA-8B")}
+ursa_series = {
+    "URSA-8B": partial(UrsaChat, model_path="URSA-MATH/URSA-8B"),
+    "URSA-8B-PS-GRPO": partial(UrsaChat, model_path="URSA-MATH/URSA-8B-PS-GRPO")    
+}
 
 gemma_series = {
     "paligemma-3b-mix-448": partial(
