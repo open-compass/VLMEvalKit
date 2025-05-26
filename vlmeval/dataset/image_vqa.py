@@ -2194,17 +2194,17 @@ class PhyX(ImageBaseDataset):
     }
     DATASET_MD5 = {
         'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42', # noqa
-        'PhyX_mini_IMG': '92399e2c3ef56e70297c3d123104f0aa', # noqa
-        'PhyX_mini_MC': '2dc52c02c7feff20ba6ff8d19fe6372c', # noqa
-        'PhyX_mini_MC_IMG': '06b3c1618478fec8d25c136b5464a29d', # noqa
-        'PhyX_mini_MC_SIMPLY': 'b243fdd72ffc475e234ac896cd30f300', # noqa
-        'PhyX_mini_SIMPLY': '88d8bc377f8bfb775fd306a027bad13b', # noqa
+        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300', # noqa
+        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa', # noqa
+        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b', # noqa
+        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d', # noqa
+        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c', # noqa
         'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8', # noqa
-        'PhyX_mini_TL_IMG': '5be1c92b5e4e0e85fb36f186db7085f2', # noqa
-        'PhyX_mini_TL_MC': 'a6e83fc38abdfadf5a791f00a0348fa3', # noqa
-        'PhyX_mini_TL_MC_IMG': '7196d2bd1c50337bc253d642c4415852', # noqa
-        'PhyX_mini_TL_MC_SIMPLY': 'd934090c4aceb940c3aa1bd578ef2dc4', # noqa
-        'PhyX_mini_TL_SIMPLY': 'da6262a35be62213986e9a1b2437de60', # noqa
+        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4', # noqa
+        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2', # noqa
+        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60', # noqa
+        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852', # noqa
+        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3', # noqa
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
