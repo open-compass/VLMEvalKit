@@ -2221,7 +2221,8 @@ class PhyX(ImageBaseDataset):
 
         msgs = []
         if "TL" in self.dataset_name:
-            pass # pure text, do not load image
+            # pure text, do not load image
+            pass 
         else:
             if isinstance(tgt_path, list):
                 msgs.extend([dict(type='image', value=p) for p in tgt_path])
