@@ -75,7 +75,8 @@ Judegement: 0
     example_3 = """
 Ground truth answer: C \n
 Predicted answer: ### Step 1: Calculate ( l_1 )
-The lightbulb is ( 2.50, \\text\\{m\\}) above the floor, and the bottom of the mirror is (0.50, \\text\\{m\\}) above the floor. The vertical distance from the lightbulb to the bottom of the mirror is:
+The lightbulb is ( 2.50, \\text\\{m\\}) above the floor, and the bottom of the mirror is (0.50, \\text\\{m\\}) \
+above the floor. The vertical distance from the lightbulb to the bottom of the mirror is:
 [
 \\Delta y_1 = 2.50, \\text\\{m\\} - 0.50, \\text\\{m\\} = 2.00, \\text\\{m\\}.
 ] \n
@@ -96,7 +97,8 @@ def build_phyx_gpt4_prompt(line):
 Please read the following example. Given predicted answer and ground truth answer,
 compare the these two answers, then ONLY output judegement 1/0 for matched/unmatched at the end of the prompt.
 If the meaning is expressed in the same way, it is also considered consistent, for example, 0.5m and 50cm.
-If the given predicted mentions "approximately", then allow the Approximation Error, such as 0.49 and approximately 0.5, 0.81 and approximately 0.8. \n
+If the given predicted mentions "approximately", then allow the Approximation Error, \
+such as 0.49 and approximately 0.5, 0.81 and approximately 0.8. \n
 """
     gt_answer = line['answer']
     prediction = str(line['prediction'])
