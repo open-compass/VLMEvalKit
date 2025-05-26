@@ -2235,8 +2235,11 @@ class PhyX(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         valid_type = judge_kwargs["valid_type"]
-        assert valid_type in ["STR", "LLM"], print("To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
-                                                   " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: --judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command.")
+        assert valid_type in ["STR", "LLM"], print(
+            "To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
+            " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: "
+            "--judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command."
+        )
         if valid_type == "STR":
             # Match at string level
             from .utils.phyx import PhyX_process_line, PhyX_process_line_MC
@@ -2290,7 +2293,10 @@ class PhyX(ImageBaseDataset):
             if not osp.exists(storage):
                 data = load(eval_file)
                 model = build_judge(max_tokens=128, **judge_kwargs)
-                assert model.working(), ('PhyX evaluation requires a working API. We use Deepseek-V3 provided by SiliconFlow. please set SiliconFlow_API_KEY.\n')
+                assert model.working(), (
+                    "PhyX evaluation requires a working API. We use Deepseek-V3 provided by SiliconFlow. "
+                    "please set SiliconFlow_API_KEY.\n"
+                )
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
                 tups = [(model, line) for line in lines]
