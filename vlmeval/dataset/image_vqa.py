@@ -2175,7 +2175,6 @@ class OCR_Reasoning(ImageBaseDataset):
         return msgs
 
 
-
 class PhyX(ImageBaseDataset):
     TYPE = 'VQA'
 
@@ -2207,6 +2206,7 @@ class PhyX(ImageBaseDataset):
         'PhyX_mini_TL_MC_SIMPLY': 'd934090c4aceb940c3aa1bd578ef2dc4', # noqa
         'PhyX_mini_TL_SIMPLY': 'da6262a35be62213986e9a1b2437de60', # noqa
     }
+
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2222,7 +2222,7 @@ class PhyX(ImageBaseDataset):
         msgs = []
         if "TL" in self.dataset_name:
             # pure text, do not load image
-            pass 
+            pass
         else:
             if isinstance(tgt_path, list):
                 msgs.extend([dict(type='image', value=p) for p in tgt_path])
@@ -2235,18 +2235,18 @@ class PhyX(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         valid_type = judge_kwargs["valid_type"]
-        assert valid_type in ["STR", "LLM"], print("To evaluate PhyX, you need to set valid_type in judge-args, STR for string level match and LLM for LLM as judger."
-        " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: --judge deepseek --judge-args '{\"valid_type\": \"LLM\"}'   in your command.")
+        assert valid_type in ["STR", "LLM"], print("To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
+                                                   " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: --judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command.")
         if valid_type == "STR":
-            #! Match at string level
+            # Match at string level
             from .utils.phyx import PhyX_process_line, PhyX_process_line_MC
             data = load(eval_file)
             assert 'answer' in data and 'prediction' in data
             data['prediction'] = [str(x) for x in data['prediction']]
-            data['answer'] = [str(x) for x in data['answer']] 
+            data['answer'] = [str(x) for x in data['answer']]
             lt = len(data)
-            lines = [data.iloc[i] for i in range(lt)]     
-            pool = mp.Pool(1)        
+            lines = [data.iloc[i] for i in range(lt)]
+            pool = mp.Pool(1)
             if "_MC" in eval_file:
                 # Multi choice
                 res = pool.map(partial(PhyX_process_line_MC), lines)
@@ -2261,7 +2261,7 @@ class PhyX(ImageBaseDataset):
 
             hit = [x['match'] for x in res]
             ret = dict()
-            ret['Overall'] = np.mean(hit) 
+            ret['Overall'] = np.mean(hit)
 
             if 'category' in data:
                 cates = list(set(data['category']))
@@ -2269,7 +2269,7 @@ class PhyX(ImageBaseDataset):
                 for c in cates:
                     sub = [r for l, r in zip(lines, res) if l['category'] == c]
                     hit = [x['match'] for x in sub]
-                    ret[c] = np.mean(hit) 
+                    ret[c] = np.mean(hit)
             ret = d2df(ret)
             ret.round(2)
 
@@ -2277,7 +2277,7 @@ class PhyX(ImageBaseDataset):
             result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
             dump(ret, result_file)
             return ret
-        
+
         elif valid_type == "LLM":
             from .utils.phyx import PhyX_auxeval, PhyX_acc, PhyX_auxeval_MC
 
@@ -2334,4 +2334,4 @@ class PhyX(ImageBaseDataset):
             score = PhyX_acc(storage)
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
-            return score 
+            return score
