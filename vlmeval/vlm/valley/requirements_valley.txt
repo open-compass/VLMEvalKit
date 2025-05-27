@@ -2,7 +2,6 @@ accelerate==0.34.2
 bert-score==0.3.13
 byted-wandb==0.13.72
 datasets==2.21.0
-decord==0.6.0
 einops==0.8.0
 evaluate==0.4.3
 fastapi==0.115.0

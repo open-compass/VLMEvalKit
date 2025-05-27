@@ -23,7 +23,7 @@ def build_judge(**kwargs):
             'gpt-4o-mini': 'gpt-4o-mini-2024-07-18',
             'qwen-7b': 'Qwen/Qwen2.5-7B-Instruct',
             'qwen-72b': 'Qwen/Qwen2.5-72B-Instruct',
-            'deepseek': 'deepseek-ai/DeepSeek-V2.5',
+            'deepseek': 'deepseek-ai/DeepSeek-V3',
             'llama31-8b': 'meta-llama/Llama-3.1-8B-Instruct',
         }
         model_version = model_map[model]

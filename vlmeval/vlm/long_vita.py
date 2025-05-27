@@ -3,7 +3,6 @@ import os
 import math
 import numpy as np
 from PIL import Image
-import decord
 from ..smp import *
 from .base import BaseModel
 from ..dataset import DATASET_TYPE
@@ -469,6 +468,7 @@ class ImageProcessor:
         ]
 
     def save_video_frames(self, vid_path, max_fps=1, num_frames=8):
+        import decord
         vid = decord.VideoReader(vid_path, num_threads=1)
 
         step_size = len(vid) / (num_frames + 1)
@@ -493,6 +493,7 @@ class ImageProcessor:
         return frame_paths
 
     def get_video_frames(self, vid_path, max_fps=1, num_frames=8):
+        import decord
         vid = decord.VideoReader(vid_path, num_threads=1)
 
         step_size = len(vid) / (num_frames + 1)

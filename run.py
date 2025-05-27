@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from functools import partial
 
 
 # GET the number of GPUs on the node without importing libs like torch
@@ -17,20 +18,25 @@ def get_gpu_list():
         return []
 
 
-# Set Device when WORLD SIZE > 1, Only Single Node Scenario Considered Now
 RANK = int(os.environ.get('RANK', 0))
 WORLD_SIZE = int(os.environ.get('WORLD_SIZE', 1))
+LOCAL_WORLD_SIZE = int(os.environ.get("LOCAL_WORLD_SIZE",1))
+LOCAL_RANK = int(os.environ.get("LOCAL_RANK",1))
+
 GPU_LIST = get_gpu_list()
-if WORLD_SIZE > 1 and len(GPU_LIST):
+if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
     NGPU = len(GPU_LIST)
-    assert NGPU >= WORLD_SIZE, "The number of processes should be less than or equal to the number of GPUs"
-    GPU_PER_PROC = NGPU // WORLD_SIZE
-    DEVICE_START_IDX = GPU_PER_PROC * RANK
+    assert NGPU >= LOCAL_WORLD_SIZE, "The number of processes should be less than or equal to the number of GPUs"
+    GPU_PER_PROC = NGPU // LOCAL_WORLD_SIZE
+    DEVICE_START_IDX = GPU_PER_PROC * LOCAL_RANK
     CUDA_VISIBLE_DEVICES = [str(i) for i in GPU_LIST[DEVICE_START_IDX: DEVICE_START_IDX + GPU_PER_PROC]]
     CUDA_VISIBLE_DEVICES = ','.join(CUDA_VISIBLE_DEVICES)
     # Set CUDA_VISIBLE_DEVICES
     os.environ['CUDA_VISIBLE_DEVICES'] = CUDA_VISIBLE_DEVICES
-    print(f'RANK: {RANK}, WORLD_SIZE: {WORLD_SIZE}, CUDA_VISIBLE_DEVICES: {CUDA_VISIBLE_DEVICES}')
+    print(
+        f'RANK: {RANK}, LOCAL_RANK: {LOCAL_RANK}, WORLD_SIZE: {WORLD_SIZE},'
+        f'LOCAL_WORLD_SIZE: {LOCAL_WORLD_SIZE}, CUDA_VISIBLE_DEVICES: {CUDA_VISIBLE_DEVICES}'
+    )
 
 
 from vlmeval.config import supported_VLM
@@ -217,6 +223,16 @@ def main():
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
 
+        # If FWD_API is set, will use class `GPT4V` for all API models in the config
+        if os.environ.get('FWD_API', None) == '1':
+            from vlmeval.config import api_models as supported_APIs
+            from vlmeval.api import GPT4V
+            for m in args.model:
+                if m in supported_APIs:
+                    kws = supported_VLM[m].keywords
+                    supported_VLM[m] = partial(GPT4V, **kws)
+                    logger.warning(f'FWD_API is set, will use class `GPT4V` for {m}')
+
     if WORLD_SIZE > 1:
         import torch.distributed as dist
         dist.init_process_group(
@@ -385,7 +401,7 @@ def main():
                         judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT'], dataset_name):  # noqa: E501
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
