@@ -2178,6 +2178,12 @@ class OCR_Reasoning(ImageBaseDataset):
 class PhyX(ImageBaseDataset):
     TYPE = 'VQA'
 
+    def __init__(self, dataset='PhyX_mini', skip_noimg=True):
+        if dataset != 'PhyX_mini':
+            import warnings
+            warnings.warn('To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.')
+        super().__init__(dataset=dataset, skip_noimg=skip_noimg)
+
     DATASET_URL = {
         'PhyX_mini': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv', # noqa
         'PhyX_mini_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv', # noqa
@@ -2192,6 +2198,7 @@ class PhyX(ImageBaseDataset):
         'PhyX_mini_TL_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv', # noqa
         'PhyX_mini_TL_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv', # noqa
     }
+
     DATASET_MD5 = {
         'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42', # noqa
         'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300', # noqa
