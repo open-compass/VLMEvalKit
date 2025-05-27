@@ -399,6 +399,8 @@ api_models = {
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
     # TeleMM
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
+    "Qwen2.5-VL-32B-Instruct-SiliconFlow": partial(
+        SiliconFlowAPI, model="Qwen/Qwen2.5-VL-32B-Instruct", temperature=0, retry=10),
     # lmdeploy api
     "lmdeploy": partial(
         LMDeployAPI,

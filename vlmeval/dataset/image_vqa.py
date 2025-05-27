@@ -2173,3 +2173,171 @@ class OCR_Reasoning(ImageBaseDataset):
                 else:
                     item['value'] += f"\n通过一步一步的推理解决这个复杂的问题。最后的回答的组成应该是: '{line['format']}'."
         return msgs
+
+
+class PhyX(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {
+        'PhyX_mini': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv', # noqa
+        'PhyX_mini_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv', # noqa
+        'PhyX_mini_MC': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv', # noqa
+        'PhyX_mini_MC_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv', # noqa
+        'PhyX_mini_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv', # noqa
+        'PhyX_mini_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv', # noqa
+        'PhyX_mini_TL': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv', # noqa
+        'PhyX_mini_TL_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv', # noqa
+        'PhyX_mini_TL_MC': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv', # noqa
+        'PhyX_mini_TL_MC_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv', # noqa
+        'PhyX_mini_TL_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv', # noqa
+        'PhyX_mini_TL_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv', # noqa
+    }
+    DATASET_MD5 = {
+        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42', # noqa
+        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300', # noqa
+        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa', # noqa
+        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b', # noqa
+        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d', # noqa
+        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c', # noqa
+        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8', # noqa
+        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4', # noqa
+        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2', # noqa
+        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60', # noqa
+        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852', # noqa
+        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3', # noqa
+    }
+
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if "TL" in self.dataset_name:
+            # pure text, do not load image
+            pass
+        else:
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        valid_type = judge_kwargs["valid_type"]
+        assert valid_type in ["STR", "LLM"], print(
+            "To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
+            " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: "
+            "--judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command."
+        )
+        if valid_type == "STR":
+            # Match at string level
+            from .utils.phyx import PhyX_process_line, PhyX_process_line_MC
+            data = load(eval_file)
+            assert 'answer' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answer']]
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            pool = mp.Pool(1)
+            if "_MC" in eval_file:
+                # Multi choice
+                res = pool.map(partial(PhyX_process_line_MC), lines)
+            else:
+                # Open ended mode
+                res = pool.map(partial(PhyX_process_line), lines)
+
+            suffix = eval_file.split('.')[-1]
+            result_file = eval_file.replace(f'.{suffix}', '_predict.xlsx')
+            df = pd.DataFrame(res)
+            df.to_excel(result_file, index=False)
+
+            hit = [x['match'] for x in res]
+            ret = dict()
+            ret['Overall'] = np.mean(hit)
+
+            if 'category' in data:
+                cates = list(set(data['category']))
+                cates.sort()
+                for c in cates:
+                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    hit = [x['match'] for x in sub]
+                    ret[c] = np.mean(hit)
+            ret = d2df(ret)
+            ret.round(2)
+
+            suffix = eval_file.split('.')[-1]
+            result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            dump(ret, result_file)
+            return ret
+
+        elif valid_type == "LLM":
+            from .utils.phyx import PhyX_auxeval, PhyX_acc, PhyX_auxeval_MC
+
+            model = judge_kwargs['model']
+            suffix = eval_file.split('.')[-1]
+            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            nproc = judge_kwargs.pop('nproc', 4)
+
+            if not osp.exists(storage):
+                data = load(eval_file)
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                assert model.working(), (
+                    "PhyX evaluation requires a working API. We use Deepseek-V3 provided by SiliconFlow. "
+                    "please set SiliconFlow_API_KEY.\n"
+                )
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
+
+                ans = {}
+                if osp.exists(tmp_file):
+                    ans = load(tmp_file)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
+
+                if len(indices):
+                    if "_MC" in eval_file:
+                        new_results = track_progress_rich(
+                            PhyX_auxeval_MC,
+                            tups,
+                            nproc=nproc,
+                            chunksize=nproc,
+                            keys=indices,
+                            save=tmp_file,
+                        )
+                    else:
+                        new_results = track_progress_rich(
+                            PhyX_auxeval,
+                            tups,
+                            nproc=nproc,
+                            chunksize=nproc,
+                            keys=indices,
+                            save=tmp_file,
+                        )
+                    ans = load(tmp_file)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+                data['res'] = [ans[idx]['res'] for idx in data['index']]
+                data['log'] = [ans[idx]['log'] for idx in data['index']]
+                data['extracted'] = [ans[idx]['extracted'] for idx in data['index']]
+                dump(data, storage)
+
+            score = PhyX_acc(storage)
+            score_pth = storage.replace('.xlsx', '_score.csv')
+            dump(score, score_pth)
+            return score
