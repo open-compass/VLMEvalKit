@@ -1,3 +1,4 @@
+from datetime import date
 import warnings
 
 from .image_base import ImageBaseDataset
@@ -1810,3 +1811,91 @@ directly state the correct option content. Do not give any explanation.
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
+
+
+class VLMBlind(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'VLMBlind': 'http://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
+    }
+    DATASET_MD5 = {
+        'VLMBlind': 'e0f960236afe08f9fa48e8ccc908b2a9',
+    }
+
+    def extract_content_in_braces(self, input_str):
+        import re
+        pattern = r'\{(.*?)\}'
+        match = re.search(pattern, input_str)
+        if match:
+            return match.group(1)
+        else:
+            return ""
+
+    def compare_string_with_values(self, input_str, target_values):
+        import re
+        try:
+            target_nums = [int(x.strip()) for x in target_values.split(',')]
+            if len(target_nums) != 2:
+                return False
+        except Exception:
+            return False
+
+        rows_match = re.search(r'[Rr]ows?(?:[^{}]*)\{(\d+)\}', input_str)
+        cols_match = re.search(r'[Cc]olumns?(?:[^{}]*)\{(\d+)\}', input_str)
+
+        if rows_match and cols_match:
+            input_nums = [int(rows_match.group(1)), int(cols_match.group(1))]
+            return input_nums == target_nums
+
+        pattern2 = r'\((\d+),\s*(\d+)\)'
+        match2 = re.search(pattern2, input_str)
+        if match2:
+            input_nums = [int(match2.group(1)), int(match2.group(2))]
+            return input_nums == target_nums
+        return False
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        task_stats = {}
+
+        for index, data_item in data.iterrows():
+            task = data_item["task"]
+            if task not in task_stats:
+                task_stats[task] = {'correct': 0, 'total': 0}
+            task_stats[task]['total'] += 1
+            if data_item["task"] == "Subway Connections":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Nested Squares":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Line Plot Intersections":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Touching Circles":
+                if str.lower(data_item["answers"]) in str.lower(data_item["prediction"]):
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Counting Grid - Word Grids":
+                if self.compare_string_with_values(data_item["prediction"], data_item["answers"]):
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Counting Grid - Blank Grids":
+                if self.compare_string_with_values(data_item["prediction"], data_item["answers"]):
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Olympic Counting - Pentagons":
+                if data_item["answers"] in data_item["prediction"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Olympic Counting - Circles":
+                if data_item["answers"] in data_item["prediction"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Circled Letter":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+
+        accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in task_stats.items()}
+        result_df = pd.DataFrame(accuracy_dict)
+
+        return result_df

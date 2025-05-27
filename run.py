@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from functools import partial
 
 
 # GET the number of GPUs on the node without importing libs like torch
@@ -221,6 +222,16 @@ def main():
             if hasattr(v, 'keywords') and 'verbose' in v.keywords and args.verbose is not None:
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
+
+        # If FWD_API is set, will use class `GPT4V` for all API models in the config
+        if os.environ.get('FWD_API', None) == '1':
+            from vlmeval.config import api_models as supported_APIs
+            from vlmeval.api import GPT4V
+            for m in args.model:
+                if m in supported_APIs:
+                    kws = supported_VLM[m].keywords
+                    supported_VLM[m] = partial(GPT4V, **kws)
+                    logger.warning(f'FWD_API is set, will use class `GPT4V` for {m}')
 
     if WORLD_SIZE > 1:
         import torch.distributed as dist
