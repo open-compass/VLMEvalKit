@@ -1813,14 +1813,13 @@ directly state the correct option content. Do not give any explanation.
         return msgs
 
 
-class vlm_blind(ImageMCQDataset):
+class VLMBlind(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        # 'vlm_blind' : '/fs-computility/mllm1/lixiaozhe/CODE/vlmevalkit/VLMEvalKit/vlm_blind.tsv'
-        'vlm_blind' : ''
+        'VLMBlind': 'http://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
     }
     DATASET_MD5 = {
-        'vlm_blind': 'e0f960236afe08f9fa48e8ccc908b2a9',
+        'VLMBlind': 'e0f960236afe08f9fa48e8ccc908b2a9',
     }
 
     def extract_content_in_braces(self, input_str):
