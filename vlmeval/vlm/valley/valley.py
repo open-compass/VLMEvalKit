@@ -1,4 +1,4 @@
-import re 
+import re
 import torch
 import logging
 import string
@@ -8,7 +8,7 @@ from transformers import AutoProcessor, AutoModel
 from ..base import BaseModel
 from ...dataset import DATASET_TYPE
 from ...smp import *
- 
+
 
 class Valley2Chat(BaseModel):
     """
@@ -17,7 +17,7 @@ class Valley2Chat(BaseModel):
     Attributes:
         - seed (int): Random seed used for reproducibility. Default is 42.
         - torch_dtype (torch.dtype): Data type for model weights (e.g., torch.bfloat16). Default is bfloat16.
-        - model_path (str): Hugging Face model path or local checkpoint directory for loading 
+        - model_path (str): Hugging Face model path or local checkpoint directory for loading
             the Valley2-DPO model. Default is 'bytedance-research/Valley2-DPO'.
         - cot_output_trunc (bool): Whether to truncate model output by extracting the part between
             <CONCLUSION> and </CONCLUSION> tags, if present. This is useful for structured
@@ -41,8 +41,8 @@ class Valley2Chat(BaseModel):
                  max_new_tokens: int = 2048,
                  seed=42,
                  torch_dtype=torch.float16,
-                 min_pixels=1280*28*28,
-                 max_pixels=16384*28*28,
+                 min_pixels=1280 * 28 * 28,
+                 max_pixels=16384 * 28 * 28,
                  use_llava_cot_prompt=False,
                  use_custom_prompt=True,
                  use_custom_pixels_limit=True,
@@ -57,8 +57,8 @@ class Valley2Chat(BaseModel):
         self.processor = AutoProcessor.from_pretrained(
             model_path,
             anyres=self.model.config.anyres,
-            max_pixels=max_pixels, 
-            min_pixels=min_pixels, 
+            max_pixels=max_pixels,
+            min_pixels=min_pixels,
             trust_remote_code=True
         )
 
@@ -115,7 +115,10 @@ class Valley2Chat(BaseModel):
 
     def build_math_prompt(self, line, dataset=None):
         prompt = line['question']
-        prompt += "\nProvide a step-by-step solution to the problem, and conclude with 'the answer is' followed by the final solution."
+        prompt += (
+            "\nProvide a step-by-step solution to the problem, "
+            "and conclude with 'the answer is' followed by the final solution."
+        )
         return prompt
 
     def build_ocr_cmmmu_prompt(self, line, dataset=None):
@@ -147,14 +150,14 @@ class Valley2Chat(BaseModel):
             message = [dict(type='image', value=p) for p in tgt_path]
         else:
             message = [dict(type='image', value=tgt_path)]
-        
+
         # add text to message
         message.append(dict(type='text', value=prompt))
         return message
 
     def post_process(self, generation_text, dataset=None):
         if any(dataset.startswith(prefix) for prefix in ('TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA', 'CMMMU')):
-            self.cot_output_trunc = True # froce truncate cot output
+            self.cot_output_trunc = True  # froce truncate cot output
 
         if self.cot_output_trunc:
             pattern = r"(?:<CONCLUSION>)([\s\S]*?)(?:</CONCLUSION>)"
@@ -169,9 +172,10 @@ class Valley2Chat(BaseModel):
         return generation_text
 
     def get_pixels_limit(self, dataset=None):
-        if self._use_custom_pixels_limit and any(dataset.startswith(prefix) for prefix in ['OCRBench', 'HallusionBench', 'MMMU', 'MMBench']):
-            min_pixels = 100*28*28
-            max_pixels = 1280*28*28
+        if self._use_custom_pixels_limit and \
+                any(dataset.startswith(prefix) for prefix in ['OCRBench', 'HallusionBench', 'MMMU', 'MMBench']):
+            min_pixels = 100 * 28 * 28
+            max_pixels = 1280 * 28 * 28
         else:
             min_pixels = self.min_pixels
             max_pixels = self.max_pixels
@@ -187,7 +191,7 @@ class Valley2Chat(BaseModel):
             elif item['type'] == 'image':
                 text += ' <image> '
                 images.append(item['value'])
-        
+
         # Add CoT prompt, trigger the llava-cot output format
         LLAVA_COT_PROMPT = "\nPlease think step by step."
         if self._use_llava_cot_prompt:
@@ -203,7 +207,7 @@ class Valley2Chat(BaseModel):
             {
                 "conversations": messages,
                 "images": images
-            }, 
+            },
             min_pixels=min_pixels,
             max_pixels=max_pixels
         )
@@ -212,8 +216,11 @@ class Valley2Chat(BaseModel):
         with torch.inference_mode():
             self.model.to(dtype=self.torch_dtype, device=self.device)
 
-            if type(data_dict["images"][0]) == list:
-                images = [[item.to(dtype=self.torch_dtype, device=self.device) for item in img] for img in data_dict["images"]]
+            if type(data_dict["images"][0]) is list:
+                images = [
+                    [item.to(dtype=self.torch_dtype, device=self.device) for item in img]
+                    for img in data_dict["images"]
+                ]
             else:
                 images = [img.to(dtype=self.torch_dtype, device=self.device) for img in data_dict["images"]]
 
@@ -232,7 +239,7 @@ class Valley2Chat(BaseModel):
         input_token_len = data_dict["input_ids"].shape[1]
         generation_text = self.processor.batch_decode(output_ids.sequences[:, input_token_len:])[0]
         generation_text = generation_text.replace("<|im_end|>", "")
-        
+
         # Postprocess
         generation_text = self.post_process(generation_text, dataset)
         return generation_text
