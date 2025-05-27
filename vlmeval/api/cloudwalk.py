@@ -68,7 +68,7 @@ class CWWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=text))
         return input_msgs
 
-    def generate_inner(self, inputs, **kwargs) :
+    def generate_inner(self, inputs, **kwargs):
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
