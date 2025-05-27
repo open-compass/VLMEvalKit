@@ -40,7 +40,7 @@ class Valley2Chat(BaseModel):
                  cot_output_trunc=False,
                  max_new_tokens: int = 2048,
                  seed=42,
-                 torch_dtype=torch.bfloat16,
+                 torch_dtype=torch.float16,
                  min_pixels=1280*28*28,
                  max_pixels=16384*28*28,
                  use_llava_cot_prompt=False,
