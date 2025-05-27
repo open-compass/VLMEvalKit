@@ -2105,3 +2105,32 @@ class TDBenchGrounding(ImageVQADataset):
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
         return msgs
+
+
+class CountBenchQA(ImageVQADataset):
+    DATASET_URL = {'CountBenchQA': 'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'}
+    DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        tgt_path = self.dump_image(line)
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        ques = line['question']
+        question = f'{ques} Note that: answer with a number directly e.g. 3. Do not include any additional text.'
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answers']]
+        correct_count = 0
+        total_count = len(predictions)
+
+        for pred, ans in zip(predictions, answers):
+            if ans in pred:
+                correct_count += 1
+        accuracy = correct_count / total_count if total_count > 0 else 0
+        return {'accuracy': accuracy}
