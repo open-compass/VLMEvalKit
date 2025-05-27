@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from functools import partial
 
 
 # GET the number of GPUs on the node without importing libs like torch
