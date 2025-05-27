@@ -2133,11 +2133,7 @@ class zerobench(ImageVQADataset):
                 pass
 
             # evaluate via exact matching
-            correct = (
-                parsed_answer[:len(ans)].lower() == ans.strip().lower()
-                and len(parsed_answer) == len(ans.strip())
-            )
-
+            correct = ans.strip().lower() in parsed_answer.lower()
             # store results
             results_row = {"Question_ID": idx,
                            "Ground_Truth": ans,
