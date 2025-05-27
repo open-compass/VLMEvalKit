@@ -32,10 +32,12 @@ def get_logger(name, log_file=None, log_level=logging.INFO, file_mode='w'):
         handlers.append(file_handler)
 
     formatter = logging.Formatter(
-        '[%(asctime)s] %(levelname)s - %(name)s - %(filename)s: %(funcName)s - %(lineno)d: %(message)s')
+        '[%(asctime)s] %(levelname)s - %(name)s - %(filename)s: %(funcName)s - %(lineno)d: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S')
     for handler in handlers:
         handler.setFormatter(formatter)
         handler.setLevel(log_level)
+        logger.propagate = False
         logger.addHandler(handler)
 
     if rank == 0:

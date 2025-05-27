@@ -36,8 +36,8 @@ def process_punctuation(inText):
         ';', r'/', '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-',
         '>', '<', '@', '`', ',', '?', '!'
     ]
-    commaStrip = re.compile('(\d)(,)(\d)')  # noqa: W605
-    periodStrip = re.compile('(?!<=\d)(\.)(?!\d)')  # noqa: W605
+    commaStrip  = re.compile(r'(\d)(,)(\d)')
+    periodStrip = re.compile(r'(?<!\d)\.(?!\d)')
     for p in punct:
         if (p + ' ' in inText or ' ' + p in inText) or (re.search(
                 commaStrip, inText) is not None):
@@ -137,11 +137,6 @@ def cn_string(s):
     if re.search(u'[\u4e00-\u9fff]', s):
         return True
     return False
-
-try:
-    import decord
-except ImportError:
-    pass
 
 def timestr(granularity='second'):
     s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')

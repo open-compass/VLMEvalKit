@@ -8,11 +8,11 @@ import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr, load, dump, download_file
 from ...dataset import DATASET_TYPE
-from decord import VideoReader, cpu
 from huggingface_hub import snapshot_download
 
 
 def load_video(video_path, setting_fps):
+    from decord import VideoReader, cpu
     vr = VideoReader(video_path, ctx=cpu(0))
     total_frame_num = len(vr)
     fps = round(vr.get_avg_fps())

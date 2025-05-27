@@ -551,6 +551,7 @@ def save_clue_video_frames(data_root, clue_frame_root, video, uid, clue_interval
         uid = str(uid)
 
     vid_path = osp.join(data_root, video)
+    import decord
     vid = decord.VideoReader(vid_path)
     vid_fps = vid.get_avg_fps()
 

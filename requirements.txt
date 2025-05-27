@@ -3,10 +3,13 @@ decord; platform_machine != 'arm64'
 dotenv
 einops
 eva-decord; platform_machine == 'arm64'
+# for gemini api
+google-genai
 gradio
 huggingface_hub
 imageio
 ipdb
+json_repair
 matplotlib
 nltk
 numpy
