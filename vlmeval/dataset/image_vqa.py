@@ -1980,45 +1980,6 @@ class MMSci_Captioning(ImageBaseDataset):
                 data.loc[idx, 'g_eval_metrics'] = g_eval_metrics
             dump(data, g_eval_metrics_output_file)
 
-        # fact score, not align with official score, so now skip it
-        # if not osp.exists(fact_score_metrics_output_file):
-        #     for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
-        #         os.environ.pop(var, None)
-        #     data = load(eval_file)
-        #     suffix = '.' + eval_file.split('.')[-1]
-
-        #     lines = [data.iloc[i] for i in range(len(data))]
-        #     model = judge_kwargs.pop('model', 'gpt-4o')
-        #     tmp_file = eval_file.replace(suffix, f'_{model}_fact_score.pkl')
-        #     nproc = judge_kwargs.pop('nproc', 4)
-        #     assert model in ['gpt-4o-0806', 'gpt-4o']
-        #     judge_model = build_judge(model=model, **judge_kwargs)
-        #     assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
-
-        #     tups = [(judge_model, line) for line in lines]
-        #     indices = [line['index'] for line in lines]
-
-        #     ans = {}
-        #     if osp.exists(tmp_file):
-        #         ans = load(tmp_file)
-        #     ans = {k: v for k, v in ans.items() if model.fail_msg not in str(v)}
-        #     tups = [x for x, i in zip(tups, indices) if i not in ans]
-        #     indices = [i for i in indices if i not in ans]
-        #     if len(indices):
-        #         _ = track_progress_rich(
-        #             fact_score_generate,
-        #             tups,
-        #             nproc=nproc,
-        #             chunksize=nproc,
-        #             keys=indices,
-        #             save=tmp_file,
-        #         )
-        #     ans = load(tmp_file)
-        #     for idx, item in data.iterrows():
-        #         fact_score_metrics = str(ans[item["index"]])
-        #         data.loc[idx, 'fact_score_metrics'] = fact_score_metrics
-        #     dump(data, fact_score_metrics_output_file)
-
         rating = merge_rating(
             refer_based_metrics_output_file,
             g_eval_metrics_output_file,
@@ -2107,6 +2068,35 @@ class TDBenchGrounding(ImageVQADataset):
         return msgs
 
 
+class CountBenchQA(ImageVQADataset):
+    DATASET_URL = {'CountBenchQA': 'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'}
+    DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        tgt_path = self.dump_image(line)
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        ques = line['question']
+        question = f'{ques} Note that: answer with a number directly e.g. 3. Do not include any additional text.'
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answers']]
+        correct_count = 0
+        total_count = len(predictions)
+
+        for pred, ans in zip(predictions, answers):
+            if ans in pred:
+                correct_count += 1
+        accuracy = correct_count / total_count if total_count > 0 else 0
+        return {'accuracy': accuracy}
+
+      
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -2348,3 +2338,4 @@ class PhyX(ImageBaseDataset):
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
             return score
+
