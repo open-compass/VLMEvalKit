@@ -8,7 +8,6 @@ import logging
 from ..base import BaseModel
 from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
-from decord import VideoReader, cpu
 from PIL import Image
 
 
@@ -41,6 +40,7 @@ def _get_rawvideo_dec(
             end_time = start_time + 1
 
     if os.path.exists(video_path):
+        from decord import VideoReader, cpu
         vreader = VideoReader(video_path, ctx=cpu(0))
     else:
         print(video_path)
