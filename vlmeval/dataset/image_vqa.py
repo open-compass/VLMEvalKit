@@ -2066,15 +2066,15 @@ class TDBenchGrounding(ImageVQADataset):
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
         return msgs
-      
-      
+
+
 class zerobench(ImageVQADataset):
     # DATASET_URL = {'zerobench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv'}
     DATASET_URL = {'zerobench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
                    'zerobench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
     DATASET_MD5 = {'zerobench': '600d5e89325f1dab5ad3fa2ea200cea6',
                    'zerobench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
@@ -2117,8 +2117,8 @@ class zerobench(ImageVQADataset):
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
         return msgs
-    
-    
+
+
 class CountBenchQA(ImageVQADataset):
     DATASET_URL = {'CountBenchQA': 'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'}
     DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
@@ -2147,7 +2147,7 @@ class CountBenchQA(ImageVQADataset):
         accuracy = correct_count / total_count if total_count > 0 else 0
         return {'accuracy': accuracy}
 
-      
+
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
