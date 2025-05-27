@@ -171,7 +171,7 @@ class Valley2Chat(BaseModel):
     def get_pixels_limit(self, dataset=None):
         if self._use_custom_pixels_limit and any(dataset.startswith(prefix) for prefix in ['OCRBench', 'HallusionBench', 'MMMU', 'MMBench']):
             min_pixels = 100*28*28
-            max_pixels = self.max_pixels
+            max_pixels = 1280*28*28
         else:
             min_pixels = self.min_pixels
             max_pixels = self.max_pixels
