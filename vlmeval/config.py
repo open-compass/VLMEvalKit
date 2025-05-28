@@ -349,6 +349,20 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "Claude4_Opus": partial(
+        Claude3V,
+        model="claude-4-opus-20250514",
+        temperature=0,
+        retry=10,
+        verbose=False,
+    ),
+    "Claude4_Sonnet": partial(
+        Claude3V,
+        model="claude-4-sonnet-20250514",
+        temperature=0,
+        retry=10,
+        verbose=False,
+    ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
     "GLM4V_PLUS": partial(GLMVisionAPI, model="glm-4v-plus", temperature=0, retry=10),
@@ -422,12 +436,6 @@ api_models = {
         retry=10,
         timeout=300,
     ),
-    # Taichu-VL
-    # "Taichu-VL-2B": partial(
-    #     TaichuVLAPI,
-    #     model="Taichu-VL-2B",
-    #     url="https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions",
-    # ),
     'Taichu-VLR-3B': partial(
         TaichuVLRAPI, 
         model='taichu_vlr_3b', 
