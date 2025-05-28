@@ -2096,7 +2096,7 @@ class CountBenchQA(ImageVQADataset):
         accuracy = correct_count / total_count if total_count > 0 else 0
         return {'accuracy': accuracy}
 
-      
+
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -2338,4 +2338,3 @@ class PhyX(ImageBaseDataset):
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
             return score
-

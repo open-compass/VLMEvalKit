@@ -1909,7 +1909,10 @@ class SCAM(ImageMCQDataset):
     DATASET_MD5 = {'SCAM': 'None'}
 
     def load_data(self, dataset):
-        import base64, io, datasets, random
+        import base64
+        import io
+        import datasets
+        import random
         random.seed(42)
 
         # Function to convert dataset to VLMEvalKit format
@@ -1925,16 +1928,18 @@ class SCAM(ImageMCQDataset):
                 'image_base64': img_base64,
                 'question': 'What entity is depicted in the image?',
                 'A': example['attack_word' if shuffle else 'object_label'],
-                'B': example['object_label' if shuffle else 'attack_word'], 
+                'B': example['object_label' if shuffle else 'attack_word'],
                 'answer': 'B' if shuffle else 'A',
                 'category': example['type'],
             }
 
         # Load and convert dataset
         ds = datasets.load_dataset("BLISS-e-V/SCAM", split="train")
-        ds = ds.map(convert_to_vlmeval_format, remove_columns=ds.column_names, num_proc=8)  # Use 8 workers for parallel processing
+        # Use 8 workers for parallel processing
+        ds = ds.map(convert_to_vlmeval_format, remove_columns=ds.column_names, num_proc=8)
         df = ds.to_pandas()
-        df.rename(columns={'image_base64': 'image'}, inplace=True)  # rename df column, because using `image` with a hf ds has different functionality
+        # Rename df column, because using `image` with a hf ds has different functionality
+        df.rename(columns={'image_base64': 'image'}, inplace=True)
         df['index'] = range(1, len(df) + 1)  # add index column with unique values
 
         return df
