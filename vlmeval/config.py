@@ -1344,7 +1344,7 @@ kimi_series = {
 }
 
 flash_vl = {
-    'Flash-VL-2B-Dynamic-ISS': partial(FlashVL, model_path='Model/FlashVL-2B-Dynamic-ISS')
+    'Flash-VL-2B-Dynamic-ISS': partial(FlashVL, model_path='FlashVL/FlashVL-2B-Dynamic-ISS')
 }
 
 internvl_groups = [
