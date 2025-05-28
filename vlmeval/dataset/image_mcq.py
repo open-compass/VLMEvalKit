@@ -1850,8 +1850,7 @@ directly state the correct option content. Do not give any explanation.
 class vlm_blind(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        # 'vlm_blind' : '/fs-computility/mllm1/lixiaozhe/CODE/vlmevalkit/VLMEvalKit/vlm_blind.tsv'
-        'vlm_blind' : ''
+        'vlm_blind' : 'http://opencompass.openxxlab.com/utils/VLMEval/vlm_blind.tsv'
     }
     DATASET_MD5 = {
         'vlm_blind': 'e0f960236afe08f9fa48e8ccc908b2a9',
@@ -1932,5 +1931,6 @@ class vlm_blind(ImageMCQDataset):
 
         accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in task_stats.items()}
         result_df = pd.DataFrame(accuracy_dict)
+        result_df['overall'] = result_df.mean(axis=1)
 
         return result_df
