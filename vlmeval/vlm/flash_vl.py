@@ -116,7 +116,6 @@ class FlashVL(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
-
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
