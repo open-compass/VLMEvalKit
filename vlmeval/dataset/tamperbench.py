@@ -5,7 +5,6 @@ from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 import torchvision.transforms as T
 from torchvision import transforms
-from decord import VideoReader, cpu
 import imageio
 import cv2
 import zipfile
@@ -231,6 +230,7 @@ Based on your observations, select the best option that accurately addresses the
         return frame_indices.astype(int)
 
     def read_video(self, video_path, bound=None):
+        from decord import VideoReader, cpu
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         max_frame = len(vr) - 1
         fps = float(vr.get_avg_fps())
