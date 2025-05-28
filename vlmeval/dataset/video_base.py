@@ -68,6 +68,7 @@ class VideoBaseDataset:
                          self.frame_tmpl_fps.format(i, num_frames, self.fps)) for i in range(1, num_frames + 1)]
 
     def save_video_frames(self, video):
+        import decord
         if self.fps > 0:
             vid_path = osp.join(self.data_root, video + '.mp4')
             vid = decord.VideoReader(vid_path)

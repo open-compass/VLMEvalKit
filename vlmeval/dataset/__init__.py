@@ -6,13 +6,13 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
-    CMMU_MCQ, PathMMU_VAL, PathMMU_TEST, MicroVQA, MicroBench, SCAM
+    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, TDBenchGrounding
+    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA
 )
 
 from .image_ccocr import CCOCRDataset
@@ -59,6 +59,9 @@ from .video_dataset_config import *
 from ..smp import *
 from .Omnidocbench.omnidocbench import OmniDocBench
 from .moat import MOAT
+from .GUI.screenspot import ScreenSpot
+from .GUI.screenspot_v2 import ScreenSpotV2
+from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 
 
@@ -158,9 +161,11 @@ IMAGE_DATASET = [
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, MMIFEval, Spatial457, VisuLogic, CVBench,
-    CMMU_MCQ, PathVQA_VAL, PathVQA_TEST, PathMMU_VAL, PathMMU_TEST, TDBench, TDBenchGrounding,
-    MicroVQA, MicroBench, CharXiv, SCAM
+    LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot,
+    ScreenSpotV2, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
+    PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
+    WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
+    SCAM,
 ]
 
 
@@ -259,6 +264,11 @@ def build_dataset(dataset_name, **kwargs):
     else:
         warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ')
         return CustomVQADataset(dataset=dataset_name, **kwargs)
+
+
+def infer_dataset_basename(dataset_name):
+    basename = "_".join(dataset_name.split("_")[:-1])
+    return basename
 
 
 __all__ = [

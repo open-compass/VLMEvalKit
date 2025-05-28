@@ -1003,7 +1003,7 @@ class LLaVABench(ImageBaseDataset):
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_30_samples.tsv'}  # noqa: E501
+    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_100_samples.tsv'}  # noqa: E501
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -1149,6 +1149,174 @@ class MTVQADataset(ImageBaseDataset):
         for item in msgs:
             if item['type'] == 'text':
                 item['value'] += '\nAnswer the question using a word or phrase in the language of the question.'
+        return msgs
+
+
+class WildDocBenchmark(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {'WildDoc': "https://huggingface.co/datasets/jingqun/wilddoc-vlmeval/resolve/main/WildDoc.tsv"}
+    DATASET_MD5 = {'WildDoc': '7b9a95e7ae26dad58be05685f59867aa',}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        import pandas as pd
+
+        data = load(eval_file)
+        DocVQA_df = pd.DataFrame(columns=data.columns)
+        CharQA_df = pd.DataFrame(columns=data.columns)
+        TableVQA_df = pd.DataFrame(columns=data.columns)
+
+        for i in range(len(data)):
+            line = data.iloc[i]
+            benchmark_name = line["index"].split("-")[0]
+            if benchmark_name == "DocVQA":
+                DocVQA_df = pd.concat([DocVQA_df, pd.DataFrame([line])], ignore_index=True)
+            elif benchmark_name == "ChartQA":
+                CharQA_df = pd.concat([CharQA_df, pd.DataFrame([line])], ignore_index=True)
+            elif benchmark_name == "TableVQA":
+                TableVQA_df = pd.concat([TableVQA_df, pd.DataFrame([line])], ignore_index=True)
+            else:
+                raise ValueError(f"Unknown benchmark name {benchmark_name}")
+
+        # calculate three subset separately
+        from .utils.vqa_eval import hit_calculate, process_line_WildDoc, calculate_consistency_WildDoc, calculate_overall_accuracy_WildDoc  # noqa: E501
+
+        # 1. DocVQA
+        data = DocVQA_df
+        assert 'answer' in data and 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        lt = len(data)
+        pool = mp.Pool(16)
+        lines = [data.iloc[i] for i in range(lt)]
+        DocVQA_res = pool.map(partial(process_line_WildDoc, method='anls'), lines)
+        hit = hit_calculate(DocVQA_res, "DocVQA")
+        DocVQA_overall = np.mean(hit) * 100
+        DocVQA_consistency_score = calculate_consistency_WildDoc(DocVQA_res)
+
+        # 2. ChartQA
+        data = CharQA_df
+        assert 'answer' in data and 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        lt = len(data)
+        pool = mp.Pool(16)
+        lines = [data.iloc[i] for i in range(lt)]
+        ChartQA_res = pool.map(partial(process_line_WildDoc, method='relaxed_accuracy'), lines)
+        hit = hit_calculate(ChartQA_res, "ChartQA")
+        ChartQA_overall = np.mean(hit) * 100
+        ChartQA_consistency_score = calculate_consistency_WildDoc(ChartQA_res)
+
+        # 3. TableVQA
+        data = TableVQA_df
+        assert 'answer' in data and 'prediction' in data
+        import pandas as pd
+        from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
+
+        data['prediction'] = data['prediction'].str.replace('^Answer: ', '', regex=True)
+        ##################
+        TableVQA_res = {"fintabnetqa": [], "vtabfact": [], "vwtq": [], "vwtq_syn": []}
+        lt = len(data)
+        for i in range(lt):
+            line = data.iloc[i]
+            ret = {'index':line["index"]}
+            ans = line['answer']
+            pred = line["prediction"]
+            from .utils.tablevqabench import fintabnet_normalize, tsv_unescape_list, to_value_list, check_denotation
+
+            subset = line["index"].split("-")[1]
+            if subset == "fintabnetqa":
+                pred, preds = fintabnet_normalize(pred)
+                gt, gts = fintabnet_normalize(ans)
+                correct = 1 if gt == pred or any(_pred == _gt for _pred in preds for _gt in gts) else 0
+            elif subset == "vtabfact":
+                pred = pred.lower()
+                gt = ans
+                if 'true' in pred and 'false' in pred:
+                    correct = 0
+                elif 'true' in pred and gt == '1':
+                    correct = 1
+                elif 'false' in pred and gt == '0':
+                    correct = 1
+                else:
+                    correct = 0
+            elif subset == "vwtq_syn" or subset == "vwtq":
+                pred = str(pred).replace('||', '|')
+                if pred == "nan":
+                    pred = ""
+                gt = ans
+                original_strings = tsv_unescape_list(gt)
+                target_values = to_value_list(original_strings)
+
+                predicted_strings = tsv_unescape_list(pred)
+                predicted_values = to_value_list(predicted_strings)
+                correct = 1 if check_denotation(target_values, predicted_values) else 0
+            else:
+                raise ValueError(f"Unknown benchmark name {benchmark_name}")
+
+            ret["pred"] = pred
+            ret["gt"] = gt
+            ret["match"] = correct
+            TableVQA_res[subset].append(ret)
+
+        TableVQA_overall = np.mean([np.mean(hit_calculate(x, "TableVQA")) for x in TableVQA_res.values()]) * 100
+        TableVQA_consistency_score = np.mean([calculate_consistency_WildDoc(x) for x in TableVQA_res.values()])
+
+        eval_results = {
+            "DocVQA": {
+                "Overall": DocVQA_overall,
+                "Consistency": DocVQA_consistency_score
+            },
+            "ChartQA": {
+                "Overall": ChartQA_overall,
+                "Consistency": ChartQA_consistency_score
+            },
+            "TableVQA": {
+                "Overall": TableVQA_overall,
+                "Consistency": TableVQA_consistency_score
+            },
+            # Overall
+            "WildDoc": {
+                "Overall": np.mean([DocVQA_overall, ChartQA_overall, TableVQA_overall]),
+                "Consistency": np.mean([
+                    DocVQA_consistency_score, ChartQA_consistency_score, TableVQA_consistency_score
+                ])
+            }
+        }
+
+        # 转换为长格式DataFrame
+        ret_df = pd.DataFrame([
+            {"Task": task, "Metric": metric, "Score": score}
+            for task, metrics in eval_results.items()
+            for metric, score in metrics.items()
+        ])
+        return ret_df
+
+    # WildDoc adopts a custom prompt for each subset
+    def build_prompt(self, line):
+        index = line["index"]
+        benchmark_name = index.split("-")[0]
+        print(benchmark_name)
+
+        from .utils.tablevqabench import FINTABNETQA_PROMPT, VTABFACT_PROMPT, VWTQ_PROMPT
+
+        msgs = super().build_prompt(line)
+        assert sum([x['type'] == 'text' for x in msgs]) == 1
+        for item in msgs:
+            if item['type'] == 'text':
+                if benchmark_name == "TableVQA":
+                    split = index.split("-")[1]
+                    if split == 'fintabnetqa':
+                        item['value'] = FINTABNETQA_PROMPT.format_map({'question': item['value']})
+                    elif split == 'vtabfact':
+                        item['value'] = VTABFACT_PROMPT.format_map({'question': item['value']})
+                    elif split == 'vwtq_syn' or split == 'vwtq':
+                        item['value'] = VWTQ_PROMPT.format_map({'question': item['value']})
+                    else:
+                        raise ValueError(f"Unknown split {line['split']}")
+                    print(item)
+                else:
+                    item['value'] += '\nAnswer the question using a single word or phrase.'
+        print(item)
         return msgs
 
 
@@ -1812,45 +1980,6 @@ class MMSci_Captioning(ImageBaseDataset):
                 data.loc[idx, 'g_eval_metrics'] = g_eval_metrics
             dump(data, g_eval_metrics_output_file)
 
-        # fact score, not align with official score, so now skip it
-        # if not osp.exists(fact_score_metrics_output_file):
-        #     for var in ["http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"]:
-        #         os.environ.pop(var, None)
-        #     data = load(eval_file)
-        #     suffix = '.' + eval_file.split('.')[-1]
-
-        #     lines = [data.iloc[i] for i in range(len(data))]
-        #     model = judge_kwargs.pop('model', 'gpt-4o')
-        #     tmp_file = eval_file.replace(suffix, f'_{model}_fact_score.pkl')
-        #     nproc = judge_kwargs.pop('nproc', 4)
-        #     assert model in ['gpt-4o-0806', 'gpt-4o']
-        #     judge_model = build_judge(model=model, **judge_kwargs)
-        #     assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
-
-        #     tups = [(judge_model, line) for line in lines]
-        #     indices = [line['index'] for line in lines]
-
-        #     ans = {}
-        #     if osp.exists(tmp_file):
-        #         ans = load(tmp_file)
-        #     ans = {k: v for k, v in ans.items() if model.fail_msg not in str(v)}
-        #     tups = [x for x, i in zip(tups, indices) if i not in ans]
-        #     indices = [i for i in indices if i not in ans]
-        #     if len(indices):
-        #         _ = track_progress_rich(
-        #             fact_score_generate,
-        #             tups,
-        #             nproc=nproc,
-        #             chunksize=nproc,
-        #             keys=indices,
-        #             save=tmp_file,
-        #         )
-        #     ans = load(tmp_file)
-        #     for idx, item in data.iterrows():
-        #         fact_score_metrics = str(ans[item["index"]])
-        #         data.loc[idx, 'fact_score_metrics'] = fact_score_metrics
-        #     dump(data, fact_score_metrics_output_file)
-
         rating = merge_rating(
             refer_based_metrics_output_file,
             g_eval_metrics_output_file,
@@ -1937,3 +2066,276 @@ class TDBenchGrounding(ImageVQADataset):
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
         return msgs
+
+
+class CountBenchQA(ImageVQADataset):
+    DATASET_URL = {'CountBenchQA': 'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'}
+    DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        tgt_path = self.dump_image(line)
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        ques = line['question']
+        question = f'{ques} Note that: answer with a number directly e.g. 3. Do not include any additional text.'
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answers']]
+        correct_count = 0
+        total_count = len(predictions)
+
+        for pred, ans in zip(predictions, answers):
+            if ans in pred:
+                correct_count += 1
+        accuracy = correct_count / total_count if total_count > 0 else 0
+        return {'accuracy': accuracy}
+
+      
+class OCR_Reasoning(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'OCR_Reasoning': 'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
+    }
+    DATASET_MD5 = {'OCR_Reasoning': 'cf95ace31742170cf669ef45e0dae267'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.ocr_reasoning import OcrR_auxeval, OcrR_acc
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        nproc = 1
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    OcrR_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            data['reason_score'] = [ans[idx]['reason_score'] for idx in data['index']]
+            dump(data, storage)
+        score = OcrR_acc(storage)
+        score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert sum([x['type'] == 'text' for x in msgs]) == 1
+        for item in msgs:
+            if item['type'] == 'text':
+                if 'English' in line['language']:
+                    item['value'] += f"\nSolve the complex problem through step-by-step reasoning. The composition of the final answer should be: '{line['format']}'." # noqa e501
+                else:
+                    item['value'] += f"\n通过一步一步的推理解决这个复杂的问题。最后的回答的组成应该是: '{line['format']}'."
+        return msgs
+
+
+class PhyX(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    def __init__(self, dataset='PhyX_mini', skip_noimg=True):
+        if dataset != 'PhyX_mini':
+            import warnings
+            warnings.warn('To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.')
+        super().__init__(dataset=dataset, skip_noimg=skip_noimg)
+
+    DATASET_URL = {
+        'PhyX_mini': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv', # noqa
+        'PhyX_mini_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv', # noqa
+        'PhyX_mini_MC': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv', # noqa
+        'PhyX_mini_MC_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv', # noqa
+        'PhyX_mini_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv', # noqa
+        'PhyX_mini_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv', # noqa
+        'PhyX_mini_TL': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv', # noqa
+        'PhyX_mini_TL_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv', # noqa
+        'PhyX_mini_TL_MC': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv', # noqa
+        'PhyX_mini_TL_MC_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv', # noqa
+        'PhyX_mini_TL_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv', # noqa
+        'PhyX_mini_TL_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv', # noqa
+    }
+
+    DATASET_MD5 = {
+        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42', # noqa
+        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300', # noqa
+        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa', # noqa
+        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b', # noqa
+        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d', # noqa
+        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c', # noqa
+        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8', # noqa
+        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4', # noqa
+        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2', # noqa
+        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60', # noqa
+        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852', # noqa
+        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3', # noqa
+    }
+
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if "TL" in self.dataset_name:
+            # pure text, do not load image
+            pass
+        else:
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        valid_type = judge_kwargs["valid_type"]
+        assert valid_type in ["STR", "LLM"], print(
+            "To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
+            " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: "
+            "--judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command."
+        )
+        if valid_type == "STR":
+            # Match at string level
+            from .utils.phyx import PhyX_process_line, PhyX_process_line_MC
+            data = load(eval_file)
+            assert 'answer' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answer']]
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            pool = mp.Pool(1)
+            if "_MC" in eval_file:
+                # Multi choice
+                res = pool.map(partial(PhyX_process_line_MC), lines)
+            else:
+                # Open ended mode
+                res = pool.map(partial(PhyX_process_line), lines)
+
+            suffix = eval_file.split('.')[-1]
+            result_file = eval_file.replace(f'.{suffix}', '_predict.xlsx')
+            df = pd.DataFrame(res)
+            df.to_excel(result_file, index=False)
+
+            hit = [x['match'] for x in res]
+            ret = dict()
+            ret['Overall'] = np.mean(hit)
+
+            if 'category' in data:
+                cates = list(set(data['category']))
+                cates.sort()
+                for c in cates:
+                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    hit = [x['match'] for x in sub]
+                    ret[c] = np.mean(hit)
+            ret = d2df(ret)
+            ret.round(2)
+
+            suffix = eval_file.split('.')[-1]
+            result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            dump(ret, result_file)
+            return ret
+
+        elif valid_type == "LLM":
+            from .utils.phyx import PhyX_auxeval, PhyX_acc, PhyX_auxeval_MC
+
+            model = judge_kwargs['model']
+            suffix = eval_file.split('.')[-1]
+            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            nproc = judge_kwargs.pop('nproc', 4)
+
+            if not osp.exists(storage):
+                data = load(eval_file)
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                assert model.working(), (
+                    "PhyX evaluation requires a working API. We use Deepseek-V3 provided by SiliconFlow. "
+                    "please set SiliconFlow_API_KEY.\n"
+                )
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
+
+                ans = {}
+                if osp.exists(tmp_file):
+                    ans = load(tmp_file)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
+
+                if len(indices):
+                    if "_MC" in eval_file:
+                        new_results = track_progress_rich(
+                            PhyX_auxeval_MC,
+                            tups,
+                            nproc=nproc,
+                            chunksize=nproc,
+                            keys=indices,
+                            save=tmp_file,
+                        )
+                    else:
+                        new_results = track_progress_rich(
+                            PhyX_auxeval,
+                            tups,
+                            nproc=nproc,
+                            chunksize=nproc,
+                            keys=indices,
+                            save=tmp_file,
+                        )
+                    ans = load(tmp_file)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+                data['res'] = [ans[idx]['res'] for idx in data['index']]
+                data['log'] = [ans[idx]['log'] for idx in data['index']]
+                data['extracted'] = [ans[idx]['extracted'] for idx in data['index']]
+                dump(data, storage)
+
+            score = PhyX_acc(storage)
+            score_pth = storage.replace('.xlsx', '_score.csv')
+            dump(score, score_pth)
+            return score
+

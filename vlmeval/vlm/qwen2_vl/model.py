@@ -7,6 +7,7 @@ import math
 import logging
 
 import torch
+from transformers import StoppingCriteria
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
@@ -139,6 +140,49 @@ def setup_visible_devices_per_rank():
     return num_gpus
 
 
+class KeywordsStoppingCriteria(StoppingCriteria):
+    def __init__(self, keywords, tokenizer, input_ids):
+        self.keywords = keywords
+        self.keyword_ids = []
+        self.max_keyword_len = 0
+        for keyword in keywords:
+            cur_keyword_ids = tokenizer(keyword).input_ids
+            if (
+                len(cur_keyword_ids) > 1
+                and cur_keyword_ids[0] == tokenizer.bos_token_id
+            ):
+                cur_keyword_ids = cur_keyword_ids[1:]
+            if len(cur_keyword_ids) > self.max_keyword_len:
+                self.max_keyword_len = len(cur_keyword_ids)
+            self.keyword_ids.append(torch.tensor(cur_keyword_ids))
+        self.tokenizer = tokenizer
+        self.start_len = input_ids.shape[1]
+
+    def __call__(
+        self, output_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs
+    ) -> bool:
+        assert output_ids.shape[0] == 1, "Only support batch size 1 (yet)"  # TODO
+        offset = min(output_ids.shape[1] - self.start_len, self.max_keyword_len)
+        self.keyword_ids = [
+            keyword_id.to(output_ids.device) for keyword_id in self.keyword_ids
+        ]
+        for keyword_id in self.keyword_ids:
+            if (output_ids[0, -keyword_id.shape[0]:] == keyword_id).all():
+                return True
+        outputs = self.tokenizer.batch_decode(
+            output_ids[:, -offset:], skip_special_tokens=True
+        )[0]
+        for keyword in self.keywords:
+            if keyword in outputs:
+                return True
+        return False
+
+
+CHAT_TEMPLATE = "{% set image_count = namespace(value=0) %}{% set video_count = namespace(value=0) %}{% for message in messages %}<|im_start|>{{ message['role'] }}\n{% if message['content'] is string %}{{ message['content'] }}<|im_end|>\n{% else %}{% for content in message['content'] %}{% if content['type'] == 'image' or 'image' in content or 'image_url' in content %}{% set image_count.value = image_count.value + 1 %}{% if add_vision_id %}Picture {{ image_count.value }}: {% endif %}<|vision_start|><|image_pad|><|vision_end|>{% elif content['type'] == 'video' or 'video' in content %}{% set video_count.value = video_count.value + 1 %}{% if add_vision_id %}Video {{ video_count.value }}: {% endif %}<|vision_start|><|video_pad|><|vision_end|>{% elif 'text' in content %}{{ content['text'] }}{% endif %}{% endfor %}<|im_end|>\n{% endif %}{% endfor %}{% if add_generation_prompt %}<|im_start|>assistant\n{% endif %}"  # noqa: E501
+
+UNTIL = ["<|diff_marker|>"]
+
+
 class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
@@ -213,7 +257,10 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
         assert max_gpu_mem > 0
         self.use_vllm = kwargs.get('use_vllm', False)
+        self.use_lmdeploy = kwargs.get('use_lmdeploy', False)
         self.limit_mm_per_prompt = VLLM_MAX_IMAGE_INPUT_NUM
+        assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag between `use_vllm` and `use_lmdeploy` to True"  # noqa: E501
+
         if self.use_vllm:
             from vllm import LLM
             gpu_count = setup_visible_devices_per_rank()
@@ -243,6 +290,15 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
             )
 
+        elif self.use_lmdeploy:
+            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            num_gpus = torch.cuda.device_count()
+            self.model = pipeline(
+                model_path,
+                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus)
+            )
+            torch.cuda.set_device(0)
+            self.device = 'cuda'
         else:
             self.model = MODEL_CLS.from_pretrained(
                 model_path, torch_dtype='auto', device_map="auto", attn_implementation='flash_attention_2'
@@ -458,6 +514,22 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             print(f'\033[32m{response}\033[0m')
         return response
 
+    def generate_inner_lmdeploy(self, message, dataset=None):
+        from lmdeploy import GenerationConfig
+        gen_config = GenerationConfig(
+            max_new_tokens=self.max_new_tokens,
+            top_p=self.generate_kwargs['top_p'],
+            top_k=self.generate_kwargs['top_k'],
+            temperature=self.generate_kwargs['temperature'],
+            repetition_penalty=self.generate_kwargs['repetition_penalty'],
+        )
+        gen_config.random_seed = None
+        messages_list = self.message_to_lmdeploy(message, system_prompt=self.system_prompt)
+        assert len(messages_list) == 1
+        response = self.model(messages_list, gen_config=gen_config)[0]
+        response = response.text
+        return response
+
     def generate_inner_vllm(self, message, dataset=None):
         from vllm import SamplingParams
 
@@ -556,5 +628,124 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
             return self.generate_inner_vllm(message, dataset=dataset)
+        elif self.use_lmdeploy:
+            return self.generate_inner_lmdeploy(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
+
+
+class Qwen2VLChatAguvis(Qwen2VLChat):
+    def __init__(self, mode=None, **kwargs):
+        self.mode = mode
+        super().__init__(**kwargs)
+        self.processor.max_pixels = self.max_pixels
+        self.processor.min_pixels = self.min_pixels
+
+    def generate_inner(self, message, dataset=None):
+        try:
+            from qwen_vl_utils import process_vision_info
+        except Exception as err:
+            logging.critical(
+                "qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'"
+            )
+            raise err
+
+        messages = []
+        user_message = []
+        for item in message:
+            if "role" in item.keys():
+                if item["role"] == "system":
+                    self.system_prompt = item["value"]
+                else:
+                    item.pop("role")
+                    user_message.append(item)
+            else:
+                user_message.append(item)
+        message = user_message
+
+        if self.system_prompt is not None:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append(
+            {"role": "user", "content": self._prepare_content(message, dataset=dataset)}
+        )
+        if self.verbose:
+            print(f"\033[31m{messages}\033[0m")
+
+        text = self.processor.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=False,
+            chat_template=CHAT_TEMPLATE,
+        )
+        # TODO: provide current action's low-level instruction
+        # if False:
+        #     # If low-level instruction is provided
+        #     # We enforce using "Action: {low_level_instruction} to guide generation"
+        #     recipient_text = f"<|im_start|>assistant<|recipient|>all\nAction: {low_level_instruction}\n"
+        if self.mode == "force-plan":
+            recipient_text = "<|im_start|>assistant<|recipient|>all\nThought: "
+        elif self.mode == "force-plan-l1":
+            recipient_text = "<|im_start|>assistant<|recipient|>all\nAction: "
+        elif self.mode == "force-plan-l3":
+            recipient_text = "<|im_start|>assistant<|recipient|>all\nObservation: "
+        elif self.mode == "grounding":
+            recipient_text = "<|im_start|>assistant<|recipient|>os\n"
+        elif self.mode == "force-plan-free":
+            recipient_text = "<|im_start|>assistant<|recipient|>all\n"
+        elif self.mode == "self-plan":
+            recipient_text = "<|im_start|>assistant<|recipient|>"
+        else:
+            raise ValueError(f"Invalid mode: {self.mode}")
+        text += recipient_text
+        # print(text)
+
+        images, videos = process_vision_info([messages])
+        inputs = self.processor(
+            text=[text], images=images, videos=videos, padding=True, return_tensors="pt"
+        )
+        inputs = inputs.to("cuda")
+
+        # stop_str = "<|diff_marker|>"
+        # keywords = [stop_str]
+        # stopping_criteria = KeywordsStoppingCriteria(
+        #     keywords, self.processor.tokenizer, inputs.input_ids
+        # )
+
+        generated_ids = self.model.generate(
+            **inputs,
+            **self.generate_kwargs,
+            # stopping_criteria=[stopping_criteria],
+        )
+        generated_ids = [
+            output_ids[len(input_ids):]
+            for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        out = self.processor.tokenizer.batch_decode(
+            generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        response = out[0]
+        # for term in UNTIL:
+        #     if len(term) > 0:
+        #         response = response.split(term)[0]
+
+        if self.post_process:
+            resp = response.split("\\boxed{")[-1]
+            lt = len(resp)
+            counter, end = 1, None
+            for i in range(lt):
+                if resp[i] == "{":
+                    counter += 1
+                elif resp[i] == "}":
+                    counter -= 1
+                if counter == 0:
+                    end = i
+                    break
+                elif i == lt - 1:
+                    end = lt
+                    break
+            if end is not None:
+                response = resp[:end]
+
+        if self.verbose:
+            print(f"\033[32m{response}\033[0m")
+        return response

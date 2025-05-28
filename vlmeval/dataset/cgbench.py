@@ -350,7 +350,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
         if type(uid) is not str:
             uid = str(uid)
-
+        import decord
         vid_path = osp.join(self.data_root, video)
         vid = decord.VideoReader(vid_path)
         vid_fps = vid.get_avg_fps()
@@ -677,7 +677,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         if type(uid) is not str:
             uid = str(uid)
-
+        import decord
         vid_path = osp.join(self.data_root, video)
         vid = decord.VideoReader(vid_path)
         vid_fps = vid.get_avg_fps()
@@ -1230,7 +1230,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
         if type(uid) is not str:
             uid = str(uid)
-
+        import decord
         vid_path = osp.join(self.data_root, video)
         vid = decord.VideoReader(vid_path)
         vid_fps = vid.get_avg_fps()
@@ -1556,7 +1556,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         if type(uid) is not str:
             uid = str(uid)
-
+        import decord
         vid_path = osp.join(self.data_root, video)
         vid = decord.VideoReader(vid_path)
         vid_fps = vid.get_avg_fps()

@@ -19,8 +19,19 @@ class llama4(BaseModel):
         except Exception as e:
             logging.critical('Please install transformers>=4.51.0 before using llama4.')
             raise e
+        self.generate_kwargs = dict(
+            max_new_tokens=kwargs.get('max_new_tokens', 4096),
+            top_p=kwargs.get('top_p', 0.001),
+            top_k=kwargs.get('top_k', 1),
+            temperature=kwargs.get('temperature', 0.01),
+            repetition_penalty=kwargs.get('repetition_penalty', 1.0),
+        )
+        self.system_prompt = kwargs.get('system_prompt', None)
 
         self.use_vllm = kwargs.get('use_vllm', False)
+        self.use_lmdeploy = kwargs.get('use_lmdeploy', False)
+        assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag between `use_vllm` and `use_lmdeploy` to True"  # noqa: E501
+
         self.limit_mm_per_prompt = 10  # vLLM support max 10 images per prompt for Llama 4
         if self.use_vllm:
             from vllm import LLM, SamplingParams
@@ -52,6 +63,17 @@ class llama4(BaseModel):
                 gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
             )
             # export VLLM_WORKER_MULTIPROC_METHOD=spawn
+
+        elif self.use_lmdeploy:
+            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            num_gpus = torch.cuda.device_count()
+            self.model = pipeline(
+                model_path,
+                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus)
+            )
+            torch.cuda.set_device(0)
+            self.device = 'cuda'
+
         else:
             self.model = Llama4ForConditionalGeneration.from_pretrained(
                 model_path,
@@ -215,8 +237,8 @@ class llama4(BaseModel):
             tokenize=False,
             add_generation_prompt=True
         )
-        sampling_params = SamplingParams(temperature=0.0,
-                                         max_tokens=4096)
+        sampling_params = SamplingParams(temperature=self.generate_kwargs['temperature'],
+                                         max_tokens=self.generate_kwargs['max_new_tokens'])
         outputs = self.llm.generate(
             {
                 "prompt": prompt,
@@ -235,8 +257,26 @@ class llama4(BaseModel):
 
         return generated_text
 
+    def generate_inner_lmdeploy(self, message, dataset=None):
+        from lmdeploy import GenerationConfig
+        gen_config = GenerationConfig(
+            max_new_tokens=self.generate_kwargs['max_new_tokens'],
+            top_p=self.generate_kwargs['top_p'],
+            top_k=self.generate_kwargs['top_k'],
+            temperature=self.generate_kwargs['temperature'],
+            repetition_penalty=self.generate_kwargs['repetition_penalty'],
+        )
+        gen_config.random_seed = None
+        messages_list = self.message_to_lmdeploy(message, system_prompt=self.system_prompt)
+        assert len(messages_list) == 1
+        response = self.model(messages_list, gen_config=gen_config)[0]
+        response = response.text
+        return response
+
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
             return self.generate_inner_vllm(message, dataset=dataset)
+        elif self.use_lmdeploy:
+            return self.generate_inner_lmdeploy(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)

@@ -31,7 +31,7 @@ from .omnilmm import OmniLMM12B
 from .open_flamingo import OpenFlamingo
 from .pandagpt import PandaGPT
 from .qwen_vl import QwenVL, QwenVLChat
-from .qwen2_vl import Qwen2VLChat
+from .qwen2_vl import Qwen2VLChat, Qwen2VLChatAguvis
 from .transcore_m import TransCoreM
 from .visualglm import VisualGLM
 from .xcomposer import (
@@ -86,7 +86,7 @@ from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM, SmolVLM2
 from .sail_vl import SailVL
-from .valley import ValleyEagleChat
+from .valley import Valley2Chat
 from .ross import Ross
 from .ola import Ola
 from .ursa import UrsaChat
@@ -95,3 +95,4 @@ from .aki import AKI
 from .ristretto import Ristretto
 from .vlaa_thinker import VLAAThinkerChat
 from .kimi_vl import KimiVL
+from .wethink_vl import WeThinkVL

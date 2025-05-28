@@ -1,6 +1,7 @@
 from vlmeval.vlm import *
 from vlmeval.api import *
 from functools import partial
+import os
 
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
@@ -254,9 +255,16 @@ api_models = {
     "GeminiPro2-5": partial(
         Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
+    "GeminiPro2-5-Thinking": partial(
+        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
+    ),
     "GeminiPro2-5-0506": partial(
         Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
+    "GeminiPro2-5-0506-Thinking": partial(
+        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
+    ),
+    
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -341,6 +349,20 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "Claude4_Opus": partial(
+        Claude3V,
+        model="claude-4-opus-20250514",
+        temperature=0,
+        retry=10,
+        verbose=False,
+    ),
+    "Claude4_Sonnet": partial(
+        Claude3V,
+        model="claude-4-sonnet-20250514",
+        temperature=0,
+        retry=10,
+        verbose=False,
+    ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
     "GLM4V_PLUS": partial(GLMVisionAPI, model="glm-4v-plus", temperature=0, retry=10),
@@ -363,7 +385,8 @@ api_models = {
         retry=10,
     ),
     # CongRong
-    "CloudWalk": partial(CWWrapper, model="cw-congrong-v1.5", temperature=0, retry=10),
+    "CongRong-v1.5": partial(CWWrapper, model="cw-congrong-v1.5", temperature=0, retry=10),
+    "CongRong-v2.0": partial(CWWrapper, model="cw-congrong-v2.0", temperature=0, retry=10),
     # SenseNova
     "SenseNova-V6-Pro": partial(
         SenseChatVisionAPI, model="SenseNova-V6-Pro", temperature=0, retry=10
@@ -390,6 +413,8 @@ api_models = {
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
     # TeleMM
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
+    "Qwen2.5-VL-32B-Instruct-SiliconFlow": partial(
+        SiliconFlowAPI, model="Qwen/Qwen2.5-VL-32B-Instruct", temperature=0, retry=10),
     # lmdeploy api
     "lmdeploy": partial(
         LMDeployAPI,
@@ -411,12 +436,6 @@ api_models = {
         retry=10,
         timeout=300,
     ),
-    # Taichu-VL
-    # "Taichu-VL-2B": partial(
-    #     TaichuVLAPI,
-    #     model="Taichu-VL-2B",
-    #     url="https://platform.wair.ac.cn/api/v1/infer/10381/v1/chat/completions",
-    # ),
     'Taichu-VLR-3B': partial(
         TaichuVLRAPI, 
         model='taichu_vlr_3b', 
@@ -430,6 +449,14 @@ api_models = {
     # doubao_vl
     "DoubaoVL": partial(
         DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=10, verbose=False
+    ),
+    "Seed1.5-VL": partial(
+        DoubaoVL, 
+        model="doubao-1-5-thinking-vision-pro-250428", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
     ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
@@ -773,6 +800,20 @@ internvl2_5_mpo = {
         model_path="OpenGVLab/InternVL2_5-78B-MPO",
         version="V2.0",
         use_mpo_prompt=True,
+    ),
+    "InternVL2_5-8B-GUI": partial(
+        InternVLChat,
+        model_path="/fs-computility/mllm1/shared/zhaoxiangyu/models/internvl2_5_8b_internlm2_5_7b_dynamic_res_stage1", 
+        version="V2.0", 
+        max_new_tokens=512,
+        screen_parse=False,
+    ),
+     "InternVL3-7B-GUI": partial(
+        InternVLChat,
+        model_path="/fs-computility/mllm1/shared/zhaoxiangyu/GUI/checkpoints/internvl3_7b_dynamic_res_stage1_56/", 
+        version="V2.0", 
+        max_new_tokens=512,
+        screen_parse=False,
     ),
 }
 
@@ -1169,6 +1210,15 @@ qwen2vl_series = {
                     "<answer> answer here </answer>"
                 ),
     ),
+    'WeThink-Qwen2.5VL-7B': partial(
+        WeThinkVL, 
+        model_path='yangjie-cv/WeThink-Qwen2.5VL-7B', 
+        min_pixels=1280*28*28, 
+        max_pixels=16384*28*28, 
+        use_custom_prompt=False,
+        system_prompt=("You FIRST think about the reasoning process as an internal monologue and then provide the final answer.\nThe reasoning process MUST BE enclosed within <think> </think> tags. The final answer MUST BE enclosed within <answer> </answer> tags."
+        ),
+    ),
 }
 
 slime_series = {
@@ -1247,8 +1297,11 @@ h2ovl_series = {
 }
 
 valley_series = {
-    "valley_eagle": partial(
-        ValleyEagleChat, model_path="bytedance-research/Valley-Eagle-7B"
+    "valley2": partial(
+        Valley2Chat, model_path="bytedance-research/Valley-Eagle-7B"
+    ),
+    "valley2_dpo": partial(
+        Valley2Chat, model_path="bytedance-research/Valley2-DPO"
     ),
 }
 
@@ -1260,7 +1313,10 @@ ross_series = {
     "ross-qwen2-7b": partial(Ross, model_path="HaochenWang/ross-qwen2-7b"),
 }
 
-ursa_series = {"URSA-8B": partial(UrsaChat, model_path="URSA-MATH/URSA-8B")}
+ursa_series = {
+    "URSA-8B": partial(UrsaChat, model_path="URSA-MATH/URSA-8B"),
+    "URSA-8B-PS-GRPO": partial(UrsaChat, model_path="URSA-MATH/URSA-8B-PS-GRPO")    
+}
 
 gemma_series = {
     "paligemma-3b-mix-448": partial(
@@ -1269,6 +1325,20 @@ gemma_series = {
     'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
     'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
+}
+
+aguvis_series = {
+    "aguvis_7b": partial(
+        Qwen2VLChatAguvis,
+        model_path=os.getenv(
+            "EVAL_MODEL",
+            "xlangai/Aguvis-7B-720P",
+        ),
+        min_pixels=256 * 28 * 28,
+        max_pixels=46 * 26 * 28 * 28,
+        use_custom_prompt=False,
+        mode='grounding',
+    )
 }
 
 kimi_series = {
@@ -1297,7 +1367,7 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series
+    long_vita_series, ristretto_series, kimi_series, aguvis_series
 ]
 
 for grp in model_groups:
