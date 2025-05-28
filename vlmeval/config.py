@@ -448,7 +448,7 @@ api_models = {
         temperature=0,
         retry=10, 
         verbose=False, 
-        max_tokens=32768,
+        max_tokens=16384,
     ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
