@@ -1897,5 +1897,6 @@ class VLMBlind(ImageMCQDataset):
 
         accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in task_stats.items()}
         result_df = pd.DataFrame(accuracy_dict)
+        result_df['overall'] = result_df.mean(axis=1)
 
         return result_df
