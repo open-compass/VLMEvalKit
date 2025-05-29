@@ -2069,11 +2069,10 @@ class TDBenchGrounding(ImageVQADataset):
 
 
 class zerobench(ImageVQADataset):
-    # DATASET_URL = {'zerobench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv'}
-    DATASET_URL = {'zerobench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
-                   'zerobench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
-    DATASET_MD5 = {'zerobench': '600d5e89325f1dab5ad3fa2ea200cea6',
-                   'zerobench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
+    DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
+                   'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
+    DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
+                   'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
 
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
