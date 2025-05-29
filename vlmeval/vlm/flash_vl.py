@@ -5,20 +5,19 @@ import pandas as pd
 import torch
 import string
 import copy
+import torch.nn as nn
 from functools import partial
 from PIL import Image
 from enum import auto, Enum
 from typing import List, Tuple
-
 from transformers.modeling_utils import PreTrainedModel
 from transformers import PretrainedConfig
 from transformers.image_processing_utils import BatchFeature
-import torch.nn as nn
-
 from .base import BaseModel
 from ..dataset import DATASET_TYPE
 from ..smp import isimg, listinstr, cn_string
 from transformers import AutoModel, AutoTokenizer, CLIPImageProcessor
+
 
 class FlashVL(BaseModel):
 
@@ -28,11 +27,15 @@ class FlashVL(BaseModel):
     def __init__(self, model_path, **kwargs):
         assert model_path is not None
         self.model_path = model_path
-        self.model = AutoModel.from_pretrained(model_path, torch_dtype=torch.bfloat16,trust_remote_code=True,device_map='cuda')
-        self.model.tokenizer = AutoTokenizer.from_pretrained(model_path,device_map='cuda')
-        self.model.im_trans = CLIPImageProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.model = AutoModel.from_pretrained(model_path,
+                                               torch_dtype=torch.bfloat16,
+                                               trust_remote_code=True,
+                                               device_map='cuda')
+        self.model.tokenizer = AutoTokenizer.from_pretrained(model_path,
+                                                             device_map='cuda')
+        self.model.im_trans = CLIPImageProcessor.from_pretrained(
+            model_path, trust_remote_code=True)
         self.INTERLEAVE = False
-
 
     def build_history(self, message):
 
@@ -52,29 +55,34 @@ class FlashVL(BaseModel):
         for i in range(len(message) // 2):
             m1, m2 = message[2 * i], message[2 * i + 1]
             assert m1['role'] == 'user' and m2['role'] == 'assistant'
-            hist.append((concat_tilist(m1['content']), concat_tilist(m2['content'])))
+            hist.append(
+                (concat_tilist(m1['content']), concat_tilist(m2['content'])))
         return hist
-
 
     def generate_inner(self, message, dataset=None):
         text, img_path = self.message_to_promptimg(message, dataset=dataset)
-        pil_image = Image.open(img_path).convert('RGB')   
-        messages = [{'role': 'user', 'content': text}] 
-        answer = self.model.chat(pil_image, messages, do_sample=False, max_new_tokens=512)
+        pil_image = Image.open(img_path).convert('RGB')
+        messages = [{'role': 'user', 'content': text}]
+        answer = self.model.chat(pil_image,
+                                 messages,
+                                 do_sample=False,
+                                 max_new_tokens=512)
         return answer
-
 
     def chat_inner(self, message, dataset=None):
         assert len(message) % 2 == 1 and message[-1]['role'] == 'user'
         history = self.build_history(message[:-1])
-        vl_list = [
-            {'image': s['value']} if s['type'] == 'image' else {'text': s['value']}
-            for s in message[-1]['content']
-        ]
+        vl_list = [{
+            'image': s['value']
+        } if s['type'] == 'image' else {
+            'text': s['value']
+        } for s in message[-1]['content']]
         query = self.tokenizer.from_list_format(vl_list)
-        response, _ = self.model.chat(self.tokenizer, query=query, history=history, **self.kwargs)
+        response, _ = self.model.chat(self.tokenizer,
+                                      query=query,
+                                      history=history,
+                                      **self.kwargs)
         return response
-
 
     def use_custom_prompt(self, dataset):
 
@@ -104,7 +112,8 @@ class FlashVL(BaseModel):
                 question = line['question']
                 prompt = question + '\nAnswer this question in detail.'
             elif listinstr(['MMVet', 'OCRBench'], dataset):
-                prompt = line['question'] + ' Anylyze the reason for the answer.'
+                prompt = line[
+                    'question'] + ' Anylyze the reason for the answer.'
             elif listinstr(['MTBench_VQA'], dataset):
                 prompt = line['question'] + '\n 请直接回答问题'
             else:
@@ -118,7 +127,8 @@ class FlashVL(BaseModel):
 
     def build_multi_choice_prompt(self, line, dataset=None):
         question = line['question']
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        hint = line['hint'] if ('hint' in line
+                                and not pd.isna(line['hint'])) else None
         if hint is not None:
             question = hint + '\n' + question
 
@@ -133,19 +143,10 @@ class FlashVL(BaseModel):
 
         if len(options):
             prompt += '\n请直接回答选项字母。' if cn_string(
-                prompt) else "\nAnswer with the option's letter from the given choices directly."
+                prompt
+            ) else "\nAnswer with the option's letter from the given choices directly."
         else:
-            prompt += '\n请直接回答问题。' if cn_string(prompt) else '\nAnswer the question directly.'
+            prompt += '\n请直接回答问题。' if cn_string(
+                prompt) else '\nAnswer the question directly.'
 
         return prompt
-
-
-
-
-
-
-
-
-
-
-
