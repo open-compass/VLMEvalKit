@@ -15,15 +15,24 @@ class ImageVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
 
     DATASET_URL = {
-        'OCRVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TEST.tsv',
-        'OCRVQA_TESTCORE': 'https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv',
-        'TextVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv',
-        'DocVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv',
-        'DocVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_TEST.tsv',
-        'InfoVQA_VAL': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL.tsv',
-        'InfoVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_TEST.tsv',
-        'ChartQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
-        'GQA_TestDev_Balanced': 'https://opencompass.openxlab.space/utils/VLMEval/GQA_TestDev_Balanced.tsv',
+        'OCRVQA_TEST':
+        'https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TEST.tsv',
+        'OCRVQA_TESTCORE':
+        'https://opencompass.openxlab.space/utils/VLMEval/OCRVQA_TESTCORE.tsv',
+        'TextVQA_VAL':
+        'https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv',
+        'DocVQA_VAL':
+        'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv',
+        'DocVQA_TEST':
+        'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_TEST.tsv',
+        'InfoVQA_VAL':
+        'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL.tsv',
+        'InfoVQA_TEST':
+        'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_TEST.tsv',
+        'ChartQA_TEST':
+        'https://opencompass.openxlab.space/utils/VLMEval/ChartQA_TEST.tsv',
+        'GQA_TestDev_Balanced':
+        'https://opencompass.openxlab.space/utils/VLMEval/GQA_TestDev_Balanced.tsv',
     }
 
     DATASET_MD5 = {
@@ -41,7 +50,8 @@ class ImageVQADataset(ImageBaseDataset):
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
         assert msgs[-1]['type'] == 'text'
-        msgs[-1]['value'] += '\nAnswer the question using a single word or phrase.'
+        msgs[-1][
+            'value'] += '\nAnswer the question using a single word or phrase.'
         return msgs
 
     # It returns a DataFrame
@@ -59,7 +69,8 @@ class ImageVQADataset(ImageBaseDataset):
         if listinstr(['TextVQA'], dataset):
             res = pool.map(partial(process_line, method='vqa_score'), lines)
         elif listinstr(['ChartQA'], dataset):
-            res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
+            res = pool.map(partial(process_line, method='relaxed_accuracy'),
+                           lines)
         elif listinstr(['OCRVQA', 'GQA'], dataset):
             res = pool.map(partial(process_line, method='accuracy'), lines)
         elif listinstr(['DocVQA', 'InfoVQA'], dataset):
@@ -102,9 +113,7 @@ class VizWiz(ImageBaseDataset):
     DATASET_URL = {
         'VizWiz': 'https://opencompass.openxlab.space/utils/VLMEval/VizWiz.tsv'
     }
-    DATASET_MD5 = {
-        'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'
-    }
+    DATASET_MD5 = {'VizWiz': 'fa4ac4164467563ed2fac6eac6631bd0'}
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -140,9 +149,11 @@ class VizWiz(ImageBaseDataset):
 class OCRBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'OCRBench': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
+        'OCRBench':
+        'https://opencompass.openxlab.space/utils/VLMEval/OCRBench.tsv',
         # For internal test only
-        'OCRBench_MINI': 'https://opencompass.openxlab.space/utils/TEST/OCRBench_MINI.tsv'
+        'OCRBench_MINI':
+        'https://opencompass.openxlab.space/utils/TEST/OCRBench_MINI.tsv'
     }
     DATASET_MD5 = {'OCRBench': 'e953d98a987cc6e26ef717b61260b778'}
 
@@ -172,8 +183,10 @@ class OCRBench(ImageBaseDataset):
             category = line['category']
             if category == 'Handwritten Mathematical Expression Recognition':
                 for j in range(len(answers)):
-                    answer = answers[j].strip().replace('\n', ' ').replace(' ', '')
-                    predict = predict.strip().replace('\n', ' ').replace(' ', '')
+                    answer = answers[j].strip().replace('\n',
+                                                        ' ').replace(' ', '')
+                    predict = predict.strip().replace('\n',
+                                                      ' ').replace(' ', '')
                     if answer in predict:
                         OCRBench_score[category] += 1
                         break
@@ -190,16 +203,20 @@ class OCRBench(ImageBaseDataset):
             (OCRBench_score['Regular Text Recognition'] + OCRBench_score['Irregular Text Recognition']
              + OCRBench_score['Artistic Text Recognition'] + OCRBench_score['Handwriting Recognition']
              + OCRBench_score['Digit String Recognition'] + OCRBench_score['Non-Semantic Text Recognition'])
-        final_score_dict['Scene Text-centric VQA'] = OCRBench_score['Scene Text-centric VQA']
-        final_score_dict['Doc-oriented VQA'] = OCRBench_score['Doc-oriented VQA']
-        final_score_dict['Key Information Extraction'] = OCRBench_score['Key Information Extraction']
+        final_score_dict['Scene Text-centric VQA'] = OCRBench_score[
+            'Scene Text-centric VQA']
+        final_score_dict['Doc-oriented VQA'] = OCRBench_score[
+            'Doc-oriented VQA']
+        final_score_dict['Key Information Extraction'] = OCRBench_score[
+            'Key Information Extraction']
         final_score_dict['Handwritten Mathematical Expression Recognition'] = \
             (OCRBench_score['Handwritten Mathematical Expression Recognition'])
         final_score_dict['Final Score'] = \
             (final_score_dict['Text Recognition'] + final_score_dict['Scene Text-centric VQA']
              + final_score_dict['Doc-oriented VQA'] + final_score_dict['Key Information Extraction']
              + final_score_dict['Handwritten Mathematical Expression Recognition'])
-        final_score_dict['Final Score Norm'] = (float(final_score_dict['Final Score']) / 10)
+        final_score_dict['Final Score Norm'] = (
+            float(final_score_dict['Final Score']) / 10)
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
         return final_score_dict
@@ -208,7 +225,8 @@ class OCRBench(ImageBaseDataset):
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVista_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
+        'MathVista_MINI':
+        'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
     }
     DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
 
@@ -226,7 +244,9 @@ class MathVista(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), ('MathVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'MathVista evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -250,7 +270,8 @@ class MathVista(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
+                        'res']
 
             data['res'] = [ans[idx]['res'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
@@ -265,13 +286,20 @@ class MathVista(ImageBaseDataset):
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVerse_MINI': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv', # noqa
-        'MathVerse_MINI_Vision_Only': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
-        'MathVerse_MINI_Vision_Only_cot': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv', # noqa
-        'MathVerse_MINI_Vision_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv', # noqa
-        'MathVerse_MINI_Vision_Intensive': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv', # noqa
-        'MathVerse_MINI_Text_Lite': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv', # noqa
-        'MathVerse_MINI_Text_Dominant': 'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv', # noqa
+        'MathVerse_MINI':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
+        'MathVerse_MINI_Vision_Only':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'MathVerse_MINI_Vision_Only_cot':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'MathVerse_MINI_Vision_Dominant':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
+        'MathVerse_MINI_Vision_Intensive':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
+        'MathVerse_MINI_Text_Lite':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
+        'MathVerse_MINI_Text_Dominant':
+        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -312,8 +340,10 @@ class MathVerse(ImageBaseDataset):
 
         model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
-        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
-        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        storage_extract = eval_file.replace(f'.{suffix}',
+                                            f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}',
+                                             f'_{model}_extract.pkl')
         storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
         tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -321,7 +351,9 @@ class MathVerse(ImageBaseDataset):
         if not osp.exists(storage_extract):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), ('MathVerse evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'MathVerse evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -345,17 +377,22 @@ class MathVerse(ImageBaseDataset):
                 ans = load(tmp_file_extract)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log_extract'] == v['log_extract'] and ans[k]['extract'] == v['extract']
+                    assert ans[k]['log_extract'] == v['log_extract'] and ans[
+                        k]['extract'] == v['extract']
 
             data['extract'] = [ans[idx]['extract'] for idx in data['index']]
-            data['log_extract'] = [ans[idx]['log_extract'] for idx in data['index']]
+            data['log_extract'] = [
+                ans[idx]['log_extract'] for idx in data['index']
+            ]
             dump(data, storage_extract)
 
         # stage2: score the answer
         if not osp.exists(storage_score):
             data = load(storage_extract)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), ('MathVerse evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'MathVerse evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -379,10 +416,13 @@ class MathVerse(ImageBaseDataset):
                 ans = load(tmp_file_score)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k][
+                        'score'] == v['score']
 
             data['score'] = [ans[idx]['score'] for idx in data['index']]
-            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            data['log_score'] = [
+                ans[idx]['log_score'] for idx in data['index']
+            ]
             dump(data, storage_score)
 
         score = MathVerse_acc(storage_score)
@@ -394,8 +434,10 @@ class MathVerse(ImageBaseDataset):
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MathVision': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
-        'MathVision_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/MathVision_MINI.tsv'
+        'MathVision':
+        'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
+        'MathVision_MINI':
+        'https://opencompass.openxlab.space/utils/VLMEval/MathVision_MINI.tsv'
     }
     DATASET_MD5 = {
         'MathVision': '93f6de14f7916e598aa1b7165589831e',
@@ -419,7 +461,9 @@ class MathVision(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), ('MATH-Vision evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'MATH-Vision evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -443,7 +487,8 @@ class MathVision(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
+                        'res']
 
             data['res'] = [ans[idx]['res'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
@@ -458,20 +503,26 @@ class MathVision(ImageBaseDataset):
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'atomic_dataset': 'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
-        'electro_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
-        'mechanics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
-        'optics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
-        'quantum_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
-        'statistics_dataset':'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'atomic_dataset':
+        'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'electro_dataset':
+        'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'mechanics_dataset':
+        'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'optics_dataset':
+        'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'quantum_dataset':
+        'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'statistics_dataset':
+        'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
     }
     DATASET_MD5 = {
-        'atomic_dataset':'b927fae6bcc6163b0bd89041e4421c70',
-        'electro_dataset':'66db62cdbc468bb003e6d09592b94b59',
-        'mechanics_dataset':'11f287a18ccc6227bea15fa89f24de67',
-        'optics_dataset':'39ab9028ae4a33c06f78ce8618668172',
-        'quantum_dataset':'d2610f9938ad1e848259ccbcd5ac3acf',
-        'statistics_dataset':'78242aa2431a477782b5b3de1c18d633',
+        'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
+        'electro_dataset': '66db62cdbc468bb003e6d09592b94b59',
+        'mechanics_dataset': '11f287a18ccc6227bea15fa89f24de67',
+        'optics_dataset': '39ab9028ae4a33c06f78ce8618668172',
+        'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
+        'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
     }
 
     def build_prompt(self, line):
@@ -500,8 +551,7 @@ class Physics_yale(ImageBaseDataset):
             "E_1 = -13.6 eV\n"
             "ΔE = 13.6 - 3.4 = 10.2 eV\n"
             "\\[\n\\boxed{10.2\\ \\text{eV}}\n\\]\n\n"
-            f"Question: {line['question']}\nAnswer:"
-        )
+            f"Question: {line['question']}\nAnswer:")
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -531,7 +581,9 @@ class Physics_yale(ImageBaseDataset):
             data = load(eval_file)
             judge_kwargs['max_tokens'] = 4096
             model = build_judge(**judge_kwargs)
-            assert model.working(), ('Physics_yale evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'Physics_yale evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -556,7 +608,8 @@ class Physics_yale(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
+                        'res']
 
             data['res'] = [ans[idx]['res'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
@@ -571,9 +624,12 @@ class Physics_yale(ImageBaseDataset):
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
     DATASET_URL = {
-        'OlympiadBench': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
-        'OlympiadBench_EN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_EN.tsv',
-        'OlympiadBench_CN': 'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_CN.tsv'
+        'OlympiadBench':
+        'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
+        'OlympiadBench_EN':
+        'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_EN.tsv',
+        'OlympiadBench_CN':
+        'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench_CN.tsv'
     }
     DATASET_MD5 = {
         'OlympiadBench': '9735ae0f0299eae1e7d07f5a7feab914',
@@ -587,7 +643,8 @@ class OlympiadBench(ImageBaseDataset):
         tgt_path_z = []
         if isinstance(line['image'], list):
             for i in range(len(line['image'])):
-                tgt_path = osp.join(self.img_root, f"{line['index']}--{i + 1}.jpg")
+                tgt_path = osp.join(self.img_root,
+                                    f"{line['index']}--{i + 1}.jpg")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'][i], tgt_path)
                 tgt_path_z.append(tgt_path)
@@ -611,11 +668,12 @@ class OlympiadBench(ImageBaseDataset):
             if self.is_theorem_proving:
                 prompt = (
                     f"以下是中国{subject_content}竞赛中的证明题。请根据题目的要求，运用逻辑推理及常用定理证明题目中的命题。"
-                    "证明过程中使用的变量和公式请使用LaTeX格式表示。"
-                )
+                    "证明过程中使用的变量和公式请使用LaTeX格式表示。")
             else:
-                answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=True,
-                                                        multiple_answer=line['is_multiple_answer'])
+                answer_type_text = get_answer_type_text(
+                    line['answer_type'],
+                    is_chinese=True,
+                    multiple_answer=line['is_multiple_answer'])
                 if line['is_multiple_answer']:
                     multiple_answer_text = '\\boxed{用英文逗号连接的多个答案}'
                 else:
@@ -627,8 +685,7 @@ class OlympiadBench(ImageBaseDataset):
                 prompt = (
                     f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。'
                     f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”'
-                    f'显式给出结果{unit_text}。'
-                )
+                    f'显式给出结果{unit_text}。')
         else:
             subject_content = 'Math' if self.is_math else 'Physics'
             if self.is_theorem_proving:
@@ -647,8 +704,10 @@ class OlympiadBench(ImageBaseDataset):
                 if line['unit']:
                     multiple_answer_text += '(unit)'
                     unit_text = ', note that the unit of the answer should not be included in \\boxed{}'
-                answer_type_text = get_answer_type_text(line['answer_type'], is_chinese=False,
-                                                        multiple_answer=line['is_multiple_answer'])
+                answer_type_text = get_answer_type_text(
+                    line['answer_type'],
+                    is_chinese=False,
+                    multiple_answer=line['is_multiple_answer'])
                 prompt = (
                     f'The following is an open-ended problem from an International {subject_content} competition. '
                     f'{answer_type_text}Please calculate the answer according to the given requirements and '
@@ -660,8 +719,10 @@ class OlympiadBench(ImageBaseDataset):
         if self.is_math:
             input = make_input(prompt, line['question'])
         else:
-            if 'context' in line.keys() and str(line['context']) != 'nan':  # cannot be null
-                input = make_input(prompt, line['context'] + '\n' + line['question'])
+            if 'context' in line.keys() and str(
+                    line['context']) != 'nan':  # cannot be null
+                input = make_input(prompt,
+                                   line['context'] + '\n' + line['question'])
             else:
                 input = make_input(prompt, line['question'])
 
@@ -680,8 +741,10 @@ class OlympiadBench(ImageBaseDataset):
         suffix = eval_file.split('.')[-1]
         name_str1 = 'judge'
         name_str2 = 'score'
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str1}_result.xlsx')
-        score_file = eval_file.replace(f'.{suffix}', f'_{name_str2}_result.csv')
+        result_file = eval_file.replace(f'.{suffix}',
+                                        f'_{name_str1}_result.xlsx')
+        score_file = eval_file.replace(f'.{suffix}',
+                                       f'_{name_str2}_result.csv')
 
         if not osp.exists(result_file):
             data = load(eval_file)
@@ -691,7 +754,9 @@ class OlympiadBench(ImageBaseDataset):
                 line = i[1]
                 model_answer = line['prediction']
                 is_chinese = 'zh' in line['source']
-                model_answer = extract_answer(is_chinese, model_answer, is_deepseek=False)
+                model_answer = extract_answer(is_chinese,
+                                              model_answer,
+                                              is_deepseek=False)
                 answer_type = line['answer_type']
 
                 final_answer = line['final_answer'][2:-2]
@@ -702,11 +767,15 @@ class OlympiadBench(ImageBaseDataset):
                     if str(line['error']) != 'nan':
                         if ',' in line['error']:
                             precisions = line['error'].split(',')
-                            precisions = [float(p) if p else 1e-8 for p in precisions]
-                            judge_result = judger.judge(model_answer, final_answer, precisions)
+                            precisions = [
+                                float(p) if p else 1e-8 for p in precisions
+                            ]
+                            judge_result = judger.judge(
+                                model_answer, final_answer, precisions)
                         else:
                             precision = float(line['error'])
-                            judge_result = judger.judge(model_answer, final_answer, precision)
+                            judge_result = judger.judge(
+                                model_answer, final_answer, precision)
                     else:
                         judge_result = judger.judge(model_answer, final_answer)
                 scorez.append(judge_result)
@@ -717,9 +786,13 @@ class OlympiadBench(ImageBaseDataset):
         judge_file = load(result_file)
 
         if not osp.exists(score_file):
-            name_list = ['OE_MM_maths_en_COMP', 'OE_MM_maths_zh_CEE', 'OE_MM_maths_zh_COMP', 'OE_MM_physics_en_COMP',
-                         'OE_MM_physics_zh_CEE','OE_TO_maths_en_COMP', 'OE_TO_maths_zh_CEE', 'OE_TO_maths_zh_COMP',
-                         'OE_TO_physics_en_COMP', 'OE_TO_physics_zh_CEE']
+            name_list = [
+                'OE_MM_maths_en_COMP', 'OE_MM_maths_zh_CEE',
+                'OE_MM_maths_zh_COMP', 'OE_MM_physics_en_COMP',
+                'OE_MM_physics_zh_CEE', 'OE_TO_maths_en_COMP',
+                'OE_TO_maths_zh_CEE', 'OE_TO_maths_zh_COMP',
+                'OE_TO_physics_en_COMP', 'OE_TO_physics_zh_CEE'
+            ]
 
             sample_list = [[] for _ in range(len(name_list))]
             for i in judge_file.iterrows():
@@ -745,7 +818,7 @@ class OlympiadBench(ImageBaseDataset):
             labela = ['zh', 'en']
             labelb = ['maths', 'physics']
 
-            grain_list = [[x,y] for x in labela for y in labelb]
+            grain_list = [[x, y] for x in labela for y in labelb]
             for j in grain_list:
                 dict_name = j[0] + "_" + j[1]
                 correct_num = 0
@@ -785,7 +858,8 @@ class OlympiadBench(ImageBaseDataset):
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'LogicVista': 'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
+        'LogicVista':
+        'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
 
@@ -794,8 +868,14 @@ class LogicVista(ImageBaseDataset):
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
-        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        assert model in [
+            'exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'
+        ], model
+        name_str_map = {
+            'gpt-4-0125': 'gpt4',
+            'gpt-4-turbo': 'gpt4-turbo',
+            'gpt-4o-mini': 'gpt4o-mini'
+        }
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
@@ -803,11 +883,15 @@ class LogicVista(ImageBaseDataset):
         elif gpt_key_set():
             model = build_judge(**judge_kwargs)
             if not model.working():
-                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(
+                    'OPENAI API is not working properly, will use exact matching for evaluation'
+                )
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
         else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            warnings.warn(
+                'OPENAI_API_KEY is not set properly, will use exact matching for evaluation'
+            )
             model = None
 
         suffix = eval_file.split('.')[-1]
@@ -818,7 +902,9 @@ class LogicVista(ImageBaseDataset):
         if not osp.exists(storage) and model is not None:
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), ('LogicVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'LogicVista evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -842,7 +928,8 @@ class LogicVista(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res'] and ans[k]['hit'] == v['hit']
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
+                        'res'] and ans[k]['hit'] == v['hit']
 
             data['res'] = [ans[idx]['res'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
@@ -860,7 +947,8 @@ class LogicVista(ImageBaseDataset):
 class MME_CoT(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MME_CoT_TEST': 'https://huggingface.co/datasets/CaraJ/MME-CoT_VLMEvalKit/resolve/main/MME-CoT.tsv' # noqa
+        'MME_CoT_TEST':
+        'https://huggingface.co/datasets/CaraJ/MME-CoT_VLMEvalKit/resolve/main/MME-CoT.tsv'  # noqa
     }
     DATASET_MD5 = {
         'MME_CoT_TEST': 'a612dee0f2d702e01fe50267201302e0',
@@ -902,7 +990,10 @@ class MME_CoT(ImageBaseDataset):
                 if 'image_path' in line:
                     image_path_list = line['image_path']
                 else:
-                    image_path_list = [f"{line['index']}--{i + 1}.jpg" for i in range(len(line['image']))]
+                    image_path_list = [
+                        f"{line['index']}--{i + 1}.jpg"
+                        for i in range(len(line['image']))
+                    ]
                 for img, im_name in zip(line['image'], image_path_list):
                     path = osp.join(self.img_root, im_name)
                     if not read_ok(path):
@@ -933,7 +1024,8 @@ class MME_CoT(ImageBaseDataset):
             for cand in string.ascii_uppercase
             if cand in line and not pd.isna(line[cand])
         }
-        prompt = prompt + '\n' + '\n'.join([f'{key}. {item}' for key, item in options.items()])
+        prompt = prompt + '\n' + '\n'.join(
+            [f'{key}. {item}' for key, item in options.items()])
 
         # add cot prompt
         if os.environ.get('USE_COT_PROMPT', '1') == '1':
@@ -954,16 +1046,20 @@ class MME_CoT(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        print("\033[1;31;40m" + "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main" + "\033[0m")  # noqa: E501
-        dummy_result = dict(
-            dummy_result=0
-        )
+        print(
+            "\033[1;31;40m" +
+            "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main"
+            + "\033[0m")  # noqa: E501
+        dummy_result = dict(dummy_result=0)
         return pd.DataFrame(dummy_result, index=[0])
 
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = {'LLaVABench': 'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'}
+    DATASET_URL = {
+        'LLaVABench':
+        'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'
+    }
     DATASET_MD5 = {'LLaVABench': 'd382a093f749a697820d3dadd61c8428'}
 
     # It returns a DataFrame
@@ -984,12 +1080,19 @@ class LLaVABench(ImageBaseDataset):
         if not osp.exists(record_file):
             data = load(eval_file)
             lines = [data.iloc[i] for i in range(len(data))]
-            model = build_judge(temperature=0.2, system_prompt=system_prompt, **judge_kwargs)
-            assert model.working(), ('LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            model = build_judge(temperature=0.2,
+                                system_prompt=system_prompt,
+                                **judge_kwargs)
+            assert model.working(), (
+                'LLaVABench evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
 
             prompts = [build_prompt(line) for line in lines]
             tups = [(model, prompt) for prompt in prompts]
-            scores = track_progress_rich(LLaVABench_atomeval, tups, nproc=nproc, chunksize=nproc)
+            scores = track_progress_rich(LLaVABench_atomeval,
+                                         tups,
+                                         nproc=nproc,
+                                         chunksize=nproc)
             data['gpt4_score'] = [x[0] for x in scores]
             data['score'] = [x[1] for x in scores]
             dump(data, record_file)
@@ -1003,7 +1106,10 @@ class LLaVABench(ImageBaseDataset):
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
 
-    DATASET_URL = {'VGRPBench': 'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_100_samples.tsv'}  # noqa: E501
+    DATASET_URL = {
+        'VGRPBench':
+        'https://huggingface.co/datasets/VGRP-Bench/VGRP-Bench/resolve/main/data/vgrpbench_dataset_easy_100_samples.tsv'
+    }  # noqa: E501
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -1026,23 +1132,34 @@ class VGRPBench(ImageBaseDataset):
             data = load(eval_file)
             lines = [data.iloc[i] for i in range(len(data))]
 
-            system_prompts = [VGRPBench_get_system_prompt(line) for line in lines]
+            system_prompts = [
+                VGRPBench_get_system_prompt(line) for line in lines
+            ]
 
             models = [
-                build_judge(temperature=0.0, system_prompt=system_prompt, **judge_kwargs)
-                for system_prompt in system_prompts
+                build_judge(temperature=0.0,
+                            system_prompt=system_prompt,
+                            **judge_kwargs) for system_prompt in system_prompts
             ]
 
             prompts = [build_prompt(line) for line in lines]
 
-            tups = [(model, prompt, line) for model, prompt, line in zip(models, prompts, lines)]
+            tups = [(model, prompt, line)
+                    for model, prompt, line in zip(models, prompts, lines)]
 
             # Original parallel processing
-            scores = track_progress_rich(VGRPBench_atomeval, tups, nproc=nproc, chunksize=nproc)
+            scores = track_progress_rich(VGRPBench_atomeval,
+                                         tups,
+                                         nproc=nproc,
+                                         chunksize=nproc)
 
-            data['perception_correct'] = [x['perception_correct'] for x in scores]
+            data['perception_correct'] = [
+                x['perception_correct'] for x in scores
+            ]
             data['answer_correct'] = [x['answer_correct'] for x in scores]
-            data['number_of_samples'] = [x['number_of_samples'] for x in scores]
+            data['number_of_samples'] = [
+                x['number_of_samples'] for x in scores
+            ]
             dump(data, record_file)
 
         data = load(record_file)
@@ -1056,10 +1173,15 @@ class VGRPBench(ImageBaseDataset):
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'MMVet': 'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
-        'MMVet_Hard': 'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'MMVet':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
+        'MMVet_Hard':
+        'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
-    DATASET_MD5 = {'MMVet': '748aa6d4aa9d4de798306a63718455e3', 'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16'}
+    DATASET_MD5 = {
+        'MMVet': '748aa6d4aa9d4de798306a63718455e3',
+        'MMVet_Hard': '63a598819a936a2e77c410a78a21ff16'
+    }
 
     # It returns a DataFrame
     @classmethod
@@ -1074,7 +1196,9 @@ class MMVet(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=3, **judge_kwargs)
-            assert model.working(), ('MMVet evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'MMVet evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -1097,7 +1221,8 @@ class MMVet(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['score'] == v['score']
+                    assert ans[k]['log'] == v['log'] and ans[k]['score'] == v[
+                        'score']
             data['score'] = [ans[idx]['score'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
             dump(data, storage)
@@ -1112,7 +1237,10 @@ class MMVet(ImageBaseDataset):
 
 class MTVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = {'MTVQA_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/MTVQA_TEST.tsv'}
+    DATASET_URL = {
+        'MTVQA_TEST':
+        'https://opencompass.openxlab.space/utils/VLMEval/MTVQA_TEST.tsv'
+    }
     DATASET_MD5 = {'MTVQA_TEST': 'd87c17dbab934b7cd89c0a3c1c5657f4'}
 
     @classmethod
@@ -1122,7 +1250,8 @@ class MTVQADataset(ImageBaseDataset):
         data['prediction'] = [str(x) for x in data['prediction']]
         data['answer'] = [str(x) for x in data['answer']]
         if 'split' in data:
-            assert np.all([x.lower() == 'test' for x in data['split']]), 'We only support MTVQA_TEST for now. '
+            assert np.all([x.lower() == 'test' for x in data['split']
+                           ]), 'We only support MTVQA_TEST for now. '
         lt = len(data)
         category_scores = defaultdict(list)
         for i in range(lt):
@@ -1134,7 +1263,10 @@ class MTVQADataset(ImageBaseDataset):
             category_scores[cate].append(score)
             category_scores['Average'].append(score)
         # Calculate the average score for each category, the score is normalized to [0, 100]
-        category_averages = {category: np.mean(scores) * 100 for category, scores in category_scores.items()}
+        category_averages = {
+            category: np.mean(scores) * 100
+            for category, scores in category_scores.items()
+        }
 
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', '_acc.json')
@@ -1148,14 +1280,20 @@ class MTVQADataset(ImageBaseDataset):
         assert sum([x['type'] == 'text' for x in msgs]) == 1
         for item in msgs:
             if item['type'] == 'text':
-                item['value'] += '\nAnswer the question using a word or phrase in the language of the question.'
+                item[
+                    'value'] += '\nAnswer the question using a word or phrase in the language of the question.'
         return msgs
 
 
 class WildDocBenchmark(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = {'WildDoc': "https://huggingface.co/datasets/jingqun/wilddoc-vlmeval/resolve/main/WildDoc.tsv"}
-    DATASET_MD5 = {'WildDoc': '7b9a95e7ae26dad58be05685f59867aa',}
+    DATASET_URL = {
+        'WildDoc':
+        "https://huggingface.co/datasets/jingqun/wilddoc-vlmeval/resolve/main/WildDoc.tsv"
+    }
+    DATASET_MD5 = {
+        'WildDoc': '7b9a95e7ae26dad58be05685f59867aa',
+    }
 
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
@@ -1169,11 +1307,14 @@ class WildDocBenchmark(ImageBaseDataset):
             line = data.iloc[i]
             benchmark_name = line["index"].split("-")[0]
             if benchmark_name == "DocVQA":
-                DocVQA_df = pd.concat([DocVQA_df, pd.DataFrame([line])], ignore_index=True)
+                DocVQA_df = pd.concat(
+                    [DocVQA_df, pd.DataFrame([line])], ignore_index=True)
             elif benchmark_name == "ChartQA":
-                CharQA_df = pd.concat([CharQA_df, pd.DataFrame([line])], ignore_index=True)
+                CharQA_df = pd.concat(
+                    [CharQA_df, pd.DataFrame([line])], ignore_index=True)
             elif benchmark_name == "TableVQA":
-                TableVQA_df = pd.concat([TableVQA_df, pd.DataFrame([line])], ignore_index=True)
+                TableVQA_df = pd.concat(
+                    [TableVQA_df, pd.DataFrame([line])], ignore_index=True)
             else:
                 raise ValueError(f"Unknown benchmark name {benchmark_name}")
 
@@ -1188,7 +1329,8 @@ class WildDocBenchmark(ImageBaseDataset):
         lt = len(data)
         pool = mp.Pool(16)
         lines = [data.iloc[i] for i in range(lt)]
-        DocVQA_res = pool.map(partial(process_line_WildDoc, method='anls'), lines)
+        DocVQA_res = pool.map(partial(process_line_WildDoc, method='anls'),
+                              lines)
         hit = hit_calculate(DocVQA_res, "DocVQA")
         DocVQA_overall = np.mean(hit) * 100
         DocVQA_consistency_score = calculate_consistency_WildDoc(DocVQA_res)
@@ -1201,7 +1343,8 @@ class WildDocBenchmark(ImageBaseDataset):
         lt = len(data)
         pool = mp.Pool(16)
         lines = [data.iloc[i] for i in range(lt)]
-        ChartQA_res = pool.map(partial(process_line_WildDoc, method='relaxed_accuracy'), lines)
+        ChartQA_res = pool.map(
+            partial(process_line_WildDoc, method='relaxed_accuracy'), lines)
         hit = hit_calculate(ChartQA_res, "ChartQA")
         ChartQA_overall = np.mean(hit) * 100
         ChartQA_consistency_score = calculate_consistency_WildDoc(ChartQA_res)
@@ -1212,13 +1355,20 @@ class WildDocBenchmark(ImageBaseDataset):
         import pandas as pd
         from .utils.tablevqabench import evaluate_fintabnet, evaluate_tabfact, evaluate_wtq
 
-        data['prediction'] = data['prediction'].str.replace('^Answer: ', '', regex=True)
+        data['prediction'] = data['prediction'].str.replace('^Answer: ',
+                                                            '',
+                                                            regex=True)
         ##################
-        TableVQA_res = {"fintabnetqa": [], "vtabfact": [], "vwtq": [], "vwtq_syn": []}
+        TableVQA_res = {
+            "fintabnetqa": [],
+            "vtabfact": [],
+            "vwtq": [],
+            "vwtq_syn": []
+        }
         lt = len(data)
         for i in range(lt):
             line = data.iloc[i]
-            ret = {'index':line["index"]}
+            ret = {'index': line["index"]}
             ans = line['answer']
             pred = line["prediction"]
             from .utils.tablevqabench import fintabnet_normalize, tsv_unescape_list, to_value_list, check_denotation
@@ -1227,7 +1377,9 @@ class WildDocBenchmark(ImageBaseDataset):
             if subset == "fintabnetqa":
                 pred, preds = fintabnet_normalize(pred)
                 gt, gts = fintabnet_normalize(ans)
-                correct = 1 if gt == pred or any(_pred == _gt for _pred in preds for _gt in gts) else 0
+                correct = 1 if gt == pred or any(_pred == _gt
+                                                 for _pred in preds
+                                                 for _gt in gts) else 0
             elif subset == "vtabfact":
                 pred = pred.lower()
                 gt = ans
@@ -1249,7 +1401,8 @@ class WildDocBenchmark(ImageBaseDataset):
 
                 predicted_strings = tsv_unescape_list(pred)
                 predicted_values = to_value_list(predicted_strings)
-                correct = 1 if check_denotation(target_values, predicted_values) else 0
+                correct = 1 if check_denotation(target_values,
+                                                predicted_values) else 0
             else:
                 raise ValueError(f"Unknown benchmark name {benchmark_name}")
 
@@ -1258,8 +1411,12 @@ class WildDocBenchmark(ImageBaseDataset):
             ret["match"] = correct
             TableVQA_res[subset].append(ret)
 
-        TableVQA_overall = np.mean([np.mean(hit_calculate(x, "TableVQA")) for x in TableVQA_res.values()]) * 100
-        TableVQA_consistency_score = np.mean([calculate_consistency_WildDoc(x) for x in TableVQA_res.values()])
+        TableVQA_overall = np.mean([
+            np.mean(hit_calculate(x, "TableVQA"))
+            for x in TableVQA_res.values()
+        ]) * 100
+        TableVQA_consistency_score = np.mean(
+            [calculate_consistency_WildDoc(x) for x in TableVQA_res.values()])
 
         eval_results = {
             "DocVQA": {
@@ -1276,19 +1433,23 @@ class WildDocBenchmark(ImageBaseDataset):
             },
             # Overall
             "WildDoc": {
-                "Overall": np.mean([DocVQA_overall, ChartQA_overall, TableVQA_overall]),
-                "Consistency": np.mean([
-                    DocVQA_consistency_score, ChartQA_consistency_score, TableVQA_consistency_score
+                "Overall":
+                np.mean([DocVQA_overall, ChartQA_overall, TableVQA_overall]),
+                "Consistency":
+                np.mean([
+                    DocVQA_consistency_score, ChartQA_consistency_score,
+                    TableVQA_consistency_score
                 ])
             }
         }
 
         # 转换为长格式DataFrame
-        ret_df = pd.DataFrame([
-            {"Task": task, "Metric": metric, "Score": score}
-            for task, metrics in eval_results.items()
-            for metric, score in metrics.items()
-        ])
+        ret_df = pd.DataFrame([{
+            "Task": task,
+            "Metric": metric,
+            "Score": score
+        } for task, metrics in eval_results.items()
+                               for metric, score in metrics.items()])
         return ret_df
 
     # WildDoc adopts a custom prompt for each subset
@@ -1306,16 +1467,20 @@ class WildDocBenchmark(ImageBaseDataset):
                 if benchmark_name == "TableVQA":
                     split = index.split("-")[1]
                     if split == 'fintabnetqa':
-                        item['value'] = FINTABNETQA_PROMPT.format_map({'question': item['value']})
+                        item['value'] = FINTABNETQA_PROMPT.format_map(
+                            {'question': item['value']})
                     elif split == 'vtabfact':
-                        item['value'] = VTABFACT_PROMPT.format_map({'question': item['value']})
+                        item['value'] = VTABFACT_PROMPT.format_map(
+                            {'question': item['value']})
                     elif split == 'vwtq_syn' or split == 'vwtq':
-                        item['value'] = VWTQ_PROMPT.format_map({'question': item['value']})
+                        item['value'] = VWTQ_PROMPT.format_map(
+                            {'question': item['value']})
                     else:
                         raise ValueError(f"Unknown split {line['split']}")
                     print(item)
                 else:
-                    item['value'] += '\nAnswer the question using a single word or phrase.'
+                    item[
+                        'value'] += '\nAnswer the question using a single word or phrase.'
         print(item)
         return msgs
 
@@ -1323,7 +1488,8 @@ class WildDocBenchmark(ImageBaseDataset):
 class TableVQABench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'TableVQABench': 'https://pai-aigc-photog.oss-cn-hangzhou.aliyuncs.com/mentor-vil/datasets/tablevqa-bench.tsv'
+        'TableVQABench':
+        'https://pai-aigc-photog.oss-cn-hangzhou.aliyuncs.com/mentor-vil/datasets/tablevqa-bench.tsv'
     }
     DATASET_MD5 = {'TableVQABench': '2550adc61bdc82d8e62f3b003de7c62d'}
 
@@ -1338,7 +1504,9 @@ class TableVQABench(ImageBaseDataset):
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
 
-        data['prediction'] = data['prediction'].str.replace('^Answer: ', '', regex=True)
+        data['prediction'] = data['prediction'].str.replace('^Answer: ',
+                                                            '',
+                                                            regex=True)
         data_group = dict(tuple(data.groupby('split')))
         eval_result = {'split': [], 'average_scores': []}
         for split in ['fintabnetqa', 'vtabfact', 'vwtq', 'vwtq_syn']:
@@ -1350,7 +1518,8 @@ class TableVQABench(ImageBaseDataset):
             elif split == 'vwtq' or split == 'vwtq_syn':
                 split_eval_meta = evaluate_wtq(data_split, ['accuracy'])
             eval_result['split'].append(split)
-            eval_result['average_scores'].append(split_eval_meta['average_scores'])
+            eval_result['average_scores'].append(
+                split_eval_meta['average_scores'])
 
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
@@ -1366,11 +1535,14 @@ class TableVQABench(ImageBaseDataset):
         for item in msgs:
             if item['type'] == 'text':
                 if line['split'] == 'fintabnetqa':
-                    item['value'] = self.FINTABNETQA_PROMPT.format_map({'question': item['value']})
+                    item['value'] = self.FINTABNETQA_PROMPT.format_map(
+                        {'question': item['value']})
                 elif line['split'] == 'vtabfact':
-                    item['value'] = self.VTABFACT_PROMPT.format_map({'question': item['value']})
+                    item['value'] = self.VTABFACT_PROMPT.format_map(
+                        {'question': item['value']})
                 elif line['split'] == 'vwtq_syn' or line['split'] == 'vwtq':
-                    item['value'] = self.VWTQ_PROMPT.format_map({'question': item['value']})
+                    item['value'] = self.VWTQ_PROMPT.format_map(
+                        {'question': item['value']})
         return msgs
 
 
@@ -1382,7 +1554,8 @@ class CustomVQADataset(ImageBaseDataset):
 
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
+            if not osp.exists(local_path) or os.environ.get(
+                    'FORCE_LOCAL', None):
                 from ..tools import LOCALIZE
 
                 LOCALIZE(data_path, local_path)
@@ -1396,12 +1569,15 @@ class CustomVQADataset(ImageBaseDataset):
 class CRPE(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'CRPE_EXIST': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_EXIST.tsv',
-        'CRPE_RELATION': 'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_RELATION.tsv'
+        'CRPE_EXIST':
+        'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_EXIST.tsv',
+        'CRPE_RELATION':
+        'https://huggingface.co/datasets/petter12321/crpe_vlmevalkit/resolve/main/CRPE_RELATION.tsv'
     }
     DATASET_MD5 = {
         'CRPE_EXIST': '315584e23ac1ff7f8719ed3b7ad90f08',
-        'CRPE_RELATION': 'bad7094cde0b572288f4b119c2d0c656'}
+        'CRPE_RELATION': 'bad7094cde0b572288f4b119c2d0c656'
+    }
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -1460,16 +1636,14 @@ class CRPE(ImageBaseDataset):
         msgs = super().build_prompt(line)
         for msg in msgs:
             if msg['type'] == 'image':
-                msg['value'] = osp.join(osp.join(ROOT, 'images', self.dataset_name), msg['value'])
+                msg['value'] = osp.join(
+                    osp.join(ROOT, 'images', self.dataset_name), msg['value'])
         return msgs
 
 
 class QSpatial(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = {
-        'QSpatial_plus': '',
-        'QSpatial_scannet': ''
-    }
+    DATASET_URL = {'QSpatial_plus': '', 'QSpatial_scannet': ''}
 
     # NOTE: To evaluate Q-Spatial-ScanNet, you need to get the permission from ScanNet website
     # Once you get the permission, you can use the helper code here to download and extract necessary images:
@@ -1484,20 +1658,25 @@ class QSpatial(ImageBaseDataset):
             self.url + "system_prompt.txt",
             self.url + "spatial_prompt_single.txt",
             self.url + "spatial_prompt_steps.txt",
-            self.url + "standard_prompt.txt",
-            self.url + "zero_shot_prompt.txt"
+            self.url + "standard_prompt.txt", self.url + "zero_shot_prompt.txt"
         ]
         with tempfile.TemporaryDirectory() as temp_dir:
             for link in links:
                 tgt_path = os.path.join(temp_dir, link.split("/")[-1])
                 os.system(f"wget {link} -O {tgt_path}")
 
-            self.system_prompt = open(os.path.join(temp_dir, "system_prompt.txt")).read()
+            self.system_prompt = open(
+                os.path.join(temp_dir, "system_prompt.txt")).read()
             self._prompt_templates = dict(
-                spatial_prompt_single=open(os.path.join(temp_dir, "spatial_prompt_single.txt")).read(),
-                spatial_prompt_steps=open(os.path.join(temp_dir, "spatial_prompt_steps.txt")).read(),
-                standard_prompt=open(os.path.join(temp_dir, "standard_prompt.txt")).read(),
-                zero_shot_prompt=open(os.path.join(temp_dir, "zero_shot_prompt.txt")).read(),
+                spatial_prompt_single=open(
+                    os.path.join(temp_dir,
+                                 "spatial_prompt_single.txt")).read(),
+                spatial_prompt_steps=open(
+                    os.path.join(temp_dir, "spatial_prompt_steps.txt")).read(),
+                standard_prompt=open(
+                    os.path.join(temp_dir, "standard_prompt.txt")).read(),
+                zero_shot_prompt=open(
+                    os.path.join(temp_dir, "zero_shot_prompt.txt")).read(),
             )
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -1505,7 +1684,8 @@ class QSpatial(ImageBaseDataset):
         from jinja2.sandbox import SandboxedEnvironment
         text_prompt_template = self._prompt_templates["spatial_prompt_single"]
         env = SandboxedEnvironment()
-        text_prompt = env.from_string(text_prompt_template).render(question=line["question"])
+        text_prompt = env.from_string(text_prompt_template).render(
+            question=line["question"])
         tgt_path = self.dump_image(line)
 
         msgs = []
@@ -1514,7 +1694,8 @@ class QSpatial(ImageBaseDataset):
         else:
             msgs = [dict(type='image', value=tgt_path)]
 
-        msgs.append(dict(type='text', value=f"{self.system_prompt}\n{text_prompt}"))
+        msgs.append(
+            dict(type='text', value=f"{self.system_prompt}\n{text_prompt}"))
         return msgs
 
     # Given the dataset name, return the dataset as a pandas dataframe, can override
@@ -1523,7 +1704,8 @@ class QSpatial(ImageBaseDataset):
         import pandas as pd
         from datasets import load_dataset
 
-        hf_dataset = load_dataset("andrewliao11/Q-Spatial-Bench", split=dataset)
+        hf_dataset = load_dataset("andrewliao11/Q-Spatial-Bench",
+                                  split=dataset)
         df = hf_dataset.to_pandas()
 
         df.reset_index(drop=True, inplace=True)
@@ -1533,9 +1715,15 @@ class QSpatial(ImageBaseDataset):
 
         if dataset == "QSpatial_scannet":
             df = df.drop(columns=["image"])
-            df["image"] = [Image.open(os.path.join(self.qspatial_root, image_path)) for image_path in df["image_path"]]
+            df["image"] = [
+                Image.open(os.path.join(self.qspatial_root, image_path))
+                for image_path in df["image_path"]
+            ]
         else:
-            df["image"] = [Image.open(io.BytesIO(image_dict["bytes"])) for image_dict in df["image"]]
+            df["image"] = [
+                Image.open(io.BytesIO(image_dict["bytes"]))
+                for image_dict in df["image"]
+            ]
 
         df["image"] = [encode_image_to_base64(image) for image in df["image"]]
         return df
@@ -1613,7 +1801,9 @@ class QSpatial(ImageBaseDataset):
             if not osp.exists(storage):
                 model = build_judge(max_tokens=128, **judge_kwargs)
 
-                assert model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+                assert model.working(), (
+                    'Evaluation requires a working OPENAI API\n' +
+                    DEBUG_MESSAGE)
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
                 tups = [(model, line) for line in lines]
@@ -1637,7 +1827,8 @@ class QSpatial(ImageBaseDataset):
                     ans = load(tmp_file)
                     for k, v in zip(indices, new_results):
                         assert k in ans
-                        assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                        assert ans[k]['log'] == v['log'] and ans[k][
+                            'res'] == v['res']
 
                 data['res'] = [ans[idx]['res'] for idx in data['index']]
                 data['log'] = [ans[idx]['log'] for idx in data['index']]
@@ -1691,10 +1882,16 @@ class QSpatial(ImageBaseDataset):
         }
         for question_type in set(data["question_type"]):
             filtered_data = data[data["question_type"] == question_type]
-            delta_2_per_question_type = filtered_data["eval_score_delta_2"].mean()
-            delta_1_point_5_per_question_type = filtered_data["eval_score_delta_1_point_5"].mean()
-            final_score_dict.update({f"{question_type}_delta_2": delta_2_per_question_type})
-            final_score_dict.update({f"{question_type}_delta_1_point_5": delta_1_point_5_per_question_type})
+            delta_2_per_question_type = filtered_data[
+                "eval_score_delta_2"].mean()
+            delta_1_point_5_per_question_type = filtered_data[
+                "eval_score_delta_1_point_5"].mean()
+            final_score_dict.update(
+                {f"{question_type}_delta_2": delta_2_per_question_type})
+            final_score_dict.update({
+                f"{question_type}_delta_1_point_5":
+                delta_1_point_5_per_question_type
+            })
 
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
@@ -1705,15 +1902,19 @@ class MMNIAH(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MM_NIAH_VAL':
-            'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/MM_NIAH_VAL.tsv',
-        'MM_NIAH_TEST':
-            ['https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-aa',
-             'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ab',
-             'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ac',
-             'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ad',
-             'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ae']}
-    DATASET_MD5 = {'MM_NIAH_VAL': '27e5a8c3cef7746cb38f89cd86c474c5',
-                   'MM_NIAH_TEST': 'f490eb2a43096307465fe9e7ef13497c'}
+        'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/MM_NIAH_VAL.tsv',
+        'MM_NIAH_TEST': [
+            'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-aa',
+            'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ab',
+            'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ac',
+            'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ad',
+            'https://huggingface.co/datasets/petter12321/MM-NIAH-VLMEvalKit/resolve/main/part-ae'
+        ]
+    }
+    DATASET_MD5 = {
+        'MM_NIAH_VAL': '27e5a8c3cef7746cb38f89cd86c474c5',
+        'MM_NIAH_TEST': 'f490eb2a43096307465fe9e7ef13497c'
+    }
 
     def prepare_tsv(self, url, file_md5=None):
         import os
@@ -1722,18 +1923,22 @@ class MMNIAH(ImageBaseDataset):
         update_flag = False
         file_name = 'MM_NIAH_VAL.tsv' if 'MM_NIAH_VAL' in url else 'MM_NIAH_TEST.tsv'
         data_path = osp.join(data_root, file_name)
-        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
+        if osp.exists(data_path) and (file_md5 is None
+                                      or md5(data_path) == file_md5):
             pass
         elif file_name == 'MM_NIAH_TEST.tsv':
             warnings.warn('The dataset tsv is not downloaded')
             for i in range(len(url)):
-                if osp.exists(osp.join(data_root, 'part-a' + chr(ord('a') + i))):
+                if osp.exists(osp.join(data_root,
+                                       'part-a' + chr(ord('a') + i))):
                     print('part_a' + chr(ord('a') + i) + ' is existed')
                     continue
                 download_file(url[i], data_path)
             file_prefix = 'part-'
             output_file = data_path
-            split_files = sorted([f for f in os.listdir(data_root) if f.startswith(file_prefix)])
+            split_files = sorted([
+                f for f in os.listdir(data_root) if f.startswith(file_prefix)
+            ])
             with open(output_file, 'wb') as outfile:
                 # 逐个读取每个拆分文件并写入到输出文件
                 for filename in split_files:
@@ -1747,7 +1952,8 @@ class MMNIAH(ImageBaseDataset):
 
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+            if not osp.exists(local_path) or os.environ.get(
+                    'FORCE_LOCAL', None) or update_flag:
                 from ..tools import LOCALIZE
                 LOCALIZE(data_path, local_path)
             data_path = local_path
@@ -1801,10 +2007,13 @@ class MMNIAH(ImageBaseDataset):
             MMNIAH_num[category] += 1
             MMNIAH_num['total'] += 1
 
-        for category in ['find-image', 'count-text', 'find-text',
-                         'infer-choose', 'count-image', 'visual-reasoning', 'total']:
+        for category in [
+                'find-image', 'count-text', 'find-text', 'infer-choose',
+                'count-image', 'visual-reasoning', 'total'
+        ]:
             if MMNIAH_num[category] != 0:
-                final_score_dict[category] = MMNIAH_score[category] / MMNIAH_num[category]
+                final_score_dict[
+                    category] = MMNIAH_score[category] / MMNIAH_num[category]
             else:
                 final_score_dict[category] = None
 
@@ -1863,7 +2072,11 @@ class MMNIAH(ImageBaseDataset):
                 msgs.append(dict(type='text', value=context[i]))
             else:
                 ROOT = LMUDataRoot()
-                msgs.append(dict(type='image', value=osp.join(osp.join(ROOT, 'images', self.dataset_name), context[i])))
+                msgs.append(
+                    dict(type='image',
+                         value=osp.join(
+                             osp.join(ROOT, 'images', self.dataset_name),
+                             context[i])))
         for element in msgs:
             if element['value'] == '':
                 msgs.remove(element)
@@ -1874,8 +2087,10 @@ class MMSci_Captioning(ImageBaseDataset):
 
     TYPE = 'MMSci_Captioning'
     DATASET_URL = {
-        'MMSci_DEV_Captioning_image_only': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
-        'MMSci_DEV_Captioning_with_abs': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_with_abs.tsv'  # noqa: E501
+        'MMSci_DEV_Captioning_image_only':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_image_only.tsv',  # noqa: E501
+        'MMSci_DEV_Captioning_with_abs':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_Captioning_with_abs.tsv'  # noqa: E501
     }
 
     DATASET_MD5 = {
@@ -1884,13 +2099,15 @@ class MMSci_Captioning(ImageBaseDataset):
     }
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmsci import (
-            get_all_metrics_for_g_eval_score, get_all_metrics_for_reference_based_metrics,
-            merge_rating, fact_score_generate
-        )
-        refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
-        g_eval_metrics_output_file = eval_file.replace('.xlsx', '_g_eval_metrics.xlsx')
-        fact_score_metrics_output_file = eval_file.replace('.xlsx', '_fact_score.xlsx')
+        from .utils.mmsci import (get_all_metrics_for_g_eval_score,
+                                  get_all_metrics_for_reference_based_metrics,
+                                  merge_rating, fact_score_generate)
+        refer_based_metrics_output_file = eval_file.replace(
+            '.xlsx', '_reference_based_metrics.xlsx')
+        g_eval_metrics_output_file = eval_file.replace('.xlsx',
+                                                       '_g_eval_metrics.xlsx')
+        fact_score_metrics_output_file = eval_file.replace(
+            '.xlsx', '_fact_score.xlsx')
 
         # calculate reference-based metrics
         if not osp.exists(refer_based_metrics_output_file):
@@ -1915,13 +2132,15 @@ class MMSci_Captioning(ImageBaseDataset):
             if isinstance(references[0], str):
                 references = [[r] for r in references]
 
-            reference_based_metrics_file = eval_file.replace('.xlsx', '_reference_based_metrics.pkl')
+            reference_based_metrics_file = eval_file.replace(
+                '.xlsx', '_reference_based_metrics.pkl')
             existing_data = get_all_metrics_for_reference_based_metrics(
-                references, candidates, image_id_list, reference_based_metrics_file
-            )
+                references, candidates, image_id_list,
+                reference_based_metrics_file)
             for idx, item in data.iterrows():
                 reference_based_metrics = str(existing_data[item["image_id"]])
-                data.loc[idx, 'reference_based_metrics'] = reference_based_metrics
+                data.loc[idx,
+                         'reference_based_metrics'] = reference_based_metrics
             dump(data, refer_based_metrics_output_file)
 
         # calculate g-eval metrics
@@ -1962,13 +2181,17 @@ class MMSci_Captioning(ImageBaseDataset):
             assert model in ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
             judge_model = build_judge(model=model, **judge_kwargs)
 
-            assert judge_model.working(), ('Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert judge_model.working(), (
+                'Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
             suffix = '.' + eval_file.split('.')[-1]
             tmp_file = eval_file.replace(suffix, f'_{model}_G_eval.pkl')
 
             tmp_result = get_all_metrics_for_g_eval_score(
-                references, candidates, evaluator=judge_model, tmp_file=tmp_file, nproc=nproc
-            )
+                references,
+                candidates,
+                evaluator=judge_model,
+                tmp_file=tmp_file,
+                nproc=nproc)
 
             indices = range(len(references))
             image_id_dict = {}
@@ -1980,21 +2203,23 @@ class MMSci_Captioning(ImageBaseDataset):
                 data.loc[idx, 'g_eval_metrics'] = g_eval_metrics
             dump(data, g_eval_metrics_output_file)
 
-        rating = merge_rating(
-            refer_based_metrics_output_file,
-            g_eval_metrics_output_file,
-            fact_score_metrics_output_file
-        )
+        rating = merge_rating(refer_based_metrics_output_file,
+                              g_eval_metrics_output_file,
+                              fact_score_metrics_output_file)
         dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
         return rating
 
 
 class TDBenchGrounding(ImageVQADataset):
     DATASET_URL = {
-        'tdbench_grounding_rot0': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot0.tsv',  # noqa: E501
-        'tdbench_grounding_rot90': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot90.tsv',  # noqa: E501
-        'tdbench_grounding_rot180': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot180.tsv',  # noqa: E501
-        'tdbench_grounding_rot270': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot270.tsv',  # noqa: E501
+        'tdbench_grounding_rot0':
+        'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot0.tsv',  # noqa: E501
+        'tdbench_grounding_rot90':
+        'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot90.tsv',  # noqa: E501
+        'tdbench_grounding_rot180':
+        'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot180.tsv',  # noqa: E501
+        'tdbench_grounding_rot270':
+        'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_grounding_rot270.tsv',  # noqa: E501
     }
 
     DATASET_MD5 = {
@@ -2008,7 +2233,8 @@ class TDBenchGrounding(ImageVQADataset):
         from .utils.tdbench import evaluate_bbox, extract_bbox_from_string, rotational_eval
         suffix = eval_file.split('.')[-1]
         method = judge_kwargs.get('model', 'centroid')
-        assert method in ['centroid', 'iou'], '--judge should be either centroid or iou'
+        assert method in ['centroid',
+                          'iou'], '--judge should be either centroid or iou'
 
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
@@ -2017,7 +2243,8 @@ class TDBenchGrounding(ImageVQADataset):
 
         scores = []
 
-        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+        for idx, (pred, ans,
+                  index) in enumerate(zip(predictions, answers, indexes)):
             try:
                 pred_bbox = extract_bbox_from_string(pred)
                 gt_bbox = extract_bbox_from_string(ans)
@@ -2025,7 +2252,9 @@ class TDBenchGrounding(ImageVQADataset):
                 score = evaluate_bbox(pred_bbox, gt_bbox, method)
                 scores.append(score)
             except Exception as e:
-                print(f"Error calculating {method} for index {index}. Marking as incorrect: {e}")
+                print(
+                    f"Error calculating {method} for index {index}. Marking as incorrect: {e}"
+                )
                 scores.append(0.0)
 
         avg_score = sum(scores) / len(scores) if scores else 0
@@ -2036,18 +2265,18 @@ class TDBenchGrounding(ImageVQADataset):
         data.to_excel(result_file, index=False)
 
         metric_name = 'Average Centroid Containment' if method == 'centroid' else 'Average IoU'
-        summary_scores = {
-            metric_name: avg_score,
-            'Total Samples': len(scores)
-        }
+        summary_scores = {metric_name: avg_score, 'Total Samples': len(scores)}
 
-        score_df = pd.DataFrame(list(summary_scores.items()), columns=['Metric', 'Score'])
+        score_df = pd.DataFrame(list(summary_scores.items()),
+                                columns=['Metric', 'Score'])
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         score_df.to_csv(score_file, index=False)
         re_result = rotational_eval(result_file)
         if method == 'centroid' and re_result is not None and re_result is not False:
-            file_addr = osp.abspath(result_file.split('_rot')[0] + '_REresult.csv')
-            link_addr = osp.join(osp.dirname(osp.dirname(result_file)), osp.basename(file_addr))
+            file_addr = osp.abspath(
+                result_file.split('_rot')[0] + '_REresult.csv')
+            link_addr = osp.join(osp.dirname(osp.dirname(result_file)),
+                                 osp.basename(file_addr))
             re_result.to_csv(file_addr, index=True)
             print(tabulate(re_result, headers="keys"))
             if osp.exists(link_addr) or osp.islink(link_addr):
@@ -2059,7 +2288,7 @@ class TDBenchGrounding(ImageVQADataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
         obj = line['question']
-        question = f'\nPlease output the coordinates of the {obj} in the image in the format [x1, y1, x2, y2]. Do not include any additional text. Respond with relative coordinates between 0 and 1, with top left corner (0, 0), top right (1, 0) and bottom right (1, 1).'   # noqa: E501
+        question = f'\nPlease output the coordinates of the {obj} in the image in the format [x1, y1, x2, y2]. Do not include any additional text. Respond with relative coordinates between 0 and 1, with top left corner (0, 0), top right (1, 0) and bottom right (1, 1).'  # noqa: E501
         tgt_path = self.dump_image(line)
 
         msgs = []
@@ -2069,7 +2298,10 @@ class TDBenchGrounding(ImageVQADataset):
 
 
 class CountBenchQA(ImageVQADataset):
-    DATASET_URL = {'CountBenchQA': 'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'}
+    DATASET_URL = {
+        'CountBenchQA':
+        'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'
+    }
     DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
 
     def build_prompt(self, line):
@@ -2096,11 +2328,12 @@ class CountBenchQA(ImageVQADataset):
         accuracy = correct_count / total_count if total_count > 0 else 0
         return {'accuracy': accuracy}
 
-      
+
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'OCR_Reasoning': 'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
+        'OCR_Reasoning':
+        'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
     }
     DATASET_MD5 = {'OCR_Reasoning': 'cf95ace31742170cf669ef45e0dae267'}
 
@@ -2118,7 +2351,9 @@ class OCR_Reasoning(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=1024, **judge_kwargs)
-            assert model.working(), ('OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            assert model.working(), (
+                'OCRReasoning evaluation requires a working OPENAI API\n' +
+                DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -2142,11 +2377,14 @@ class OCR_Reasoning(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
+                        'res']
 
             data['res'] = [ans[idx]['res'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
-            data['reason_score'] = [ans[idx]['reason_score'] for idx in data['index']]
+            data['reason_score'] = [
+                ans[idx]['reason_score'] for idx in data['index']
+            ]
             dump(data, storage)
         score = OcrR_acc(storage)
         score_pth = storage.replace('.xlsx', '_score.csv')
@@ -2159,9 +2397,11 @@ class OCR_Reasoning(ImageBaseDataset):
         for item in msgs:
             if item['type'] == 'text':
                 if 'English' in line['language']:
-                    item['value'] += f"\nSolve the complex problem through step-by-step reasoning. The composition of the final answer should be: '{line['format']}'." # noqa e501
+                    item[
+                        'value'] += f"\nSolve the complex problem through step-by-step reasoning. The composition of the final answer should be: '{line['format']}'."  # noqa e501
                 else:
-                    item['value'] += f"\n通过一步一步的推理解决这个复杂的问题。最后的回答的组成应该是: '{line['format']}'."
+                    item[
+                        'value'] += f"\n通过一步一步的推理解决这个复杂的问题。最后的回答的组成应该是: '{line['format']}'."
         return msgs
 
 
@@ -2171,37 +2411,51 @@ class PhyX(ImageBaseDataset):
     def __init__(self, dataset='PhyX_mini', skip_noimg=True):
         if dataset != 'PhyX_mini':
             import warnings
-            warnings.warn('To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.')
+            warnings.warn(
+                'To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.'
+            )
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
 
     DATASET_URL = {
-        'PhyX_mini': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv', # noqa
-        'PhyX_mini_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv', # noqa
-        'PhyX_mini_MC': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv', # noqa
-        'PhyX_mini_MC_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv', # noqa
-        'PhyX_mini_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv', # noqa
-        'PhyX_mini_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv', # noqa
-        'PhyX_mini_TL': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv', # noqa
-        'PhyX_mini_TL_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv', # noqa
-        'PhyX_mini_TL_MC': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv', # noqa
-        'PhyX_mini_TL_MC_IMG': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv', # noqa
-        'PhyX_mini_TL_MC_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv', # noqa
-        'PhyX_mini_TL_SIMPLY': 'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv', # noqa
+        'PhyX_mini':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv',  # noqa
+        'PhyX_mini_IMG':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv',  # noqa
+        'PhyX_mini_MC':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv',  # noqa
+        'PhyX_mini_MC_IMG':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv',  # noqa
+        'PhyX_mini_MC_SIMPLY':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv',  # noqa
+        'PhyX_mini_SIMPLY':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv',  # noqa
+        'PhyX_mini_TL':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv',  # noqa
+        'PhyX_mini_TL_IMG':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv',  # noqa
+        'PhyX_mini_TL_MC':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv',  # noqa
+        'PhyX_mini_TL_MC_IMG':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv',  # noqa
+        'PhyX_mini_TL_MC_SIMPLY':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv',  # noqa
+        'PhyX_mini_TL_SIMPLY':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv',  # noqa
     }
 
     DATASET_MD5 = {
-        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42', # noqa
-        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300', # noqa
-        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa', # noqa
-        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b', # noqa
-        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d', # noqa
-        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c', # noqa
-        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8', # noqa
-        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4', # noqa
-        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2', # noqa
-        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60', # noqa
-        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852', # noqa
-        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3', # noqa
+        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42',  # noqa
+        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300',  # noqa
+        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa',  # noqa
+        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b',  # noqa
+        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d',  # noqa
+        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c',  # noqa
+        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8',  # noqa
+        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4',  # noqa
+        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2',  # noqa
+        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60',  # noqa
+        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852',  # noqa
+        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3',  # noqa
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -2292,8 +2546,7 @@ class PhyX(ImageBaseDataset):
                 model = build_judge(max_tokens=128, **judge_kwargs)
                 assert model.working(), (
                     "PhyX evaluation requires a working API. We use Deepseek-V3 provided by SiliconFlow. "
-                    "please set SiliconFlow_API_KEY.\n"
-                )
+                    "please set SiliconFlow_API_KEY.\n")
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
                 tups = [(model, line) for line in lines]
@@ -2327,15 +2580,17 @@ class PhyX(ImageBaseDataset):
                     ans = load(tmp_file)
                     for k, v in zip(indices, new_results):
                         assert k in ans
-                        assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                        assert ans[k]['log'] == v['log'] and ans[k][
+                            'res'] == v['res']
 
                 data['res'] = [ans[idx]['res'] for idx in data['index']]
                 data['log'] = [ans[idx]['log'] for idx in data['index']]
-                data['extracted'] = [ans[idx]['extracted'] for idx in data['index']]
+                data['extracted'] = [
+                    ans[idx]['extracted'] for idx in data['index']
+                ]
                 dump(data, storage)
 
             score = PhyX_acc(storage)
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
             return score
-
