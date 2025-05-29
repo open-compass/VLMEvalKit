@@ -138,11 +138,6 @@ def cn_string(s):
         return True
     return False
 
-try:
-    import decord
-except ImportError:
-    pass
-
 def timestr(granularity='second'):
     s = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     assert granularity in ['second', 'minute', 'hour', 'day']

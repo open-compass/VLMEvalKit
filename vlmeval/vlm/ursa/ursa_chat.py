@@ -165,6 +165,6 @@ class UrsaChat(BaseModel):
         )
         outputs = self.model.generate(**inputs, **generation_config)
         response = self.image_processor.decode(outputs[0], skip_special_tokens=True).split('assistant\n')[-1]
-        if dataset in ['MathVista_MINI', 'MathVista', 'DynaMath', 'MathVision']:
+        if dataset in ['MathVista_MINI', 'MathVista', 'DynaMath', 'MathVision', 'LogicVista', 'WeMath', 'MathVerse_MINI_Vision_Only', 'MathVerse']:
             response = 'Answer: {}'.format(self.extract_answer(response))
         return response

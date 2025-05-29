@@ -7,7 +7,6 @@ from ..utils import track_progress_rich
 import torchvision.transforms as T
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from decord import VideoReader, cpu
 import imageio
 import cv2
 import zipfile
@@ -213,6 +212,7 @@ Based on your observations, select the best option that accurately addresses the
         return frame_indices
 
     def read_video(self, video_path, bound=None):
+        from decord import VideoReader, cpu
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         max_frame = len(vr) - 1
         fps = float(vr.get_avg_fps())
@@ -342,7 +342,6 @@ Based on your observations, select the best option that accurately addresses the
 
         question, answer = self.qa_template(line)
         message = [dict(type='text', value=self.SYS, role='system')]
-        message.append(dict(type='text', value=question))
         if video_llm:
             new_video_path = self.load_into_video_and_process(line)
             message.append(dict(type='video', value=new_video_path))
@@ -350,6 +349,7 @@ Based on your observations, select the best option that accurately addresses the
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         message.append(dict(type='text', value='\nOnly give the best option.'))
         message.append(dict(type='text', value='Best option:(', role='assistant'))
         return message
@@ -535,6 +535,7 @@ Based on your observations, select the best option that accurately addresses the
         return frame_indices
 
     def read_video(self, video_path):
+        from decord import VideoReader, cpu
         vr = VideoReader(video_path, ctx=cpu(0), num_threads=1)
         max_frame = len(vr) - 1
 
@@ -585,7 +586,6 @@ Based on your observations, select the best option that accurately addresses the
 
         question, answer = self.qa_template(line)
         message = [dict(type='text', value=self.SYS, role='system')]
-        message.append(dict(type='text', value=question))
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
         if video_llm:
             message.append(dict(type='video', value=video_path))
@@ -593,6 +593,7 @@ Based on your observations, select the best option that accurately addresses the
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         message.append(dict(type='text', value='\nOnly give the best option.'))
         message.append(dict(type='text', value='Best option:(', role='assistant'))
         return message

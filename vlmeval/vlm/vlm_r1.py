@@ -188,7 +188,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         )
 
         generated_ids = [
-            output_ids[len(input_ids) :]
+            output_ids[len(input_ids):]
             for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
         ]
         out = self.processor.tokenizer.batch_decode(

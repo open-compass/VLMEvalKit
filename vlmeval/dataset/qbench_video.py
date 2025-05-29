@@ -9,7 +9,6 @@ from ..utils import track_progress_rich
 import torchvision.transforms as T
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from decord import VideoReader, cpu
 import pandas as pd
 import imageio
 import cv2
@@ -102,6 +101,7 @@ Please do not add any other answers beyond this.
     def save_video_frames(self, line):
         video = line['video']
         vid_path = os.path.normpath(os.path.join(self.data_root, line['video_path']))
+        import decord
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),
@@ -256,6 +256,7 @@ Please analyze these frames and provide a detailed and accurate answer from the 
     def save_video_frames(self, line):
         video = line['video']
         vid_path = os.path.normpath(os.path.join(self.data_root, line['video_path']))
+        import decord
         vid = decord.VideoReader(vid_path)
         video_info = {
             'fps': vid.get_avg_fps(),

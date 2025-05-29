@@ -1,3 +1,4 @@
+from datetime import date
 import warnings
 
 from .image_base import ImageBaseDataset
@@ -108,6 +109,11 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
         'AI2D_MINI': 'https://opencompass.openxlab.space/utils/TEST/AI2D_MINI.tsv',
+        "VStarBench": "https://huggingface.co/datasets/xjtupanda/VStar_Bench/resolve/main/VStarBench.tsv",
+        'PathMMU_VAL': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_VAL.tsv',
+        'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
+        'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
+        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
     }
 
     DATASET_MD5 = {
@@ -164,6 +170,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '71c82f81920a84526803574f719099a7',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
+        "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
+        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -1481,36 +1489,6 @@ class VisuLogic(ImageMCQDataset):
         return combine_score
 
 
-class CMMU_MCQ(ImageMCQDataset):
-    DATASET_URL = {
-        'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
-    }
-
-    DATASET_MD5 = {
-        'CMMU_MCQ': None,
-    }
-
-
-class PathMMU_VAL(ImageMCQDataset):
-    DATASET_URL = {
-        'PathMMU_VAL': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_VAL.tsv',
-    }
-
-    DATASET_MD5 = {
-        'PathMMU_VAL': None,
-    }
-
-
-class PathMMU_TEST(ImageMCQDataset):
-    DATASET_URL = {
-        'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
-    }
-
-    DATASET_MD5 = {
-        'PathMMU_TEST': None,
-    }
-
-
 class TDBench(ImageMCQDataset):
     DATASET_URL = {
         'tdbench_rot0': 'https://huggingface.co/datasets/Columbia-ICSL/TDBench/resolve/main/tdbench_rot0.tsv',
@@ -1647,17 +1625,6 @@ class MicroBench(ImageMCQDataset):
         # 合并所有数据
         data = pd.concat(dfs, ignore_index=True)
         return data
-
-
-class MicroVQA(ImageMCQDataset):
-
-    DATASET_URL = {
-        'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
-    }
-
-    DATASET_MD5 = {
-        'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
-    }
 
 
 class OmniMedVQA(ImageMCQDataset):
@@ -1844,3 +1811,92 @@ directly state the correct option content. Do not give any explanation.
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
+
+
+class VLMBlind(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'VLMBlind': 'http://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
+    }
+    DATASET_MD5 = {
+        'VLMBlind': 'e0f960236afe08f9fa48e8ccc908b2a9',
+    }
+
+    def extract_content_in_braces(self, input_str):
+        import re
+        pattern = r'\{(.*?)\}'
+        match = re.search(pattern, input_str)
+        if match:
+            return match.group(1)
+        else:
+            return ""
+
+    def compare_string_with_values(self, input_str, target_values):
+        import re
+        try:
+            target_nums = [int(x.strip()) for x in target_values.split(',')]
+            if len(target_nums) != 2:
+                return False
+        except Exception:
+            return False
+
+        rows_match = re.search(r'[Rr]ows?(?:[^{}]*)\{(\d+)\}', input_str)
+        cols_match = re.search(r'[Cc]olumns?(?:[^{}]*)\{(\d+)\}', input_str)
+
+        if rows_match and cols_match:
+            input_nums = [int(rows_match.group(1)), int(cols_match.group(1))]
+            return input_nums == target_nums
+
+        pattern2 = r'\((\d+),\s*(\d+)\)'
+        match2 = re.search(pattern2, input_str)
+        if match2:
+            input_nums = [int(match2.group(1)), int(match2.group(2))]
+            return input_nums == target_nums
+        return False
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        task_stats = {}
+
+        for index, data_item in data.iterrows():
+            task = data_item["task"]
+            if task not in task_stats:
+                task_stats[task] = {'correct': 0, 'total': 0}
+            task_stats[task]['total'] += 1
+            if data_item["task"] == "Subway Connections":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Nested Squares":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Line Plot Intersections":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Touching Circles":
+                if str.lower(data_item["answers"]) in str.lower(data_item["prediction"]):
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Counting Grid - Word Grids":
+                if self.compare_string_with_values(data_item["prediction"], data_item["answers"]):
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Counting Grid - Blank Grids":
+                if self.compare_string_with_values(data_item["prediction"], data_item["answers"]):
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Olympic Counting - Pentagons":
+                if data_item["answers"] in data_item["prediction"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Olympic Counting - Circles":
+                if data_item["answers"] in data_item["prediction"]:
+                    task_stats[task]['correct'] += 1
+            elif data_item["task"] == "Circled Letter":
+                ans = self.extract_content_in_braces(data_item["prediction"])
+                if ans == data_item["answers"]:
+                    task_stats[task]['correct'] += 1
+
+        accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in task_stats.items()}
+        result_df = pd.DataFrame(accuracy_dict)
+        result_df['overall'] = result_df.mean(axis=1)
+
+        return result_df
