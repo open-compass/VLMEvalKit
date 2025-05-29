@@ -1297,8 +1297,11 @@ h2ovl_series = {
 }
 
 valley_series = {
-    "valley_eagle": partial(
-        ValleyEagleChat, model_path="bytedance-research/Valley-Eagle-7B"
+    "valley2": partial(
+        Valley2Chat, model_path="bytedance-research/Valley-Eagle-7B"
+    ),
+    "valley2_dpo": partial(
+        Valley2Chat, model_path="bytedance-research/Valley2-DPO"
     ),
 }
 
