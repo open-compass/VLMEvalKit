@@ -244,9 +244,7 @@ class MathVista(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), (
-                'MathVista evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'MathVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -340,10 +338,8 @@ class MathVerse(ImageBaseDataset):
 
         model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
-        storage_extract = eval_file.replace(f'.{suffix}',
-                                            f'_{model}_extract.xlsx')
-        tmp_file_extract = eval_file.replace(f'.{suffix}',
-                                             f'_{model}_extract.pkl')
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
         storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
         tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -351,9 +347,7 @@ class MathVerse(ImageBaseDataset):
         if not osp.exists(storage_extract):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), (
-                'MathVerse evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'MathVerse evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -390,9 +384,7 @@ class MathVerse(ImageBaseDataset):
         if not osp.exists(storage_score):
             data = load(storage_extract)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), (
-                'MathVerse evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'MathVerse evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -461,9 +453,7 @@ class MathVision(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), (
-                'MATH-Vision evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'MATH-Vision evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -581,9 +571,7 @@ class Physics_yale(ImageBaseDataset):
             data = load(eval_file)
             judge_kwargs['max_tokens'] = 4096
             model = build_judge(**judge_kwargs)
-            assert model.working(), (
-                'Physics_yale evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'Physics_yale evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -902,9 +890,7 @@ class LogicVista(ImageBaseDataset):
         if not osp.exists(storage) and model is not None:
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), (
-                'LogicVista evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'LogicVista evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -1047,9 +1033,9 @@ class MME_CoT(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         print(
-            "\033[1;31;40m" +
-            "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main"
-            + "\033[0m")  # noqa: E501
+            "\033[1;31;40m"
+            "[MME-CoT Evaluation]: Please refer to the official repository for evaluation: https://github.com/CaraJ7/MME-CoT/tree/main"  # noqa: E501
+            "\033[0m")
         dummy_result = dict(dummy_result=0)
         return pd.DataFrame(dummy_result, index=[0])
 
@@ -1083,9 +1069,7 @@ class LLaVABench(ImageBaseDataset):
             model = build_judge(temperature=0.2,
                                 system_prompt=system_prompt,
                                 **judge_kwargs)
-            assert model.working(), (
-                'LLaVABench evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
             prompts = [build_prompt(line) for line in lines]
             tups = [(model, prompt) for prompt in prompts]
@@ -1196,9 +1180,7 @@ class MMVet(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=3, **judge_kwargs)
-            assert model.working(), (
-                'MMVet evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'MMVet evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -1444,12 +1426,11 @@ class WildDocBenchmark(ImageBaseDataset):
         }
 
         # 转换为长格式DataFrame
-        ret_df = pd.DataFrame([{
-            "Task": task,
-            "Metric": metric,
-            "Score": score
-        } for task, metrics in eval_results.items()
-                               for metric, score in metrics.items()])
+        ret_df = pd.DataFrame([
+            {"Task": task, "Metric": metric, "Score": score}
+            for task, metrics in eval_results.items()
+            for metric, score in metrics.items()
+        ])
         return ret_df
 
     # WildDoc adopts a custom prompt for each subset
@@ -1801,9 +1782,7 @@ class QSpatial(ImageBaseDataset):
             if not osp.exists(storage):
                 model = build_judge(max_tokens=128, **judge_kwargs)
 
-                assert model.working(), (
-                    'Evaluation requires a working OPENAI API\n' +
-                    DEBUG_MESSAGE)
+                assert model.working(), 'Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
                 tups = [(model, line) for line in lines]
@@ -2351,9 +2330,7 @@ class OCR_Reasoning(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=1024, **judge_kwargs)
-            assert model.working(), (
-                'OCRReasoning evaluation requires a working OPENAI API\n' +
-                DEBUG_MESSAGE)
+            assert model.working(), 'OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
