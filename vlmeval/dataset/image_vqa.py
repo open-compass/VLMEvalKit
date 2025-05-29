@@ -2068,7 +2068,7 @@ class TDBenchGrounding(ImageVQADataset):
         return msgs
 
 
-class zerobench(ImageVQADataset):
+class ZEROBench(ImageVQADataset):
     DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
                    'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
     DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
