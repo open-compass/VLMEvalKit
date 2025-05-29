@@ -189,7 +189,6 @@ class TempCompass_MCQ(VideoBaseDataset):
 
         question, answer = self.qa_template(line)
         message = []
-        message.append(dict(type='text', value=question))
         video_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
         if video_llm:
             message.append(dict(type='video', value=video_path))
@@ -197,6 +196,7 @@ class TempCompass_MCQ(VideoBaseDataset):
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         message.append(dict(type='text', value='\nPlease directly give the best option:'))
         return message
 
@@ -385,7 +385,6 @@ class TempCompass_Captioning(VideoBaseDataset):
 
         question, answer = self.qa_template(line)
         message = []
-        message.append(dict(type='text', value=question))
         video_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
         if video_llm:
             message.append(dict(type='video', value=video_path))
@@ -393,6 +392,7 @@ class TempCompass_Captioning(VideoBaseDataset):
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         return message
 
     @classmethod
@@ -578,7 +578,6 @@ class TempCompass_YorN(VideoBaseDataset):
 
         question, answer = self.qa_template(line)
         message = []
-        message.append(dict(type='text', value=question))
         video_path = osp.join(self.data_root, line['prefix'], line['video'] + line['suffix'])
         if video_llm:
             message.append(dict(type='video', value=video_path))
@@ -586,6 +585,7 @@ class TempCompass_YorN(VideoBaseDataset):
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         message.append(dict(type='text', value='\nPlease answer yes or no:'))
         return message
 
