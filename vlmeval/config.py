@@ -1128,6 +1128,14 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+    "Qwen2.5-VL-7B-Instruct-ForVideo": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-VL-7B-Instruct",
+        min_pixels=128 * 28 * 28,
+        max_pixels=768 * 28 * 28,
+        total_pixels=24576 * 28 * 28,
+        use_custom_prompt=False,
+    ),
     "Qwen2.5-VL-7B-Instruct-AWQ": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
@@ -1147,6 +1155,14 @@ qwen2vl_series = {
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen2.5-VL-72B-Instruct-ForVideo": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-VL-72B-Instruct",
+        min_pixels=128 * 28 * 28,
+        max_pixels=768 * 28 * 28,
+        total_pixels=24576 * 28 * 28,
         use_custom_prompt=False,
     ),
     "Qwen2.5-VL-72B-Instruct-AWQ": partial(
