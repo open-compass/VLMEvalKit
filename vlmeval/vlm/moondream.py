@@ -125,9 +125,10 @@ class Moondream2(BaseModel):
             model_path,
             trust_remote_code=True,
             torch_dtype=torch.float16,
-            device_map={"": "cuda"},
             revision=revision,
         )
+
+        self.model = self.model.to("cuda")
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
 
