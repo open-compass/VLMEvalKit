@@ -2279,7 +2279,7 @@ class TDBenchGrounding(ImageVQADataset):
 class CountBenchQA(ImageVQADataset):
     TYPE = "VQA"
     DATASET_URL = {
-        "CountBenchQA": 
+        "CountBenchQA":
         "https://huggingface.co/datasets/moondream/CountBenchQA-VLMEvalKit/resolve/main/countbench_data.tsv"
     }
     DATASET_MD5 = {"CountBenchQA": "d70123bd9d7c090b00101f2116f3a7c6"}
