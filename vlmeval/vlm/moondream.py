@@ -1,14 +1,21 @@
+from PIL import Image
+from .base import BaseModel
+from ..dataset import DATASET_TYPE
+from ..smp import *
+
+import os.path as osp
 import torch
 import re
-from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import copy
 
+def extract_object(sentence: str) -> str:
+    words = sentence.split()
+    obj_words = []
+    for word in words[2:]:
+        if word.lower() in {"are", "is"}:
+            break
+        obj_words.append(word)
+        
+    return " ".join(obj_words)
 
 class Moondream1(BaseModel):
     INSTALL_REQ = False
@@ -103,16 +110,15 @@ class Moondream2(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(self, model_path="vikhyatk/moondream2", revision="2025-01-09", **kwargs):
-        try:
-            from transformers import AutoModelForCausalLM, AutoTokenizer
-        except Exception as e:
-            logging.critical(
-                """Please install Transformers version 4.44 by running: "pip install transformers==4.44.0",
-            please intall torchvision>=0.16."""
-            )
-            raise e
+    def __init__(
+        self, model_path="vikhyatk/moondream2", revision=None, **kwargs):
+        
+        import transformers
+        import torchvision
+        assert transformers.__version__ >= "4.44.0", f"Transformers 4.44.0 or greater required, found {transformers.__version__}"
+        assert torchvision.__version__ >= "0.16", f"Torchvision 0.16 or greater required, found {torchvision.__version__}"
 
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -125,29 +131,50 @@ class Moondream2(BaseModel):
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-        default_kwargs = dict(max_new_tokens=512)
-        default_kwargs.update(kwargs)
-        self.kwargs = default_kwargs
+        self.capability = "query"  # Default capability, change to "point" if needed.
 
-        warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config. ")
+        self.kwargs = {"max_new_tokens": 512, **kwargs}
+
+        warnings.warn(
+            f"Following kwargs received: {self.kwargs}, will use as generation config. "
+        )
         torch.cuda.empty_cache()
 
     def generate_inner(self, message, dataset=None):
+        """
+        Generate an answer for the given message using the specified capability.
+        
+        Args:
+            message (dict): The message containing the question and image.
+            dataset (str): The dataset for which the answer is being generated (optional, for context).
+            
+        Returns:
+            str: The generated answer or count.
+        """
         prompt, img = self.message_to_promptimg(message)
         enc_image = self.model.encode_image(Image.open(img))
-        print(f"prompt for {dataset} -> ", prompt)
+        capability = self.capability
 
-        answer = self.model.query(enc_image, prompt)["answer"]
-        cleaned_answer = answer.strip()
-
-        return cleaned_answer
+        if capability == "point":
+            return len(self.model.point(enc_image, prompt)["points"])
+        elif capability == "query":
+            return self.model.query(enc_image, prompt)["answer"].strip()
+        else:
+            raise ValueError(f"Unknown capability: {capability}")
 
     def use_custom_prompt(self, dataset):
+        """
+        Determine if a custom prompt is needed for the given dataset.
+        Args:
+            dataset (str): The dataset for which the prompt is being checked.
+        Returns:
+            bool: True if a custom prompt is needed, False otherwise.
+        """
         assert dataset is not None
 
         if listinstr(["MMMU"], dataset):
             return False
-        if DATASET_TYPE(dataset) == "MCQ":
+        elif DATASET_TYPE(dataset) == "MCQ":
             return True
         elif dataset in [
             "ChartQA_TEST",
@@ -156,7 +183,7 @@ class Moondream2(BaseModel):
             "POPE",
             "RealWorldQA",
             "TallyQA",
-            "CountbenchQA",
+            "CountBenchQA",
             "MMVet",
         ]:
             return True
@@ -166,47 +193,48 @@ class Moondream2(BaseModel):
     def build_prompt(self, line, dataset=None):
         assert dataset is None or isinstance(dataset, str)
         assert self.use_custom_prompt(dataset)
+
         tgt_path = self.dump_image(line, dataset)
         question = line["question"]
 
-        if dataset == "ChartQA_TEST":
-            prompt = (
-                "Analyze the chart carefully, consider both visual features and data values,"
-                " and provide a precise answer without any additional explanation or formatting. "
-                + question
-            )
-        elif dataset == "TextVQA_VAL":
-            prompt = (
-                "Read the text in the image and provide a brief lowercase answer. "
-                "Respond 'unanswerable' only if there is no plausible answer. "
-                + question
-            )
-        elif dataset == "DocVQA_VAL":
-            prompt = question + " The answer should be a short text span taken verbatim from the document."
-        elif dataset == "POPE":
-            prompt = f"{question}\nAnswer yes or no."
-        elif dataset == "RealWorldQA":
-            prompt = question
-        elif dataset == "TallyQA" or dataset == "CountbenchQA":
-            prompt = (
-                "Look at the image carefully and count the objects. "
-                "Answer with just a number, without any additional text. "
-                + question
-            )
+        capability = self.capability # Default capability = "query", change to "point" if needed.
 
-        elif dataset == "MMVet":
-            prompt = question + "\nAnswer the question directly. "
+        prompts = {
+            "ChartQA_TEST": f"Analyze the chart carefully, consider both visual features and data values, and provide a precise answer without any additional explanation or formatting. {question}",
+            "TextVQA_VAL": f"Read the text in the image and provide a brief lowercase answer. Respond 'unanswerable' only if there is no plausible answer. {question}",
+            "DocVQA_VAL": f"{question} The answer should be a short text span taken verbatim from the document.",
+            "POPE": f"{question}\nAnswer yes or no.",
+            "TallyQA": f"Look at the image carefully and count the objects. Answer with just a number, without any additional text. {question}",
+            "CountBenchQA_query": f"Look at the image carefully and count the objects. Answer with just a number, without any additional text. {question}",
+            "CountBenchQA_point": f"individual {extract_object(question)}",
+            "MMVet": f"{question}\nAnswer the question directly.",
+        }
+
+        if dataset == "CountBenchQA":
+            prompt_key = f"CountBenchQA_{capability}"
+            if prompt_key in prompts:
+                prompt = prompts[prompt_key]
+            else:
+                raise ValueError(f"No prompt defined for capability '{capability}' in dataset '{dataset}'.")
+        elif dataset in prompts:
+            prompt = prompts[dataset]
         elif DATASET_TYPE(dataset) == "MCQ":
-            options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
+            }
             options_prompt = ""
             for key, item in options.items():
                 options_prompt += f"{key}. {item}\n"
 
-            hint = line["hint"] if ("hint" in line and not pd.isna(line["hint"])) else None
+            hint = (
+                line["hint"] if ("hint" in line and not pd.isna(line["hint"])) else None
+            )
             prompt = f"Hint: {hint}\n" if hint is not None else ""
             prompt += f"{question}\n"
             prompt += (
-                f"{options_prompt}\nAnswer with the option’s letter from the given choices directly. "
+                f"{options_prompt}\nAnswer with the option's letter from the given choices directly. "
                 if len(options)
                 else "Answer the question directly. "
             )
