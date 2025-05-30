@@ -234,7 +234,7 @@ class Moondream2(BaseModel):
             prompt = f"Hint: {hint}\n" if hint is not None else ""
             prompt += f"{question}\n"
             prompt += (
-                f"{options_prompt}\n\nAnswer with the option’s letter from the given choices directly. "
+                f"{options_prompt}\n\nAnswer with the options' letter from the given choices directly. "
                 if len(options)
                 else "Answer the question directly. "
             )
