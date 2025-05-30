@@ -2572,9 +2572,10 @@ class PhyX(ImageBaseDataset):
             dump(score, score_pth)
             return score
 
+
 class TallyQA(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL = { 
+    DATASET_URL = {
         'TallyQA': 'https://huggingface.co/datasets/moondream/TallyQA-VLMEvalKit/resolve/main/tallyqa_data.tsv'
     }
     DATASET_MD5 = {'TallyQA': '959df01cf1858e73a71efe5cd3b9bf19'}
@@ -2582,16 +2583,16 @@ class TallyQA(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         import pandas as pd
         from .utils.tallyqa import extract_count_from_prediction
-        
+
         data = load(eval_file)
-        
+
         pred_ints = data["prediction"].apply(extract_count_from_prediction)
         answer_ints = data["answer"].astype(int)
-        
+
         correct = (pred_ints == answer_ints).sum()
         total = len(data)
         accuracy = correct / total
-        
+
         result_df = pd.DataFrame([{"TallyQA": accuracy}])
         result_file = eval_file.replace(f".{eval_file.split('.')[-1]}", "_acc.csv")
         dump(result_df, result_file)
