@@ -80,6 +80,12 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('XAI_API_KEY', '')
             if key is None:
                 key = env_key
+        elif 'gemini' in model and 'preview' in model:
+            # Will only handle preview models
+            env_key = os.environ.get('GOOGLE_API_KEY', '')
+            if key is None:
+                key = env_key
+            api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
