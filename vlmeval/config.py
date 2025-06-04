@@ -253,10 +253,10 @@ api_models = {
         GPT4V, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
     ),
     "GeminiPro2-5": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
     "GeminiPro2-5-0506": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
     
     # Qwen-VL
