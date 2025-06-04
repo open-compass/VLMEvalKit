@@ -212,6 +212,11 @@ class OpenAIWrapper(BaseAPI):
         else:
             payload['max_tokens'] = max_tokens
 
+        if 'gemini' in self.model:
+            payload.pop('max_tokens')
+            payload.pop('n')
+            payload['reasoning_effort'] = 'high'
+
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
