@@ -30,7 +30,7 @@ class Eagle(BaseModel):
         model_name = get_model_name_from_path(model_path)
 
         self.tokenizer, self.model, self.image_processor, self.context_len = (
-            load_pretrained_model(model_path, None, model_name, False, False, device_map="auto")
+            load_pretrained_model(model_path, None, model_name, False, False, device_map="cuda")
         )
         self.model.eval()
         self.conv_mode = 'vicuna_v1'

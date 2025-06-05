@@ -22,7 +22,7 @@ class llama_vision(BaseModel):
         self.model = MllamaForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            device_map='auto',
+            device_map="auto",
         ).eval()
 
         self.device = 'cuda'

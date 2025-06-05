@@ -108,7 +108,7 @@ class NVLM(BaseModel):
             low_cpu_mem_usage=True,
             use_flash_attn=False,
             trust_remote_code=True,
-            device_map='auto').eval()
+            device_map="auto").eval()
 
         logging.info(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
         torch.cuda.empty_cache()

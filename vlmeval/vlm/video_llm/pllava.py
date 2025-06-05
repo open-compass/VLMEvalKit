@@ -7,7 +7,7 @@ from PIL import Image
 import torchvision
 import logging
 from ..base import BaseModel
-from ...smp import isimg, listinstr, get_rank_and_world_size
+from ...smp import isimg, listinstr
 from ...dataset import DATASET_TYPE
 from huggingface_hub import snapshot_download
 
@@ -29,7 +29,6 @@ class PLLaVA(BaseModel):
             )
             raise err
 
-        rank, world_size = get_rank_and_world_size()
         self.nframe = 16
         self.use_lora = True
         self.lora_alpha = 4

@@ -36,14 +36,17 @@ class DoubaoVLWrapper(BaseAPI):
         self.temperature = temperature
         self.max_tokens = max_tokens
 
-        warnings.warn('You may need to set the env variable  DOUBAO_VL_KEY& DOUBAO_VL_ENDPOINT to use DOUBAO_VL.')
+        assert 'DOUBAO_VL_KEY' in os.environ, 'You may need to set the env variable DOUBAO_VL_KEY to use DOUBAO_VL.'
 
         key = os.environ.get('DOUBAO_VL_KEY', None)
         assert key is not None, 'Please set the environment variable DOUBAO_VL_KEY. '
         self.key = key
 
-        endpoint = os.getenv('DOUBAO_VL_ENDPOINT', None)
-        assert endpoint is not None, 'Please set the environment variable DOUBAO_VL_ENDPOINT. '
+        # We will retrieve the endpoint based on model_name
+        assert self.model in ['Doubao-1.5-vision-pro', 'doubao-1-5-thinking-vision-pro-250428']
+        EP_KEY = 'DOUBAO_VL_ENDPOINT' + '_' + self.model.replace('.', '_').replace('-', '_').upper()
+        endpoint = os.getenv(EP_KEY, None)
+        assert endpoint is not None, f'Please set the environment variable {EP_KEY} as the endpoint of model {model}. '
         self.endpoint = endpoint
 
         assert api_base is not None, 'Please set the variable API_BASE. '
