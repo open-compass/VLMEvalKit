@@ -22,7 +22,7 @@ class LLama3Mixsense(BaseModel):
             model_path, trust_remote_code=True
         )
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, trust_remote_code=True, device_map='auto'
+            model_path, trust_remote_code=True, device_map="cuda"
         ).eval()
         self.kwargs = kwargs
 
