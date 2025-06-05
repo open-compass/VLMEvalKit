@@ -20,7 +20,7 @@ class QH_360VL(BaseModel):
         self.model = AutoModelForCausalLM.from_pretrained(model_path,
                                                           torch_dtype=torch.float16,
                                                           low_cpu_mem_usage=True,
-                                                          device_map='auto',
+                                                          device_map="auto",
                                                           trust_remote_code=True).eval()
         vision_tower = self.model.get_vision_tower()
         vision_tower.load_model()

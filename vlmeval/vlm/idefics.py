@@ -16,7 +16,7 @@ class IDEFICS(BaseModel):
         from transformers import IdeficsForVisionText2Text, AutoProcessor
 
         self.model = IdeficsForVisionText2Text.from_pretrained(
-            model_path, torch_dtype=torch.bfloat16, device_map='auto'
+            model_path, torch_dtype=torch.bfloat16, device_map="auto"
         )
         self.processor = AutoProcessor.from_pretrained(model_path)
         kwargs_default = {'max_new_tokens': 512}
@@ -71,8 +71,8 @@ class IDEFICS2(BaseModel):
         model = AutoModelForVision2Seq.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            _attn_implementation='flash_attention_2',
-            device_map='auto')
+            _attn_implementation="flash_attention_2",
+            device_map="auto")
         self.model = model
 
         kwargs_default = {'max_new_tokens': 1024}

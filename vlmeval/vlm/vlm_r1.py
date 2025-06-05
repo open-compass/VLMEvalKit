@@ -76,7 +76,7 @@ class VLMR1Chat(Qwen2VLPromptMixin, BaseModel):
         self.model = MODEL_CLS.from_pretrained(
             model_path,
             torch_dtype="auto",
-            device_map="auto",
+            device_map="cuda",
             attn_implementation="flash_attention_2",
         )
         self.model.eval()

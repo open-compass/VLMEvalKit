@@ -89,7 +89,7 @@ class WeThinkVL(Qwen2VLPromptMixin, BaseModel):
         max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
         assert max_gpu_mem > 0
         self.model = MODEL_CLS.from_pretrained(
-            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            model_path, torch_dtype='auto', device_map='cuda', attn_implementation='flash_attention_2'
         )
         self.model.eval()
         torch.cuda.empty_cache()

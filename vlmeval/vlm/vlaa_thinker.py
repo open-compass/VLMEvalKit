@@ -97,7 +97,7 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         assert max_gpu_mem > 0
 
         self.model = MODEL_CLS.from_pretrained(
-            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            model_path, torch_dtype='auto', device_map='cuda', attn_implementation='flash_attention_2'
         )
         self.model.eval()
         torch.cuda.empty_cache()
