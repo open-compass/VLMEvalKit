@@ -63,6 +63,7 @@ from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
+from .GUI.osworld_g import OSWorldG
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -165,7 +166,7 @@ IMAGE_DATASET = [
     ScreenSpotV2, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM
+    ZEROBench, SCAM, OSWorldG
 ]
 
 
@@ -267,6 +268,8 @@ def build_dataset(dataset_name, **kwargs):
 
 
 def infer_dataset_basename(dataset_name):
+    if 'OSWorld-G' in dataset_name:
+        return 'OSWorld-G'
     basename = "_".join(dataset_name.split("_")[:-1])
     return basename
 

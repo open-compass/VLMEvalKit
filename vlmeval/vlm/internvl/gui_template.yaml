@@ -22,6 +22,14 @@ ScreenSpot_v2:
   placeholders:
     - task
 
+OSWorld-G:
+  template_zeroshot: |-
+    Based on the screenshot of the page, I give a text description and you give the bounding box coordinate of the region this sentence describes: {task}
+  template: |-
+    {task}
+  placeholders:
+    - task
+
 MM_Mind2Web:
   system_prompt: |-
     You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform a series of pyautogui actions to complete the task.
