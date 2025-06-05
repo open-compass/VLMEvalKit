@@ -2327,11 +2327,12 @@ class ZEROBench(ImageVQADataset):
 
 
 class CountBenchQA(ImageVQADataset):
+    TYPE = "VQA"
     DATASET_URL = {
-        'CountBenchQA':
-        'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'
+        "CountBenchQA":
+        "https://huggingface.co/datasets/moondream/CountBenchQA-VLMEvalKit/resolve/main/countbench_data.tsv"
     }
-    DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
+    DATASET_MD5 = {"CountBenchQA": "d70123bd9d7c090b00101f2116f3a7c6"}
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2347,7 +2348,7 @@ class CountBenchQA(ImageVQADataset):
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
-        answers = [str(x) for x in data['answers']]
+        answers = [str(x) for x in data['answer']]
         correct_count = 0
         total_count = len(predictions)
 
