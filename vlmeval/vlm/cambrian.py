@@ -30,7 +30,7 @@ class Cambrian(BaseModel):
             model_path,
             None,
             model_name,
-            device_map='auto'
+            device_map="cuda"
         )
 
         if '8b' in model_path:

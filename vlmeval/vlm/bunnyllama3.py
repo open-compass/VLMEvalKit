@@ -20,7 +20,7 @@ class BunnyLLama3(BaseModel):
         transformers.logging.disable_progress_bar()
         warnings.filterwarnings('ignore')
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
-        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map='auto', trust_remote_code=True)
+        self.model = AutoModelForCausalLM.from_pretrained(model_path, device_map="cuda", trust_remote_code=True)
         self.kwargs = kwargs
 
     def use_custom_prompt(self, dataset):

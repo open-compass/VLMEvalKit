@@ -86,7 +86,7 @@ from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM, SmolVLM2
 from .sail_vl import SailVL
-from .valley import ValleyEagleChat
+from .valley import Valley2Chat
 from .ross import Ross
 from .ola import Ola
 from .ursa import UrsaChat
@@ -96,3 +96,4 @@ from .ristretto import Ristretto
 from .vlaa_thinker import VLAAThinkerChat
 from .kimi_vl import KimiVL
 from .wethink_vl import WeThinkVL
+from .flash_vl import FlashVL

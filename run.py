@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from functools import partial
 
 
 # GET the number of GPUs on the node without importing libs like torch
@@ -48,9 +49,11 @@ from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
+# Make WORLD_SIZE invisible when build models
 def build_model_from_config(cfg, model_name, use_vllm=False):
     import vlmeval.api
     import vlmeval.vlm
+    ws_bak = os.environ.pop('WORLD_SIZE', None)
 
     config = cp.deepcopy(cfg[model_name])
     if use_vllm:
@@ -59,11 +62,15 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
         return supported_VLM[model_name](**config)
     cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
-        return getattr(vlmeval.api, cls_name)(**config)
+        model = getattr(vlmeval.api, cls_name)(**config)
     elif hasattr(vlmeval.vlm, cls_name):
-        return getattr(vlmeval.vlm, cls_name)(**config)
+        model = getattr(vlmeval.vlm, cls_name)(**config)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
+
+    if ws_bak:
+        os.environ['WORLD_SIZE'] = ws_bak
+    return model
 
 
 def build_dataset_from_config(cfg, dataset_name):
@@ -221,6 +228,16 @@ def main():
             if hasattr(v, 'keywords') and 'verbose' in v.keywords and args.verbose is not None:
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
+
+        # If FWD_API is set, will use class `GPT4V` for all API models in the config
+        if os.environ.get('FWD_API', None) == '1':
+            from vlmeval.config import api_models as supported_APIs
+            from vlmeval.api import GPT4V
+            for m in args.model:
+                if m in supported_APIs:
+                    kws = supported_VLM[m].keywords
+                    supported_VLM[m] = partial(GPT4V, **kws)
+                    logger.warning(f'FWD_API is set, will use class `GPT4V` for {m}')
 
     if WORLD_SIZE > 1:
         import torch.distributed as dist
