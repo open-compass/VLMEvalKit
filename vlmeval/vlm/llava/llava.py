@@ -530,7 +530,6 @@ class LLaVA_OneVision(BaseModel):
                     "mm_spatial_pool_mode"
                 ]
 
-        rank, world_size = get_rank_and_world_size()
         model_name = get_model_name_from_path(model_path)
         import warnings
         # filter warning align with official code
