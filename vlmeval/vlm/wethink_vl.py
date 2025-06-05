@@ -10,7 +10,7 @@ import warnings
 from .base import BaseModel
 from .qwen2_vl.prompt import Qwen2VLPromptMixin
 from .qwen2_vl.model import ensure_image_url, ensure_video_url
-from ..smp import get_rank_and_world_size, get_gpu_memory, listinstr
+from ..smp import get_gpu_memory, listinstr
 
 
 def extract_answer_tag(s: str, verbose=False) -> str:
