@@ -108,7 +108,14 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         or 'Qwen2.5-VL' in model_name
     ):
         kwargs = {'use_vllm': use_vllm}
+
+    # (25.06.05) In newer version of transformers (after 4.50), with device_map='auto' and torchrun launcher,
+    # Transformers automatically adopt TP parallelism, which leads to compatibility problems with VLMEvalKit
+    # (In VLMEvalKit, we use torchrun to launch multiple model instances on a single node).
+    # To bypass this problem, we unset `WORLD_SIZE` before building the model to not use TP parallel.
+    ws_bak = os.environ.pop('WORLD_SIZE', None)
     model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
+    os.environ['WORLD_SIZE'] = ws_bak
     assert hasattr(model, 'chat_inner')
 
     is_api = getattr(model, 'is_api', False)
