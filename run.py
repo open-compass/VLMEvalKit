@@ -49,9 +49,11 @@ from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
+# Make WORLD_SIZE invisible when build models
 def build_model_from_config(cfg, model_name, use_vllm=False):
     import vlmeval.api
     import vlmeval.vlm
+    ws_bak = os.environ.pop('WORLD_SIZE', None)
 
     config = cp.deepcopy(cfg[model_name])
     if use_vllm:
@@ -60,11 +62,13 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
         return supported_VLM[model_name](**config)
     cls_name = config.pop('class')
     if hasattr(vlmeval.api, cls_name):
-        return getattr(vlmeval.api, cls_name)(**config)
+        model = getattr(vlmeval.api, cls_name)(**config)
     elif hasattr(vlmeval.vlm, cls_name):
-        return getattr(vlmeval.vlm, cls_name)(**config)
+        model = getattr(vlmeval.vlm, cls_name)(**config)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
+    os.environ['WORLD_SIZE'] = ws_bak
+    return model
 
 
 def build_dataset_from_config(cfg, dataset_name):

@@ -25,7 +25,7 @@ class MMAlaya(BaseModel):
             model_path, trust_remote_code=True
         )
         model = AutoModelForCausalLM.from_pretrained(
-            model_path, device_map='auto', trust_remote_code=True
+            model_path, device_map="cuda", trust_remote_code=True
         ).eval()
         # need initialize tokenizer
         model.initialize_tokenizer(self.tokenizer)
@@ -200,7 +200,7 @@ class MMAlaya2(BaseModel):
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
             load_in_8bit=load_in_8bit,
-            device_map='auto'
+            device_map="cuda"
         ).eval()
 
         self.image_size = self.model.config.vision_config.image_size

@@ -250,19 +250,13 @@ api_models = {
         Gemini, model="gemini-2.0-pro-exp", temperature=0, retry=10
     ),
     "GeminiFlash2-5": partial(
-        Gemini, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
     ),
     "GeminiPro2-5": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
+        GPT4V, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
     "GeminiPro2-5-0506": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-0506-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
+        GPT4V, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
     
     # Qwen-VL
@@ -1128,6 +1122,14 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+    "Qwen2.5-VL-7B-Instruct-ForVideo": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-VL-7B-Instruct",
+        min_pixels=128 * 28 * 28,
+        max_pixels=768 * 28 * 28,
+        total_pixels=24576 * 28 * 28,
+        use_custom_prompt=False,
+    ),
     "Qwen2.5-VL-7B-Instruct-AWQ": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
@@ -1147,6 +1149,14 @@ qwen2vl_series = {
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen2.5-VL-72B-Instruct-ForVideo": partial(
+        Qwen2VLChat,
+        model_path="Qwen/Qwen2.5-VL-72B-Instruct",
+        min_pixels=128 * 28 * 28,
+        max_pixels=768 * 28 * 28,
+        total_pixels=24576 * 28 * 28,
         use_custom_prompt=False,
     ),
     "Qwen2.5-VL-72B-Instruct-AWQ": partial(
@@ -1346,6 +1356,10 @@ kimi_series = {
     'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct')
 }
 
+flash_vl = {
+    'Flash-VL-2B-Dynamic-ISS': partial(FlashVL, model_path='FlashVL/FlashVL-2B-Dynamic-ISS')
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
@@ -1367,7 +1381,7 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, flash_vl
 ]
 
 for grp in model_groups:

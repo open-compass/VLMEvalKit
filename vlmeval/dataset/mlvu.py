@@ -195,7 +195,6 @@ class MLVU_MCQ(VideoBaseDataset):
 
         question, answer = self.qa_template(line)
         message = [dict(type='text', value=self.SYS, role='system')]
-        message.append(dict(type='text', value=question))
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
         if video_llm:
             message.append(dict(type='video', value=video_path))
@@ -203,6 +202,7 @@ class MLVU_MCQ(VideoBaseDataset):
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         message.append(dict(type='text', value='\nOnly give the best option.'))
         return message
 
@@ -399,7 +399,6 @@ class MLVU_OpenEnded(VideoBaseDataset):
 
         question, answer = self.qa_template(line)
         message = [dict(type='text', value=self.SYS, role='system')]
-        message.append(dict(type='text', value=question))
         video_path = os.path.join(self.data_root, line['prefix'], line['video'])
         if video_llm:
             message.append(dict(type='video', value=video_path))
@@ -407,6 +406,7 @@ class MLVU_OpenEnded(VideoBaseDataset):
             img_frame_paths = self.save_video_into_images(line)
             for im in img_frame_paths:
                 message.append(dict(type='image', value=im))
+        message.append(dict(type='text', value=question))
         return message
 
     @classmethod
