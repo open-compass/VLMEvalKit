@@ -77,7 +77,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     # To bypass this problem, we unset `WORLD_SIZE` before building the model to not use TP parallel.
     ws_bak = os.environ.pop('WORLD_SIZE', None)
     model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
-    os.environ['WORLD_SIZE'] = ws_bak
+    if ws_bak:
+        os.environ['WORLD_SIZE'] = ws_bak
 
     is_api = getattr(model, 'is_api', False)
     if is_api:

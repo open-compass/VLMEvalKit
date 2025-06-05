@@ -67,7 +67,9 @@ def build_model_from_config(cfg, model_name, use_vllm=False):
         model = getattr(vlmeval.vlm, cls_name)(**config)
     else:
         raise ValueError(f'Class {cls_name} is not supported in `vlmeval.api` or `vlmeval.vlm`')
-    os.environ['WORLD_SIZE'] = ws_bak
+
+    if ws_bak:
+        os.environ['WORLD_SIZE'] = ws_bak
     return model
 
 
