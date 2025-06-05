@@ -2276,6 +2276,56 @@ class TDBenchGrounding(ImageVQADataset):
         return msgs
 
 
+class ZEROBench(ImageVQADataset):
+    DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
+                   'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
+    DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
+                   'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answers']]
+        indexes = [str(x) for x in data['index']]
+        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
+        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+            formatted_response = pred.strip()
+            # convert to lowercase
+            formatted_response = formatted_response.lower()
+            # try to extract final answer from curly braces
+            parsed_answer = ''
+            try:
+                pattern = r"\{(.*?)\}"
+                parsed_answer = re.findall(pattern, formatted_response)[-1]
+            except IndexError:
+                pass
+
+            # evaluate via exact matching
+            correct = ans.strip().lower() in parsed_answer.lower()
+            # store results
+            results_row = {"Question_ID": idx,
+                           "Ground_Truth": ans,
+                           "Model_Output": pred,
+                           "Correct?": correct}
+            output_df = pd.concat([output_df, pd.DataFrame([results_row])],
+                                  ignore_index=True)
+
+        # compute accuracy
+        accuracy = output_df["Correct?"].mean()
+        return {"accuracy": accuracy}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        obj = line['question']
+        question = f"{obj} \n\n\nLet's think step by step and give the final answer in curly braces,  like this: {{final answer}}"   # noqa: E501
+        tgt_path = self.dump_image(line)
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+
 class CountBenchQA(ImageVQADataset):
     DATASET_URL = {
         'CountBenchQA':
