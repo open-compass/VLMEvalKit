@@ -2622,3 +2622,28 @@ class PhyX(ImageBaseDataset):
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
             return score
+
+
+class Omni3DBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'Omni3DBench':
+        'https://huggingface.co/datasets/rohunagrawal/Omni3DBench-VLMEvalKit/resolve/main/omni3dbench.tsv'
+    }
+    DATASET_MD5 = {'Omni3DBench': 'ba1fa59c3897eb95aed445996ec9b690'}
+
+    def build_prompt(self, line):
+        from .utils.omni3dbench import OMNI3DBENCH_PROMPT
+        question = line['question']
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += f'{OMNI3DBENCH_PROMPT}{question} (Answer type: {line["answer_type"]})'
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.omni3dbench import Omni3DBench_acc
+
+        data = load(eval_file)
+        result = Omni3DBench_acc(data)
+        return result
