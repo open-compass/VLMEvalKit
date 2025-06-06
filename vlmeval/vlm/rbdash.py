@@ -65,7 +65,7 @@ class RBDash(BaseModel):
             download_file(preprocessor_url, download_file_path)
 
         tokenizer, model, image_processor, image_processor_aux, context_len = load_pretrained_model(
-            download_model_path, None, model_name, device_map='auto'
+            download_model_path, None, model_name, device_map="auto"
         )
         os.chdir(VLMEvalKit_path)
         self.model = model

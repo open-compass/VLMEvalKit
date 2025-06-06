@@ -11,7 +11,7 @@ from transformers import StoppingCriteria
 
 from ..base import BaseModel
 from .prompt import Qwen2VLPromptMixin
-from ...smp import get_rank_and_world_size, get_gpu_memory, listinstr
+from ...smp import get_gpu_memory, listinstr
 from ...dataset import DATASET_MODALITY
 
 VLLM_MAX_IMAGE_INPUT_NUM = 24
@@ -128,18 +128,6 @@ def process_video(video_path, num_frames, min_pixels, max_pixels):
     return images
 
 
-def setup_visible_devices_per_rank():
-    total_gpus = torch.cuda.device_count()
-    rank, world_size = get_rank_and_world_size()
-    assert world_size == 1, "Only support world_size == 1 for vLLM inference"
-    num_gpus = total_gpus // world_size
-    start_idx = rank * num_gpus
-    assigned_devices = list(range(start_idx, start_idx + num_gpus))
-    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(i) for i in assigned_devices)
-    logging.info(f"[Rank {rank}] Visible GPUs: {assigned_devices}")
-    return num_gpus
-
-
 class KeywordsStoppingCriteria(StoppingCriteria):
     def __init__(self, keywords, tokenizer, input_ids):
         self.keywords = keywords
@@ -231,7 +219,6 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                   the fps/nframe setting in video dataset is omitted")
         self.use_audio_in_video = use_audio_in_video
         self.FRAME_FACTOR = 2
-        rank, world_size = get_rank_and_world_size()
         assert model_path is not None
         self.model_path = model_path
         MODEL_CLS = None
@@ -263,7 +250,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
 
         if self.use_vllm:
             from vllm import LLM
-            gpu_count = setup_visible_devices_per_rank()
+            gpu_count = torch.cuda.device_count()
             if gpu_count >= 8:
                 tp_size = 8
             elif gpu_count >= 4:

@@ -10,7 +10,7 @@ import warnings
 from .base import BaseModel
 from .qwen2_vl.prompt import Qwen2VLPromptMixin
 from .qwen2_vl.model import ensure_image_url, ensure_video_url
-from ..smp import get_rank_and_world_size, get_gpu_memory, listinstr
+from ..smp import get_gpu_memory, listinstr
 
 
 def extract_answer_tag(s: str, verbose=False) -> str:
@@ -79,7 +79,6 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         self.fps = 2.0
         self.nframe = 64
         self.FRAME_FACTOR = 2
-        rank, world_size = get_rank_and_world_size()
         assert model_path is not None
         self.model_path = model_path
         MODEL_CLS = None
@@ -98,7 +97,7 @@ class VLAAThinkerChat(Qwen2VLPromptMixin, BaseModel):
         assert max_gpu_mem > 0
 
         self.model = MODEL_CLS.from_pretrained(
-            model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+            model_path, torch_dtype='auto', device_map='cuda', attn_implementation='flash_attention_2'
         )
         self.model.eval()
         torch.cuda.empty_cache()
