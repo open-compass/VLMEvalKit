@@ -140,46 +140,12 @@ class ScreenSpot_Pro(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Pro_Development": "ScreenSpot_Pro_Development",
-        "ScreenSpot_Pro_Creative": "ScreenSpot_Pro_Creative",
-        "ScreenSpot_Pro_CAD": "ScreenSpot_Pro_CAD",
-        "ScreenSpot_Pro_Scientific": "ScreenSpot_Pro_Scientific",
-        "ScreenSpot_Pro_Office": "ScreenSpot_Pro_Office",
-        "ScreenSpot_Pro_OS": "ScreenSpot_Pro_OS",
-        # "ScreenSpot_Pro_Development": [
-        #     "vscode_macos",
-        #     "pycharm_macos",
-        #     "android_studio_macos",
-        #     "quartus_windows",
-        #     "vmware_macos",
-        # ],
-        # "ScreenSpot_Pro_Creative": [
-        #     "photoshop_windows",
-        #     "premiere_windows",
-        #     "illustrator_windows",
-        #     "blender_windows",
-        #     "fruitloops_windows",
-        #     "unreal_engine_windows",
-        #     "davinci_macos",
-        # ],
-        # "ScreenSpot_Pro_CAD": [
-        #     "autocad_windows",
-        #     "solidworks_windows",
-        #     "inventor_windows",
-        #     "vivado_windows",
-        # ],
-        # "ScreenSpot_Pro_Scientific": [
-        #     "matlab_macos",
-        #     "origin_windows",
-        #     "stata_windows",
-        #     "eviews_windows",
-        # ],
-        # "ScreenSpot_Pro_Office": ["word_macos", "excel_macos", "powerpoint_windows"],
-        # "ScreenSpot_Pro_OS": [
-        #     "macos_common_macos",
-        #     "windows_common_windows",
-        #     "linux_common_linux",
-        # ],
+        "ScreenSpot_Pro_Development": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Development.tsv",  # noqa
+        "ScreenSpot_Pro_Creative": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Creative.tsv",  # noqa
+        "ScreenSpot_Pro_CAD": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_CAD.tsv",  # noqa
+        "ScreenSpot_Pro_Scientific": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Scientific.tsv",  # noqa
+        "ScreenSpot_Pro_Office": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
+        "ScreenSpot_Pro_OS": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
     }  # path
     DATASET_MD5 = {}
     EVAL_TYPE = "point"  # point or rectangle
