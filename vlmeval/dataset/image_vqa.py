@@ -2572,13 +2572,14 @@ class PhyX(ImageBaseDataset):
             dump(score, score_pth)
             return score
 
+
 class Omni3DBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'Omni3DBench':
         'https://huggingface.co/datasets/rohunagrawal/Omni3DBench-VLMEvalKit/resolve/main/omni3dbench.tsv'
     }
-    DATASET_MD5 = {'Omni3DBench': 'adb724d9185ae0a42089bb36f835a539'}
+    DATASET_MD5 = {'Omni3DBench': 'ba1fa59c3897eb95aed445996ec9b690'}
 
     def build_prompt(self, line):
         from .utils.omni3dbench import OMNI3DBENCH_PROMPT
@@ -2595,4 +2596,3 @@ class Omni3DBench(ImageBaseDataset):
         data = load(eval_file)
         result = Omni3DBench_acc(data)
         return result
-
