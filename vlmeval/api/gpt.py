@@ -100,10 +100,11 @@ class OpenAIWrapper(BaseAPI):
                 env_key = os.environ.get('OPENAI_API_KEY', '')
                 if key is None:
                     key = env_key
-                assert isinstance(key, str) and key.startswith('sk-'), (
-                    f'Illegal openai_key {key}. '
-                    'Please set the environment variable OPENAI_API_KEY to your openai key. '
-                )
+                else:
+                    assert isinstance(key, str) and key.startswith('sk-'), (
+                        f'Illegal openai_key {key}. '
+                        'Please set the environment variable OPENAI_API_KEY to your openai key. '
+                    )
 
         self.key = key
         assert img_size > 0 or img_size == -1
@@ -197,6 +198,8 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
         elif 'internvl2-pro' in self.model:
             headers = {'Content-Type': 'application/json', 'Authorization': self.key}
+        elif self.key is None:
+            headers = {'Content-Type': 'application/json'}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
@@ -228,6 +231,8 @@ class OpenAIWrapper(BaseAPI):
             answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
+                import pdb; pdb.set_trace()
+                print((response.json()))
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
 

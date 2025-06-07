@@ -106,6 +106,15 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "xdg": partial(
+        GPT4V,
+        model="xdg_ds_v3_vlm",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=True,
+    ),
     "GPT4V_HIGH": partial(
         GPT4V,
         model="gpt-4-1106-vision-preview",
