@@ -140,9 +140,12 @@ class ScreenSpot(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Mobile": "ScreenSpot_Mobile.tsv",
-        "ScreenSpot_Desktop": "ScreenSpot_Desktop.tsv",
-        "ScreenSpot_Web": "ScreenSpot_Web.tsv",
+        "ScreenSpot_Mobile": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Mobile.tsv",  # noqa
+        "ScreenSpot_Desktop": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Desktop.tsv",  # noqa
+        "ScreenSpot_Web": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Web.tsv",  # noqa
+        "ScreenSpot_v2_Mobile": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_v2_Mobile.tsv",  # noqa
+        "ScreenSpot_v2_Desktop": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_v2_Desktop.tsv",  # noqa
+        "ScreenSpot_v2_Web": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_v2_Web.tsv",  # noqa
     }  # path
     DATASET_URL_V2 = {
         "ScreenSpot_Mobile": "$WORK_DIR/screenspot_mobile_ug.json",
@@ -153,6 +156,9 @@ class ScreenSpot(ImageBaseDataset):
         "ScreenSpot_Mobile": "a5b5299843a75c9b9574c47bc13b2c53",
         "ScreenSpot_Desktop": "e6e7bac21b6b2475276404fce2458132",
         "ScreenSpot_Web": "e51d168c14b8582427cf3107d236cfc5",
+        "ScreenSpot_v2_Mobile": "234c858ab4f0e787e8388a73df65a4b7",
+        "ScreenSpot_v2_Desktop": "5f2aa2a497327bd33b2512a0c75cf994",
+        "ScreenSpot_v2_Web": "01cd0877ee1b735a6d5190b053ba9482",
     }
     EVAL_TYPE = "point"  # point or rectangle
     RE_TYPE = "functional"  # type of referring expressions: functional or composite
