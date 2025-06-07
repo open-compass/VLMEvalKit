@@ -199,11 +199,6 @@ class ScreenSpot_Pro(ImageBaseDataset):
             data["image"] = [x[0] if len(x) == 1 else x for x in images]
             self.meta_only = False
 
-        if "img_filename" in data:
-            paths = [toliststr(x) for x in data["img_filename"]]
-            data["image_path"] = [x[0] if len(x) == 1 else x for x in paths]
-            data["image_path"] = [x.replace("matlab_mac/", "matlab_macos/") for x in data["image_path"]]
-
         self.data = data
 
     @classmethod

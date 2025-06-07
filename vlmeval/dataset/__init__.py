@@ -142,16 +142,28 @@ class ConcatDataset(ImageBaseDataset):
             data_sub.pop('SUB_DATASET')
             dump(data_sub, tgt)
         # Then, evaluate each dataset separately
-        results_all = []
+        df_all = []
+        dict_all = {}
+        # One of the vars will be used to aggregate results
         for dname in self.datasets:
             tgt = eval_file.replace(self.dataset_name, dname)
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
-            assert isinstance(res, pd.DataFrame)
-            res['DATASET'] = [dname] * len(res)
-            results_all.append(res)
-        result = pd.concat(results_all)
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
-        dump(result, score_file)
+            if isinstance(res, pd.DataFrame):
+                res['DATASET'] = [dname] * len(res)
+                df_all.append(res)
+            elif isinstance(res, dict):
+                res = {f'{dname}:{k}': v for k, v in res.items()}
+                dict_all.update(res)
+            else:
+                raise NotImplementedError(f'Unknown result type {type(res)}')
+
+        if len(df_all):
+            result = pd.concat(df_all)
+            score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            dump(result, score_file)
+        else:
+            score_file = eval_file.replace(f'.{suffix}', '_score.json')
+            dump(dict_all, score_file)
         return result
 
 
