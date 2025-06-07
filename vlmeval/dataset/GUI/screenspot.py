@@ -355,7 +355,7 @@ class ScreenSpot(ImageBaseDataset):
             )
             # The format of bbox is (x1, y1, w, h)
             x1, y1, w, h = bbox
-            bbox = (x1, y1, x1 + w, y1 + h)
+            bbox = (x1, y1, x1 + w - 1, y1 + h - 1)
 
             image = Image.open(os.path.join(self.img_root, line["image_path"]))
             img_size = image.size
