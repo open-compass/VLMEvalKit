@@ -147,7 +147,14 @@ class ScreenSpot_Pro(ImageBaseDataset):
         "ScreenSpot_Pro_Office": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
         "ScreenSpot_Pro_OS": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
     }  # path
-    DATASET_MD5 = {}
+    DATASET_MD5 = {
+        'ScreenSpot_Pro_Development': '45b93df1d5814885011d682fe1b0f959',
+        'ScreenSpot_Pro_Creative': 'a15867fee82ba8cd95581895c55f03cd',
+        'ScreenSpot_Pro_CAD': '0faa3bc29eba359766c3a7ca2c4d8917',
+        'ScreenSpot_Pro_Scientific': 'edc2e1f2b53af5fff6480b77c4986b81',
+        'ScreenSpot_Pro_Office': '8756c128cf567274c2647423ccc4eaf0',
+        'ScreenSpot_Pro_OS': '49c3eaaa7df6d22475c39120fe8f1c06'
+    }
     EVAL_TYPE = "point"  # point or rectangle
     RE_TYPE = "functional"  # type of referring expressions: functional or composite
 
@@ -162,7 +169,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
-        self.img_root = osp.join(ROOT, "ScreenSpot_Pro", "images")
+        self.img_root = osp.join(ROOT, "images", self.dataset_name)
         self.RE_TYPE = re_type
         if skeleton:
             return
@@ -196,31 +203,8 @@ class ScreenSpot_Pro(ImageBaseDataset):
             data["image_path"] = [x[0] if len(x) == 1 else x for x in paths]
             data["image_path"] = [x.replace("matlab_mac/", "matlab_macos/") for x in data["image_path"]]
 
-        # if np.all([istype(x, int) for x in data["index"]]):
-        #     data["index"] = [int(x) for x in data["index"]]
-
         self.data = data
-        self.post_build(dataset)
-
-    def prepare_tsv(self, url, file_md5=None):
-        # st()
-        data = []
-        if isinstance(url, str):
-            url = [url]
-        data_root = LMUDataRoot()
-        for single_url in url:
-            data_path = osp.join(
-                data_root, "ScreenSpot_Pro", single_url + ".tsv"
-            )
-            task_data = load(data_path)
-            data.extend(task_data)
-        return pd.DataFrame(task_data)
-
-    # actually retrieve the image path
-    def dump_image(self, line):
-        assert "image_path" in line
-        tgt_path = toliststr(osp.join(self.img_root, line["image_path"]))
-        return tgt_path
+        print(data)
 
     @classmethod
     def get_action_space(self):
@@ -393,6 +377,10 @@ class ScreenSpot_Pro(ImageBaseDataset):
             prediction = str(line["prediction"])
             try:
                 click_point = self.parse_response_func(prediction)
+                # Do Normalization
+                if click_point[0] > 1 or click_point[1] > 1:
+                    click_point = (click_point[0] / img_size[0], click_point[1] / img_size[1])
+
                 match = (bbox[0] <= click_point[0] <= bbox[2]) and \
                     (bbox[1] <= click_point[1] <= bbox[3])
                 if match:
