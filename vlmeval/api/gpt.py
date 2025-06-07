@@ -233,8 +233,6 @@ class OpenAIWrapper(BaseAPI):
             answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
-                import pdb; pdb.set_trace()
-                print((response.json()))
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
 
