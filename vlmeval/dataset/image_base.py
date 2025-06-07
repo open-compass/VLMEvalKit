@@ -129,6 +129,13 @@ class ImageBaseDataset:
         else:
             assert 'image_path' in line
             tgt_path = toliststr(line['image_path'])
+            read_ok_flag = [read_ok(x) for x in tgt_path]
+            # Might be the Relative Path
+            if not all(read_ok_flag):
+                tgt_path_abs = [osp.join(self.img_root, x) for x in tgt_path]
+                read_ok_flag = [read_ok(x) for x in tgt_path_abs]
+                assert read_ok_flag, f"Field `image` is missing and we could not find {tgt_path} both as absolute or relative paths. "  # noqa
+                tgt_path = tgt_path_abs
 
         return tgt_path
 
