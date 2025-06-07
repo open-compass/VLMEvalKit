@@ -151,7 +151,7 @@ class ScreenSpot(ImageBaseDataset):
     DATASET_MD5 = {
         "ScreenSpot_Mobile": "a5b5299843a75c9b9574c47bc13b2c53",
         "ScreenSpot_Desktop": "e6e7bac21b6b2475276404fce2458132",
-        "ScreenSpot_Web": "2810437766da95489d7e35f9bdcb789f",
+        "ScreenSpot_Web": "e51d168c14b8582427cf3107d236cfc5",
     }
     EVAL_TYPE = "point"  # point or rectangle
     RE_TYPE = "functional"  # type of referring expressions: functional or composite
