@@ -164,10 +164,11 @@ class ConcatDataset(ImageBaseDataset):
             result = pd.concat(df_all)
             score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
             dump(result, score_file)
+            return result
         else:
             score_file = eval_file.replace(f'.{suffix}', '_score.json')
             dump(dict_all, score_file)
-        return result
+            return dict_all
 
 
 # Add new supported dataset class here
