@@ -143,6 +143,7 @@ api_models = {
         retry=10,
         verbose=True,
     ),
+<<<<<<< HEAD
     "vllm_qwen-72b": partial(
         VLLMAPI,
         model="Qwen25-VL-72B-Instruct",
@@ -341,6 +342,8 @@ api_models = {
         timeout = 1000,
         system_prompt=None,
     ),
+=======
+>>>>>>> 7a6427c (update)
     "GPT4V_HIGH": partial(
         GPT4V,
         model="gpt-4-1106-vision-preview",
