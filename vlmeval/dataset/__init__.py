@@ -13,7 +13,7 @@ from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
     MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA, ZEROBench,
-    Omni3DBench
+    Omni3DBench, TallyQA
 )
 
 from .image_ccocr import CCOCRDataset
@@ -187,7 +187,7 @@ IMAGE_DATASET = [
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench,
+    ZEROBench, SCAM, Omni3DBench, TallyQA
 ]
 
 
