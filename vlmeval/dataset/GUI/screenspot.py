@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import itertools
 from functools import partial
 
 import pandas as pd
@@ -292,7 +293,7 @@ class ScreenSpot(ImageBaseDataset):
                     if score_key != "IoU":
                         match[score_key.replace("ACC", "match")] = score
                     results_dict[score_key].append(score)
-                    if line["ui_type"] == "text":
+                    if line["data_type"] == "text":
                         results_dict[score_key + "_text"].append(score)
                     else:
                         results_dict[score_key + "_icon"].append(score)
@@ -305,8 +306,8 @@ class ScreenSpot(ImageBaseDataset):
                     "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
-                    "type": line["ui_type"],
-                    "source": line["application"],
+                    "type": line["data_type"],
+                    "source": line["data_source"],
                     "pred": click_point,
                     "num_matched": sum(match.values()),
                     **match,
@@ -396,8 +397,8 @@ class ScreenSpot(ImageBaseDataset):
                     "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
-                    "type": line["ui_type"],
-                    "source": line["application"],
+                    "type": line["data_type"],
+                    "source": line["data_source"],
                     "match": match,
                     "is_wrong_format": is_wrong_format,
                     "pred": click_point,
