@@ -2654,7 +2654,7 @@ class TallyQA(ImageBaseDataset):
         msgs[-1]['value'] += '\nAnswer the question using a single number.'
         return msgs
 
-      
+
 class Omni3DBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
