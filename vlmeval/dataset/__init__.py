@@ -12,7 +12,7 @@ from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA, ZEROBench, 
+    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA, ZEROBench,
     Omni3DBench
 )
 
@@ -61,7 +61,6 @@ from ..smp import *
 from .Omnidocbench.omnidocbench import OmniDocBench
 from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
-from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 
@@ -76,6 +75,12 @@ class ConcatDataset(ImageBaseDataset):
             'MMBench_dev_ar', 'MMBench_dev_cn', 'MMBench_dev_en',
             'MMBench_dev_pt', 'MMBench_dev_ru', 'MMBench_dev_tr'
         ],
+        'ScreenSpot_Pro': [
+            'ScreenSpot_Pro_Development', 'ScreenSpot_Pro_Creative', 'ScreenSpot_Pro_CAD',
+            'ScreenSpot_Pro_Scientific', 'ScreenSpot_Pro_Office', 'ScreenSpot_Pro_OS'
+        ],
+        'ScreenSpot': ['ScreenSpot_Mobile', 'ScreenSpot_Desktop', 'ScreenSpot_Web'],
+        'ScreenSpot_v2': ['ScreenSpot_v2_Mobile', 'ScreenSpot_v2_Desktop', 'ScreenSpot_v2_Web'],
     }
 
     def __init__(self, dataset):
@@ -98,8 +103,11 @@ class ConcatDataset(ImageBaseDataset):
         for dname in datasets:
             data = self.dataset_map[dname].data
             data['SUB_DATASET'] = [dname] * len(data)
-            data_new = localize_df(data, dname, nproc=16)
-            data_all.append(data_new)
+            if 'image' in data:
+                data_new = localize_df(data, dname, nproc=16)
+                data_all.append(data_new)
+            else:
+                data_all.append(data)
 
         data = pd.concat(data_all)
         data['original_index'] = data.pop('index')
@@ -138,17 +146,30 @@ class ConcatDataset(ImageBaseDataset):
             data_sub.pop('SUB_DATASET')
             dump(data_sub, tgt)
         # Then, evaluate each dataset separately
-        results_all = []
+        df_all = []
+        dict_all = {}
+        # One of the vars will be used to aggregate results
         for dname in self.datasets:
             tgt = eval_file.replace(self.dataset_name, dname)
             res = self.dataset_map[dname].evaluate(tgt, **judge_kwargs)
-            assert isinstance(res, pd.DataFrame)
-            res['DATASET'] = [dname] * len(res)
-            results_all.append(res)
-        result = pd.concat(results_all)
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
-        dump(result, score_file)
-        return result
+            if isinstance(res, pd.DataFrame):
+                res['DATASET'] = [dname] * len(res)
+                df_all.append(res)
+            elif isinstance(res, dict):
+                res = {f'{dname}:{k}': v for k, v in res.items()}
+                dict_all.update(res)
+            else:
+                raise NotImplementedError(f'Unknown result type {type(res)}')
+
+        if len(df_all):
+            result = pd.concat(df_all)
+            score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            dump(result, score_file)
+            return result
+        else:
+            score_file = eval_file.replace(f'.{suffix}', '_score.json')
+            dump(dict_all, score_file)
+            return dict_all
 
 
 # Add new supported dataset class here
@@ -163,7 +184,7 @@ IMAGE_DATASET = [
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot,
-    ScreenSpotV2, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
+    MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench,

@@ -2,14 +2,17 @@ from collections import defaultdict
 import pandas as pd
 
 OMNI3DBENCH_PROMPT = """
-I will ask you a question based on an image. Answer with either true/false, one word or number, place your answer between <ans></ans> tags. Only include your answer. Question: 
+I will ask you a question based on an image. Answer with either true/false, one word or number, \
+place your answer between <ans></ans> tags. Only include your answer. Question:
 """
+
 
 def extract_answer(prediction):
     if '<ans>' in prediction:
         return prediction.split('<ans>')[1].split('</ans>')[0]
     else:
         return prediction
+
 
 def Omni3DBench_acc(data):
     mra_thresholds = [0.5, 0.45, 0.40, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05]
