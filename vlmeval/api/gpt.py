@@ -289,11 +289,8 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         elif self.key is None:
             headers = {'Content-Type': 'application/json'}
-        elif 'gemini' in self.model:
-            headers = {'Content-Type': 'application/json', 'api-key': self.key}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
-<<<<<<< HEAD
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
@@ -303,7 +300,6 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
-=======
 
         if 'gemini' in self.model:
             input_msgs, system_instruction = convert_openai_to_gemini_format(input_msgs)
@@ -350,6 +346,8 @@ class OpenAIWrapper(BaseAPI):
                 answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
+                import pdb; pdb.set_trace()
+                print((response.json()))
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
 
