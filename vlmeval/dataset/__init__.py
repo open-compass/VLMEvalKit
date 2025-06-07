@@ -79,7 +79,8 @@ class ConcatDataset(ImageBaseDataset):
         'ScreenSpot_Pro': [
             'ScreenSpot_Pro_Development', 'ScreenSpot_Pro_Creative', 'ScreenSpot_Pro_CAD',
             'ScreenSpot_Pro_Scientific', 'ScreenSpot_Pro_Office', 'ScreenSpot_Pro_OS'
-        ]
+        ],
+        'ScreenSpot': ['ScreenSpot_Mobile', 'ScreenSpot_Desktop', 'ScreenSpot_Web'],
     }
 
     def __init__(self, dataset):
