@@ -185,7 +185,7 @@ class OpenAIWrapper(BaseAPI):
                 if key is None:
                     key = env_key
                 else:
-                    assert isinstance(key, str), (
+                    assert isinstance(key, str) and key.startswith('sk-'), (
                         f'Illegal openai_key {key}. '
                         'Please set the environment variable OPENAI_API_KEY to your openai key. '
                     )
@@ -290,8 +290,11 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         elif self.key is None:
             headers = {'Content-Type': 'application/json'}
+<<<<<<< HEAD
         elif 'gemini' in self.model:
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
+=======
+>>>>>>> 7a6427c (update)
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
 
@@ -339,6 +342,8 @@ class OpenAIWrapper(BaseAPI):
                 answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
+                import pdb; pdb.set_trace()
+                print((response.json()))
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
 
