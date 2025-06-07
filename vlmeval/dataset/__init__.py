@@ -102,8 +102,11 @@ class ConcatDataset(ImageBaseDataset):
         for dname in datasets:
             data = self.dataset_map[dname].data
             data['SUB_DATASET'] = [dname] * len(data)
-            data_new = localize_df(data, dname, nproc=16)
-            data_all.append(data_new)
+            if 'image' in data:
+                data_new = localize_df(data, dname, nproc=16)
+                data_all.append(data_new)
+            else:
+                data_all.append(data)
 
         data = pd.concat(data_all)
         data['original_index'] = data.pop('index')
