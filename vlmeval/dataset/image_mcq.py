@@ -114,6 +114,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'PathMMU_TEST': 'https://huggingface.co/datasets/Pfei111/PathMMU/resolve/main/PathMMU_TEST.tsv',
         'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
         'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
+        'MMSIBench_circular': 'https://opencompass.openxlab.space/utils/VLMEval/MMSIBench_circular.tsv',
     }
 
     DATASET_MD5 = {
@@ -172,6 +173,7 @@ class ImageMCQDataset(ImageBaseDataset):
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
+        'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
     }
 
     DATASET_URL.update(MMMB_URLS)
