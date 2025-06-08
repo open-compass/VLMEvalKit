@@ -36,7 +36,7 @@ class Video_Holmes(VideoBaseDataset):
     Based on the given video, reason and answer the single-choice question. Provide your reasoning between the <think> and </think> tags, and then give your final answer between the <answer> and </answer> tags. \
     The question is: {}. The options are: {}. \
     Your answer:
-    """
+    """  # noqa: E501
 
     TYPE = 'Video-MCQ'
 
@@ -63,20 +63,17 @@ class Video_Holmes(VideoBaseDataset):
                     return False
             return True
 
-        
         cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-
-            
             def unzip_hf_zip(pth):
                 import zipfile
                 base_dir = pth
                 target_dir = os.path.join(pth, 'video/')
                 zip_files = [
                     os.path.join(base_dir, file) for file in os.listdir(base_dir)
-                    if file=="videos.zip"
+                    if file == "videos.zip"
                 ]
                 zip_files.sort()
 
@@ -96,7 +93,6 @@ class Video_Holmes(VideoBaseDataset):
                 else:
                     print('The video file already exists.')
 
-
             def generate_tsv(pth):
 
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
@@ -107,12 +103,13 @@ class Video_Holmes(VideoBaseDataset):
                     data = json.load(f)
 
                 rows = []
-  
+
                 for idx, item in enumerate(data):
-    
+
                     video_id = item.get('video ID')
                     options = item.get('Options', {})
-                    candidates = [f"{k}. {options.get(k, '')}".replace("'","") for k in ['A', 'B', 'C', 'D', 'E', 'F'] if k in options]
+                    candidates = [f"{k}. {options.get(k, '')}".replace("'","")
+                                  for k in ['A', 'B', 'C', 'D', 'E', 'F'] if k in options]
                     row = {
                         'index': idx,
                         'video': video_id,
@@ -127,19 +124,18 @@ class Video_Holmes(VideoBaseDataset):
                     rows.append(row)
 
                 df = pd.DataFrame(rows)
-                columns = ['index', 'video', 'video_path', 'candidates', 
-                        'question', 'answer', 'question_id', 'question_type', 'explanation']
+                columns = ['index', 'video', 'video_path', 'candidates',
+                           'question', 'answer', 'question_id', 'question_type', 'explanation']
                 df = df[columns]
-                df.to_csv(data_file, sep='\t', index=False)   
+                df.to_csv(data_file, sep='\t', index=False)
                 print("Generate tsv file OK")
-
 
             if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-            
+
             unzip_hf_zip(dataset_path)
             generate_tsv(dataset_path)
 
@@ -179,13 +175,13 @@ class Video_Holmes(VideoBaseDataset):
         return frame_paths, indices, video_info
 
     def build_prompt(self, line, video_llm):
-        
+
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
 
         frames, indices, video_info = self.save_video_frames(line['video'], video_llm)
-        
+
         message = [dict(type='text', value=self.SYS)]
 
         if video_llm:
@@ -193,7 +189,7 @@ class Video_Holmes(VideoBaseDataset):
         else:
             for im in frames:
                 message.append(dict(type='image', value=im))
-        
+
         text_prompt = self.QUESTION_TMPL.format(line['question'],line['candidates'])
         message.append(dict(type='text', value=text_prompt))
         # print(f"Build message OK {line[1]}")
@@ -239,8 +235,7 @@ class Video_Holmes(VideoBaseDataset):
                 predicted_answer = extract_option(pred)
 
                 data.loc[idx, 'score'] = int(predicted_answer == ans)
-                
-                
+
             rejected = [x for x in data['score'] if x == -1]
 
             print(

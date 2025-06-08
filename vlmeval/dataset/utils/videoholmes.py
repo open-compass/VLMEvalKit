@@ -13,7 +13,6 @@ TASK_CATEGORIES = [
 def get_dimension_rating(data_path, score_col='score', type_col='question_type'):
     data = load(data_path)
     acc_by_type = {}
-    
     for qtype, group in data.groupby(type_col):
         correct = (group[score_col] == 1).sum()
         total = len(group)
