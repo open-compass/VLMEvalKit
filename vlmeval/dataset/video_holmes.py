@@ -196,7 +196,7 @@ class Video_Holmes(VideoBaseDataset):
         
         text_prompt = self.QUESTION_TMPL.format(line['question'],line['candidates'])
         message.append(dict(type='text', value=text_prompt))
-        print(f"Build message OK {line[1]}")
+        # print(f"Build message OK {line[1]}")
         return message
 
     # It returns a dictionary
@@ -250,7 +250,7 @@ class Video_Holmes(VideoBaseDataset):
             )
 
             dump(data, score_file)
-        breakpoint()
+
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
