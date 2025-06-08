@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import itertools
 from functools import partial
 
 import pandas as pd
@@ -140,48 +141,21 @@ class ScreenSpot_Pro(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Pro_Development": "ScreenSpot_Pro_Development",
-        "ScreenSpot_Pro_Creative": "ScreenSpot_Pro_Creative",
-        "ScreenSpot_Pro_CAD": "ScreenSpot_Pro_CAD",
-        "ScreenSpot_Pro_Scientific": "ScreenSpot_Pro_Scientific",
-        "ScreenSpot_Pro_Office": "ScreenSpot_Pro_Office",
-        "ScreenSpot_Pro_OS": "ScreenSpot_Pro_OS",
-        # "ScreenSpot_Pro_Development": [
-        #     "vscode_macos",
-        #     "pycharm_macos",
-        #     "android_studio_macos",
-        #     "quartus_windows",
-        #     "vmware_macos",
-        # ],
-        # "ScreenSpot_Pro_Creative": [
-        #     "photoshop_windows",
-        #     "premiere_windows",
-        #     "illustrator_windows",
-        #     "blender_windows",
-        #     "fruitloops_windows",
-        #     "unreal_engine_windows",
-        #     "davinci_macos",
-        # ],
-        # "ScreenSpot_Pro_CAD": [
-        #     "autocad_windows",
-        #     "solidworks_windows",
-        #     "inventor_windows",
-        #     "vivado_windows",
-        # ],
-        # "ScreenSpot_Pro_Scientific": [
-        #     "matlab_macos",
-        #     "origin_windows",
-        #     "stata_windows",
-        #     "eviews_windows",
-        # ],
-        # "ScreenSpot_Pro_Office": ["word_macos", "excel_macos", "powerpoint_windows"],
-        # "ScreenSpot_Pro_OS": [
-        #     "macos_common_macos",
-        #     "windows_common_windows",
-        #     "linux_common_linux",
-        # ],
+        "ScreenSpot_Pro_Development": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Development.tsv",  # noqa
+        "ScreenSpot_Pro_Creative": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Creative.tsv",  # noqa
+        "ScreenSpot_Pro_CAD": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_CAD.tsv",  # noqa
+        "ScreenSpot_Pro_Scientific": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Scientific.tsv",  # noqa
+        "ScreenSpot_Pro_Office": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
+        "ScreenSpot_Pro_OS": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
     }  # path
-    DATASET_MD5 = {}
+    DATASET_MD5 = {
+        'ScreenSpot_Pro_Development': '45b93df1d5814885011d682fe1b0f959',
+        'ScreenSpot_Pro_Creative': 'a15867fee82ba8cd95581895c55f03cd',
+        'ScreenSpot_Pro_CAD': '0faa3bc29eba359766c3a7ca2c4d8917',
+        'ScreenSpot_Pro_Scientific': 'edc2e1f2b53af5fff6480b77c4986b81',
+        'ScreenSpot_Pro_Office': '8756c128cf567274c2647423ccc4eaf0',
+        'ScreenSpot_Pro_OS': '49c3eaaa7df6d22475c39120fe8f1c06'
+    }
     EVAL_TYPE = "point"  # point or rectangle
     RE_TYPE = "functional"  # type of referring expressions: functional or composite
 
@@ -196,7 +170,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
-        self.img_root = osp.join(ROOT, "ScreenSpot_Pro", "images")
+        self.img_root = osp.join(ROOT, "images", self.dataset_name)
         self.RE_TYPE = re_type
         if skeleton:
             return
@@ -225,36 +199,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
             data["image"] = [x[0] if len(x) == 1 else x for x in images]
             self.meta_only = False
 
-        if "img_filename" in data:
-            paths = [toliststr(x) for x in data["img_filename"]]
-            data["image_path"] = [x[0] if len(x) == 1 else x for x in paths]
-            data["image_path"] = [x.replace("matlab_mac/", "matlab_macos/") for x in data["image_path"]]
-
-        # if np.all([istype(x, int) for x in data["index"]]):
-        #     data["index"] = [int(x) for x in data["index"]]
-
         self.data = data
-        self.post_build(dataset)
-
-    def prepare_tsv(self, url, file_md5=None):
-        # st()
-        data = []
-        if isinstance(url, str):
-            url = [url]
-        data_root = LMUDataRoot()
-        for single_url in url:
-            data_path = osp.join(
-                data_root, "ScreenSpot_Pro", single_url + ".tsv"
-            )
-            task_data = load(data_path)
-            data.extend(task_data)
-        return pd.DataFrame(task_data)
-
-    # actually retrieve the image path
-    def dump_image(self, line):
-        assert "image_path" in line
-        tgt_path = toliststr(osp.join(self.img_root, line["image_path"]))
-        return tgt_path
 
     @classmethod
     def get_action_space(self):
@@ -380,30 +325,24 @@ class ScreenSpot_Pro(ImageBaseDataset):
         return results_dict
 
     def evaluate_point(self, eval_file, **judge_kwargs):
-        # st()
-        SCREENSPOT_result = dict(
-            num_action=0,
-            corr_action=0,
-            text_correct=[],
-            icon_correct=[],
-            num_wrong_format=0,
-            text_num=0,
-            icon_num=0,
-        )
+        # -1: format_err, 0: wrong, 1: correct
+        stats = defaultdict(list)
+        # Will include instance-level results
         result = []
+
         data = load(eval_file)
         assert "bbox" in data and "prediction" in data
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
         for i in tqdm(range(len(lines))):
-            SCREENSPOT_result["num_action"] += 1
             line = lines[i]
             bbox = (
                 line["bbox"]
                 if isinstance(line["bbox"], list)
                 else ast.literal_eval(line["bbox"])
             )
-            # bbox = [bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]]  # f**k
+            # The format of bbox is (x1, y1, x2, y2)
+
             image = Image.open(os.path.join(self.img_root, line["image_path"]))
             img_size = image.size
 
@@ -424,52 +363,26 @@ class ScreenSpot_Pro(ImageBaseDataset):
             if any([x < 0 or x > 1 for x in bbox]):
                 raise ValueError(f"bbox out of range: {bbox} | {line['bbox']} | {img_size}")
 
+            key = line["category"] + ":" + line['ui_type']
             prediction = str(line["prediction"])
             try:
                 click_point = self.parse_response_func(prediction)
+                # Do Normalization By Default
+                if click_point[0] > 1 or click_point[1] > 1:
+                    click_point = (click_point[0] / img_size[0], click_point[1] / img_size[1])
+
                 match = (bbox[0] <= click_point[0] <= bbox[2]) and \
                     (bbox[1] <= click_point[1] <= bbox[3])
+
                 if match:
-                    SCREENSPOT_result["corr_action"] += 1
-                    if line["ui_type"] == "text":
-                        SCREENSPOT_result["text_correct"].append(1)
-                        SCREENSPOT_result["text_num"] += 1
-                    else:
-                        SCREENSPOT_result["icon_correct"].append(1)
-                        SCREENSPOT_result["icon_num"] += 1
-                    logger.debug(
-                        "match "
-                        + str(
-                            SCREENSPOT_result["corr_action"]
-                            / SCREENSPOT_result["num_action"]
-                        )
-                    )
+                    stats[key].append(1)
                 else:
-                    if line["ui_type"] == "text":
-                        SCREENSPOT_result["text_correct"].append(0)
-                        SCREENSPOT_result["text_num"] += 1
-                    else:
-                        SCREENSPOT_result["icon_correct"].append(0)
-                        SCREENSPOT_result["icon_num"] += 1
-                    logging.debug(
-                        "unmatch "
-                        + str(
-                            SCREENSPOT_result["corr_action"]
-                            / SCREENSPOT_result["num_action"]
-                        )
-                    )
+                    stats[key].append(0)
                 is_wrong_format = False
 
             except Exception as e:
                 logger.warning(f"exception in screenspot eval:{e}")
-                SCREENSPOT_result["num_wrong_format"] += 1
-                if line["ui_type"] == "text":
-                    SCREENSPOT_result["text_correct"].append(0)
-                    SCREENSPOT_result["text_num"] += 1
-                else:
-                    SCREENSPOT_result["icon_correct"].append(0)
-                    SCREENSPOT_result["icon_num"] += 1
-
+                stats[key].append(-1)
                 match, is_wrong_format, click_point = False, True, None
 
             result.append(
@@ -486,30 +399,28 @@ class ScreenSpot_Pro(ImageBaseDataset):
                 }
             )
 
-        action_acc = SCREENSPOT_result["corr_action"] / SCREENSPOT_result["num_action"] * 100
-        text_acc = (
-            sum(SCREENSPOT_result["text_correct"])
-            / len(SCREENSPOT_result["text_correct"])
-            if len(SCREENSPOT_result["text_correct"]) != 0
-            else 0
-        ) * 100
-        icon_acc = (
-            sum(SCREENSPOT_result["icon_correct"])
-            / len(SCREENSPOT_result["icon_correct"])
-            if len(SCREENSPOT_result["icon_correct"]) != 0
-            else 0
-        ) * 100
-
         final_score_dict = {}
-        final_score_dict["Action Acc"] = str(action_acc)
-        final_score_dict["Total num"] = str(SCREENSPOT_result["num_action"])
-        final_score_dict["Wrong format num"] = str(
-            SCREENSPOT_result["num_wrong_format"]
-        )
-        final_score_dict["Text Num"] = str(SCREENSPOT_result["text_num"])
-        final_score_dict["Icon Num"] = str(SCREENSPOT_result["icon_num"])
-        final_score_dict["Text Acc"] = str(text_acc)
-        final_score_dict["Icon Acc"] = str(icon_acc)
+        # Record the number of each category
+        final_score_dict.update({k + ':cnt': len(stats[k]) for k in stats})
+        # Calculate the Overall stats
+        full_stats = []
+        for v in stats.values():
+            full_stats.extend(v)
+        final_score_dict['Overall_Accuracy'] = np.mean([x > 0 for x in full_stats]) * 100
+        final_score_dict['Format_Err_Rate'] = np.mean([x < 0 for x in full_stats]) * 100
+        # Calculate the Accuracy of Text / Icon
+        text_stats = [v for k, v in stats.items() if k.split(":")[1] == "text" for x in v]
+        text_stats = itertools.chain(*text_stats)
+        final_score_dict['Text_Accuracy'] = np.mean([x > 0 for x in text_stats]) * 100
+        icon_stats = [v for k, v in stats.items() if k.split(":")[1] == "icon" for x in v]
+        icon_stats = itertools.chain(*icon_stats)
+        final_score_dict['Icon_Accuracy'] = np.mean([x > 0 for x in icon_stats]) * 100
+        # Calculate the Accuracy of Each Category
+        cates = list(set(data['category']))
+        for c in cates:
+            sub_stats = [v for k, v in stats.items() if k.split(":")[0] == c for x in v]
+            sub_stats = itertools.chain(*sub_stats)
+            final_score_dict[c + '_Accuracy'] = np.mean([x > 0 for x in sub_stats]) * 100
 
         score_pth = eval_file.replace(".xlsx", "_score.json")
         dump(final_score_dict, score_pth)
