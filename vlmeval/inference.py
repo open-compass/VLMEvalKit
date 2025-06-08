@@ -153,7 +153,17 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         else:
             struct = dataset.build_prompt(data.iloc[i])
 
-        response = model.generate(message=struct, dataset=dataset_name)
+        # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
+        if os.environ.get('SKIP_ERR', False) == '1':
+            FAIL_MSG = 'Failed to obtain answer'
+            try:
+                response = model.generate(message=struct, dataset=dataset_name)
+            except RuntimeError as err:
+                torch.cuda.synchronize()
+                warnings.error(f'{type(err)} {str(err)}')
+                response = f'{FAIL_MSG}: {type(err)} {str(err)}'
+        else:
+            response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:
