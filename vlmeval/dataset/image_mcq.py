@@ -294,6 +294,42 @@ class ImageMCQDataset(ImageBaseDataset):
         score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         dump(acc, score_file)
 
+        # The piece of code is for internal use, to check vanilla acc (circ0 & all) for circular datasets
+        if circular and os.environ.get('PRINT_VANILLA', None) == '1':
+            acc_map['circular'] = acc
+            # Vanilla Circ0 Acc
+            data = load(eval_file)
+            data['index'] = [int(x) for x in data['index']]
+            if 'g_index' in data:
+                data['g_index'] = [int(x) for x in data['g_index']]
+                circ0 = data[data['g_index'] == data['index']]
+            else:
+                offset = 1e6
+                circ0 = data[data['index'] <= offset]
+            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_result.pkl')
+            data0 = mcq_vanilla_eval(model, circ0, meta, nproc, result_file, self.dataset_name)
+            dump(data0, eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_circ0_result.{suffix}'))
+            data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_circ0_result.{suffix}'))
+            acc_map['vanilla_0'] = report_acc(data)
+            # Vanilla ALL Acc
+            data = load(eval_file)
+            dataall = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+            dump(dataall, eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_all_result.{suffix}'))
+            data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_all_result.{suffix}'))
+            acc_map['vanilla_all'] = report_acc(data)
+            # Merge & Print the Evaluation Results
+            for k, v in acc_map.items():
+                if len(v) == 1 and pd.isna(v[0]['split']):
+                    v['split'] = [k]
+                else:
+                    assert not pd.isna(v[0]['split'])
+                    v['split'] = [k + '_' + sp for sp in v['split']]
+            score_all = [acc_map['vanilla_0'], acc_map['vanilla_all'], acc_map['circular']]
+            score_all = pd.concat(score_all)
+            print(score_all)
+            score_file = eval_file.replace(f'.{suffix}', '_acc_all.csv')
+            dump(score_all, score_file)
+
         if dataset == 'AesBench_VAL':
             warnings.warn('Note that AesBench VAL is just a toy version of AesBench TEST. For full results, \
                            please evaluate on AesBench TEST. The AesBench TEST dataset is more than 20 times \
