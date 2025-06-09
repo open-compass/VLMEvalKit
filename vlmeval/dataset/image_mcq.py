@@ -1948,106 +1948,103 @@ class SCAM(ImageMCQDataset):
 
     class OmniEarth_MCQ(ImageMCQDataset):
 
-    DATASET_URL = {
-        'OmniEarth_MCQ': '',
-    }
+        DATASET_URL = {'OmniEarth_MCQ': ''}
 
-    def load_data(self, dataset="OmniEarth_MCQ", repo_id="initiacms/OmniEarth-Bench_MCQ"):
-        """
-        将HuggingFace parquet后缀dataset生成规范的DataFrame
-        需要字段:
-            index, question, A, B, C, D, answer, image (base64)
-        现有字段:
-            query, response, image(PIL.Image Type)
-        """
-        import re
-        import pandas as pd
-        from datasets import load_dataset
-        # from PIL import Image
-        from ..tools import encode_image_to_base64
+        def load_data(self, dataset="OmniEarth_MCQ", repo_id="initiacms/OmniEarth-Bench_MCQ"):
+            """
+            将HuggingFace parquet后缀dataset生成规范的DataFrame
+            需要字段:
+                index, question, A, B, C, D, answer, image (base64)
+            现有字段:
+                query, response, image(PIL.Image Type)
+            """
+            import re
+            import pandas as pd
+            from datasets import load_dataset
+            # from PIL import Image
+            from ..tools import encode_image_to_base64
 
-        # 读取huggingface数据
-        ds = load_dataset("initiacms/OmniEarth-Bench_MCQ", data_dir="data", split='train')
+            # 读取huggingface数据
+            ds = load_dataset("initiacms/OmniEarth-Bench_MCQ", data_dir="data", split='train')
 
+            for sample in ds:
+                for opt in sample["multi-choice options"]:
+                    m = option_letter_pat.match(opt)
+                    if m:
+                        all_letters.add(m.group(1))
 
-        for sample in ds:
-            for opt in sample["multi-choice options"]:
-                m = option_letter_pat.match(opt)
-                if m:
-                    all_letters.add(m.group(1))
+            # 保持字母顺序稳定（A, B, …）
+            all_letters = sorted(all_letters)
 
-        # 保持字母顺序稳定（A, B, …）
-        all_letters = sorted(all_letters)
+            # ---------- 第二遍生成记录 ----------
+            records = []
+            for sample in ds:
+                row = {
+                    "index": sample.get("index", None),
+                    "question": sample["question"].strip(),
+                    "answer": option_letter_pat.match(str(sample["answer"])).group(1),
+                    "image": encode_image_to_base64(sample["image"]),
+                }
 
-        # ---------- 第二遍生成记录 ----------
-        records = []
-        for sample in ds:
-            row = {
-                "index":    sample.get("index", None),
-                "question": sample["question"].strip(),
-                "answer":   option_letter_pat.match(str(sample["answer"])).group(1),
-                "image":    encode_image_to_base64(sample["image"]),
+                # 预填空串，确保所有列存在
+                for L in all_letters:
+                    row[L] = ""
+
+                for opt in sample["multi-choice options"]:
+                    m = option_letter_pat.match(opt)
+                    if not m:
+                        continue
+                    letter = m.group(1)
+                    text = opt[m.end():].strip()   # 去掉 "(A)" 前缀
+                    row[letter] = text
+
+                records.append(row)
+
+            # ---------- DataFrame & 列顺序 ----------
+            option_cols = all_letters                     # ['A', 'B', 'C', ...]
+            base_cols = ["index", "question"] + option_cols + ["answer", "image"]
+            df = pd.DataFrame(records)[base_cols]
+
+            # 如部分行缺 index，可重新编号
+            if df["index"].isnull().any():
+                df["index"] = range(len(df))
+
+            return df
+
+        def build_prompt(self, line):
+
+            if isinstance(line, int):
+                line = self.data.iloc[line]
+
+            if self.meta_only:
+                tgt_path = toliststr(line['image_path'])
+            else:
+                tgt_path = self.dump_image(line)
+
+            question = line['question']
+            options = {
+                cand: line[cand]
+                for cand in string.ascii_uppercase
+                if cand in line and not pd.isna(line[cand])
             }
+            options_prompt = 'Options:\n'
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+            hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+            prompt = 'You are tasked with answering a multiple-choice question about the given input image.\n\n'
+            if hint is not None:
+                prompt += f'Hint: {hint}\n'
+            prompt += f'Caption:\n {question}\n'
+            if len(options):
+                prompt += options_prompt
+                # prompt += 'Please select the correct answer from the options above. \n'
+                prompt += "Based on the image, select the correct option or directly state the correct option content, Do not give any explaination."  # noqa E501
 
-            # 预填空串，确保所有列存在
-            for L in all_letters:
-                row[L] = ""
+            msgs = []
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+            msgs.append(dict(type='text', value=prompt))
 
-            for opt in sample["multi-choice options"]:
-                m = option_letter_pat.match(opt)
-                if not m:
-                    continue
-                letter = m.group(1)
-                text   = opt[m.end():].strip()   # 去掉 "(A)" 前缀
-                row[letter] = text
-
-            records.append(row)
-
-        # ---------- DataFrame & 列顺序 ----------
-        option_cols = all_letters                     # ['A', 'B', 'C', ...]
-        base_cols   = ["index", "question"] + option_cols + ["answer", "image"]
-        df = pd.DataFrame(records)[base_cols]
-
-        # 如部分行缺 index，可重新编号
-        if df["index"].isnull().any():
-            df["index"] = range(len(df))
-
-        return df
-
-    def build_prompt(self, line):
-
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-
-        if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
-        else:
-            tgt_path = self.dump_image(line)
-
-        question = line['question']
-        options = {
-            cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
-        }
-        options_prompt = 'Options:\n'
-        for key, item in options.items():
-            options_prompt += f'{key}. {item}\n'
-        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
-        prompt = 'You are tasked with answering a multiple-choice question about the given input image.\n\n'
-        if hint is not None:
-            prompt += f'Hint: {hint}\n'
-        prompt += f'Caption:\n {question}\n'
-        if len(options):
-            prompt += options_prompt
-            # prompt += 'Please select the correct answer from the options above. \n'
-            prompt += "Based on the image, select the correct option or directly state the correct option content, Do not give any explaination."  # noqa E501
-
-        msgs = []
-        if isinstance(tgt_path, list):
-            msgs.extend([dict(type='image', value=p) for p in tgt_path])
-        else:
-            msgs = [dict(type='image', value=tgt_path)]
-        msgs.append(dict(type='text', value=prompt))
-
-        return msgs
+            return msgs
