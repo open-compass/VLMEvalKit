@@ -1386,7 +1386,7 @@ class LEGO(ImageMCQDataset):
     DATASET_URL = {
         'LEGO': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO.tsv',
     }
-    DATASET_MD5 = {'LEGO': 'd595f50e1fb4d4eb12cbc95297893ffc'}
+    DATASET_MD5 = {'LEGO': '70c4c54716631eb546c48d877be6acd2'}
 
     @staticmethod
     def split_LEGO(msgs):
