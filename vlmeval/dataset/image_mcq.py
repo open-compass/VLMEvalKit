@@ -296,6 +296,7 @@ class ImageMCQDataset(ImageBaseDataset):
 
         # The piece of code is for internal use, to check vanilla acc (circ0 & all) for circular datasets
         if circular and os.environ.get('PRINT_VANILLA', None) == '1':
+            acc_map = {}
             acc_map['circular'] = acc
             # Vanilla Circ0 Acc
             data = load(eval_file)
@@ -319,10 +320,12 @@ class ImageMCQDataset(ImageBaseDataset):
             acc_map['vanilla_all'] = report_acc(data)
             # Merge & Print the Evaluation Results
             for k, v in acc_map.items():
-                if len(v) == 1 and pd.isna(v[0]['split']):
+                if 'split' not in v:
+                    v['split'] = [None] * len(v)
+                if len(v) == 1 and pd.isna(v['split'][0]):
                     v['split'] = [k]
                 else:
-                    assert not pd.isna(v[0]['split'])
+                    assert not pd.isna(v['split'][0])
                     v['split'] = [k + '_' + sp for sp in v['split']]
             score_all = [acc_map['vanilla_0'], acc_map['vanilla_all'], acc_map['circular']]
             score_all = pd.concat(score_all)
