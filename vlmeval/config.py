@@ -1151,6 +1151,20 @@ qwen2vl_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+    "MiMo-VL-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-RL": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-RL",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
     "Qwen2.5-VL-72B-Instruct-ForVideo": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
