@@ -7,6 +7,7 @@ import os.path as osp
 import torch
 import re
 
+
 def extract_object(sentence: str) -> str:
     words = sentence.split()
     obj_words = []
@@ -14,8 +15,9 @@ def extract_object(sentence: str) -> str:
         if word.lower() in {"are", "is"}:
             break
         obj_words.append(word)
-        
+
     return " ".join(obj_words)
+
 
 class Moondream1(BaseModel):
     INSTALL_REQ = False
@@ -110,9 +112,8 @@ class Moondream2(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = False
 
-    def __init__(
-        self, model_path="vikhyatk/moondream2", revision=None, **kwargs):
-        
+    def __init__(self, model_path="vikhyatk/moondream2", revision=None, **kwargs):
+
         import transformers
         import torchvision
         assert transformers.__version__ >= "4.44.0", f"Transformers 4.44.0 or greater required, found {transformers.__version__}"
@@ -144,11 +145,11 @@ class Moondream2(BaseModel):
     def generate_inner(self, message, dataset=None):
         """
         Generate an answer for the given message using the specified capability.
-        
+
         Args:
             message (dict): The message containing the question and image.
             dataset (str): The dataset for which the answer is being generated (optional, for context).
-            
+
         Returns:
             str: The generated answer or count.
         """
@@ -198,7 +199,7 @@ class Moondream2(BaseModel):
         tgt_path = self.dump_image(line, dataset)
         question = line["question"]
 
-        capability = self.capability # Default capability = "query", change to "point" if needed.
+        capability = self.capability  # Default capability = "query", change to "point" if needed.
 
         prompts = {
             "ChartQA_TEST": f"Analyze the chart carefully, consider both visual features and data values, and provide a precise answer without any additional explanation or formatting. {question}",
