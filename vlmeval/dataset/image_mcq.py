@@ -111,6 +111,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
         'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
         'MMSIBench_circular': 'https://opencompass.openxlab.space/utils/VLMEval/MMSIBench_circular.tsv',
+        'SpatialEval': 'https://opencompass.openxlab.space/utils/VLMEval/SpatialEval.tsv',
     }
 
     DATASET_MD5 = {
@@ -169,6 +170,7 @@ class ImageMCQDataset(ImageBaseDataset):
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
+        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b'
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -2033,6 +2035,5 @@ class _3DSRBench(ImageMCQDataset):
             acc_map[k]['setting'] = [k] * len(acc_map[k])
             metrics.append(acc_map[k])
         res_all = pd.concat(metrics)
-        print(res_all)
         dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
         return res_all
