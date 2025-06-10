@@ -175,7 +175,7 @@ class DoubaoVLWrapper(BaseAPI):
         response = None
         try:
             response = self.client.chat.completions.create(
-                model=self.endpoint,
+                model=self.model,
                 messages=input_msgs,
                 max_tokens=max_tokens,
                 temperature=temperature
