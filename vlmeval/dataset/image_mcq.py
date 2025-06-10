@@ -98,10 +98,6 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
             'resolve/main/visonlyqa_vlmevalkit.tsv'
         ),
-        '3DSRBench': (
-            'https://huggingface.co/datasets/ccvl/3DSRBench/'
-            'resolve/main/3dsrbench_v1_vlmevalkit_circular.tsv'
-        ),
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
         "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
@@ -167,7 +163,6 @@ class ImageMCQDataset(ImageBaseDataset):
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
-        '3DSRBench': '13a99f33164dc1b9faf0e8b8b01fd6f2',
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '71c82f81920a84526803574f719099a7',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
@@ -280,8 +275,9 @@ class ImageMCQDataset(ImageBaseDataset):
             data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # load split
-        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        eval_record = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        dump(data, eval_record)
+        data = load(eval_record)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
@@ -1984,3 +1980,59 @@ class SCAM(ImageMCQDataset):
         df['index'] = range(1, len(df) + 1)  # add index column with unique values
 
         return df
+
+
+class _3DSRBench(ImageMCQDataset):
+
+    DATASET_URL = {'3DSRBench': 'http://opencompass.openxlab.space/utils/VLMEval/3DSRBench.tsv'}
+    DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        super().evaluate(eval_file, **judge_kwargs)
+        from .utils.multiple_choice import report_acc
+        dname = osp.dirname(eval_file)
+        base = osp.basename(eval_file).split('.')[0]
+        result_file = ls(dname, match=[base, 'result.xlsx'])
+        assert len(result_file) == 1
+        result_file = result_file[0]
+        data = load(result_file)
+
+        acc_map = {}
+        acc_map['vanilla'] = report_acc(data)
+        # Flip Acc
+        qid2key = {x: x.replace('-flip', '') for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['flip_eval'] = report_acc(main)
+        # Circ Acc
+        qid2key = {x: x[:8] if '-flip' not in x else x[:13] for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['circ_eval'] = report_acc(main)
+        # Flip Circ Acc
+        qid2key = {x: x[:8] for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['flip_circ_eval'] = report_acc(main)
+
+        metrics = []
+        for k in acc_map:
+            acc_map[k].pop('split')
+            acc_map[k]['setting'] = [k] * len(acc_map[k])
+            metrics.append(acc_map[k])
+        res_all = pd.concat(metrics)
+        print(res_all)
+        dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
+        return res_all
