@@ -231,7 +231,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 raise err
             MODEL_CLS = Qwen2_5OmniForConditionalGeneration
             self.processor = Qwen2_5OmniProcessor.from_pretrained(model_path)
-        elif listinstr(['2.5', '2_5', 'qwen25'], model_path.lower()):
+        elif listinstr(['2.5', '2_5', 'qwen25', 'mimo'], model_path.lower()):
             from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
