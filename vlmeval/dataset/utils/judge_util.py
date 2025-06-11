@@ -34,6 +34,17 @@ def build_judge(**kwargs):
         model = SiliconFlowAPI(model_version, **kwargs)
     elif model == 'llama31-8b':
         model = HFChatModel(model_version, **kwargs)
+    elif model == 'gpt-4o-mini':
+        api_base = os.environ.get('XHS_OPENAI_GPT4OMINI_API_BASE', None)
+        key = os.environ.get('XHS_OPENAI_GPT4OMINI_KEY', None)
+        assert api_base is not None and key is not None, (
+            "Please set `XHS_OPENAI_GPT4OMINI_API_BASE` and `XHS_OPENAI_GPT4OMINI_KEY` in '$VLMEVALKIT/.env'")
+        model = OpenAIWrapper(
+            model_version, 
+            api_base=api_base, 
+            key=key, 
+            use_azure=True,
+            **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)
     return model
