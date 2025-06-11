@@ -31,6 +31,7 @@ from .charxiv import CharXiv
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
+from .video_holmes import Video_Holmes
 from .mvbench import MVBench, MVBench_MP4
 from .tamperbench import MVTamperBench
 from .miabench import MIABench
@@ -198,7 +199,8 @@ VIDEO_DATASET = [
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
-    VideoMMLU_CAP, VideoMMLU_QA
+    VideoMMLU_CAP, VideoMMLU_QA,
+    Video_Holmes
 ]
 
 TEXT_DATASET = [
