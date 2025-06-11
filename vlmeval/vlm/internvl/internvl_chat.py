@@ -191,7 +191,7 @@ class InternVLChat(BaseModel):
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
-                device_map='auto').eval()
+                device_map="auto").eval()
             self.device = 'cuda'
 
         if best_of_n > 1:
@@ -206,7 +206,7 @@ class InternVLChat(BaseModel):
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
-                device_map='auto').eval()
+                device_map="auto").eval()
 
             if not self.use_cot:
                 os.environ['USE_COT'] = '1'

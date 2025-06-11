@@ -250,19 +250,13 @@ api_models = {
         Gemini, model="gemini-2.0-pro-exp", temperature=0, retry=10
     ),
     "GeminiFlash2-5": partial(
-        Gemini, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
     ),
     "GeminiPro2-5": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
+        GPT4V, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
     "GeminiPro2-5-0506": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-0506-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
+        GPT4V, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
     
     # Qwen-VL
@@ -1153,6 +1147,20 @@ qwen2vl_series = {
     "Qwen2.5-VL-72B-Instruct": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-RL": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-RL",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,

@@ -109,12 +109,23 @@ class ImageBaseDataset:
         if 'image' in line:
             if isinstance(line['image'], list):
                 tgt_path = []
-                assert 'image_path' in line
-                for img, im_name in zip(line['image'], line['image_path']):
+                if 'image_path' in line:
+                    image_path = line['image_path']
+                else:
+                    index = line['index']
+                    image_path = [f'{index}_{i}.png' for i in range(len(line['image']))]
+                for img, im_name in zip(line['image'], image_path):
                     path = osp.join(self.img_root, im_name)
                     if not read_ok(path):
                         decode_base64_to_image_file(img, path)
                     tgt_path.append(path)
+
+            elif isinstance(line['image'], str) and 'image_path' in line:
+                assert isinstance(line['image_path'], str)
+                tgt_path = osp.join(self.img_root, line['image_path'])
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'], tgt_path)
+                tgt_path = [tgt_path]
             else:
                 tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
                 if not read_ok(tgt_path):
@@ -123,6 +134,13 @@ class ImageBaseDataset:
         else:
             assert 'image_path' in line
             tgt_path = toliststr(line['image_path'])
+            read_ok_flag = [read_ok(x) for x in tgt_path]
+            # Might be the Relative Path
+            if not all(read_ok_flag):
+                tgt_path_abs = [osp.join(self.img_root, x) for x in tgt_path]
+                read_ok_flag = [read_ok(x) for x in tgt_path_abs]
+                assert read_ok_flag, f"Field `image` is missing and we could not find {tgt_path} both as absolute or relative paths. "  # noqa
+                tgt_path = tgt_path_abs
 
         return tgt_path
 

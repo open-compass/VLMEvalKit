@@ -2276,12 +2276,63 @@ class TDBenchGrounding(ImageVQADataset):
         return msgs
 
 
+class ZEROBench(ImageVQADataset):
+    DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
+                   'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
+    DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
+                   'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answers']]
+        indexes = [str(x) for x in data['index']]
+        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
+        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+            formatted_response = pred.strip()
+            # convert to lowercase
+            formatted_response = formatted_response.lower()
+            # try to extract final answer from curly braces
+            parsed_answer = ''
+            try:
+                pattern = r"\{(.*?)\}"
+                parsed_answer = re.findall(pattern, formatted_response)[-1]
+            except IndexError:
+                pass
+
+            # evaluate via exact matching
+            correct = ans.strip().lower() in parsed_answer.lower()
+            # store results
+            results_row = {"Question_ID": idx,
+                           "Ground_Truth": ans,
+                           "Model_Output": pred,
+                           "Correct?": correct}
+            output_df = pd.concat([output_df, pd.DataFrame([results_row])],
+                                  ignore_index=True)
+
+        # compute accuracy
+        accuracy = output_df["Correct?"].mean()
+        return {"accuracy": accuracy}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        obj = line['question']
+        question = f"{obj} \n\n\nLet's think step by step and give the final answer in curly braces,  like this: {{final answer}}"   # noqa: E501
+        tgt_path = self.dump_image(line)
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+
 class CountBenchQA(ImageVQADataset):
+    TYPE = "VQA"
     DATASET_URL = {
-        'CountBenchQA':
-        'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'
+        "CountBenchQA":
+        "https://huggingface.co/datasets/moondream/CountBenchQA-VLMEvalKit/resolve/main/countbench_data.tsv"
     }
-    DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
+    DATASET_MD5 = {"CountBenchQA": "d70123bd9d7c090b00101f2116f3a7c6"}
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2297,7 +2348,7 @@ class CountBenchQA(ImageVQADataset):
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
-        answers = [str(x) for x in data['answers']]
+        answers = [str(x) for x in data['answer']]
         correct_count = 0
         total_count = len(predictions)
 
@@ -2571,3 +2622,59 @@ class PhyX(ImageBaseDataset):
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
             return score
+
+
+class TallyQA(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'TallyQA': 'https://huggingface.co/datasets/moondream/TallyQA-VLMEvalKit/resolve/main/tallyqa_data.tsv'
+    }
+    DATASET_MD5 = {'TallyQA': '959df01cf1858e73a71efe5cd3b9bf19'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        import pandas as pd
+        from .utils.tallyqa import extract_count_from_prediction
+
+        data = load(eval_file)
+
+        pred_ints = data["prediction"].apply(extract_count_from_prediction)
+        answer_ints = data["answer"].astype(int)
+
+        correct = (pred_ints == answer_ints).sum()
+        total = len(data)
+        accuracy = correct / total
+
+        result_df = pd.DataFrame([{"TallyQA": accuracy}])
+        result_file = eval_file.replace(f".{eval_file.split('.')[-1]}", "_acc.csv")
+        dump(result_df, result_file)
+        return result_df
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        msgs[-1]['value'] += '\nAnswer the question using a single number.'
+        return msgs
+
+
+class Omni3DBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'Omni3DBench':
+        'https://huggingface.co/datasets/rohunagrawal/Omni3DBench-VLMEvalKit/resolve/main/omni3dbench.tsv'
+    }
+    DATASET_MD5 = {'Omni3DBench': 'ba1fa59c3897eb95aed445996ec9b690'}
+
+    def build_prompt(self, line):
+        from .utils.omni3dbench import OMNI3DBENCH_PROMPT
+        question = line['question']
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += f'{OMNI3DBENCH_PROMPT}{question} (Answer type: {line["answer_type"]})'
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.omni3dbench import Omni3DBench_acc
+
+        data = load(eval_file)
+        result = Omni3DBench_acc(data)
+        return result

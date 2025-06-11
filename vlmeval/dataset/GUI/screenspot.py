@@ -1,6 +1,7 @@
 import os
 import re
 import tempfile
+import itertools
 from functools import partial
 
 import pandas as pd
@@ -139,16 +140,26 @@ class ScreenSpot(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Mobile": "ScreenSpot_Mobile.tsv",
-        "ScreenSpot_Desktop": "ScreenSpot_Desktop.tsv",
-        "ScreenSpot_Web": "ScreenSpot_Web.tsv",
+        "ScreenSpot_Mobile": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Mobile.tsv",  # noqa
+        "ScreenSpot_Desktop": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Desktop.tsv",  # noqa
+        "ScreenSpot_Web": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Web.tsv",  # noqa
+        "ScreenSpot_v2_Mobile": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_v2_Mobile.tsv",  # noqa
+        "ScreenSpot_v2_Desktop": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_v2_Desktop.tsv",  # noqa
+        "ScreenSpot_v2_Web": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_v2_Web.tsv",  # noqa
     }  # path
     DATASET_URL_V2 = {
-        "ScreenSpot_Mobile": "/mnt/petrelfs/share_data/suweijie/workspace_dx/screenspot/screenspot_mobile_ug.json",
-        "ScreenSpot_Desktop": "/mnt/petrelfs/share_data/suweijie/workspace_dx/screenspot/screenspot_desktop_ug.json",
-        "ScreenSpot_Web": "/mnt/petrelfs/share_data/suweijie/workspace_dx/screenspot/screenspot_web_ug.json",
+        "ScreenSpot_Mobile": "$WORK_DIR/screenspot_mobile_ug.json",
+        "ScreenSpot_Desktop": "$WORK_DIR/screenspot_desktop_ug.json",
+        "ScreenSpot_Web": "$WORK_DIR/screenspot_web_ug.json",
     }  # path
-    DATASET_MD5 = {}
+    DATASET_MD5 = {
+        "ScreenSpot_Mobile": "a5b5299843a75c9b9574c47bc13b2c53",
+        "ScreenSpot_Desktop": "e6e7bac21b6b2475276404fce2458132",
+        "ScreenSpot_Web": "e51d168c14b8582427cf3107d236cfc5",
+        "ScreenSpot_v2_Mobile": "234c858ab4f0e787e8388a73df65a4b7",
+        "ScreenSpot_v2_Desktop": "5f2aa2a497327bd33b2512a0c75cf994",
+        "ScreenSpot_v2_Web": "01cd0877ee1b735a6d5190b053ba9482",
+    }
     EVAL_TYPE = "point"  # point or rectangle
     RE_TYPE = "functional"  # type of referring expressions: functional or composite
 
@@ -163,7 +174,7 @@ class ScreenSpot(ImageBaseDataset):
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
-        self.img_root = osp.join(ROOT, "ScreenSpot", "screenspot_imgs")
+        self.img_root = osp.join(ROOT, "images", self.dataset_name)
         self.RE_TYPE = re_type
         if skeleton:
             return
@@ -172,8 +183,6 @@ class ScreenSpot(ImageBaseDataset):
         self.skip_noimg = skip_noimg
         if skip_noimg and "image" in data:
             data = data[~pd.isna(data["image"])]
-
-        data["index"] = [str(idx + 1) for idx, x in enumerate(data["bbox"])]
 
         self.meta_only = True
         self.parse_response_func = parse_bbox_aguvis  # TODO: parse function can be specified through kwargs when initializing the dataset # noqa: E501
@@ -192,30 +201,15 @@ class ScreenSpot(ImageBaseDataset):
             data["image"] = [x[0] if len(x) == 1 else x for x in images]
             self.meta_only = False
 
-        if "img_filename" in data:
-            paths = [toliststr(x) for x in data["img_filename"]]
-            data["image_path"] = [x[0] if len(x) == 1 else x for x in paths]
-
-        # if np.all([istype(x, int) for x in data["index"]]):
-        #     data["index"] = [int(x) for x in data["index"]]
-
         self.data = data
-        self.post_build(dataset)
 
     def prepare_tsv(self, url, file_md5=None):
         # st()
         if self.RE_TYPE == "functional":
-            data_root = LMUDataRoot()
-            data_path = osp.join(data_root, "ScreenSpot", url)
+            return super().prepare_tsv(url=url, file_md5=file_md5)
         else:
             data_path = self.DATASET_URL_V2[self.dataset_name]
         return pd.DataFrame(load(data_path))
-
-    # actually retrieve the image path
-    def dump_image(self, line):
-        assert "image_path" in line
-        tgt_path = toliststr(osp.join(self.img_root, line["image_path"]))
-        return tgt_path
 
     @classmethod
     def get_action_space(self):
@@ -305,7 +299,7 @@ class ScreenSpot(ImageBaseDataset):
                     if score_key != "IoU":
                         match[score_key.replace("ACC", "match")] = score
                     results_dict[score_key].append(score)
-                    if line["ui_type"] == "text":
+                    if line["data_type"] == "text":
                         results_dict[score_key + "_text"].append(score)
                     else:
                         results_dict[score_key + "_icon"].append(score)
@@ -318,8 +312,8 @@ class ScreenSpot(ImageBaseDataset):
                     "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
-                    "type": line["ui_type"],
-                    "source": line["application"],
+                    "type": line["data_type"],
+                    "source": line["data_source"],
                     "pred": click_point,
                     "num_matched": sum(match.values()),
                     **match,
@@ -343,84 +337,66 @@ class ScreenSpot(ImageBaseDataset):
         return results_dict
 
     def evaluate_point(self, eval_file, **judge_kwargs):
-        # st()
-        SCREENSPOT_result = dict(
-            num_action=0,
-            corr_action=0,
-            text_correct=[],
-            icon_correct=[],
-            num_wrong_format=0,
-            text_num=0,
-            icon_num=0,
-        )
+        # -1: format_err, 0: wrong, 1: correct
+        stats = defaultdict(list)
+        # Will include instance-level results
         result = []
+
         data = load(eval_file)
         assert "bbox" in data and "prediction" in data
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
         for i in tqdm(range(len(lines))):
-            SCREENSPOT_result["num_action"] += 1
             line = lines[i]
             bbox = (
                 line["bbox"]
                 if isinstance(line["bbox"], list)
                 else ast.literal_eval(line["bbox"])
             )
-            bbox = [bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]]
+            # The format of bbox is (x1, y1, w, h)
+            x1, y1, w, h = bbox
+            bbox = (x1, y1, x1 + w - 1, y1 + h - 1)
+
             image = Image.open(os.path.join(self.img_root, line["image_path"]))
             img_size = image.size
+
+            def make_safe(value):
+                if value == -1:
+                    # we can tolerate -1 as a special value and nomalize it to 0
+                    return 0
+                else:
+                    return value
+
             bbox = [
-                bbox[0] / img_size[0],
-                bbox[1] / img_size[1],
-                bbox[2] / img_size[0],
-                bbox[3] / img_size[1],
+                make_safe(bbox[0]) / img_size[0],
+                make_safe(bbox[1]) / img_size[1],
+                make_safe(bbox[2]) / img_size[0],
+                make_safe(bbox[3]) / img_size[1],
             ]
+
+            if any([x < 0 or x > 1 for x in bbox]):
+                raise ValueError(f"bbox out of range: {bbox} | {line['bbox']} | {img_size}")
+
+            key = line['data_type'] if 'category' not in line else line['category'] + ":" + line['data_type']
             prediction = str(line["prediction"])
             try:
                 click_point = parse_bbox_aguvis(prediction)
+                # Do Normalization By Default
+                if click_point[0] > 1 or click_point[1] > 1:
+                    click_point = (click_point[0] / img_size[0], click_point[1] / img_size[1])
+
                 match = (bbox[0] <= click_point[0] <= bbox[2]) and \
                     (bbox[1] <= click_point[1] <= bbox[3])
+
                 if match:
-                    SCREENSPOT_result["corr_action"] += 1
-                    if line["ui_type"] == "text":
-                        SCREENSPOT_result["text_correct"].append(1)
-                        SCREENSPOT_result["text_num"] += 1
-                    else:
-                        SCREENSPOT_result["icon_correct"].append(1)
-                        SCREENSPOT_result["icon_num"] += 1
-                    logger.debug(
-                        "match "
-                        + str(
-                            SCREENSPOT_result["corr_action"]
-                            / SCREENSPOT_result["num_action"]
-                        )
-                    )
+                    stats[key].append(1)
                 else:
-                    if line["ui_type"] == "text":
-                        SCREENSPOT_result["text_correct"].append(0)
-                        SCREENSPOT_result["text_num"] += 1
-                    else:
-                        SCREENSPOT_result["icon_correct"].append(0)
-                        SCREENSPOT_result["icon_num"] += 1
-                    logging.debug(
-                        "unmatch "
-                        + str(
-                            SCREENSPOT_result["corr_action"]
-                            / SCREENSPOT_result["num_action"]
-                        )
-                    )
+                    stats[key].append(0)
                 is_wrong_format = False
 
             except Exception as e:
                 logger.warning(f"exception in screenspot eval:{e}")
-                SCREENSPOT_result["num_wrong_format"] += 1
-                if line["ui_type"] == "text":
-                    SCREENSPOT_result["text_correct"].append(0)
-                    SCREENSPOT_result["text_num"] += 1
-                else:
-                    SCREENSPOT_result["icon_correct"].append(0)
-                    SCREENSPOT_result["icon_num"] += 1
-
+                stats[key].append(-1)
                 match, is_wrong_format, click_point = False, True, None
 
             result.append(
@@ -429,7 +405,7 @@ class ScreenSpot(ImageBaseDataset):
                     "text": line["question"],
                     "bbox": line["bbox"],
                     "parsed_bbox": bbox,
-                    "type": line["ui_type"],
+                    "type": line["data_type"],
                     "source": line["data_source"],
                     "match": match,
                     "is_wrong_format": is_wrong_format,
@@ -437,30 +413,29 @@ class ScreenSpot(ImageBaseDataset):
                 }
             )
 
-        action_acc = SCREENSPOT_result["corr_action"] / SCREENSPOT_result["num_action"] * 100
-        text_acc = (
-            sum(SCREENSPOT_result["text_correct"])
-            / len(SCREENSPOT_result["text_correct"])
-            if len(SCREENSPOT_result["text_correct"]) != 0
-            else 0
-        ) * 100
-        icon_acc = (
-            sum(SCREENSPOT_result["icon_correct"])
-            / len(SCREENSPOT_result["icon_correct"])
-            if len(SCREENSPOT_result["icon_correct"]) != 0
-            else 0
-        ) * 100
-
         final_score_dict = {}
-        final_score_dict["Action Acc"] = str(action_acc)
-        final_score_dict["Total num"] = str(SCREENSPOT_result["num_action"])
-        final_score_dict["Wrong format num"] = str(
-            SCREENSPOT_result["num_wrong_format"]
-        )
-        final_score_dict["Text Num"] = str(SCREENSPOT_result["text_num"])
-        final_score_dict["Icon Num"] = str(SCREENSPOT_result["icon_num"])
-        final_score_dict["Text Acc"] = str(text_acc)
-        final_score_dict["Icon Acc"] = str(icon_acc)
+        # Record the number of each category
+        final_score_dict.update({k + ':cnt': len(stats[k]) for k in stats})
+        # Calculate the Overall stats
+        full_stats = []
+        for v in stats.values():
+            full_stats.extend(v)
+        final_score_dict['Overall_Accuracy'] = np.mean([x > 0 for x in full_stats]) * 100
+        final_score_dict['Format_Err_Rate'] = np.mean([x < 0 for x in full_stats]) * 100
+        # Calculate the Accuracy of Text / Icon
+        text_stats = [v for k, v in stats.items() if k.endswith('text') for x in v]
+        text_stats = itertools.chain(*text_stats)
+        final_score_dict['Text_Accuracy'] = np.mean([x > 0 for x in text_stats]) * 100
+        icon_stats = [v for k, v in stats.items() if k.endswith('icon') for x in v]
+        icon_stats = itertools.chain(*icon_stats)
+        final_score_dict['Icon_Accuracy'] = np.mean([x > 0 for x in icon_stats]) * 100
+        # Calculate the Accuracy of Each Category
+        if 'category' in data:
+            cates = list(set(data['category']))
+            for c in cates:
+                sub_stats = [v for k, v in stats.items() if k.split(":")[0] == c for x in v]
+                sub_stats = itertools.chain(*sub_stats)
+                final_score_dict[c + '_Accuracy'] = np.mean([x > 0 for x in sub_stats]) * 100
 
         score_pth = eval_file.replace(".xlsx", "_score.json")
         dump(final_score_dict, score_pth)
@@ -470,11 +445,11 @@ class ScreenSpot(ImageBaseDataset):
             def click_distance(bbox, click_point):
                 x, y = click_point
                 x1, y1, x2, y2 = bbox
+                xc, yc = (x1 + x2) / 2, (y1 + y2) / 2
                 w, h = x2 - x1, y2 - y1
-                center = [(x1 + x2) / 2, (y1 + y2) / 2]
-                abs_shift_to_center = [abs(x - center[0]), abs(y - center[1])]
+                abs_shift_to_center = [abs(x - xc), abs(y - yc)]  # noqa: E501
                 width_outside, height_outside = [max(0, abs_shift_to_center[0] - w / 2), max(0, abs_shift_to_center[1] - h / 2)]  # noqa: E501
-                return (width_outside ** 2 + height_outside ** 2) ** 0.5
+                return (width_outside ** 2 + height_outside ** 2) ** 0.5  # noqa: E501
 
             wrong_format_result = [res for res in result if res["is_wrong_format"]]
             missed_result = [res for res in result if not res["match"] and not res["is_wrong_format"]]
