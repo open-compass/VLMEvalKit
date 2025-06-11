@@ -452,6 +452,30 @@ api_models = {
         verbose=False, 
         max_tokens=16384,
     ),
+    "Seed1.6": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Flash": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-flash-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Thinking": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-thinking-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
         MUGUAPI, 
