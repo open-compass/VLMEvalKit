@@ -6,7 +6,6 @@ import logging
 import torch
 
 
-
 def ensure_image_url(image: str) -> str:
     prefixes = ['http://', 'https://', 'file://', 'data:image;']
     if any(image.startswith(prefix) for prefix in prefixes):
@@ -24,10 +23,12 @@ def ensure_video_url(video: str) -> str:
         return 'file://' + video
     raise ValueError(f'Invalid video: {video}')
 
+
 class HawkVL(HawkVLPromptMixin, BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = False
+
     def __init__(
         self,
         model_path: str,
@@ -41,7 +42,7 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
         use_custom_prompt: bool = False,
         system_prompt: str | None = None,
         verbose: bool = False,
-    ):  
+    ):
         try:
             from .hawk.model import HawkQwenForCausalLM
         except Exception as e:
@@ -64,17 +65,15 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
         self.fps = 1.0
         self.nframe = 64
         self.FRAME_FACTOR = 1
-            
+
         self.model_path = model_path
         from transformers import AutoProcessor
         self.processor = AutoProcessor.from_pretrained(model_path)
-        
-        
+
         self.model = HawkQwenForCausalLM.from_pretrained(
             model_path, torch_dtype=torch.bfloat16, attn_implementation='flash_attention_2', device_map=None)
-            
-        self.model.cuda().eval()
 
+        self.model.cuda().eval()
 
     def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
         """
@@ -115,15 +114,14 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
                 raise ValueError(f"Invalid message type: {s['type']}, {s}")
             content.append(item)
         return content
-    
+
     def generate_inner(self, message, dataset=None):
-        from .qwen_vl_utils import process_vision_info
-        # try:
-        #     from qwen_vl_utils import process_vision_info
-        # except Exception as err:
-        #     logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-        #     raise err
-        
+        try:
+            from qwen_vl_utils import process_vision_info
+        except Exception as err:
+            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
+            raise err
+
         messages = []
         if self.system_prompt is not None:
             messages.append({'role': 'system', 'content': self.system_prompt})
@@ -134,14 +132,14 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
         text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         images, videos = process_vision_info(messages)
         inputs = self.processor(text=[text], images=images, videos=videos, padding=True, return_tensors='pt')
-        
+
         inputs = inputs.to('cuda')
 
         generated_ids = self.model.generate(
             **inputs,
             **self.generate_kwargs,
         )
-        
+
         out = self.processor.batch_decode(
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
@@ -150,4 +148,3 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
         if self.verbose:
             print(f'\033[32m{response}\033[0m')
         return response
-    

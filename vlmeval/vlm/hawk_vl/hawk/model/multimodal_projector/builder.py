@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import re
 
+
 class IdentityMap(nn.Module):
     def __init__(self):
         super().__init__()
@@ -22,11 +23,12 @@ class SimpleResBlock(nn.Module):
         self.proj = nn.Sequential(
             nn.Linear(channels, channels),
             nn.GELU(),
-            nn.Linear(channels, channels)
-        )
+            nn.Linear(channels, channels))
+
     def forward(self, x):
         x = self.pre_norm(x)
         return x + self.proj(x)
+
 
 # copied from modeling_qwen2_vl.py
 # similar to the pixel unshuffle operation in InternVL
@@ -45,15 +47,17 @@ class PatchMerger(nn.Module):
         x = self.mlp(self.ln_q(x).view(-1, self.hidden_size))
         return x
 
+
 class PoolingMerger(nn.Module):
     def __init__(self, pool_type, kernel_size):
         super().__init__()
-        
-        self.pooling_layer = nn.AvgPool1d(kernel_size) if pool_type=='avgpool' else nn.MaxPool1d(kernel_size)
-        
+
+        self.pooling_layer = nn.AvgPool1d(kernel_size) if pool_type == 'avgpool' else nn.MaxPool1d(kernel_size)
+
     def forward(self, x):
         return self.pooling_layer(x)
-    
+
+
 def build_vision_projector(config, **kwargs):
     projector_type = getattr(config, 'mm_projector_type', 'pixel_unshuffle')
     if projector_type == 'linear':
@@ -70,11 +74,11 @@ def build_vision_projector(config, **kwargs):
 
     if projector_type == 'identity':
         return IdentityMap()
-    
+
     # add pooling & pixel unshuffle.
     if projector_type == 'pixel_unshuffle':
         return PatchMerger(config.lm_hidden_size, config.embed_dim, config.spatial_merge_size)
-    
+
     if projector_type in ['avgpool', 'maxpool']:
         return PoolingMerger(projector_type, config.spatial_merge_size)
 

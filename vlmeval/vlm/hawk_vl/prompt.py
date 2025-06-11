@@ -143,7 +143,7 @@ class HawkVLPromptMixin:
 
     def _build_vqa_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for VQA dataset:"""
-        VQA_PROMPT = "\nAnswer the question using a single word or phrase."#'\nPlease try to answer the question with short words or phrases if possible.'
+        VQA_PROMPT = "\nAnswer the question using a single word or phrase."
 
         tgt_path = self.dump_image(line, dataset)
         question = line['question']

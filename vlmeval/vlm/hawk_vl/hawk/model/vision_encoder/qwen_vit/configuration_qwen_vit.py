@@ -10,9 +10,10 @@ from transformers.utils import logging
 
 logger = logging.get_logger(__name__)
 
+
 class QwenVisionConfig(PretrainedConfig):
     model_type = "qwen_vit"
-    #base_config_key = "vision_config"
+    # base_config_key = "vision_config"
 
     def __init__(
         self,
@@ -38,7 +39,7 @@ class QwenVisionConfig(PretrainedConfig):
         self.patch_size = patch_size
         self.spatial_merge_size = spatial_merge_size
         self.temporal_patch_size = temporal_patch_size
-    
+
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path: Union[str, os.PathLike], **kwargs) -> 'PretrainedConfig':
         config_dict, kwargs = cls.get_config_dict(pretrained_model_name_or_path, **kwargs)
@@ -53,4 +54,3 @@ class QwenVisionConfig(PretrainedConfig):
             )
 
         return cls.from_dict(config_dict, **kwargs)
-    

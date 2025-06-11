@@ -1,6 +1,5 @@
-# coding=utf-8
 # --------------------------------------------------------
-# pandayin: Copied and modified from transformers/models/qwen2_vl/modeling_qwen2_vl.py 
+# pandayin: Copied and modified from transformers/models/qwen2_vl/modeling_qwen2_vl.py
 # Below is the original copyright statement.
 # --------------------------------------------------------
 # Copyright 2024 The Qwen team, Alibaba Group and the HuggingFace Inc. team. All rights reserved.
@@ -40,14 +39,12 @@ from .configuration_qwen_vit import QwenVisionConfig
 
 
 try:
-    from flash_attn.flash_attn_interface import \
-        flash_attn_varlen_func
     from transformers.modeling_flash_attention_utils import flash_attn_varlen_func
     has_flash_attn = True
 except:
     print('FlashAttention2 is not installed.')
     has_flash_attn = False
-    
+
 # if has_flash_attn:
 #     from transformers.modeling_flash_attention_utils import flash_attn_varlen_func
 
@@ -64,8 +61,9 @@ NORM2FN = {
 def rotate_half(x):
     """Rotates half the hidden dims of the input."""
     x1 = x[..., : x.shape[-1] // 2]
-    x2 = x[..., x.shape[-1] // 2 :]
+    x2 = x[..., x.shape[-1] // 2:]
     return torch.cat((-x2, x1), dim=-1)
+
 
 def apply_rotary_pos_emb_vision(
     q: torch.Tensor, k: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor
@@ -80,6 +78,7 @@ def apply_rotary_pos_emb_vision(
     k_embed = k_embed.to(orig_k_dtype)
     return q_embed, k_embed
 
+
 class VisionRotaryEmbedding(nn.Module):
     def __init__(self, dim: int, theta: float = 10000.0) -> None:
         super().__init__()
@@ -90,7 +89,8 @@ class VisionRotaryEmbedding(nn.Module):
         seq = torch.arange(seqlen, device=self.inv_freq.device, dtype=self.inv_freq.dtype)
         freqs = torch.outer(seq, self.inv_freq)
         return freqs
-    
+
+
 class PatchEmbed(nn.Module):
     def __init__(
         self,
@@ -116,6 +116,7 @@ class PatchEmbed(nn.Module):
         hidden_states = self.proj(hidden_states.to(dtype=target_dtype)).view(-1, self.embed_dim)
         return hidden_states
 
+
 class VisionMlp(nn.Module):
     def __init__(self, dim: int, hidden_dim: int, hidden_act: str) -> None:
         super().__init__()
@@ -125,6 +126,7 @@ class VisionMlp(nn.Module):
 
     def forward(self, x) -> torch.Tensor:
         return self.fc2(self.act(self.fc1(x)))
+
 
 class VisionAttention(nn.Module):
     def __init__(self, dim: int, num_heads: int = 16) -> None:
@@ -161,7 +163,7 @@ class VisionAttention(nn.Module):
             [1, seq_length, seq_length], torch.finfo(q.dtype).min, device=q.device, dtype=q.dtype
         )
         for i in range(1, len(cu_seqlens)):
-            attention_mask[..., cu_seqlens[i - 1] : cu_seqlens[i], cu_seqlens[i - 1] : cu_seqlens[i]] = 0
+            attention_mask[..., cu_seqlens[i - 1]: cu_seqlens[i], cu_seqlens[i - 1]: cu_seqlens[i]] = 0
 
         q = q.transpose(0, 1)
         k = k.transpose(0, 1)
@@ -246,7 +248,7 @@ class VisionSdpaAttention(nn.Module):
 
         attention_mask = torch.zeros([1, seq_length, seq_length], device=q.device, dtype=torch.bool)
         for i in range(1, len(cu_seqlens)):
-            attention_mask[..., cu_seqlens[i - 1] : cu_seqlens[i], cu_seqlens[i - 1] : cu_seqlens[i]] = True
+            attention_mask[..., cu_seqlens[i - 1]: cu_seqlens[i], cu_seqlens[i - 1]: cu_seqlens[i]] = True
         q = q.transpose(0, 1)
         k = k.transpose(0, 1)
         v = v.transpose(0, 1)
@@ -257,21 +259,22 @@ class VisionSdpaAttention(nn.Module):
         attn_output = attn_output.reshape(seq_length, -1)
         attn_output = self.proj(attn_output)
         return attn_output
-    
+
+
 QWEN2_VL_VISION_ATTENTION_CLASSES = {
     "eager": VisionAttention,
     "flash_attention_2": VisionFlashAttention2,
     "sdpa": VisionSdpaAttention,
 }
 
+
 class QwenVisionBlock(nn.Module):
     def __init__(self, config, attn_implementation: str = "flash_attention_2") -> None:
         super().__init__()
-        self.norm1 = NORM2FN['layer_norm'](config.embed_dim, eps=1e-6) #LayerNorm(config.embed_dim, eps=1e-6)
-        self.norm2 = NORM2FN['layer_norm'](config.embed_dim, eps=1e-6) # LayerNorm(config.embed_dim, eps=1e-6)
+        self.norm1 = NORM2FN['layer_norm'](config.embed_dim, eps=1e-6)
+        self.norm2 = NORM2FN['layer_norm'](config.embed_dim, eps=1e-6)
         mlp_hidden_dim = int(config.embed_dim * config.mlp_ratio)
-        # TODO: delete this debug line.
-        assert attn_implementation == "flash_attention_2"
+
         self.attn = QWEN2_VL_VISION_ATTENTION_CLASSES[attn_implementation](
             config.embed_dim, num_heads=config.num_heads
         )
@@ -292,13 +295,14 @@ class QwenVisionBlock(nn.Module):
         )
         hidden_states = hidden_states + self.mlp(self.norm2(hidden_states))
         return hidden_states
-       
+
+
 class QwenVisionModel(PreTrainedModel):
     main_input_name = 'pixel_values'
     config_class = QwenVisionConfig
     _no_split_modules = ["QwenVisionBlock"]
     _supports_flash_attn_2 = True
-    
+
     def __init__(self, config) -> None:
         super().__init__(config)
         self.spatial_merge_size = config.spatial_merge_size
@@ -313,14 +317,11 @@ class QwenVisionModel(PreTrainedModel):
         head_dim = config.embed_dim // config.num_heads
         self.rotary_pos_emb = VisionRotaryEmbedding(head_dim // 2)
 
-        # TODO: delete this debug line.
-        assert config._attn_implementation == "flash_attention_2"
         self.blocks = nn.ModuleList(
             [QwenVisionBlock(config, config._attn_implementation) for _ in range(config.depth)]
         )
-        
-        # pandayin: don't know why it's set to False. We modify it to True as default.
-        self.gradient_checkpointing = True#False
+
+        self.gradient_checkpointing = True
 
     def get_dtype(self) -> torch.dtype:
         return self.blocks[0].mlp.fc2.weight.dtype
@@ -357,9 +358,7 @@ class QwenVisionModel(PreTrainedModel):
         rotary_pos_emb = rotary_pos_emb_full[pos_ids].flatten(1)
         return rotary_pos_emb
 
-    #def forward(self, hidden_states: torch.Tensor, grid_thw: torch.Tensor) -> torch.Tensor:
     def forward(self, pixel_values: torch.FloatTensor, grid_thw: torch.LongTensor) -> torch.FloatTensor:
-        #hidden_states = self.patch_embed(hidden_states)
         hidden_states = self.patch_embed(pixel_values)
         rotary_pos_emb = self.rot_pos_emb(grid_thw)
         emb = torch.cat((rotary_pos_emb, rotary_pos_emb), dim=-1)
@@ -382,8 +381,4 @@ class QwenVisionModel(PreTrainedModel):
                 )
             else:
                 hidden_states = blk(hidden_states, cu_seqlens=cu_seqlens, position_embeddings=position_embeddings)
-        # pandayin: hidden_states of shape: (L, D)
-        # We isolate the merger (projector) here. 
-        #return self.merger(hidden_states)
         return hidden_states
-    
