@@ -290,11 +290,8 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         elif self.key is None:
             headers = {'Content-Type': 'application/json'}
-<<<<<<< HEAD
         elif 'gemini' in self.model:
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
-=======
->>>>>>> 7a6427c (update)
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
 
