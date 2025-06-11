@@ -293,7 +293,7 @@ class IDEFICS2(BaseModel):
             'ScienceQA_TEST',
         ]:
             formatted_messages, formatted_images = self.build_prompt_puremcq(message)
-        elif listinstr(['MLVU','TempCompass','MVBench'], dataset):
+        elif dataset is not None and listinstr(['MLVU','TempCompass','MVBench'], dataset):
             formatted_messages, formatted_images = self.build_prompt_default(message, change_the_img_place=True)
         else:
             formatted_messages, formatted_images = self.build_prompt_default(message)

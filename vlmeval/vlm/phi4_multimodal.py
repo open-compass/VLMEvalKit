@@ -8,7 +8,7 @@ from ..smp import *
 class Phi4Multimodal(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='microsoft/Phi-4-multimodal-instruct', **kwargs):
         try:
@@ -36,8 +36,13 @@ class Phi4Multimodal(BaseModel):
         user_prompt = '<|user|>'
         assistant_prompt = '<|assistant|>'
         prompt_suffix = '<|end|>'
-        prompt = f'{user_prompt}<|image_1|>{user_question}{prompt_suffix}{assistant_prompt}'
-        inputs = self.processor(text=prompt, images=images[0], return_tensors='pt').to('cuda')
+        prompt = f'{user_prompt}<|image_placeholder|>{user_question}{prompt_suffix}{assistant_prompt}'
+        image_prompt = ''
+        for num in range(1, len(images) + 1):
+            image_prompt += f'<|image_{num}|>'
+        prompt = prompt.replace('<|image_placeholder|>', image_prompt, 1)
+
+        inputs = self.processor(text=prompt, images=images, return_tensors='pt').to('cuda')
 
         # Generate response
         generate_ids = self.model.generate(
