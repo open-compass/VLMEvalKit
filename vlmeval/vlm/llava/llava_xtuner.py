@@ -8,9 +8,6 @@ import pandas as pd
 import torch
 from huggingface_hub import snapshot_download
 from PIL import Image
-from transformers import (AutoModel, AutoModelForCausalLM, AutoTokenizer,
-                          CLIPImageProcessor, CLIPVisionModel,
-                          GenerationConfig, StoppingCriteriaList)
 
 from ..base import BaseModel
 from ...smp import *
@@ -38,6 +35,8 @@ class LLaVA_XTuner(BaseModel):
                 'Please install xtuner with `pip install -U xtuner` before '
                 'using LLaVA_XTuner')
             raise err
+
+        from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer, StoppingCriteriaList  # noqa
 
         if not osp.isdir(llava_path):
             cache_path = get_cache_path(llava_path)
@@ -74,6 +73,8 @@ class LLaVA_XTuner(BaseModel):
         else:
             assert visual_encoder_path is not None, (
                 'Please specify the `visual_encoder_path`!')
+
+        from transformers import CLIPImageProcessor, CLIPVisionModel
         visual_encoder = CLIPVisionModel.from_pretrained(
             visual_encoder_path, torch_dtype=torch_dtype, device_map='cpu')
         image_processor = CLIPImageProcessor.from_pretrained(
@@ -138,6 +139,7 @@ class LLaVA_XTuner(BaseModel):
                 StopWordStoppingCriteria(self.tokenizer, word))
 
     def build_gen_config(self, dataset):
+        from transformers import GenerationConfig
         gen_kwargs = dict(max_new_tokens=512,
                           do_sample=True,
                           temperature=1,
