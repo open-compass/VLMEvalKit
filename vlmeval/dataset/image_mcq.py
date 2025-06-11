@@ -2039,3 +2039,145 @@ class _3DSRBench(ImageMCQDataset):
         res_all = pd.concat(metrics)
         dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
         return res_all
+
+
+class AffordanceDataset(ImageMCQDataset):
+    DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
+    DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        affordance_definition = (
+            """ Please read the following key points of Gibson's Affordance Theory before answering:
+            Gibson's Affordance Theory core principles:
+            1. Core Definition
+            - "What the environment offers the animal for good or ill" (Gibson, 1979)
+            - Complementarity between animal's capacities and environmental properties
+            - Example: Horizontal rigid surface affords support for standing; cliff edge affords falling
+
+            2. Key Characteristics
+            - Direct perception through ecological optics (e.g., texture gradients specify walkability)
+            - Functional relativity (e.g., knee-high surface affords sitting for adults but not children)
+            - Action possibilities multiplicity (e.g., stone as missile/paperweight/hammer)
+
+            3. Fundamental Distinctions
+            - Affordance vs physical measurement (support measured relative to animal's weight)
+            - Invariant optical information (e.g., horizon specifies earth-sky separation)
+            - Niche as occupied affordance system (e.g., aquatic vs terrestrial niches)
+
+            4. Theoretical Breakthroughs
+            - Rejecting subjective-objective dichotomy (air affords breathing & seeing simultaneously)
+            - Lawful misinformation cases (e.g., visual cliff experiment with glass extension)
+            - Embodied perception (posture/gravity constraints in surface perception)
+
+            5. Ecological Evidence
+            - Animate vs inanimate distinction (infants' immediate perception of agency)
+            - Occlusion laws (peek-a-boo as concealment affordance learning)
+            - Tool-body extension (staff as arm extension for reaching/striking)"""
+        )  # noqa: E122
+        # 构建提示结构
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Concept: {affordance_definition}\n'  # 插入定义
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += ("""Process multiple-choice questions under STRICT rules:
+                        1. Final answer MUST be valid Python list:
+                        - Format examples: ['A'] or ['B','D']
+                        - Output ONLY the answer list, NO explanations
+                        2. Mandatory requirements:
+                        a. MUST determine question type (single/multi-select: ONLY ONE answer list
+                        b. Uppercase letters in alphabetical order (A < B < C < D < E)
+                        c. Use English single quotes and brackets
+                        3. Processing logic:
+                        - All wrong: Return most probable single option (e.g., ['D'])
+                        - Partial correct: Keep ONLY confirmed correct options
+                        - Uncertain: Output highest-probability combination
+                        4. Format RULES:
+                        - STRICTLY ONE list (no multiple answers like ['C'] and ['A','B'])
+                        - NO non-list formats (e.g., 'C', A,B)
+                        - NO empty lists (even if all options wrong)
+
+                        Output: Answer list""")
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
+
+    def is_match(self, row):
+        import ast
+        answer = ast.literal_eval(row['answer'])
+        prediction = ast.literal_eval(row['prediction'])
+        return sorted(answer) == sorted(prediction)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import (
+            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+        )
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        try:
+            df = pd.read_excel(eval_file)
+        except FileNotFoundError:
+            print(f"未找到文件：{eval_file}")
+        except Exception as e:
+            print(f"读取文件时出现错误：{e}")
+        else:
+            # 添加 match 列
+            df['match'] = df.apply(self.is_match, axis=1).astype(int)
+
+        # load split
+        dump(df, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        df = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+
+        acc = df['match'].mean()
+        print(f"准确率(ACC): {acc * 100:.2f}%")
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        try:
+            acc_df = pd.DataFrame({'Accuracy': [acc]})
+            acc_df.to_csv(score_file, index=False)
+        except Exception as e:
+            print(f"保存准确率到 CSV 文件时出现错误: {e}")
+
+        selected_columns = ['index', 'question', 'prediction', 'match']
+        return df[selected_columns]
