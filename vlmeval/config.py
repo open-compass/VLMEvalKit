@@ -143,6 +143,14 @@ api_models = {
         retry=10,
         verbose=True,
     ),
+    "vllm_qwen": partial(
+        VLLMAPI,
+        model="Qwen25-VL-72B-Instruct",
+        temperature=0,
+        retry=10,
+        verbose=True,
+        system_prompt=None,
+    ),
     "GPT4V_HIGH": partial(
         GPT4V,
         model="gpt-4-1106-vision-preview",
