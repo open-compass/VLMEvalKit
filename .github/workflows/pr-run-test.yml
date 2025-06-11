@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_SCORE: '{"MMBench_V11_MINI":{"Qwen2-VL-7B-Instruct":0.8727272727272727,"InternVL2_5-8B":0.8727272727272727,"llava_onevision_qwen2_7b_si":0.8363636363636363},"MMStar_MINI":{"Qwen2-VL-7B-Instruct":0.6266666666666667,"InternVL2_5-8B":0.6333333333333333,"llava_onevision_qwen2_7b_si":0.49333333333333335},"AI2D_MINI":{"Qwen2-VL-7B-Instruct":0.7854251012145749,"InternVL2_5-8B":0.8421052631578947,"llava_onevision_qwen2_7b_si":0.8178137651821862},"OCRBench_MINI":{"Qwen2-VL-7B-Instruct":16.6,"InternVL2_5-8B":16.4,"llava_onevision_qwen2_7b_si":12.9}}'
+  BASE_SCORE: '{"MMBench_V11_MINI":{"Qwen2-VL-7B-Instruct":0.8727272727272727,"InternVL2_5-8B":0.8727272727272727,"llava_onevision_qwen2_7b_si":0.8363636363636363},"MMStar_MINI":{"Qwen2-VL-7B-Instruct":0.6266666666666667,"InternVL2_5-8B":0.6333333333333333,"llava_onevision_qwen2_7b_si":0.49333333333333335},"AI2D_MINI":{"Qwen2-VL-7B-Instruct":0.7975708502024291,"InternVL2_5-8B":0.854251012145749,"llava_onevision_qwen2_7b_si":0.8178137651821862},"OCRBench_MINI":{"Qwen2-VL-7B-Instruct":16.6,"InternVL2_5-8B":16.4,"llava_onevision_qwen2_7b_si":12.9}}'
 
 jobs:
   vlm_test:
