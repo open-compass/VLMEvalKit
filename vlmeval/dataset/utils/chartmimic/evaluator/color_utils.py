@@ -1,7 +1,4 @@
 import numpy as np
-from colormath.color_objects import sRGBColor, LabColor
-from colormath.color_conversions import convert_color
-from colormath.color_diff import delta_e_cie2000
 
 # This is a patch for color map, which is not updated for newer version of numpy
 def patch_asscalar(a):
@@ -18,6 +15,8 @@ def rgb_to_lab(rgb):
     RGB values should be in the range [0, 255].
     """
     # Create an sRGBColor object from RGB values
+    from colormath.color_objects import sRGBColor, LabColor
+    from colormath.color_conversions import convert_color
     rgb_color = sRGBColor(rgb[0], rgb[1], rgb[2], is_upscaled=True)
     
     # Convert to Lab color space
@@ -34,6 +33,7 @@ def calculate_similarity_single(c1, c2):
         lab1 = rgb_to_lab(c1)
         lab2 = rgb_to_lab(c2)
         # return max(0, 1 - deltaE_cie76(c1, c2)[0] / 100)
+        from colormath.color_diff import delta_e_cie2000
         return max(0, 1 - (delta_e_cie2000(lab1, lab2)/100) )
     elif not c1.startswith("#") and not c2.startswith("#"):
 

@@ -11,8 +11,8 @@ import eval_configs.global_config as gloabl_config
 
 import re
 
-from skimage.color import deltaE_cie76
-from skimage.color import rgb2lab
+# from skimage.color import deltaE_cie76
+# from skimage.color import rgb2lab
 import numpy as np
 from itertools import permutations
 from multiprocessing import Pool, cpu_count

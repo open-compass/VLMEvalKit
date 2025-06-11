@@ -1,7 +1,6 @@
 import re
 import os
 import sys
-from pdf2image import convert_from_path
 
 from ..smp import *
 logger = get_logger("ChartMimic")
@@ -122,6 +121,7 @@ def clean_escape_chars(code: str) -> str:
     return code
 
 def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
+    from pdf2image import convert_from_path
     images = convert_from_path(pdf_path, dpi=dpi)
     images[0].save(output_path, "PNG")
 
@@ -342,6 +342,13 @@ class ChartMimic(ImageBaseDataset):
 
         # return {"score": 99.99}
         # raw_tsv_data = ChartMimic(self.dataset).data
+        try:
+            from pdf2image import convert_from_path
+            from colormath.color_objects import sRGBColor, LabColor
+        except ImportError as e:
+            logging.critical('Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
+                             to install dependency package for chartmimic evaluation.')
+            raise e
         infer_data_all = load(eval_file).to_dict(orient="records")
 
         suffix = eval_file.split(".")[-1]
