@@ -2038,10 +2038,11 @@ class _3DSRBench(ImageMCQDataset):
         dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
         return res_all
 
+
 class AffordanceDataset(ImageMCQDataset):
     DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
     DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
-    
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -2062,33 +2063,33 @@ class AffordanceDataset(ImageMCQDataset):
             options_prompt += f'{key}. {item}\n'
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         affordance_definition = (
-        """ Please read the following key points of Gibson's Affordance Theory before answering:
-        Gibson's Affordance Theory core principles:
-        1. Core Definition
-        - "What the environment offers the animal for good or ill" (Gibson, 1979)
-        - Complementarity between animal's capacities and environmental properties
-        - Example: Horizontal rigid surface affords support for standing; cliff edge affords falling
+            """ Please read the following key points of Gibson's Affordance Theory before answering:
+            Gibson's Affordance Theory core principles:
+            1. Core Definition
+            - "What the environment offers the animal for good or ill" (Gibson, 1979)
+            - Complementarity between animal's capacities and environmental properties
+            - Example: Horizontal rigid surface affords support for standing; cliff edge affords falling
 
-        2. Key Characteristics
-        - Direct perception through ecological optics (e.g., texture gradients specify walkability)
-        - Functional relativity (e.g., knee-high surface affords sitting for adults but not children)
-        - Action possibilities multiplicity (e.g., stone as missile/paperweight/hammer)
+            2. Key Characteristics
+            - Direct perception through ecological optics (e.g., texture gradients specify walkability)
+            - Functional relativity (e.g., knee-high surface affords sitting for adults but not children)
+            - Action possibilities multiplicity (e.g., stone as missile/paperweight/hammer)
 
-        3. Fundamental Distinctions
-        - Affordance vs physical measurement (support measured relative to animal's weight)
-        - Invariant optical information (e.g., horizon specifies earth-sky separation)
-        - Niche as occupied affordance system (e.g., aquatic vs terrestrial niches)
+            3. Fundamental Distinctions
+            - Affordance vs physical measurement (support measured relative to animal's weight)
+            - Invariant optical information (e.g., horizon specifies earth-sky separation)
+            - Niche as occupied affordance system (e.g., aquatic vs terrestrial niches)
 
-        4. Theoretical Breakthroughs
-        - Rejecting subjective-objective dichotomy (air affords breathing & seeing simultaneously)
-        - Lawful misinformation cases (e.g., visual cliff experiment with glass extension)
-        - Embodied perception (posture/gravity constraints in surface perception)
+            4. Theoretical Breakthroughs
+            - Rejecting subjective-objective dichotomy (air affords breathing & seeing simultaneously)
+            - Lawful misinformation cases (e.g., visual cliff experiment with glass extension)
+            - Embodied perception (posture/gravity constraints in surface perception)
 
-        5. Ecological Evidence
-        - Animate vs inanimate distinction (infants' immediate perception of agency)
-        - Occlusion laws (peek-a-boo as concealment affordance learning)
-        - Tool-body extension (staff as arm extension for reaching/striking)"""
-        )
+            5. Ecological Evidence
+            - Animate vs inanimate distinction (infants' immediate perception of agency)
+            - Occlusion laws (peek-a-boo as concealment affordance learning)
+            - Tool-body extension (staff as arm extension for reaching/striking)"""
+        )  # noqa: E122
         # 构建提示结构
         prompt = ''
         if hint is not None:
@@ -2122,22 +2123,18 @@ class AffordanceDataset(ImageMCQDataset):
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=prompt))
         return msgs
-    
+
     def is_match(self, row):
+        import ast
         answer = ast.literal_eval(row['answer'])
         prediction = ast.literal_eval(row['prediction'])
         return sorted(answer) == sorted(prediction)
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
         )
-    
-        dataset = self.dataset_name
-        nproc = judge_kwargs.pop('nproc', 4)
 
-        circular = False
-        
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
         assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
@@ -2155,7 +2152,6 @@ class AffordanceDataset(ImageMCQDataset):
         else:
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
-
 
         try:
             df = pd.read_excel(eval_file)
@@ -2180,7 +2176,6 @@ class AffordanceDataset(ImageMCQDataset):
             acc_df.to_csv(score_file, index=False)
         except Exception as e:
             print(f"保存准确率到 CSV 文件时出现错误: {e}")
-        
+
         selected_columns = ['index', 'question', 'prediction', 'match']
         return df[selected_columns]
-
