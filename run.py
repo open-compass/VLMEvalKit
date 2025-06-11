@@ -441,9 +441,13 @@ def main():
                             judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+<<<<<<< HEAD
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):
                         judge_kwargs['model'] = 'xhs-deepseek'   
                     elif listinstr(['MMLongBench', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
+=======
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val', 'CharXiv_reasoning_val'], dataset_name):  # noqa: E501
+>>>>>>> ccb9795 (update)
                         judge_kwargs['model'] = 'gpt-4o-mini'
 <<<<<<< HEAD
                     elif listinstr(['OlympiadBench'], dataset_name):
