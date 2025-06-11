@@ -2039,8 +2039,9 @@ class _3DSRBench(ImageMCQDataset):
         return res_all
 
 class AffordanceDataset(ImageMCQDataset):
-    DATASET_URL = {'A4Bench': "https://huggingface.co/datasets/JunyingWang/A4Bench/blob/main/affordance_en.tsv"}
-    DATASET_MD5 = {'A4Bench':"7c0dc90e8c03e67ff937f3abb4a3fffb"}
+    DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
+    DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
+    
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
