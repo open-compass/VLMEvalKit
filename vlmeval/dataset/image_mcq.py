@@ -88,6 +88,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
+        'BLINK_circular': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK_circular.tsv',
         'TaskMeAnything_v1_imageqa_random': (
             'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
             'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
@@ -1383,6 +1384,7 @@ class LEGO(ImageMCQDataset):
 
     DATASET_URL = {
         'LEGO': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO.tsv',
+        'LEGO_circular': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO_circular.tsv',
     }
     DATASET_MD5 = {'LEGO': 'a10a2aaa1cab16d1d8d4fd0b66d45e82'}
 
