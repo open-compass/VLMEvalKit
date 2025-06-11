@@ -1,4 +1,4 @@
-from .gpt import OpenAIWrapper, GPT4V
+from .gpt import OpenAIWrapper, GPT4V, VLLMAPI
 from .hf_chat_model import HFChatModel
 from .gemini import GeminiWrapper, Gemini
 from .qwen_vl_api import QwenVLWrapper, QwenVLAPI, Qwen2VLAPI
@@ -26,5 +26,6 @@ __all__ = [
     'Reka', 'GLMVisionAPI', 'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision',
     'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API', 'JTVLChatAPI',
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
-    'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI'
+    'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
+    "VLLMAPI"
 ]
