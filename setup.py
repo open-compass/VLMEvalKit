@@ -80,7 +80,7 @@ def parse_requirements(fname='requirements.txt', with_version=True):
     return packages
 
 
-with open('README.md', 'r', encoding='utf-8') as f:
+with open('README.md') as f:
     readme = f.read()
 
 
