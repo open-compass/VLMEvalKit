@@ -129,7 +129,7 @@ def extract_gpt_score(resp):
     m = re.search(r'^\s*Score:\s*(\d+)\s*/\s*100', resp, re.IGNORECASE | re.MULTILINE)
     return int(m.group(1)) if m else 0
 
-def judge_one_item(item, retry=3):
+def judge_one_item(item):
     score_dict = {}
     global judge_model, save_code_dir, sub_set_name
     item = json.loads(item)
@@ -175,11 +175,13 @@ def judge_one_item(item, retry=3):
         logger.info(f"Subprocess failed with error: {e}")
     except Exception as e:
         logger.info(f"An unexpected error occurred: {e}")
+
     # try generate image (converted from pdf)
     if os.path.exists(output_py.replace(".py", ".pdf")):
         _convert_single_page_pdf_to_png(output_py.replace(".py", ".pdf"), output_py.replace(".py", ".png"))
         logger.info(f"converted pdf to image: {output_py.replace('.py', '.png')}")
         # breakpoint()
+
     # --- Got py and its pdf ---
     # >>> 2. Low Level Evaluation <<<
     text_evaluator = TextEvaluator(use_position=False, use_axs=False)
@@ -242,16 +244,16 @@ def judge_one_item(item, retry=3):
 
 
     # >>> 3. High Level Evaluation <<<
-    generated_pdf_file = generated_py_file.replace(".py", ".pdf")
-    # check if generated_pdf_file exists
-    if not os.path.exists(generated_pdf_file):
-        logger.info(f"Generated PDF file {generated_pdf_file} does not exist")
-        score_dict["high_level"] = {
-            "resp": None,
-            "msg": "Generated PDF file does not exist",
-            "score": 0.0
-        }
-        return 0, score_dict
+    # generated_pdf_file = generated_py_file.replace(".py", ".pdf")
+    # # check if generated_pdf_file exists
+    # if not os.path.exists(generated_pdf_file):
+    #     logger.info(f"Generated PDF file {generated_pdf_file} does not exist")
+    #     score_dict["high_level"] = {
+    #         "resp": None,
+    #         "msg": "Generated PDF file does not exist",
+    #         "score": 0.0
+    #     }
+    #     return 0, score_dict
     
     # pdf exsits
     # convert pdf to image
@@ -262,15 +264,16 @@ def judge_one_item(item, retry=3):
     # [Attention] Unable to get page count. Is poppler installed and in PATH?
     # Solution：apt install poppler-utils
     
-    generated_pdf_image_file = generated_pdf_file.replace(".pdf", ".png")
+    generated_pdf_image_file = generated_py_file.replace(".py", ".png")
     # check if generated_pdf_image_file exists
     if not os.path.exists(generated_pdf_image_file):
-        logger.info(f"Generated PDF image file {generated_pdf_image_file} does not exist")
+        # logger.info(f"Generated PDF image file {generated_pdf_image_file} does not exist")
         score_dict["high_level"] = {
             "resp": None,
             "msg": "Generated PDF image file does not exist",
             "score": 0.0
         }
+        logger.info(f"index: {item['index']}, return 0, score_dict: {score_dict}")
         return 0, score_dict
     
     # image order should align with prompt
@@ -282,14 +285,16 @@ def judge_one_item(item, retry=3):
             "msg": "Error in getting response from judge model!",
             "score": 0.0
         }
+        logger.info(f"index: {item['index']}, return -1, score_dict: {score_dict}")
         return -1, score_dict
     else:
-        logger.info(f"Successfully got response from judge model:\n{resp}")
+        # logger.info(f"Successfully got response from judge model:\n{resp}")
         score_dict["high_level"] = {
             "resp": resp,
             "msg": "Successfully got response from judge model!",
             "score": extract_gpt_score(resp)
         }
+        logger.info(f"index: {item['index']}, return 0, score_dict: {score_dict}")
     return 0, score_dict
 
 
@@ -302,13 +307,17 @@ class ChartMimic(ImageBaseDataset):
         "ChartMimic_v1_direct": 'https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v1_direct.tsv',
         # v2
         "ChartMimic_v2_customized": 'https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized.tsv',
-        "ChartMimic_v2_direct": 'https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct.tsv'
+        "ChartMimic_v2_direct": 'https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct.tsv',
+        "ChartMimic_v2_customized_temp_32": 'https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_temp_32.tsv',
+        "ChartMimic_v2_customized_temp_4": 'https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_temp_4.tsv'
     }
     DATASET_MD5 = {
         "ChartMimic_v1_customized": None,
         "ChartMimic_v1_direct": None,
         "ChartMimic_v2_customized": None,
-        "ChartMimic_v2_direct": None
+        "ChartMimic_v2_direct": None,
+        "ChartMimic_v2_customized_temp_32": None,
+        "ChartMimic_v2_customized_temp_4": None
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -388,7 +397,7 @@ class ChartMimic(ImageBaseDataset):
         # save current work dir
         global cur_work_dir, pdf_tmp_dir
         cur_work_dir = os.getcwd()
-        pdf_tmp_dir = os.path.join(save_code_dir, "chart_mimic_tmp")
+        pdf_tmp_dir = os.path.join(save_code_dir, "chart_mimic_tmp", f"{sub_set_name}")
         os.makedirs(pdf_tmp_dir, exist_ok=True)
         os.chdir(pdf_tmp_dir)
 
@@ -491,36 +500,3 @@ class ChartMimic(ImageBaseDataset):
         dump(score_df, score_file)
 
         return score_df
-        
-
-        # breakpoint()
-        # TODO: calculate scores
-        # # eval_data = [json.loads(line) for line in eval_data]
-        # # calculate P-Level scores
-        # p_level_score_sum = 0
-        # c_level_score_sum = 0
-        # p_level_cnt = 0
-        # c_level_cnt = 0
-        # for line in eval_data:
-        #     if line["tag"] == "P-Level":
-        #         p_level_score_sum += line["eval_score_dict"]["total_score"]
-        #         p_level_cnt += 1
-        #     elif line["tag"] == "C-Level":
-        #         c_level_score_sum += line["eval_score_dict"]["total_score"]
-        #         c_level_cnt += 1
-        # p_level_accuracy = p_level_score_sum / p_level_cnt
-        # c_level_accuracy = c_level_score_sum / c_level_cnt
-        # # save to score_file
-        # score_dict = {
-        #     "p_level_accuracy": [p_level_accuracy],
-        #     "c_level_accuracy": [c_level_accuracy],
-        #     "p_level_cnt": [p_level_cnt],
-        #     "c_level_cnt": [c_level_cnt],
-        #     "overall_accuracy": [
-        #         (p_level_accuracy * p_level_cnt + c_level_accuracy * c_level_cnt) / (p_level_cnt + c_level_cnt)
-        #     ],
-        # }
-        # score_df = pd.DataFrame(score_dict)
-        # dump(score_df, score_file)
-
-        # return score_df
