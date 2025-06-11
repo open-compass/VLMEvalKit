@@ -44,6 +44,8 @@ from .megabench import MEGABench
 from .moviechat1k import MovieChat1k
 from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
 from .vdc import VDC
+from .gobench import GOBenchDataset
+
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -187,7 +189,7 @@ IMAGE_DATASET = [
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench
+    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, GOBenchDataset
 ]
 
 
