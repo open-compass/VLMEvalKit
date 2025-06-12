@@ -349,7 +349,10 @@ def extract_answer_from_item(model, item, dataset_name=None):
             if ret:
                 return dict(opt=ret, log=ans)
             else:
-                logger.warning(f'Output includes 0 / > 1 letter among candidates {set(choices)} and Z: {ans}')
+                logger.warning(
+                    f'Failed to in infer: prediction is {ans}, choice labels are {set(choices)}'
+                    f', Answer is {item["answer"]}' if "answer" in item else ""
+                )
         retry -= 1
 
         if retry == 0:
