@@ -92,7 +92,7 @@ class GOBenchDataset(ImageBaseDataset):
                         scores = failed_scores
                         break
                     diff = abs(gt - pred)
-                    scores[key] = 1.0 if diff <= 0.5 else 0.0
+                    scores[key] = max(0,(0.5 - diff) / 0.5)
                 eval_results.append(scores)
 
             except Exception as e:
