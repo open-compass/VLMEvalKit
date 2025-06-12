@@ -71,6 +71,10 @@ dataset_levels = {
         ('MathVision', 'score.csv'), ('MathVerse_MINI_Vision_Only', 'score.csv'),
         ('DynaMath', 'score.csv'), ('WeMath', 'score.csv'), ('LogicVista', 'score.csv'),
         ('MathVista_MINI', 'gpt-4-turbo_score.csv'),
+    ],
+    'spatial': [
+        ('LEGO_circular', 'acc_all.csv'), ('BLINK_circular', 'acc_all.csv'), ('MMSIBench_circular', 'acc_all.csv'),
+        ('Spatial457', 'score.json'), ('3DSRBench', 'acc_all.csv')
     ]
 }
 
