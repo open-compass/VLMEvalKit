@@ -180,9 +180,6 @@ class SFE(ImageBaseDataset):
                 "image": image
             }
             records.append(rec)
-            #! TODELETE: 仅测试前10条数据
-            if idx >= 10:
-                break
         df = pd.DataFrame(records)
         df.reset_index(drop=True, inplace=True)
         return df
