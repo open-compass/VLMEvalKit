@@ -322,13 +322,13 @@ def extract_answer_from_item(model, item, dataset_name=None):
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
         prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
-    elif dataset_name == 'LEGO':
+    elif 'LEGO' in dataset_name:
         prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'],item['question_type'])
     else:
         prompt = build_prompt(item['question'], option_str, item['prediction'])
     retry = 3
 
-    if dataset_name == 'LEGO':
+    if 'LEGO' in dataset_name:
         ret = can_infer_lego(item['prediction'], item['question_type'], choices)
     else:
         ret = can_infer(item['prediction'], choices)
@@ -342,7 +342,7 @@ def extract_answer_from_item(model, item, dataset_name=None):
         if 'Failed to obtain answer via API' in ans:
             logger.warning('GPT API failed to answer. ')
         else:
-            if dataset_name == 'LEGO':
+            if 'LEGO' in dataset_name:
                 ret = can_infer_lego(ans, item['question_type'], choices)
             else:
                 ret = can_infer(ans, choices)

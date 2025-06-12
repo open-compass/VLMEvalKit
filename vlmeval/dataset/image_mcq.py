@@ -162,6 +162,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
+        'BLINK_circular': '75aee2332420c7654dc51b1442fafc7b',
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
@@ -1386,7 +1387,7 @@ class LEGO(ImageMCQDataset):
         'LEGO': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO.tsv',
         'LEGO_circular': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO_circular.tsv',
     }
-    DATASET_MD5 = {'LEGO': 'a10a2aaa1cab16d1d8d4fd0b66d45e82'}
+    DATASET_MD5 = {'LEGO': 'cfa845764442ebd54afa369c26011b8e'}
 
     @staticmethod
     def split_LEGO(msgs):
@@ -1995,9 +1996,10 @@ class _3DSRBench(ImageMCQDataset):
         super().evaluate(eval_file, **judge_kwargs)
         from .utils.multiple_choice import report_acc
         dname = osp.dirname(eval_file)
-        base = osp.basename(eval_file).split('.')[0]
-        result_file = ls(dname, match=[base, 'result.xlsx'])
-        assert len(result_file) == 1
+        base = osp.basename(eval_file).split('.')[:-1]
+        base = '.'.join(base)
+        result_file = ls(dname, match=[base + '_', 'result.xlsx'])
+        assert len(result_file) == 1, result_file
         result_file = result_file[0]
         data = load(result_file)
 

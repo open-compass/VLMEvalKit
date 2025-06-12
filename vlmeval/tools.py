@@ -250,8 +250,9 @@ def CIRCULAR(inp):
                 else:
                     try:
                         data = groups[k].copy()
-                        data['index'] = [x + OFFSET * i for x in data['index']]
-                        data['g_index'] = [x % OFFSET for x in data['index']]
+                        data['index'] = [int(x + OFFSET * i) for x in data['index']]
+                        data['g_index'] = [int(x % OFFSET) for x in data['index']]
+                        data['image'] = data['g_index']
                         c_map = {k: v for k, v in zip(rotates[0], rot)}
                         data['answer'] = [c_map[x] for x in data['answer']]
                         for s, t in c_map.items():
