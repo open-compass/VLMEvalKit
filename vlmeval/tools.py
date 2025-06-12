@@ -530,8 +530,11 @@ def SCAN(root, models, datasets):
                     cur_datasets.append(d)
         else:
             cur_datasets = datasets
+        cur_datasets = list(set(cur_datasets))
+        cur_datasets.sort()
         for d in cur_datasets:
             SCAN_ONE(root, m, d)
+        print(colored(f'Finished scanning datasets {cur_datasets} for model {m}.', 'green'))
 
 
 def cli():
@@ -611,7 +614,7 @@ def cli():
     elif args[0].lower() == 'scan':
         args, unknownargs = parse_args_scan()
         # The default value is only for the maintainer usage
-        root = args.root if args.root is not None else osp.join(osp.expanduser('~'), 'mmeval')
+        root = args.root if args.root is not None else os.getcwd()
         models = []
         for m in args.model:
             if osp.exists(m) and m.endswith('.txt'):
