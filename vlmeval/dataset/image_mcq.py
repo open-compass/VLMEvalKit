@@ -2039,7 +2039,7 @@ class _3DSRBench(ImageMCQDataset):
             acc_map[k]['setting'] = [k] * len(acc_map[k])
             metrics.append(acc_map[k])
         res_all = pd.concat(metrics)
-        dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
+        dump(res_all, eval_file.replace('.xlsx', '_acc_all.csv'))
         return res_all
 
 
