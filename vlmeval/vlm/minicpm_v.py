@@ -458,7 +458,7 @@ class MiniCPM_V_2_6(BaseModel):
         return [ret]
 
     def generate_inner_transformers(self, message, dataset=None):
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             max_slice_nums = 1
             use_image_id = False
             max_inp_length = 2048 * 10
@@ -730,7 +730,7 @@ class MiniCPM_o_2_6(BaseModel):
         return res
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if dataset is not None and DATASET_MODALITY(dataset) == 'VIDEO':
             max_slice_nums = 1
             use_image_id = False
             max_inp_length = 2048 * 10
@@ -750,7 +750,7 @@ class MiniCPM_o_2_6(BaseModel):
 
         content = []
 
-        if DATASET_TYPE(dataset) == 'Video-MCQ':
+        if dataset is not None and DATASET_TYPE(dataset) == 'Video-MCQ':
             message.append(dict(type='text', value=self.options_suffix_prompt))
 
         for x in message:
