@@ -206,7 +206,6 @@ def reorganize_prompt(message, image_num, dataset=None):
                 if x["type"] == "text":
                     prompt += x["value"]
                 elif x["type"] == "image":
-                    prompt += f"<Image-{image_idx}>"
                     image_idx += 1
     elif image_num == 1:
         prompt = '<image>\n' + '\n'.join([x['value'] for x in message if x['type'] == 'text'])
