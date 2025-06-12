@@ -36,3 +36,21 @@ def add_marker(marker):
 
 def get_markers():
     return markers
+
+import subprocess
+
+def run_script_safe(script_path):
+    try:
+        result = subprocess.run(
+            ["python3", script_path],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        return True  # success
+    except subprocess.CalledProcessError as e:
+        print(f"[ERROR] Failed to run {script_path}")
+        print(f"[Return Code]: {e.returncode}")
+        print(f"[Stdout]:\n{e.stdout}")
+        print(f"[Stderr]:\n{e.stderr}")
+        return False  # failed

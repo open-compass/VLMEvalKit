@@ -5,8 +5,8 @@ from typing import List, Tuple, Any, Dict
 import os
 import sys
 import matplotlib.pyplot as plt
+from eval_configs.global_config import run_script_safe
 import eval_configs.global_config as gloabl_config
-
 import re
 
 class ChartTypeEvaluator:
@@ -50,7 +50,11 @@ class ChartTypeEvaluator:
         with open(code_log_chart_types_file, "w") as f:
             f.write(code)
 
-        os.system(f"python {code_log_chart_types_file}")
+        # os.system(f"python {code_log_chart_types_file}")
+        success = run_script_safe(code_log_chart_types_file)
+        if not success:
+            print("Skip downstream logic due to previous failure.")
+            # optionally return default result or continue
 
         if os.path.exists(output_file) == True:
             with open(output_file, "r") as f:

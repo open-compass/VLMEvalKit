@@ -7,7 +7,7 @@ import sys
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
 import matplotlib.pyplot as plt
-import eval_configs.global_config as gloabl_config
+from eval_configs.global_config import run_script_safe
 
 class LayoutEvaluator:
 
@@ -52,7 +52,11 @@ class LayoutEvaluator:
         with open(code_log_texts_file, 'w') as f:
             f.write(code)
         
-        os.system(f"python3 {code_log_texts_file}")
+        # os.system(f"python3 {code_log_texts_file}")
+        success = run_script_safe(code_log_texts_file)
+        if not success:
+            print("Skip downstream logic due to previous failure.")
+            # optionally return default result or continue
 
         if os.path.exists(output_file) == True:                
             with open(output_file, 'r') as f:
