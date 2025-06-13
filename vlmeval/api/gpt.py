@@ -665,6 +665,8 @@ class VLLMAPIWrapper(BaseAPI):
 
 XHSVLMAPIWrapper = VLLMAPIWrapper
 
+XHSVLMAPIWrapper = VLLMAPIWrapper
+
 class VLLMAPI(VLLMAPIWrapper):
 
     def generate(self, message, dataset=None):
