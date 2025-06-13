@@ -49,6 +49,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 response = response[7:]
             if response.endswith("```"):
                 response = response[:-3]
+<<<<<<< HEAD
             
             try:
                 content = json.loads(response.strip())
@@ -71,6 +72,18 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             content["response"] = f"{response} {e}"
             continue
     return content
+=======
+            content = json.loads(response.strip())
+            if not isinstance(content, dict):
+                return failure_result
+            if "score" not in content or "extract_answer" not in content:
+                return failure_result
+            return content
+        except Exception as e:
+            print(f"{response} {e}")
+            continue
+    return failure_result
+>>>>>>> 9b3f245 (uopdate)
 
 
 def qid2category(mode: str) -> Tuple[Dict[int, str], str]:

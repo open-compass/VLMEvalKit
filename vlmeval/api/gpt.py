@@ -184,7 +184,7 @@ class OpenAIWrapper(BaseAPI):
                 if key is None:
                     key = env_key
                 else:
-                    assert isinstance(key, str) and key.startswith('sk-'), (
+                    assert isinstance(key, str), (
                         f'Illegal openai_key {key}. '
                         'Please set the environment variable OPENAI_API_KEY to your openai key. '
                     )
@@ -643,6 +643,8 @@ class VLLMAPIWrapper(BaseAPI):
                     self.logger.error(response.text if hasattr(response, 'text') else response)
 
             return ret_code, answer, response
+
+XHSVLMAPIWrapper = VLLMAPIWrapper
 
 XHSVLMAPIWrapper = VLLMAPIWrapper
 

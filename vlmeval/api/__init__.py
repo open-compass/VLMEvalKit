@@ -32,5 +32,4 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     "VLLMAPI", 'XHSVLMAPI', 'XHSSEEDVL', 'XHSVLMAPIWrapper'
-    
 ]
