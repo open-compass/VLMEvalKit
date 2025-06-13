@@ -101,7 +101,7 @@ class OpenAIWrapper(BaseAPI):
                 if key is None:
                     key = env_key
                 else:
-                    assert isinstance(key, str) and key.startswith('sk-'), (
+                    assert isinstance(key, str), (
                         f'Illegal openai_key {key}. '
                         'Please set the environment variable OPENAI_API_KEY to your openai key. '
                     )
@@ -318,7 +318,7 @@ class VLLMAPIWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
 
-        env_key = os.environ.get('API_KEY', '')
+        env_key = os.environ.get('VLLM_API_KEY', '')
         if key is None:
             key = env_key
         else:
@@ -343,6 +343,8 @@ class VLLMAPIWrapper(BaseAPI):
             else:
                 self.logger.error('Unknown API Base. ')
                 raise NotImplementedError
+        else:
+            self.api_base = api_base
 
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
@@ -423,7 +425,29 @@ class VLLMAPIWrapper(BaseAPI):
 
         return ret_code, answer, response
 
+XHSVLMAPIWrapper = VLLMAPIWrapper
+
 class VLLMAPI(VLLMAPIWrapper):
 
     def generate(self, message, dataset=None):
         return super(VLLMAPI, self).generate(message)
+
+class XHSVLMAPI(XHSVLMAPIWrapper):
+    """内部API"""
+    def generate(self, message, dataset=None):
+        return super(XHSVLMAPI, self).generate(message)
+
+class XHSSEEDVL(VLLMAPIWrapper):
+    """内部API"""
+
+    def __init__(self, model: str = None, key: str = None, api_base: str = None, **kwargs):
+        assert model is None and key is None and api_base is None, "使用环境变量设置"
+        model=os.environ.get("DOUBAO_MODEL_NAME", None)
+        key=os.environ.get("DOUBAO_VL_KEY", None)
+        api_base=os.environ.get("DOUBAO_API_BASE", None)
+        
+        assert model is not None and key is not None and api_base is not None, (
+            "使用环境变量设置 `DOUBAO_MODEL_NAME=`, `DOUBAO_VL_KEY=`, `DOUBAO_API_BASE=`")
+
+        super(XHSSEEDVL,self).__init__(model=model, key=key, api_base=api_base, **kwargs)
+        
