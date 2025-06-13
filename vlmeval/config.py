@@ -487,6 +487,30 @@ api_models = {
         verbose=False, 
         max_tokens=16384,
     ),
+    "Seed1.6": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Flash": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-flash-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Thinking": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-thinking-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
         MUGUAPI, 
@@ -854,7 +878,7 @@ internvl3 = {
         InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
     ),
     "InternVL3-8B": partial(
-        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0", use_lmdeploy=True
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0",
     ),
     "InternVL3-9B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"
@@ -1182,6 +1206,20 @@ qwen2vl_series = {
     "Qwen2.5-VL-72B-Instruct": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-RL": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-RL",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,

@@ -105,7 +105,7 @@ class Phi3Vision(BaseModel):
 class Phi3_5Vision(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='microsoft/Phi-3.5-vision-instruct', **kwargs):
         try:

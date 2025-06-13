@@ -134,7 +134,18 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             struct = dataset.build_prompt(
                 sample_map[idx], video_llm=getattr(model, 'VIDEO_LLM', False)
             )
-        response = model.generate(message=struct, dataset=dataset_name)
+
+        # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
+        if os.environ.get('SKIP_ERR', False) == '1':
+            FAIL_MSG = 'Failed to obtain answer'
+            try:
+                response = model.generate(message=struct, dataset=dataset_name)
+            except RuntimeError as err:
+                torch.cuda.synchronize()
+                warnings.error(f'{type(err)} {str(err)}')
+                response = f'{FAIL_MSG}: {type(err)} {str(err)}'
+        else:
+            response = model.generate(message=struct, dataset=dataset_name)
         torch.cuda.empty_cache()
 
         if verbose:

@@ -2330,9 +2330,9 @@ class CountBenchQA(ImageVQADataset):
     TYPE = "VQA"
     DATASET_URL = {
         "CountBenchQA":
-        "https://huggingface.co/datasets/moondream/CountBenchQA-VLMEvalKit/resolve/main/countbench_data.tsv"
+        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv"
     }
-    DATASET_MD5 = {"CountBenchQA": "d70123bd9d7c090b00101f2116f3a7c6"}
+    DATASET_MD5 = {"CountBenchQA": "fc73c8d4ffa665431448753f094d56ff"}
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2622,6 +2622,37 @@ class PhyX(ImageBaseDataset):
             score_pth = storage.replace('.xlsx', '_score.csv')
             dump(score, score_pth)
             return score
+
+
+class TallyQA(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'TallyQA': 'https://huggingface.co/datasets/moondream/TallyQA-VLMEvalKit/resolve/main/tallyqa_data.tsv'
+    }
+    DATASET_MD5 = {'TallyQA': '959df01cf1858e73a71efe5cd3b9bf19'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        import pandas as pd
+        from .utils.tallyqa import extract_count_from_prediction
+
+        data = load(eval_file)
+
+        pred_ints = data["prediction"].apply(extract_count_from_prediction)
+        answer_ints = data["answer"].astype(int)
+
+        correct = (pred_ints == answer_ints).sum()
+        total = len(data)
+        accuracy = correct / total
+
+        result_df = pd.DataFrame([{"TallyQA": accuracy}])
+        result_file = eval_file.replace(f".{eval_file.split('.')[-1]}", "_acc.csv")
+        dump(result_df, result_file)
+        return result_df
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        msgs[-1]['value'] += '\nAnswer the question using a single number.'
+        return msgs
 
 
 class Omni3DBench(ImageBaseDataset):
