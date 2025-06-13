@@ -88,6 +88,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
+        'BLINK_circular': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK_circular.tsv',
         'TaskMeAnything_v1_imageqa_random': (
             'https://huggingface.co/datasets/weikaih/TaskMeAnything-v1-imageqa-random/'
             'resolve/main/TaskMeAnything-v1-imageqa-random.tsv'
@@ -111,6 +112,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'CMMU_MCQ': 'https://huggingface.co/datasets/Pfei111/CMMU_VAL_MCQ/resolve/main/CMMU_VAL_MCQ.tsv',
         'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
         'MMSIBench_circular': 'https://opencompass.openxlab.space/utils/VLMEval/MMSIBench_circular.tsv',
+        'SpatialEval': 'https://opencompass.openxlab.space/utils/VLMEval/SpatialEval.tsv',
     }
 
     DATASET_MD5 = {
@@ -160,6 +162,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
+        'BLINK_circular': '75aee2332420c7654dc51b1442fafc7b',
         'TaskMeAnything_v1_imageqa_random': '023fef69e2ca21827afb77c5ec3bc889',
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
@@ -169,6 +172,7 @@ class ImageMCQDataset(ImageBaseDataset):
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
+        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b'
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -1148,7 +1152,7 @@ class NaturalBenchDataset(ImageMCQDataset):
         ),
     }
     DATASET_MD5 = {
-        'NaturalBenchDataset':'dbe25b044bc35696426381e9ba4fe930',
+        'NaturalBenchDataset':'e5f724932972eaeb8a9099e6979606ec',
     }
 
     def build_prompt(self, line):
@@ -1381,8 +1385,9 @@ class LEGO(ImageMCQDataset):
 
     DATASET_URL = {
         'LEGO': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO.tsv',
+        'LEGO_circular': 'https://opencompass.openxlab.space/utils/VLMEval/LEGO_circular.tsv',
     }
-    DATASET_MD5 = {'LEGO': 'a10a2aaa1cab16d1d8d4fd0b66d45e82'}
+    DATASET_MD5 = {'LEGO': 'cfa845764442ebd54afa369c26011b8e'}
 
     @staticmethod
     def split_LEGO(msgs):
@@ -1991,9 +1996,10 @@ class _3DSRBench(ImageMCQDataset):
         super().evaluate(eval_file, **judge_kwargs)
         from .utils.multiple_choice import report_acc
         dname = osp.dirname(eval_file)
-        base = osp.basename(eval_file).split('.')[0]
-        result_file = ls(dname, match=[base, 'result.xlsx'])
-        assert len(result_file) == 1
+        base = osp.basename(eval_file).split('.')[:-1]
+        base = '.'.join(base)
+        result_file = ls(dname, match=[base + '_', 'result.xlsx'])
+        assert len(result_file) == 1, result_file
         result_file = result_file[0]
         data = load(result_file)
 
@@ -2033,6 +2039,147 @@ class _3DSRBench(ImageMCQDataset):
             acc_map[k]['setting'] = [k] * len(acc_map[k])
             metrics.append(acc_map[k])
         res_all = pd.concat(metrics)
-        print(res_all)
-        dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
+        dump(res_all, eval_file.replace('.xlsx', '_acc_all.csv'))
         return res_all
+
+
+class AffordanceDataset(ImageMCQDataset):
+    DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
+    DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        affordance_definition = (
+            """ Please read the following key points of Gibson's Affordance Theory before answering:
+            Gibson's Affordance Theory core principles:
+            1. Core Definition
+            - "What the environment offers the animal for good or ill" (Gibson, 1979)
+            - Complementarity between animal's capacities and environmental properties
+            - Example: Horizontal rigid surface affords support for standing; cliff edge affords falling
+
+            2. Key Characteristics
+            - Direct perception through ecological optics (e.g., texture gradients specify walkability)
+            - Functional relativity (e.g., knee-high surface affords sitting for adults but not children)
+            - Action possibilities multiplicity (e.g., stone as missile/paperweight/hammer)
+
+            3. Fundamental Distinctions
+            - Affordance vs physical measurement (support measured relative to animal's weight)
+            - Invariant optical information (e.g., horizon specifies earth-sky separation)
+            - Niche as occupied affordance system (e.g., aquatic vs terrestrial niches)
+
+            4. Theoretical Breakthroughs
+            - Rejecting subjective-objective dichotomy (air affords breathing & seeing simultaneously)
+            - Lawful misinformation cases (e.g., visual cliff experiment with glass extension)
+            - Embodied perception (posture/gravity constraints in surface perception)
+
+            5. Ecological Evidence
+            - Animate vs inanimate distinction (infants' immediate perception of agency)
+            - Occlusion laws (peek-a-boo as concealment affordance learning)
+            - Tool-body extension (staff as arm extension for reaching/striking)"""
+        )  # noqa: E122
+        # 构建提示结构
+        prompt = ''
+        if hint is not None:
+            prompt += f'Hint: {hint}\n'
+        prompt += f'Concept: {affordance_definition}\n'  # 插入定义
+        prompt += f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += ("""Process multiple-choice questions under STRICT rules:
+                        1. Final answer MUST be valid Python list:
+                        - Format examples: ['A'] or ['B','D']
+                        - Output ONLY the answer list, NO explanations
+                        2. Mandatory requirements:
+                        a. MUST determine question type (single/multi-select: ONLY ONE answer list
+                        b. Uppercase letters in alphabetical order (A < B < C < D < E)
+                        c. Use English single quotes and brackets
+                        3. Processing logic:
+                        - All wrong: Return most probable single option (e.g., ['D'])
+                        - Partial correct: Keep ONLY confirmed correct options
+                        - Uncertain: Output highest-probability combination
+                        4. Format RULES:
+                        - STRICTLY ONE list (no multiple answers like ['C'] and ['A','B'])
+                        - NO non-list formats (e.g., 'C', A,B)
+                        - NO empty lists (even if all options wrong)
+
+                        Output: Answer list""")
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
+
+    def is_match(self, row):
+        import ast
+        answer = ast.literal_eval(row['answer'])
+        prediction = ast.literal_eval(row['prediction'])
+        return sorted(answer) == sorted(prediction)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import (
+            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+        )
+
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        try:
+            df = pd.read_excel(eval_file)
+        except FileNotFoundError:
+            print(f"未找到文件：{eval_file}")
+        except Exception as e:
+            print(f"读取文件时出现错误：{e}")
+        else:
+            # 添加 match 列
+            df['match'] = df.apply(self.is_match, axis=1).astype(int)
+
+        # load split
+        dump(df, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        df = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+
+        acc = df['match'].mean()
+        print(f"准确率(ACC): {acc * 100:.2f}%")
+
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        try:
+            acc_df = pd.DataFrame({'Accuracy': [acc]})
+            acc_df.to_csv(score_file, index=False)
+        except Exception as e:
+            print(f"保存准确率到 CSV 文件时出现错误: {e}")
+
+        selected_columns = ['index', 'question', 'prediction', 'match']
+        return df[selected_columns]
