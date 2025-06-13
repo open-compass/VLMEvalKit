@@ -378,7 +378,9 @@ def main():
                             judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val', 'CharXiv_reasoning_val'], dataset_name):  # noqa: E501
+                    elif listinstr(['CharXiv_reasoning_val'], dataset_name):
+                        judge_kwargs['model'] = 'xhs-deepseek'   
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['OlympiadBench'], dataset_name):
                         use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
