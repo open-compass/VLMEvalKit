@@ -1,8 +1,5 @@
-<<<<<<< HEAD
+
 from .gpt import OpenAIWrapper, GPT4V, VLLMAPI, XHSVLMAPI, XHSSEEDVL, XHSVLMAPIWrapper
-=======
-from .gpt import OpenAIWrapper, GPT4V, VLLMAPI
->>>>>>> ccb9795 (update)
 from .hf_chat_model import HFChatModel
 from .gemini import GeminiWrapper, Gemini
 from .qwen_vl_api import QwenVLWrapper, QwenVLAPI, Qwen2VLAPI
