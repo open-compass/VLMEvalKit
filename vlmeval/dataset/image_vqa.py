@@ -2191,7 +2191,7 @@ class MMSci_Captioning(ImageBaseDataset):
 class BMMR(ImageBaseDataset):
     TYPE = 'BMMR'
     DATASET_URL = {
-        'BMMR': 'bmmr.tsv'
+        'BMMR': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR.tsv'
     }
     DATASET_MD5 = {'BMMR': '3245ec52eb8dd689b81633cf7be06264'}
     def evaluate(self, eval_file, **judge_kwargs):
