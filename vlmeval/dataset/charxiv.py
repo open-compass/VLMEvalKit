@@ -40,15 +40,19 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 seed=seed,
                 top_p=top_p,
             )
-            content = json.loads(response)
+            if response.startswith("```json"):
+                response = response[7:]
+            if response.endswith("```"):
+                response = response[:-3]
+            content = json.loads(response.strip())
             if not isinstance(content, dict):
                 return failure_result
             if "score" not in content or "extract_answer" not in content:
                 return failure_result
             return content
-        except Exception:
+        except Exception as e:
+            print(f"{response} {e}")
             continue
-
     return failure_result
 
 

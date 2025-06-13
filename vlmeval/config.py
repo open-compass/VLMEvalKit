@@ -115,12 +115,30 @@ api_models = {
         retry=10,
         verbose=True,
     ),
-    "vllm_qwen": partial(
+    "vllm_qwen-72b": partial(
         VLLMAPI,
         model="Qwen25-VL-72B-Instruct",
         temperature=0,
         retry=10,
         verbose=True,
+        system_prompt=None,
+    ),
+    "xhs_api": partial(
+        XHSVLMAPI,
+        temperature=0,
+        retry=10,
+        verbose=True,
+        max_tokens=16384,
+        timeout = 256,
+        system_prompt=None,
+    ),
+    "xhs-seedvl-1.5" : partial(
+        XHSSEEDVL,
+        temperature=0,
+        retry=10,
+        verbose=True,
+        max_tokens=16384,
+        timeout = 1000,
         system_prompt=None,
     ),
     "GPT4V_HIGH": partial(

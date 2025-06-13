@@ -5,7 +5,7 @@ INTERNAL = os.environ.get('INTERNAL', 0)
 
 
 def build_judge(**kwargs):
-    from ...api import OpenAIWrapper, SiliconFlowAPI, HFChatModel
+    from ...api import OpenAIWrapper, SiliconFlowAPI, HFChatModel, XHSVLMAPIWrapper
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
     load_env()
@@ -24,6 +24,7 @@ def build_judge(**kwargs):
             'qwen-7b': 'Qwen/Qwen2.5-7B-Instruct',
             'qwen-72b': 'Qwen/Qwen2.5-72B-Instruct',
             'deepseek': 'deepseek-ai/DeepSeek-V3',
+            'xhs-deepseek': 'DeepSeek-V3',
             'llama31-8b': 'meta-llama/Llama-3.1-8B-Instruct',
         }
         model_version = model_map[model]
@@ -44,6 +45,27 @@ def build_judge(**kwargs):
             api_base=api_base, 
             key=key, 
             use_azure=True,
+            **kwargs)
+    elif model == 'gpt-4o':
+        api_base = os.environ.get('XHS_OPENAI_GPT4O_API_BASE', None)
+        key = os.environ.get('XHS_OPENAI_GPT4O_KEY', None)
+        assert api_base is not None and key is not None, (
+            "Please set `XHS_OPENAI_GPT4O_API_BASE` and `XHS_OPENAI_GPT4O_KEY` in '$VLMEVALKIT/.env'")
+        model = OpenAIWrapper(
+            'gpt-4o', 
+            api_base=api_base, 
+            key=key, 
+            use_azure=True,
+            **kwargs)
+    elif model == 'xhs-deepseek':
+        api_base = os.environ.get('XHS_DEEPSEEK_API_BASE', None)
+        key = os.environ.get('XHS_DEEPSEEK_KEY', None)
+        assert api_base is not None and key is not None, (
+            "Please set `XHS_DEEPSEEK_API_BASE` and `XHS_DEEPSEEK_KEY` in '$VLMEVALKIT/.env'")
+        model = XHSVLMAPIWrapper(
+            'deepseek-v3', 
+            api_base=api_base, 
+            key=key,
             **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)
