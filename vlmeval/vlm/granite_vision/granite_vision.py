@@ -8,8 +8,8 @@ from ...smp import *
 from ...dataset import DATASET_TYPE, DATASET_MODALITY
 import copy
 import requests
-from transformers import AutoModelFoVision2Seq, AutoProcessor
-            
+from transformers import AutoModelForVision2Seq, AutoProcessor
+
 flash_attn_flag = False
 try:
     import flash_attn
@@ -20,25 +20,25 @@ except ImportError:
 
 
 class GraniteVision3(BaseModel):
-
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path="ibm-granite/granite-vision-3.3-2b", **kwargs):
-
+    def __init__(
+        self, model_path="ibm-granite/granite-vision-3.3-2b", use_vllm=False, **kwargs
+    ):
+        # assert not use_vllm "vLLM is not yet supported for evaluations in VLMEvalKit"
         self.model_path = model_path
         self.processor = AutoProcessor.from_pretrained(self.model_path)
-        model = AutoModelFoVision2Seq.from_pretrained(
-                self.model_path,
-                torch_dtype=torch.bfloat16,
-                low_cpu_mem_usage=True,
-                use_flash_attention_2=flash_attn_flag,)
- 
+        model = AutoModelForVision2Seq.from_pretrained(
+            self.model_path,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            use_flash_attention_2=flash_attn_flag,
+        )
+
         model = model.eval()
         self.model = model.cuda()
-        kwargs_default = dict(
-            do_sample=False, temperature=0, max_new_tokens=2048, top_p=None, num_beams=1
-        )
+        kwargs_default = dict(do_sample=False, max_new_tokens=2048)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(
@@ -51,32 +51,35 @@ class GraniteVision3(BaseModel):
         if "<|assistant|>" in answer:
             answer = answer.split("<|assistant|>")[1].strip("\n .")
         elif "<|start_of_role|>assistant<|end_of_role|>" in answer:
-            answer = answer.split("<|start_of_role|>assistant<|end_of_role|>")[1].strip("\n .")
+            answer = answer.split("<|start_of_role|>assistant<|end_of_role|>")[1].strip(
+                "\n ."
+            )
         return answer
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         if DATASET_TYPE(dataset) == "MCQ":
             return True
-        if dataset in ['OCRBench']:
+        if dataset in ["OCRBench"]:
             return True
         return False
 
     def get_pre_post_prompt(self, dataset, chineese=False):
         pre_post_prompt = {
-            "OCRBench": ("", "\nAnswer with a short word or phrase."),
+            "OCRBench": ("", "\nReply with only one word or a short phrase."),
+            "COCO_VAL": ("", "\nReply with a short sentence."),
         }
-        pre_post_prompt_cn = {
-        }
-        
-        return pre_post_prompt.get(dataset, ("","")) if chineese else pre_post_prompt_cn.get(dataset, ("",""))
+        pre_post_prompt_cn = {}
+
+        return (
+            pre_post_prompt.get(dataset, ("", "")) if not chineese else pre_post_prompt_cn.get(dataset, ("", ""))
+        )
 
     def build_promt_mcq(self, line):
         question = line["question"]
         hint = line["hint"] if ("hint" in line and not pd.isna(line["hint"])) else None
         if hint is not None:
             question = hint + "\n" + question
-
 
         options = {
             cand: line[cand]
@@ -100,23 +103,25 @@ class GraniteVision3(BaseModel):
                 else "\nAnswer the question directly."
             )
         return prompt
-        
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        
+
         tgt_path = self.dump_image(line, dataset)
         if DATASET_TYPE(dataset) == "MCQ":
             prompt = self.build_promt_mcq(line)
         else:
             prompt = line["question"]
-        pre_promt, post_prompt = self.get_pre_post_prompt(dataset, chineese=cn_string(prompt))
+        pre_promt, post_prompt = self.get_pre_post_prompt(
+            dataset, chineese=cn_string(prompt)
+        )
         prompt = pre_promt + prompt + post_prompt
         message = [dict(type="image", value=s) for s in tgt_path]
         message.append(dict(type="text", value=prompt))
 
         return message
-    
+
     def resize_to_max_dim(self, image: Image.Image, max_dim: int = 768) -> Image.Image:
         """Resize image so the longer side is exactly `max_dim` pixels."""
         w, h = image.size
