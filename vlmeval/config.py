@@ -528,6 +528,13 @@ emu_series = {
     "emu3_chat": partial(Emu3_chat, model_path="BAAI/Emu3-Chat"),
     "emu3_gen": partial(Emu3_gen, model_path="BAAI/Emu3-Gen"),
 }
+
+granite_vision_series = {
+    'granite_vision_3.1_2b_preview': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.1-2b-preview"),
+    'granite_vision_3.2_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.2-2b"),
+    'granite_vision_3.3_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.3-2b"),
+}
+
 mmalaya_series = {
     "MMAlaya": partial(MMAlaya, model_path="DataCanvas/MMAlaya"),
     "MMAlaya2": partial(MMAlaya2, model_path="DataCanvas/MMAlaya2"),
@@ -1409,7 +1416,7 @@ for group in internvl_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
@@ -1419,7 +1426,8 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, flash_vl,
+    
 ]
 
 for grp in model_groups:
