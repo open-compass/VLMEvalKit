@@ -45,7 +45,7 @@ class GraniteVision3(BaseModel):
             f"Following kwargs received: {self.kwargs}, will use as generation config. "
         )
 
-    def output_process(self, answer):
+    def output_process(self, answer, dataset):
         if "<s>" in answer:
             answer = answer.replace("<s>", "").strip()
         if "<|assistant|>" in answer:
@@ -54,6 +54,17 @@ class GraniteVision3(BaseModel):
             answer = answer.split("<|start_of_role|>assistant<|end_of_role|>")[1].strip(
                 "\n ."
             )
+
+        if "<|end_of_text|>" in answer:
+            answer = answer.split("<|end_of_text|>")[0].strip("\n ")
+        if dataset in [
+            "ChartQA_TEST",
+            "DocVQA_VAL",
+            "DocVQA_TEST",
+            "InfoVQA_VAL",
+            "InfoVQA_TEST"]:
+            answer.strip(".")
+
         return answer
 
     def use_custom_prompt(self, dataset):
@@ -66,13 +77,18 @@ class GraniteVision3(BaseModel):
 
     def get_pre_post_prompt(self, dataset, chineese=False):
         pre_post_prompt = {
-            "OCRBench": ("", "\nReply with only one word or a short phrase."),
+            "OCRBench": (
+                "",
+                "\nReply with only one word or a short phrase or a full address.",
+            ),
             "COCO_VAL": ("", "\nReply with a short sentence."),
         }
         pre_post_prompt_cn = {}
 
         return (
-            pre_post_prompt.get(dataset, ("", "")) if not chineese else pre_post_prompt_cn.get(dataset, ("", ""))
+            pre_post_prompt.get(dataset, ("", ""))
+            if not chineese
+            else pre_post_prompt_cn.get(dataset, ("", ""))
         )
 
     def build_promt_mcq(self, line):
@@ -159,5 +175,5 @@ class GraniteVision3(BaseModel):
         )
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
-        answer = self.output_process(answer)
+        answer = self.output_process(answer, dataset)
         return answer
