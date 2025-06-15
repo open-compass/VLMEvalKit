@@ -63,6 +63,9 @@ class GraniteVision3(BaseModel):
             "DocVQA_TEST",
             "InfoVQA_VAL",
             "InfoVQA_TEST",
+            "OCRVQA_TEST",
+            "OCRVQA_TESTCORE",
+            "TextVQA_VAL"
         ]:
             answer = answer.strip(".")
 
@@ -72,7 +75,7 @@ class GraniteVision3(BaseModel):
         assert dataset is not None
         if DATASET_TYPE(dataset) == "MCQ":
             return True
-        if dataset in ["OCRBench"]:
+        if dataset in ["OCRBench", "COCO_VAL"]:
             return True
         return False
 
@@ -82,7 +85,7 @@ class GraniteVision3(BaseModel):
                 "",
                 "\nReply with only one word or a short phrase or a full address.",
             ),
-            "COCO_VAL": ("", "\nReply with a short sentence."),
+            "COCO_VAL": ("", "\nReply with one short sentence."),
         }
         pre_post_prompt_cn = {}
 
