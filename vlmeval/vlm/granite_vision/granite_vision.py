@@ -62,8 +62,9 @@ class GraniteVision3(BaseModel):
             "DocVQA_VAL",
             "DocVQA_TEST",
             "InfoVQA_VAL",
-            "InfoVQA_TEST"]:
-            answer.strip(".")
+            "InfoVQA_TEST",
+        ]:
+            answer = answer.strip(".")
 
         return answer
 
