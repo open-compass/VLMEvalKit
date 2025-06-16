@@ -394,6 +394,9 @@ api_models = {
     "HunYuan-Standard-Vision": partial(
         HunyuanVision, model="hunyuan-standard-vision", temperature=0, retry=10
     ),
+    "HunYuan-Large-Vision": partial(
+        HunyuanVision, model="hunyuan-large-vision", temperature=0, retry=10
+    ),
     "BailingMM-Lite-1203": partial(
         bailingMMAPI, model="BailingMM-Lite-1203", temperature=0, retry=10
     ),
