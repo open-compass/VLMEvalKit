@@ -394,6 +394,9 @@ api_models = {
     "HunYuan-Standard-Vision": partial(
         HunyuanVision, model="hunyuan-standard-vision", temperature=0, retry=10
     ),
+    "HunYuan-Large-Vision": partial(
+        HunyuanVision, model="hunyuan-large-vision", temperature=0, retry=10
+    ),
     "BailingMM-Lite-1203": partial(
         bailingMMAPI, model="BailingMM-Lite-1203", temperature=0, retry=10
     ),
@@ -447,6 +450,30 @@ api_models = {
     "Seed1.5-VL": partial(
         DoubaoVL, 
         model="doubao-1-5-thinking-vision-pro-250428", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Flash": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-flash-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Thinking": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-thinking-250615", 
         temperature=0,
         retry=10, 
         verbose=False, 
@@ -819,7 +846,7 @@ internvl3 = {
         InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
     ),
     "InternVL3-8B": partial(
-        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0", use_lmdeploy=True
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0",
     ),
     "InternVL3-9B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"
@@ -1017,6 +1044,16 @@ xgen_mm_series = {
     "xgen-mm-phi3-dpo-r-v1.5": partial(
         XGenMM, model_path="Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5"
     ),
+}
+
+hawkvl_series = {
+    "HawkVL-2B": partial(
+        HawkVL,
+        model_path="xjtupanda/HawkVL-2B",
+        min_pixels=4 * 28 * 28,
+        max_pixels=6800 * 28 * 28,
+        use_custom_prompt=True
+    )
 }
 
 qwen2vl_series = {
@@ -1395,7 +1432,7 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, flash_vl
 ]
 
 for grp in model_groups:

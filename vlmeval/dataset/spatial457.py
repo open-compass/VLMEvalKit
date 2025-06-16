@@ -32,6 +32,7 @@ class Spatial457(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
 
         data = load(eval_file)
+        data['prediction'] = [str(x) for x in data['prediction']]
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
 

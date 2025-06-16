@@ -6,14 +6,14 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
-    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench
+    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
     MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA, ZEROBench,
-    Omni3DBench, TallyQA
+    Omni3DBench, TallyQA, MMEReasoning
 )
 
 from .image_ccocr import CCOCRDataset
@@ -31,6 +31,7 @@ from .charxiv import CharXiv
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
+from .video_holmes import Video_Holmes
 from .mvbench import MVBench, MVBench_MP4
 from .tamperbench import MVTamperBench
 from .miabench import MIABench
@@ -44,6 +45,8 @@ from .megabench import MEGABench
 from .moviechat1k import MovieChat1k
 from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
 from .vdc import VDC
+from .gobench import GOBenchDataset
+
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -187,8 +190,9 @@ IMAGE_DATASET = [
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot,
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
-    WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA, ChartMimic,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench
+    WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
+    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
+    MMEReasoning, GOBenchDataset, ChartMimic
 ]
 
 
@@ -199,7 +203,8 @@ VIDEO_DATASET = [
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
-    VideoMMLU_CAP, VideoMMLU_QA
+    VideoMMLU_CAP, VideoMMLU_QA,
+    Video_Holmes
 ]
 
 TEXT_DATASET = [

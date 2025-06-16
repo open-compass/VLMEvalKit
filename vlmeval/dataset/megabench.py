@@ -382,6 +382,7 @@ class MEGABench(VideoBaseDataset):
         # save the result to json
         output_path = os.path.join(os.path.dirname(eval_file), f'megabench_result_{self.subset_name}.json')
         result_path = os.path.join(os.path.dirname(eval_file), f'megabench_score_{self.subset_name}.json')
+        score_path = os.path.join(os.path.dirname(eval_file), f'megabench_score_{self.subset_name}_summary.json')
         if not os.path.exists(output_path) or not os.path.exists(result_path):
             for task_name, group in data.groupby('task_name'):
                 task_dict = {
@@ -431,5 +432,6 @@ class MEGABench(VideoBaseDataset):
                 'num_queries': scores['summary']['num_queries']
             }
         }
+        dump(eval_results, score_path)
 
         return eval_results

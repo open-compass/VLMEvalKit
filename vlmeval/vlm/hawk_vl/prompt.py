@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 
-class Qwen2VLPromptMixin:
+# Adapted from vlmeval/vlm/qwen2_vl/prompt.py
+class HawkVLPromptMixin:
     """
-    Mixin class for Qwen2VLChat to build custom prompt for different datasets.
+    Mixin class for HawkVL to build custom prompt for different datasets.
 
     Requires the following methods to be implemented in the subclass:
         - dump_image(line, dataset: str) -> str | list[str]
@@ -32,7 +33,7 @@ class Qwen2VLPromptMixin:
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True
         if dataset_type == 'MCQ':
-            if dataset is not None and 'LEGO' in dataset:
+            if dataset == 'LEGO':
                 return False
             return True
         if dataset_type == 'Y/N' and dataset in {'HallusionBench', 'POPE'}:  # MME has it's own prompt
@@ -75,7 +76,7 @@ class Qwen2VLPromptMixin:
         prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
-            prompt += 'Please select the correct answer from the options above. \n'
+            prompt += "Answer with the option's letter from the given choices directly. \n"
         prompt = prompt.rstrip()
         msgs = []
         if isinstance(tgt_path, list):
@@ -88,7 +89,7 @@ class Qwen2VLPromptMixin:
     def _build_mcq_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for MCQ dataset: use chinese prompt if the question contains chinese characters."""
         MCQ_CN_PROMPT = '请直接回答选项字母。'
-        MCQ_EN_PROMPT = 'Please select the correct answer from the options above.'
+        MCQ_EN_PROMPT = "Answer with the option's letter from the given choices directly."
 
         import string
 
@@ -142,7 +143,7 @@ class Qwen2VLPromptMixin:
 
     def _build_vqa_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for VQA dataset:"""
-        VQA_PROMPT = '\nPlease try to answer the question with short words or phrases if possible.'
+        VQA_PROMPT = "\nAnswer the question using a single word or phrase."
 
         tgt_path = self.dump_image(line, dataset)
         question = line['question']

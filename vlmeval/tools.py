@@ -71,6 +71,10 @@ dataset_levels = {
         ('MathVision', 'score.csv'), ('MathVerse_MINI_Vision_Only', 'score.csv'),
         ('DynaMath', 'score.csv'), ('WeMath', 'score.csv'), ('LogicVista', 'score.csv'),
         ('MathVista_MINI', 'gpt-4-turbo_score.csv'),
+    ],
+    'spatial': [
+        ('LEGO_circular', 'acc_all.csv'), ('BLINK_circular', 'acc_all.csv'), ('MMSIBench_circular', 'acc_all.csv'),
+        ('Spatial457', 'score.json'), ('3DSRBench', 'acc_all.csv')
     ]
 }
 
@@ -250,8 +254,9 @@ def CIRCULAR(inp):
                 else:
                     try:
                         data = groups[k].copy()
-                        data['index'] = [x + OFFSET * i for x in data['index']]
-                        data['g_index'] = [x % OFFSET for x in data['index']]
+                        data['index'] = [int(x + OFFSET * i) for x in data['index']]
+                        data['g_index'] = [int(x % OFFSET) for x in data['index']]
+                        data['image'] = data['g_index']
                         c_map = {k: v for k, v in zip(rotates[0], rot)}
                         data['answer'] = [c_map[x] for x in data['answer']]
                         for s, t in c_map.items():
@@ -525,8 +530,11 @@ def SCAN(root, models, datasets):
                     cur_datasets.append(d)
         else:
             cur_datasets = datasets
+        cur_datasets = list(set(cur_datasets))
+        cur_datasets.sort()
         for d in cur_datasets:
             SCAN_ONE(root, m, d)
+        print(colored(f'Finished scanning datasets {cur_datasets} for model {m}.', 'green'))
 
 
 def cli():
@@ -606,7 +614,7 @@ def cli():
     elif args[0].lower() == 'scan':
         args, unknownargs = parse_args_scan()
         # The default value is only for the maintainer usage
-        root = args.root if args.root is not None else osp.join(osp.expanduser('~'), 'mmeval')
+        root = args.root if args.root is not None else os.getcwd()
         models = []
         for m in args.model:
             if osp.exists(m) and m.endswith('.txt'):
