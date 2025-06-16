@@ -4,14 +4,19 @@ import sys
 
 from ..smp import *
 
+FAIL_MSG = 'Failed to obtain answer via API.'
+
 logger = get_logger("ChartMimic")
 
 # SET VLMEVAL_CHARTMIMIC_UTILS_PATH for chartmimic evaluator
 # ".../VLMEvalKit/vlmeval..."
 cur_path = os.path.abspath(__file__)
+logger.info(f"cur_path: {cur_path}")
+# breakpoint()
 # get path before "VLMEvalKit/vlmeval", then add "VLMEvalKit/vlmeval"
-vlmeval_path = cur_path.split("VLMEvalKit/vlmeval")[0] + "VLMEvalKit/vlmeval/"
-os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] = vlmeval_path + "dataset/utils/chartmimic"
+# is there a better way to get VLMEvalKit path?
+util_path = cur_path.replace("dataset/chartmimic.py", "dataset/utils/chartmimic")
+os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] = util_path
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
     logger.info(f"sys.path add: {os.environ['VLMEVAL_CHARTMIMIC_UTILS_PATH']}")
@@ -158,8 +163,13 @@ def clean_escape_chars(code: str) -> str:
 def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
     from pdf2image import convert_from_path
 
-    images = convert_from_path(pdf_path, dpi=dpi)
-    images[0].save(output_path, "PNG")
+    try:
+        images = convert_from_path(pdf_path, dpi=dpi)
+        images[0].save(output_path, "PNG")
+    except Exception as e:
+        # logger.info(f"Error in converting pdf to image: {e}")
+        return False
+    return True
 
 
 def extract_gpt_score(resp):
@@ -239,7 +249,7 @@ def judge_one_item(item):
     try:
         subprocess.run(
             ["python", output_py],
-            timeout=20,
+            timeout=120,
             capture_output=True,
             text=True,
         )
@@ -247,19 +257,22 @@ def judge_one_item(item):
     except subprocess.TimeoutExpired:
         logger.info(f"Timeout: Script {output_py} ran too long.")
     except Exception as e:
+        # maybe could directly return 0, zero_score_dict
         logger.info(f"Error when running {output_py}: {e}")
     
     # check if pdf exists
     if not os.path.exists(output_py.replace(".py", ".pdf")):
-        logger.info(f"index: {item['index']}, pdf does not exist, return 0, zero_score_dict: {zero_score_dict}")
+        zero_score_dict["high_level"]["original_py_file"] = output_py
+        logger.info(f"index: {item['index']}, run code failed, pdf does not exist, return 0, zero_score_dict: {zero_score_dict}")
         return 0, zero_score_dict
 
     # try generate image (converted from pdf)
     if os.path.exists(output_py.replace(".py", ".pdf")):
+        # if error when converting pdf to image, maybe could directly return 0, zero_score_dict
         _convert_single_page_pdf_to_png(
             output_py.replace(".py", ".pdf"), output_py.replace(".py", ".png")
         )
-        logger.info(f"converted pdf to image: {output_py.replace('.py', '.png')}")
+        # logger.info(f"converted pdf to image: {output_py.replace('.py', '.png')}")
         # breakpoint()
 
     # --- Got py and its pdf ---
@@ -388,6 +401,7 @@ class ChartMimic(ImageBaseDataset):
         "ChartMimic_v2_direct": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct.tsv",
         "ChartMimic_v2_customized_temp_32": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_temp_32.tsv",
         "ChartMimic_v2_customized_temp_4": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_temp_4.tsv",
+        "ChartMimic_v2_direct_temp_300": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_temp_300.tsv",
     }
     DATASET_MD5 = {
         "ChartMimic_v1_customized": None,
@@ -396,7 +410,76 @@ class ChartMimic(ImageBaseDataset):
         "ChartMimic_v2_direct": None,
         "ChartMimic_v2_customized_temp_32": None,
         "ChartMimic_v2_customized_temp_4": None,
+        "ChartMimic_v2_direct_temp_300": None,
     }
+
+    def prepare_tsv(self, url, file_md5=None):
+        data_root = LMUDataRoot()
+        os.makedirs(data_root, exist_ok=True)
+        update_flag = False
+        file_name = url.split('/')[-1]
+        data_path = osp.join(data_root, file_name)
+        self.data_path = data_path
+        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
+            pass
+        else:
+            warnings.warn('The dataset tsv is not downloaded')
+            download_file(url, data_path)
+            update_flag = True
+
+        if file_size(data_path, 'GB') > 1:
+            local_path = data_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+                from ..tools import LOCALIZE
+                LOCALIZE(data_path, local_path)
+            data_path = local_path
+        # Extra check for images
+        py_root = os.path.join(LMUDataRoot(), "images", "ChartMimic")
+        v1_path = osp.join(py_root, "v1")
+        # Check if py_root/v1 exists
+        if not osp.exists(os.path.join(v1_path, "customized_500")) or not osp.exists(os.path.join(v1_path, "ori_500")):
+            # Download v1
+            warnings.warn('Python files v1 needed by ChartMimic are not downloaded')
+            os.makedirs(v1_path, exist_ok=True)
+            v1_tar = osp.join(v1_path, "v1.tar.gz")
+            if not osp.exists(v1_tar):
+                print("Downloading ChartMimic v1 files...")
+                subprocess.run([
+                    "wget",
+                    "https://hf-mirror.com/datasets/ChartMimic/ChartMimic/resolve/main/dataset-old.tar.gz",
+                    "-O", v1_tar
+                ], check=True)
+            print("Extracting v1...")
+            # subprocess.run([
+            #     "tar", "-xzvf", v1_tar, "-C", v1_path
+            # ], check=True)
+            try:
+                subprocess.run([
+                    "tar", "-xzvf", v1_tar, "--no-same-owner", "-C", v1_path
+                ], check=True)
+            except subprocess.CalledProcessError as e:
+                warnings.warn(f"tar extract v1 warning, try to continue. error: {e}")
+        v2_path = osp.join(py_root, "v2")
+        if not osp.exists(os.path.join(v2_path, "customized_1800")) or not osp.exists(os.path.join(v2_path, "direct_1800")) or not osp.exists(os.path.join(v2_path, "customized_600")) or not osp.exists(os.path.join(v2_path, "direct_600")):
+            warnings.warn('Python files v2 needed by ChartMimic are not downloaded')
+            os.makedirs(v2_path, exist_ok=True)
+            v2_tar = osp.join(v2_path, "v2.tar.gz")
+            if not osp.exists(v2_tar):
+                print("Downloading ChartMimic v2 files...")
+                subprocess.run([
+                    "wget",
+                    "https://hf-mirror.com/datasets/ChartMimic/ChartMimic/resolve/main/dataset-iclr.tar.gz",
+                    "-O", v2_tar
+                ], check=True)
+            print("Extracting v2...")
+            try:
+                subprocess.run([
+                    "tar", "-xzvf", v2_tar, "--no-same-owner", "-C", v2_path
+                ], check=True)
+            except subprocess.CalledProcessError as e:
+                warnings.warn(f"tar extract v2 warning, try to continue. error: {e}")
+            
+        return load(data_path)
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     # Actually, all lines have single image
@@ -471,7 +554,8 @@ class ChartMimic(ImageBaseDataset):
             tmp_data = load(tmp_file)
             for k, v in tmp_data.items():
                 # -1 means error for getting response from judge model, so try to rejudge for this item
-                if v[0] == 0:
+                # if v[0] == 0:
+                if v[0] == 0 and v[1]["high_level"]["resp"] != FAIL_MSG:
                     ans[k] = v
             logger.info(f"Tmp file exists, loaded {len(ans)} data from {tmp_file}")
             # logger.info(f"ans: {ans}")
@@ -487,7 +571,7 @@ class ChartMimic(ImageBaseDataset):
         os.chdir(pdf_tmp_dir)
 
         # >>> judge <<<
-        if not osp.exists(storage):
+        if len(indices):
             # judge_kwargs['system_prompt'] = SYSTEM_PROMPT
             judge_kwargs["temperature"] = 0
             judge_kwargs["img_detail"] = "high"
@@ -499,20 +583,22 @@ class ChartMimic(ImageBaseDataset):
                 "ChartMimic evaluation requires a working OPENAI API\n" + DEBUG_MESSAGE
             )
 
-            if len(indices):
-                new_results = track_progress_rich_new(
-                    judge_one_item,
-                    tups,
-                    nproc=nproc,
-                    keys=indices,
-                    save=tmp_file,
-                )
-                for k, v in zip(indices, new_results):
-                    ans[k] = v
-            else:
-                for k, v in ans.items():
-                    ans[k] = v
+            # if len(indices):
+            new_results = track_progress_rich_new(
+                judge_one_item,
+                tups,
+                nproc=nproc,
+                keys=indices,
+                save=tmp_file,
+            )
+            for k, v in zip(indices, new_results):
+                ans[k] = v
+            # else:
+            #     for k, v in ans.items():
+            #         ans[k] = v
 
+            # filter out items that do not have judge_result["low_level"] and judge_result["high_level"]: failed item need rejudge
+            # infer_data_all = [item for item in infer_data_all if "judge_result" in item and "low_level" in item["judge_result"] and "high_level" in item["judge_result"]]
             for item in infer_data_all:
                 # ans[i] is a tuple, (0 / -1, score_dict), only use score_dict
                 item["judge_result"] = ans[item["index"]][1]
@@ -531,6 +617,21 @@ class ChartMimic(ImageBaseDataset):
         # logger.info(f"storage: {storage}")
         eval_data_all = load(storage)
         # result_df = pd.DataFrame(columns=["example_count", "exec_rate", "text_score","layout_score",  "type_score",  "color_score", "average", f"gpt_score({judge_kwargs['model']})", "overall"])
+
+        # filter out items that do not have judge_result["low_level"] and judge_result["high_level"]: failed item need rejudge
+        old_len = len(eval_data_all)
+        eval_data_all = [item for item in eval_data_all if "judge_result" in item and "low_level" in item["judge_result"] and "high_level" in item["judge_result"]]
+        new_len = len(eval_data_all)
+        logger.info(f"filter out {old_len - new_len} items for no judge_result in item")
+
+        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
+        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
+        old_len = len(eval_data_all)
+        eval_data_all = [item for item in eval_data_all if item["judge_result"]["high_level"]["resp"] != FAIL_MSG]
+        new_len = len(eval_data_all)
+        logger.info(f"filter out {old_len - new_len} items for FAIL_MSG in high_level resp")
+
+        
 
         new_result = {
             "example_count": len(eval_data_all),

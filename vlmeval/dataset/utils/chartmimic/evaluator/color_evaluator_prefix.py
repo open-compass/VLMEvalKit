@@ -178,12 +178,14 @@ def log_function_specific_for_draw_networkx_edges(func):
                 for line in result:
                     color = convert_color_to_hex( line.get_facecolor() )
                     drawed_colors.append( func_name + "--" + color )
-                drawed_objects[func_name + "--" + color] = result
+                if len(result) > 0:
+                    drawed_objects[func_name + "--" + color] = result
             else:
                 for item in result.get_edgecolors().tolist():
                     color = convert_color_to_hex( item )
                     drawed_colors.append( func_name + "--" + color )
-                drawed_objects[func_name + "--" + color] = result   #! Attention
+                if len(result.get_edgecolors().tolist()) > 0:
+                    drawed_objects[func_name + "--" + color] = result   #! Attention
 
             in_decorator = False
         else:
@@ -559,7 +561,8 @@ def update_drawed_colors(drawed_obejcts):
             drawed_colors.append( func_name + "--" + color )
         elif "/bar" in func_name and "_3d" not in func_name:
             color = convert_color_to_hex( list(obj._original_facecolor))
-            drawed_colors.append( func_name + "--" + color )
+            if color is not None:
+                drawed_colors.append( func_name + "--" + color )
         elif "/scatter" in func_name and "polar" not in func_name and "3d" not in func_name:
             # check whether cmap is used by checking whether color is hex
             if color.startswith("#") == False:

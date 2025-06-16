@@ -3,8 +3,9 @@ from tqdm import tqdm
 import traceback
 import os
 from typing import Callable, Iterable
-from ....smp import load, dump
+from ....smp import *
 
+logger = get_logger("ChartMimic/mp_util")
 
 def track_progress_rich_new(
     func: Callable,
@@ -51,9 +52,9 @@ def track_progress_rich_new(
                 except Exception as e:
                     exc_type = type(e).__name__
                     err_msg = f"[{exc_type}] Exception in task {key or idx}: {str(e)}"
-                    print(err_msg)
-                    print("Full traceback:")
-                    print(traceback.format_exc())
+                    logger.error(err_msg)
+                    logger.error("Full traceback:")
+                    logger.error(traceback.format_exc())
 
                     # Optional: attach traceback to result for downstream reference
                     result = getattr(e, 'result', (-1, {

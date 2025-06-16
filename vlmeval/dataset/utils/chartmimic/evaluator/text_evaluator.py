@@ -27,8 +27,7 @@ class TextEvaluator:
         
         self._calculate_metrics(generation_texts, golden_texts)
 
-        # [TAG-DSY] What is this for?
-        # 打印workdir
+        # [TAG] What is this for?
         # print(f"os.getcwd(): {os.getcwd()}")
         # breakpoint()
         # redunant_file = os.environ["PROJECT_PATH"] + "/" + os.path.basename(golden_code_file).replace(".py", ".pdf")

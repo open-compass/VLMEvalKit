@@ -26,7 +26,7 @@ class ChartTypeEvaluator:
 
         self._calculate_metrics(generation_chart_types, golden_chart_types)
 
-        # [TAG-DSY] What is this for?
+        # [TAG] What is this for?
         # redunant_file = os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] + "/" + os.path.basename(golden_code_file).replace(".py", ".pdf")
         # print(f"redunant_file: {redunant_file}")
         # breakpoint()

@@ -67,12 +67,16 @@ class ColorEvaluator:
 
         self.golden_code_file = golden_code_file
 
+        # print(f"generation_code_file: {generation_code_file}")
         generation_colors = self._log_colors(generation_code_file)
+        # print(f"golden_code_file: {golden_code_file}")
         golden_colors = self._log_colors(golden_code_file)
+        # print(f"len(generation_colors): {len(generation_colors)}")
+        # print(f"len(golden_colors): {len(golden_colors)}")
         
         self._calculate_metrics(generation_colors, golden_colors)
 
-        # [TAG-DSY] What is this for?
+        # [TAG] What is this for?
         # redunant_file = os.environ["PROJECT_PATH"] + "/" + os.path.basename(golden_code_file).replace(".py", ".pdf")
         # os.remove(redunant_file)
         # print(self.metrics)
@@ -105,7 +109,10 @@ class ColorEvaluator:
         if os.path.exists(output_file) == True:
             with open(output_file, 'r') as f:
                 colors = f.read()
-                colors = eval(colors)
+                try: 
+                    colors = eval(colors)
+                except:
+                    colors = []
             os.remove(output_file)
         else:
             colors = []
@@ -123,6 +130,12 @@ class ColorEvaluator:
     def _calculate_metrics(self, generation_colors: List[Tuple], golden_colors: List[Tuple]):
         generation_colors = list(generation_colors)
         golden_colors = list(golden_colors)
+
+        if len(generation_colors) == 0 or len(golden_colors) == 0:
+            self.metrics["precision"] = 0
+            self.metrics["recall"] = 0
+            self.metrics["f1"] = 0
+            return
 
         group_generation_colors = group_color(generation_colors)
         group_golden_colors = group_color(golden_colors)
