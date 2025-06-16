@@ -1,9 +1,11 @@
 # flake8: noqa
 from typing import List, Tuple
+
 # from dotenv import load_dotenv
 # load_dotenv()
 
 import os
+
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
 from eval_configs.global_config import run_script_safe
@@ -43,12 +45,12 @@ from multiprocessing import Process
 #     else:
 #         return 0
 
+
 def calculate_similarity_for_permutation(args):
     shorter, perm = args
     current_similarity = sum(
-        calculate_similarity_single(
-            c1, c2) for c1, c2 in zip(
-            shorter, perm))
+        calculate_similarity_single(c1, c2) for c1, c2 in zip(shorter, perm)
+    )
     return current_similarity
 
 
@@ -86,9 +88,9 @@ class ColorEvaluator:
         Get text objects of the code
         """
 
-        with open(code_file, 'r') as f:
+        with open(code_file, "r") as f:
             lines = f.readlines()
-        code = ''.join(lines)
+        code = "".join(lines)
 
         prefix = self._get_prefix()
         output_file = code_file.replace(".py", "_log_colors.txt")
@@ -96,7 +98,7 @@ class ColorEvaluator:
         code = prefix + code + suffix
 
         code_log_texts_file = code_file.replace(".py", "_log_colors.py")
-        with open(code_log_texts_file, 'w') as f:
+        with open(code_log_texts_file, "w") as f:
             f.write(code)
 
         # os.system(f"python3 {code_log_texts_file}")
@@ -106,7 +108,7 @@ class ColorEvaluator:
             # optionally return default result or continue
 
         if os.path.exists(output_file):
-            with open(output_file, 'r') as f:
+            with open(output_file, "r") as f:
                 colors = f.read()
                 try:
                     colors = eval(colors)
@@ -127,9 +129,8 @@ class ColorEvaluator:
         return colors
 
     def _calculate_metrics(
-            self,
-            generation_colors: List[Tuple],
-            golden_colors: List[Tuple]):
+        self, generation_colors: List[Tuple], golden_colors: List[Tuple]
+    ):
         generation_colors = list(generation_colors)
         golden_colors = list(golden_colors)
 
@@ -152,17 +153,15 @@ class ColorEvaluator:
             if len(lst1) == 0 or len(lst2) == 0:
                 return 0
 
-            shorter, longer = (lst1, lst2) if len(
-                lst1) <= len(lst2) else (lst2, lst1)
+            shorter, longer = (lst1, lst2) if len(lst1) <= len(lst2) else (lst2, lst1)
 
-            max_total_similarity = float('-inf')
+            max_total_similarity = float("-inf")
             best_index = None
 
             for perm in permutations(longer, len(shorter)):
                 current_similarity = sum(
-                    calculate_similarity_single(
-                        c1, c2) for c1, c2 in zip(
-                        shorter, perm))
+                    calculate_similarity_single(c1, c2) for c1, c2 in zip(shorter, perm)
+                )
                 current_similarity /= len(shorter)
 
                 if current_similarity > max_total_similarity:
@@ -175,9 +174,9 @@ class ColorEvaluator:
             for i1, i2 in zip(best_index[0], best_index[1]):
                 print(i1, i2)
             tmp_similarity = sum(
-                calculate_similarity_single(
-                    c1, c2) for c1, c2 in zip(
-                    best_index[0], best_index[1])) / len(shorter)
+                calculate_similarity_single(c1, c2)
+                for c1, c2 in zip(best_index[0], best_index[1])
+            ) / len(shorter)
             print("tmp_similarity", tmp_similarity)
 
             return max_total_similarity
@@ -186,15 +185,15 @@ class ColorEvaluator:
             if len(lst1) == 0 or len(lst2) == 0:
                 return 0
 
-            shorter, longer = (lst1, lst2) if len(
-                lst1) <= len(lst2) else (lst2, lst1)
+            shorter, longer = (lst1, lst2) if len(lst1) <= len(lst2) else (lst2, lst1)
             perms = permutations(longer, len(shorter))
 
             # create processes according to the number of CPUs
             with Pool(processes=cpu_count()) as pool:
                 similarities = pool.map(
-                    calculate_similarity_for_permutation, [
-                        (shorter, perm) for perm in perms])
+                    calculate_similarity_for_permutation,
+                    [(shorter, perm) for perm in perms],
+                )
 
             # print("length of similarities", len(similarities))
 
@@ -210,7 +209,7 @@ class ColorEvaluator:
             # index[0] = sorted(index[0])
             # index[1] = sorted(index[1])
             # for i1, i2 in zip(index[0], index[1]):
-                # print(i1, i2)
+            # print(i1, i2)
 
             # tmp_similarity = sum( calculate_similarity_single(c1, c2) for c1, c2 in zip(index[0], index[1]) ) / len(shorter)
             # print("tmp_similarity", tmp_similarity)
@@ -220,7 +219,8 @@ class ColorEvaluator:
 
         # merge keys in group_generation_colors and group_golden_colors
         merged_color_group = list(
-            set(list(group_generation_colors.keys()) + list(group_golden_colors.keys())))
+            set(list(group_generation_colors.keys()) + list(group_golden_colors.keys()))
+        )
         for color in merged_color_group:
             if color not in group_generation_colors:
                 group_generation_colors[color] = []
@@ -231,27 +231,42 @@ class ColorEvaluator:
 
         for color in merged_color_group:
             max_set_similarity += calculate_similarity_parallel(
-                group_generation_colors[color], group_golden_colors[color])
+                group_generation_colors[color], group_golden_colors[color]
+            )
 
         # self.metrics["similarity"] = calculate_similarity_parallel(generation_colors, golden_colors)
         # max_set_similarity = calculate_similarity_parallel(generation_colors, golden_colors)
-        self.metrics["precision"] = max_set_similarity / \
-            len(generation_colors) if len(generation_colors) != 0 else 0
+        self.metrics["precision"] = (
+            max_set_similarity / len(generation_colors)
+            if len(generation_colors) != 0
+            else 0
+        )
         if "box" in self.golden_code_file:
-            self.metrics["recall"] = max_set_similarity / \
-                len(golden_colors) if len(golden_colors) != 0 else 0
+            self.metrics["recall"] = (
+                max_set_similarity / len(golden_colors)
+                if len(golden_colors) != 0
+                else 0
+            )
         else:
             self.metrics["recall"] = max_set_similarity / len(golden_colors)
         if self.metrics["precision"] + self.metrics["recall"] == 0:
             self.metrics["f1"] = 0
         else:
-            self.metrics["f1"] = 2 * self.metrics["precision"] * \
-                self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
+            self.metrics["f1"] = (
+                2
+                * self.metrics["precision"]
+                * self.metrics["recall"]
+                / (self.metrics["precision"] + self.metrics["recall"])
+            )
 
         return
 
     def _get_prefix(self):
-        with open(os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] + "/evaluator/color_evaluator_prefix.py", "r") as f:
+        with open(
+            os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"]
+            + "/evaluator/color_evaluator_prefix.py",
+            "r",
+        ) as f:
             prefix = f.read()
         return prefix
 
@@ -277,12 +292,10 @@ if __name__ == "__main__":
     # evaluator = TextEvaluator()
 
     golden_code_dir = f"{os.environ['PROJECT_PATH']}/dataset/ori_500/"
-    generation_code_dir = f"{
-        os.environ['PROJECT_PATH']}/results/chart2code_Phi-3-vision-128k-instruct_DirectAgent_results/direct/"
+    generation_code_dir = f"{os.environ['PROJECT_PATH']}/results/chart2code_Phi-3-vision-128k-instruct_DirectAgent_results/direct/"
 
     # list python files in the directory
-    golden_code_files = [f for f in os.listdir(
-        golden_code_dir) if f.endswith(".py")]
+    golden_code_files = [f for f in os.listdir(golden_code_dir) if f.endswith(".py")]
 
     # for golden_code_file in golden_code_files:
     # print(golden_code_file)
@@ -301,11 +314,8 @@ if __name__ == "__main__":
     num_processes = 20
     for rank in range(num_processes):
         p = Process(
-            target=_muti_process_run,
-            args=(
-                rank,
-                golden_code_files,
-                num_processes))
+            target=_muti_process_run, args=(rank, golden_code_files, num_processes)
+        )
         p.start()
         processes.append(p)
     for p in processes:
