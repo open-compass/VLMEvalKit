@@ -66,6 +66,7 @@ from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
+from .chartmimic import ChartMimic
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -191,7 +192,7 @@ IMAGE_DATASET = [
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
-    MMEReasoning, GOBenchDataset
+    MMEReasoning, GOBenchDataset, ChartMimic
 ]
 
 
