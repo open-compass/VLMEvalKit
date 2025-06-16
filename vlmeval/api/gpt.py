@@ -401,6 +401,8 @@ class VLLMAPIWrapper(BaseAPI):
             messages=input_msgs,
             temperature=temperature,
             **kwargs)
+        if self.model == os.environ.get("DOUBAO_MODEL_NAME") and self.think_mode is False:
+            payload['thinking'] = {"type" : "disabled"}
 
         payload['max_tokens'] = max_tokens
 
@@ -440,7 +442,7 @@ class XHSVLMAPI(XHSVLMAPIWrapper):
 class XHSSEEDVL(VLLMAPIWrapper):
     """内部API"""
 
-    def __init__(self, model: str = None, key: str = None, api_base: str = None, **kwargs):
+    def __init__(self, model: str = None, key: str = None, api_base: str = None, think_mode = True,**kwargs):
         assert model is None and key is None and api_base is None, "使用环境变量设置"
         model=os.environ.get("DOUBAO_MODEL_NAME", None)
         key=os.environ.get("DOUBAO_VL_KEY", None)
@@ -448,6 +450,7 @@ class XHSSEEDVL(VLLMAPIWrapper):
         
         assert model is not None and key is not None and api_base is not None, (
             "使用环境变量设置 `DOUBAO_MODEL_NAME=`, `DOUBAO_VL_KEY=`, `DOUBAO_API_BASE=`")
+        self.think_mode = think_mode
 
         super(XHSSEEDVL,self).__init__(model=model, key=key, api_base=api_base, **kwargs)
         

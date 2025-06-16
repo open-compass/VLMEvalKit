@@ -169,6 +169,16 @@ api_models = {
         timeout = 1000,
         system_prompt=None,
     ),
+    "xhs-seedvl-1.5-nothink" : partial(
+        XHSSEEDVL,
+        temperature=0,
+        retry=10,
+        verbose=True,
+        think_mode=False,
+        max_tokens=16384,
+        timeout = 1000,
+        system_prompt=None,
+    ),
     "GPT4V_HIGH": partial(
         GPT4V,
         model="gpt-4-1106-vision-preview",

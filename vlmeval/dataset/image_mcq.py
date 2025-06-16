@@ -224,7 +224,8 @@ class ImageMCQDataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
-            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, 
+            mcq_vanilla_eval, report_acc_MMVP
         )
         # assert dataset is not None
         dataset_map = {
@@ -291,6 +292,8 @@ class ImageMCQDataset(ImageBaseDataset):
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
             acc = report_acc_MMT(data)
+        elif 'MMVP' in dataset:
+            acc = report_acc_MMVP(data)
         elif 'MMSci' in dataset:
             acc = report_acc_MMSci(data)
         else:
