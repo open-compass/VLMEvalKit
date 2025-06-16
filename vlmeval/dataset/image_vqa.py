@@ -2312,6 +2312,8 @@ class ZEROBench(ImageVQADataset):
 
         # compute accuracy
         accuracy = output_df["Correct?"].mean()
+        result_file = eval_file.replace(f".{eval_file.split('.')[-1]}", "_acc.json")
+        dump( {'accuracy': accuracy}, result_file )
         return {"accuracy": accuracy}
 
     def build_prompt(self, line):
@@ -2356,6 +2358,8 @@ class CountBenchQA(ImageVQADataset):
             if ans in pred:
                 correct_count += 1
         accuracy = correct_count / total_count if total_count > 0 else 0
+        result_file = eval_file.replace(f".{eval_file.split('.')[-1]}", "_acc.json")
+        dump( {'accuracy': accuracy}, result_file )
         return {'accuracy': accuracy}
 
 
