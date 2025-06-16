@@ -53,7 +53,7 @@ Judegement: 1
 
     example_5 = """
 Ground truth answer: 3.2 m \n
-Predicted answer: The stuntman and villain slide approximately \\frac\{10\}{3.1415} meters**.
+Predicted answer: The stuntman and villain slide approximately \\frac\\{10\\}{3.1415} meters**.
 Judegement: 1
 """
 
@@ -130,7 +130,7 @@ Please compare the these two answers, then ONLY output judegement 1/0 for matche
 
 
 def mapping_str(input):
-    d = {"\dfrac": "\\frac", "\pi": "3.14"}
+    d = {r"\dfrac": r"\frac", r"\pi": "3.14"}
     output = input
     for k,v in d.items():
         try:
@@ -145,7 +145,7 @@ def safe_literal_eval(s):
     try:
         return ast.literal_eval(s)
     except:
-        pass  
+        pass
     if not s.startswith("{"):
         s = "{" + s
     if not s.endswith("}"):
@@ -153,14 +153,14 @@ def safe_literal_eval(s):
     s = re.sub(r'([{,]\s*)([^"\{\}\:\,\s]+)\s*:', r'\1"\2":', s)
     try:
         return ast.literal_eval(s)
-    except Exception as e:
+    except:
         return None
 
 
 def extract_boxed_content(s):
     start = s.find(r'\boxed{')
     if start == -1:
-        return None 
+        return None
     content_start = start + len(r'\boxed{')
     rest = s[content_start:]
     depth = 0
@@ -228,7 +228,7 @@ def PhyX_auxeval_MC(model, line):
         log += "Fail to Call API"
         prediction = "Fail to Call API"
         return dict(log=log, res=0, extracted=prediction)
-        
+
     if tmp["extracted"] != "SAME as predict":
         prediction = tmp["extracted"]
 
@@ -286,13 +286,13 @@ def PhyX_process_line(line):
 
     ret["index"] = line["index"]
     ret['gt'] = answers
-    
+
     # with reasoning, extract content part
     prediction_str = line['prediction']
     with_reasoning = False
     try:
         pred_dict = safe_literal_eval(prediction_str)
-        if isinstance(pred_dict, dict) and 'content' in pred_dict and pred_dict['content']!="":
+        if isinstance(pred_dict, dict) and 'content' in pred_dict and pred_dict['content'] != "":
             ret['pred'] = pred_dict['content'].strip()
             with_reasoning = True
     except:
@@ -300,14 +300,14 @@ def PhyX_process_line(line):
 
     if not with_reasoning:
         ret['pred'] = prediction_str.strip()
-    
+
     if ret['pred'] == FAIL_MSG:
         ret['match'] = 0
         ret["extracted"] = "Fail to Call API"
         return ret
-    
+
     boxed_answer = extract_boxed_content(ret['pred'])
-    if boxed_answer != None:
+    if boxed_answer is not None:
         boxed_answer = mapping_str(boxed_answer)
         ret["extracted"] = boxed_answer
     else:
@@ -321,8 +321,9 @@ def PhyX_process_line(line):
         else:
             ret["extracted"] = "SAME as predict"
 
-
-    if ret['gt'].strip().lower() == ret["extracted"].strip().lower() or ret['gt'].strip().lower() == ret["pred"].strip().lower() or ret['gt'] in ret['pred']:
+    if ret['gt'].strip().lower() == ret["extracted"].strip().lower() \
+        or ret['gt'].strip().lower() == ret["pred"].strip().lower() \
+        or ret['gt'] in ret['pred']:
         ret['match'] = 1
         return ret
 
