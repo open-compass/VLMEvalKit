@@ -1,17 +1,18 @@
+# flake8: noqa
 import re
 import os
 import sys
 
 from ..smp import *
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+FAIL_MSG = "Failed to obtain answer via API."
 
 logger = get_logger("ChartMimic")
 
 # SET VLMEVAL_CHARTMIMIC_UTILS_PATH for chartmimic evaluator
 # ".../VLMEvalKit/vlmeval..."
 cur_path = os.path.abspath(__file__)
-logger.info(f"cur_path: {cur_path}")
+# logger.info(f"cur_path: {cur_path}")
 # breakpoint()
 # get path before "VLMEvalKit/vlmeval", then add "VLMEvalKit/vlmeval"
 # is there a better way to get VLMEvalKit path?
@@ -19,11 +20,12 @@ util_path = cur_path.replace("dataset/chartmimic.py", "dataset/utils/chartmimic"
 os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] = util_path
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
-    logger.info(f"sys.path add: {os.environ['VLMEVAL_CHARTMIMIC_UTILS_PATH']}")
+    # logger.info(f"sys.path add: {os.environ['VLMEVAL_CHARTMIMIC_UTILS_PATH']}")
     # logger.info(f"sys.path: {sys.path}")
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
+
 # from ..utils import track_progress_rich
 from ..dataset.utils.chartmimic.evaluator.text_evaluator import TextEvaluator
 from ..dataset.utils.chartmimic.evaluator.chart_type_evaluator import ChartTypeEvaluator
@@ -76,7 +78,7 @@ def run_once_with_images(pt, image_abs_path_list, retry=4):
             ans = judge_model.generate(messages)
             return ans
         except Exception as e:
-            logger.exception("Error in run_once_with_images:")
+            logger.exception(f"Error in run_once_with_images: {e}")
             retry -= 1
     return ans
 
@@ -166,7 +168,7 @@ def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
     try:
         images = convert_from_path(pdf_path, dpi=dpi)
         images[0].save(output_path, "PNG")
-    except Exception as e:
+    except Exception:
         # logger.info(f"Error in converting pdf to image: {e}")
         return False
     return True
@@ -239,9 +241,7 @@ def judge_one_item(item):
     # clean & add self redefined path
     code = re.sub(r"plt\.savefig\(.*\n*", "", code, flags=re.S)
     code = re.sub(r"plt.show\(.*\n*", "", code, flags=re.S)
-    code = code.strip() + '\nplt.savefig("{}")'.format(
-        output_py.replace(".py", f".pdf")
-    )
+    code = code.strip() + '\nplt.savefig("{}")'.format(output_py.replace(".py", ".pdf"))
     with open(output_py, "w") as f:
         f.write(code)
     # [Attention] run code with timeout, enhancement here
@@ -259,11 +259,13 @@ def judge_one_item(item):
     except Exception as e:
         # maybe could directly return 0, zero_score_dict
         logger.info(f"Error when running {output_py}: {e}")
-    
+
     # check if pdf exists
     if not os.path.exists(output_py.replace(".py", ".pdf")):
         zero_score_dict["high_level"]["original_py_file"] = output_py
-        logger.info(f"index: {item['index']}, run code failed, pdf does not exist, return 0, zero_score_dict: {zero_score_dict}")
+        logger.info(
+            f"index: {item['index']}, run code failed, pdf does not exist, return 0, zero_score_dict: {zero_score_dict}"
+        )
         return 0, zero_score_dict
 
     # try generate image (converted from pdf)
@@ -370,7 +372,7 @@ def judge_one_item(item):
         [original_py_file.replace(".py", ".png"), generated_pdf_image_file],
     )
     if resp is None:
-        logger.error(f"Error in getting response from judge model!")
+        logger.error("Error in getting response from judge model!")
         score_dict["high_level"] = {
             "resp": None,
             "msg": "Error in getting response from judge model!",
@@ -417,68 +419,90 @@ class ChartMimic(ImageBaseDataset):
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
-        file_name = url.split('/')[-1]
+        file_name = url.split("/")[-1]
         data_path = osp.join(data_root, file_name)
         self.data_path = data_path
         if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
             pass
         else:
-            warnings.warn('The dataset tsv is not downloaded')
+            warnings.warn("The dataset tsv is not downloaded")
             download_file(url, data_path)
             update_flag = True
 
-        if file_size(data_path, 'GB') > 1:
-            local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+        if file_size(data_path, "GB") > 1:
+            local_path = data_path.replace(".tsv", "_local.tsv")
+            if (
+                not osp.exists(local_path)
+                or os.environ.get("FORCE_LOCAL", None)
+                or update_flag
+            ):
                 from ..tools import LOCALIZE
+
                 LOCALIZE(data_path, local_path)
             data_path = local_path
         # Extra check for images
         py_root = os.path.join(LMUDataRoot(), "images", "ChartMimic")
         v1_path = osp.join(py_root, "v1")
         # Check if py_root/v1 exists
-        if not osp.exists(os.path.join(v1_path, "customized_500")) or not osp.exists(os.path.join(v1_path, "ori_500")):
+        if not osp.exists(os.path.join(v1_path, "customized_500")) or not osp.exists(
+            os.path.join(v1_path, "ori_500")
+        ):
             # Download v1
-            warnings.warn('Python files v1 needed by ChartMimic are not downloaded')
+            warnings.warn("Python files v1 needed by ChartMimic are not downloaded")
             os.makedirs(v1_path, exist_ok=True)
             v1_tar = osp.join(v1_path, "v1.tar.gz")
             if not osp.exists(v1_tar):
                 print("Downloading ChartMimic v1 files...")
-                subprocess.run([
-                    "wget",
-                    "https://hf-mirror.com/datasets/ChartMimic/ChartMimic/resolve/main/dataset-old.tar.gz",
-                    "-O", v1_tar
-                ], check=True)
+                subprocess.run(
+                    [
+                        "wget",
+                        "https://hf-mirror.com/datasets/ChartMimic/ChartMimic/resolve/main/dataset-old.tar.gz",
+                        "-O",
+                        v1_tar,
+                    ],
+                    check=True,
+                )
             print("Extracting v1...")
             # subprocess.run([
             #     "tar", "-xzvf", v1_tar, "-C", v1_path
             # ], check=True)
             try:
-                subprocess.run([
-                    "tar", "-xzvf", v1_tar, "--no-same-owner", "-C", v1_path
-                ], check=True)
+                subprocess.run(
+                    ["tar", "-xzvf", v1_tar, "--no-same-owner", "-C", v1_path],
+                    check=True,
+                )
             except subprocess.CalledProcessError as e:
                 warnings.warn(f"tar extract v1 warning, try to continue. error: {e}")
         v2_path = osp.join(py_root, "v2")
-        if not osp.exists(os.path.join(v2_path, "customized_1800")) or not osp.exists(os.path.join(v2_path, "direct_1800")) or not osp.exists(os.path.join(v2_path, "customized_600")) or not osp.exists(os.path.join(v2_path, "direct_600")):
-            warnings.warn('Python files v2 needed by ChartMimic are not downloaded')
+        if (
+            not osp.exists(os.path.join(v2_path, "customized_1800"))
+            or not osp.exists(os.path.join(v2_path, "direct_1800"))
+            or not osp.exists(os.path.join(v2_path, "customized_600"))
+            or not osp.exists(os.path.join(v2_path, "direct_600"))
+        ):
+            warnings.warn("Python files v2 needed by ChartMimic are not downloaded")
             os.makedirs(v2_path, exist_ok=True)
             v2_tar = osp.join(v2_path, "v2.tar.gz")
             if not osp.exists(v2_tar):
                 print("Downloading ChartMimic v2 files...")
-                subprocess.run([
-                    "wget",
-                    "https://hf-mirror.com/datasets/ChartMimic/ChartMimic/resolve/main/dataset-iclr.tar.gz",
-                    "-O", v2_tar
-                ], check=True)
+                subprocess.run(
+                    [
+                        "wget",
+                        "https://hf-mirror.com/datasets/ChartMimic/ChartMimic/resolve/main/dataset-iclr.tar.gz",
+                        "-O",
+                        v2_tar,
+                    ],
+                    check=True,
+                )
             print("Extracting v2...")
             try:
-                subprocess.run([
-                    "tar", "-xzvf", v2_tar, "--no-same-owner", "-C", v2_path
-                ], check=True)
+                subprocess.run(
+                    ["tar", "-xzvf", v2_tar, "--no-same-owner", "-C", v2_path],
+                    check=True,
+                )
             except subprocess.CalledProcessError as e:
                 warnings.warn(f"tar extract v2 warning, try to continue. error: {e}")
-            
+
         return load(data_path)
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -620,86 +644,120 @@ class ChartMimic(ImageBaseDataset):
 
         # filter out items that do not have judge_result["low_level"] and judge_result["high_level"]: failed item need rejudge
         old_len = len(eval_data_all)
-        eval_data_all = [item for item in eval_data_all if "judge_result" in item and "low_level" in item["judge_result"] and "high_level" in item["judge_result"]]
+        eval_data_all = [
+            item
+            for item in eval_data_all
+            if "judge_result" in item
+            and "low_level" in item["judge_result"]
+            and "high_level" in item["judge_result"]
+        ]
         new_len = len(eval_data_all)
         logger.info(f"filter out {old_len - new_len} items for no judge_result in item")
 
         # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
         # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
         old_len = len(eval_data_all)
-        eval_data_all = [item for item in eval_data_all if item["judge_result"]["high_level"]["resp"] != FAIL_MSG]
+        eval_data_all = [
+            item
+            for item in eval_data_all
+            if item["judge_result"]["high_level"]["resp"] != FAIL_MSG
+        ]
         new_len = len(eval_data_all)
-        logger.info(f"filter out {old_len - new_len} items for FAIL_MSG in high_level resp")
+        logger.info(
+            f"filter out {old_len - new_len} items for FAIL_MSG in high_level resp"
+        )
 
-        
+        def compute_metrics(eval_data):
+            result = {
+                "example_count": len(eval_data),
+            }
 
-        new_result = {
-            "example_count": len(eval_data_all),
+            denominator = len(eval_data)
+            if denominator == 0:
+                # Avoid division by zero, return zeros
+                result.update(
+                    {
+                        "exec_rate": 0,
+                        "text_score": 0,
+                        "layout_score": 0,
+                        "chart_type_score": 0,
+                        "color_score": 0,
+                        "average": 0,
+                        "gpt_score": 0,
+                        "overall": 0,
+                    }
+                )
+                return result
+
+            pdf_file_cnt = 0
+            text_score_sum = 0
+            layout_score_sum = 0
+            type_score_sum = 0
+            color_score_sum = 0
+            gpt_score_sum = 0
+
+            for item in eval_data:
+                py_file = item["judge_result"]["low_level"]["generated_py_file"]
+                if py_file and os.path.exists(py_file.replace(".py", ".pdf")):
+                    pdf_file_cnt += 1
+
+                text_score_sum += item["judge_result"]["low_level"]["text_metrics"][
+                    "f1"
+                ]
+                layout_score_sum += item["judge_result"]["low_level"]["layout_metrics"][
+                    "f1"
+                ]
+                type_score_sum += item["judge_result"]["low_level"][
+                    "chart_type_metrics"
+                ]["f1"]
+                color_score_sum += item["judge_result"]["low_level"]["color_metrics"][
+                    "f1"
+                ]
+                gpt_score_sum += item["judge_result"]["high_level"]["score"]
+
+            result["exec_rate"] = pdf_file_cnt / denominator * 100
+            result["text_score"] = text_score_sum / denominator * 100
+            result["layout_score"] = layout_score_sum / denominator * 100
+            result["chart_type_score"] = type_score_sum / denominator * 100
+            result["color_score"] = color_score_sum / denominator * 100
+            result["average"] = (
+                result["text_score"]
+                + result["layout_score"]
+                + result["chart_type_score"]
+                + result["color_score"]
+            ) / 4
+            result["gpt_score"] = gpt_score_sum / denominator
+            result["overall"] = (result["average"] + result["gpt_score"]) / 2
+
+            return result
+
+        # Collect unique task values
+        task_values = sorted(
+            set(
+                item.get("task")
+                for item in eval_data_all
+                if item.get("task") is not None
+            )
+        )
+
+        # Create splits dict
+        splits = {
+            "all": eval_data_all,
+            **{
+                task: [item for item in eval_data_all if item.get("task") == task]
+                for task in task_values
+            },
         }
 
-        # calculate exec_rate by counting pdf file / total num
-        denominator = len(eval_data_all)
-        pdf_file_cnt = 0
-        for item in eval_data_all:
-            # maybe generated pdf file does not exist
-            if item["judge_result"]["low_level"]["generated_py_file"] is None:
-                continue
-            if os.path.exists(
-                item["judge_result"]["low_level"]["generated_py_file"].replace(
-                    ".py", ".pdf"
-                )
-            ):
-                pdf_file_cnt += 1
-        new_result["exec_rate"] = pdf_file_cnt / denominator * 100
+        all_results = []
+        for split_name, data in splits.items():
+            result = compute_metrics(data)
+            result["split"] = split_name
+            all_results.append(result)
 
-        # calculate text_score
-        text_score_sum = 0
-        for item in eval_data_all:
-            text_score_sum += item["judge_result"]["low_level"]["text_metrics"]["f1"]
-        new_result["text_score"] = text_score_sum / denominator * 100
-
-        # calculate layout_score
-        layout_score_sum = 0
-        for item in eval_data_all:
-            layout_score_sum += item["judge_result"]["low_level"]["layout_metrics"][
-                "f1"
-            ]
-        new_result["layout_score"] = layout_score_sum / denominator * 100
-
-        # calculate type_score
-        type_score_sum = 0
-        for item in eval_data_all:
-            type_score_sum += item["judge_result"]["low_level"]["chart_type_metrics"][
-                "f1"
-            ]
-        new_result["chart_type_score"] = type_score_sum / denominator * 100
-
-        # calculate color_score
-        color_score_sum = 0
-        for item in eval_data_all:
-            color_score_sum += item["judge_result"]["low_level"]["color_metrics"]["f1"]
-        new_result["color_score"] = color_score_sum / denominator * 100
-
-        # calculate average
-        new_result["average"] = (
-            new_result["text_score"]
-            + new_result["layout_score"]
-            + new_result["chart_type_score"]
-            + new_result["color_score"]
-        ) / 4
-
-        # calculate gpt_score
-        gpt_score_sum = 0
-        # first extract gpt score from resp
-        for item in eval_data_all:
-            gpt_score_sum += item["judge_result"]["high_level"]["score"]
-        new_result["gpt_score"] = gpt_score_sum / denominator
-
-        # calculate overall
-        # mean of average and gpt_score
-        new_result["overall"] = (new_result["average"] + new_result["gpt_score"]) / 2
-
-        score_df = pd.DataFrame([new_result])
+        score_df = pd.DataFrame(all_results)
+        # reorder columns
+        cols = ["split"] + [col for col in score_df.columns if col != "split"]
+        score_df = score_df[cols]
         dump(score_df, score_file)
-
         return score_df

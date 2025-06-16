@@ -7,6 +7,7 @@ from ....smp import *
 
 logger = get_logger("ChartMimic/mp_util")
 
+
 def track_progress_rich_new(
     func: Callable,
     tasks: Iterable = tuple(),
@@ -56,7 +57,8 @@ def track_progress_rich_new(
                     logger.error("Full traceback:")
                     logger.error(traceback.format_exc())
 
-                    # Optional: attach traceback to result for downstream reference
+                    # Optional: attach traceback to result for downstream
+                    # reference
                     result = getattr(e, 'result', (-1, {
                         'msg': err_msg,
                         'traceback': traceback.format_exc(),

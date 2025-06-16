@@ -1,13 +1,13 @@
-from typing import List, Tuple, Any
+# flake8: noqa
+from typing import List, Tuple
 # from dotenv import load_dotenv
 # load_dotenv()
 
 import os
-import sys
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
-import matplotlib.pyplot as plt
 from eval_configs.global_config import run_script_safe
+
 
 class LayoutEvaluator:
 
@@ -21,14 +21,13 @@ class LayoutEvaluator:
     def __call__(self, generation_code_file, golden_code_file):
         generation_layouts = self._log_layouts(generation_code_file)
         golden_layouts = self._log_layouts(golden_code_file)
-        
+
         self._calculate_metrics(generation_layouts, golden_layouts)
 
         # redunant_file = os.environ["PROJECT_PATH"] + "/" + os.path.basename(golden_code_file).replace(".py", ".pdf")
         # os.remove(redunant_file)
 
         # print(self.metrics)
-
 
     def _log_layouts(self, code_file):
         """
@@ -51,14 +50,14 @@ class LayoutEvaluator:
         code_log_texts_file = code_file.replace(".py", "_log_layouts.py")
         with open(code_log_texts_file, 'w') as f:
             f.write(code)
-        
+
         # os.system(f"python3 {code_log_texts_file}")
         success = run_script_safe(code_log_texts_file)
         if not success:
             print("Skip downstream logic due to previous failure.")
             # optionally return default result or continue
 
-        if os.path.exists(output_file) == True:                
+        if os.path.exists(output_file):
             with open(output_file, 'r') as f:
                 texts = f.read()
                 texts = eval(texts)
@@ -69,7 +68,10 @@ class LayoutEvaluator:
 
         return texts
 
-    def _calculate_metrics(self, generation_layouts: List[Tuple], golden_layouts: List[Tuple]):
+    def _calculate_metrics(
+            self,
+            generation_layouts: List[Tuple],
+            golden_layouts: List[Tuple]):
         """
         Calculate the metrics
 
@@ -97,19 +99,20 @@ class LayoutEvaluator:
         if self.metrics["precision"] + self.metrics["recall"] == 0:
             self.metrics["f1"] = 0
         else:
-            self.metrics["f1"] = 2 * self.metrics["precision"] * self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
+            self.metrics["f1"] = 2 * self.metrics["precision"] * \
+                self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
 
         return
 
     def _get_prefix(self):
-        return f"""
+        return """
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 """
-    
+
     def _get_suffix(self, output_file):
         return f"""
 
@@ -132,7 +135,7 @@ layout_info = get_gridspec_layout_info(fig=plt.gcf())
 with open('{output_file}', 'w') as f:
     f.write(str(layout_info))
 """
-    
+
     def _get_suffix_special_for_graph(self, output_file):
         return f"""
 def get_gridspec_layout_info(fig):
@@ -148,16 +151,18 @@ with open('{output_file}', 'w') as f:
     f.write(str(layout_info))
 """
 
+
 if __name__ == "__main__":
-    import sys
 
     evaluator = LayoutEvaluator()
 
     for idx in range(60, 61):
         print(f"Processing {idx}")
         # print("Processing Golden Code")
-        golden_code_file = f"{os.environ['PROJECT_PATH']}/dataset/ori/line_{idx}.py"
+        golden_code_file = f"{
+            os.environ['PROJECT_PATH']}/dataset/ori/line_{idx}.py"
         # print("Processing Generation Code")
-        generation_code_file = f"{os.environ['PROJECT_PATH']}/results/chart2code_gpt_ScaffoldAgent_results/scaffold/line_{idx}.py"
+        generation_code_file = f"{
+            os.environ['PROJECT_PATH']}/results/chart2code_gpt_ScaffoldAgent_results/scaffold/line_{idx}.py"
         evaluator(generation_code_file, golden_code_file)
         print()

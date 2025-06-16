@@ -1,27 +1,23 @@
+import inspect
+from matplotlib_venn._common import VennDiagram
+from matplotlib.patches import Ellipse, Circle
+from matplotlib.image import NonUniformImage
+from mpl_toolkits.mplot3d import Axes3D
+import networkx as nx
+import networkx.drawing.nx_pylab as nx_pylab
+import squarify
+from matplotlib.axes import Axes
+from matplotlib.projections.polar import PolarAxes
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-import os
-import sys
 # sys.path.insert(0, os.environ['PROJECT_PATH'])
-from matplotlib.projections.polar import PolarAxes
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.axes._base import _process_plot_var_args
-import squarify
-import networkx.drawing.nx_pylab as nx_pylab
-import networkx as nx
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.image import NonUniformImage
-from matplotlib.patches import Ellipse, Circle
-from matplotlib.tri._tripcolor import tripcolor
-from matplotlib_venn._common import VennDiagram
-import inspect
 
 called_functions = {}
 in_decorator = False
+
 
 def log_function_specific_for_draw_networkx_labels(func):
     def wrapper(
@@ -42,7 +38,7 @@ def log_function_specific_for_draw_networkx_labels(func):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             file_name = inspect.getfile(func) + "/" + func.__name__
@@ -84,6 +80,7 @@ def log_function_specific_for_draw_networkx_labels(func):
             )
         return result
     return wrapper
+
 
 def log_function_specific_for_draw_networkx_edges(func):
     def wrapper(
@@ -112,7 +109,7 @@ def log_function_specific_for_draw_networkx_edges(func):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             file_name = inspect.getfile(func) + "/" + func.__name__
@@ -170,6 +167,7 @@ def log_function_specific_for_draw_networkx_edges(func):
             )
         return result
     return wrapper
+
 
 def log_function_specific_for_draw_networkx_nodes(func):
     def wrapper(
@@ -187,12 +185,12 @@ def log_function_specific_for_draw_networkx_nodes(func):
         linewidths=None,
         edgecolors=None,
         label=None,
-        margins=None,      
+        margins=None,
     ):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             file_name = inspect.getfile(func) + "/" + func.__name__
@@ -239,12 +237,14 @@ def log_function_specific_for_draw_networkx_nodes(func):
         return result
     return wrapper
 
+
 def log_function(func):
     def wrapper(*args, **kwargs):
         global in_decorator
         if not in_decorator:
             in_decorator = True
-            if len(args) > 0 and type(args[0]) == PolarAxes and func.__name__ == "plot":
+            if len(args) > 0 and isinstance(
+                    args[0], PolarAxes) and func.__name__ == "plot":
                 file_name = inspect.getfile(func)
                 file_name += "_polar"
             else:
@@ -257,6 +257,7 @@ def log_function(func):
         else:
             return func(*args, **kwargs)
     return wrapper
+
 
 Axes.bar = log_function(Axes.bar)
 Axes.barh = log_function(Axes.barh)   # The same as the bar
@@ -285,17 +286,23 @@ Axes.fill_betweenx = log_function(Axes.fill_betweenx)
 
 Axes.scatter = log_function(Axes.scatter)
 
-nx_pylab.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(nx_pylab.draw_networkx_nodes)
-nx_pylab.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(nx_pylab.draw_networkx_edges)
-nx_pylab.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(nx_pylab.draw_networkx_labels)
+nx_pylab.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(
+    nx_pylab.draw_networkx_nodes)
+nx_pylab.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(
+    nx_pylab.draw_networkx_edges)
+nx_pylab.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(
+    nx_pylab.draw_networkx_labels)
 
 # nx_pylab.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(nx_pylab.draw_networkx_nodes)
 # nx_pylab.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(nx_pylab.draw_networkx_edges)
 # nx_pylab.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(nx_pylab.draw_networkx_labels)
 
-nx.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(nx.draw_networkx_nodes)
-nx.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(nx.draw_networkx_edges)
-nx.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(nx.draw_networkx_labels)
+nx.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(
+    nx.draw_networkx_nodes)
+nx.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(
+    nx.draw_networkx_edges)
+nx.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(
+    nx.draw_networkx_labels)
 
 Axes.quiver = log_function(Axes.quiver)
 

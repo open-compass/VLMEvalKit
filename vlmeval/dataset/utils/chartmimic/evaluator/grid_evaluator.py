@@ -1,15 +1,13 @@
-from typing import List, Tuple, Any
+# flake8: noqa
+from typing import List, Tuple
 # from dotenv import load_dotenv
 # load_dotenv()
 
 import os
-import sys
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
-import matplotlib.pyplot as plt
 from eval_configs.global_config import run_script_safe
 
-import re
 
 
 class GridEvaluator:
@@ -24,13 +22,12 @@ class GridEvaluator:
     def __call__(self, generation_code_file, golden_code_file):
         generation_grids = self._log_legends(generation_code_file)
         golden_grids = self._log_legends(golden_code_file)
-        
+
         self._calculate_metrics(generation_grids, golden_grids)
 
         # redunant_file = os.environ["PROJECT_PATH"] + "/" + os.path.basename(golden_code_file).replace(".py", ".pdf")
         # os.remove(redunant_file)
         # print(self.metrics)
-
 
     def _log_legends(self, code_file):
         """
@@ -49,7 +46,7 @@ class GridEvaluator:
         code_log_texts_file = code_file.replace(".py", "_log_legends.py")
         with open(code_log_texts_file, 'w') as f:
             f.write(code)
-        
+
         # os.system(f"python3 {code_log_texts_file}")
         success = run_script_safe(code_log_texts_file)
         if not success:
@@ -62,16 +59,19 @@ class GridEvaluator:
 
         os.remove(code_log_texts_file)
         os.remove(output_file)
-        
+
         # pdf_file = re.findall(r"plt\.savefig\('(.*)'\)", code)
         # if len(pdf_file) != 0:
-            # pdf_file = pdf_file[0]
-            # if os.path.basename(pdf_file) == pdf_file:
-                # os.remove(pdf_file)
+        # pdf_file = pdf_file[0]
+        # if os.path.basename(pdf_file) == pdf_file:
+        # os.remove(pdf_file)
 
         return texts
 
-    def _calculate_metrics(self, generation_grids: List[Tuple], golden_grids: List[Tuple]):
+    def _calculate_metrics(
+            self,
+            generation_grids: List[Tuple],
+            golden_grids: List[Tuple]):
         """
         Calculate the metrics
 
@@ -99,7 +99,8 @@ class GridEvaluator:
         if self.metrics["precision"] + self.metrics["recall"] == 0:
             self.metrics["f1"] = 0
         else:
-            self.metrics["f1"] = 2 * self.metrics["precision"] * self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
+            self.metrics["f1"] = 2 * self.metrics["precision"] * \
+                self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
 
         return
 
@@ -120,7 +121,7 @@ from matplotlib.backends.backend_pdf import RendererPdf
 
 grid_visibility = []
 """
-    
+
     def _get_suffix(self, output_file):
         return f"""
 
@@ -168,7 +169,6 @@ with open('{output_file}', 'w') as f:
 
 
 if __name__ == "__main__":
-    import sys
     # sys.path.insert(0, '/home/yc21/project/Princess-s-CHI')
 
     evaluator = GridEvaluator()

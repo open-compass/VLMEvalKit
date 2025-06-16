@@ -1,13 +1,11 @@
-from typing import List, Tuple, Any, Dict
+# flake8: noqa
+from typing import Dict
 # from dotenv import load_dotenv
 # load_dotenv()
 
 import os
-import sys
-import matplotlib.pyplot as plt
 from eval_configs.global_config import run_script_safe
-import eval_configs.global_config as gloabl_config
-import re
+
 
 class ChartTypeEvaluator:
 
@@ -17,7 +15,7 @@ class ChartTypeEvaluator:
             "recall": 0,
             "f1": 0
         }
-    
+
     def __call__(self, generation_code_file, golden_code_file):
         generation_chart_types = self._get_chart_types(generation_code_file)
         golden_chart_types = self._get_chart_types(golden_code_file)
@@ -34,9 +32,9 @@ class ChartTypeEvaluator:
         # os.remove(redunant_file)
 
         # print(self.metrics)
-    
+
     def _get_chart_types(self, code_file):
-        
+
         with open(code_file, "r") as f:
             lines = f.readlines()
         code = "".join(lines)
@@ -46,7 +44,8 @@ class ChartTypeEvaluator:
         suffix = self._get_suffix(output_file)
         code = prefix + code + suffix
 
-        code_log_chart_types_file = code_file.replace(".py", "_log_chart_types.py")
+        code_log_chart_types_file = code_file.replace(
+            ".py", "_log_chart_types.py")
         with open(code_log_chart_types_file, "w") as f:
             f.write(code)
 
@@ -56,7 +55,7 @@ class ChartTypeEvaluator:
             print("Skip downstream logic due to previous failure.")
             # optionally return default result or continue
 
-        if os.path.exists(output_file) == True:
+        if os.path.exists(output_file):
             with open(output_file, "r") as f:
                 chart_types = f.read()
                 chart_types = eval(chart_types)
@@ -64,17 +63,18 @@ class ChartTypeEvaluator:
         else:
             chart_types = {}
         os.remove(code_log_chart_types_file)
-        
+
         # pdf_file = re.findall(r"plt\.savefig\('(.*)'\)", code)
         # if len(pdf_file) != 0:
-            # pdf_file = pdf_file[0].split(",")[0][:-1]
-            # print(pdf_file)
-            # if os.path.basename(pdf_file) == pdf_file:
-                # os.remove(pdf_file)
+        # pdf_file = pdf_file[0].split(",")[0][:-1]
+        # print(pdf_file)
+        # if os.path.basename(pdf_file) == pdf_file:
+        # os.remove(pdf_file)
 
         return chart_types
 
-    def _calculate_metrics(self, generation_chart_types: Dict[str, int], golden_chart_types: Dict[str, int]):
+    def _calculate_metrics(
+            self, generation_chart_types: Dict[str, int], golden_chart_types: Dict[str, int]):
         """
         Calculate precision, recall, and f1 score of the chart types.
 
@@ -98,20 +98,24 @@ class ChartTypeEvaluator:
 
         self.metrics["precision"] = n_correct / total
         try:
-            self.metrics["recall"] = n_correct / sum(golden_chart_types.values())
-        except:
-            print("<<<<<<<<<<<<<<<<<<<<golden_code_file", self.golden_code_file)
+            self.metrics["recall"] = n_correct / \
+                sum(golden_chart_types.values())
+        except BaseException:
+            print(
+                "<<<<<<<<<<<<<<<<<<<<golden_code_file",
+                self.golden_code_file)
         if self.metrics["precision"] + self.metrics["recall"] == 0:
             self.metrics["f1"] = 0
         else:
-            self.metrics["f1"] = 2 * self.metrics["precision"] * self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
+            self.metrics["f1"] = 2 * self.metrics["precision"] * \
+                self.metrics["recall"] / (self.metrics["precision"] + self.metrics["recall"])
         return
 
     def _get_prefix(self):
         with open(os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] + "/evaluator/chart_type_evaluator_prefix.py", "r") as f:
             prefix = f.read()
         return prefix
-        
+
 #     def _get_prefix(self):
 #         return f"""
 # import warnings
@@ -167,7 +171,7 @@ class ChartTypeEvaluator:
 # squarify.plot = log_function(squarify.plot)
 # """
 
-    def _get_suffix(self, output_file):  
+    def _get_suffix(self, output_file):
         return f"""
 # print(called_functions)
 with open('{output_file}', 'w') as f:

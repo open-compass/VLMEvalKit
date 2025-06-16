@@ -1,3 +1,4 @@
+import subprocess
 texts = []
 images = []
 markers = []
@@ -22,26 +23,30 @@ def get_texts():
 def reset_images():
     images.clear()
 
+
 def add_image(image):
     images.append(image)
+
 
 def get_images():
     return images
 
+
 def reset_markers():
     markers.clear()
+
 
 def add_marker(marker):
     markers.append(marker)
 
+
 def get_markers():
     return markers
 
-import subprocess
 
 def run_script_safe(script_path):
     try:
-        result = subprocess.run(
+        subprocess.run(
             ["python3", script_path],
             check=True,
             capture_output=True,

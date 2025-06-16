@@ -1,35 +1,34 @@
-import os
+# flake8: noqa
+import inspect
+from matplotlib.patches import Ellipse
+from matplotlib.image import NonUniformImage
+from matplotlib.projections.polar import PolarAxes
+import networkx.drawing.nx_pylab as nx_pylab
+import matplotlib.colors as mcolors
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.axes._axes import Axes
+from matplotlib.axes._base import _process_plot_var_args
+import matplotlib.pyplot as plt
+import matplotlib
 import squarify
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-import sys
 # sys.path.insert(0, f'{os.environ["PROJECT_PATH"]}')
 
-import networkx
-import matplotlib
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.axes._base import _process_plot_var_args
-from matplotlib.axes._axes import Axes
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.colors as mcolors
-import networkx.drawing.nx_pylab as nx_pylab
-from matplotlib.projections.polar import PolarAxes
-from matplotlib.image import NonUniformImage
-from matplotlib.patches import Ellipse
-import inspect
 
 drawed_colors = []
 in_decorator = False
+
 
 def convert_color_to_hex(color):
     'Convert color from name, RGBA, or hex to a hex format.'
     try:
         # First, try to convert from color name to RGBA to hex
         if isinstance(color, str):
-            # Check if it's already a hex color (start with '#' and length either 7 or 9)
+            # Check if it's already a hex color (start with '#' and length
+            # either 7 or 9)
             if color.startswith('#') and (len(color) == 7 or len(color) == 9):
                 return color.upper()
             else:
@@ -43,6 +42,7 @@ def convert_color_to_hex(color):
         print(color)
         print("Error converting color:", e)
         return None
+
 
 def log_function_specific_for_draw_networkx_labels(func):
     def wrapper(
@@ -63,7 +63,7 @@ def log_function_specific_for_draw_networkx_labels(func):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             func_name = inspect.getfile(func) + "/" + func.__name__
@@ -85,8 +85,8 @@ def log_function_specific_for_draw_networkx_labels(func):
             )
 
             for item in result.values():
-                color = convert_color_to_hex( item.get_color() )
-                drawed_colors.append( func_name + "--" + color )
+                color = convert_color_to_hex(item.get_color())
+                drawed_colors.append(func_name + "--" + color)
 
             in_decorator = False
         else:
@@ -107,6 +107,7 @@ def log_function_specific_for_draw_networkx_labels(func):
             )
         return result
     return wrapper
+
 
 def log_function_specific_for_draw_networkx_edges(func):
     def wrapper(
@@ -135,7 +136,7 @@ def log_function_specific_for_draw_networkx_edges(func):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             func_name = inspect.getfile(func) + "/" + func.__name__
@@ -165,8 +166,8 @@ def log_function_specific_for_draw_networkx_edges(func):
             )
 
             for item in result.get_edgecolors().tolist():
-                color = convert_color_to_hex( item )
-                drawed_colors.append( func_name + "--" + color )
+                color = convert_color_to_hex(item)
+                drawed_colors.append(func_name + "--" + color)
 
             in_decorator = False
         else:
@@ -196,6 +197,7 @@ def log_function_specific_for_draw_networkx_edges(func):
         return result
     return wrapper
 
+
 def log_function_specific_for_draw_networkx_nodes(func):
     def wrapper(
         G,
@@ -212,12 +214,12 @@ def log_function_specific_for_draw_networkx_nodes(func):
         linewidths=None,
         edgecolors=None,
         label=None,
-        margins=None,      
+        margins=None,
     ):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             func_name = inspect.getfile(func) + "/" + func.__name__
@@ -241,8 +243,8 @@ def log_function_specific_for_draw_networkx_nodes(func):
             )
 
             for item in result.get_facecolors().tolist():
-                color = convert_color_to_hex( item )
-                drawed_colors.append( func_name + "--" + color )
+                color = convert_color_to_hex(item)
+                drawed_colors.append(func_name + "--" + color)
 
             in_decorator = False
         else:
@@ -272,143 +274,159 @@ def log_function_for_3d(func):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             func_name = inspect.getfile(func) + "/" + func.__name__
-            
+
             result = func(*args, **kwargs)
 
             if func.__name__ == "scatter":
                 # check whether cmap is used
                 if "cmap" in kwargs and kwargs["cmap"] is not None:
-                    print( "cmap is used", kwargs["cmap"] )
-                    drawed_colors.append( func_name + "--" + kwargs["cmap"] )
+                    print("cmap is used", kwargs["cmap"])
+                    drawed_colors.append(func_name + "--" + kwargs["cmap"])
                 else:
                     for item in result.get_facecolors().tolist():
-                        color = convert_color_to_hex( item )
-                        drawed_colors.append( func_name + "--" + color )
+                        color = convert_color_to_hex(item)
+                        drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "plot":
                 for line in result:
-                    color = convert_color_to_hex( line.get_color() )
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(line.get_color())
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "plot_surface":
                 if "cmap" in kwargs and kwargs["cmap"] is not None:
-                    print( "cmap is used", kwargs["cmap"] )
-                    drawed_colors.append( func_name + "--" + kwargs["cmap"] ) 
+                    print("cmap is used", kwargs["cmap"])
+                    drawed_colors.append(func_name + "--" + kwargs["cmap"])
                 else:
                     colors = result.get_facecolors().tolist()
-                    drawed_colors.append( func_name + "--" + convert_color_to_hex( colors[0] ) )
+                    drawed_colors.append(
+                        func_name +
+                        "--" +
+                        convert_color_to_hex(
+                            colors[0]))
             elif func.__name__ == "bar3d":
                 colors = result.get_facecolors().tolist()
-                drawed_colors.append( func_name + "--" + convert_color_to_hex( colors[0] ) )
+                drawed_colors.append(
+                    func_name +
+                    "--" +
+                    convert_color_to_hex(
+                        colors[0]))
             elif func.__name__ == "bar":
                 for item in result:
-                    color = convert_color_to_hex( item.get_facecolor() )
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(item.get_facecolor())
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "add_collection3d":
                 colors = result.get_facecolors().tolist()
                 for color in colors:
-                    drawed_colors.append( func_name + "--" + convert_color_to_hex( color ) )
+                    drawed_colors.append(
+                        func_name + "--" + convert_color_to_hex(color))
 
             in_decorator = False
         else:
             return func(*args, **kwargs)
         return result
-    
+
     return wrapper
+
 
 def log_function(func):
     def wrapper(*args, **kwargs):
         global drawed_colors
         global in_decorator
 
-        if in_decorator == False:
+        if not in_decorator:
             in_decorator = True
 
             func_name = inspect.getfile(func) + "/" + func.__name__
-            
+
             result = func(*args, **kwargs)
 
             if func.__name__ == "_makeline":
                 color = convert_color_to_hex(result[1]["color"])
-                drawed_colors.append( func_name + "--" + color )
+                drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "axhline":
                 color = convert_color_to_hex(result.get_color())
-                drawed_colors.append( func_name + "--" + color )
+                drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "axvline":
                 color = convert_color_to_hex(result.get_color())
-                drawed_colors.append( func_name + "--" + color )
+                drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "_fill_between_x_or_y":
                 color = convert_color_to_hex(list(result.get_facecolors()[0]))
-                drawed_colors.append( func_name + "--" + color )
+                drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "bar":
                 for item in result:
-                    color = convert_color_to_hex( list(item._original_facecolor))
-                    drawed_colors.append( func_name + "--" + color )
-            elif func.__name__ == "scatter" and type(args[0]) != PolarAxes:
+                    color = convert_color_to_hex(
+                        list(item._original_facecolor))
+                    drawed_colors.append(func_name + "--" + color)
+            elif func.__name__ == "scatter" and not isinstance(args[0], PolarAxes):
                 # check whether cmap is used
                 if "cmap" in kwargs and kwargs["cmap"] is not None:
-                    print( "cmap is used", kwargs["cmap"] )
-                    drawed_colors.append( func_name + "--" + kwargs["cmap"] )
+                    print("cmap is used", kwargs["cmap"])
+                    drawed_colors.append(func_name + "--" + kwargs["cmap"])
                 else:
-                    color = convert_color_to_hex(list(result.get_facecolor()[0]))
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(
+                        list(result.get_facecolor()[0]))
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "pie":
                 for item in result[0]:
-                    color = convert_color_to_hex( item.get_facecolor() )
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(item.get_facecolor())
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "axvspan":
                 color = convert_color_to_hex(result.get_facecolor())
-                drawed_colors.append( func_name + "--" + color )
+                drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "axhspan":
                 color = convert_color_to_hex(result.get_facecolor())
-                drawed_colors.append( func_name + "--" + color )
+                drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "hlines":
                 for item in result.get_edgecolors():
-                    color = convert_color_to_hex( list(item) )
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(list(item))
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "vlines":
                 for item in result.get_edgecolors():
-                    color = convert_color_to_hex( list(item) )
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(list(item))
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "boxplot":
                 for item in result["boxes"]:
-                    if type(item) == matplotlib.patches.PathPatch:
-                        color = convert_color_to_hex( list(item.get_facecolor()) )
-                        drawed_colors.append( func_name + "--" + color )
+                    if isinstance(item, matplotlib.patches.PathPatch):
+                        color = convert_color_to_hex(
+                            list(item.get_facecolor()))
+                        drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "violinplot":
                 for item in result["bodies"]:
-                    color = convert_color_to_hex( list(item.get_facecolor()[0]) )
-                    drawed_colors.append( func_name + "--" + color )
+                    color = convert_color_to_hex(list(item.get_facecolor()[0]))
+                    drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "hist":
                 tops, bins, patches = result
-                if type(patches) != matplotlib.cbook.silent_list:
+                if not isinstance(patches, matplotlib.cbook.silent_list):
                     for item in patches:
-                        color = convert_color_to_hex( list(item.get_facecolor()) )
-                        drawed_colors.append( func_name + "--" + color ) 
+                        color = convert_color_to_hex(
+                            list(item.get_facecolor()))
+                        drawed_colors.append(func_name + "--" + color)
                 else:
                     for container in patches:
                         for item in container:
-                            color = convert_color_to_hex( list(item.get_facecolor()) )
-                            drawed_colors.append( func_name + "--" + color )
+                            color = convert_color_to_hex(
+                                list(item.get_facecolor()))
+                            drawed_colors.append(func_name + "--" + color)
             elif func.__name__ == "quiver":
                 for item in result.get_facecolors().tolist():
-                    color = convert_color_to_hex( item )
-                    drawed_colors.append( func_name + "--" + color )
-            elif func.__name__ == "plot" and len(args) > 0 and type(args[0]) == PolarAxes:
+                    color = convert_color_to_hex(item)
+                    drawed_colors.append(func_name + "--" + color)
+            elif func.__name__ == "plot" and len(args) > 0 and isinstance(args[0], PolarAxes):
                 lines = result
                 for line in lines:
-                    color = convert_color_to_hex( line.get_color() )
-                    drawed_colors.append( func_name + "_polar" + "--" + color )
-            elif func.__name__ == "scatter" and type(args[0]) == PolarAxes:
+                    color = convert_color_to_hex(line.get_color())
+                    drawed_colors.append(func_name + "_polar" + "--" + color)
+            elif func.__name__ == "scatter" and isinstance(args[0], PolarAxes):
                 # check whether cmap is used
                 if "cmap" in kwargs and kwargs["cmap"] is not None:
-                    print( "cmap is used", kwargs["cmap"] )
-                    drawed_colors.append( func_name + "--" + kwargs["cmap"] )
+                    print("cmap is used", kwargs["cmap"])
+                    drawed_colors.append(func_name + "--" + kwargs["cmap"])
                 else:
-                    color = convert_color_to_hex(list(result.get_facecolor()[0]))
-                    drawed_colors.append( func_name + "_polar" + "--" + color )
+                    color = convert_color_to_hex(
+                        list(result.get_facecolor()[0]))
+                    drawed_colors.append(func_name + "_polar" + "--" + color)
             elif func.__name__ == "plot" and "squarify" in func_name:
                 # get ax
                 ax = result
@@ -416,44 +434,49 @@ def log_function(func):
                 containers = ax.containers
                 for container in containers:
                     for item in container:
-                        color = convert_color_to_hex( list(item.get_facecolor()) )
-                        drawed_colors.append( func_name + "_squarify" + "--" + color )
+                        color = convert_color_to_hex(
+                            list(item.get_facecolor()))
+                        drawed_colors.append(
+                            func_name + "_squarify" + "--" + color)
             elif func.__name__ == "imshow":
                 colormap = result.get_cmap().name
-                drawed_colors.append( func_name + "--" + colormap )
+                drawed_colors.append(func_name + "--" + colormap)
             elif func.__name__ == "pcolor":
                 colormap = result.get_cmap().name
-                drawed_colors.append( func_name + "--" + colormap )
+                drawed_colors.append(func_name + "--" + colormap)
             elif func.__name__ == "contour":
                 colormap = result.get_cmap().name
-                drawed_colors.append( func_name + "--" + colormap )
+                drawed_colors.append(func_name + "--" + colormap)
             elif func.__name__ == "contourf":
                 colormap = result.get_cmap().name
-                drawed_colors.append( func_name + "--" + colormap )
+                drawed_colors.append(func_name + "--" + colormap)
             elif func.__name__ == "fill":
                 patches = result
                 for patch in patches:
-                    color = convert_color_to_hex( list(patch.get_facecolor()) )
-                    drawed_colors.append( func_name + "--" + color )
-            elif func.__name__ == "__init__" and type(args[0]) == NonUniformImage:
+                    color = convert_color_to_hex(list(patch.get_facecolor()))
+                    drawed_colors.append(func_name + "--" + color)
+            elif func.__name__ == "__init__" and isinstance(args[0], NonUniformImage):
                 colormap = args[0].get_cmap().name
-                drawed_colors.append( func_name + "--" + colormap )
+                drawed_colors.append(func_name + "--" + colormap)
             elif func.__name__ == "broken_barh":
                 colors = result.get_facecolors().tolist()
                 for color in colors:
-                    drawed_colors.append( func_name + "--" + convert_color_to_hex( color ) )
-            elif func.__name__ == "__init__" and type(args[0]) == Ellipse:
-                color = convert_color_to_hex( args[0].get_facecolor() )
-                drawed_colors.append( func_name + "--" + color )
+                    drawed_colors.append(
+                        func_name + "--" + convert_color_to_hex(color))
+            elif func.__name__ == "__init__" and isinstance(args[0], Ellipse):
+                color = convert_color_to_hex(args[0].get_facecolor())
+                drawed_colors.append(func_name + "--" + color)
 
             in_decorator = False
         else:
             return func(*args, **kwargs)
         return result
-    
+
     return wrapper
 
-_process_plot_var_args._makeline = log_function(_process_plot_var_args._makeline)
+
+_process_plot_var_args._makeline = log_function(
+    _process_plot_var_args._makeline)
 Axes.bar = log_function(Axes.bar)
 Axes.scatter = log_function(Axes.scatter)
 Axes.axhline = log_function(Axes.axhline)
@@ -478,9 +501,12 @@ NonUniformImage.__init__ = log_function(NonUniformImage.__init__)
 Ellipse.__init__ = log_function(Ellipse.__init__)
 Axes.broken_barh = log_function(Axes.broken_barh)
 
-nx_pylab.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(nx_pylab.draw_networkx_nodes)
-nx_pylab.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(nx_pylab.draw_networkx_edges)
-nx_pylab.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(nx_pylab.draw_networkx_labels)
+nx_pylab.draw_networkx_nodes = log_function_specific_for_draw_networkx_nodes(
+    nx_pylab.draw_networkx_nodes)
+nx_pylab.draw_networkx_edges = log_function_specific_for_draw_networkx_edges(
+    nx_pylab.draw_networkx_edges)
+nx_pylab.draw_networkx_labels = log_function_specific_for_draw_networkx_labels(
+    nx_pylab.draw_networkx_labels)
 
 
 squarify.plot = log_function(squarify.plot)
@@ -515,7 +541,7 @@ Axes3D.add_collection3d = log_function_for_3d(Axes3D.add_collection3d)
 # fig, ax = plt.subplots()
 # x = np.arange(10)
 # y = np.sin(x)
-# 
+#
 # ax.errorbar(x, y, yerr=0.1)
 # ax.errorbar(x, y, yerr=0.2)
 # plt.show()
@@ -880,8 +906,6 @@ plt.show()
 # plt.savefig('tmp.png')
 
 
-
-
 # poly3d in test
 # import math
 # import matplotlib.pyplot as plt
@@ -937,7 +961,6 @@ plt.show()
 # # ===================
 # plt.tight_layout()
 # plt.savefig('3d_14.pdf', bbox_inches='tight')
-
 
 
 drawed_colors = set(drawed_colors)
