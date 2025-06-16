@@ -2437,53 +2437,29 @@ class PhyX(ImageBaseDataset):
     TYPE = 'VQA'
 
     def __init__(self, dataset='PhyX_mini', skip_noimg=True):
-        if dataset != 'PhyX_mini':
+        if dataset != 'PhyX_mini_OE':
             import warnings
             warnings.warn(
-                'To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.'
+                'To evaluate on PhyX, we would suggest `PhyX_mini_OE` for the default setting.'
             )
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
 
     DATASET_URL = {
-        'PhyX_mini':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv',  # noqa
-        'PhyX_mini_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv',  # noqa
+        'PhyX_MC':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_MC.tsv',  # noqa
+        'PhyX_OE':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_OE.tsv',  # noqa
         'PhyX_mini_MC':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv',  # noqa
-        'PhyX_mini_MC_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv',  # noqa
-        'PhyX_mini_MC_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv',  # noqa
-        'PhyX_mini_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv',  # noqa
-        'PhyX_mini_TL':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv',  # noqa
-        'PhyX_mini_TL_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv',  # noqa
-        'PhyX_mini_TL_MC':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv',  # noqa
-        'PhyX_mini_TL_MC_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv',  # noqa
-        'PhyX_mini_TL_MC_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv',  # noqa
-        'PhyX_mini_TL_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv',  # noqa
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_mini_MC.tsv',  # noqa
+        'PhyX_mini_OE':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_mini_OE.tsv',  # noqa
     }
 
     DATASET_MD5 = {
-        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42',  # noqa
-        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300',  # noqa
-        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa',  # noqa
-        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b',  # noqa
-        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d',  # noqa
-        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c',  # noqa
-        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8',  # noqa
-        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4',  # noqa
-        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2',  # noqa
-        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60',  # noqa
-        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852',  # noqa
-        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3',  # noqa
+        'PhyX_MC': '36e841a2c12e605cdc940e5e36d89213',  # noqa
+        'PhyX_OE': '8abdd9802a78c688c3a38fe0c785ee7a',  # noqa
+        'PhyX_mini_MC': '3587d8804b66a8e7678f3496716fa84f',  # noqa
+        'PhyX_mini_OE': '1f646ccb086ef28453f8c260441734f3',  # noqa
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override

@@ -465,45 +465,21 @@ def main():
                         elif listinstr(['VisuLogic'], dataset_name):
                             judge_kwargs['model'] = 'exact_matching'
                         else:
-                            judge_kwargs["model"] = "chatgpt-0125"
-                    elif listinstr(
-                        ["MMVet", "LLaVABench", "MMBench_Video"], dataset_name
-                    ):
-                        judge_kwargs["model"] = "gpt-4-turbo"
-                    elif listinstr(["VGRPBench"], dataset_name):
-                        judge_kwargs["model"] = "gpt-4o"
-                    elif listinstr(
-                        [
-                            "MathVista",
-                            "MathVerse",
-                            "MathVision",
-                            "DynaMath",
-                            "VL-RewardBench",
-                            "LogicVista",
-                            "MOAT",
-                            "OCR_Reasoning",
-                        ],
-                        dataset_name,
-                    ):  # noqa: E501
-                        judge_kwargs["model"] = "gpt-4o-mini"
-                    elif listinstr(
-                        [
-                            "MMLongBench",
-                            "MMDU",
-                            "DUDE",
-                            "SLIDEVQA",
-                            "MIA-Bench",
-                            "WildVision",
-                            "MMAlignBench",
-                            "MM-IFEval",
-                        ],
-                        dataset_name,
-                    ):  # noqa: E501
-                        judge_kwargs["model"] = "gpt-4o"
-                    elif listinstr(["VDC"], dataset_name):
-                        judge_kwargs["model"] = "llama31-8b"
-                    elif listinstr(["VideoMMLU_QA", "VideoMMLU_CAP"], dataset_name):
-                        judge_kwargs["model"] = "qwen-72b"
+                            judge_kwargs['model'] = 'chatgpt-0125'
+                    elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4-turbo'
+                    elif listinstr(['VGRPBench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
+                        judge_kwargs['model'] = 'gpt-4o-mini'
+                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
+                        judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['ChartMimic'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['VDC'], dataset_name):
+                        judge_kwargs['model'] = 'llama31-8b'
+                    elif listinstr(['VideoMMLU_QA', 'VideoMMLU_CAP'], dataset_name):
+                        judge_kwargs['model'] = 'qwen-72b'
 
                 if RANK == 0:
                     logger.info(judge_kwargs)
