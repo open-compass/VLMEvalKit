@@ -7,6 +7,7 @@ exclude: |
       vlmeval/dataset/Omnidocbench/ |
       vlmeval/dataset/utils/megabench/ |
       vlmeval/dataset/utils/vgrpbench/ |
+      vlmeval/dataset/utils/chartmimic/ |
       vlmeval/vlm/ola/ |
       vlmeval/vlm/ursa/ |
       vlmeval/vlm/ovis/ |
