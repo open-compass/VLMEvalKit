@@ -159,10 +159,8 @@ if __name__ == "__main__":
     for idx in range(60, 61):
         print(f"Processing {idx}")
         # print("Processing Golden Code")
-        golden_code_file = f"{
-            os.environ['PROJECT_PATH']}/dataset/ori/line_{idx}.py"
+        golden_code_file = f"{os.environ['PROJECT_PATH']}/dataset/ori/line_{idx}.py"
         # print("Processing Generation Code")
-        generation_code_file = f"{
-            os.environ['PROJECT_PATH']}/results/chart2code_gpt_ScaffoldAgent_results/scaffold/line_{idx}.py"
+        generation_code_file = f"{os.environ['PROJECT_PATH']}/results/chart2code_gpt_ScaffoldAgent_results/scaffold/line_{idx}.py"
         evaluator(generation_code_file, golden_code_file)
         print()
