@@ -85,12 +85,16 @@ class ImageBaseDataset:
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
-        # file_name = url.split('/')[-1]
+        origin_file_name = url.split('/')[-1]
         file_name = f"{self.dataset_name}.tsv"
         data_path = osp.join(data_root, file_name)
+        origin_data_path = osp.join(data_root, origin_file_name)
         self.data_path = data_path
-        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
-            pass
+        if osp.exists(origin_data_path) and (file_md5 is None or md5(origin_data_path) == file_md5):
+            data_path = origin_data_path
+            self.data_path = origin_data_path
+        elif osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
+            self.data_path = data_path
         else:
             warnings.warn('The dataset tsv is not downloaded')
             download_file(url, data_path)
