@@ -321,9 +321,11 @@ def PhyX_process_line(line):
         else:
             ret["extracted"] = "SAME as predict"
 
-    if ret['gt'].strip().lower() == ret["extracted"].strip().lower() \
-        or ret['gt'].strip().lower() == ret["pred"].strip().lower() \
-        or ret['gt'] in ret['pred']:
+    if (
+        ret['gt'].strip().lower() == ret["extracted"].strip().lower()
+        or ret['gt'].strip().lower() == ret["pred"].strip().lower()
+        or ret['gt'] in ret['pred']
+    ):
         ret['match'] = 1
         return ret
 
