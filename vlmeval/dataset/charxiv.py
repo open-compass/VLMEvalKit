@@ -199,7 +199,7 @@ class CharXiv(ImageBaseDataset):
                 f"The judge_model '{judge_model}' is not gpt-4o-mini. Evaluation results may not be accurate."
             )
 
-        judge_model = build_judge(**judge_kwargs)
+        judge_model = build_judge(model=judge_model, **judge_kwargs)
         judge_model_name = judge_model.model
 
         # Define file paths
