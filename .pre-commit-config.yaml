@@ -9,7 +9,8 @@ exclude: |
       vlmeval/dataset/utils/vgrpbench/ |
       vlmeval/vlm/ola/ |
       vlmeval/vlm/ursa/ |
-      vlmeval/vlm/ovis/
+      vlmeval/vlm/ovis/ |
+      vlmeval/dataset/utils/mme_reasoning.py
   )
 repos:
   - repo: https://github.com/PyCQA/flake8
