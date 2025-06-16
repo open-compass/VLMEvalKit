@@ -2330,9 +2330,9 @@ class CountBenchQA(ImageVQADataset):
     TYPE = "VQA"
     DATASET_URL = {
         "CountBenchQA":
-        "https://huggingface.co/datasets/moondream/CountBenchQA-VLMEvalKit/resolve/main/countbench_data.tsv"
+        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv"
     }
-    DATASET_MD5 = {"CountBenchQA": "d70123bd9d7c090b00101f2116f3a7c6"}
+    DATASET_MD5 = {"CountBenchQA": "fc73c8d4ffa665431448753f094d56ff"}
 
     def build_prompt(self, line):
         if isinstance(line, int):
