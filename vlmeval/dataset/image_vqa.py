@@ -2688,12 +2688,12 @@ class MMEReasoning(ImageBaseDataset):
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line)
-            
+
         question = line['question']
 
         msgs = []
@@ -2703,10 +2703,10 @@ class MMEReasoning(ImageBaseDataset):
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=question))
         return msgs
-    
+
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions
+        from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions  # noqa
 
         model = judge_kwargs.get('model', 'gpt-4o-mini')
         suffix = eval_file.split('.')[-1]
@@ -2743,7 +2743,7 @@ class MMEReasoning(ImageBaseDataset):
                 for k, v in zip(indices, new_results):
                     assert k in ans
                     assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
-            
+
             res_list = []
             log_list = []
             for idx in data['index']:
@@ -2758,27 +2758,27 @@ class MMEReasoning(ImageBaseDataset):
             data['res'] = res_list
             data['log'] = log_list
             dump(data, storage_extract)
-        
+
         storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
         tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
-            
+
         # stage 2: evaluate score
         if not osp.exists(storage_score):
             data = load(storage_extract)
             data = data.replace({float('nan'): None})
-            model = build_judge(max_token=1024, **judge_kwargs)
+            model = build_judge(max_tokens=1024, **judge_kwargs)
             assert model.working(), ('MME-Reasoning evaluation requires a working OPENAI API\n')
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             lines_scores_gpt = []
             lines_scores_other = []
             for line in lines:
-                if (line['question_type'].lower() == 'open' and line.get('function_id', None) == None) or line.get('function_id', None) == 'open_function':
+                if (line['question_type'].lower() == 'open' and line.get('function_id', None) == None) or line.get('function_id', None) == 'open_function':  # noqa
                     lines_scores_gpt.append(line)
                 else:
                     lines_scores_other.append(line)
-            
-            # for open question, use LLM     
+
+            # for open question, use LLM
             tups_scores_gpt = [(model, line) for line in lines_scores_gpt]
             indices_scores_gpt = [line['index'] for line in lines_scores_gpt]
             if len(indices_scores_gpt):
@@ -2799,8 +2799,8 @@ class MMEReasoning(ImageBaseDataset):
             res = {}
             indices_scores_other = [line['index'] for line in lines_scores_other]
             for k, line in zip(indices_scores_other, lines_scores_other):
-                if line['res'] == None or FAIL_MSG in line['res']:
-                    log_score = f'Failed to evaluate'
+                if line['res'] is None or FAIL_MSG in line['res']:
+                    log_score = 'Failed to evaluate'
                     res.update({
                         k: {
                             "log_score": log_score,
@@ -2809,21 +2809,21 @@ class MMEReasoning(ImageBaseDataset):
                     })
                     continue
 
-                if line['function_id'] == None:
+                if line['function_id'] is None:
                     assert line['question_type'].lower() == 'choice'
                     function_id = 'choice_function'
                     function = mme_reasoning_eval_functions[function_id]
-                    
+
                 else:
                     function_id = line['function_id']
                     function = mme_reasoning_eval_functions[function_id]
-                
+
                 if function_id not in ['open_function', 'choice_function']:
                     if function_id == "judge_24points_function":
                         response = line['res']
                     else:
                         response = json.loads(line['res'])
-                    if line['answer'] != None:
+                    if line['answer'] is not None:
                         answer = eval(line['answer'])
                     else:
                         answer = None
@@ -2831,11 +2831,11 @@ class MMEReasoning(ImageBaseDataset):
                     if function_id in [
                         "calculate_answer_function_hashi",
                         "calculate_answer_function_skyscraper",
-                        "calculate_answer_function_sudoku_4", 
+                        "calculate_answer_function_sudoku_4",
                         "calculate_answer_function_sudoku_6",
                         "calculate_answer_function_yinyang",
                         "judge_24points_function"
-                        ]:
+                    ]:
                         assert line["special_info"] is not None
                         special_info = eval(line['special_info'])
                     else:
@@ -2855,20 +2855,20 @@ class MMEReasoning(ImageBaseDataset):
                     score = False
                 else:
                     log_score = 'Succeed'
-                    score = answer_judge    
+                    score = answer_judge
                 res.update({
                     k: {
                         "log_score": log_score,
                         "score": score
                     }
                 })
-            
+
             ans.update(res)
-            
+
             data['score'] = [ans[idx]['score'] for idx in data['index']]
             data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
             dump(data, storage_score)
-        
+
         score = MMEReasoning_acc(storage_score)
         score_pth = storage_score.replace('.xlsx', '.csv')
         dump(score, score_pth)

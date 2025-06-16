@@ -7,16 +7,16 @@ import pandas as pd
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 id_answer_pair_prompt = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
-Example: 
+Example:
     Question: Each cycle represents a number. You need to find out what the three numbers are. Give a possible answer in the format 'cycle id:number'
     Model Response: The possible answer is: A:5, B:1, C:2
-    Extracted answer (json format):          
+    Extracted answer (json format):
         {{
             "A":5,
             "B":1,
             "C":2
         }}
-        
+
 Please extract the answer for the following response:
     Question: {question}
     Model Response: {response}
@@ -25,16 +25,16 @@ Please extract the answer for the following response:
 
 # id: number, answer: letter
 id_answer_pair_prompt_reverse = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
-Example: 
+Example:
     Question: Each cycle (id from 1 to 3) represents a letter. You need to find out what the three numbers are. Give a possible answer in the format 'cycle id:letter'
     Model Response: The possible answer is: 1:A, 2:B, 3:C
-    Extracted answer (json format):          
+    Extracted answer (json format):
         {{
             "1":"A",
             "2":"B",
             "3":"C"
         }}
-        
+
 Please extract the answer for the following response:
     Question: {question}
     Model Response: {response}
@@ -42,10 +42,10 @@ Please extract the answer for the following response:
 """
 
 coordinate_answer_prompt = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
-Example1: 
+Example1:
     Question: According to the clues, find the corresponding position. Answer in '(row id (A-C), column id (1-3))' format.
     Model Response: The possible answer is: (A, 1)
-    Extracted answer (json format):          
+    Extracted answer (json format):
         [
             {{
                 "row": "A",
@@ -55,7 +55,7 @@ Example1:
 Example2:
     Question: According to the clues, find the two corresponding position. Answer in '(row id (A-C), column id (1-3))' format.
     Model Response: The possible answer is: (A, 1), (B, 3)
-    Extracted answer (json format):          
+    Extracted answer (json format):
         [
             {{
                 "row": "A",
@@ -66,7 +66,7 @@ Example2:
                 "column": 3
             }}
         ]
-        
+
 Please extract the answer for the following response:
     Question: {question}
     Model Response: {response}
@@ -74,17 +74,17 @@ Please extract the answer for the following response:
 """
 
 multiple_answer_prompt = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
-Example1: 
+Example1:
     Question: There are six balls (A-F), find two balls that have lower weight. Answer in ball id.
     Model Response: The possible answer is: A, C
-    Extracted answer (json format):          
+    Extracted answer (json format):
         {{
             "id": ["A", "C"]
         }}
 Example2:
     Question: There are six balls (A-F), find a ball that have lower weight. Answer in ball id.
     Model Response: The possible answer is: A
-    Extracted answer (json format):          
+    Extracted answer (json format):
         {{
             "id": ["A"]
         }}
@@ -98,7 +98,7 @@ formula_extraction_prompt = """Please extract the mathematical formula from the 
 Example:
     Question: What is the right equation to solve the problem?
     Model Response: The right equation to solve the problem is: 2 + 3 = 7
-    Extracted answer (json format):          
+    Extracted answer (json format):
         {{
             "equation": "2 + 3 = 7"
         }}
@@ -109,7 +109,7 @@ Please extract the answer for the following response:
 """
 
 choice_prompt = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
-Example1: 
+Example1:
     Question: Which answer is right?\n A.1\n B.2\n C.3\n D.4\n Please answer the question and provide the correct option letter, e.g., A, B, C, D, at the end.
     Model Response: The possible answer is: A
     Extracted answer: A
@@ -117,7 +117,7 @@ Example2:
     Question: Which answer is right?\n A.1\n B.2\n C.3\n D.4\n Please answer the question and provide all correct option letter, e.g., A, B, C, D, at the end. Find all possible answers.
     Model Response: The possible answer is: A, C
     Extracted answer: [A, C]
-        
+
 Please extract the answer for the following response:
     Question: {question}
     Model Response: {response}
@@ -126,7 +126,7 @@ Please extract the answer for the following response:
 """
 
 open_question_prompt = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
-Example1: 
+Example1:
     Question: What value should be? Please answer the question and provide the final value, e.g., 2, 2.10, -3, at the end.
     Model Response: The possible value is -4
     Extracted answer: -4
@@ -138,7 +138,7 @@ Example3:
     Question: What value should be? Please answer the question and provide the final value, e.g., 2, 2.10, -3, at the end.
     Model Response: The possible value is 3.28
     Extracted answer: 3.28
-        
+
 Please extract the answer for the following response:
     Question: {question}
     Model Response: {response}
@@ -197,7 +197,7 @@ Solution:
 Output:
 """
 
-skyscraper_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution. 
+skyscraper_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution.
 
 ### Requirements:
 1. Only return the final filled matrix, formatted as a JSON list of lists.
@@ -225,7 +225,7 @@ Solution:
 Output:
 """
 
-sudoku_4_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution. 
+sudoku_4_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution.
 
 ### Requirements:
 1. Only return the final filled matrix, formatted as a JSON list of lists.
@@ -254,7 +254,7 @@ Solution:
 Output:
 """
 
-sudoku_6_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution. 
+sudoku_6_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution.
 
 ### Requirements:
 1. Only return the final filled matrix, formatted as a JSON list of lists.
@@ -283,7 +283,7 @@ Solution:
 Output:
 """
 
-yinyang_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution. 
+yinyang_extraction_prompt = """Extract the final answer from the given solution. The solution will contain a detailed solution to a Sudoku-like puzzle, including step-by-step explanations and a final filled grid representation. Your task is to identify and extract only the final answer, which is presented as a matrix (list of lists or equivalent) at the end of the solution.
 
 ### Requirements:
 1. Only return the final filled matrix, formatted as a JSON list of lists.
@@ -439,7 +439,7 @@ def calculate_answer_function_5(response_dict, answer_dict=None):
         num_dict[v] = num_dict.get(v, 0) + 1
     if num_dict.get(20, 0) > 5 or num_dict.get(15, 0) > 3 or num_dict.get(10, 0) > 3 or num_dict.get(5, 0) > 6:
         return False
-    
+
     line_list = [
         ['A', 'B', 'C'],
         ['A', 'G', 'O'],
@@ -449,7 +449,7 @@ def calculate_answer_function_5(response_dict, answer_dict=None):
         ['C', 'F', 'I', 'L', 'O'],
         ['B', 'E', 'I', 'M', 'P'],
         ['G', 'H', 'I', 'J', 'K'],
-        
+
     ]
     for line in line_list:
         total_value = 0
@@ -477,7 +477,7 @@ def calculate_answer_function_6(response_dict, answer_dict=None):
         ['L', 'J', 'H'],
         ['N', 'J', 'F'],
         ['P', 'J', 'D'],
-        ['R', 'J', 'B'] 
+        ['R', 'J', 'B']
     ]
     for line in line_list:
         total_value = 0
@@ -552,7 +552,7 @@ def calculate_answer_function_9(response_dict, answer_dict=None):
     expect_values = set(range(1, 20))
     if values != expect_values:
         return False
-    
+
     line_list = [
         ['A', 'B', 'C'],
         ['A', 'D', 'H'],
@@ -634,13 +634,13 @@ def match_coordinate_function(response_list, answer_list):
     response_coor = []
     for coor in response_list:
         response_coor.append(str(coor['row']) + str(coor['column']))
-    
+
     answer_coor = []
     if isinstance(answer_list, dict):
         answer_list = [answer_list]
     for coor in answer_list:
         answer_coor.append(str(coor['row']) + str(coor['column']))
-    
+
     return response_coor == answer_coor
 
 # answer justify: answer in xxx
@@ -666,12 +666,12 @@ def compare_expression_function(response_dict, anwser_list):
         if extract_expr.func != answer_expr.func:
             is_cur_same = False
             continue
-            
+
         # for addition and multiplication, check if the set of arguments is the same
         if extract_expr.func in (sympy.Add, sympy.Mul):
             args1 = extract_expr.args
             args2 = answer_expr.args
-                
+
             # if the number of arguments is different, the expressions are not the same
             if len(args1) != len(args2):
                 is_cur_same = False
@@ -706,7 +706,7 @@ def calculate_answer_function_hashi(response_list, answer=None, special_info=Non
     init_islands = special_info["init_islands"]
     # init_islands be like:
     # [
-    # {"cord": "b1", "requirement": 2}, 
+    # {"cord": "b1", "requirement": 2},
     # {"cord": "f8", "requirement": 1}
     # ]
 
@@ -823,8 +823,8 @@ def calculate_answer_function_skyscraper(response_list, answer=None, special_inf
             if base_matrix[i][j] is not None and base_matrix[i][j]!=response_list[i][j]:
                 # print("Mismatch with base matrix")
                 return False
-            
-    
+
+
     for i in range(size):
         if len(set(grid[i])) != size or len(set(row[i] for row in grid)) != size:
             # print("repeat height on one row or colomn")
@@ -838,32 +838,32 @@ def calculate_answer_function_skyscraper(response_list, answer=None, special_inf
                 count += 1
                 max_so_far = lst[i]
         return count == target_count
-    
+
     # Verify the skyscraper rule
     hori = grid
     vert = [[grid[j][i] for j in range(len(grid))] for i in range(len(grid[0]))]
-    
+
     for index, h in enumerate(visible_skyscrapers[0]):
         if h is None:
             continue
         if not count_higher_than_previous(vert[index], h):
             # print("wrong visible towers")
             return False
-    
+
     for index, h in enumerate(visible_skyscrapers[1]):
         if h is None:
             continue
         if not count_higher_than_previous(hori[index], h):
             # print("wrong visible towers")
             return False
-    
+
     for index, h in enumerate(visible_skyscrapers[2]):
         if h is None:
             continue
         if not count_higher_than_previous(hori[index][::-1], h):
             # print("wrong visible towers")
             return False
-    
+
     for index, h in enumerate(visible_skyscrapers[3]):
         if h is None:
             continue
@@ -877,7 +877,7 @@ def calculate_answer_function_skyscraper(response_list, answer=None, special_inf
 def calculate_answer_function_sudoku_4(response_list, answer=None, special_info=None):
     if response_list is None or special_info is None or len(response_list) == 0:
         return False
-    
+
     def is_valid_sudoku_4x4(grid):
         # Check rows and columns
         for i in range(4):
@@ -917,12 +917,12 @@ def calculate_answer_function_sudoku_4(response_list, answer=None, special_info=
         return is_valid_sudoku_4x4(grid)
     except (ValueError, SyntaxError):
         return False
-    
+
 
 def calculate_answer_function_sudoku_6(response_list, answer=None, special_info=None):
     if response_list is None or special_info is None or len(response_list) == 0:
         return False
-    
+
     def is_valid_sudoku_6x6(grid):
         # Check rows and columns
         for i in range(6):
@@ -948,24 +948,24 @@ def calculate_answer_function_sudoku_6(response_list, answer=None, special_info=
         grid = response_list
         if not isinstance(grid, list) or len(grid) != 6 or not all(len(row) == 6 for row in grid):
             return False
-        
+
         # Verify if the base matrix has been changed
         base_matrix = special_info['base_matrix']
         for i in range(6):
             for j in range(6):
                 if base_matrix[i][j] is not None and base_matrix[i][j]!=grid[i][j]:
                     return False
-                
+
         # Validate the Sudoku grid
         return is_valid_sudoku_6x6(grid)
     except (ValueError, SyntaxError):
         return False
-    
- 
+
+
 def calculate_answer_function_yinyang(response_list, answer=None, special_info=None):
     if response_list is None or special_info is None or len(response_list) == 0:
         return False
-    
+
     def is_connected(matrix, value):
         rows, cols = len(matrix), len(matrix[0])
         visited = [[False for _ in range(cols)] for _ in range(rows)]
@@ -1030,7 +1030,7 @@ def calculate_answer_function_yinyang(response_list, answer=None, special_info=N
         print("exist 2x2 block")
         return False
     print("Yinyang: All rules satisfied")
-    return True   
+    return True
 
 def judge_24points_function(response, answer=None, special_info=None):
     left_formula = response.replace(' ', '').split('=')[0]
@@ -1118,7 +1118,7 @@ def MMEReasoning_extract(model, line):
             try:
                 json.loads(res)
             except:
-                try: 
+                try:
                     json.loads(extract_json_from_response(res))
                     res = extract_json_from_response(res)
                 except:
@@ -1140,7 +1140,7 @@ Note:
     Different expressions of the same number should also be considered consistent, for example, \\frac{{7}}{{2}} and 3.5.
     If a conversion results in a decimal approximation, the expressions can be considered consistent if the values are equal up to two decimal places, for example, \\sqrt{{3}} and 1.73.
 If they are consistent, Judgement is 1; if they are different, Judgement is 0.\n
-Example 1: 
+Example 1:
     [Question]: What is the minimize length of the line?
     [Standard answer]: \\sqrt{{2}}
     [Model answer]: 1.414
@@ -1148,14 +1148,14 @@ Example 1:
 Example 2:
     [Question]: Given an image of a 3x3 maze. How to reach the end cell marked 'E' from the start cell is marked 'S'.
     [Standard answer]: ['Left', 'Right']
-    [Model answer]: 'Left', 'Right' 
+    [Model answer]: 'Left', 'Right'
     [Judgement]: 1
 
 Now, judge the anwser for the following question:
     [Question]: {question}
     [Standard answer]: {answer}
     [Model answer]: {response}
-    [Judgement]: 
+    [Judgement]:
 You should only output the judgement without any other texts.
 """
     log = ''
@@ -1192,7 +1192,7 @@ def MMEReasoning_acc(result_file):
     for capability in capabilities:
         sub = df[df['capability'].apply(lambda x: capability in x)]
         res[capability].append(np.mean(sub['score']) * 100)
-    
+
     for r_type in reasoning_types:
         sub = df[df['reasoning_type'].apply(lambda x: r_type in x)]
         res[r_type].append(np.mean(sub['score']) * 100)

@@ -190,7 +190,7 @@ IMAGE_DATASET = [
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset, 
+    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
     MMEReasoning, GOBenchDataset
 ]
 
