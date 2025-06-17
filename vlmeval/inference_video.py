@@ -135,10 +135,15 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
                 raise ValueError(f'nframe is not suitable for {model_name}')
             else:
                 setattr(model, 'fps', None)
-        if getattr(model, 'nframe', None) is None and dataset.nframe > 0:
-            print(f'using {model_name} default setting for video, dataset.nframe is ommitted')
-        if getattr(model, 'fps', None) is None and dataset.fps > 0:
-            print(f'using {model_name} default setting for video, dataset.fps is ommitted')
+        if (
+            'Qwen2-VL' in model_name
+            or 'Qwen2.5-VL' in model_name
+            or 'Qwen2.5-Omni' in model_name
+        ):
+            if getattr(model, 'nframe', None) is None and dataset.nframe > 0:
+                print(f'using {model_name} default setting for video, dataset.nframe is ommitted')
+            if getattr(model, 'fps', None) is None and dataset.fps > 0:
+                print(f'using {model_name} default setting for video, dataset.fps is ommitted')
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
