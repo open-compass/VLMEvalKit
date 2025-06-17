@@ -2678,6 +2678,7 @@ class MMEReasoning(ImageBaseDataset):
         else:
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=question))
+
         return msgs
 
     @classmethod
@@ -2849,3 +2850,123 @@ class MMEReasoning(ImageBaseDataset):
         score_pth = storage_score.replace('.xlsx', '.csv')
         dump(score, score_pth)
         return score
+
+
+class MMVMBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'MMVMBench':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
+    }
+    DATASET_MD5 = {'MMVMBench': '168823a449bc323bec5d309227943757'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    def report_acc_mmatch(scores, match_types_int):
+        res = defaultdict(list)
+
+        match_type = ['CL', 'SP', 'TM', 'SZ', 'RP', 'OO', 'BR', 'OM']
+        match_type_dict = {i + 1: v for i, v in enumerate(match_type)}
+        match_type_hit = {i + 1: [] for i, _ in enumerate(match_type)}
+        overall_hits = []
+        for match_type_i, score_i in zip(match_types_int, scores):
+            try:
+                match_type_i_list = eval(match_type_i)
+            except:
+                match_type_i_list = [1, 5]
+            hit_i = 0
+            for tag in ['[YES]', '[Yes]', '[yes]', 'YES', 'Yes', 'yes']:
+                if tag in score_i:
+                    hit_i = 1
+
+            for mt in match_type_i_list:
+                if mt not in match_type_hit.keys():
+                    mt = 2
+                match_type_hit[mt].append(hit_i)
+
+            overall_hits.append(hit_i)
+
+        res['Overall'] = [np.mean(overall_hits),]
+        for k, v in match_type_dict.items():
+            res[v] = np.mean(match_type_hit[k])
+
+        return pd.DataFrame(res)
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        judge = judge_kwargs['model']
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
+        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        acc_file = eval_file.replace('.xlsx', f'_{judge}_acc.xlsx')
+
+        judge_kwargs['temperature'] = 0.0
+        model = build_judge(**judge_kwargs)
+
+        prompt = "I asked a model a question: {QUESTION}. The model's response was: {RESPONSE}. "\
+            "The correct answer to this question is: {GT}. Please determine whether the model's "\
+            "response is correct. If it is, conclude with [YES]. If it is not, conclude with [NO]."
+
+        def prepare_score_prompt(line):
+            vq = "{" + line['question'] + "}"
+            va = "{" + line['prediction'] + "}"
+            gt = "{" + line['answer'] + "}"
+            question = prompt.format(QUESTION=vq, RESPONSE=va, GT=gt)
+            return question
+
+        if not osp.exists(score_file):
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if model.fail_msg not in v}
+
+            data = load(eval_file)
+            data_un = data[~data['index'].isin(res)]
+            data_un = data_un[~pd.isna(data_un['prediction'])]
+            lt = len(data_un)
+
+            prompts = [prepare_score_prompt(data_un.iloc[i]) for i in range(lt)]
+            indices = [data_un.iloc[i]['index'] for i in range(lt)]
+
+            if len(prompts):
+                _ = track_progress_rich(
+                    model.generate,
+                    prompts,
+                    keys=indices,
+                    save=tmp_file,
+                    nproc=nproc,
+                    chunksize=nproc
+                )
+                score_map = load(tmp_file)
+                data['score'] = [score_map[idx] if idx in score_map else '[NO]' for idx in data['index']]
+                FAIL_MSG = 'Failed to obtain answer via API.'
+                rejected = [x for x in score_map.values() if FAIL_MSG in x]
+                print(
+                    f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} '
+                    f'questions, failed to obtain the score for another {len(rejected)} questions. '
+                    'Those questions will be counted as 0 score in ALL rating, '
+                    'and will not be counted in VALID rating.'
+                )
+
+                dump(data, score_file)
+
+            scores = data['score']
+            match_types_int = data['match_type']
+            acc = self.report_acc_mmatch(scores, match_types_int)
+            dump(acc, acc_file)
+
+            return acc
