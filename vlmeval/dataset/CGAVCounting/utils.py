@@ -2,15 +2,13 @@ import json
 import math
 
 from ...smp import *
-from ..utils.multiple_choice import extract_answer_from_item
-import pandas as pd
 import numpy as np
 import re
 import zipfile
-import traceback
-from collections import defaultdict
+
 from pathlib import Path
 from tqdm import tqdm
+import signal
 
 
 def rating_func(data_path):
@@ -38,13 +36,13 @@ def rating_func(data_path):
     return rating
 
 
-
 def get_timestampes(frame_indices, fps):
     seconds = list(map(lambda x: str(round(x / fps, 4)), frame_indices))
     timestamps = ", ".join(seconds)
     return "A total of {frame_num} frames are sampled. Their corresponding timestamps are:\n\n{timestamps}\n\n".format(
         frame_num=len(frame_indices), timestamps=timestamps
     )
+
 
 def time_str_to_seconds(time_str: str) -> float:
     time_str = time_str.strip()
@@ -199,9 +197,6 @@ def compute_cluster_pair_wcs(gt, pred, iou_type):
         raise ValueError("Unsupported iou_type")
 
 
-import signal
-
-
 class TimeoutException(Exception):
     pass
 
@@ -233,7 +228,6 @@ def compute_wcs_unlabeled(gt_clusters, pred_clusters, iou_type='tIoU',
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
         matched_scores = [score_matrix[i, j] for i, j in zip(row_ind, col_ind)]
-        unmatched_gt = K - len(row_ind)
 
         # WCS = average over gt clusters (including unmatched = 0)
         total_wcs = sum(matched_scores)
@@ -247,6 +241,7 @@ def compute_wcs_unlabeled(gt_clusters, pred_clusters, iou_type='tIoU',
     finally:
         signal.alarm(0)  # Cancel the alarm after the function completes or times out
 
+
 def post_process(response, right_answer, task_mode, category):
     from word2number import w2n
     if task_mode in ["long_acc", "ref_acc"]:
@@ -256,14 +251,13 @@ def post_process(response, right_answer, task_mode, category):
                 pred = w2n.word_to_num(response)
             except:
                 pred = 0
-            if abs(float(right_answer)-float(pred)) <= 1e-5:
+            if abs(float(right_answer) - float(pred)) <= 1e-5:
                 result["acc"] = 1
 
-            if abs(float(right_answer)-float(pred)) <= 1:
+            if abs(float(right_answer) - float(pred)) <= 1:
                 result["oboa"] = 1
 
-            if abs(float(right_answer) - float(pred)) <= max(2 * float(right_answer),
-                                                               100):  # 防止模型输出类似于10000000……的超长数字，导致MAE和RMSE严重失真，因此进行截断
+            if abs(float(right_answer) - float(pred)) <= max(2 * float(right_answer),100):
                 result["mae"] = abs(float(right_answer) - float(pred))
                 result["rmse"] = abs(float(right_answer) - float(pred)) ** 2
             else:
@@ -289,11 +283,11 @@ def post_process(response, right_answer, task_mode, category):
                         pred = []
                         for e in j:
 
-                            if type(e[0]) == str and type(e[1]) == str and ":" in e[0] and ":" in e[1]:
+                            if isinstance(e[0],str) and isinstance(e[1],str) and ":" in e[0] and ":" in e[1]:
                                 pred.append([time_str_to_seconds(e[0]), time_str_to_seconds(e[1])])
                             else:
-                                pred.append([float(e[0].split(" ")[0]) if type(e[0]) == str else e[0],
-                                             float(e[1].split(" ")[0]) if type(e[1]) == str else e[1]])
+                                pred.append([float(e[0].split(" ")[0]) if isinstance(e[0],str) else e[0],
+                                             float(e[1].split(" ")[0]) if isinstance(e[1],str) else e[1]])
                         gt = []
                         for e in clues:
                             gt.append([float(e['start']), float(e['end'])])
@@ -315,14 +309,14 @@ def post_process(response, right_answer, task_mode, category):
                             idx = int(key.replace("Frame", "")) - 1
                             if len(j[key]) == 0:
                                 continue
-                            if type(j[key][0]) == list and len(j[key][0]) == 4:
+                            if isinstance(j[key][0],list) and len(j[key][0]) == 4:
                                 for e in j[key]:
-                                    if type(e) == list and len(e) == 4:
+                                    if isinstance(e,list) and len(e) == 4:
                                         pred.append((idx, e))
-                            elif type(j[key][0]) == list and len(j[key][0]) == 2:
+                            elif isinstance(j[key][0],list) and len(j[key][0]) == 2:
                                 for ii in range(int(len(j[key]) // 2)):
-                                    if type(j[key][ii * 2]) == list and len(j[key][ii * 2]) == 2 and type(
-                                            j[key][ii * 2 + 1]) == list and len(j[key][ii * 2 + 1]) == 2:
+                                    if isinstance(j[key][ii * 2],list) and len(j[key][ii * 2]) == 2 and isinstance(
+                                            j[key][ii * 2 + 1],list) and len(j[key][ii * 2 + 1]) == 2:
                                         pred.append((idx, [j[key][ii * 2][0], j[key][ii * 2][1], j[key][ii * 2 + 1][0],
                                                            j[key][ii * 2 + 1][1]]))
                         result["wcs"] = compute_wcs_unlabeled([gt], [pred], "sIoU")
@@ -348,10 +342,10 @@ def post_process(response, right_answer, task_mode, category):
                                 if e['label'] not in pred.keys():
                                     pred[e['label']] = []
                                 if 'bbox' in e:
-                                    if len(e['bbox']) == 4 and type(e['bbox']) == list:
+                                    if isinstance(e['bbox'],list) and len(e['bbox']) == 4:
                                         pred[e['label']].append((idx, e['bbox']))
                                 if 'bbox_2d' in e:
-                                    if len(e['bbox_2d']) == 4 and type(e['bbox_2d']) == list:
+                                    if isinstance(e['bbox_2d'],list) and len(e['bbox_2d']) == 4:
                                         pred[e['label']].append((idx, e['bbox_2d']))
                         pred_list = [pred[key] for key in pred]
                         result["wcs"] = compute_wcs_unlabeled(gt, pred_list, "sIoU")
@@ -360,9 +354,6 @@ def post_process(response, right_answer, task_mode, category):
                     pass
 
     return result
-
-
-
 
 
 def get_chunk_number(filename):
@@ -382,7 +373,7 @@ def auto_merge_and_unzip_parts(target_dir, extract_dir, zip_prefix=None):
     part_files = sorted(target_dir.glob("*.zip.part*"))
     groups = {}
 
-    # 分组：根据前缀提取 group 名（即 zip 文件名） 
+    # 分组：根据前缀提取 group 名（即 zip 文件名）
     for part_file in part_files:
         match = re.match(r"(.*\.zip)\.part\d+$", part_file.name)
         if match:
@@ -394,7 +385,7 @@ def auto_merge_and_unzip_parts(target_dir, extract_dir, zip_prefix=None):
         print(f"No matching zip parts found with prefix: {zip_prefix}")
         return
 
-    # 合并每一组分卷 -> 解压 
+    # 合并每一组分卷 -> 解压
     for zip_name, parts in tqdm(groups.items(), desc="Merging and unzipping"):
         parts = sorted(parts, key=lambda p: int(p.name.split("part")[-1]))
         zip_path = target_dir / zip_name

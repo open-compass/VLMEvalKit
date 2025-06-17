@@ -80,7 +80,7 @@ class CGAVCounting(VideoBaseDataset):
 
         def check_integrity(pth):
             data_file = osp.join(pth, f"{dataset_name}.tsv")
-            
+
             if not os.path.exists(data_file):
                 return False
 
@@ -115,11 +115,12 @@ class CGAVCounting(VideoBaseDataset):
                     data_file["ref_video_path"] = ""
                     data_file["ref_video_uid"] = ""
 
-                    if task_mode in ["ref_acc"]: 
+                    if task_mode in ["ref_acc"]:
                         data_file["ref_video_path"] = data_file.apply(
                             lambda row: f"ref_videos/{self.get_output_filename(row)}", axis=1
                         )
-                        data_file["ref_video_uid"] = data_file["ref_video_path"].apply(lambda x: x.split("/")[-1].replace(".mp4", ""))
+                        data_file["ref_video_uid"] = data_file["ref_video_path"].apply(
+                            lambda x: x.split("/")[-1].replace(".mp4", ""))
 
                     data_file["task_mode"] = task_mode
 
@@ -147,24 +148,21 @@ class CGAVCounting(VideoBaseDataset):
                 final_data["index"] = range(len(final_data))
                 final_data.to_csv(tsv_file, sep="\t", index=False)
             dataset_path = cache_path
-            
+
             if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
 
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type="dataset")
-            
+
             unzip_hf_zip(dataset_path)
-            
+
             generate_tsv(dataset_path)
 
         tsv_file = osp.join(dataset_path, f"{dataset_name}.tsv")
 
         return dict(data_file=tsv_file, root=dataset_path)
-
-
-
 
     def build_prompt(self, line,video_llm):
         if isinstance(line, int):
@@ -187,7 +185,10 @@ class CGAVCounting(VideoBaseDataset):
                 if self.use_frame_time:
                     user_prompt += get_timestampes(frame_indices, vid_fps)
 
-            user_prompt += f"Please answer the question '{line['question']}' with a number. Just output the number itself, don't output anything else."
+            user_prompt += (
+                f"Please answer the question '{line['question']}' with a number. Just output the number itself, "
+                "don't output anything else."
+            )
             message.append(dict(type="text", value=user_prompt))
         elif task_mode == "ref_acc":
             user_prompt = ""
@@ -203,8 +204,10 @@ class CGAVCounting(VideoBaseDataset):
 
                 if self.use_frame_time:
                     user_prompt += get_timestampes(frame_indices, vid_fps)
-
-            user_prompt += f"Please answer the question '{line['question']}' with a number. Just output the number itself, don't output anything else."
+            user_prompt += (
+                f"Please answer the question '{line['question']}' with a number. Just output the number itself, "
+                "don't output anything else."
+            )
             message.append(dict(type="text", value=user_prompt))
         elif task_mode == "clue_acc":
             if line["category"] == "event":
@@ -220,7 +223,13 @@ class CGAVCounting(VideoBaseDataset):
                     message.extend(dict(type="image", value=im) for im in image_paths)
                     user_prompt += get_timestampes(frame_indices, vid_fps)
 
-                user_prompt += f"Watch the video and provide your answer to the question '{line['question']}', including the start and end timestamps for each event. Format your answer in JSON, enclosed in <answer> and </answer> tags. The output should look like this: <answer>[[\"start_time\", \"end_time\"], ...]</answer>. Ensure each timestamp is in seconds (e.g., 'xx.xx')."
+                user_prompt += (
+                    f"Watch the video and provide your answer to the question '{line['question']}', "
+                    "including the start and end timestamps for each event."
+                    "Format your answer in JSON, enclosed in <answer> and </answer> tags. "
+                    "The output should look like this: <answer>[[\"start_time\", \"end_time\"], ...]</answer>. "
+                    "Ensure each timestamp is in seconds (e.g., 'xx.xx')."
+                )
                 message.append(dict(type="text", value=user_prompt))
             elif line["category"] == "object":
                 user_prompt = ""
@@ -238,7 +247,19 @@ class CGAVCounting(VideoBaseDataset):
                 for idx,im in enumerate(image_paths):
                     message.append(dict(type="text", value=f"Frame{idx+1}:"))
                     message.append(dict(type="image", value=im))
-                user_prompt += f"Answer the question '{line['question']}', including the bounding box for the query object in the first frame where it appears. For subsequent frames where the object appears, do not provide the bounding box again. Format your answer in JSON, enclosed within <answer> and </answer> tags. The output should look like this: <answer>{{\"Frame1\": [[x_min, y_min, x_max, y_max]], \"Frame2\": [...],...}}</answer>. In the output, each frame should either contain the bounding box of the object (if it appears for the first time in that frame) or an empty list `[]` (if the object does not appear or it has already been labeled in a previous frame). Ensure that bounding boxes are listed as [x_min, y_min, x_max, y_max]."
+                user_prompt += (
+                    f"Answer the question '{line['question']}', "
+                    "including the bounding box for the query object in the first frame "
+                    "where it appears. For subsequent frames where the object appears, "
+                    "do not provide the bounding box again. "
+                    "Format your answer in JSON, enclosed within <answer> and </answer> tags. "
+                    "The output should look like this: "
+                    "<answer>{\"Frame1\": [[x_min, y_min, x_max, y_max]], \"Frame2\": [...],...}</answer>. "
+                    "In the output, each frame should either contain the bounding box of the object "
+                    "(if it appears for the first time in that frame) or an empty list `[]` "
+                    "(if the object does not appear or it has already been labeled in a previous frame). "
+                    "Ensure that bounding boxes are listed as [x_min, y_min, x_max, y_max]."
+                )
                 message.append(dict(type="text", value=user_prompt))
             elif line["category"] == "attribute":
                 user_prompt = ""
@@ -252,11 +273,26 @@ class CGAVCounting(VideoBaseDataset):
                 image_paths,width,height = self.save_video_frames_clue(
                     video_path, uid=line["video_uid"],timestamp_list=clue_timestamp_list
                 )
-                message.append(dict(type="text", value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
+                message.append(dict(
+                    type="text",
+                    value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
                 for idx,im in enumerate(image_paths):
                     message.append(dict(type="text", value=f"Frame{idx+1}:"))
                     message.append(dict(type="image", value=im))
-                user_prompt += f"Answer the question '{line['question']}', clustering the objects according to the question. For each unique cluster, assign a unique label and return the bounding box for each object in the first frame where it appears. For subsequent frames where the object appears, do not output anything. Format your answer in JSON, enclosed within <answer> and </answer> tags. The output should look like this: <answer>{{\"Frame 1\": [{{\"bbox\": [x_min, y_min, x_max, y_max], 'label': \"Label 1\"}}], \"Frame 2\": [...], ...}}</answer>. In the output, each frame should either contain the bounding box and label for the object (if it appears for the first time in that frame) or an empty list `[]` (if the object has already been labeled or does not appear in that frame). The label should correspond to a unique object cluster according to the question."
+                user_prompt += (
+                    f"Answer the question '{line['question']}', clustering the objects according to the question. "
+                    "For each unique cluster, assign a unique label and return the bounding box for each object in "
+                    "the first frame where it appears. For subsequent frames where the object appears, "
+                    "do not output anything. "
+                    "Format your answer in JSON, enclosed within <answer> and </answer> tags. "
+                    "The output should look like this: "
+                    "<answer>{\"Frame 1\": [{\"bbox\": [x_min, y_min, x_max, y_max], 'label': \"Label 1\"}], "
+                    "\"Frame 2\": [...], ...}</answer>. "
+                    "In the output, each frame should either contain the bounding box and label for the object "
+                    "(if it appears for the first time in that frame) or an empty list `[]` "
+                    "(if the object has already been labeled or does not appear in that frame). "
+                    "The label should correspond to a unique object cluster according to the question."
+                )
                 message.append(dict(type="text", value=user_prompt))
         print(message)
         return message
