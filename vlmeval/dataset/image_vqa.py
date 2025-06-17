@@ -2856,9 +2856,9 @@ class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MMVMBench':
-        'https://huggingface.co/datasets/zhouyik/MMVMBench_VQA/resolve/main/mmvm_match_bench_vqa_version.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
     }
-    DATASET_MD5 = {'MMVMBench': '16b5827f0bc95049a858dbb83553ea73'}
+    DATASET_MD5 = {'MMVMBench': '168823a449bc323bec5d309227943757'}
 
     def build_prompt(self, line):
         if isinstance(line, int):
