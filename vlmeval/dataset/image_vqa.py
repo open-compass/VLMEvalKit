@@ -2664,7 +2664,7 @@ class MMEReasoning(ImageBaseDataset):
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-          
+
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
         else:
@@ -2851,7 +2851,7 @@ class MMEReasoning(ImageBaseDataset):
         dump(score, score_pth)
         return score
 
-      
+
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -2880,8 +2880,8 @@ class MMVMBench(ImageBaseDataset):
         res = defaultdict(list)
 
         match_type = ['CL', 'SP', 'TM', 'SZ', 'RP', 'OO', 'BR', 'OM']
-        match_type_dict = {i+1:v for i, v in enumerate(match_type)}
-        match_type_hit = {i+1: [] for i, _ in enumerate(match_type)}
+        match_type_dict = {i + 1: v for i, v in enumerate(match_type)}
+        match_type_hit = {i + 1: [] for i, _ in enumerate(match_type)}
         overall_hits = []
         for match_type_i, score_i in zip(match_types_int, scores):
             try:
@@ -2892,20 +2892,20 @@ class MMVMBench(ImageBaseDataset):
             for tag in ['[YES]', '[Yes]', '[yes]', 'YES', 'Yes', 'yes']:
                 if tag in score_i:
                     hit_i = 1
-            
+
             for mt in match_type_i_list:
                 if mt not in match_type_hit.keys():
                     mt = 2
                 match_type_hit[mt].append(hit_i)
-            
+
             overall_hits.append(hit_i)
 
         res['Overall'] = [np.mean(overall_hits),]
         for k, v in match_type_dict.items():
             res[v] = np.mean(match_type_hit[k])
-        
+
         return pd.DataFrame(res)
-    
+
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
@@ -2956,17 +2956,17 @@ class MMVMBench(ImageBaseDataset):
                 FAIL_MSG = 'Failed to obtain answer via API.'
                 rejected = [x for x in score_map.values() if FAIL_MSG in x]
                 print(
-                    f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} questions, '
-                    f'failed to obtain the score for another {len(rejected)} questions. '
-                    f'Those questions will be counted as 0 score in ALL rating, and will not be counted in VALID rating.'
+                    f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} '
+                    f'questions, failed to obtain the score for another {len(rejected)} questions. '
+                    'Those questions will be counted as 0 score in ALL rating, '
+                    'and will not be counted in VALID rating.'
                 )
 
                 dump(data, score_file)
-            
+
             scores = data['score']
             match_types_int = data['match_type']
             acc = self.report_acc_mmatch(scores, match_types_int)
             dump(acc, acc_file)
 
-            return acc     
-    
+            return acc
