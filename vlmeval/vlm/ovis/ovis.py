@@ -494,8 +494,11 @@ class Ovis2(BaseModel):
             dataset.startswith(prefix) for prefix in
             ('HallusionBench', 'TextVQA', 'ChartQA', 'OCRBench', 'InfoVQA', 'DocVQA', 'MTVQA')):
             max_partition = 12
+        elif len(images) > 1:
+            max_partition = max(1, 12 // len(images))
         else:
             max_partition = 9
+
         prompt, input_ids, pixel_values = self.model.preprocess_inputs(
             query, [Image.open(image) for image in images], max_partition=max_partition, frame_selector=self.frame_selector
         )

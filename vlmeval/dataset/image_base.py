@@ -85,15 +85,30 @@ class ImageBaseDataset:
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
-        file_name = url.split('/')[-1]
+        file_name_legacy = url.split('/')[-1]
+        file_name = f"{self.dataset_name}.tsv"
+        data_path_legacy = osp.join(data_root, file_name_legacy)
         data_path = osp.join(data_root, file_name)
+
         self.data_path = data_path
-        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
-            pass
+        if osp.exists(data_path):
+            if file_md5 is None or md5(data_path) == file_md5:
+                pass
+            else:
+                warnings.warn(f'The tsv file is in {data_root}, but the md5 does not match, will re-download')
+                download_file(url, data_path)
+                update_flag = True
         else:
-            warnings.warn('The dataset tsv is not downloaded')
-            download_file(url, data_path)
-            update_flag = True
+            if osp.exists(data_path_legacy) and (file_md5 is None or md5(data_path_legacy) == file_md5):
+                warnings.warn(
+                    'Due to a modification in #1055, the local target file name has changed. '
+                    f'We detected the tsv file with legacy name {data_path_legacy} exists and will do the rename. '
+                )
+                import shutil
+                shutil.move(data_path_legacy, data_path)
+            else:
+                download_file(url, data_path)
+                update_flag = True
 
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
@@ -109,12 +124,23 @@ class ImageBaseDataset:
         if 'image' in line:
             if isinstance(line['image'], list):
                 tgt_path = []
-                assert 'image_path' in line
-                for img, im_name in zip(line['image'], line['image_path']):
+                if 'image_path' in line:
+                    image_path = line['image_path']
+                else:
+                    index = line['index']
+                    image_path = [f'{index}_{i}.png' for i in range(len(line['image']))]
+                for img, im_name in zip(line['image'], image_path):
                     path = osp.join(self.img_root, im_name)
                     if not read_ok(path):
                         decode_base64_to_image_file(img, path)
                     tgt_path.append(path)
+
+            elif isinstance(line['image'], str) and 'image_path' in line:
+                assert isinstance(line['image_path'], str)
+                tgt_path = osp.join(self.img_root, line['image_path'])
+                if not read_ok(tgt_path):
+                    decode_base64_to_image_file(line['image'], tgt_path)
+                tgt_path = [tgt_path]
             else:
                 tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
                 if not read_ok(tgt_path):
@@ -123,6 +149,13 @@ class ImageBaseDataset:
         else:
             assert 'image_path' in line
             tgt_path = toliststr(line['image_path'])
+            read_ok_flag = [read_ok(x) for x in tgt_path]
+            # Might be the Relative Path
+            if not all(read_ok_flag):
+                tgt_path_abs = [osp.join(self.img_root, x) for x in tgt_path]
+                read_ok_flag = [read_ok(x) for x in tgt_path_abs]
+                assert read_ok_flag, f"Field `image` is missing and we could not find {tgt_path} both as absolute or relative paths. "  # noqa
+                tgt_path = tgt_path_abs
 
         return tgt_path
 

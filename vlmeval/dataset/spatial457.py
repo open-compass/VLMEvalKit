@@ -17,7 +17,11 @@ class Spatial457(ImageBaseDataset):
     ROBUST = True
 
     DATASET_URL = {
-        "Spatial457": "https://huggingface.co/datasets/RyanWW/Spatial457/resolve/main/vlm_eval_kit_tsv/Spatial457.tsv",
+        "Spatial457": "http://opencompass.openxlab.space/utils/VLMEval/Spatial457.tsv",
+    }
+
+    DATASET_MD5 = {
+        'Spatial457': "1f24f5a7b2cadc3d33a8a66ecf92ca68"
     }
 
     def __init__(self, *args, **kwargs):
@@ -25,13 +29,10 @@ class Spatial457(ImageBaseDataset):
 
         self.dataset_utils = Spatial457_utils()
 
-    def load_data(self, dataset):
-        url = "https://huggingface.co/datasets/RyanWW/Spatial457/resolve/main/vlm_eval_kit_tsv/Spatial457.tsv"
-        return self.prepare_tsv(url, None)
-
     def evaluate(self, eval_file, **judge_kwargs):
 
         data = load(eval_file)
+        data['prediction'] = [str(x) for x in data['prediction']]
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
 
@@ -62,7 +63,7 @@ class Spatial457(ImageBaseDataset):
             index = int(line["index"])
 
             answers = str(line["answer"])
-            level = line["level"]
+            level = line["category"]
             objects = []
 
             # parse the answer
@@ -140,7 +141,7 @@ class Spatial457(ImageBaseDataset):
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
 
-        set_type = line["level"]
+        set_type = line["category"]
 
         instruction_1, instruction_2 = self.build_subtask_instruction(set_type)
 

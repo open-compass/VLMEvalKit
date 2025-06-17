@@ -2276,12 +2276,63 @@ class TDBenchGrounding(ImageVQADataset):
         return msgs
 
 
+class ZEROBench(ImageVQADataset):
+    DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
+                   'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
+    DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
+                   'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file).sort_values(by='index')
+        predictions = [str(x) for x in data['prediction']]
+        answers = [str(x) for x in data['answers']]
+        indexes = [str(x) for x in data['index']]
+        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
+        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
+            formatted_response = pred.strip()
+            # convert to lowercase
+            formatted_response = formatted_response.lower()
+            # try to extract final answer from curly braces
+            parsed_answer = ''
+            try:
+                pattern = r"\{(.*?)\}"
+                parsed_answer = re.findall(pattern, formatted_response)[-1]
+            except IndexError:
+                pass
+
+            # evaluate via exact matching
+            correct = ans.strip().lower() in parsed_answer.lower()
+            # store results
+            results_row = {"Question_ID": idx,
+                           "Ground_Truth": ans,
+                           "Model_Output": pred,
+                           "Correct?": correct}
+            output_df = pd.concat([output_df, pd.DataFrame([results_row])],
+                                  ignore_index=True)
+
+        # compute accuracy
+        accuracy = output_df["Correct?"].mean()
+        return {"accuracy": accuracy}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        obj = line['question']
+        question = f"{obj} \n\n\nLet's think step by step and give the final answer in curly braces,  like this: {{final answer}}"   # noqa: E501
+        tgt_path = self.dump_image(line)
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+
 class CountBenchQA(ImageVQADataset):
+    TYPE = "VQA"
     DATASET_URL = {
-        'CountBenchQA':
-        'https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv'
+        "CountBenchQA":
+        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv"
     }
-    DATASET_MD5 = {'CountBenchQA': 'f4f65f3fe57f0fd30ca67a3baae16b9d'}
+    DATASET_MD5 = {"CountBenchQA": "fc73c8d4ffa665431448753f094d56ff"}
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2297,7 +2348,7 @@ class CountBenchQA(ImageVQADataset):
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
-        answers = [str(x) for x in data['answers']]
+        answers = [str(x) for x in data['answer']]
         correct_count = 0
         total_count = len(predictions)
 
@@ -2386,53 +2437,29 @@ class PhyX(ImageBaseDataset):
     TYPE = 'VQA'
 
     def __init__(self, dataset='PhyX_mini', skip_noimg=True):
-        if dataset != 'PhyX_mini':
+        if dataset != 'PhyX_mini_OE':
             import warnings
             warnings.warn(
-                'To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.'
+                'To evaluate on PhyX, we would suggest `PhyX_mini_OE` for the default setting.'
             )
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
 
     DATASET_URL = {
-        'PhyX_mini':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv',  # noqa
-        'PhyX_mini_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv',  # noqa
+        'PhyX_MC':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_MC.tsv',  # noqa
+        'PhyX_OE':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_OE.tsv',  # noqa
         'PhyX_mini_MC':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv',  # noqa
-        'PhyX_mini_MC_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv',  # noqa
-        'PhyX_mini_MC_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv',  # noqa
-        'PhyX_mini_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv',  # noqa
-        'PhyX_mini_TL':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv',  # noqa
-        'PhyX_mini_TL_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv',  # noqa
-        'PhyX_mini_TL_MC':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv',  # noqa
-        'PhyX_mini_TL_MC_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv',  # noqa
-        'PhyX_mini_TL_MC_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv',  # noqa
-        'PhyX_mini_TL_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv',  # noqa
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_mini_MC.tsv',  # noqa
+        'PhyX_mini_OE':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_mini_OE.tsv',  # noqa
     }
 
     DATASET_MD5 = {
-        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42',  # noqa
-        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300',  # noqa
-        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa',  # noqa
-        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b',  # noqa
-        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d',  # noqa
-        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c',  # noqa
-        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8',  # noqa
-        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4',  # noqa
-        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2',  # noqa
-        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60',  # noqa
-        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852',  # noqa
-        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3',  # noqa
+        'PhyX_MC': '36e841a2c12e605cdc940e5e36d89213',  # noqa
+        'PhyX_OE': '8abdd9802a78c688c3a38fe0c785ee7a',  # noqa
+        'PhyX_mini_MC': '3587d8804b66a8e7678f3496716fa84f',  # noqa
+        'PhyX_mini_OE': '1f646ccb086ef28453f8c260441734f3',  # noqa
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -2572,6 +2599,259 @@ class PhyX(ImageBaseDataset):
             dump(score, score_pth)
             return score
 
+
+class TallyQA(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'TallyQA': 'https://huggingface.co/datasets/moondream/TallyQA-VLMEvalKit/resolve/main/tallyqa_data.tsv'
+    }
+    DATASET_MD5 = {'TallyQA': '959df01cf1858e73a71efe5cd3b9bf19'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        import pandas as pd
+        from .utils.tallyqa import extract_count_from_prediction
+
+        data = load(eval_file)
+
+        pred_ints = data["prediction"].apply(extract_count_from_prediction)
+        answer_ints = data["answer"].astype(int)
+
+        correct = (pred_ints == answer_ints).sum()
+        total = len(data)
+        accuracy = correct / total
+
+        result_df = pd.DataFrame([{"TallyQA": accuracy}])
+        result_file = eval_file.replace(f".{eval_file.split('.')[-1]}", "_acc.csv")
+        dump(result_df, result_file)
+        return result_df
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        msgs[-1]['value'] += '\nAnswer the question using a single number.'
+        return msgs
+
+
+class Omni3DBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'Omni3DBench':
+        'https://huggingface.co/datasets/rohunagrawal/Omni3DBench-VLMEvalKit/resolve/main/omni3dbench.tsv'
+    }
+    DATASET_MD5 = {'Omni3DBench': 'ba1fa59c3897eb95aed445996ec9b690'}
+
+    def build_prompt(self, line):
+        from .utils.omni3dbench import OMNI3DBENCH_PROMPT
+        question = line['question']
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += f'{OMNI3DBENCH_PROMPT}{question} (Answer type: {line["answer_type"]})'
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.omni3dbench import Omni3DBench_acc
+
+        data = load(eval_file)
+        result = Omni3DBench_acc(data)
+        return result
+
+
+class MMEReasoning(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
+    DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+          
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions  # noqa
+
+        model = judge_kwargs.get('model', 'gpt-4o-mini')
+        suffix = eval_file.split('.')[-1]
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        # stage 1: extract answers using LLM
+        if not osp.exists(storage_extract):
+            data = load(eval_file)
+            data = data.replace({float('nan'): None})
+            model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('MME-Reasoning evaluation requires a working OPENAI API\n')
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_extract):
+                ans = load(tmp_file_extract)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMEReasoning_extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_extract,
+                )
+                ans = load(tmp_file_extract)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            res_list = []
+            log_list = []
+            for idx in data['index']:
+                if not isinstance(ans[idx], dict):
+                    res_list.append(ans[idx])
+                    log_list.append('use previous answer')
+                else:
+                    res_list.append(ans[idx]['res'])
+                    log_list.append(ans[idx]['log'])
+            # data['res'] = [ans[int(idx)]['res'] for idx in data['index']]
+            # data['log'] = [ans[idx]['log'] for idx in int(data['index'])]
+            data['res'] = res_list
+            data['log'] = log_list
+            dump(data, storage_extract)
+
+        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+
+        # stage 2: evaluate score
+        if not osp.exists(storage_score):
+            data = load(storage_extract)
+            data = data.replace({float('nan'): None})
+            model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('MME-Reasoning evaluation requires a working OPENAI API\n')
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            lines_scores_gpt = []
+            lines_scores_other = []
+            for line in lines:
+                if (line['question_type'].lower() == 'open' and line.get('function_id', None) == None) or line.get('function_id', None) == 'open_function':  # noqa
+                    lines_scores_gpt.append(line)
+                else:
+                    lines_scores_other.append(line)
+
+            # for open question, use LLM
+            tups_scores_gpt = [(model, line) for line in lines_scores_gpt]
+            indices_scores_gpt = [line['index'] for line in lines_scores_gpt]
+            if len(indices_scores_gpt):
+                new_results_score = track_progress_rich(
+                    MMEReasoning_openeval,
+                    tups_scores_gpt,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices_scores_gpt,
+                    save=tmp_file_score,
+                )
+                ans = load(tmp_file_score)
+                for k, v in zip(indices_scores_gpt, new_results_score):
+                    assert k in ans
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+
+            # for other questions, use corresponding function
+            res = {}
+            indices_scores_other = [line['index'] for line in lines_scores_other]
+            for k, line in zip(indices_scores_other, lines_scores_other):
+                if line['res'] is None or FAIL_MSG in line['res']:
+                    log_score = 'Failed to evaluate'
+                    res.update({
+                        k: {
+                            "log_score": log_score,
+                            "score": False
+                        }
+                    })
+                    continue
+
+                if line['function_id'] is None:
+                    assert line['question_type'].lower() == 'choice'
+                    function_id = 'choice_function'
+                    function = mme_reasoning_eval_functions[function_id]
+
+                else:
+                    function_id = line['function_id']
+                    function = mme_reasoning_eval_functions[function_id]
+
+                if function_id not in ['open_function', 'choice_function']:
+                    if function_id == "judge_24points_function":
+                        response = line['res']
+                    else:
+                        response = json.loads(line['res'])
+                    if line['answer'] is not None:
+                        answer = eval(line['answer'])
+                    else:
+                        answer = None
+
+                    if function_id in [
+                        "calculate_answer_function_hashi",
+                        "calculate_answer_function_skyscraper",
+                        "calculate_answer_function_sudoku_4",
+                        "calculate_answer_function_sudoku_6",
+                        "calculate_answer_function_yinyang",
+                        "judge_24points_function"
+                    ]:
+                        assert line["special_info"] is not None
+                        special_info = eval(line['special_info'])
+                    else:
+                        special_info = None
+                else:
+                    response = line['res']
+                    answer = line['answer']
+                    special_info = None
+
+                if special_info is None:
+                    answer_judge = function(response, answer)
+                else:
+                    answer_judge = function(response, answer, special_info)
+
+                if answer_judge not in [True, False]:
+                    log_score = 'Failed to evaluate'
+                    score = False
+                else:
+                    log_score = 'Succeed'
+                    score = answer_judge
+                res.update({
+                    k: {
+                        "log_score": log_score,
+                        "score": score
+                    }
+                })
+
+            ans.update(res)
+
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            dump(data, storage_score)
+
+        score = MMEReasoning_acc(storage_score)
+        score_pth = storage_score.replace('.xlsx', '.csv')
+        dump(score, score_pth)
+        return score
+
+      
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -2580,17 +2860,9 @@ class MMVMBench(ImageBaseDataset):
     }
     DATASET_MD5 = {'MMVMBench': '16b5827f0bc95049a858dbb83553ea73'}
 
-    # def load_data(self, dataset):
-    #     """
-    #     If the TSV file fails to download automatically, you can manually download the TSV file 
-    #     to your local machine and then uncomment this function to proceed with the test normally.
-    #     """
-    #     return load("./mmvm_match_bench_vqa_version.tsv")
-
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
         tgt_path = self.dump_image(line)
 
         question = line['question']
@@ -2633,7 +2905,6 @@ class MMVMBench(ImageBaseDataset):
             res[v] = np.mean(match_type_hit[k])
         
         return pd.DataFrame(res)
-
     
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
@@ -2697,4 +2968,5 @@ class MMVMBench(ImageBaseDataset):
             acc = self.report_acc_mmatch(scores, match_types_int)
             dump(acc, acc_file)
 
-            return acc
+            return acc     
+    

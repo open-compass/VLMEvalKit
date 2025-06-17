@@ -250,19 +250,13 @@ api_models = {
         Gemini, model="gemini-2.0-pro-exp", temperature=0, retry=10
     ),
     "GeminiFlash2-5": partial(
-        Gemini, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
     ),
     "GeminiPro2-5": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10, thinking_budget=24576
+        GPT4V, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
     ),
     "GeminiPro2-5-0506": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-0506-Thinking": partial(
-        Gemini, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10, thinking_budget=24576
+        GPT4V, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
     ),
     
     # Qwen-VL
@@ -400,6 +394,9 @@ api_models = {
     "HunYuan-Standard-Vision": partial(
         HunyuanVision, model="hunyuan-standard-vision", temperature=0, retry=10
     ),
+    "HunYuan-Large-Vision": partial(
+        HunyuanVision, model="hunyuan-large-vision", temperature=0, retry=10
+    ),
     "BailingMM-Lite-1203": partial(
         bailingMMAPI, model="BailingMM-Lite-1203", temperature=0, retry=10
     ),
@@ -458,6 +455,30 @@ api_models = {
         verbose=False, 
         max_tokens=16384,
     ),
+    "Seed1.6": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Flash": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-flash-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.6-Thinking": partial(
+        DoubaoVL, 
+        model="doubao-seed-1.6-thinking-250615", 
+        temperature=0,
+        retry=10, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
     # Shopee MUG-U
     'MUG-U-7B': partial(
         MUGUAPI, 
@@ -510,6 +531,13 @@ emu_series = {
     "emu3_chat": partial(Emu3_chat, model_path="BAAI/Emu3-Chat"),
     "emu3_gen": partial(Emu3_gen, model_path="BAAI/Emu3-Gen"),
 }
+
+granite_vision_series = {
+    'granite_vision_3.1_2b_preview': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.1-2b-preview"),
+    'granite_vision_3.2_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.2-2b"),
+    'granite_vision_3.3_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.3-2b"),
+}
+
 mmalaya_series = {
     "MMAlaya": partial(MMAlaya, model_path="DataCanvas/MMAlaya"),
     "MMAlaya2": partial(MMAlaya2, model_path="DataCanvas/MMAlaya2"),
@@ -825,7 +853,7 @@ internvl3 = {
         InternVLChat, model_path="OpenGVLab/InternVL3-2B", version="V2.0"
     ),
     "InternVL3-8B": partial(
-        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0", use_lmdeploy=True
+        InternVLChat, model_path="OpenGVLab/InternVL3-8B", version="V2.0",
     ),
     "InternVL3-9B": partial(
         InternVLChat, model_path="OpenGVLab/InternVL3-9B", version="V2.0"
@@ -1025,6 +1053,16 @@ xgen_mm_series = {
     ),
 }
 
+hawkvl_series = {
+    "HawkVL-2B": partial(
+        HawkVL,
+        model_path="xjtupanda/HawkVL-2B",
+        min_pixels=4 * 28 * 28,
+        max_pixels=6800 * 28 * 28,
+        use_custom_prompt=True
+    )
+}
+
 qwen2vl_series = {
     "Qwen-VL-Max-0809": partial(
         Qwen2VLAPI,
@@ -1153,6 +1191,20 @@ qwen2vl_series = {
     "Qwen2.5-VL-72B-Instruct": partial(
         Qwen2VLChat,
         model_path="Qwen/Qwen2.5-VL-72B-Instruct",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MiMo-VL-7B-RL": partial(
+        Qwen2VLChat,
+        model_path="XiaomiMiMo/MiMo-VL-7B-RL",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
@@ -1377,7 +1429,7 @@ for group in internvl_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
@@ -1387,7 +1439,7 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, flash_vl
 ]
 
 for grp in model_groups:

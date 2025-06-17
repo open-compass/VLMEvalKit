@@ -401,6 +401,7 @@ class LLaVA_Next(BaseModel):
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         answer = self.output_process(answer)
+        answer = answer.replace('<unk>', '')
         return answer
 
 
@@ -530,7 +531,6 @@ class LLaVA_OneVision(BaseModel):
                     "mm_spatial_pool_mode"
                 ]
 
-        rank, world_size = get_rank_and_world_size()
         model_name = get_model_name_from_path(model_path)
         import warnings
         # filter warning align with official code
