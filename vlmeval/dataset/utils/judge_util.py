@@ -26,7 +26,7 @@ def build_judge(**kwargs):
             'deepseek': 'deepseek-ai/DeepSeek-V3',
             'llama31-8b': 'meta-llama/Llama-3.1-8B-Instruct',
         }
-        model_version = model_map[model]
+        model_version = model_map[model] if model in model_map else model
     else:
         model_version = LOCAL_LLM
 
