@@ -400,19 +400,21 @@ class ChartMimic(ImageBaseDataset):
         "ChartMimic_v1_direct": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v1_direct.tsv",
         # v2
         "ChartMimic_v2_customized": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized.tsv",
+        "ChartMimic_v2_customized_600": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_600.tsv",
+        "ChartMimic_v2_customized_1800": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_1800.tsv",
         "ChartMimic_v2_direct": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct.tsv",
-        "ChartMimic_v2_customized_temp_32": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_temp_32.tsv",
-        "ChartMimic_v2_customized_temp_4": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_temp_4.tsv",
-        "ChartMimic_v2_direct_temp_300": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_temp_300.tsv",
+        "ChartMimic_v2_direct_600": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_600.tsv",
+        "ChartMimic_v2_direct_1800": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_1800.tsv",
     }
     DATASET_MD5 = {
-        "ChartMimic_v1_customized": None,
-        "ChartMimic_v1_direct": None,
-        "ChartMimic_v2_customized": None,
-        "ChartMimic_v2_direct": None,
-        "ChartMimic_v2_customized_temp_32": None,
-        "ChartMimic_v2_customized_temp_4": None,
-        "ChartMimic_v2_direct_temp_300": None,
+        "ChartMimic_v1_customized": "d636eca077e75e39fd2600889bf0284e",
+        "ChartMimic_v1_direct": "d0fb410970cab0c666bbacf7d9f0cfb3",
+        "ChartMimic_v2_customized": "390e715dbdfbad3ff788fffa91945405",
+        "ChartMimic_v2_customized_600": "79907e8f9edc5e0eccbbcfc9cbe8a235",
+        "ChartMimic_v2_customized_1800": "a6cf57807c07d328689872a77c9f847a",
+        "ChartMimic_v2_direct": "1c8b444bd681f808f77f06037866eb19",
+        "ChartMimic_v2_direct_600": "3d8d8afecccb6e8feacbcec6834f45f5",
+        "ChartMimic_v2_direct_1800": "340331019c7eaa56cc02080656b66c3c"
     }
 
     def prepare_tsv(self, url, file_md5=None):
