@@ -73,7 +73,7 @@ Please analyze these images and provide the answer to the question about the vid
             question = line['question']
             prefix, video_idx_path = os.path.split(line['video_path'])
             message = [dict(type='text', value=question)]
-            message.append(dict(type='video', value=os.path.join(self.video_path, video_idx_path)))
+            message.append(dict(type='video', value=os.path.join(self.video_path, os.path.join(prefix, video_idx_path))))
             return message
         else:
             frames = self.save_video_frames(line['video'])
