@@ -107,6 +107,13 @@ cgbench_dataset = {
     )
 }
 
+cg_av_counting_dataset = {
+    'CGAVCounting_64frame': partial(
+        CGAVCounting,
+        dataset='CGAVCounting',
+        nframe=64
+    )
+}
 
 megabench_dataset = {
     'MEGABench_core_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core"),
@@ -165,7 +172,7 @@ supported_video_datasets = {}
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
-    megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset
+    megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset,cg_av_counting_dataset
 
 ]
 
