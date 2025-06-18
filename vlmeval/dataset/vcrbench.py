@@ -7,11 +7,12 @@ from ..utils import track_progress_rich
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 # unzip video files
 def unzip_video(pth):
     source_dir = os.path.join(pth, 'v1/videos/video.zip')
     target_dir = os.path.join(pth, 'v1/videos/')
-    
+
     video_folder = os.path.join(pth, 'v1/videos/video')
 
     if not os.path.exists(video_folder):
@@ -73,7 +74,12 @@ Please analyze these images and provide the answer to the question about the vid
             question = line['question']
             prefix, video_idx_path = os.path.split(line['video_path'])
             message = [dict(type='text', value=question)]
-            message.append(dict(type='video', value=os.path.join(self.video_path, os.path.join(prefix, video_idx_path))))
+            message.append(
+                dict(
+                    type='video',
+                    value=os.path.join(self.video_path, os.path.join(prefix, video_idx_path))
+                )
+            )
             return message
         else:
             frames = self.save_video_frames(line['video'])
@@ -123,21 +129,27 @@ Please analyze these images and provide the answer to the question about the vid
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.vcrbench.prompt import Recall_Evaluation_Prompt, Precision_Evaluation_Prompt, Answer_Extraction_Prompt_part1, Answer_Scoring_Prompt_part1
-        from .utils.vcrbench.prompt import build_Extraction_prompt, build_Scoring_prompt, build_Precision_prompt, build_Recall_prompt
+        from .utils.vcrbench.prompt import (
+            Recall_Evaluation_Prompt, Precision_Evaluation_Prompt,
+            Answer_Extraction_Prompt_part1, Answer_Scoring_Prompt_part1
+        )
+        from .utils.vcrbench.prompt import (
+            build_Extraction_prompt, build_Scoring_prompt,
+            build_Precision_prompt, build_Recall_prompt
+        )
         from .utils.vcrbench.cau_acc import calu_acc_main, xlsx2json
         from .utils.vcrbench.eval import precision, recall
         from .utils.vcrbench.cau_total import calu_pre_recall
 
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
-        judge = judge_kwargs['model']
+        judge = judge_kwargs.pop('model','gpt-4o-0806')
         nproc = judge_kwargs.pop('nproc', 4)
 
         # step1: extract answer
         print("running step 1: extracting answer")
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_extracted_answer_tmp.pkl')
         extracted_answer_file = eval_file.replace('.xlsx', f'_{judge}_extracted_answer.xlsx')
-        model = build_judge(system_prompt=Answer_Extraction_Prompt_part1, **judge_kwargs)
+        model = build_judge(system_prompt=Answer_Extraction_Prompt_part1, model=judge, **judge_kwargs)
 
         if not osp.exists(extracted_answer_file):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
@@ -160,7 +172,9 @@ Please analyze these images and provide the answer to the question about the vid
                     chunksize=nproc
                 )
             extracted_answer_map = load(tmp_file)
-            data['extracted_answer'] = [extracted_answer_map[idx] if idx in extracted_answer_map else -1 for idx in data['index']]
+            data['extracted_answer'] = [
+                extracted_answer_map[idx] if idx in extracted_answer_map else -1 for idx in data['index']
+            ]
             dump(data, extracted_answer_file)
 
         # step2: scoring
@@ -224,9 +238,12 @@ Please analyze these images and provide the answer to the question about the vid
                     chunksize=nproc
                 )
             pre_map = load(tmp_file)  # resume
-            data['precision_eval'] = [pre_map[idx] if idx in pre_map else -1 for idx in data['index']]
+            data['precision_eval'] = [
+                pre_map[idx] if idx in pre_map else -1 for idx in data['index']
+            ]
             valid_indices = []
-            data['Video_precision'] = data['logic_precision'] = data['background_precision'] = data['overall_precision'] = data['efficiency'] = ""  # panda
+            data['Video_precision'] = data['logic_precision'] = ""
+            data['background_precision'] = data['overall_precision'] = data['efficiency'] = ""  # panda
             for index, row in data.iterrows():
                 try:
                     data.loc[index] = precision(row)
