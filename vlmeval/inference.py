@@ -217,30 +217,16 @@ def infer_data_job(
         data = dataset.data
         for x in data['index']:
             assert x in data_all
-        if os.getenv('SPLIT_THINK', False):
-            prediction = [str(data_all[x]) for x in data['index']]
-
-            def split_thinking(s):
-                if '</think>' in s:
-                    splits = s.split('</think>')
-                    prediction = splits[-1].strip()
-                    if len(splits) == 2 and '<think>' in splits[0]:
-                        thinking = splits[0].split('<think>')[1].strip()
-                    else:
-                        thinking = '</think>'.join(splits[:-1])
-                        thinking += '</think>'
-                        warnings.warn('Failed to parse thinking, multiple </think> tags or missing <think> tag.')
-                else:
-                    thinking = ''
-                    prediction = s
-                return (prediction, thinking)
-            split_func = model.split_thinking if hasattr(model, 'split_thinking') else split_thinking
-            print(f'Prediction format: {os.getenv("SPLIT_THINK")},splitting func: {split_func}')
-            tups = [split_func(x) for x in prediction]
-            data['prediction'] = [x[0] for x in tups]
-            data['thinking'] = [x[1] for x in tups]
-        else:
-            data['prediction'] = [str(data_all[x]) for x in data['index']]
+        data['prediction'] = [str(data_all[x]) for x in data['index']]
+        ori_predictions = data['prediction']
+        predictions = []
+        for ori_pred in ori_predictions:
+            pred = ori_pred
+            if "</think>" in ori_pred:
+                pred = ori_pred.split("</think>")[0]
+            predictions.append(pred)
+        data['prediction'] = predictions
+        data['ori_predictions'] = ori_predictions
         if 'image' in data:
             data.pop('image')
 
