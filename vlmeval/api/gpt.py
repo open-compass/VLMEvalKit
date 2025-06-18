@@ -6,6 +6,7 @@ from ..smp import *
 from .base import BaseAPI
 from io import BytesIO
 import threading
+import random
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -642,7 +643,27 @@ class VLLMAPIWrapper(BaseAPI):
                     self.logger.error(f'{type(err)}: {err}')
                     self.logger.error(response.text if hasattr(response, 'text') else response)
 
+<<<<<<< HEAD
             return ret_code, answer, response
+=======
+        if isinstance(self.api_base, str):
+            _api_base = self.api_base
+        elif isinstance(self.api_base, list):
+             _api_base = random.choice(self.api_base)
+        response = requests.post(
+            _api_base,
+            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+        ret_code = response.status_code
+        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
+        answer = self.fail_msg
+        try:
+            resp_struct = json.loads(response.text)
+            answer = resp_struct['choices'][0]['message']['content'].strip()
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
+>>>>>>> ed61438 (update)
 
 XHSVLMAPIWrapper = VLLMAPIWrapper
 
