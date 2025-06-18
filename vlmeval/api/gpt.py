@@ -457,7 +457,8 @@ class VLLMAPIWrapper(BaseAPI):
         if isinstance(self.api_base, str):
             _api_base = self.api_base
         elif isinstance(self.api_base, list):
-             _api_base = random.choice(self.api_base)
+            _api_base = random.choice(self.api_base)
+            print( f"USING {_api_base}" )
         response = requests.post(
             _api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
