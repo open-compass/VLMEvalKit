@@ -215,6 +215,15 @@ def infer_data_job(
         for x in data['index']:
             assert x in data_all
         data['prediction'] = [str(data_all[x]) for x in data['index']]
+        ori_predictions = data['prediction']
+        predictions = []
+        for ori_pred in ori_predictions:
+            pred = ori_pred
+            if "<think>" in ori_pred and "</think>" in ori_pred:
+                pred = ori_pred.split("</think>")[1]
+            predictions.append(pred)
+        data['prediction'] = predictions
+        data['ori_predictions'] = ori_predictions
         if 'image' in data:
             data.pop('image')
 

@@ -572,6 +572,10 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
     if type(s) is dict:
         s = ''
     s = s.strip()
+    match = re.search(r'.*\\boxed\{([^}]*)\}', text)
+    if match:
+        return match.group(1)
+
     answer_prefixes = [
         'The best answer is',
         'The correct answer is',

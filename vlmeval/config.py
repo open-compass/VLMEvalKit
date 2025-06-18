@@ -128,7 +128,7 @@ api_models = {
         temperature=0,
         retry=10,
         verbose=True,
-        max_tokens=16384,
+        max_tokens= 8192,
         timeout = 256,
         system_prompt=None,
     ),
