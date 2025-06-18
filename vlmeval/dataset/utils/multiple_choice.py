@@ -575,7 +575,11 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
         s = ''
     s = s.strip()
     match = re.search(r'.*\\boxed\{([^}]*)\}', text)
+<<<<<<< HEAD
     if match and match.group(1) in choices:
+=======
+    if match:
+>>>>>>> 238e75b (update)
         return match.group(1)
 
     answer_prefixes = [

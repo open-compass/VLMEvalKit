@@ -5,6 +5,10 @@ from typing import List, Dict, Any, Tuple
 from ..smp import *
 from .base import BaseAPI
 from io import BytesIO
+<<<<<<< HEAD
+=======
+import random
+>>>>>>> 238e75b (update)
 import threading
 
 APIBASES = {
