@@ -103,10 +103,12 @@ class SFE(ImageVQADataset):
 
     DATASET_URL = {
         'SFE': 'https://opencompass.openxlab.space/utils/VLMEval/SFE.tsv',
+        'SFE-zh': 'https://opencompass.openxlab.space/utils/VLMEval/SFE-zh.tsv'
     }
 
     DATASET_MD5 = {
-        'SFE': 'd4601425e7c9a62446b63a1faee17da5'
+        'SFE': 'd4601425e7c9a62446b63a1faee17da5',
+        'SFE-zh': '3e0250b7f30da55bf8f7b95eace66d82'
     }
 
     MCQ_PROMPT = (
@@ -176,14 +178,13 @@ class SFE(ImageVQADataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.get('model', 'gpt-4o-mini')
+            model = judge_kwargs.get('model', 'gpt-4o-1120')
             if model == 'exact_matching':
                 model = None
             elif gpt_key_set():
                 model = build_judge(model=model, **judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                    warnings.warn(DEBUG_MESSAGE)
                     model = None
             else:
                 model = None
