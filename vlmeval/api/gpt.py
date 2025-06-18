@@ -4,6 +4,7 @@ import sys
 from .base import BaseAPI
 from io import BytesIO
 import random
+import threading
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -355,6 +356,8 @@ class VLLMAPIWrapper(BaseAPI):
 
         self.key = key
         self.timeout = timeout
+        self.cur_idx = 0
+        self.cur_idx_lock = threading.Lock()
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
@@ -421,6 +424,16 @@ class VLLMAPIWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         return input_msgs
 
+    def _next_api_base(self):
+        # 线程安全轮询
+        if isinstance(self.api_base, str):
+            return self.api_base
+        with self.cur_idx_lock:
+            _api_base = self.api_base[self.cur_idx]
+            self.cur_idx = (self.cur_idx + 1) % len(self.api_base)
+        print(f"USING {_api_base}")
+        return _api_base
+
     def generate_inner(self, inputs, **kwargs) -> str:
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
@@ -446,13 +459,8 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
 
-        if isinstance(self.api_base, str):
-            _api_base = self.api_base
-        elif isinstance(self.api_base, list):
-            _api_base = random.choice(self.api_base)
-            print( f"USING {_api_base}" )
         response = requests.post(
-            _api_base,
+            self._next_api_base(),
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
