@@ -935,6 +935,25 @@ class MathVision(ImageBaseDataset):
         score_pth = eval_file.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
+    
+    # Given one data record, return the built prompt (a multi-modal message), can override
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        msgs = []
+        hint = """\nPlease solve the problem step by step and put your answer in one "\boxed{}". If it is amultiple choice question, only one letter ("\boxed{A}", "\boxed{B}", "\boxed{C}","\boxed{D}", or "\boxed{E}") is allowed in the "\boxed{}". For example, do NOT output"\boxed{42}" for a multiple choice question."""
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question + hint))
+        return msgs
 
 
 class Physics_yale(ImageBaseDataset):
