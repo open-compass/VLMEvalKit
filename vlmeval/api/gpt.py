@@ -7,6 +7,7 @@ from .base import BaseAPI
 from io import BytesIO
 import threading
 import random
+import threading
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
