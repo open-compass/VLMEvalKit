@@ -615,6 +615,7 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
     match = re.search(r'.*\\boxed\{([^}]*)\}', text)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     if match and match.group(1) in choices:
 =======
     if match:
@@ -622,6 +623,9 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
 =======
     if match and match.group(1) in choices:
 >>>>>>> 8fd8627 (update mmmu and ocr_bench)
+=======
+    if match:
+>>>>>>> 604d45d (update)
         return match.group(1)
 
     answer_prefixes = [

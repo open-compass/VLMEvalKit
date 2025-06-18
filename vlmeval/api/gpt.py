@@ -7,6 +7,7 @@ from .base import BaseAPI
 from io import BytesIO
 import threading
 import random
+import threading
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -644,6 +645,7 @@ class VLLMAPIWrapper(BaseAPI):
                     self.logger.error(response.text if hasattr(response, 'text') else response)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             return ret_code, answer, response
 =======
         if isinstance(self.api_base, str):
@@ -651,8 +653,10 @@ class VLLMAPIWrapper(BaseAPI):
         elif isinstance(self.api_base, list):
             _api_base = random.choice(self.api_base)
             print( f"USING {_api_base}" )
+=======
+>>>>>>> 604d45d (update)
         response = requests.post(
-            _api_base,
+            self._next_api_base(),
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
