@@ -2,6 +2,8 @@ from ..smp import *
 import os
 import sys
 from .base import BaseAPI
+from io import BytesIO
+import random
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -297,6 +299,33 @@ class GPT4V(OpenAIWrapper):
     def generate(self, message, dataset=None):
         return super(GPT4V, self).generate(message)
 
+def compress_image(base64_str, quality=85, format='JPEG'):
+    img_data = base64.b64decode(base64_str)
+    img = Image.open(BytesIO(img_data))
+
+    # 检查是否有透明度通道
+    # if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+    if img.mode in ('RGBA', 'LA', 'P'):
+        # 创建一个白色背景的图像
+        alpha = img.convert('RGBA').split()[-1]
+        bg = Image.new("RGB", img.size, (255, 255, 255) + (255,))
+        bg.paste(img, mask=alpha)
+        img = bg
+
+    # 检查图像尺寸
+    max_size = 36000000  # doubao的最大宽高乘积
+    if img.size[0] * img.size[1] > max_size:
+        ratio = (max_size / (img.size[0] * img.size[1])) ** 0.5
+        new_width = int(img.size[0] * ratio)
+        new_height = int(img.size[1] * ratio)
+        img = img.resize((new_width, new_height), Image.LANCZOS)
+
+
+    # 压缩并转换格式
+    buf = BytesIO()
+    img.save(buf, format=format, quality=quality)
+    byte_img = buf.getvalue()
+    return base64.b64encode(byte_img).decode('utf-8')
 
 class VLLMAPIWrapper(BaseAPI):
 
@@ -341,15 +370,21 @@ class VLLMAPIWrapper(BaseAPI):
             if 'VLLM_API_BASE' in os.environ and os.environ['VLLM_API_BASE'] != '':
                 self.logger.info('Environment variable VLLM_API_BASE is set. Will use it as api_base. ')
                 api_base = os.environ['VLLM_API_BASE']
+                if "," in api_base:
+                    api_base = api_base.split(",")
 
             assert api_base is not None
 
-            if api_base in APIBASES:
+            if isinstance(api_base, str) and api_base in APIBASES:
                 self.api_base = APIBASES[api_base]
-            elif api_base.startswith('http'):
+            elif isinstance(api_base, str) and api_base.startswith('http'):
+                self.api_base = api_base
+            elif isinstance(api_base, list):
+                for api in api_base:
+                    assert api.startswith('http')
                 self.api_base = api_base
             else:
-                self.logger.error('Unknown API Base. ')
+                self.logger.error(f'Unknown API Base. {api_base}')
                 raise NotImplementedError
         else:
             self.api_base = api_base
@@ -370,10 +405,10 @@ class VLLMAPIWrapper(BaseAPI):
                     from PIL import Image
                     img = Image.open(msg['value'])
                     b64 = encode_image_to_base64(img, target_size=-1)
+                    if self.model == os.environ.get("DOUBAO_MODEL_NAME"):
+                        b64 = compress_image(b64)
                     img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
-                    content_list.append(
-                        dict(type='image_url', image_url=img_struct, min_pixels=1003520)
-                    )
+                    content_list.append(dict(type='image_url', image_url=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])
             text = '\n'.join([x['value'] for x in inputs])
@@ -419,8 +454,12 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
 
+        if isinstance(self.api_base, str):
+            _api_base = self.api_base
+        elif isinstance(self.api_base, list):
+             _api_base = random.choice(self.api_base)
         response = requests.post(
-            self.api_base,
+            _api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
