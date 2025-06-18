@@ -32,15 +32,15 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
     def __init__(
         self,
         model_path: str,
-        min_pixels: int | None = None,
-        max_pixels: int | None = None,
+        min_pixels: int = None,
+        max_pixels: int = None,
         max_new_tokens=1024,
         top_p=0.8,
         top_k=20,
         temperature=0.7,
         repetition_penalty=1.0,
         use_custom_prompt: bool = False,
-        system_prompt: str | None = None,
+        system_prompt: str = None,
         verbose: bool = False,
     ):
         try:
@@ -75,7 +75,7 @@ class HawkVL(HawkVLPromptMixin, BaseModel):
 
         self.model.cuda().eval()
 
-    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str | None = None) -> list[dict[str, str]]:
+    def _prepare_content(self, inputs: list[dict[str, str]], dataset: str = None) -> list[dict[str, str]]:
         """
         inputs list[dict[str, str]], each dict has keys: ['type', 'value']
         """

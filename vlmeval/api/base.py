@@ -8,7 +8,7 @@ from ..smp import get_logger, parse_file, concat_images_vlmeval, LMUDataRoot, md
 
 class BaseAPI:
 
-    allowed_types = ['text', 'image']
+    allowed_types = ['text', 'image', 'video']
     INTERLEAVE = True
     INSTALL_REQ = False
 
