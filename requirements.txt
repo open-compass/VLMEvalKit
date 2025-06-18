@@ -13,7 +13,7 @@ nltk
 numpy
 omegaconf
 openai
-opencv-python>=4.4.0.46
+opencv-python>=4.7.0.72
 openpyxl
 pandas
 pillow

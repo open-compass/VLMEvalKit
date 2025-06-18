@@ -85,15 +85,30 @@ class ImageBaseDataset:
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
-        file_name = url.split('/')[-1]
+        file_name_legacy = url.split('/')[-1]
+        file_name = f"{self.dataset_name}.tsv"
+        data_path_legacy = osp.join(data_root, file_name_legacy)
         data_path = osp.join(data_root, file_name)
+
         self.data_path = data_path
-        if osp.exists(data_path) and (file_md5 is None or md5(data_path) == file_md5):
-            pass
+        if osp.exists(data_path):
+            if file_md5 is None or md5(data_path) == file_md5:
+                pass
+            else:
+                warnings.warn(f'The tsv file is in {data_root}, but the md5 does not match, will re-download')
+                download_file(url, data_path)
+                update_flag = True
         else:
-            warnings.warn('The dataset tsv is not downloaded')
-            download_file(url, data_path)
-            update_flag = True
+            if osp.exists(data_path_legacy) and (file_md5 is None or md5(data_path_legacy) == file_md5):
+                warnings.warn(
+                    'Due to a modification in #1055, the local target file name has changed. '
+                    f'We detected the tsv file with legacy name {data_path_legacy} exists and will do the rename. '
+                )
+                import shutil
+                shutil.move(data_path_legacy, data_path)
+            else:
+                download_file(url, data_path)
+                update_flag = True
 
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')

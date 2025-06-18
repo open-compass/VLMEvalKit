@@ -2330,9 +2330,9 @@ class CountBenchQA(ImageVQADataset):
     TYPE = "VQA"
     DATASET_URL = {
         "CountBenchQA":
-        "https://huggingface.co/datasets/moondream/CountBenchQA-VLMEvalKit/resolve/main/countbench_data.tsv"
+        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv"
     }
-    DATASET_MD5 = {"CountBenchQA": "d70123bd9d7c090b00101f2116f3a7c6"}
+    DATASET_MD5 = {"CountBenchQA": "fc73c8d4ffa665431448753f094d56ff"}
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2437,53 +2437,29 @@ class PhyX(ImageBaseDataset):
     TYPE = 'VQA'
 
     def __init__(self, dataset='PhyX_mini', skip_noimg=True):
-        if dataset != 'PhyX_mini':
+        if dataset != 'PhyX_mini_OE':
             import warnings
             warnings.warn(
-                'To evaluate on PhyX, we would suggest `PhyX_mini` for the default setting.'
+                'To evaluate on PhyX, we would suggest `PhyX_mini_OE` for the default setting.'
             )
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
 
     DATASET_URL = {
-        'PhyX_mini':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini.tsv',  # noqa
-        'PhyX_mini_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_IMG.tsv',  # noqa
+        'PhyX_MC':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_MC.tsv',  # noqa
+        'PhyX_OE':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_OE.tsv',  # noqa
         'PhyX_mini_MC':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC.tsv',  # noqa
-        'PhyX_mini_MC_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_IMG.tsv',  # noqa
-        'PhyX_mini_MC_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_MC_SIMPLY.tsv',  # noqa
-        'PhyX_mini_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_SIMPLY.tsv',  # noqa
-        'PhyX_mini_TL':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL.tsv',  # noqa
-        'PhyX_mini_TL_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_IMG.tsv',  # noqa
-        'PhyX_mini_TL_MC':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC.tsv',  # noqa
-        'PhyX_mini_TL_MC_IMG':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_IMG.tsv',  # noqa
-        'PhyX_mini_TL_MC_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_MC_SIMPLY.tsv',  # noqa
-        'PhyX_mini_TL_SIMPLY':
-        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_final/PhyX_mini_TL_SIMPLY.tsv',  # noqa
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_mini_MC.tsv',  # noqa
+        'PhyX_mini_OE':
+        'https://huggingface.co/datasets/Cloudriver/PhyX/resolve/main/data_tsv_vlmevalkit/PhyX_mini_OE.tsv',  # noqa
     }
 
     DATASET_MD5 = {
-        'PhyX_mini': 'e77f31ed01a868a8543f01f743d98d42',  # noqa
-        'PhyX_mini_IMG': 'b243fdd72ffc475e234ac896cd30f300',  # noqa
-        'PhyX_mini_MC': '92399e2c3ef56e70297c3d123104f0aa',  # noqa
-        'PhyX_mini_MC_IMG': '88d8bc377f8bfb775fd306a027bad13b',  # noqa
-        'PhyX_mini_MC_SIMPLY': '06b3c1618478fec8d25c136b5464a29d',  # noqa
-        'PhyX_mini_SIMPLY': '2dc52c02c7feff20ba6ff8d19fe6372c',  # noqa
-        'PhyX_mini_TL': '44ff72b077ed1c1df08d2e061ff514b8',  # noqa
-        'PhyX_mini_TL_IMG': 'd934090c4aceb940c3aa1bd578ef2dc4',  # noqa
-        'PhyX_mini_TL_MC': '5be1c92b5e4e0e85fb36f186db7085f2',  # noqa
-        'PhyX_mini_TL_MC_IMG': 'da6262a35be62213986e9a1b2437de60',  # noqa
-        'PhyX_mini_TL_MC_SIMPLY': '7196d2bd1c50337bc253d642c4415852',  # noqa
-        'PhyX_mini_TL_SIMPLY': 'a6e83fc38abdfadf5a791f00a0348fa3',  # noqa
+        'PhyX_MC': '36e841a2c12e605cdc940e5e36d89213',  # noqa
+        'PhyX_OE': '8abdd9802a78c688c3a38fe0c785ee7a',  # noqa
+        'PhyX_mini_MC': '3587d8804b66a8e7678f3496716fa84f',  # noqa
+        'PhyX_mini_OE': '1f646ccb086ef28453f8c260441734f3',  # noqa
     }
 
     # Given one data record, return the built prompt (a multi-modal message), can override
@@ -2678,3 +2654,319 @@ class Omni3DBench(ImageBaseDataset):
         data = load(eval_file)
         result = Omni3DBench_acc(data)
         return result
+
+
+class MMEReasoning(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
+    DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions  # noqa
+
+        model = judge_kwargs.get('model', 'gpt-4o-mini')
+        suffix = eval_file.split('.')[-1]
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        # stage 1: extract answers using LLM
+        if not osp.exists(storage_extract):
+            data = load(eval_file)
+            data = data.replace({float('nan'): None})
+            model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('MME-Reasoning evaluation requires a working OPENAI API\n')
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_extract):
+                ans = load(tmp_file_extract)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMEReasoning_extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_extract,
+                )
+                ans = load(tmp_file_extract)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            res_list = []
+            log_list = []
+            for idx in data['index']:
+                if not isinstance(ans[idx], dict):
+                    res_list.append(ans[idx])
+                    log_list.append('use previous answer')
+                else:
+                    res_list.append(ans[idx]['res'])
+                    log_list.append(ans[idx]['log'])
+            # data['res'] = [ans[int(idx)]['res'] for idx in data['index']]
+            # data['log'] = [ans[idx]['log'] for idx in int(data['index'])]
+            data['res'] = res_list
+            data['log'] = log_list
+            dump(data, storage_extract)
+
+        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+
+        # stage 2: evaluate score
+        if not osp.exists(storage_score):
+            data = load(storage_extract)
+            data = data.replace({float('nan'): None})
+            model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('MME-Reasoning evaluation requires a working OPENAI API\n')
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            lines_scores_gpt = []
+            lines_scores_other = []
+            for line in lines:
+                if (line['question_type'].lower() == 'open' and line.get('function_id', None) == None) or line.get('function_id', None) == 'open_function':  # noqa
+                    lines_scores_gpt.append(line)
+                else:
+                    lines_scores_other.append(line)
+
+            # for open question, use LLM
+            tups_scores_gpt = [(model, line) for line in lines_scores_gpt]
+            indices_scores_gpt = [line['index'] for line in lines_scores_gpt]
+            if len(indices_scores_gpt):
+                new_results_score = track_progress_rich(
+                    MMEReasoning_openeval,
+                    tups_scores_gpt,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices_scores_gpt,
+                    save=tmp_file_score,
+                )
+                ans = load(tmp_file_score)
+                for k, v in zip(indices_scores_gpt, new_results_score):
+                    assert k in ans
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+
+            # for other questions, use corresponding function
+            res = {}
+            indices_scores_other = [line['index'] for line in lines_scores_other]
+            for k, line in zip(indices_scores_other, lines_scores_other):
+                if line['res'] is None or FAIL_MSG in line['res']:
+                    log_score = 'Failed to evaluate'
+                    res.update({
+                        k: {
+                            "log_score": log_score,
+                            "score": False
+                        }
+                    })
+                    continue
+
+                if line['function_id'] is None:
+                    assert line['question_type'].lower() == 'choice'
+                    function_id = 'choice_function'
+                    function = mme_reasoning_eval_functions[function_id]
+
+                else:
+                    function_id = line['function_id']
+                    function = mme_reasoning_eval_functions[function_id]
+
+                if function_id not in ['open_function', 'choice_function']:
+                    if function_id == "judge_24points_function":
+                        response = line['res']
+                    else:
+                        response = json.loads(line['res'])
+                    if line['answer'] is not None:
+                        answer = eval(line['answer'])
+                    else:
+                        answer = None
+
+                    if function_id in [
+                        "calculate_answer_function_hashi",
+                        "calculate_answer_function_skyscraper",
+                        "calculate_answer_function_sudoku_4",
+                        "calculate_answer_function_sudoku_6",
+                        "calculate_answer_function_yinyang",
+                        "judge_24points_function"
+                    ]:
+                        assert line["special_info"] is not None
+                        special_info = eval(line['special_info'])
+                    else:
+                        special_info = None
+                else:
+                    response = line['res']
+                    answer = line['answer']
+                    special_info = None
+
+                if special_info is None:
+                    answer_judge = function(response, answer)
+                else:
+                    answer_judge = function(response, answer, special_info)
+
+                if answer_judge not in [True, False]:
+                    log_score = 'Failed to evaluate'
+                    score = False
+                else:
+                    log_score = 'Succeed'
+                    score = answer_judge
+                res.update({
+                    k: {
+                        "log_score": log_score,
+                        "score": score
+                    }
+                })
+
+            ans.update(res)
+
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            dump(data, storage_score)
+
+        score = MMEReasoning_acc(storage_score)
+        score_pth = storage_score.replace('.xlsx', '.csv')
+        dump(score, score_pth)
+        return score
+
+
+class MMVMBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'MMVMBench':
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
+    }
+    DATASET_MD5 = {'MMVMBench': '168823a449bc323bec5d309227943757'}
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    def report_acc_mmatch(scores, match_types_int):
+        res = defaultdict(list)
+
+        match_type = ['CL', 'SP', 'TM', 'SZ', 'RP', 'OO', 'BR', 'OM']
+        match_type_dict = {i + 1: v for i, v in enumerate(match_type)}
+        match_type_hit = {i + 1: [] for i, _ in enumerate(match_type)}
+        overall_hits = []
+        for match_type_i, score_i in zip(match_types_int, scores):
+            try:
+                match_type_i_list = eval(match_type_i)
+            except:
+                match_type_i_list = [1, 5]
+            hit_i = 0
+            for tag in ['[YES]', '[Yes]', '[yes]', 'YES', 'Yes', 'yes']:
+                if tag in score_i:
+                    hit_i = 1
+
+            for mt in match_type_i_list:
+                if mt not in match_type_hit.keys():
+                    mt = 2
+                match_type_hit[mt].append(hit_i)
+
+            overall_hits.append(hit_i)
+
+        res['Overall'] = [np.mean(overall_hits),]
+        for k, v in match_type_dict.items():
+            res[v] = np.mean(match_type_hit[k])
+
+        return pd.DataFrame(res)
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        judge = judge_kwargs['model']
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
+        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        acc_file = eval_file.replace('.xlsx', f'_{judge}_acc.xlsx')
+
+        judge_kwargs['temperature'] = 0.0
+        model = build_judge(**judge_kwargs)
+
+        prompt = "I asked a model a question: {QUESTION}. The model's response was: {RESPONSE}. "\
+            "The correct answer to this question is: {GT}. Please determine whether the model's "\
+            "response is correct. If it is, conclude with [YES]. If it is not, conclude with [NO]."
+
+        def prepare_score_prompt(line):
+            vq = "{" + line['question'] + "}"
+            va = "{" + line['prediction'] + "}"
+            gt = "{" + line['answer'] + "}"
+            question = prompt.format(QUESTION=vq, RESPONSE=va, GT=gt)
+            return question
+
+        if not osp.exists(score_file):
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if model.fail_msg not in v}
+
+            data = load(eval_file)
+            data_un = data[~data['index'].isin(res)]
+            data_un = data_un[~pd.isna(data_un['prediction'])]
+            lt = len(data_un)
+
+            prompts = [prepare_score_prompt(data_un.iloc[i]) for i in range(lt)]
+            indices = [data_un.iloc[i]['index'] for i in range(lt)]
+
+            if len(prompts):
+                _ = track_progress_rich(
+                    model.generate,
+                    prompts,
+                    keys=indices,
+                    save=tmp_file,
+                    nproc=nproc,
+                    chunksize=nproc
+                )
+                score_map = load(tmp_file)
+                data['score'] = [score_map[idx] if idx in score_map else '[NO]' for idx in data['index']]
+                FAIL_MSG = 'Failed to obtain answer via API.'
+                rejected = [x for x in score_map.values() if FAIL_MSG in x]
+                print(
+                    f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(score_map)} '
+                    f'questions, failed to obtain the score for another {len(rejected)} questions. '
+                    'Those questions will be counted as 0 score in ALL rating, '
+                    'and will not be counted in VALID rating.'
+                )
+
+                dump(data, score_file)
+
+            scores = data['score']
+            match_types_int = data['match_type']
+            acc = self.report_acc_mmatch(scores, match_types_int)
+            dump(acc, acc_file)
+
+            return acc

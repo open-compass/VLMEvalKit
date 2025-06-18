@@ -401,6 +401,7 @@ class LLaVA_Next(BaseModel):
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         answer = self.output_process(answer)
+        answer = answer.replace('<unk>', '')
         return answer
 
 

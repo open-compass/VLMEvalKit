@@ -3,6 +3,7 @@
 import os
 import re
 import tempfile
+import json
 from functools import partial
 import pandas as pd
 
@@ -54,7 +55,8 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_ZhScene": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/scene_text/zh_scene_450.tsv",
         "CCOCR_MultiSceneOcr_UgcLaion": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
-        "CCOCR_MultiSceneOcr_ZhVertical": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_vertical_100.tsv"
+        "CCOCR_MultiSceneOcr_ZhVertical": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
+        "CCOCR": "http://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
     }
 
     DATASET_URL_HUGGINGFACE = {
@@ -96,7 +98,8 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_ZhScene": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/scene_text/zh_scene_450.tsv",
         "CCOCR_MultiSceneOcr_UgcLaion": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
-        "CCOCR_MultiSceneOcr_ZhVertical": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_vertical_100.tsv"
+        "CCOCR_MultiSceneOcr_ZhVertical": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
+        "CCOCR": "http://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
     }
 
     # define data path
@@ -140,19 +143,15 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_ZhScene": "9295152a66e6f117db8bfbb20a9013e6",
         "CCOCR_MultiSceneOcr_UgcLaion": "8e9ea1fbf9d56532157e807eabf39b21",
         "CCOCR_MultiSceneOcr_ZhDense": "de8f48ee0c8a2cf8ed7f2b3a81e6322d",
-        "CCOCR_MultiSceneOcr_ZhVertical": "4892b4aec6e7fd11e39aaea23712709b"
+        "CCOCR_MultiSceneOcr_ZhVertical": "4892b4aec6e7fd11e39aaea23712709b",
+        "CCOCR": "f8927b76510ffe04e59d45e3f8e8b620"
     }
 
-    # It returns a DataFrame
-    def evaluate(self, eval_file, **judge_kwargs):
+    def _evaluate_single_dataset(self, sub_df, data_name, **judge_kwargs):
         """
+        Evaluate a single sub-dataset from the combined CCOCR tsv
         """
-        df = load(eval_file)
-        dict_list = df.to_dict(orient='records')
-
-        required_colume_list = ['answer', 'prediction', "category", "image_name", "l2-category", "split"]
-        for required_colume in required_colume_list:
-            assert required_colume in df, "required_colume: {} NOT found".format(required_colume)
+        dict_list = sub_df.to_dict(orient='records')
 
         gt_info, ptd_info = {}, {}
         for data_info in dict_list:
@@ -163,35 +162,138 @@ class CCOCRDataset(ImageBaseDataset):
             if data_info['prediction'] != FAIL_MSG:
                 ptd_info[image_name] = data_info['prediction']
 
-        # assert eval_file is a single dataset
-        group_name = set([str(x) for x in df['category']]).pop()
-        op_name = set([str(x) for x in df['l2-category']]).pop()
-        data_name = set([str(x) for x in df['split']]).pop()
+        # Extract metadata from the sub-dataset
+        group_name = str(sub_df['category'].iloc[0])
+        op_name = str(sub_df['l2-category'].iloc[0])
 
-        data_info = {"op": op_name, "group": group_name, "dataset": data_name,  "num": len(gt_info)}
+        data_info = {"op": op_name, "group": group_name, "dataset": data_name, "num": len(gt_info)}
+
         try:
             from .utils.ccocr_evaluator import evaluator_map_info as ccocr_evaluator_map
         except ImportError as err:
             import warnings
             warnings.warn('The dependency of CCOCR evaluator is not properly installed')
             warnings.warn(f'{type(err)}: {err}')
+            return None, None
+
         eval_func = ccocr_evaluator_map.get(group_name, None)
         if eval_func is None:
-            raise ValueError("error: evaluator not defined for: {}".format(group_name))
+            print(f"Warning: evaluator not defined for: {group_name}")
+            return None, None
+
         meta_info, eval_info = eval_func(ptd_info, gt_info, **data_info)
 
-        output_info = {"meta": meta_info, "evaluation": eval_info, "config": data_info}
-        result_file = os.path.splitext(os.path.abspath(eval_file))[0] + "_eval.json"
-        dump(output_info, result_file)
+        return {"meta": meta_info, "evaluation": eval_info, "config": data_info}, eval_info.get("summary")
 
-        # update global status for summary
-        # warning: the evaluate function should NOT run in parallel
-        all_status_info = {}
-        global_status_path = os.path.join(os.path.dirname(eval_file), "status.json")
-        if os.path.exists(global_status_path):
-            with open(global_status_path, "r") as f:
-                all_status_info = json.load(f)
-        all_status_info[data_name] = output_info
-        with open(global_status_path, "w") as f:
-            json.dump(all_status_info, f, ensure_ascii=False, indent=4)
-        return eval_info.get("summary")
+    # It returns a DataFrame
+    def evaluate(self, eval_file, **judge_kwargs):
+        """
+        Evaluate the combined CCOCR dataset containing all sub-datasets
+        """
+        df = load(eval_file)
+        required_colume_list = ['answer', 'prediction', "category", "image_name", "l2-category", "split"]
+        for required_colume in required_colume_list:
+            assert required_colume in df, "required_colume: {} NOT found".format(required_colume)
+
+        # Create unique sub-dataset identifiers using category, l2-category, and split
+        df['sub_dataset_id'] = df['category'].astype(str) + '_' + df['l2-category'].astype(str) + '_' + df['split'].astype(str)
+
+        # Get all unique sub-datasets from the combined identifier
+        unique_sub_datasets = df['sub_dataset_id'].unique()
+
+        all_results = {}
+        all_summaries = {}
+
+        # Process each sub-dataset separately
+        for sub_dataset_id in tqdm(unique_sub_datasets, desc="Processing sub-datasets"):
+            print(f"Processing sub-dataset: {sub_dataset_id}")
+
+            # Filter data for this specific sub-dataset
+            sub_df = df[df['sub_dataset_id'] == sub_dataset_id].copy()
+
+            if len(sub_df) == 0:
+                print(f"Warning: No data found for sub-dataset: {sub_dataset_id}")
+                continue
+
+            # Get the original split name for compatibility (use the split value)
+            split_name = sub_df['split'].iloc[0]
+
+            # Evaluate this sub-dataset
+            result_info, summary = self._evaluate_single_dataset(sub_df, split_name, **judge_kwargs)
+
+            if result_info is not None:
+                all_results[sub_dataset_id] = result_info
+                all_summaries[sub_dataset_id] = summary
+                print(f"Completed evaluation for {sub_dataset_id}: {summary}")
+            else:
+                print(f"Failed to evaluate {sub_dataset_id}")
+
+        # Save comprehensive results
+        base_name = os.path.splitext(os.path.abspath(eval_file))[0]
+        comprehensive_result = {
+            "meta": {"total_datasets": len(all_results), "datasets": list(all_results.keys())},
+            "results": all_results,
+            "summaries": all_summaries
+        }
+        result_file = base_name + "_comprehensive_eval.json"
+        dump(comprehensive_result, result_file)
+        print(f"Comprehensive results saved to: {result_file}")
+
+        # Final Aggregation Logic
+        lan_ocr_scores = []
+        scene_ocr_scores = []
+        kie_scores = []
+        doc_parsing_scores = []
+
+        for key, summary in all_summaries.items():
+            if not isinstance(summary, dict):
+                continue
+
+            if 'lan_ocr' in key:
+                if 'macro_f1_score' in summary:
+                    lan_ocr_scores.append(summary['macro_f1_score'])
+            elif 'scene_ocr' in key:
+                if 'macro_f1_score' in summary:
+                    scene_ocr_scores.append(summary['macro_f1_score'])
+            elif 'kie' in key:
+                if 'acc' in summary:
+                    kie_scores.append(summary['acc'])
+            elif 'doc_parsing' in key:
+                if 'score' in summary:
+                    doc_parsing_scores.append(summary['score'])
+
+        res = {}
+        category_averages = []
+
+        if lan_ocr_scores:
+            avg = sum(lan_ocr_scores) / len(lan_ocr_scores)
+            res['lan_ocr'] = avg
+            category_averages.append(avg)
+
+        if scene_ocr_scores:
+            avg = sum(scene_ocr_scores) / len(scene_ocr_scores)
+            res['scene_ocr'] = avg
+            category_averages.append(avg)
+
+        if kie_scores:
+            avg = sum(kie_scores) / len(kie_scores)
+            res['kie'] = avg
+            category_averages.append(avg)
+
+        if doc_parsing_scores:
+            avg = sum(doc_parsing_scores) / len(doc_parsing_scores)
+            res['doc_parsing'] = avg
+            category_averages.append(avg)
+
+        if category_averages:
+            res['total'] = sum(category_averages) / len(category_averages)
+        else:
+            res['total'] = 0
+
+        print("\n" + "="*80)
+        print("Final Aggregated Results:")
+        print("="*80)
+        for k, v in res.items():
+            print(f"  {k.upper():<20}: {v:.4f}")
+        print("="*80)
+        return res

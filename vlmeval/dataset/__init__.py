@@ -12,8 +12,8 @@ from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA, ZEROBench,
-    Omni3DBench, TallyQA
+    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
+    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench
 )
 
 from .image_ccocr import CCOCRDataset
@@ -46,6 +46,9 @@ from .moviechat1k import MovieChat1k
 from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
 from .vdc import VDC
 from .vcrbench import VCRBench
+from .gobench import GOBenchDataset
+from .sfebench import SFE
+
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -65,6 +68,7 @@ from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
+from .chartmimic import ChartMimic
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -189,7 +193,8 @@ IMAGE_DATASET = [
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset
+    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
+    MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench,
 ]
 
 

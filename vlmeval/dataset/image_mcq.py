@@ -1152,7 +1152,7 @@ class NaturalBenchDataset(ImageMCQDataset):
         ),
     }
     DATASET_MD5 = {
-        'NaturalBenchDataset':'dbe25b044bc35696426381e9ba4fe930',
+        'NaturalBenchDataset':'e5f724932972eaeb8a9099e6979606ec',
     }
 
     def build_prompt(self, line):
@@ -2039,7 +2039,7 @@ class _3DSRBench(ImageMCQDataset):
             acc_map[k]['setting'] = [k] * len(acc_map[k])
             metrics.append(acc_map[k])
         res_all = pd.concat(metrics)
-        dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
+        dump(res_all, eval_file.replace('.xlsx', '_acc_all.csv'))
         return res_all
 
 
