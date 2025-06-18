@@ -181,7 +181,7 @@ Please analyze these images and provide the answer to the question about the vid
         print("running step 2: acc scoring")
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_answer_score_tmp.pkl')
         answer_score_file = eval_file.replace('.xlsx', f'_{judge}_answer_score.xlsx')
-        model = build_judge(system_prompt=Answer_Scoring_Prompt_part1, **judge_kwargs)
+        model = build_judge(system_prompt=Answer_Scoring_Prompt_part1, model=judge, **judge_kwargs)
 
         if not osp.exists(answer_score_file):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
@@ -216,7 +216,7 @@ Please analyze these images and provide the answer to the question about the vid
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_pre_score_tmp.pkl')
         pre_score_file = eval_file.replace('.xlsx', f'_{judge}_pre_score.xlsx')
 
-        model = build_judge(system_prompt=Precision_Evaluation_Prompt, **judge_kwargs)
+        model = build_judge(system_prompt=Precision_Evaluation_Prompt, model=judge, **judge_kwargs)
 
         if not osp.exists(pre_score_file):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
@@ -261,7 +261,7 @@ Please analyze these images and provide the answer to the question about the vid
         tmp_file = eval_file.replace('.xlsx', f'_{judge}_recall_score_tmp.pkl')
         recall_score_file = eval_file.replace('.xlsx', f'_{judge}_recall_score.xlsx')
 
-        model = build_judge(system_prompt=Recall_Evaluation_Prompt, **judge_kwargs)
+        model = build_judge(system_prompt=Recall_Evaluation_Prompt, model=judge, **judge_kwargs)
 
         if not osp.exists(recall_score_file):
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
