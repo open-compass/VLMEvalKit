@@ -1526,7 +1526,7 @@ class VisuLogic(ImageMCQDataset):
             accuracy_scores = VisuLogic_acc(eval_file)
         combine_score = {**accuracy_scores,}
         combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = storage.replace('.xlsx', '_acc.csv')
         dump(combine_score, score_pth)
         return combine_score
 

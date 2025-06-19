@@ -75,7 +75,23 @@ dataset_levels = {
     'spatial': [
         ('LEGO_circular', 'acc_all.csv'), ('BLINK_circular', 'acc_all.csv'), ('MMSIBench_circular', 'acc_all.csv'),
         ('Spatial457', 'score.json'), ('3DSRBench', 'acc_all.csv')
-    ]
+    ],
+    'ESOV_GA': [
+        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_64frame', 'summary.json'),
+        ('MMStar', 'acc.csv'), ('RealWorldQA', 'acc.csv')
+    ],
+    'ESOV_GO': [
+        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_16frame', 'summary.json'),
+        ('MMStar', 'acc.csv'), ('RealWorldQA', 'acc.csv')
+    ],
+    'ESOV_R': [
+        ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('MathVision', 'score.csv'), ('MMMU_DEV_VAL', 'acc.csv'),
+        ('LogicVista', 'score.csv'), ('VisuLogic', 'acc.csv')
+    ],
+    'ESOV_I': [
+        ('CCOCR', 'acc.csv'), ('AI2D_TEST', 'acc.csv'), ('SEEDBench2_Plus', 'acc.csv'),
+        ('CharXiv_reasoning_val', 'acc.csv'), ('CharXiv_descriptive_val', 'acc.csv'),
+    ],
 }
 
 dataset_levels['l12'] = dataset_levels['l1'] + dataset_levels['l2']
