@@ -562,8 +562,11 @@ def cli():
 
     if args[0].lower() == 'dlist':
         assert len(args) >= 2
-        lst = DLIST(args[1])
-        print(' '.join(lst))
+        res = []
+        for arg in args[1:]:
+            lst = DLIST(arg)
+            res.extend(lst)
+        print(' '.join(res))
     elif args[0].lower() == 'mlist':
         assert len(args) >= 2
         size = 'all'
