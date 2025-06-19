@@ -245,7 +245,15 @@ class InternVLChat(BaseModel):
 
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        tgt_path = self.dump_image(line, dataset)
+        # if dataset is not ChartMimic, dump image (assert "image_path" in line)
+        if not listinstr(['ChartMimic'], dataset):
+            tgt_path = self.dump_image(line, dataset)
+        else:
+            input_figure_path_rel = line["input_figure"]
+            ROOT = LMUDataRoot()
+            img_root = os.path.join(ROOT, 'images', 'ChartMimic')
+            input_figure_path = os.path.join(img_root, input_figure_path_rel)
+            tgt_path = [input_figure_path]
 
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
@@ -268,7 +276,7 @@ class InternVLChat(BaseModel):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
-                            'WeMath', 'LogicVista', 'MM-IFEval'], dataset):
+                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)

@@ -490,6 +490,7 @@ class ImageProcessor:
 
         for im, pth in zip(images, frame_paths):
             im.save(pth)
+
         return frame_paths
 
     def get_video_frames(self, vid_path, max_fps=1, num_frames=8):
@@ -505,6 +506,7 @@ class ImageProcessor:
 
         images = [vid[i].asnumpy() for i in indices]
         images = [Image.fromarray(arr) for arr in images]
+        print(f"for this video, video duration is {len(vid)/fps}s, get {len(images)} frames for inference")
 
         return images
 

@@ -22,6 +22,8 @@ class GeminiWrapper(BaseAPI):
                  project_id='vlmeval',
                  thinking_budget: int = None,  # range from 0 to 24576
                  # see https://ai.google.dev/gemini-api/docs/thinking
+                 fps: int = 1,
+                 media_resolution: str = None,
                  **kwargs):
 
         self.model = model
@@ -29,6 +31,12 @@ class GeminiWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.thinking_budget = thinking_budget
+        self.fps = fps
+        # for image, high and medium resolution is 258 tokens per image [default], low resolution is 66 tokens per image
+        # for video, not support high resolution, medium resolution is 258 tokens per image [default], low resolution is 66 tokens per image  # noqa: E501
+        self.media_resolution = media_resolution
+        if self.media_resolution:
+            assert self.media_resolution in ['low', 'medium', 'high']
         if key is None:
             key = os.environ.get('GOOGLE_API_KEY', None)
         # Try to load backend from environment variable
@@ -42,11 +50,17 @@ class GeminiWrapper(BaseAPI):
             assert key is not None  # Vertex does not require API Key
             try:
                 from google import genai
+                from google.genai import types
             except ImportError as e:
                 raise ImportError(
                     "Could not import 'google.genai'. Please install it with:\n"
                     "    pip install --upgrade google-genai"
                 ) from e
+            self.media_resolution_dict = {
+                'low': types.MediaResolution.MEDIA_RESOLUTION_LOW,
+                'medium': types.MediaResolution.MEDIA_RESOLUTION_MEDIUM,
+                'high': types.MediaResolution.MEDIA_RESOLUTION_HIGH
+            }
             self.genai = genai
             self.client = genai.Client(api_key=key)
 
@@ -58,14 +72,43 @@ class GeminiWrapper(BaseAPI):
             proxy_set(proxy)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
+    def upload_video_genai(self, video_path):
+        from google import genai
+        from google.genai import types
+        myfile = self.client.files.upload(file=video_path)
+
+        video_part = types.Part.from_uri(
+            file_uri=myfile.uri,
+            mime_type="video/mp4"
+        )
+
+        video_part.video_metadata = types.VideoMetadata(fps=self.fps)
+
+        while True:
+            myfile = self.client.files.get(name=myfile.name)
+            if myfile.state == "ACTIVE":
+                break
+            time.sleep(2)
+
+        return video_part
+
     def build_msgs_genai(self, inputs):
-        messages = [] if self.system_prompt is None else [self.system_prompt]
+        video_in_msg = False
+        video_parts = []
+        text_and_images = [] if self.system_prompt is None else [self.system_prompt]
+
         for inp in inputs:
             if inp['type'] == 'text':
-                messages.append(inp['value'])
+                text_and_images.append(inp['value'])
             elif inp['type'] == 'image':
-                messages.append(Image.open(inp['value']))
-        return messages
+                text_and_images.append(Image.open(inp['value']))
+            elif inp['type'] == 'video':
+                video_file = self.upload_video_genai(inp['value'])
+                video_parts.append(video_file)
+                video_in_msg = True
+
+        messages = video_parts + text_and_images
+        return messages, video_in_msg
 
     def build_msgs_vertex(self, inputs):
         from vertexai.generative_models import Part, Image
@@ -82,13 +125,18 @@ class GeminiWrapper(BaseAPI):
             from google.genai import types
             assert isinstance(inputs, list)
             model = self.model
-            messages = self.build_msgs_genai(inputs)
+            messages, video_in_msg = self.build_msgs_genai(inputs)
 
             # Configure generation parameters
             config_args = {
                 "temperature": self.temperature,
                 "max_output_tokens": self.max_tokens
             }
+            # set resolution for vision input
+            if self.media_resolution:
+                if video_in_msg:
+                    assert self.media_resolution != 'high', "For video input, only support medium and low resolution"
+                config_args["media_resolution"] = self.media_resolution_dict[self.media_resolution]
 
             # If thinking_budget is specified, add thinking_config
             # By default, Gemini 2.5 Pro will automatically select
@@ -133,6 +181,7 @@ class GeminiWrapper(BaseAPI):
 
 
 class Gemini(GeminiWrapper):
+    VIDEO_LLM = True
 
     def generate(self, message, dataset=None):
         return super(Gemini, self).generate(message)
