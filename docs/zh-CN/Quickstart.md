@@ -30,6 +30,8 @@ pip install -e .
   OPENAI_API_BASE=
   # StepAI API
   STEPAI_API_KEY=
+  # AI/ML API
+  AIML_API_KEY=
   # REKA API
   REKA_API_KEY=
   # GLMV API

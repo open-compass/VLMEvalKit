@@ -31,6 +31,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   OPENAI_API_BASE=
   # StepAI API
   STEPAI_API_KEY=
+  # AI/ML API
+  AIML_API_KEY=
   # REKA API
   REKA_API_KEY=
   # GLMV API
