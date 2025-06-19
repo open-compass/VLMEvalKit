@@ -2,20 +2,24 @@ from collections import defaultdict
 import json
 import sys
 
+
 def load_data(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
+
 def calculate_metrics(data_pre, data_recall):
-    total_stats = defaultdict(lambda: {"precision_sum": 0, "precision_count": 0, 
-                                      "recall_sum": 0, "recall_count": 0,
-                                      "efficiency_sum": 0, "efficiency_count": 0})
-    
+    total_stats = defaultdict(lambda: {
+        "precision_sum": 0, "precision_count": 0,
+        "recall_sum": 0, "recall_count": 0,
+        "efficiency_sum": 0, "efficiency_count": 0
+    })
+
     for item in data_pre:
         for metric in ["Video", "logic", "overall"]:
             precision = item.get(f"{metric}_precision", '')
 
-            if precision != '' and precision != None:
+            if precision and precision != '':
                 total_stats[metric]["precision_sum"] += precision
                 total_stats[metric]["precision_count"] += 1
 
@@ -23,7 +27,7 @@ def calculate_metrics(data_pre, data_recall):
         for metric in ["Video", "logic", "overall"]:
             recall = item.get(f"{metric}_recall", '')
 
-            if recall != '' and recall != None:
+            if recall and recall != '':
                 total_stats[metric]["recall_sum"] += recall
                 total_stats[metric]["recall_count"] += 1
 
@@ -42,6 +46,7 @@ def calculate_metrics(data_pre, data_recall):
         "overall_metrics": overall_metrics
     }
 
+
 def format_metrics_results(results):
     def format_dict(d):
         return {k: f"{v:.3f}" if isinstance(v, (int, float)) else v for k, v in d.items()}
@@ -49,6 +54,7 @@ def format_metrics_results(results):
     return {
         "Overall Metrics": {metric: format_dict(stats) for metric, stats in results["overall_metrics"].items()}
     }
+
 
 def print_results(formatted_results, txt_file):
     mapping = {"Video": "Perception", "logic": "Reasoning", "overall": "Overall"}
@@ -60,15 +66,16 @@ def print_results(formatted_results, txt_file):
             print(f"    {key}: {value}")
 
         mapping = {"Video": "Perception", "logic": "Reasoning", "overall": "Overall"}
-    
+
     with open(txt_file, 'w') as file:
         file.write("===== Metrics Summary =====\n")
         file.write("Overall Metrics:\n")
-        
+
         for metric, stats in formatted_results["Overall Metrics"].items():
             file.write(f"  {mapping[metric]}:\n")
             for key, value in stats.items():
                 file.write(f"    {key}: {value}\n")
+
 
 def calu_pre_recall(pre_file, recall_file, txt_file):
     # Load and process data
@@ -77,6 +84,6 @@ def calu_pre_recall(pre_file, recall_file, txt_file):
 
     results = calculate_metrics(data_pre, data_recall)
     formatted_results = format_metrics_results(results)
-    
+
     # Print results
     print_results(formatted_results, txt_file)

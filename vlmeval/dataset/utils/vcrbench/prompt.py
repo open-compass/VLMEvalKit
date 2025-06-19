@@ -1,3 +1,4 @@
+# flake8: noqa
 Recall_Evaluation_Prompt = """You are an expert system for verifying solutions to video-based problems. Your task is to match the ground truth middle steps with the provided solution.
 
 INPUT FORMAT:
@@ -26,7 +27,7 @@ Step Types:
    - No inferences or assumptions
    - Contains event time
 
-3. Background Review Steps: 
+3. Background Review Steps:
    - Repetition or review of the problem
    - Not directly related to solving the problem.
 
@@ -69,7 +70,7 @@ Convert the unstructured solution into distinct reasoning steps while:
    - No inferences or assumptions
    - Contains event time
 
-3. Background Review Steps: 
+3. Background Review Steps:
    - Repetition or review of the problem
    - Not directly related to solving the problem.
 
@@ -96,7 +97,7 @@ For Background review:
 If Step:
 - Premises must not contradict any ground truth or correct answer
 - Logic is valid
-- Conclusion must not contradict any ground truth 
+- Conclusion must not contradict any ground truth
 - Conclusion must support or be neutral to correct answer
 - Helpful in solving the problem, non-redundant steps
 this Step be viewed as matched.
@@ -126,27 +127,27 @@ Here is the problem, and the solution that needs to be reformatted to steps:
 
 """
 
-Answer_Extraction_Prompt_part1 = """You are an AI assistant who will help me to extract an answer of a question. You are provided with a question and a response, and you need to find the final answer of the question. 
+Answer_Extraction_Prompt_part1 = """You are an AI assistant who will help me to extract an answer of a question. You are provided with a question and a response, and you need to find the final answer of the question.
 
 Extract Rule:
 [Multiple choice question]
-1. The answer could be answering the option letter or the value. You should directly output the choice letter of the answer. 
+1. The answer could be answering the option letter or the value. You should directly output the choice letter of the answer.
 2. You should output a single uppercase character in A, B, C, D, E, F, G, H, I (if they are valid options), and Z.
-3. If the meaning of all options are significantly different from the final answer, output Z. 
+3. If the meaning of all options are significantly different from the final answer, output Z.
 [Non Multiple choice question]
 1. Output the final value of the answer. It could be hidden inside the last step of calculation or inference. Pay attention to what the question is asking for to extract the value of the answer.
 2. The final answer could also be a short phrase or sentence.
 3. If the answer is about a certain time period, such as from 1 minute 30 seconds to 2 minutes 30 seconds, it should be given in the format [90, 150].
 4. If the response doesn't give a final answer, output Z.
 
-Output Format: 
-Directly output the extracted answer of the response 
+Output Format:
+Directly output the extracted answer of the response
 
 Example 1:
 Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog
 Response: a cute teddy bear
 Your output: A
-Example 2: 
+Example 2:
 Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog
 Answer: Spider
 Your output: Z
@@ -158,7 +159,7 @@ Example 4:
 Question: In the diagram, $O A=15, O P=9$ and $P B=4$. Determine the equation of the line through $A$ and $B$. Explain how you got your answer.
 
 <image>
-Response: The equation of the line through $A$ and $B$ is $y = -\frac{1}{3}x + 12$. 
+Response: The equation of the line through $A$ and $B$ is $y = -\frac{1}{3}x + 12$.
 
 To find the equation of the line through $A$ and $B$, we first need to find the slope of the line. The slope of a line passing through two points $(x_1, y_1)$ and $(x_2, y_2)$ is given by the formula:
 
@@ -201,11 +202,11 @@ Answer: {response}
 Your output:
 """
 
-Answer_Scoring_Prompt_part1 = r"""You are an AI assistant who will help me to judge whether two answers are consistent. 
+Answer_Scoring_Prompt_part1 = r"""You are an AI assistant who will help me to judge whether two answers are consistent.
 
 Input Illustration:
-[Standard Answer] is the standard answer to the question 
-[Model Answer] is the answer extracted from a model's output to this question. 
+[Standard Answer] is the standard answer to the question
+[Model Answer] is the answer extracted from a model's output to this question.
 
 Task Illustration:
 Determine whether [Standard Answer] and [Model Answer] are consistent.
@@ -217,7 +218,7 @@ Consistent Criteria:
 1. The [Model Answer] and [Standard Answer] should exactly match.
 2. If the meaning is expressed in the same way, it is also considered consistent, for example, 0.5m and 50cm.
 
-Output Format: 
+Output Format:
 1. If they are consistent, output 1; if they are different, output 0.
 2. DIRECTLY output 1 or 0 without any other content.
 
@@ -227,13 +228,13 @@ Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C.
 [Standard Answer]: A
 Your output: 1
 
-Example 2: 
+Example 2:
 Question: Find the value of AB. Choices: A.1;B.5;C.9;D.10
 [Model Answer]: \\boxed{5}
 [Standard Answer]: B
 Your output: 1
 
-Example 3: 
+Example 3:
 Question: Three of the following four slides are from the same presentation, but one is from a different one. Please identify the outlier: \n\n<image> <image> <image> <image>\nA. the forth image\nB. the second image\nC. the third image\nD. None of the choices provided
 [Model Answer]: \\boxed{B}
 [Standard Answer]: A
@@ -254,13 +255,16 @@ def build_Extraction_prompt(item):
     tmpl = 'Question: {question}\nAnswer: {response}\nYour output:'
     return tmpl.format(question=item['question'], response=item['prediction'])
 
+
 def build_Scoring_prompt(item):
     tmpl = 'Question: {question}\n[Model Answer]: {extract_answer}\n[Standard Answer]: {gt_answer}\nYour output:'
     return tmpl.format(question=item['question'], extract_answer=item['extracted_answer'], gt_answer=item['answer'])
 
+
 def build_Precision_prompt(item):
     tmpl = '[Problem]:{question}\n[Solution]:{solution}\n[Ground Truth Information]:{gt_annotation}'
     return tmpl.format(question=item['question'], solution=item['prediction'], gt_annotation=item['reasoning'])
+
 
 def build_Recall_prompt(item):
     tmpl = '[Problem]:{question}\n[Answer]:{answer}\n[Solution]:{solution}\n[Ground Truth Information]:{gt_annotation}'
