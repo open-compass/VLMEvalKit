@@ -1,8 +1,9 @@
 from datetime import date
+import re
 import warnings
 
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
+from .utils import DEBUG_MESSAGE, build_judge
 from ..smp import *
 import pandas as pd
 
@@ -219,8 +220,13 @@ class ImageMCQDataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
-            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+            mcq_circular_eval,
+            mcq_vanilla_eval,
+            report_acc,
+            report_acc_MMSci,
+            report_acc_MMT,
         )
+
         # assert dataset is not None
         dataset_map = {
             'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
@@ -680,7 +686,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
         return pd.DataFrame(res)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
         nproc = judge_kwargs.pop('nproc', 4)
 
         suffix = eval_file.split('.')[-1]
@@ -1073,8 +1079,8 @@ class HRBenchDataset(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
-        from .utils.multiple_choice import mcq_vanilla_eval
         from .utils.hrbench import report_acc_hrbench
+        from .utils.multiple_choice import mcq_vanilla_eval
         nproc = judge_kwargs.pop('nproc', 4)
 
         suffix = eval_file.split('.')[-1]
@@ -1259,8 +1265,8 @@ class WeMath(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.wemath import wemath_evaluate_models, wemath_accuracy
         from .utils.multiple_choice import mcq_vanilla_eval
+        from .utils.wemath import wemath_accuracy, wemath_evaluate_models
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
@@ -1496,8 +1502,8 @@ class VisuLogic(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.visulogic import VisuLogic_acc
         from .utils.multiple_choice import mcq_vanilla_eval
+        from .utils.visulogic import VisuLogic_acc
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
@@ -1574,7 +1580,7 @@ class TDBench(ImageMCQDataset):
         return acc
 
     def do_evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, mcq_vanilla_eval
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
         nproc = judge_kwargs.pop('nproc', 4)
 
         suffix = eval_file.split('.')[-1]
@@ -1669,6 +1675,137 @@ class MicroBench(ImageMCQDataset):
         return data
 
 
+class XLRSBench(ImageMCQDataset):
+
+    DATASET_URL = {'XLRS-Bench-lite': ''}
+
+    DATASET_PART_URL = {
+        'part0': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part0.tsv',
+        'part1': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part1.tsv',
+        'part2': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part2.tsv',
+        'part3': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part3.tsv',
+        'part4': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part4.tsv',
+        'part5': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part5.tsv',
+        'part6': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part6.tsv',
+        'part7': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part7.tsv',
+        'part8': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part8.tsv',
+        'part9': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part9.tsv',
+        'part10': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part10.tsv', # noqa E501
+        'part11': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part11.tsv', # noqa E501
+        'part12': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part12.tsv', # noqa E501
+        'part13': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part13.tsv', # noqa E501
+        'part14': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part14.tsv' # noqa E501
+    }
+
+    def load_data(self, dataset="XLRS-Bench-lite_VLM", repo_id="initiacms/XLRS-Bench-lite_VLM"):
+
+        dfs = []
+        for part_num in range(15):
+            part_name = f'part{part_num}'
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'XLRS-Bench-lite_{part_name}.tsv')
+            if not osp.exists(tsv_path):
+                download_file(url, filename=tsv_path)
+            local_path = tsv_path.replace('.tsv', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
+                from ..tools import LOCALIZE
+                LOCALIZE(tsv_path, local_path)
+            tsv_path = local_path
+            # 加载数据
+            df = load(tsv_path)
+            dfs.append(df)
+        # 合并所有数据
+        data = pd.concat(dfs, ignore_index=True)
+        # data = pd.read_csv('/root/LMUData/splits/xlrs_bench_lite_part0.tsv', sep='\t')
+        return data
+
+    def build_prompt(self, line):
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        prompt = question + line['multi-choice options']
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    @staticmethod
+    def extract_characters_regex(s, choices=["(A)", "(B)", "(C)", "(D)", "(E)"]):
+        if type(s) is dict:
+            s = ""
+        s = s.strip()
+        answer_prefixes = [
+            "The best answer is",
+            "The correct answer is",
+            "The answer is",
+            "The answer",
+            "The best option isThe correct option is",
+            "Best answer:Best option:",
+        ]
+        for answer_prefix in answer_prefixes:
+            s = s.replace(answer_prefix, "")
+
+        if not re.search("[ABCDE]", s):
+            return ""
+        matches = re.findall(r"\(([a-eA-E])\)", s)
+        if len(matches) == 0:
+            matches = re.findall(r"(?:^|\s)?([a-eA-E])(?:$|[\s,.])?", s)
+        if len(matches) == 0:
+            matches = re.findall(r"[a-eA-E]", s)
+        if len(matches) == 0:
+            return ""
+        else:
+            matches = set(mat.upper() for mat in matches)
+            return "".join(matches)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        task_stats = {}
+        micro_metric = {'correct': 0, 'total': 0}
+        for pair in [
+            "Complex reasoning/Anomaly Detection and Interpretation",
+            "Complex reasoning/Environmental condition reasoning",
+            "Complex reasoning/Route planning",
+            "Counting/Counting with changing detection",
+            "Counting/Counting with complex reasoning",
+            "Counting/Overall counting",
+            "Counting/Regional counting",
+            "Land use classification/Overall Land use classification",
+            "Land use classification/Regional Land use classification",
+            "Object properties/Object classification",
+            "Object properties/Object color",
+            "Object properties/Object motion state",
+            "Object spatial relationship/Object spatial relationship",
+        ]:
+            task_stats[pair] = {'correct': 0, 'total': 0}
+        for index, it in data.iterrows():
+            task = f"{it['category']}/{it['l2-category']}"
+            # if task not in task_stats:
+            #    task_stats[task] = {'correct': 0, 'total': 0}
+            task_stats[task]['total'] += 1
+            micro_metric['total'] += 1
+            pred = self.extract_characters_regex(it['prediction'])
+            if set(pred) == set(it['answer']):
+                task_stats[task]['correct'] += 1
+                micro_metric['correct'] += 1
+        accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in task_stats.items()}
+        result_df = pd.DataFrame(accuracy_dict)
+        result_df['Overall macro'] = result_df.mean(axis=1)
+        result_df['Overall micro'] = micro_metric['correct'] / micro_metric['total']
+        return result_df
+
+
 class OmniMedVQA(ImageMCQDataset):
 
     DATASET_URL = {'OmniMedVQA': ''}
@@ -1743,8 +1880,10 @@ class MSEarthMCQ(ImageMCQDataset):
             query, response, image(PIL.Image Type)
         """
         import re
+
         import pandas as pd
         from datasets import load_dataset
+
         # from PIL import Image
         from ..tools import encode_image_to_base64
 
@@ -1953,8 +2092,9 @@ class SCAM(ImageMCQDataset):
     def load_data(self, dataset):
         import base64
         import io
-        import datasets
         import random
+
+        import datasets
         random.seed(42)
 
         # Function to convert dataset to VLMEvalKit format
@@ -2136,7 +2276,11 @@ class AffordanceDataset(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
-            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+            mcq_circular_eval,
+            mcq_vanilla_eval,
+            report_acc,
+            report_acc_MMSci,
+            report_acc_MMT,
         )
 
         suffix = eval_file.split('.')[-1]
