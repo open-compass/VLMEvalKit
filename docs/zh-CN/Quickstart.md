@@ -51,6 +51,38 @@ pip install -e .
   ```
 
 - 如果需要使用 API 在对应键值空白处填写上你的密钥。这些 API 密钥将在进行推理和评估时自动加载。
+
+## 🌐 支持的模型服务商：AI/ML API 接入
+
+VLMEvalKit 现已原生支持 [AI/ML API](https://aimlapi.com/app/?utm_source=VLMEvalKit&utm_medium=github&utm_campaign=integration) —— 一个统一的接口平台，整合了 300+ 主流模型，包括：
+
+* 🧠 OpenAI（GPT-4o, GPT-3.5）
+* 🐑 Claude 3.5 系列
+* 🔹 Gemini 1.5 Pro / Flash
+* 📚 DeepSeek，LLaMA3，Mistral 等
+
+**AI/ML API 特点：**
+
+* ⚡ 高应对请求限率
+* 💼 企业级稳定性
+* ♻ 完全兼容 OpenAI API 接口
+
+📘 [使用文档](https://docs.aimlapi.com/?utm_source=VLMEvalKit&utm_medium=github&utm_campaign=integration)
+
+🔗 [模型目录](https://aimlapi.com/models/?utm_source=VLMEvalKit&utm_medium=github&utm_campaign=integration)
+
+要启用 AI/ML API，请设置环境变量：
+
+```bash
+AIML_API_KEY=你的密钥
+```
+
+随后在 `--model` 参数中使用相应的 AIMLAPI 模型，例如：
+
+```bash
+python run.py --data MMBench_DEV_EN --model aimlapi_gpt_4o
+```
+
 ## 第1步 配置
 
 **VLM 配置**：所有 VLMs 都在 `vlmeval/config.py` 中配置。对于某些 VLMs（如 MiniGPT-4、LLaVA-v1-7B），需要额外的配置（在配置文件中配置代码 / 模型权重根目录）。在评估时，你应该使用 `vlmeval/config.py` 中 `supported_VLM` 指定的模型名称来选择 VLM。确保在开始评估之前，你可以成功使用 VLM 进行推理，使用以下命令 `vlmutil check {MODEL_NAME}`。
