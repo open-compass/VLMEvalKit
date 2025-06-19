@@ -71,41 +71,6 @@ class HunyuanWrapper(BaseAPI):
             f'Using Endpoint: {self.endpoint}; API Secret ID: {self.secret_id}; API Secret Key: {self.secret_key}'
         )
 
-    def dump_image(self, line, dataset):
-        """Dump the image(s) of the input line to the corresponding dataset folder.
-
-        Args:
-            line (line of pd.DataFrame): The raw input line.
-            dataset (str): The name of the dataset.
-
-        Returns:
-            str | list[str]: The paths of the dumped images.
-        """
-        ROOT = LMUDataRoot()
-        assert isinstance(dataset, str)
-
-        img_root = os.path.join(ROOT, 'images', img_root_map(dataset) if dataset in img_root_map(dataset) else dataset)
-        os.makedirs(img_root, exist_ok=True)
-        if 'image' in line:
-            if isinstance(line['image'], list):
-                tgt_path = []
-                assert 'image_path' in line
-                for img, im_name in zip(line['image'], line['image_path']):
-                    path = osp.join(img_root, im_name)
-                    if not read_ok(path):
-                        decode_base64_to_image_file(img, path)
-                    tgt_path.append(path)
-            else:
-                tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-                if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
-                tgt_path = [tgt_path]
-        else:
-            assert 'image_path' in line
-            tgt_path = toliststr(line['image_path'])
-
-        return tgt_path
-
     def use_custom_prompt(self, dataset_name):
         if DATASET_TYPE(dataset_name) == 'MCQ':
             return True
