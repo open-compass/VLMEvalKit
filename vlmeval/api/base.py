@@ -288,3 +288,9 @@ class BaseAPI:
             else:
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
+
+    def dump_image(self, line, dataset):
+        return self.dump_image_func(line)
+
+    def set_dump_image(self, dump_image_func):
+        self.dump_image_func = dump_image_func
