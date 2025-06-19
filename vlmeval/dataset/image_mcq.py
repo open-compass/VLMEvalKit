@@ -1003,8 +1003,9 @@ class CVBench(ImageMCQDataset):
                 "OPENAI_API_KEY is not set properly, will use exact matching for evaluation"
             )
             model = None
+        name_str = model_name if model is not None else ""
 
-        result_file = eval_file.replace(f".{suffix}", f"_{model_name}_result.pkl")
+        result_file = eval_file.replace(f".{suffix}", f"_{name_str}_result.pkl")
 
         data = load(eval_file)
         data = data.sort_values(by="index")
@@ -1031,8 +1032,8 @@ class CVBench(ImageMCQDataset):
         data = mcq_vanilla_eval(
             model, data, meta, nproc, result_file, self.dataset_name
         )
-        dump(data, eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
-        data = load(eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
+        dump(data, eval_file.replace(f".{suffix}", f"_{name_str}_result.{suffix}"))
+        data = load(eval_file.replace(f".{suffix}", f"_{name_str}_result.{suffix}"))
 
         if all(data["split"] == "2D"):  # 2D
             acc = self.report_accuracy(data)
