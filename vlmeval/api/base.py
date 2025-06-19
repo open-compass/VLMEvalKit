@@ -210,8 +210,8 @@ class BaseAPI:
             if self.system_prompt is None:
                 self.system_prompt = system_prompt
             else:
-                self.system_prompt += '\n' + system_prompt
-
+                if system_prompt not in self.system_prompt:
+                    self.system_prompt += '\n' + system_prompt
         return new_message
 
     def generate(self, message, **kwargs1):
