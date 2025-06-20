@@ -77,11 +77,11 @@ dataset_levels = {
         ('Spatial457', 'score.json'), ('3DSRBench', 'acc_all.csv')
     ],
     'ESOV_GA': [
-        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_64frame', 'summary.json'),
+        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_64frame', 'score.json'),
         ('MMStar', 'acc.csv'), ('RealWorldQA', 'acc.csv')
     ],
     'ESOV_GO': [
-        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_16frame', 'summary.json'),
+        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_16frame', 'score.json'),
         ('MMStar', 'acc.csv'), ('RealWorldQA', 'acc.csv')
     ],
     'ESOV_R': [
