@@ -247,10 +247,10 @@ api_models = {
         Gemini, model="gemini-2.0-flash-lite", temperature=0, retry=10
     ),
     "GeminiFlash2-5": partial(
-        GPT4V, model="gemini-2.5-flash", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-flash", temperature=0, retry=10, timeout=1800
     ),
     "GeminiPro2-5": partial(
-        GPT4V, model="gemini-2.5-pro", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-pro", temperature=0, retry=10, timeout=1800
     ),
     
     # Qwen-VL
@@ -343,6 +343,7 @@ api_models = {
         temperature=0,
         retry=10,
         verbose=False,
+        timeout=1800
     ),
     "Claude4_Sonnet": partial(
         Claude3V,
@@ -350,6 +351,7 @@ api_models = {
         temperature=0,
         retry=10,
         verbose=False,
+        timeout=1800
     ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
