@@ -190,6 +190,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
+    parser.add_argument('--temp', action='store_true')
     # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
     parser.add_argument('--reuse-aux', type=int, default=True, help='reuse auxiliary evaluation files')
     parser.add_argument(
