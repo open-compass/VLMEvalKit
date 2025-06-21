@@ -1732,7 +1732,6 @@ class XLRSBench(ImageMCQDataset):
         return data
 
     def build_prompt(self, line):
-
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -1800,6 +1799,144 @@ class XLRSBench(ImageMCQDataset):
         result_df = pd.DataFrame(accuracy_dict)
         result_df['Overall macro'] = result_df.mean(axis=1)
         result_df['Overall micro'] = micro_metric['correct'] / micro_metric['total']
+        return result_df
+      
+      
+class OmniEarthMCQBench(ImageMCQDataset):
+    DATASET_URL = {"OmniEarth-Bench": ""}
+
+    DATASET_PART_URL = {
+        "part0": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part0.jsonl",  # noqa E501
+        "part1": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part1.jsonl",  # noqa E501
+        "part2": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part2.jsonl",  # noqa E501
+        "part3": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part3.jsonl",  # noqa E501
+        "part4": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part4.jsonl",  # noqa E501
+        "part5": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part5.jsonl",  # noqa E501
+        "part6": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part6.jsonl",  # noqa E501
+        "part7": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part7.jsonl",  # noqa E501
+        "part8": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part8.jsonl",  # noqa E501
+        "part9": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part9.jsonl",  # noqa E501
+        "part10": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part10.jsonl",  # noqa E501
+        "part11": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part11.jsonl",  # noqa E501
+        "part12": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part12.jsonl",  # noqa E501
+        "part13": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part13.jsonl",  # noqa E501
+        "part14": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part14.jsonl",  # noqa E501
+    }
+
+    def load_data(self, dataset="OmniEarth-Bench_MCQ_VLM", repo_id="initiacms/OmniEarth-Bench_MCQ_VLM"):
+        def load_jsonl(f):
+            lines = open(f, encoding='utf-8').readlines()
+            lines = [x.strip() for x in lines]
+            if lines[-1] == '':
+                lines = lines[:-1]
+            data = [json.loads(x) for x in lines]
+            return pd.DataFrame(data)
+        dfs = []
+        for part_num in range(15):
+            part_name = f'part{part_num}'
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'OmniEarth-Bench_MCQ_{part_name}.jsonl')
+            if not osp.exists(tsv_path):
+                download_file(url, filename=tsv_path)
+            local_path = tsv_path.replace('.jsonl', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
+                fname = tsv_path
+                new_fname = local_path
+                if new_fname is None:
+                    new_fname = fname.replace('.jsonl', '_local.tsv')
+
+                base_name = osp.basename(fname)
+                dname = osp.splitext(base_name)[0]
+
+                data = load_jsonl(fname)
+                data_new = localize_df(data, dname)
+                dump(data_new, new_fname)
+                print(f'The localized version of data file is {new_fname}')
+
+            tsv_path = local_path
+            # 加载数据
+            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load(tsv_path)
+            dfs.append(df)
+        # 合并所有数据
+        data = pd.concat(dfs, ignore_index=True)
+        return data
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line["image_path"])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line["question"]
+        prompt = question + line["multi-choice options"]
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type="image", value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type="image", value=tgt_path)]
+        msgs.append(dict(type="text", value=prompt))
+
+        return msgs
+
+    @staticmethod
+    def extract_characters_regex(s, choices=["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)"]):
+        if type(s) is dict:
+            s = ""
+        s = s.strip()
+        answer_prefixes = [
+            "The best answer is",
+            "The correct answer is",
+            "The answer is",
+            "The answer",
+            "The best option isThe correct option is",
+            "Best answer:Best option:",
+        ]
+        for answer_prefix in answer_prefixes:
+            s = s.replace(answer_prefix, "")
+
+        if not re.search("[ABCDEFG]", s):
+            return ""
+        matches = re.findall(r"\(([a-gA-G])\)", s)
+        if len(matches) == 0:
+            matches = re.findall(r"(?:^|\s)?([a-gA-G])(?:$|[\s,.])?", s)
+        if len(matches) == 0:
+            matches = re.findall(r"[a-gA-G]", s)
+        if len(matches) == 0:
+            return ""
+        else:
+            matches = set(mat.upper() for mat in matches)
+            return "".join(matches)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        task_stats = {}
+        micro_metric = {"correct": 0, "total": 0}
+        for index, it in data.iterrows():
+            task = f"{it['category']}/{it['l2-category']}/{it['l3-category']}/{it['l4-category']}"
+            if task not in task_stats:
+                task_stats[task] = {"correct": 0, "total": 0}
+            task_stats[task]["total"] += 1
+            micro_metric["total"] += 1
+            pred = self.extract_characters_regex(it["prediction"])
+            if set(pred) == set(it["answer"]):
+                task_stats[task]["correct"] += 1
+                micro_metric["correct"] += 1
+        accuracy_dict = {task: [stats["correct"] / stats["total"]] for task, stats in sorted(task_stats.items())}
+        result_df = pd.DataFrame(accuracy_dict)
+        from collections import defaultdict
+
+        sphere_accs = defaultdict(list)
+        for task, acc in accuracy_dict.items():
+            sphere = task.split("/")[0]
+            assert len(acc) == 1
+            sphere_accs[sphere].append(acc[0])
+        for sphere, accs in sphere_accs.items():
+            result_df[f"Sphere macro: {sphere}"] = sum(accs) / len(accs)
+        result_df["Overall macro"] = result_df.mean(axis=1)
+        result_df["Overall micro"] = micro_metric["correct"] / micro_metric["total"]
         return result_df
 
 
