@@ -350,6 +350,8 @@ def main():
                         dist.barrier()
 
                     dataset = build_dataset(dataset_name, **dataset_kwargs)
+                    if dataset is None:
+                        raise ValueError( str((dataset_name, dataset_kwargs)) )
                     dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
                     dataset_name = dataset.dataset_name
                     if dataset is None:
