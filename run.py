@@ -341,6 +341,7 @@ def main():
                             # 更新 dataset_name 为去除切片表达式的基础名称
                             dataset_name = dataset_name[:match.start()].strip()
 
+                    dataset_kwargs = {}
                     # 添加切片参数到 kwargs
                     if test_range:
                         dataset_kwargs['test_range'] = test_range
@@ -352,6 +353,8 @@ def main():
                         dist.barrier()
 
                     dataset = build_dataset(dataset_name, **dataset_kwargs)
+                    dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
+                    dataset_name = dataset.dataset_name
                     if dataset is None:
                         raise ValueError( str((dataset_name, dataset_kwargs)) )
                     dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
