@@ -3,6 +3,7 @@
 # Copyright (c) 2014, Aishwarya Agrawal
 
 from ...smp import *
+import re
 from typing import Optional
 
 
@@ -243,6 +244,35 @@ def process_answer(answer):
     answer = process_punctuation(answer)
     answer = _process_digit_article(answer)
     return answer
+
+
+def extract_boxed_answer(text):
+    if "\\boxed{" not in text:
+        return text
+    # 方法1：正则表达式匹配（处理无嵌套或一层独立括号）
+    pattern = r'\\boxed\{((?:[^{}]|\{[^{}]*\})*)\}'
+    matches = re.findall(pattern, text, re.DOTALL)
+    if matches:
+        return matches[-1]  # 直接返回最后一个匹配的内容
+    
+    # 方法2：手动解析（处理多层嵌套括号）
+    start_idx = text.rfind('\\boxed{')
+    if start_idx != -1:
+        start_idx += len('\\boxed{')  # 移动到内容起始位置
+        brace_count = 1
+        current_idx = start_idx
+        
+        while brace_count > 0 and current_idx < len(text):
+            if text[current_idx] == '{':
+                brace_count += 1
+            elif text[current_idx] == '}':
+                brace_count -= 1
+            current_idx += 1
+        
+        if brace_count == 0:
+            return text[start_idx:current_idx - 1]  # 返回完整答案内容
+    
+    return text
 
 
 def process_line(line, method='vqa_score'):
