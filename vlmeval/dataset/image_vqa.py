@@ -429,7 +429,7 @@ class MathVision(ImageBaseDataset):
         'MathVision':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
         'MathVision_third':
-        'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
+        'https://opencompass.openxlab.space/utils/VLMEval/MathVision_third.tsv',
         'MathVision_MINI':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision_MINI.tsv'
     }
@@ -501,6 +501,8 @@ class MathVision(ImageBaseDataset):
             tgt_path = toliststr(line['image_path'])
         else:
             tgt_path = self.dump_image(line)
+        
+        question = line['question']
 
         msgs = []
         hint = """\nPlease solve the problem step by step and put your answer in one "\boxed{}". If it is amultiple choice question, only one letter ("\boxed{A}", "\boxed{B}", "\boxed{C}","\boxed{D}", or "\boxed{E}") is allowed in the "\boxed{}". For example, do NOT output"\boxed{42}" for a multiple choice question."""
