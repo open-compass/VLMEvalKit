@@ -436,7 +436,7 @@ class VLLMAPIWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
-
+        print( f"Temperature={temperature}; Max_tokens={max_tokens}"  )
         # Will send request if use Azure, dk how to use openai client for it
         if self.key is None:
             headers = {'Content-Type': 'application/json'}
