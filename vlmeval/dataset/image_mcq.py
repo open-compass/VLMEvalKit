@@ -1731,74 +1731,12 @@ class OmniMedVQA(ImageMCQDataset):
 class MSEarthMCQ(ImageMCQDataset):
 
     DATASET_URL = {
-        'MSEarthMCQ': '',
+        'MSEarthMCQ': 'http://opencompass.openxlab.space/utils/VLMEval/MSEarthMCQ.tsv',
     }
 
-    def load_data(self, dataset="MSEarthMCQ", repo_id="MSEarth/MSEarth_MCQ"):
-        """
-        将HuggingFace parquet后缀dataset生成规范的DataFrame
-        需要字段:
-            index, question, A, B, C, D, answer, image (base64)
-        现有字段:
-            query, response, image(PIL.Image Type)
-        """
-        import re
-        import pandas as pd
-        from datasets import load_dataset
-        # from PIL import Image
-        from ..tools import encode_image_to_base64
-
-        # 读取huggingface数据
-        hf_ds = load_dataset("MSEarth/MSEarth_MCQ", data_dir="data", split='train')
-
-        # 正则提取
-        caption_prefix = r"^\s*<image>\s*Caption:\s*"
-        options_prefix = r"\s*Options:\s*"
-        option_pat = r"\s*([A-D])\.\s*([^\n]+)"
-
-        records = []
-        for idx, sample in enumerate(hf_ds):
-            raw_query = sample["query"]
-            raw_answer = sample["response"]
-
-            # 解析 answer 只保留字母
-            answer_letter = raw_answer.strip()[0].upper()
-
-            # 拆分 query: 去掉 Caption 前缀 + 提取 Options
-            q_without_caption = re.sub(caption_prefix, "", raw_query, flags=re.IGNORECASE)
-            if "Options:" in q_without_caption:
-                question_part, options_part = re.split(
-                    options_prefix, q_without_caption, maxsplit=1, flags=re.IGNORECASE)
-            else:
-                # 极端情况，没有 Options 关键字
-                question_part, options_part = q_without_caption, ""
-
-            question_part = question_part.strip()
-
-            options_dict = {"A": "", "B": "", "C": "", "D": ""}
-            for m in re.finditer(option_pat, options_part):
-                letter, text = m.groups()
-                options_dict[letter] = text.strip()
-
-            img_pil = sample["image"]
-            img_base = encode_image_to_base64(img_pil)
-
-            rec = {
-                "index":    idx,  # noqa E241
-                "question": question_part,  # noqa E241
-                "A":        options_dict["A"],  # noqa E241
-                "B":        options_dict["B"],  # noqa E241
-                "C":        options_dict["C"],  # noqa E241
-                "D":        options_dict["D"],  # noqa E241
-                "answer":   answer_letter,  # noqa E241
-                "image":    img_base,  # noqa E241
-            }
-            records.append(rec)
-
-        df = pd.DataFrame(records)
-        df.reset_index(drop=True, inplace=True)
-
-        return df
+    DATASET_MD5 = {
+        'MSEarthMCQ': '4e32b487dbd241e66458251186540a6d'
+    }
 
     def build_prompt(self, line):
         '''

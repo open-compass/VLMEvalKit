@@ -505,6 +505,7 @@ class Physics_yale(ImageBaseDataset):
         'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -513,6 +514,7 @@ class Physics_yale(ImageBaseDataset):
         'optics_dataset': '39ab9028ae4a33c06f78ce8618668172',
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
+        'Physics': 'b4136f27f09339698f636111c07824e9'
     }
 
     def build_prompt(self, line):
