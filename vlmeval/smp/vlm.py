@@ -107,7 +107,8 @@ def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
     img.save(img_buffer, format=fmt)
     image_data = img_buffer.getvalue()
     ret = base64.b64encode(image_data).decode('utf-8')
-    max_size = os.environ.get('VLMEVAL_MAX_IMAGE_SIZE', None)
+    max_size = os.environ.get('VLMEVAL_MAX_IMAGE_SIZE', 1e9)
+    max_size = int(max_size)
 
     factor = 1
     while len(ret) > max_size:
