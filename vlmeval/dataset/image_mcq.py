@@ -1799,6 +1799,9 @@ class XLRSBench(ImageMCQDataset):
         result_df = pd.DataFrame(accuracy_dict)
         result_df['Overall macro'] = result_df.mean(axis=1)
         result_df['Overall micro'] = micro_metric['correct'] / micro_metric['total']
+        suffix = eval_file.split('.')[-1]
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(result_df, score_file)
         return result_df
 
 
@@ -1937,6 +1940,9 @@ class OmniEarthMCQBench(ImageMCQDataset):
             result_df[f"Sphere macro: {sphere}"] = sum(accs) / len(accs)
         result_df["Overall macro"] = result_df.mean(axis=1)
         result_df["Overall micro"] = micro_metric["correct"] / micro_metric["total"]
+        suffix = eval_file.split('.')[-1]
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(result_df, score_file)
         return result_df
 
 
