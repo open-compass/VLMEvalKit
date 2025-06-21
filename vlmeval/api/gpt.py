@@ -223,7 +223,6 @@ class OpenAIWrapper(BaseAPI):
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
-        print(response.text)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg
