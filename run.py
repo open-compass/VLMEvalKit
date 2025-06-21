@@ -352,6 +352,8 @@ def main():
                         dist.barrier()
 
                     dataset = build_dataset(dataset_name, **dataset_kwargs)
+                    dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
+                    dataset_name = dataset.dataset_name
                     if dataset is None:
                         raise ValueError( str((dataset_name, dataset_kwargs)) )
                     dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
@@ -450,11 +452,7 @@ def main():
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):
-<<<<<<< HEAD
                         judge_kwargs['model'] = 'xhs-deepseek'     
-=======
-                        judge_kwargs['model'] = 'xhs-deepseek'   
->>>>>>> e08b01f (uopdate)
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['OlympiadBench'], dataset_name):
