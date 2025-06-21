@@ -168,7 +168,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
-        'MMSci_DEV_MCQ': '71c82f81920a84526803574f719099a7',
+        'MMSci_DEV_MCQ': '865144aa866e29b251bdc7d63a735b6b',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
@@ -1800,8 +1800,8 @@ class XLRSBench(ImageMCQDataset):
         result_df['Overall macro'] = result_df.mean(axis=1)
         result_df['Overall micro'] = micro_metric['correct'] / micro_metric['total']
         return result_df
-      
-      
+
+
 class OmniEarthMCQBench(ImageMCQDataset):
     DATASET_URL = {"OmniEarth-Bench": ""}
 
