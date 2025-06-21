@@ -37,7 +37,8 @@ class ImageBaseDataset:
     DATASET_URL = {}
     DATASET_MD5 = {}
 
-    def __init__(self, dataset='MMBench', skip_noimg=True):
+    def __init__(self, dataset='MMBench', skip_noimg=True, test_range=None):
+        self.test_range = test_range
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
@@ -75,6 +76,14 @@ class ImageBaseDataset:
 
         self.data = data
         self.post_build(dataset)
+
+        try:
+            # Use eval to dynamically evaluate the slicing expression
+            sliced_data = eval(f"data{self.test_range}")
+            self.data = sliced_data
+        except Exception as e:
+            print(f"Failed to slice data with test_range={self.test_range}: {e}")
+            self.data = data
 
     def __len__(self):
         return len(self.data)
