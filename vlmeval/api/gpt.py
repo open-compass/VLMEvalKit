@@ -148,7 +148,7 @@ class OpenAIWrapper(BaseAPI):
             else:
                 self.logger.error('Unknown API Base. ')
                 raise NotImplementedError
-            if os.environ.get('BOYUE', '1'):
+            if os.environ.get('BOYUE', None):
                 self.api_base = os.environ.get('BOYUE_API_BASE')
                 self.key = os.environ.get('BOYUE_API_KEY')
 
