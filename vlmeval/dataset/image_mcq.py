@@ -1705,12 +1705,13 @@ class XLRSBench(ImageMCQDataset):
             part_name = f'part{part_num}'
             url = self.DATASET_PART_URL[part_name]
             tsv_path = osp.join(LMUDataRoot(), f'XLRS-Bench-lite_{part_name}.jsonl')
-            if not osp.exists(tsv_path):
-                download_file(url, filename=tsv_path)
             local_path = tsv_path.replace('.jsonl', '_local.tsv')
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
                 fname = tsv_path
                 new_fname = local_path
+                if not osp.exists(fname):
+                    download_file(url, filename=fname)
+
                 if new_fname is None:
                     new_fname = fname.replace('.jsonl', '_local.tsv')
 
