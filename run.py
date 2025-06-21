@@ -1,8 +1,47 @@
 import json
 import os
+import re
 import subprocess
 from functools import partial
 
+
+def encode_dataset_name(base_name, test_range=""):
+    """
+    将数据集名称和切片参数编码为一个字符串。
+    
+    :param base_name: 基础数据集名称
+    :param test_range: 切片范围字符串，如 "[::2]", "[:50]" 等
+    :return: 编码后的数据集名称
+    """
+    if not test_range:
+        return base_name
+
+    # 使用正则表达式解析 test_range
+    pattern = r'\[(\-?\d*)?:(\-?\d*)?(?::(\-?\d+))?\]'
+    match = re.match(pattern, test_range)
+    
+    if not match:
+        raise ValueError(f"Invalid test_range format: {test_range}")
+
+    start, end, step = match.groups()
+    
+    # 处理空参数
+    start = start if start is not None else ""
+    end = end if end is not None else ""
+    step = step if step is not None else ""
+
+    slice_params = []
+    if start and start != "0":
+        slice_params.append(f"from{start}")
+    if end:
+        slice_params.append(f"to{end}")
+    if step and step != "1":  # 注意：step 是字符串，需要与字符串比较
+        slice_params.append(f"step{step}")
+    
+    if slice_params:
+        return f"{base_name}_{'_'.join(slice_params)}"
+    else:
+        return base_name
 
 # GET the number of GPUs on the node without importing libs like torch
 def get_gpu_list():
@@ -271,8 +310,6 @@ def main():
                 dist.barrier()
 
             try:
-                result_file_base = f'{model_name}_{dataset_name}.xlsx'
-
                 if use_config:
                     if WORLD_SIZE > 1:
                         if RANK == 0:
@@ -287,6 +324,24 @@ def main():
                     if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
                         dataset_kwargs['model'] = model_name
 
+                    # 解析 dataset_name 中的切片表达式
+                    original_dataset_name = dataset_name
+                    test_range = None
+
+                    # 检查 dataset_name 是否包含切片表达式 (如 [start:end:step])
+                    if re.search(r'\[\s*[-?\d]*\s*:\s*[-?\d]*\s*(?::\s*[-?\d]+\s*)?\]$', dataset_name):
+                        # 提取切片表达式部分 (如 [:100])
+                        match = re.search(r'(\[\s*[-?\d]*\s*:\s*[-?\d]*\s*(?::\s*[-?\d]+\s*)?\])$', dataset_name)
+                        if match:
+                            test_range = match.group(1).strip()
+                            # 更新 dataset_name 为去除切片表达式的基础名称
+                            dataset_name = dataset_name[:match.start()].strip()
+
+                    dataset_kwargs = {}
+                    # 添加切片参数到 kwargs
+                    if test_range:
+                        dataset_kwargs['test_range'] = test_range
+
                     # If distributed, first build the dataset on the main process for doing preparation works
                     if WORLD_SIZE > 1:
                         if RANK == 0:
@@ -294,9 +349,13 @@ def main():
                         dist.barrier()
 
                     dataset = build_dataset(dataset_name, **dataset_kwargs)
+                    dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
+                    dataset_name = dataset.dataset_name
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
+                
+                result_file_base = f'{model_name}_{dataset_name}.xlsx'
 
                 # Handling Multi-Turn Dataset
                 if dataset.TYPE == 'MT':
@@ -401,7 +460,7 @@ def main():
                         if listinstr(['WeMath'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
                         elif listinstr(['VisuLogic'], dataset_name):
-                            judge_kwargs['model'] = 'exact_matching'
+                            judge_kwargs['model'] = 'gpt-4o-mini'
                         else:
                             judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):

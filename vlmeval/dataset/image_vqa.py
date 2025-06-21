@@ -23,10 +23,14 @@ class ImageVQADataset(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/VLMEval/TextVQA_VAL.tsv',
         'DocVQA_VAL':
         'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL.tsv',
+        'DocVQA_VAL_step5':
+        'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_VAL_step5.tsv',
         'DocVQA_TEST':
         'https://opencompass.openxlab.space/utils/VLMEval/DocVQA_TEST.tsv',
         'InfoVQA_VAL':
         'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL.tsv',
+        'InfoVQA_VAL_step3':
+        'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_VAL_step3.tsv',
         'InfoVQA_TEST':
         'https://opencompass.openxlab.space/utils/VLMEval/InfoVQA_TEST.tsv',
         'ChartQA_TEST':
@@ -40,8 +44,10 @@ class ImageVQADataset(ImageBaseDataset):
         'OCRVQA_TESTCORE': 'c5239fe77db8bdc1f2ad8e55e0d1fe97',
         'TextVQA_VAL': 'b233b31f551bbf4056f2f955da3a92cd',
         'DocVQA_VAL': 'd5ee77e1926ff10690d469c56b73eabf',
+        'DocVQA_VAL_step5' : '4ba8cc3a8e7ffa652606240a88d2fcf4',
         'DocVQA_TEST': '6a2f28cac26ef2d3447374e8c6f6c8e9',
         'InfoVQA_VAL': '2342e9c225222f0ef4dec545ebb126fe',
+        'InfoVQA_VAL_step3': 'cd049c8f9ad51876be94d2dbb68d4dbd',
         'InfoVQA_TEST': 'df535bf51b88dc9718252c34131a6227',
         'ChartQA_TEST': 'c902e0aa9be5582a7aad6dcf52734b42',
         'GQA_TestDev_Balanced': '99b62f22e224d9b2f32dcbe41359d1c9',
