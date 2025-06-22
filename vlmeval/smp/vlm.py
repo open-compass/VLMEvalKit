@@ -108,7 +108,17 @@ def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
     image_data = img_buffer.getvalue()
     ret = base64.b64encode(image_data).decode('utf-8')
     max_size = os.environ.get('VLMEVAL_MAX_IMAGE_SIZE', 1e9)
+    min_edge = os.environ.get('VLMEVAL_MIN_IMAGE_EDGE', 1e2)
     max_size = int(max_size)
+    min_edge = int(min_edge)
+
+    if min(img.size) < min_edge:
+        factor = min_edge / min(img.size)
+        image_new = resize_image_by_factor(img, factor)
+        img_buffer = io.BytesIO()
+        image_new.save(img_buffer, format=fmt)
+        image_data = img_buffer.getvalue()
+        ret = base64.b64encode(image_data).decode('utf-8')
 
     factor = 1
     while len(ret) > max_size:
@@ -118,6 +128,7 @@ def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
         image_new.save(img_buffer, format=fmt)
         image_data = img_buffer.getvalue()
         ret = base64.b64encode(image_data).decode('utf-8')
+
     if factor < 1:
         new_w, new_h = image_new.size
         print(
