@@ -626,6 +626,7 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
+<<<<<<< HEAD
         try_times = 0
         while try_times < 3:
             response = requests.post(
@@ -655,6 +656,8 @@ class VLLMAPIWrapper(BaseAPI):
             print( f"USING {_api_base}" )
 =======
 >>>>>>> 604d45d (update)
+=======
+>>>>>>> 85792b2 (update)
         response = requests.post(
             self._next_api_base(),
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
