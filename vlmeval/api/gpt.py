@@ -458,7 +458,6 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
-
         response = requests.post(
             self._next_api_base(),
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
