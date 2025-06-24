@@ -68,6 +68,17 @@ def build_judge(**kwargs):
             api_base=api_base, 
             key=key,
             **kwargs)
+    elif model == 'chatgpt-0125':
+        api_base = os.environ.get('XHS_OPENAI_GPT35_API_BASE', None)
+        key = os.environ.get('XHS_OPENAI_GPT35_KEY', None)
+        assert api_base is not None and key is not None, (
+            "Please set `XHS_OPENAI_GPT35_API_BASE` and `XHS_OPENAI_GPT35_KEY` in '$VLMEVALKIT/.env'")
+        model = OpenAIWrapper(
+            model_version, 
+            api_base=api_base, 
+            key=key, 
+            use_azure=True,
+            **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)
     return model
