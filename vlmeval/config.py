@@ -81,16 +81,44 @@ ungrouped = {
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
 }
 
-o1_key = 'XXX'  # noqa: E501
+o1_key = os.environ.get('O1_API_KEY', None)
+o1_base = os.environ.get('O1_API_BASE', None)
 o1_apis = {
     'o1': partial(
         GPT4V,
         model="o1-2024-12-17",
         key=o1_key,
-        api_base='OFFICIAL', 
+        api_base=o1_base, 
         temperature=0,
         img_detail='high',
-        retry=10,
+        retry=3,
+        timeout=1800, 
+        max_tokens=16384,
+        verbose=False,
+
+    ),
+    'o3': partial(
+        GPT4V, 
+        model="o3-2025-04-16",
+        key=o1_key,
+        api_base=o1_base, 
+        temperature=0,
+        img_detail='high',
+        retry=3,
+        timeout=1800, 
+        max_tokens=16384, 
+        verbose=False,
+    ),
+    'o4-mini': partial(
+        GPT4V, 
+        model="o4-mini-2025-04-16",
+        key=o1_key,
+        api_base=o1_base, 
+        temperature=0,
+        img_detail='high',
+        retry=3,
+        timeout=1800,
+        max_tokens=16384,
         verbose=False,
     ),
 }
