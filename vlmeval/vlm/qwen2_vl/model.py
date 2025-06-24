@@ -282,8 +282,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,
-                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus)
-            )
+                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus),
+                chat_template_config=ChatTemplateConfig(model_name='qwen2d5-vl'))
             torch.cuda.set_device(0)
             self.device = 'cuda'
         else:

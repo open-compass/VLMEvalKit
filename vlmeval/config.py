@@ -1197,6 +1197,7 @@ qwen2vl_series = {
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
+        use_lmdeploy=True
     ),
     "MiMo-VL-7B-RL": partial(
         Qwen2VLChat,
@@ -1204,6 +1205,7 @@ qwen2vl_series = {
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
+        use_lmdeploy=True
     ),
     "Qwen2.5-VL-72B-Instruct-ForVideo": partial(
         Qwen2VLChat,
