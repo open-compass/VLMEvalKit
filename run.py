@@ -191,7 +191,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
     # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
-    parser.add_argument('--reuse-aux', type=bool, default=True, help='reuse auxiliary evaluation files')
+    parser.add_argument('--reuse-aux', type=int, default=True, help='reuse auxiliary evaluation files')
     parser.add_argument(
         '--use-vllm', action='store_true', help='use vllm to generate, the flag is only supported in Llama4 for now')
 
@@ -264,6 +264,7 @@ def main():
 
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
+        print(args.reuse_aux)
 
         for _, dataset_name in enumerate(args.data):
             if WORLD_SIZE > 1:
