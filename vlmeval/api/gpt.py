@@ -111,8 +111,7 @@ class OpenAIWrapper(BaseAPI):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
-        self.o1_model = 'o1' in model or 'o3' in model
-
+        self.o1_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if use_azure:
