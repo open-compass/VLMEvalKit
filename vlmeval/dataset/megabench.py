@@ -206,12 +206,6 @@ class MEGABench(VideoBaseDataset):
             frame_number = 0
             msg = []
             base_path = osp.splitext(file_path)[0]
-            existing_frames = glob.glob(f"{base_path}_frame_*.jpg")
-            # for f in existing_frames:
-            #     try:
-            #         os.remove(f)
-            #     except:
-            #         pass
 
             frame_idx = 0
             while True:
@@ -435,7 +429,6 @@ class MEGABench(VideoBaseDataset):
         dump(eval_results, score_path)
 
         return eval_results
-    
 
     def deriv_breakdown_results(self, eval_file, **judge_kwargs):
         pass
