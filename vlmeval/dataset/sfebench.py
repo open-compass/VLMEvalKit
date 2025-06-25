@@ -49,7 +49,7 @@ def report_score(df):
 
     for group in [None, 'category']:
         if group is None:
-            res['Overall'] = [np.mean(df[df['split'] == sp]['score']) for sp in res['split']]
+            res['Overall'] = [np.mean(df[df['split'] == sp]['score']) / 9 * 100 for sp in res['split']]
         elif group not in df:
             continue
         else:
@@ -57,7 +57,7 @@ def report_score(df):
             abilities.sort()
             for ab in abilities:
                 sub_df = df[df[group] == ab]
-                res[ab] = [np.mean(sub_df[sub_df['split'] == sp]['score']) for sp in res['split']]
+                res[ab] = [np.mean(sub_df[sub_df['split'] == sp]['score']) / 9 * 100 for sp in res['split']]
     return pd.DataFrame(res)
 
 
