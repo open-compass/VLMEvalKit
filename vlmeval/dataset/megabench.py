@@ -207,11 +207,11 @@ class MEGABench(VideoBaseDataset):
             msg = []
             base_path = osp.splitext(file_path)[0]
             existing_frames = glob.glob(f"{base_path}_frame_*.jpg")
-            for f in existing_frames:
-                try:
-                    os.remove(f)
-                except:
-                    pass
+            # for f in existing_frames:
+            #     try:
+            #         os.remove(f)
+            #     except:
+            #         pass
 
             frame_idx = 0
             while True:
@@ -220,7 +220,7 @@ class MEGABench(VideoBaseDataset):
                     break
                 # Sample frames based on the dynamic sampling rate
                 if frame_number % sampling_gap == 0:
-                    frame_filename = f"{base_path}_frame_{frame_idx:04d}.jpg"
+                    frame_filename = f"{base_path}_num_frames_{num_frames}_frame_{frame_idx:04d}.jpg"
                     os.makedirs(osp.dirname(frame_filename), exist_ok=True)
                     cv2.imwrite(frame_filename, frame)
                     frame_filename = _encode_image(frame_filename)
@@ -435,3 +435,7 @@ class MEGABench(VideoBaseDataset):
         dump(eval_results, score_path)
 
         return eval_results
+    
+
+    def deriv_breakdown_results(self, eval_file, **judge_kwargs):
+        pass
