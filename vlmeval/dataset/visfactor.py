@@ -102,5 +102,8 @@ class VisFactor(ImageBaseDataset):
             accuracy[subtest] = sum(results) / len(results)
     
         accuracy['ALL'] = sum([accuracy[subtest] for subtest in accuracy]) / len([accuracy[subtest] for subtest in accuracy])
+        with open(eval_file.replace('.xlsx', '_acc.csv'), 'w') as f:
+            for key in accuracy:
+                f.write(f'{key},{accuracy[key]}\n')
         
         return accuracy
