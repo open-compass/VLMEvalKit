@@ -48,7 +48,7 @@ from .vdc import VDC
 from .vcrbench import VCRBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
-
+from .visfactor import VisFactor
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -195,7 +195,7 @@ IMAGE_DATASET = [
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench
+    OmniEarthMCQBench, VisFactor
 ]
 
 
