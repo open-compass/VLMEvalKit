@@ -75,6 +75,27 @@ dataset_levels = {
     'spatial': [
         ('LEGO_circular', 'acc_all.csv'), ('BLINK_circular', 'acc_all.csv'), ('MMSIBench_circular', 'acc_all.csv'),
         ('Spatial457', 'score.json'), ('3DSRBench', 'acc_all.csv')
+    ],
+    'ESOV_GA': [
+        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_64frame', 'score.json'),
+        ('MMStar', 'acc.csv'), ('RealWorldQA', 'acc.csv')
+    ],
+    'ESOV_GO': [
+        ('MMBench_V11', 'acc.csv'), ('MMBench_CN_V11', 'acc.csv'), ('MEGABench_core_16frame', 'score.json'),
+        ('MMStar', 'acc.csv'), ('RealWorldQA', 'acc.csv')
+    ],
+    'ESOV_R': [
+        ('MathVista_MINI', 'gpt-4-turbo_score.csv'), ('MathVision', 'score.csv'), ('MMMU_DEV_VAL', 'acc.csv'),
+        ('LogicVista', 'score.csv'), ('VisuLogic', 'acc.csv')
+    ],
+    'ESOV_I': [
+        ('CCOCR', 'acc.csv'), ('AI2D_TEST', 'acc.csv'), ('SEEDBench2_Plus', 'acc.csv'),
+        ('CharXiv_reasoning_val', 'acc.csv'), ('CharXiv_descriptive_val', 'acc.csv'),
+    ],
+    'ESOV_S': [
+        ('Physics', 'score.csv'), ('MicroVQA', 'acc.csv'), ('MSEarthMCQ', 'acc.csv'),
+        ('SFE', 'score.csv'), ('SFE-zh', 'score.csv'), ('MMSci_DEV_MCQ', 'acc.csv'),
+        ('XLRS-Bench-lite', 'acc.csv'), ('OmniEarth-Bench', 'acc.csv')
     ]
 }
 
@@ -546,8 +567,11 @@ def cli():
 
     if args[0].lower() == 'dlist':
         assert len(args) >= 2
-        lst = DLIST(args[1])
-        print(' '.join(lst))
+        res = []
+        for arg in args[1:]:
+            lst = DLIST(arg)
+            res.extend(lst)
+        print(' '.join(res))
     elif args[0].lower() == 'mlist':
         assert len(args) >= 2
         size = 'all'

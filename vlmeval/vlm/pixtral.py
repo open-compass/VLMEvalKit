@@ -24,7 +24,7 @@ class Pixtral(BaseModel):
         if os.path.exists(model_path):
             cache_path = model_path
         else:
-            if get_cache_path(model_path) is None:
+            if get_cache_path(model_path, repo_type='models') is None:
                 snapshot_download(repo_id=model_path)
             cache_path = get_cache_path(self.model_path, repo_type='models')
 

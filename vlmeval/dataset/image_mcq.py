@@ -1,4 +1,5 @@
 from datetime import date
+import re
 import warnings
 
 from .image_base import ImageBaseDataset
@@ -167,7 +168,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'WorldMedQA-V': '441e63875e30c87f5750528b57b41285',
         "VisOnlyQA-VLMEvalKit": 'cf460a31d2acb8d3a7cecd0e69298bfa',
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
-        'MMSci_DEV_MCQ': '71c82f81920a84526803574f719099a7',
+        'MMSci_DEV_MCQ': '865144aa866e29b251bdc7d63a735b6b',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
@@ -1526,7 +1527,7 @@ class VisuLogic(ImageMCQDataset):
             accuracy_scores = VisuLogic_acc(eval_file)
         combine_score = {**accuracy_scores,}
         combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = storage.replace('.xlsx', '_acc.csv')
         dump(combine_score, score_pth)
         return combine_score
 
@@ -1669,6 +1670,282 @@ class MicroBench(ImageMCQDataset):
         return data
 
 
+class XLRSBench(ImageMCQDataset):
+
+    DATASET_URL = {'XLRS-Bench-lite': ''}
+
+    DATASET_PART_URL = {
+        'part0': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part0.jsonl', # noqa E501
+        'part1': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part1.jsonl', # noqa E501
+        'part2': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part2.jsonl', # noqa E501
+        'part3': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part3.jsonl', # noqa E501
+        'part4': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part4.jsonl', # noqa E501
+        'part5': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part5.jsonl', # noqa E501
+        'part6': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part6.jsonl', # noqa E501
+        'part7': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part7.jsonl', # noqa E501
+        'part8': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part8.jsonl', # noqa E501
+        'part9': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part9.jsonl', # noqa E501
+        'part10': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part10.jsonl', # noqa E501
+        'part11': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part11.jsonl', # noqa E501
+        'part12': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part12.jsonl', # noqa E501
+        'part13': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part13.jsonl', # noqa E501
+        'part14': 'https://huggingface.co/datasets/initiacms/XLRS-Bench-lite_VLM/resolve/main/XLRS-Bench-lite_part14.jsonl' # noqa E501
+    }
+
+    def load_data(self, dataset="XLRS-Bench-lite_VLM", repo_id="initiacms/XLRS-Bench-lite_VLM"):
+        def load_jsonl(f):
+            lines = open(f, encoding='utf-8').readlines()
+            lines = [x.strip() for x in lines]
+            if lines[-1] == '':
+                lines = lines[:-1]
+            data = [json.loads(x) for x in lines]
+            return pd.DataFrame(data)
+        dfs = []
+        for part_num in range(15):
+            part_name = f'part{part_num}'
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'XLRS-Bench-lite_{part_name}.jsonl')
+            local_path = tsv_path.replace('.jsonl', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
+                fname = tsv_path
+                new_fname = local_path
+                if not osp.exists(fname):
+                    download_file(url, filename=fname)
+
+                if new_fname is None:
+                    new_fname = fname.replace('.jsonl', '_local.tsv')
+
+                base_name = osp.basename(fname)
+                dname = osp.splitext(base_name)[0]
+
+                data = load_jsonl(fname)
+                data_new = localize_df(data, dname)
+                dump(data_new, new_fname)
+                print(f'The localized version of data file is {new_fname}')
+
+            tsv_path = local_path
+            # 加载数据
+            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load(tsv_path)
+            dfs.append(df)
+        # 合并所有数据
+        data = pd.concat(dfs, ignore_index=True)
+        return data
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        prompt = question + line['multi-choice options']
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    @staticmethod
+    def extract_characters_regex(s, choices=["(A)", "(B)", "(C)", "(D)", "(E)"]):
+        if type(s) is dict:
+            s = ""
+        s = s.strip()
+        answer_prefixes = [
+            "The best answer is",
+            "The correct answer is",
+            "The answer is",
+            "The answer",
+            "The best option isThe correct option is",
+            "Best answer:Best option:",
+        ]
+        for answer_prefix in answer_prefixes:
+            s = s.replace(answer_prefix, "")
+
+        if not re.search("[ABCDE]", s):
+            return ""
+        matches = re.findall(r"\(([a-eA-E])\)", s)
+        if len(matches) == 0:
+            matches = re.findall(r"(?:^|\s)?([a-eA-E])(?:$|[\s,.])?", s)
+        if len(matches) == 0:
+            matches = re.findall(r"[a-eA-E]", s)
+        if len(matches) == 0:
+            return ""
+        else:
+            matches = set(mat.upper() for mat in matches)
+            return "".join(matches)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        task_stats = {}
+        micro_metric = {'correct': 0, 'total': 0}
+        for index, it in data.iterrows():
+            task = f"{it['category']}/{it['l2-category']}"
+            if task not in task_stats:
+                task_stats[task] = {'correct': 0, 'total': 0}
+            task_stats[task]['total'] += 1
+            micro_metric['total'] += 1
+            pred = self.extract_characters_regex(it['prediction'])
+            if set(pred) == set(it['answer']):
+                task_stats[task]['correct'] += 1
+                micro_metric['correct'] += 1
+        accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in sorted(task_stats.items())}
+        print(accuracy_dict)
+        result_df = pd.DataFrame(accuracy_dict)
+        result_df['Overall macro'] = result_df.mean(axis=1)
+        result_df['Overall micro'] = micro_metric['correct'] / micro_metric['total']
+        suffix = eval_file.split('.')[-1]
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(result_df, score_file)
+        return result_df
+
+
+class OmniEarthMCQBench(ImageMCQDataset):
+    DATASET_URL = {"OmniEarth-Bench": ""}
+
+    DATASET_PART_URL = {
+        "part0": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part0.jsonl",  # noqa E501
+        "part1": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part1.jsonl",  # noqa E501
+        "part2": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part2.jsonl",  # noqa E501
+        "part3": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part3.jsonl",  # noqa E501
+        "part4": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part4.jsonl",  # noqa E501
+        "part5": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part5.jsonl",  # noqa E501
+        "part6": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part6.jsonl",  # noqa E501
+        "part7": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part7.jsonl",  # noqa E501
+        "part8": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part8.jsonl",  # noqa E501
+        "part9": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part9.jsonl",  # noqa E501
+        "part10": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part10.jsonl",  # noqa E501
+        "part11": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part11.jsonl",  # noqa E501
+        "part12": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part12.jsonl",  # noqa E501
+        "part13": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part13.jsonl",  # noqa E501
+        "part14": "https://huggingface.co/datasets/initiacms/OmniEarth-Bench_MCQ_VLM/resolve/main/OmniEarth-Bench_MCQ_part14.jsonl",  # noqa E501
+    }
+
+    def load_data(self, dataset="OmniEarth-Bench_MCQ_VLM", repo_id="initiacms/OmniEarth-Bench_MCQ_VLM"):
+        def load_jsonl(f):
+            lines = open(f, encoding='utf-8').readlines()
+            lines = [x.strip() for x in lines]
+            if lines[-1] == '':
+                lines = lines[:-1]
+            data = [json.loads(x) for x in lines]
+            return pd.DataFrame(data)
+        dfs = []
+        for part_num in range(15):
+            part_name = f'part{part_num}'
+            url = self.DATASET_PART_URL[part_name]
+            tsv_path = osp.join(LMUDataRoot(), f'OmniEarth-Bench_MCQ_{part_name}.jsonl')
+            if not osp.exists(tsv_path):
+                download_file(url, filename=tsv_path)
+            local_path = tsv_path.replace('.jsonl', '_local.tsv')
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL'):
+                fname = tsv_path
+                new_fname = local_path
+                if new_fname is None:
+                    new_fname = fname.replace('.jsonl', '_local.tsv')
+
+                base_name = osp.basename(fname)
+                dname = osp.splitext(base_name)[0]
+
+                data = load_jsonl(fname)
+                data_new = localize_df(data, dname)
+                dump(data_new, new_fname)
+                print(f'The localized version of data file is {new_fname}')
+
+            tsv_path = local_path
+            # 加载数据
+            df = load_jsonl(tsv_path) if tsv_path.endswith('.jsonl') else load(tsv_path)
+            dfs.append(df)
+        # 合并所有数据
+        data = pd.concat(dfs, ignore_index=True)
+        return data
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line["image_path"])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line["question"]
+        prompt = question + line["multi-choice options"]
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type="image", value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type="image", value=tgt_path)]
+        msgs.append(dict(type="text", value=prompt))
+
+        return msgs
+
+    @staticmethod
+    def extract_characters_regex(s, choices=["(A)", "(B)", "(C)", "(D)", "(E)", "(F)", "(G)"]):
+        if type(s) is dict:
+            s = ""
+        s = s.strip()
+        answer_prefixes = [
+            "The best answer is",
+            "The correct answer is",
+            "The answer is",
+            "The answer",
+            "The best option isThe correct option is",
+            "Best answer:Best option:",
+        ]
+        for answer_prefix in answer_prefixes:
+            s = s.replace(answer_prefix, "")
+
+        if not re.search("[ABCDEFG]", s):
+            return ""
+        matches = re.findall(r"\(([a-gA-G])\)", s)
+        if len(matches) == 0:
+            matches = re.findall(r"(?:^|\s)?([a-gA-G])(?:$|[\s,.])?", s)
+        if len(matches) == 0:
+            matches = re.findall(r"[a-gA-G]", s)
+        if len(matches) == 0:
+            return ""
+        else:
+            matches = set(mat.upper() for mat in matches)
+            return "".join(matches)
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        task_stats = {}
+        micro_metric = {"correct": 0, "total": 0}
+        for index, it in data.iterrows():
+            task = f"{it['category']}/{it['l2-category']}/{it['l3-category']}/{it['l4-category']}"
+            if task not in task_stats:
+                task_stats[task] = {"correct": 0, "total": 0}
+            task_stats[task]["total"] += 1
+            micro_metric["total"] += 1
+            pred = self.extract_characters_regex(it["prediction"])
+            if set(pred) == set(it["answer"]):
+                task_stats[task]["correct"] += 1
+                micro_metric["correct"] += 1
+        accuracy_dict = {task: [stats["correct"] / stats["total"]] for task, stats in sorted(task_stats.items())}
+        result_df = pd.DataFrame(accuracy_dict)
+        from collections import defaultdict
+
+        sphere_accs = defaultdict(list)
+        for task, acc in accuracy_dict.items():
+            sphere = task.split("/")[0]
+            assert len(acc) == 1
+            sphere_accs[sphere].append(acc[0])
+        for sphere, accs in sphere_accs.items():
+            result_df[f"Sphere macro: {sphere}"] = sum(accs) / len(accs)
+        result_df["Overall macro"] = result_df.mean(axis=1)
+        result_df["Overall micro"] = micro_metric["correct"] / micro_metric["total"]
+        suffix = eval_file.split('.')[-1]
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(result_df, score_file)
+        return result_df
+
+
 class OmniMedVQA(ImageMCQDataset):
 
     DATASET_URL = {'OmniMedVQA': ''}
@@ -1731,74 +2008,12 @@ class OmniMedVQA(ImageMCQDataset):
 class MSEarthMCQ(ImageMCQDataset):
 
     DATASET_URL = {
-        'MSEarthMCQ': '',
+        'MSEarthMCQ': 'http://opencompass.openxlab.space/utils/VLMEval/MSEarthMCQ.tsv',
     }
 
-    def load_data(self, dataset="MSEarthMCQ", repo_id="MSEarth/MSEarth_MCQ"):
-        """
-        将HuggingFace parquet后缀dataset生成规范的DataFrame
-        需要字段:
-            index, question, A, B, C, D, answer, image (base64)
-        现有字段:
-            query, response, image(PIL.Image Type)
-        """
-        import re
-        import pandas as pd
-        from datasets import load_dataset
-        # from PIL import Image
-        from ..tools import encode_image_to_base64
-
-        # 读取huggingface数据
-        hf_ds = load_dataset("MSEarth/MSEarth_MCQ", data_dir="data", split='train')
-
-        # 正则提取
-        caption_prefix = r"^\s*<image>\s*Caption:\s*"
-        options_prefix = r"\s*Options:\s*"
-        option_pat = r"\s*([A-D])\.\s*([^\n]+)"
-
-        records = []
-        for idx, sample in enumerate(hf_ds):
-            raw_query = sample["query"]
-            raw_answer = sample["response"]
-
-            # 解析 answer 只保留字母
-            answer_letter = raw_answer.strip()[0].upper()
-
-            # 拆分 query: 去掉 Caption 前缀 + 提取 Options
-            q_without_caption = re.sub(caption_prefix, "", raw_query, flags=re.IGNORECASE)
-            if "Options:" in q_without_caption:
-                question_part, options_part = re.split(
-                    options_prefix, q_without_caption, maxsplit=1, flags=re.IGNORECASE)
-            else:
-                # 极端情况，没有 Options 关键字
-                question_part, options_part = q_without_caption, ""
-
-            question_part = question_part.strip()
-
-            options_dict = {"A": "", "B": "", "C": "", "D": ""}
-            for m in re.finditer(option_pat, options_part):
-                letter, text = m.groups()
-                options_dict[letter] = text.strip()
-
-            img_pil = sample["image"]
-            img_base = encode_image_to_base64(img_pil)
-
-            rec = {
-                "index":    idx,  # noqa E241
-                "question": question_part,  # noqa E241
-                "A":        options_dict["A"],  # noqa E241
-                "B":        options_dict["B"],  # noqa E241
-                "C":        options_dict["C"],  # noqa E241
-                "D":        options_dict["D"],  # noqa E241
-                "answer":   answer_letter,  # noqa E241
-                "image":    img_base,  # noqa E241
-            }
-            records.append(rec)
-
-        df = pd.DataFrame(records)
-        df.reset_index(drop=True, inplace=True)
-
-        return df
+    DATASET_MD5 = {
+        'MSEarthMCQ': '4e32b487dbd241e66458251186540a6d'
+    }
 
     def build_prompt(self, line):
         '''

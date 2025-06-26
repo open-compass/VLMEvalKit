@@ -296,4 +296,6 @@ class CCOCRDataset(ImageBaseDataset):
         for k, v in res.items():
             print(f"  {k.upper():<20}: {v:.4f}")
         print("="*80)
+        df = d2df(res)
+        dump(df, base_name + '_acc.csv')
         return res

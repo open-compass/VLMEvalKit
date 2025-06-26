@@ -6,7 +6,7 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
-    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset
+    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -47,7 +47,9 @@ from .megabench import MEGABench
 from .moviechat1k import MovieChat1k
 from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
 from .vdc import VDC
+from .vcrbench import VCRBench
 from .gobench import GOBenchDataset
+from .sfebench import SFE
 
 
 from .worldsense import WorldSense
@@ -194,7 +196,8 @@ IMAGE_DATASET = [
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
-    MMEReasoning, GOBenchDataset, ChartMimic, MMVMBench,
+    MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
+    OmniEarthMCQBench
 ]
 
 
@@ -206,8 +209,7 @@ VIDEO_DATASET = [
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     VideoMMLU_CAP, VideoMMLU_QA,
-    Video_Holmes,
-    CGAVCounting
+    Video_Holmes, VCRBench, CGAVCounting
 ]
 
 TEXT_DATASET = [

@@ -206,12 +206,6 @@ class MEGABench(VideoBaseDataset):
             frame_number = 0
             msg = []
             base_path = osp.splitext(file_path)[0]
-            existing_frames = glob.glob(f"{base_path}_frame_*.jpg")
-            for f in existing_frames:
-                try:
-                    os.remove(f)
-                except:
-                    pass
 
             frame_idx = 0
             while True:
@@ -220,7 +214,7 @@ class MEGABench(VideoBaseDataset):
                     break
                 # Sample frames based on the dynamic sampling rate
                 if frame_number % sampling_gap == 0:
-                    frame_filename = f"{base_path}_frame_{frame_idx:04d}.jpg"
+                    frame_filename = f"{base_path}_num_frames_{num_frames}_frame_{frame_idx:04d}.jpg"
                     os.makedirs(osp.dirname(frame_filename), exist_ok=True)
                     cv2.imwrite(frame_filename, frame)
                     frame_filename = _encode_image(frame_filename)
@@ -382,7 +376,7 @@ class MEGABench(VideoBaseDataset):
         # save the result to json
         output_path = os.path.join(os.path.dirname(eval_file), f'megabench_result_{self.subset_name}.json')
         result_path = os.path.join(os.path.dirname(eval_file), f'megabench_score_{self.subset_name}.json')
-        score_path = os.path.join(os.path.dirname(eval_file), f'megabench_score_{self.subset_name}_summary.json')
+        score_path = eval_file.replace('.xlsx','_score.json')
         if not os.path.exists(output_path) or not os.path.exists(result_path):
             for task_name, group in data.groupby('task_name'):
                 task_dict = {
@@ -435,3 +429,6 @@ class MEGABench(VideoBaseDataset):
         dump(eval_results, score_path)
 
         return eval_results
+
+    def deriv_breakdown_results(self, eval_file, **judge_kwargs):
+        pass

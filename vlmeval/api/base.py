@@ -210,8 +210,8 @@ class BaseAPI:
             if self.system_prompt is None:
                 self.system_prompt = system_prompt
             else:
-                self.system_prompt += '\n' + system_prompt
-
+                if system_prompt not in self.system_prompt:
+                    self.system_prompt += '\n' + system_prompt
         return new_message
 
     def generate(self, message, **kwargs1):
@@ -288,3 +288,9 @@ class BaseAPI:
             else:
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
+
+    def dump_image(self, line, dataset):
+        return self.dump_image_func(line)
+
+    def set_dump_image(self, dump_image_func):
+        self.dump_image_func = dump_image_func
