@@ -450,33 +450,15 @@ def main():
                             judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-<<<<<<< HEAD
-<<<<<<< HEAD
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):
-                        judge_kwargs['model'] = 'xhs-deepseek'   
-<<<<<<< HEAD
-                    elif listinstr(['MMLongBench_DOC', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
-=======
-                    elif listinstr(['MMLongBench', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
->>>>>>> 7872d02 (update long context)
-=======
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val', 'CharXiv_reasoning_val'], dataset_name):  # noqa: E501
->>>>>>> c1343e4 (update)
-=======
-                    elif listinstr(['CharXiv_reasoning_val'], dataset_name):
-                        judge_kwargs['model'] = 'xhs-deepseek'   
+                        judge_kwargs['model'] = 'xhs-deepseek'     
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
->>>>>>> 9b3f245 (uopdate)
                         judge_kwargs['model'] = 'gpt-4o-mini'
-<<<<<<< HEAD
                     elif listinstr(['OlympiadBench'], dataset_name):
                         use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
                         if use_api_judger:
                             judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
-=======
-                    elif listinstr(['MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
->>>>>>> 43b9c56 (update long context)
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['ChartMimic'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
