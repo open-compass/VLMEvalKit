@@ -260,7 +260,7 @@ class BaseAPI:
                     self.logger.error(f'An error occured during try {i}: ')
                     self.logger.error(f'{type(err)}: {err}')
             # delay before each retry
-            T = rd.random() * self.wait * 2
+            T = rd.random() * self.wait * i
             time.sleep(T)
 
         return self.fail_msg if answer in ['', None] else answer
