@@ -129,7 +129,7 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 8192,
-        timeout = 256,
+        timeout = 512,
         system_prompt=None,
     ),
     "xhs_api-16k": partial(
