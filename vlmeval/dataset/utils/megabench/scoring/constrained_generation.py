@@ -429,7 +429,13 @@ def check_constraint(response, constraint, constraint_val):
                 # Ensure that the number of lines is the same as the number in the rhyming scheme
                 if len(lines) != len(constraint_val):
                     return 0
-                last_words = [line.split()[-1] if line != "" else "" for line in lines]
+                last_words = []
+                for line in lines:
+                    if line.strip():  # Check if line has non-whitespace content
+                        words = line.split()
+                        last_words.append(words[-1] if words else "")
+                    else:
+                        last_words.append("")
 
                 # Map each rhyming scheme letter to the last word of a line
                 letter_to_words = collections.defaultdict(set)
