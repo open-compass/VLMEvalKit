@@ -532,9 +532,9 @@ def main():
                         proxy_set(eval_proxy)
 
                     # 当为 xhs-deepseek 和 gpt4o 时, 并发需要降低
-                    if judge_kwargs['xhs-deepseek']:
+                    if judge_kwargs['model'] == 'xhs-deepseek':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
-                    elif judge_kwargs['gpt-4o']:
+                    elif judge_kwargs['model'] == 'gpt-4o':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
 
                     # Perform the Evaluation
