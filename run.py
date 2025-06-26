@@ -444,19 +444,9 @@ def main():
                             judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-<<<<<<< HEAD
-<<<<<<< HEAD
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):
                         judge_kwargs['model'] = 'xhs-deepseek'   
-                    elif listinstr(['MMLongBench', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
-=======
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val', 'CharXiv_reasoning_val'], dataset_name):  # noqa: E501
->>>>>>> ccb9795 (update)
-=======
-                    elif listinstr(['CharXiv_reasoning_val'], dataset_name):
-                        judge_kwargs['model'] = 'xhs-deepseek'   
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
->>>>>>> e08b01f (uopdate)
+                    elif listinstr(['MMLongBench_DOC', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
@@ -527,6 +517,7 @@ def main():
 
                     # 当为 xhs-deepseek 和 gpt4o 时, 并发需要降低
 <<<<<<< HEAD
+<<<<<<< HEAD
                     if judge_kwargs.get('model', None) == 'xhs-deepseek':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
                     elif judge_kwargs.get('model', None) == 'gpt-4o':
@@ -537,8 +528,11 @@ def main():
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 32)
 =======
                     if judge_kwargs['xhs-deepseek']:
+=======
+                    if judge_kwargs['model'] == 'xhs-deepseek':
+>>>>>>> cdd9409 (update)
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
-                    elif judge_kwargs['gpt-4o']:
+                    elif judge_kwargs['model'] == 'gpt-4o':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
 >>>>>>> e3dc2ca (update)
 
