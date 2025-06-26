@@ -531,6 +531,12 @@ def main():
                     if eval_proxy is not None:
                         proxy_set(eval_proxy)
 
+                    # 当为 xhs-deepseek 和 gpt4o 时, 并发需要降低
+                    if judge_kwargs['xhs-deepseek']:
+                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
+                    elif judge_kwargs['gpt-4o']:
+                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
+
                     # Perform the Evaluation
                     eval_results = dataset.evaluate(result_file, **judge_kwargs)
                     # Display Evaluation Results in Terminal
