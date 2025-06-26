@@ -167,6 +167,11 @@ video_holmes_dataset = {
     'Video_Holmes_64frame': partial(Video_Holmes, dataset='Video_Holmes', nframe=64),
 }
 
+cg_av_counting_dataset = {
+    'CG-AV-Counting_32frame': partial(CGAVCounting, dataset='CG-AV-Counting', nframe=32, use_frame_time=False),
+    'CG-AV-Counting_64frame': partial(CGAVCounting, dataset='CG-AV-Counting', nframe=64, use_frame_time=False)
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
