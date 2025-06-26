@@ -45,10 +45,12 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             if response.endswith("```"):
                 response = response[:-3]
             content = json.loads(response.strip())
+            from copy import deepcopy
             if not isinstance(content, dict):
-                return failure_result
+                content = deepcopy(failure_result)
             if "score" not in content or "extract_answer" not in content:
-                return failure_result
+                content = deepcopy(failure_result)
+            content["response"] = str(response)
             return content
         except Exception as e:
             print(f"{response} {e}")
@@ -251,6 +253,9 @@ class CharXiv(ImageBaseDataset):
         data["score"] = data.apply(lambda x: processed_results[x.name]["score"], axis=1)
         data["extract_answer"] = data.apply(
             lambda x: processed_results[x.name]["extract_answer"], axis=1
+        )
+        data["response"] = data.apply(
+            lambda x: processed_results[x.name]["response"], axis=1
         )
 
         # Save results and return scores

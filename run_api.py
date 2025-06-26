@@ -311,6 +311,7 @@ def main():
                     api_nproc=args.api_nproc,
                     ignore_failed=args.ignore)
             else:
+                
                 model = infer_data_job(
                     model,
                     work_dir=pred_root,
@@ -393,8 +394,12 @@ def main():
             
             # Perform evaluation
             try:
+                if judge_kwargs['xhs-deepseek']:
+                    judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
+                elif judge_kwargs['gpt-4o']:
+                    judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
+
                 eval_results = dataset.evaluate(result_file, **judge_kwargs)
-                
                 if eval_results is not None:
                     logger.info(f'The evaluation of model {model_name} x dataset {dataset_name} has finished!')
                     logger.info('Evaluation Results:')
