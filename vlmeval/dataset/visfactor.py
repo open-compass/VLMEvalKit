@@ -87,7 +87,7 @@ class VisFactor(ImageBaseDataset):
                 data.at[index, 'pred'] = prediction.lower()
                 data.at[index, 'correct'] = (data.at[index, 'pred'] in [i.lower() for i in answer.split(',')])
             elif cid in ['CF3', 'I3', 'MA1', 'SS3', 'VZ3']:
-                data.at[index, 'pred'] = prediction
+                data.at[index, 'pred'] = prediction.replace('[', '(').replace(']', ')')
                 data.at[index, 'correct'] = (data.at[index, 'pred'] == answer)
 
         for subtest in subtests:
