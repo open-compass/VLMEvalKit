@@ -74,18 +74,23 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
     return content
 =======
             content = json.loads(response.strip())
-            from copy import deepcopy
+            
             if not isinstance(content, dict):
-                content = deepcopy(failure_result)
+                content = _content
             if "score" not in content or "extract_answer" not in content:
-                content = deepcopy(failure_result)
+                content = _content
             content["response"] = str(response)
-            return content
         except Exception as e:
+            content = _content
+            content["response"] = f"{response} {e}"
             print(f"{response} {e}")
             continue
+<<<<<<< HEAD
     return failure_result
 >>>>>>> 9b3f245 (uopdate)
+=======
+    return content
+>>>>>>> 8aede57 (update)
 
 
 def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
@@ -286,11 +291,7 @@ class CharXiv(ImageBaseDataset):
             lambda x: processed_results[x.name]["extract_answer"], axis=1
         )
         data["response"] = data.apply(
-<<<<<<< HEAD
             lambda x: processed_results[x.name].get("response", ""), axis=1
-=======
-            lambda x: processed_results[x.name]["response"], axis=1
->>>>>>> ea618af (update)
         )
 
         # Save results and return scores
