@@ -394,9 +394,9 @@ def main():
             
             # Perform evaluation
             try:
-                if judge_kwargs['xhs-deepseek']:
-                    judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
-                elif judge_kwargs['gpt-4o']:
+                if judge_kwargs.get('model', None) == 'xhs-deepseek':
+                    judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 16)
+                elif judge_kwargs.get('model', None) == 'gpt-4o':
                     judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
 
                 eval_results = dataset.evaluate(result_file, **judge_kwargs)
