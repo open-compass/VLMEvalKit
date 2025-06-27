@@ -49,7 +49,6 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 response = response[7:]
             if response.endswith("```"):
                 response = response[:-3]
-<<<<<<< HEAD
             try:
                 content = json.loads(response.strip())
             except json.JSONDecodeError as e:         
@@ -64,16 +63,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             if "score" not in content or "extract_answer" not in content:
                 content = _content
             content["response"] = str(response)
-=======
-            content = json.loads(response.strip())
-            from copy import deepcopy
-            if not isinstance(content, dict):
-                content = deepcopy(failure_result)
-            if "score" not in content or "extract_answer" not in content:
-                content = deepcopy(failure_result)
-            content["response"] = str(response)
             return content
->>>>>>> e3dc2ca (update)
         except Exception as e:
             sleep(random.random() * retry)
             content = _content
