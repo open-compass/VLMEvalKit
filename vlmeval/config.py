@@ -1437,7 +1437,8 @@ aguvis_series = {
 
 kimi_series = {
     'Kimi-VL-A3B-Thinking': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking'),
-    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct')
+    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct'),
+    'Kimi-VL-A3B-Thinking-2506': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking-2506', temperature=0.8, max_tokens=32768, extract_summary=True)
 }
 
 flash_vl = {
