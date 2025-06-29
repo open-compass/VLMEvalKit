@@ -31,6 +31,8 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   OPENAI_API_BASE=
   # StepAI API
   STEPAI_API_KEY=
+  # AI/ML API
+  AIML_API_KEY=
   # REKA API
   REKA_API_KEY=
   # GLMV API
@@ -50,6 +52,38 @@ To infer with API models (GPT-4v, Gemini-Pro-V, etc.) or use LLM APIs as the **j
   ```
 
 - Fill the blanks with your API keys (if necessary). Those API keys will be automatically loaded when doing the inference and evaluation.
+
+## 🌐 Supported Model Provider: AI/ML API Integration
+
+VLMEvalKit now includes first-class support for [AI/ML API](https://aimlapi.com/app/?utm_source=VLMEvalKit&utm_medium=github&utm_campaign=integration) — a unified provider of 300+ popular models, including:
+
+* 🧠 OpenAI (GPT-4o, GPT-3.5)
+* 🐑 Claude 3.5 Series
+* 🔹 Gemini 1.5 Pro / Flash
+* 📚 DeepSeek, LLaMA3, Mistral and more
+
+**Key Highlights of AI/ML API:**
+
+* ⚡ High rate limits
+* 💼 Enterprise-grade uptime
+* ♻ Fully OpenAI-compatible interface
+
+📘 [Documentation](https://docs.aimlapi.com/?utm_source=VLMEvalKit&utm_medium=github&utm_campaign=integration)
+
+🔗 [Explore Models](https://aimlapi.com/models/?utm_source=VLMEvalKit&utm_medium=github&utm_campaign=integration)
+
+To enable AI/ML API, set your key:
+
+```bash
+AIML_API_KEY=your_api_key
+```
+
+Then use any supported AIMLAPI model in the `--model` argument. For example:
+
+```bash
+python run.py --data MMBench_DEV_EN --model aimlapi_gpt_4o
+```
+
 ## Step 1. Configuration
 
 **VLM Configuration**: All VLMs are configured in `vlmeval/config.py`. Few legacy VLMs (like MiniGPT-4, LLaVA-v1-7B) requires additional configuration (configuring the code / model_weight root in the config file). During evaluation, you should use the model name specified in `supported_VLM` in `vlmeval/config.py` to select the VLM. Make sure you can successfully infer with the VLM before starting the evaluation with the following command `vlmutil check {MODEL_NAME}`.
