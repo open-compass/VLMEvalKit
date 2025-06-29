@@ -10,6 +10,7 @@ from .base import BaseModel
 from ..smp import *
 from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
+
 def extract_boxed_content(ans: str):
     idx = ans.rfind(r'\boxed{')
     if idx == -1:
@@ -36,18 +37,22 @@ def extract_boxed_content(ans: str):
     content = ans[content_start:i]
     return content
 
+
 def extract_summary(text: str, bot: str = "◁think▷", eot: str = "◁/think▷") -> str:
     if bot in text and eot not in text:
         return ""
     if eot in text:
-        return text[text.index(eot) + len(eot) :].strip()
+        return text[text.index(eot) + len(eot):].strip()
     return text
+
 
 class KimiVL(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path="moonshotai/Kimi-VL-A3B-Thinking", temperature=0.0, max_tokens=4096, extract_summary=False, **kwargs):
+    def __init__(
+            self, model_path="moonshotai/Kimi-VL-A3B-Thinking",
+            temperature=0.0, max_tokens=4096, extract_summary=False, **kwargs):
         assert model_path is not None
         self.model_path = model_path
         print(f'load from {self.model_path}')
@@ -93,8 +98,10 @@ class KimiVL(BaseModel):
         for item in message:
             if item['type'] == 'text':
                 if dataset in ["MMMU_DEV_VAL", "MMStar"]:
-                    item['value'] = item['value'].replace("Please select the correct answer from the options above. \n", "")
-                    item['value'] += "Answer the preceding question. The last line of your response should follow this format: 'Answer: $\\boxed{LETTER}$' (without quotes), where LETTER is one of the options. Think step by step logically, considering all relevant information before answering."
+                    item['value'] = item['value'].replace(
+                        "Please select the correct answer from the options above. \n", ""
+                    )
+                    item['value'] += "Answer the preceding question. The last line of your response should follow this format: 'Answer: $\\boxed{LETTER}$' (without quotes), where LETTER is one of the options. Think step by step logically, considering all relevant information before answering."  # noqa: E501
                 processed_message.append({
                     "type": "text",
                     "text": f"{item['value']}"
