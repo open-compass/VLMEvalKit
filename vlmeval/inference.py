@@ -225,7 +225,8 @@ def infer_data_job(
             pred = ori_pred
             if "<think>" in ori_pred and "</think>" in ori_pred:
                 think_flag = 1
-                pred = ori_pred.split("</think>")[1].strip()
+                pred = ori_pred.split("</think>")[1]
+                pred = pred.lstrip()
             predictions.append(pred)
         data['prediction'] = predictions
         if think_flag:
