@@ -227,7 +227,7 @@ class CharXiv(ImageBaseDataset):
 
         # Identify unprocessed indices
         indices = [i for i in range(len(data)) if i not in processed_results]
-        tups = [(judge_model, data.iloc[i]) for i in range(len(data))]
+        tups = [(judge_model, data.iloc[i]) for i in range(len(data)) if i not in processed_results]
 
         # Process remaining examples
         nproc = judge_kwargs.pop("nproc", 4)
