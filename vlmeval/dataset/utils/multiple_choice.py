@@ -342,7 +342,6 @@ def prefetch_answer(item):
 
 
 def extract_answer_from_item(model, item, dataset_name=None):
-    item['prediction'] = item['prediction'].strip()
     logger = get_logger('Evaluation')
     # It will return: (pred, raw, llm_time)
     choices = build_choices(item)

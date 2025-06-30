@@ -225,6 +225,12 @@ def infer_data_job(
                 think_flag = 1
                 pred = ori_pred.split("</think>")[1]
                 pred = pred.lstrip()
+            if pred.startswith("\n"):
+                pred = pred.lstrip("\n")
+                pred = pred.lstrip("\n\n")
+            if pred.startswith("\\n"):
+                pred = pred.lstrip("\\n")
+                pred = pred.lstrip("\\n\\n")
             predictions.append(pred)
         data['prediction'] = predictions
         if think_flag:
