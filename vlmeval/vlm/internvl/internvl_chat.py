@@ -245,16 +245,7 @@ class InternVLChat(BaseModel):
 
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        # if dataset is not ChartMimic, dump image (assert "image_path" in line)
-        if not listinstr(['ChartMimic'], dataset):
-            tgt_path = self.dump_image(line, dataset)
-        else:
-            input_figure_path_rel = line["input_figure"]
-            ROOT = LMUDataRoot()
-            img_root = os.path.join(ROOT, 'images', 'ChartMimic')
-            input_figure_path = os.path.join(img_root, input_figure_path_rel)
-            tgt_path = [input_figure_path]
-
+        tgt_path = self.dump_image(line, dataset)
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
             if listinstr(['MME'], dataset):
