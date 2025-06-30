@@ -270,11 +270,7 @@ class CharXiv(ImageBaseDataset):
             lambda x: processed_results[x.name]["extract_answer"], axis=1
         )
         data["response"] = data.apply(
-<<<<<<< HEAD
             lambda x: processed_results[x.name].get("response", ""), axis=1
-=======
-            lambda x: processed_results[x.name]["response"], axis=1
->>>>>>> e3dc2ca (update)
         )
 
         # Save results and return scores
