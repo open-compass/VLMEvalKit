@@ -49,8 +49,6 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 response = response[7:]
             if response.endswith("```"):
                 response = response[:-3]
-<<<<<<< HEAD
-            
             try:
                 content = json.loads(response.strip())
             except json.JSONDecodeError as e:         
@@ -72,25 +70,6 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             content["response"] = f"{response} {e}"
             continue
     return content
-=======
-            content = json.loads(response.strip())
-            
-            if not isinstance(content, dict):
-                content = _content
-            if "score" not in content or "extract_answer" not in content:
-                content = _content
-            content["response"] = str(response)
-        except Exception as e:
-            content = _content
-            content["response"] = f"{response} {e}"
-            print(f"{response} {e}")
-            continue
-<<<<<<< HEAD
-    return failure_result
->>>>>>> 9b3f245 (uopdate)
-=======
-    return content
->>>>>>> 8aede57 (update)
 
 
 def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
@@ -267,7 +246,7 @@ class CharXiv(ImageBaseDataset):
 
         # Identify unprocessed indices
         indices = [i for i in range(len(data)) if i not in processed_results]
-        tups = [(judge_model, data.iloc[i]) for i in range(len(data)) if i not in processed_results]
+        tups = [(judge_model, data.iloc[i]) for i in range(len(data)) if i in indices]
 
         # Process remaining examples
         nproc = judge_kwargs.pop("nproc", 4)
