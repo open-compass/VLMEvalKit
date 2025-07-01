@@ -3,6 +3,8 @@ import json
 from typing import Dict, List, Tuple, Any, Union
 import pandas as pd
 import warnings
+import random
+from time import sleep
 
 from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.smp import misc, file
@@ -25,7 +27,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
     failure_result = {"extract_answer": "Failed to parse response", "score": 0.0, "response": None}
     prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
 
-    retry = kwargs.get("retry", 10)
+    retry = kwargs.get("retry", 50)
     max_tokens = kwargs.get("max_tokens", 256)
     temperature = kwargs.get("temperature", 0)
     seed = kwargs.get("seed", 42)
@@ -46,17 +48,25 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 response = response[7:]
             if response.endswith("```"):
                 response = response[:-3]
-            content = json.loads(response.strip())
             
+            try:
+                content = json.loads(response.strip())
+            except json.JSONDecodeError as e:         
+                try:
+                    import ast
+                    content = ast.literal_eval(response.strip())
+                except Exception as e:
+                    raise e
+
             if not isinstance(content, dict):
                 content = _content
             if "score" not in content or "extract_answer" not in content:
                 content = _content
             content["response"] = str(response)
         except Exception as e:
+            sleep(random.random() * retry)
             content = _content
             content["response"] = f"{response} {e}"
-            print(f"{response} {e}")
             continue
     return content
 
@@ -236,11 +246,13 @@ class CharXiv(ImageBaseDataset):
 
         # Identify unprocessed indices
         indices = [i for i in range(len(data)) if i not in processed_results]
-        tups = [(judge_model, data.iloc[i]) for i in range(len(data))]
+        tups = [(judge_model, data.iloc[i]) for i in range(len(data)) if i in indices]
 
         # Process remaining examples
         nproc = judge_kwargs.pop("nproc", 4)
+        print(f"nproc: {nproc}")
         if len(indices):
+            print(f"Processing {len(indices)} examples, {len(tups)} total")
             utils.track_progress_rich(
                 auxeval,
                 tups,
