@@ -192,7 +192,7 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 16384,
-        timeout = 256,
+        timeout = 512,
         system_prompt=None,
     ),
     "xhs_api-temperature0.7": partial(
