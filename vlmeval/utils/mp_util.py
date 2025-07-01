@@ -100,11 +100,11 @@ def track_progress_rich(
                 
                 # Handle different input types
                 if isinstance(task_input, dict):
-                    future = executor.submit(func, **task_input, **kwargs)
+                    future = executor.submit(func, **task_input)
                 elif isinstance(task_input, (tuple, list)):
-                    future = executor.submit(func, *task_input, **kwargs)
+                    future = executor.submit(func, *task_input)
                 else:
-                    future = executor.submit(func, task_input, **kwargs)
+                    future = executor.submit(func, task_input)
                 
                 future_to_index[future] = original_index
             
