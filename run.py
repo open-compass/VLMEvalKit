@@ -538,7 +538,7 @@ def main():
 
                     # 当为 xhs-deepseek 和 gpt4o 时, 并发需要降低
                     if judge_kwargs.get('model', None) == 'xhs-deepseek':
-                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 16)
+                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
                     elif judge_kwargs.get('model', None) == 'gpt-4o':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
 
