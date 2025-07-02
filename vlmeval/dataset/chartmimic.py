@@ -169,8 +169,19 @@ def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
 
 
 def extract_gpt_score(resp):
-    m = re.search(r"^\s*Score:\s*(\d+)\s*/\s*100", resp, re.IGNORECASE | re.MULTILINE)
-    return int(m.group(1)) if m else 0
+    # First match: standard or markdown-styled "Score: 91/100", "Score: **91/100**", etc
+    pattern = r"^\s*Score:\s*[*_~`]*\**\s*(\d+)\s*/\s*100\s*[*_~`]*\**"
+    m = re.search(pattern, resp, re.IGNORECASE | re.MULTILINE)
+    if m:
+        return int(m.group(1))
+
+    # Fallback match: match "Score: 91", "Score: **91**", "Score: *91*", etc
+    fallback_pattern = r"Score:\s*[*_~`]*\**\s*(\d+)\s*[*_~`]*\**"
+    matches = list(re.finditer(fallback_pattern, resp, re.IGNORECASE))
+    if matches:
+        return int(matches[-1].group(1))
+
+    return 0
 
 
 def judge_one_item(item):
@@ -598,20 +609,15 @@ class ChartMimic(ImageBaseDataset):
             )
             for k, v in zip(indices, new_results):
                 ans[k] = v
-            # else:
-            #     for k, v in ans.items():
-            #         ans[k] = v
 
-            # filter out items that do not have judge_result["low_level"] and judge_result["high_level"]: failed item need rejudge
-            # infer_data_all = [item for item in infer_data_all if "judge_result" in item and "low_level" in item["judge_result"] and "high_level" in item["judge_result"]]
+        for item in infer_data_all:
+            # ans[i] is a tuple, (0 / -1, score_dict), only use score_dict
+            item["judge_result"] = ans[item["index"]][1]
+
+        # storage is a jsonl file
+        with open(storage, "w") as f:
             for item in infer_data_all:
-                # ans[i] is a tuple, (0 / -1, score_dict), only use score_dict
-                item["judge_result"] = ans[item["index"]][1]
-
-            # storage is a jsonl file
-            with open(storage, "w") as f:
-                for item in infer_data_all:
-                    f.write(json.dumps(item) + "\n")
+                f.write(json.dumps(item) + "\n")
 
         # judge finished, rm tmp dir
         os.chdir(cur_work_dir)
