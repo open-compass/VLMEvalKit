@@ -229,6 +229,7 @@ class CharXiv(ImageBaseDataset):
 
         # Return existing results if available
         if os.path.exists(result_file):
+            import pdb; pdb.set_trace()
             score = self.get_scores(result_file)
             file.dump(score, score_file)
             return score
