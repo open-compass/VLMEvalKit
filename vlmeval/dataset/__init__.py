@@ -45,12 +45,13 @@ from .CGAVCounting.cg_av_counting import CGAVCounting
 
 from .megabench import MEGABench
 from .moviechat1k import MovieChat1k
-from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
+from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .vdc import VDC
 from .vcrbench import VCRBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
+from .ost_bench import OSTDataset
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -197,7 +198,7 @@ IMAGE_DATASET = [
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench, VisFactor
+    OmniEarthMCQBench, VisFactor, OSTDataset
 ]
 
 
@@ -208,7 +209,7 @@ VIDEO_DATASET = [
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
-    VideoMMLU_CAP, VideoMMLU_QA,
+    Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting
 ]
 

@@ -130,7 +130,10 @@ class KimiVL(BaseModel):
             padding=True,
             truncation=True
         ).to(self.model.device)
-        generated_ids = self.model.generate(**inputs, max_new_tokens=self.max_tokens, temperature=self.temperature)
+        if self.temperature == 0.0:
+            generated_ids = self.model.generate(**inputs, max_new_tokens=self.max_tokens, do_sample=False)
+        else:
+            generated_ids = self.model.generate(**inputs, max_new_tokens=self.max_tokens, temperature=self.temperature)
         generated_ids_trimmed = [
             out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
         ]
