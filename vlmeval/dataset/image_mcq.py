@@ -114,6 +114,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
         'MMSIBench_circular': 'https://opencompass.openxlab.space/utils/VLMEval/MMSIBench_circular.tsv',
         'SpatialEval': 'https://opencompass.openxlab.space/utils/VLMEval/SpatialEval.tsv',
+        "StaticEmbodiedBench": "https://huggingface.co/datasets/xiaojiahao/StaticEmbodiedBench/resolve/main/StaticEmbodiedBench.tsv",  # noqa
+        "StaticEmbodiedBench_circular": "https://huggingface.co/datasets/xiaojiahao/StaticEmbodiedBench/resolve/main/StaticEmbodiedBench_circular.tsv"  # noqa
     }
 
     DATASET_MD5 = {
@@ -173,7 +175,9 @@ class ImageMCQDataset(ImageBaseDataset):
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
-        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b'
+        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b',
+        "StaticEmbodiedBench": "5c50611650ca966970180a80d49429f0",
+        "StaticEmbodiedBench_circular": "034cf398a3c7d848d966e1081e4baf68"
     }
 
     DATASET_URL.update(MMMB_URLS)
