@@ -63,6 +63,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             if "score" not in content or "extract_answer" not in content:
                 content = _content
             content["response"] = str(response)
+            return content
         except Exception as e:
             sleep(random.random() * retry)
             content = _content
@@ -229,6 +230,7 @@ class CharXiv(ImageBaseDataset):
 
         # Return existing results if available
         if os.path.exists(result_file):
+            import pdb; pdb.set_trace()
             score = self.get_scores(result_file)
             file.dump(score, score_file)
             return score
