@@ -205,7 +205,7 @@ def collect_results(static_results):
 class ImageILDataset(ImageBaseDataset):
 
     DATASET_URL = {'OST': 'https://opencompass.openxlab.space/utils/VLMEval/OST.tsv'}
-    DATASET_MD5 = {'OST': '7277be4027ec938f6fde4c39c96fcaa2'}
+    DATASET_MD5 = {'OST': 'd5d528680379cf2795a47723ce0906e2'}
 
     TYPE = 'IL'
 
