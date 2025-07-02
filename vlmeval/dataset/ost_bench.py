@@ -215,6 +215,9 @@ class ImageILDataset(ImageBaseDataset):
 
         if self.meta_only:
             tgt_path = toliststr(line['image_path'])
+            tgt_path_w_root = [osp.join(self.img_root, im) for im in tgt_path]
+            if all([osp.exists(pth) for pth in tgt_path_w_root]):
+                tgt_path = tgt_path_w_root
         else:
             tgt_path = self.dump_image(line)
         for im_path in tgt_path:
