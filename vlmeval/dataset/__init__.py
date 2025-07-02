@@ -71,6 +71,8 @@ from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
+from .static_embodied_bench import StaticEmbodiedBench
+from .static_embodied_bench_circular import StaticEmbodiedBench_circular
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -197,7 +199,7 @@ IMAGE_DATASET = [
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench, VisFactor
+    OmniEarthMCQBench, VisFactor,StaticEmbodiedBench, StaticEmbodiedBench_circular
 ]
 
 
