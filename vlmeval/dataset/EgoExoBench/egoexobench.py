@@ -18,8 +18,8 @@ class EgoExoBench_MCQ(VideoBaseDataset):
     MD5 = 'b5c3cfe5d316f1a67a4076991f16ca9c'
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='EgoExoBench_MCQ'):
-        super().__init__(dataset=dataset, nframe=64)
+    def __init__(self, dataset='EgoExoBench_MCQ', nframe=64):
+        super().__init__(dataset=dataset, nframe=nframe)
         self.frame_fps = 2
 
     @classmethod
@@ -167,10 +167,10 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
     def load_into_video_and_process(self, media, mcq_idx):
         try:
-            from moviepy import VideoFileClip, ImageSequenceClip
+            from moviepy.editor import VideoFileClip, ImageSequenceClip
         except:
             raise ImportError(
-                'MoviePy is not installed, please install it by running "pip install moviepy"'
+                'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )
         video_root = self.video_root
 
