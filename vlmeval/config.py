@@ -8,6 +8,7 @@ MiniGPT4_ROOT = None
 TransCore_ROOT = None
 Yi_ROOT = None
 OmniLMM_ROOT = None
+AIMLAPI_ROOT = None
 Mini_Gemini_ROOT = None
 VXVERSE_ROOT = None
 VideoChat2_ROOT = None
@@ -121,6 +122,239 @@ o1_apis = {
         max_tokens=16384,
         verbose=False,
     ),
+}
+
+ai_ml_api_models = {
+    # Default
+    "aimlapi": partial(
+        AIMLAPI,
+        model="gpt-4-turbo",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # OpenAI
+    "aimlapi_gpt_4o": partial(
+        AIMLAPI,
+        model="openai/gpt-4o",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_gpt_4o_mini": partial(
+        AIMLAPI,
+        model="gpt-4o-mini",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_gpt_4": partial(
+        AIMLAPI,
+        model="gpt-4",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_gpt_3_5_turbo": partial(
+        AIMLAPI,
+        model="gpt-3.5-turbo",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_gpt_3_5_turbo_instruct": partial(
+        AIMLAPI,
+        model="gpt-3.5-turbo-instruct",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_o1": partial(
+        AIMLAPI,
+        model="o1",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_o1_mini": partial(
+        AIMLAPI,
+        model="o1-mini",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_o3_mini": partial(
+        AIMLAPI,
+        model="o3-mini",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_text_embedding_3_large": partial(
+        AIMLAPI,
+        model="text-embedding-3-large",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # Meta
+    "aimlapi_llama_3_3_70b": partial(
+        AIMLAPI,
+        model="meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_llama_3_2_3b": partial(
+        AIMLAPI,
+        model="meta-llama/Llama-3.2-3B-Instruct-Turbo",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_llama_3_8b_lite": partial(
+        AIMLAPI,
+        model="meta-llama/Meta-Llama-3-8B-Instruct-Lite",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_llama_3_8b_chat_hf": partial(
+        AIMLAPI,
+        model="meta-llama/Llama-3-8b-chat-hf",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_llama_3_1_8b": partial(
+        AIMLAPI,
+        model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_llama_guard_3_8b": partial(
+        AIMLAPI,
+        model="meta-llama/Meta-Llama-Guard-3-8B",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # Google
+    "aimlapi_gemma_2_27b": partial(
+        AIMLAPI,
+        model="google/gemma-2-27b-it",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_gemini_1_5_flash": partial(
+        AIMLAPI,
+        model="google/gemini-1.5-flash",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_gemini_1_5_pro": partial(
+        AIMLAPI,
+        model="google/gemini-1.5-pro",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_textembedding_gecko": partial(
+        AIMLAPI,
+        model="textembedding-gecko-multilingual@001",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_text_multilingual_emb_002": partial(
+        AIMLAPI,
+        model="text-multilingual-embedding-002",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # Mistral
+    "aimlapi_mixtral_8x22b": partial(
+        AIMLAPI,
+        model="mistralai/Mixtral-8x22B-Instruct-v0.1",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_mistral_7b": partial(
+        AIMLAPI,
+        model="mistralai/Mistral-7B-Instruct-v0.3",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_mistral_tiny": partial(
+        AIMLAPI,
+        model="mistralai/mistral-tiny",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # Qwen
+    "aimlapi_qwen_2_5_7b": partial(
+        AIMLAPI,
+        model="Qwen/Qwen2.5-7B-Instruct-Turbo",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # Anthropic
+    "aimlapi_claude_3_haiku": partial(
+        AIMLAPI,
+        model="claude-3-haiku-20240307",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_claude_3_5_sonnet_0620": partial(
+        AIMLAPI,
+        model="claude-3-5-sonnet-20240620",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_claude_3_5_sonnet_1022": partial(
+        AIMLAPI,
+        model="claude-3-5-sonnet-20241022",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # DeepSeek
+    "aimlapi_deepseek_v3": partial(
+        AIMLAPI,
+        model="deepseek-chat",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_deepseek_r1": partial(
+        AIMLAPI,
+        model="deepseek-reasoner",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_deepseek_prover_v2": partial(
+        AIMLAPI,
+        model="deepseek/deepseek-prover-v2",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+
+    # X AI
+    "aimlapi_grok_beta": partial(
+        AIMLAPI,
+        model="x-ai/grok-beta",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_grok_3_beta": partial(
+        AIMLAPI,
+        model="x-ai/grok-3-beta",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    "aimlapi_grok_3_mini_beta": partial(
+        AIMLAPI,
+        model="x-ai/grok-3-mini-beta",
+        root=AIMLAPI_ROOT,
+        temperature=0,
+    ),
+    # You can use any other model from https://aimlapi.com/models
+    # Just copy the pattern below and insert the desired model name in place of `"***"`:
+    #
+    # "aimlapi_***": partial(
+    #     AIMLAPI,
+    #     model="***",  # Replace with model name from the model catalog
+    #     root=AIMLAPI_ROOT,
+    #     temperature=0,
+    # ),
 }
 
 api_models = {
@@ -1467,7 +1701,7 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, flash_vl, ai_ml_api_models
 ]
 
 for grp in model_groups:
