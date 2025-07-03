@@ -6,6 +6,20 @@ import portalocker
 from rich.progress import Progress
 from ..smp import load, dump
 
+from tqdm import tqdm
+
+# 保存原始的 __init__ 方法
+original_init_func = tqdm.__init__
+
+def custom_tqdm_init(self, *args, **kwargs):
+    kwargs.setdefault('ncols', 135) # 修改 tqdm 的默认进度条长度
+    # kwargs.setdefault('disable', True)
+    original_init_func(self, *args, **kwargs)
+
+# 用自定义的方法替换 tqdm 的 __init__ 方法
+tqdm.__init__ = custom_tqdm_init
+
+
 def track_progress_rich(
     func: Callable,
     tasks: Iterable,
