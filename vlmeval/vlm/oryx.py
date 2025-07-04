@@ -29,12 +29,6 @@ import transformers
 from transformers import AutoConfig
 from PIL import Image
 
-from oryx.conversation import conv_templates, SeparatorStyle
-from oryx.model.builder import load_pretrained_model
-from oryx.utils import disable_torch_init
-from oryx.mm_utils import tokenizer_image_token, get_model_name_from_path, KeywordsStoppingCriteria, process_anyres_highres_image_genli, KeywordsStoppingCriteria
-from oryx.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
-
 
 def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant.") -> Dict:
     roles = {"human": "<|im_start|>user", "gpt": "<|im_start|>assistant"}
@@ -99,9 +93,12 @@ class Oryx(BaseModel):
     def __init__(self,
                  model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
-
-        from oryx.model.builder import load_pretrained_model
-        from oryx.mm_utils import get_model_name_from_path
+        try:
+            from oryx.model.builder import load_pretrained_model
+            from oryx.mm_utils import get_model_name_from_path
+        except Exception as err:
+            logging.critical('Please install requirements on https://github.com/Oryx-mllm/Oryx before using Oryx')
+            raise err
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
@@ -138,6 +135,13 @@ class Oryx(BaseModel):
         return False
 
     def build_prompt(self, line, dataset=None):
+        try:
+            from oryx.conversation import conv_templates
+            from oryx.mm_utils import KeywordsStoppingCriteria, process_anyres_highres_image_genli
+            from oryx.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        except Exception as err:
+            logging.critical('Please install requirements on https://github.com/Oryx-mllm/Oryx before using Oryx')
+            raise err
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
