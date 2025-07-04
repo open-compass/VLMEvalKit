@@ -237,8 +237,8 @@ api_models = {
         temperature=0.7,
         retry=10,
         verbose=True,
-        max_tokens= 32768,
-        timeout = 384,
+        max_tokens= 28214,
+        timeout = 1024,
         system_prompt=None,
     ),
     "xhs-seedvl-1.5" : partial(
