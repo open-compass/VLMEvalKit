@@ -1,3 +1,4 @@
+import re
 import numpy as np
 from PIL import Image
 from transformers import AutoModelForCausalLM, AutoProcessor
@@ -10,11 +11,48 @@ from ..smp import *
 from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
+def extract_boxed_content(ans: str):
+    idx = ans.rfind(r'\boxed{')
+    if idx == -1:
+        return ans
+
+    idx += len(r'\boxed{')
+    brace_level = 1
+    content_start = idx
+    i = idx
+
+    while i < len(ans):
+        if ans[i] == '{':
+            brace_level += 1
+        elif ans[i] == '}':
+            brace_level -= 1
+            if brace_level == 0:
+                break
+        i += 1
+
+    if brace_level != 0:
+        # Unbalanced braces
+        return ans
+
+    content = ans[content_start:i]
+    return content
+
+
+def extract_summary(text: str, bot: str = "◁think▷", eot: str = "◁/think▷") -> str:
+    if bot in text and eot not in text:
+        return ""
+    if eot in text:
+        return text[text.index(eot) + len(eot):].strip()
+    return text
+
+
 class KimiVL(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path="moonshotai/Kimi-VL-A3B-Thinking", **kwargs):
+    def __init__(
+            self, model_path="moonshotai/Kimi-VL-A3B-Thinking",
+            temperature=0.0, max_tokens=4096, extract_summary=False, **kwargs):
         assert model_path is not None
         self.model_path = model_path
         print(f'load from {self.model_path}')
@@ -25,6 +63,9 @@ class KimiVL(BaseModel):
             trust_remote_code=True,
         )
         self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.extract_summary = extract_summary
 
     def encode_image(self, image_path):
         mime_type, _ = guess_type(image_path)
@@ -56,6 +97,11 @@ class KimiVL(BaseModel):
         images = []
         for item in message:
             if item['type'] == 'text':
+                if dataset in ["MMMU_DEV_VAL", "MMStar"]:
+                    item['value'] = item['value'].replace(
+                        "Please select the correct answer from the options above. \n", ""
+                    )
+                    item['value'] += "Answer the preceding question. The last line of your response should follow this format: 'Answer: $\\boxed{LETTER}$' (without quotes), where LETTER is one of the options. Think step by step logically, considering all relevant information before answering."  # noqa: E501
                 processed_message.append({
                     "type": "text",
                     "text": f"{item['value']}"
@@ -84,11 +130,15 @@ class KimiVL(BaseModel):
             padding=True,
             truncation=True
         ).to(self.model.device)
-        generated_ids = self.model.generate(**inputs, max_new_tokens=4096)
+        generated_ids = self.model.generate(**inputs, max_new_tokens=self.max_tokens, temperature=self.temperature)
         generated_ids_trimmed = [
             out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
         ]
         response = self.processor.batch_decode(
             generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )[0]
+        if self.extract_summary:
+            response = extract_summary(response)
+            if dataset in ["MMMU_DEV_VAL", "MMStar"]:
+                response = extract_boxed_content(response)
         return response
