@@ -164,10 +164,10 @@ qbench_video_dataset = {
 }
 
 video_mmlu_dataset = {
-    'VideoMMLU_CAP_16frame': partial(VideoMMLU_CAP, dataset='Video_MMLU_CAP', nframe=16),
-    'VideoMMLU_CAP_64frame': partial(VideoMMLU_CAP, dataset='Video_MMLU_CAP', nframe=64),
-    'VideoMMLU_QA_16frame': partial(VideoMMLU_QA, dataset='Video_MMLU_QA', nframe=16),
-    'VideoMMLU_QA_64frame': partial(VideoMMLU_QA, dataset='Video_MMLU_QA', nframe=64),
+    'Video_MMLU_CAP_16frame': partial(Video_MMLU_CAP, dataset='Video_MMLU_CAP', nframe=16),
+    'Video_MMLU_CAP_64frame': partial(Video_MMLU_CAP, dataset='Video_MMLU_CAP', nframe=64),
+    'Video_MMLU_QA_16frame': partial(Video_MMLU_QA, dataset='Video_MMLU_QA', nframe=16),
+    'Video_MMLU_QA_64frame': partial(Video_MMLU_QA, dataset='Video_MMLU_QA', nframe=64),
 }
 
 video_holmes_dataset = {
@@ -186,7 +186,7 @@ dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
-    cg_av_counting_dataset
+    cg_av_counting_dataset, video_mmlu_dataset
 ]
 
 for grp in dataset_groups:
