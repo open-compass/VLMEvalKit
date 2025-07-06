@@ -438,6 +438,7 @@ class MEGABench(VideoBaseDataset):
                   in the same directory, and run the script:")
         print("cd vlmeval/dataset/utils/megabench/tools")
         print("python3 derive_breakdown_results.py --input_dir your/path/to/score_files")
+        print("See detailed instructions in vlmeval/dataset/utils/megabench/README.md")
 
         return eval_results
 

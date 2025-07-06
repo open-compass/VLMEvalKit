@@ -17,13 +17,13 @@ pip install -r vlmeval/dataset/utils/megabench/requirements.txt
 ## Step-2: Get the model response and evaluation score files with VLMEvalKit
 
 ```bash
-# Core set (440 tasks)
+# Core set (440 tasks, in 16-frame setting)
 python3 run.py \
     --data MEGABench_core_16frame \
     --model Qwen2-VL-7B-Instruct \
     --work-dir your/work/dir \
 
-# Open-ended set (65 tasks)
+# Open-ended set (65 tasks, in 16-frame setting)
 python3 run.py \
     --data MEGABench_open_16frame \
     --model Qwen2-VL-7B-Instruct \
@@ -37,6 +37,7 @@ Then you can have 2 score files in the directory like:
 your/work/dir/Qwen-2-VL-7B-Instruct/T20250706_Gbf63ab2c/megabench_score_core.json
 your/work/dir/Qwen-2-VL-7B-Instruct/T20250707_Gbf63ab2c/megabench_score_open.json
 ```
+
 ## Step-3(Optional): Run MEGA-Bench scripts to obtain the breakdown analysis
 
 Move the 2 score files into the same directory, then run the script:
@@ -45,7 +46,6 @@ Move the 2 score files into the same directory, then run the script:
 # Run the metrics for the open-ended set
 cd vlmeval/dataset/utils/megabench/tools
 python3 derive_breakdown_results.py  --input_dir your/dir/to/megabench_scores
-
 ```
 
 The results in `your/dir/to/megabench_scores/analysis` are what used by [MEGA-Bench leaderboard](https://huggingface.co/spaces/TIGER-Lab/MEGA-Bench). The leaderboard can be updated by putting the files in the results directory of the leadboard's [HuggingFace space](https://huggingface.co/spaces/TIGER-Lab/MEGA-Bench/tree/main/static/eval_results/Default).
