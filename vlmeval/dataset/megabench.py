@@ -428,13 +428,16 @@ class MEGABench(VideoBaseDataset):
         }
         dump(eval_results, score_path)
         print(f"Saved accuracy results to {score_path}")
-        print("To get the breakdown results, please use the script in vlmeval/dataset/utils/megabench/tools/derive_breakdown_results.py")
+        print("To get the breakdown results, please use the script in \
+              vlmeval/dataset/utils/megabench/tools/derive_breakdown_results.py")
         if self.subset_name == "core":
-            print(f"Put the \"core\" (at {result_path}) and \"open\" (to be generated) evaluation results in the same directory, and run the script:")
+            print(f"Put the \"core\" (at {result_path}) and \"open\" (to be generated) evaluation results \
+                  in the same directory, and run the script:")
         elif self.subset_name == "open":
-            print(f"Put the \"core\" (to be generated) and \"open\" (at {result_path}) evaluation results in the same directory, and run the script:")
+            print(f"Put the \"core\" (to be generated) and \"open\" (at {result_path}) evaluation results \
+                  in the same directory, and run the script:")
         print("cd vlmeval/dataset/utils/megabench/tools")
-        print(f"python3 derive_breakdown_results.py --input_dir your/path/to/score_files")
+        print("python3 derive_breakdown_results.py --input_dir your/path/to/score_files")
 
         return eval_results
 
