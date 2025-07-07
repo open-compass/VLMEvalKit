@@ -42,6 +42,15 @@ class VisFactor(ImageBaseDataset):
             raw_value = raw_value[1:-1]
         return raw_value
 
+    def extract_last_numbers(self, s):
+        return [num for num in re.findall(r'\d+', s)]
+
+    def extract_last_uppercase_letter(s):
+        for char in reversed(self, s):
+            if char.isupper():
+                return char
+        return None
+
     def build_prompt(self, line):
         msgs = line['question'].replace('<br>', '\n')
         image_paths = self.dump_image(line)
@@ -76,28 +85,39 @@ class VisFactor(ImageBaseDataset):
             answer = str(row['answer'])
             additional = str(row['additional'])
 
-            if cid in ['CF1', 'CF2', 'MV1', 'MV2', 'MV3', 'P3', 'RL2', 'S1', 'S2', 'SS2', 'VZ1', 'VZ2'] \
-               or (cid == 'VZ3' and not additional.isdigit()):
+            if (cid in ['CF1', 'CF2', 'MV1', 'MV2', 'MV3', 'P3', 'RL2', 'S1', 'S2', 'SS2', 'VZ1', 'VZ2']) or \
+               (cid == 'VZ3' and not additional.isdigit()):
                 if prediction.lower() in ['t', 'y', '1', 'true', 'yes']:
                     data.at[index, 'pred'] = 'T'
                 elif prediction.lower() in ['f', 'n', '0', 'false', 'no']:
                     data.at[index, 'pred'] = 'F'
+                else:
+                    data.at[index, 'pred'] = ''
                 data.at[index, 'correct'] = (data.at[index, 'pred'] == answer)
             elif cid in ['CS1', 'CS2', 'CS3']:
-                data.at[index, 'pred'] = prediction.lower()
-                data.at[index, 'correct'] = (data.at[index, 'pred'] in [i.lower() for i in answer.split(',')])
+                data.at[index, 'pred'] = prediction
+                data.at[index, 'correct'] = (data.at[index, 'pred'].lower() in [i.lower() for i in answer.split(',')])
             elif cid in ['CF3', 'I3', 'MA1', 'SS3', 'VZ3']:
+                if prediction == '':
+                    prediction = str(row['prediction'])
+                if cid == 'VZ3':
+                    prediction = self.extract_last_uppercase_letter(prediction)
+                elif cid == 'CF3':
+                    prediction = self.extract_last_numbers(prediction)
+                    prediction = '' if len(prediction) < 2 else f'({prediction[-2]}, {prediction[-1]})'
+                else:
+                    prediction = self.extract_last_numbers(prediction)
+                    prediction = '' if len(prediction) < 1 else prediction[-1]
                 data.at[index, 'pred'] = prediction
                 data.at[index, 'correct'] = (data.at[index, 'pred'] == answer)
 
-        for subtest in subtests:
-            for index, row in data.iterrows():
-                cid = str(row['category_id'])
-                eid = str(row['eval_index'])
-                if eid not in accuracy[cid]:
-                    accuracy[cid][eid] = [row['correct']]
-                else:
-                    accuracy[cid][eid].append(row['correct'])
+        for index, row in data.iterrows():
+            cid = str(row['category_id'])
+            eid = str(row['eval_index'])
+            if eid not in accuracy[cid]:
+                accuracy[cid][eid] = [row['correct']]
+            else:
+                accuracy[cid][eid].append(row['correct'])
 
         for subtest in accuracy:
             for eval_index in accuracy[subtest]:
@@ -108,6 +128,8 @@ class VisFactor(ImageBaseDataset):
             accuracy[subtest] = sum(results) / len(results)
 
         accuracy['ALL'] = sum([accuracy[s] for s in accuracy]) / len([accuracy[s] for s in accuracy])
+
+        data.to_csv(eval_file.replace('.xlsx', '.csv'), index=False)
         with open(eval_file.replace('.xlsx', '_acc.csv'), 'w') as f:
             for key in accuracy:
                 f.write(f'{key},{accuracy[key]}\n')
