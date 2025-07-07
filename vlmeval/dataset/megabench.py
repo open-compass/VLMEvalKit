@@ -376,7 +376,7 @@ class MEGABench(VideoBaseDataset):
         # save the result to json
         output_path = os.path.join(os.path.dirname(eval_file), f'megabench_result_{self.subset_name}.json')
         result_path = os.path.join(os.path.dirname(eval_file), f'megabench_score_{self.subset_name}.json')
-        score_path = eval_file.replace('.xlsx','_score.json')
+        score_path = eval_file.replace('.xlsx','_acc_{self.subset_name}.json')
         if not os.path.exists(output_path) or not os.path.exists(result_path):
             for task_name, group in data.groupby('task_name'):
                 task_dict = {
@@ -427,6 +427,18 @@ class MEGABench(VideoBaseDataset):
             }
         }
         dump(eval_results, score_path)
+        print(f"Saved accuracy results to {score_path}")
+        print("To get the breakdown results, please use the script in \
+              vlmeval/dataset/utils/megabench/tools/derive_breakdown_results.py")
+        if self.subset_name == "core":
+            print(f"Put the \"core\" (at {result_path}) and \"open\" (to be generated) evaluation results \
+                  in the same directory, and run the script:")
+        elif self.subset_name == "open":
+            print(f"Put the \"core\" (to be generated) and \"open\" (at {result_path}) evaluation results \
+                  in the same directory, and run the script:")
+        print("cd vlmeval/dataset/utils/megabench/tools")
+        print("python3 derive_breakdown_results.py --input_dir your/path/to/score_files")
+        print("See detailed instructions in vlmeval/dataset/utils/megabench/README.md")
 
         return eval_results
 
