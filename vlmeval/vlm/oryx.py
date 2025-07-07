@@ -10,35 +10,37 @@ import os
 
 from transformers import CLIPImageProcessor
 
-os.environ['LOWRES_RESIZE']="384x32"
-os.environ['HIGHRES_BASE']="0x32"
-os.environ['MAXRES']="1536"
-os.environ['MINRES']="0"
-os.environ['SIMPLE_ARCH']="1"
-os.environ['PAD2STRIDE']="1"
-os.environ['REGIONAL_POOL']='2x'
-os.environ['FORCE_NO_DOWNSAMPLE']="1"
+os.environ['LOWRES_RESIZE'] = "384x32"
+os.environ['HIGHRES_BASE'] = "0x32"
+os.environ['MAXRES'] = "1536"
+os.environ['MINRES'] = "0"
+os.environ['SIMPLE_ARCH'] = "1"
+os.environ['PAD2STRIDE'] = "1"
+os.environ['REGIONAL_POOL'] = '2x'
+os.environ['FORCE_NO_DOWNSAMPLE'] = "1"
 
 import re
 import argparse
-import torch
 import math
 import numpy as np
 from typing import Dict, Optional, Sequence, List
 import transformers
 from transformers import AutoConfig
-from PIL import Image
 
 
-def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant.") -> Dict:
+def preprocess_qwen(
+    sources, tokenizer: transformers.PreTrainedTokenizer,
+    has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant."
+) -> Dict:
+
     roles = {"human": "<|im_start|>user", "gpt": "<|im_start|>assistant"}
 
     im_start = tokenizer("<|im_start|>").input_ids[0]
     im_end = tokenizer("<|im_end|>").input_ids[0]
     nl_tokens = tokenizer("\n").input_ids
     _system = tokenizer("system").input_ids + nl_tokens
-    _user = tokenizer("user").input_ids + nl_tokens
-    _assistant = tokenizer("assistant").input_ids + nl_tokens
+    # _user = tokenizer("user").input_ids + nl_tokens
+    # _assistant = tokenizer("assistant").input_ids + nl_tokens
 
     # Apply prompt templates
     input_ids, targets = [], []
@@ -57,23 +59,23 @@ def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_im
         if has_image and sentence["value"] is not None and "<image>" in sentence["value"]:
             num_image = len(re.findall(DEFAULT_IMAGE_TOKEN, sentence["value"]))
             texts = sentence["value"].split('<image>')
-            _input_id = tokenizer(role).input_ids + nl_tokens 
+            _input_id = tokenizer(role).input_ids + nl_tokens
             for i,text in enumerate(texts):
-                _input_id += tokenizer(text).input_ids 
-                if i<len(texts)-1:
+                _input_id += tokenizer(text).input_ids
+                if i < len(texts) - 1:
                     _input_id += [IMAGE_TOKEN_INDEX] + nl_tokens
             _input_id += [im_end] + nl_tokens
-            assert sum([i==IMAGE_TOKEN_INDEX for i in _input_id])==num_image
+            assert sum([i == IMAGE_TOKEN_INDEX for i in _input_id]) == num_image
         else:
             if sentence["value"] is None:
                 _input_id = tokenizer(role).input_ids + nl_tokens
             else:
-                _input_id = tokenizer(role).input_ids + nl_tokens + tokenizer(sentence["value"]).input_ids + [im_end] + nl_tokens
+                _input_id = tokenizer(role).input_ids + nl_tokens + tokenizer(sentence["value"]).input_ids + [im_end] + nl_tokens  # noqa: E501
         input_id += _input_id
         if role == "<|im_start|>user":
             _target = [im_start] + [IGNORE_INDEX] * (len(_input_id) - 3) + [im_end] + nl_tokens
         elif role == "<|im_start|>assistant":
-            _target = [im_start] + [IGNORE_INDEX] * len(tokenizer(role).input_ids) + _input_id[len(tokenizer(role).input_ids) + 1 : -2] + [im_end] + nl_tokens
+            _target = [im_start] + [IGNORE_INDEX] * len(tokenizer(role).input_ids) + _input_id[len(tokenizer(role).input_ids) + 1: -2] + [im_end] + nl_tokens  # noqa: E501
         else:
             raise NotImplementedError
         target += _target
@@ -109,14 +111,15 @@ class Oryx(BaseModel):
         overwrite_config["patchify_video_feature"] = False
         overwrite_config["attn_implementation"] = "sdpa" if torch.__version__ >= "2.1.2" else "eager"
 
-        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(model_path, None, model_name, device_map="cuda:0", overwrite_config=overwrite_config)
+        self.tokenizer, self.model, self.image_processor, self.context_len = load_pretrained_model(
+            model_path, None, model_name, device_map="cuda:0", overwrite_config=overwrite_config
+        )
 
         if self.image_processor is None:
             self.image_processor = CLIPImageProcessor.from_pretrained("openai/clip-vit-large-patch14")
             print('Using default image processor. ')
 
         self._config = self.model.config
-
 
         self.model = self.model.cuda()
         self.conv_mode = 'qwen_1_5'
@@ -137,8 +140,8 @@ class Oryx(BaseModel):
     def build_prompt(self, line, dataset=None):
         try:
             from oryx.conversation import conv_templates
-            from oryx.mm_utils import KeywordsStoppingCriteria, process_anyres_highres_image_genli
-            from oryx.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+            from oryx.mm_utils import KeywordsStoppingCriteria, process_anyres_highres_image_genli  # noqa: E501
+            from oryx.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN  # noqa: E501
         except Exception as err:
             logging.critical('Please install requirements on https://github.com/Oryx-mllm/Oryx before using Oryx')
             raise err
@@ -208,15 +211,18 @@ class Oryx(BaseModel):
             image_highres_tensor = image_highres_tensor.bfloat16().to("cuda")
         prompt = prompt.replace('PLACEHOLDER', content)
 
-        input_ids = preprocess_qwen([{'from': 'human','value': prompt},{'from': 'gpt','value': None}], self.tokenizer, has_image=True).cuda()
+        input_ids = preprocess_qwen(
+            [{'from': 'human','value': prompt},{'from': 'gpt','value': None}], self.tokenizer, has_image=True
+        ).cuda()
         stop_str = '<|im_end|>'
         keywords = [stop_str]
-        stopping_criteria = KeywordsStoppingCriteria(keywords, self.tokenizer, input_ids)
+        stopping_criteria = KeywordsStoppingCriteria(
+            keywords, self.tokenizer, input_ids
+        )
 
-        pad_token_ids = self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else self.tokenizer.eos_token_id
+        pad_token_ids = self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else self.tokenizer.eos_token_id  # noqa: E501
         attention_masks = input_ids.ne(pad_token_ids).to(self.device)
         print(self.kwargs)
-
 
         with torch.inference_mode():
             output_ids = self.model.generate(
