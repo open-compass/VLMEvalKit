@@ -853,7 +853,7 @@ class SeePhys(ImageBaseDataset):
     }
     DATASET_MD5 = {
         'SeePhys': 'c19612ca99cc8c1351b6c3aa556d25b8',
-        'SeePhys_vo': '671ea9ff72370b7bd5b0df3b804ea73d',
+        'SeePhys_vo': '542b4e78cbe6b34b247bdbc8aaddeb19',
 
     }
     # Text Vision is the default setting for SeePhys DATASET
