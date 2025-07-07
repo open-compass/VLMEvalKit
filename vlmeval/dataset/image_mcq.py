@@ -114,6 +114,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
         'MMSIBench_circular': 'https://opencompass.openxlab.space/utils/VLMEval/MMSIBench_circular.tsv',
         'SpatialEval': 'https://opencompass.openxlab.space/utils/VLMEval/SpatialEval.tsv',
+        "StaticEmbodiedBench": "https://huggingface.co/datasets/xiaojiahao/StaticEmbodiedBench/resolve/main/StaticEmbodiedBench.tsv",  # noqa
+        "StaticEmbodiedBench_circular": "https://huggingface.co/datasets/xiaojiahao/StaticEmbodiedBench/resolve/main/StaticEmbodiedBench_circular.tsv"  # noqa
     }
 
     DATASET_MD5 = {
@@ -134,7 +136,7 @@ class ImageMCQDataset(ImageBaseDataset):
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
-        'SEEDBench2_Plus': '7cb2323950d71f049df70e5162062af3',
+        'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
         # ScienceQA
         'ScienceQA_VAL': '96320d05e142e585e7204e72affd29f3',
         'ScienceQA_TEST': 'e42e9e00f9c59a80d8a5db35bc32b71f',
@@ -173,7 +175,9 @@ class ImageMCQDataset(ImageBaseDataset):
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
-        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b'
+        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b',
+        "StaticEmbodiedBench": "5c50611650ca966970180a80d49429f0",
+        "StaticEmbodiedBench_circular": "034cf398a3c7d848d966e1081e4baf68"
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -1782,6 +1786,7 @@ class XLRSBench(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file)
+        data['prediction'] = [str(x) for x in data['prediction']]
         task_stats = {}
         micro_metric = {'correct': 0, 'total': 0}
         for index, it in data.iterrows():
@@ -1915,6 +1920,7 @@ class OmniEarthMCQBench(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file)
+        data['prediction'] = [str(x) for x in data['prediction']]
         task_stats = {}
         micro_metric = {"correct": 0, "total": 0}
         for index, it in data.iterrows():

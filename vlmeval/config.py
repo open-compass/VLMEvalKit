@@ -1042,6 +1042,7 @@ ovis_series = {
     "Ovis2-8B": partial(Ovis2, model_path="AIDC-AI/Ovis2-8B"),
     "Ovis2-16B": partial(Ovis2, model_path="AIDC-AI/Ovis2-16B"),
     "Ovis2-34B": partial(Ovis2, model_path="AIDC-AI/Ovis2-34B"),
+    "Ovis-U1-3B": partial(OvisU1, model_path="AIDC-AI/Ovis-U1-3B"),
 }
 
 mantis_series = {
@@ -1437,7 +1438,8 @@ aguvis_series = {
 
 kimi_series = {
     'Kimi-VL-A3B-Thinking': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking'),
-    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct')
+    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct'),
+    'Kimi-VL-A3B-Thinking-2506': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking-2506', temperature=0.8, max_tokens=32768, extract_summary=True)
 }
 
 flash_vl = {
