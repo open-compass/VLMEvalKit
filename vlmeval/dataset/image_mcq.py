@@ -6,6 +6,7 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 import pandas as pd
+from tqdm import tqdm
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -223,6 +224,12 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
         )
@@ -348,6 +355,107 @@ class ImageMCQDataset(ImageBaseDataset):
                            chemistry__shape_multi split and uses a different evaluation prompt. Please \
                            explicitly specify the version of the dataset when you report results.')
 
+        return acc
+
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # assert dataset is not None
+        dataset_map = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+        }
+        dataset = self.dataset_name
+        if dataset in dataset_map:
+            dataset = dataset_map[dataset]
+
+        circular = False
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
+            circular = True
+
+        if circular:
+            raise ValueError("circular is not supported for verifier evaluation")
+
+        suffix = eval_file.split('.')[-1]
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        # Add verifier evaluation for specific datasets
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        verifier_scores = []
+        verifier_matches = []
+        for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+            question_text = row['question']
+            if 'A' in row and not pd.isna(row['A']):
+                options = []
+                for option_key in ['A', 'B', 'C', 'D', 'E']:
+                    if option_key in row and not pd.isna(row[option_key]):
+                        options.append(f"{option_key}. {row[option_key]}")
+                if options:
+                    question_text += "\nOptions:\n" + "\n".join(options)
+
+            correct_option = str(row['answer']).strip().upper()
+            if correct_option in row and not pd.isna(row[correct_option]):
+                answer_text = f"{correct_option}. {row[correct_option]}"
+            else:
+                answer_text = correct_option
+
+            score = verifier.evaluate(question_text, row['prediction'], answer_text)
+            verifier_scores.append(score)
+            verifier_matches.append(1.0 if score else 0.0)
+
+        data['verifier_score'] = verifier_scores
+        data['verifier_match'] = verifier_matches
+
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        dump(data, detailed_result_file)
+
+        def report_acc_verifier(result_file):
+            from collections import defaultdict
+
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                split_name = item.get('split', 'Overall')
+                if pd.isna(split_name):
+                    split_name = 'Overall'
+
+                tot['Overall'] += 1
+                tot[split_name] += 1
+
+                if 'category' in item and not pd.isna(item['category']):
+                    category = item['category']
+                    tot[category] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[split_name] += 1
+
+                    if 'category' in item and not pd.isna(item['category']):
+                        hit[category] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                if k == 'Overall':
+                    res['Category'].append('Overall')
+                else:
+                    res['Category'].append(k)
+                res['Total'].append(tot[k])
+                res['Hit'].append(hit[k])
+                res['Accuracy'].append(hit[k] / tot[k] * 100 if tot[k] > 0 else 0.0)
+
+            res_df = pd.DataFrame(res)
+            return res_df
+        acc = report_acc_verifier(detailed_result_file)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
         return acc
 
 
@@ -1444,7 +1552,7 @@ class LEGO(ImageMCQDataset):
         if len(options):
             prompt += options_prompt
             prompt += (
-                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "Please respond with only the sequence of letters (e.g., 'BDAC') "
                 "that correctly orders the steps.\n"
             )
 
