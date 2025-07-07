@@ -2972,3 +2972,63 @@ class MMVMBench(ImageBaseDataset):
             dump(acc, acc_file)
 
             return acc
+            
+class OCRBench_v2(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'OCRBench_v2':
+        'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+    }
+    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import ast
+        from .utils.ocrbrnch_v2_eval import process_predictions, ocrbench_v2_aggregate_accuracy
+        import pandas as pd
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        predict_result=[]
+        for i in tqdm(range(len(lines))):
+            line = lines[i]
+            predict= str(line['prediction']) if pd.notna(line['prediction']) else ''
+            answers = ast.literal_eval(line['answer'])
+            category = line['category']
+            questions = line['question']
+            evals = line['eval']
+            bbox_raw = line['bbox']
+            content_raw = line['content']
+
+            # Process bbox and content fields
+            bbox = ast.literal_eval(bbox_raw) if bbox_raw != 'without bbox' else bbox_raw
+            content = ast.literal_eval(content_raw) if content_raw != 'without content' else content_raw
+
+            # Build result dictionary
+            result_entry = {
+                "type": category,
+                "question": questions,
+                "predict": predict,
+                "answers": answers,
+                "bbox": bbox,
+                "content": content
+            }
+            
+            # Add eval field if present
+            if evals != 'without eval':
+                result_entry["eval"] = evals
+                
+            predict_result.append(result_entry)
+
+        res_data_list = process_predictions(predict_result)
+        en_scores, cn_scores = ocrbench_v2_aggregate_accuracy(res_data_list)
+        score_en_overall = sum(en_scores.values()) / len(en_scores)
+        score_cn_overall = sum(cn_scores.values()) / len(cn_scores)
+        final_score_dict = {**en_scores, **cn_scores}
+        final_score_dict["English Overall Score"]=score_en_overall
+        final_score_dict["Chinese Overall Score"]=score_cn_overall
+        score_pth = eval_file.replace('.xlsx', '_score.json')
+        dump(final_score_dict, score_pth)
+        return final_score_dict
