@@ -61,5 +61,10 @@ jobs:
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
+          if [ "${{matrix.model}}" = "lmms-lab/llava-onevision-qwen2-7b-si" ];then
+              model_name="llava_onevision_qwen2_7b_si"
+          else
+              model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
+          fi
           python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
       
