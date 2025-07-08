@@ -38,6 +38,7 @@ jobs:
         uses: nick-fields/retry@v3
         with: 
           max_attempts: 1
+          timeout_minutes: 30
           command: |
             . ${{env.CONDA_PATH}}/bin/activate
             conda activate ${{env.CONDA_ENV}}
