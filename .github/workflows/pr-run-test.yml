@@ -49,6 +49,7 @@ jobs:
             else
                 model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
             fi
+            pip list
             nvidia-smi
             LOG=$(python run.py --data ${{matrix.dataset}} --model $model_name 2>&1)
             echo "$LOG"
