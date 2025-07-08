@@ -37,7 +37,7 @@ jobs:
       - name: evaluation_model
         uses: nick-fields/retry@v3
         with: 
-          max_attempts: 1
+          max_attempts: 3
           timeout_minutes: 30
           command: |
             . ${{env.CONDA_PATH}}/bin/activate
@@ -57,5 +57,9 @@ jobs:
             if echo "$LOG" | grep -q "CUDA out of memory"; then
               exit 1  # 触发重试
             fi
-            python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
+      - name: assert_result
+        run: |
+          . ${{env.CONDA_PATH}}/bin/activate
+          conda activate ${{env.CONDA_ENV}}
+          python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
       
