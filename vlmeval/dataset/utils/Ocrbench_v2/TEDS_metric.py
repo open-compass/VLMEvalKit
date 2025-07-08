@@ -1,3 +1,4 @@
+# flake8: noqa
 # Copyright 2020 IBM
 # Author: peter.zhong@au1.ibm.com
 #
@@ -128,8 +129,6 @@ class TEDS(object):
         parser = html.HTMLParser(remove_comments=True, encoding='utf-8')
         pred = html.fromstring(pred, parser=parser)
         true = html.fromstring(true, parser=parser)
-        #print("pred:",pred)
-        #print("true:",true)
         if pred.xpath('body/table') and true.xpath('body/table'):
             pred = pred.xpath('body/table')[0]
             true = true.xpath('body/table')[0]
@@ -187,7 +186,7 @@ def convert_markdown_table_to_html(markdown_table):
     Converts a markdown table to the corresponding html string for TEDS computation.
     """
     # remove extra code block tokens like '```markdown' and '```
-    markdown_table = markdown_table.strip('```markdown').strip('```').strip() 
+    markdown_table = markdown_table.strip('```markdown').strip('```').strip()
     row_str_list = markdown_table.split('\n')
     # extra the first header row and other data rows
     valid_row_str_list = [row_str_list[0]]+row_str_list[2:]
@@ -211,7 +210,7 @@ def dict_to_html(data):
         if not isinstance(value, str):
             value = str(value)
         value_str = ' '.join(value)
-        
+
         html += f"  <tr><td>{key}</td><td>{value_str}</td></tr>\n"
     html += "</table></body></html>"
     return html
@@ -293,7 +292,7 @@ def convert_str_to_multi_dict(predict_str: str):
         content = max(matches, key=len)
     else:
         content = predict_str.strip()
-    
+
     def strip_variable_assignment(s):
         variable_assignment_pattern = r'^\s*\w+\s*=\s*'
         return re.sub(variable_assignment_pattern, '', s.strip(), count=1)
@@ -353,29 +352,29 @@ def generate_combinations(input_dict):
             except (ValueError, SyntaxError):
                 print(f"Unable to parse 'answers' field: {kie_answer}")
                 return {}
-        
+
         # Ensure the parsed result is a dictionary.
         if not isinstance(kie_answer, dict):
             print("Parsed 'answers' is still not a dictionary.")
             raise ValueError("Input could not be parsed into a dictionary.")
-    
+
         keys = list(kie_answer.keys())
-        
+
         value_lists = []
         for single_key in keys:
             sinlge_value = kie_answer[single_key]
             if not isinstance(sinlge_value, list):
                 sinlge_value = [sinlge_value]
             value_lists.append(sinlge_value)
-    
+
         # Compute the Cartesian product of the value lists.
         combinations = list(product(*value_lists))
-    
+
         # Create a dictionary for each combination of values.
         result = [dict(zip(keys, values)) for values in combinations]
 
         return result
-    
+
     else:
         keys = list(input_dict.keys())
         value_lists = [input_dict[key] for key in keys]
@@ -523,7 +522,7 @@ def wrap_html_table(html_table):
     if '<html>' not in html_table:
         html_table = '<html>' + html_table + '</html>'
     return html_table
-    
+
 
 def get_anls(s1, s2):
     try:
@@ -552,10 +551,10 @@ def ocr_eval(references,predictions):
             ref_values.append(ref_value)
         else:
             ref_values = ref_value
-        
+
         temp_score = 0.0
         temp_num = len(ref_values)
-        
+
         for tmpidx, tmpref in enumerate(ref_values):
             tmppred = pred_values[tmpidx] if tmpidx < len(pred_values) else pred_values[0]
             if len(pred_values) == 1 and tmppred != "None" and "None" not in ref_values:  # pred 1, and not None
@@ -596,14 +595,14 @@ def csv_eval(predictions,references,easy, pred_type='json'):
             return True
         except ValueError:
             return False
-    
+
     def convert_dict_to_list(data):
         """
         Convert a dictionary to a list of tuples, handling both simple and nested dictionaries.
-        
+
         Args:
         data (dict): The input dictionary, which might be nested or simple.
-        
+
         Returns:
         list: A list of tuples generated from the input dictionary.
         """
@@ -624,11 +623,11 @@ def csv_eval(predictions,references,easy, pred_type='json'):
         return converted_list
 
 
-    def csv2triples(csv, separator='\\t', delimiter='\\n'):  
+    def csv2triples(csv, separator='\\t', delimiter='\\n'):
         lines = csv.strip().split(delimiter)
-        header = lines[0].split(separator) 
+        header = lines[0].split(separator)
         triples = []
-        for line in lines[1:]:   
+        for line in lines[1:]:
             if not line:
                 continue
             values = line.split(separator)
@@ -641,13 +640,13 @@ def csv_eval(predictions,references,easy, pred_type='json'):
                 temp = [x if len(x)==0 or x[-1] != ':' else x[:-1] for x in temp]
                 value = values[i].strip()
                 value = re.sub(r'[^\d.-]', '', str(value))
-                # value = value.replace("%","")     
-                # value = value.replace("$","")     
+                # value = value.replace("%","")
+                # value = value.replace("$","")
                 triples.append((temp[0], temp[1], value))
                 #---------------------------------------------------------
         return triples
-    
-    def csv2triples_noheader(csv, separator='\\t', delimiter='\\n'):  
+
+    def csv2triples_noheader(csv, separator='\\t', delimiter='\\n'):
         lines = csv.strip().split(delimiter)
         maybe_header = [x.strip() for x in lines[0].split(separator)]
         not_header = False
@@ -663,7 +662,7 @@ def csv_eval(predictions,references,easy, pred_type='json'):
         header = None if not_header else maybe_header
         data_start = 0 if not_header and separator in lines[0] else 1
         triples = []
-        for line in lines[data_start:]:   
+        for line in lines[data_start:]:
             if not line:
                 continue
             values = [x.strip() for x in line.split(separator)]
@@ -682,8 +681,8 @@ def csv_eval(predictions,references,easy, pred_type='json'):
                         this_header = entity.strip()
                 value = values[i].strip()
                 value = re.sub(r'[^\d.-]', '', str(value))
-                # value = value.replace("%","")     
-                # value = value.replace("$","")     
+                # value = value.replace("%","")
+                # value = value.replace("$","")
                 triples.append((temp[0], temp[1], value))
                 #---------------------------------------------------------
         return triples
@@ -698,7 +697,7 @@ def csv_eval(predictions,references,easy, pred_type='json'):
                     triplet_temp = (triplet[0].lower(), triplet[1].lower(), float(triplet[2]))
                 else:
                     triplet_temp = (triplet[0].lower(), triplet[1].lower(), triplet[2].lower())
-            else: 
+            else:
                 triplet_temp = (triplet[0].lower(), triplet[1].lower(), "no meaning")
             new_triplets.append(triplet_temp)
         return new_triplets
@@ -734,22 +733,22 @@ def csv_eval(predictions,references,easy, pred_type='json'):
             for it in pred_csv:
                 pred_triple_temp = convert_dict_to_list(it)
                 pred_triple_pre = process_triplets(pred_triple_temp)
-                pred_triple_list.append(pred_triple_pre) 
+                pred_triple_list.append(pred_triple_pre)
         else:
             pred_triple_list=[]
             for it in pred_csv:
                 pred_triple_temp = csv2triples(it, separator=separator, delimiter=delimiter)
                 # pred_triple_temp = csv2triples_noheader(it, separator=separator, delimiter=delimiter)
                 pred_triple_pre = process_triplets(pred_triple_temp)
-                pred_triple_list.append(pred_triple_pre) 
+                pred_triple_list.append(pred_triple_pre)
 
         label_triple_list=[]
         for it in label_csv:
             label_triple_temp = convert_dict_to_list(it)
             label_triple_pre = process_triplets(label_triple_temp)
-            label_triple_list.append(label_triple_pre) 
+            label_triple_list.append(label_triple_pre)
 
-            
+
         intersection_list=[]
         union_list=[]
         sim_list=[]
@@ -758,7 +757,7 @@ def csv_eval(predictions,references,easy, pred_type='json'):
             for idx in range(len(pred)):
                 try:
                     if label[idx][1] == "value" and "value" not in pred[idx][:2]:
-                        pred[idx] = (pred[idx][0], "value", pred[idx][2]) 
+                        pred[idx] = (pred[idx][0], "value", pred[idx][2])
                     temp_pred_head = sorted(pred[idx][:2])
                     temp_gt_head = sorted(label[idx][:2])
                     pred[idx] = (temp_pred_head[0], temp_pred_head[1], pred[idx][2])
@@ -793,10 +792,10 @@ def csv_eval(predictions,references,easy, pred_type='json'):
             if easy == 1:
                 tol_num=0.1
             else:
-                tol_num=0.5      
+                tol_num=0.5
         intersection_list, union_list, sim_list = get_eval_list(predictions, labels, separator=separator, delimiter=delimiter, tol_word=tol_word, tol_num=tol_num, pred_type=pred_type)
         ap = len([num for num in sim_list if num >= sim_threhold])/(len(sim_list)+1e-16)
-        return ap   
+        return ap
 
     map_strict = 0
     map_slight = 0
@@ -814,13 +813,13 @@ def csv_eval(predictions,references,easy, pred_type='json'):
 
     em = get_ap(predictions, labels, sim_threhold=1, tolerance='strict', separator=s, delimiter=d, easy=easy)
     ap_50_strict = get_ap(predictions, labels, sim_threhold=0.5, tolerance='strict', separator=s, delimiter=d, easy=easy)
-    ap_75_strict = get_ap(predictions, labels, sim_threhold=0.75, tolerance='strict', separator=s, delimiter=d, easy=easy)    
+    ap_75_strict = get_ap(predictions, labels, sim_threhold=0.75, tolerance='strict', separator=s, delimiter=d, easy=easy)
     ap_90_strict = get_ap(predictions, labels, sim_threhold=0.90, tolerance='strict', separator=s, delimiter=d, easy=easy)
     ap_50_slight = get_ap(predictions, labels, sim_threhold=0.5, tolerance='slight', separator=s, delimiter=d, easy=easy)
-    ap_75_slight = get_ap(predictions, labels, sim_threhold=0.75, tolerance='slight', separator=s, delimiter=d, easy=easy)    
+    ap_75_slight = get_ap(predictions, labels, sim_threhold=0.75, tolerance='slight', separator=s, delimiter=d, easy=easy)
     ap_90_slight = get_ap(predictions, labels, sim_threhold=0.90, tolerance='slight', separator=s, delimiter=d, easy=easy)
     ap_50_high = get_ap(predictions, labels, sim_threhold=0.5, tolerance='high', separator=s, delimiter=d, easy=easy)
-    ap_75_high = get_ap(predictions, labels, sim_threhold=0.75, tolerance='high', separator=s, delimiter=d, easy=easy)    
+    ap_75_high = get_ap(predictions, labels, sim_threhold=0.75, tolerance='high', separator=s, delimiter=d, easy=easy)
     ap_90_high = get_ap(predictions, labels, sim_threhold=0.90, tolerance='high', separator=s, delimiter=d, easy=easy)
 
 

@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 import json
 import ipdb
@@ -68,10 +69,10 @@ def process_predictions(predict_file):
                 elif data_item["eval"] == "case sensitive":
                     data_item["score"] = vqa_evaluation_case_sensitive(data_item["predict"], data_item["answers"])
                 else:
-                    raise ValueError("No such evaluation method") 
+                    raise ValueError("No such evaluation method")
             else:
                 data_item["score"] = vqa_evaluation(data_item["predict"], data_item["answers"])
-        
+
         elif data_item["type"] == "cognition VQA cn" or data_item["type"] == "reasoning VQA cn":
             if "eval" in data_item.keys():
                 if data_item["eval"] == "multiple choice":
@@ -85,17 +86,17 @@ def process_predictions(predict_file):
                 elif data_item["eval"] == "case sensitive":
                     data_item["score"] = vqa_evaluation_case_sensitive(data_item["predict"], data_item["answers"])
                 else:
-                    raise ValueError("No such evaluation method") 
+                    raise ValueError("No such evaluation method")
             else:
                 data_item["score"] = cn_vqa_evaluation(data_item["predict"], data_item["answers"])
-        
+
         elif data_item["type"] == "handwritten answer extraction cn":
             if "简答" in data_item["question"]:
                 ocr_metric = cal_per_metrics(data_item["predict"], data_item["answers"][0])
                 data_item["score"] = (
-                    get_value_or_zero(ocr_metric["bleu"]) + 
-                    get_value_or_zero(ocr_metric["meteor"]) + 
-                    get_value_or_zero(ocr_metric["f_measure"]) + 
+                    get_value_or_zero(ocr_metric["bleu"]) +
+                    get_value_or_zero(ocr_metric["meteor"]) +
+                    get_value_or_zero(ocr_metric["f_measure"]) +
                     (1 - get_value_or_zero(ocr_metric["edit_dist"]))
                 ) / 4
             else:
@@ -126,7 +127,7 @@ def process_predictions(predict_file):
                             max_score = temp_score
                     data_item["score"] = max_score
 
-                else:    
+                else:
                     if data_item["answers"][0] in data_item["predict"]:
                         data_item["score"] = 1
                     else:
@@ -140,10 +141,10 @@ def process_predictions(predict_file):
 
         elif data_item["type"] == "text counting en":
             data_item["score"] = counting_evaluation(data_item["predict"], data_item["answers"], data_item["eval"])
-        
+
         elif data_item["type"] == "formula recognition en":
             data_item["score"] = math_expression_evaluation(data_item["predict"], data_item["answers"])
-        
+
         elif data_item["type"] == "table parsing en":
             if type(data_item["answers"])==list and len(data_item["answers"]) == 1:
                 if not isinstance(data_item["predict"], str):
@@ -174,7 +175,7 @@ def process_predictions(predict_file):
 
                 elif "markdown" in data_item["question"].lower():
                     if not isinstance(data_item["predict"], str):
-                        
+
                         prediction = str(data_item["predict"])
                         pred_table_html = convert_markdown_table_to_html(prediction)
                         gt_table_html = convert_markdown_table_to_html(data_item["answers"][0])
@@ -228,7 +229,7 @@ def process_predictions(predict_file):
         elif data_item["type"] == "document parsing en":
             assert type(data_item["answers"])==list and len(data_item["answers"]) == 1
             data_item["score"] = doc_parsing_evaluation(data_item["predict"], data_item["answers"][0])
-        
+
         elif data_item["type"] == "document parsing cn":
             assert type(data_item["answers"])==list and len(data_item["answers"]) == 1
             data_item["score"] = doc_parsing_evaluation(data_item["predict"], data_item["answers"][0])
@@ -236,7 +237,7 @@ def process_predictions(predict_file):
         elif data_item["type"] == "key information extraction en" or data_item["type"] == "key information mapping en":
             assert len(data_item["answers"]) == 1
             answers = generate_combinations(data_item["answers"][0])
-            
+
             if type(answers)==list and len(answers) == 1:
                 if not isinstance(data_item["predict"], str):
                     data_item["score"] = 0
@@ -248,11 +249,11 @@ def process_predictions(predict_file):
                 for answer in answers:
                     pred_kie_dict = convert_str_to_dict(data_item["predict"])
                     data_item["score"] = compute_f1_score(pred_kie_dict, answer)
-                    
+
                     if data_item["score"] > max_score:
                         max_score = data_item["score"]
                 data_item["score"] = max_score
-        
+
         elif data_item["type"] == "key information extraction cn":
             assert len(data_item["answers"]) == 1
             answers = ast.literal_eval(data_item["answers"][0])
@@ -269,12 +270,12 @@ def process_predictions(predict_file):
                 for answer in answers:
                     pred_kie_dict = convert_str_to_dict(data_item["predict"])
                     data_item["score"] = compute_f1_score(pred_kie_dict, answer)
-                    
+
                     if data_item["score"] > max_score:
                         max_score = data_item["score"]
                 data_item["score"] = max_score
 
-        elif data_item["type"] == "VQA with position en":  
+        elif data_item["type"] == "VQA with position en":
             if not isinstance(data_item["predict"], str):
                 data_item["score"] = 0
             else:
@@ -289,7 +290,7 @@ def process_predictions(predict_file):
                 data_item["ignore"] = "True"
             else:
                 ocr_metric = cal_per_metrics(data_item["predict"], data_item["answers"][0])
-                data_item["score"] = (ocr_metric["bleu"] + ocr_metric["meteor"] + ocr_metric["f_measure"] + (1 - ocr_metric["edit_dist"])) / 4 
+                data_item["score"] = (ocr_metric["bleu"] + ocr_metric["meteor"] + ocr_metric["f_measure"] + (1 - ocr_metric["edit_dist"])) / 4
 
         elif data_item["type"] == "fine-grained text recognition en":
             if not isinstance(data_item["predict"], str):
@@ -299,9 +300,9 @@ def process_predictions(predict_file):
             else:
                 ocr_metric = cal_per_metrics(data_item["predict"], data_item["answers"][0])
                 data_item["score"] = (
-                    get_value_or_zero(ocr_metric["bleu"]) + 
-                    get_value_or_zero(ocr_metric["meteor"]) + 
-                    get_value_or_zero(ocr_metric["f_measure"]) + 
+                    get_value_or_zero(ocr_metric["bleu"]) +
+                    get_value_or_zero(ocr_metric["meteor"]) +
+                    get_value_or_zero(ocr_metric["f_measure"]) +
                     (1 - get_value_or_zero(ocr_metric["edit_dist"]))
                 ) / 4
         elif data_item["type"] == "full-page OCR en":
@@ -310,9 +311,9 @@ def process_predictions(predict_file):
             else:
                 ocr_metric = cal_per_metrics(data_item["predict"], data_item["answers"][0])
                 data_item["score"] = (
-                    get_value_or_zero(ocr_metric["bleu"]) + 
-                    get_value_or_zero(ocr_metric["meteor"]) + 
-                    get_value_or_zero(ocr_metric["f_measure"]) + 
+                    get_value_or_zero(ocr_metric["bleu"]) +
+                    get_value_or_zero(ocr_metric["meteor"]) +
+                    get_value_or_zero(ocr_metric["f_measure"]) +
                     (1 - get_value_or_zero(ocr_metric["edit_dist"]))
                 ) / 4
 
@@ -324,8 +325,8 @@ def process_predictions(predict_file):
                     data_item["score"] = 0
                 else:
                     ocr_metric = cal_per_metrics(data_item["predict"], data_item["answers"][0])
-                    data_item["score"] = (ocr_metric["bleu"] + ocr_metric["meteor"] + ocr_metric["f_measure"] + (1 - ocr_metric["edit_dist"])) / 4 
-        
+                    data_item["score"] = (ocr_metric["bleu"] + ocr_metric["meteor"] + ocr_metric["f_measure"] + (1 - ocr_metric["edit_dist"])) / 4
+
         elif data_item["type"] == "text grounding en":
             if not isinstance(data_item["predict"], str):
                 data_item["score"] = 0
@@ -351,7 +352,7 @@ def process_predictions(predict_file):
 
         res_data_list.append(data_item)
 
-    
+
     return res_data_list
 
 
@@ -369,46 +370,46 @@ def ocrbench_v2_aggregate_accuracy(data_list):
     for item in data_list:
         if "ignore" in item.keys():
             assert item["ignore"] == "True"
-        
+
         elif item["type"] == "text recognition en" or item["type"] == "fine-grained text recognition en" or item["type"] == "full-page OCR en":
             en_text_recognition_list.append(item["score"])
-        
+
         elif item["type"] == "text grounding en" or item["type"] == "VQA with position en":
             en_text_detection_list.append(item["score"])
-        
+
         elif item["type"] == "text spotting en":
             en_text_spotting_list.append(item["score"])
 
         elif item["type"] == "key information extraction en" or item["type"] == "key information mapping en":
             en_relationship_extraction_list.append(item["score"])
-        
+
         elif item["type"] == "document parsing en" or item["type"] == "chart parsing en" \
         or item["type"] == "table parsing en" or item["type"] == "formula recognition en":
             en_element_parsing_list.append(item["score"])
-        
+
         elif item["type"] == "math QA en" or item["type"] == "text counting en":
             en_mathematical_calculation_list.append(item["score"])
-        
+
         elif item["type"] == "document classification en" \
         or item["type"] == "cognition VQA en" or item["type"] == "diagram QA en":
             en_visual_text_understanding_list.append(item["score"])
-        
+
         elif item["type"] == "reasoning VQA en" or item["type"] == "science QA en" \
         or item["type"] == "APP agent en" or item["type"] == "ASCII art classification en":
             en_knowledge_reasoning_list.append(item["score"])
-        
+
         elif item["type"] == "full-page OCR cn":
             cn_text_recognition_list.append(item["score"])
 
         elif item["type"] == "key information extraction cn" or item["type"] == "handwritten answer extraction cn":
             cn_relationship_extraction_list.append(item["score"])
-        
+
         elif item["type"] == "document parsing cn" or item["type"] == "table parsing cn" or item["type"] == "formula recognition cn":
             cn_element_parsing_list.append(item["score"])
-        
+
         elif item["type"] == "cognition VQA cn":
             cn_visual_text_understanding_list.append(item["score"])
-        
+
         elif item["type"] == "reasoning VQA cn" or item["type"] == "text translation cn":
             cn_knowledge_reasoning_list.append(item["score"])
 
@@ -433,9 +434,8 @@ def ocrbench_v2_aggregate_accuracy(data_list):
         "cn_visual_text_understanding": cn_visual_text_understanding_list,
         "cn_knowledge_reasoning": cn_knowledge_reasoning_list
     }
-    
+
     en_averages = calculate_average(en_scores)
     cn_averages = calculate_average(cn_scores)
 
     return en_averages,cn_averages
-

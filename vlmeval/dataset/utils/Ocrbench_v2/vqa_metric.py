@@ -12,7 +12,7 @@ def levenshtein_distance(s1, s2):
 
     distances = range(len(s1) + 1)
     for i2, c2 in enumerate(s2):
-        distances_ = [i2+1]
+        distances_ = [i2 + 1]
         for i1, c1 in enumerate(s1):
             if c1 == c2:
                 distances_.append(distances[i1])
@@ -24,7 +24,7 @@ def levenshtein_distance(s1, s2):
 
 def vqa_evaluation(predict, answers):
     score = 0
-    if type(answers)==list:
+    if isinstance(answers, list):
         for j in range(len(answers)):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
@@ -61,13 +61,13 @@ def vqa_evaluation(predict, answers):
 
                 if ANLS_value >= 0.5 and ANLS_value > score:
                     score = ANLS_value
-    
+
     return score
 
 
 def cn_vqa_evaluation(predict, answers):
     score = 0
-    if type(answers)==list:
+    if isinstance(answers, list):
         for j in range(len(answers)):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
@@ -104,13 +104,13 @@ def cn_vqa_evaluation(predict, answers):
 
                 if ANLS_value >= 0.5 and ANLS_value > score:
                     score = ANLS_value
-    
+
     return score
 
 
 def vqa_evaluation_case_sensitive(predict, answers):
     score = 0
-    if type(answers)==list:
+    if isinstance(answers, list):
         for j in range(len(answers)):
             if isinstance(answers[j], (int, float)):
                 answers[j] = str(answers[j])
@@ -145,7 +145,7 @@ def vqa_evaluation_case_sensitive(predict, answers):
 
                 if ANLS_value >= 0.5 and ANLS_value > score:
                     score = ANLS_value
-    
+
     return score
 
 
@@ -158,14 +158,14 @@ def extract_first_number(string):
 
 def counting_evaluation(predict, answers, eval_method):
     score = 0
-    
+
     if isinstance(predict, str):
         predict_processed = predict.lower().strip().replace("\n", " ")
     elif math.isnan(predict):
         return 0
     else:
         predict_processed = int(predict)
-    if type(answers)==list:
+    if isinstance(answers, list):
         temp_score = 0
         for j in range(len(answers)):
             if isinstance(answers[j], (int, float)):
@@ -179,9 +179,9 @@ def counting_evaluation(predict, answers, eval_method):
             elif eval_method == "regression":
                 predict_number = extract_first_number(predict_processed)
                 if predict_number:
-                    
+
                     answer = int(answer)
-                    
+
                     if predict_number <= 0 or predict_number >= 2 * answer:
                         score = 0
                     else:
@@ -212,7 +212,7 @@ def counting_evaluation(predict, answers, eval_method):
                     score = 0
                 else:
                     iou = 1 - abs(predict - answer) / answer
-                    
+
                     if iou > 0.5:
                         score = iou
                     else:
@@ -224,7 +224,7 @@ def counting_evaluation(predict, answers, eval_method):
 
 def math_expression_evaluation(predict, answers):
     score = 0
-    if type(answers)==list:
+    if isinstance(answers, list):
         for j in range(len(answers)):
             answer = answers[j].strip().replace("\n"," ").replace(" ","")
             predict = predict.strip().replace("\n"," ").replace(" ","")
@@ -247,9 +247,9 @@ def remove_text_tags(latex_str):
     """
 
     pattern = r'\\text\{([^{}]*)\}'
-    
+
     processed_str = re.sub(pattern, r'\1', latex_str)
-    
+
     return processed_str
 
 
@@ -260,7 +260,7 @@ def cn_math_expression_evaluation(predict, answers):
     answers = [remove_text_tags(answers[0])]
     predict = remove_text_tags(predict)
 
-    if type(answers)==list:
+    if isinstance(answers, list):
         for j in range(len(answers)):
             answer = answers[j].strip().replace("\n"," ").replace(" ","")
             predict = predict.strip().replace("\n"," ").replace(" ","")

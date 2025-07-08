@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 import re
 import ast
@@ -17,16 +18,11 @@ def calculate_iou(box1, box2):
     y1_inter = max(box1[1], box2[1])
     x2_inter = min(box1[2], box2[2])
     y2_inter = min(box1[3], box2[3])
-  
     inter_area = max(0, x2_inter - x1_inter) * max(0, y2_inter - y1_inter)
-    
     box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
     box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-    
     union_area = box1_area + box2_area - inter_area
-    
     iou = inter_area / union_area if union_area != 0 else 0
-    
     return iou
 
 
@@ -75,8 +71,8 @@ def extract_coordinates(text):
 if __name__ == "__main__":
 
     print("Example for Text Grounding task.")
-    box1 = [50, 50, 150, 150] 
-    box2 = [60, 60, 140, 140] 
+    box1 = [50, 50, 150, 150]
+    box2 = [60, 60, 140, 140]
     iou_score = calculate_iou(box1, box2)
     print(f"IoU score: {iou_score}")
 

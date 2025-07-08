@@ -1,3 +1,4 @@
+# flake8: noqa
 import re
 import os
 import ast
@@ -11,7 +12,7 @@ from vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.script import default_evalu
 
 def extract_bounding_boxes_robust(predict_str):
     """
-    Extract coordinates and text content from the given prediction string, 
+    Extract coordinates and text content from the given prediction string,
     handling potential format issues.
 
     Args:
@@ -62,7 +63,7 @@ def extract_bounding_boxes_robust(predict_str):
                         continue
     else:
         # try parsing with regular expression
-        
+
         list_content = predict_str
         items = re.findall(r'[\[\(]\s*([^\[\]\(\)]*?)\s*[\]\)]', list_content)
 
@@ -142,7 +143,7 @@ def spotting_evaluation(prediction_list, img_metas):
         x1, y1, x2, y2, rec = item
         if x1 >= x2 or y1 >= y2:
             continue
-        
+
         res_submit_list.append(",".join([str(x1),str(y1),str(x2),str(y1),str(x2),str(y2),str(x1),str(y2),rec]))
 
     res_gt_list = []
@@ -162,7 +163,7 @@ def spotting_evaluation(prediction_list, img_metas):
         for item in res_submit_list[:-1]:
             f.write(item + "\n")
         f.write(res_submit_list[-1])
-    
+
     with open(os.path.join(gt_path,"gt_img_0.txt"), "w") as f:
         for item in res_gt_list[:-1]:
             f.write(item + "\n")
@@ -172,10 +173,10 @@ def spotting_evaluation(prediction_list, img_metas):
     zip_folder(gt_path, gt_zip_path)
 
     command = {
-        'g': gt_zip_path,        
-        's': submit_zip_path,    
-        'o': './',               
-        'p': '{"IOU_CONSTRAINT":0.5}'  
+        'g': gt_zip_path,
+        's': submit_zip_path,
+        'o': './',
+        'p': '{"IOU_CONSTRAINT":0.5}'
     }
 
     # run rrc_evaluation_funcs

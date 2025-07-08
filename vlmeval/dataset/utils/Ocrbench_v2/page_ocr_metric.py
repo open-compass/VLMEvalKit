@@ -12,6 +12,7 @@ def contain_chinese_string(text):
     chinese_pattern = re.compile(r'[\u4e00-\u9fa5]')
     return bool(chinese_pattern.search(text))
 
+
 def cal_per_metrics(pred, gt):
     metrics = {}
 

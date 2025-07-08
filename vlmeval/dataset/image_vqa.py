@@ -2972,7 +2972,8 @@ class MMVMBench(ImageBaseDataset):
             dump(acc, acc_file)
 
             return acc
-            
+
+
 class OCRBench_v2(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -2991,10 +2992,10 @@ class OCRBench_v2(ImageBaseDataset):
         data = load(eval_file)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
-        predict_result=[]
+        predict_result = []
         for i in tqdm(range(len(lines))):
             line = lines[i]
-            predict= str(line['prediction']) if pd.notna(line['prediction']) else ''
+            predict = str(line['prediction']) if pd.notna(line['prediction']) else ''
             answers = ast.literal_eval(line['answer'])
             category = line['category']
             questions = line['question']
@@ -3015,20 +3016,17 @@ class OCRBench_v2(ImageBaseDataset):
                 "bbox": bbox,
                 "content": content
             }
-            
             # Add eval field if present
             if evals != 'without eval':
                 result_entry["eval"] = evals
-                
             predict_result.append(result_entry)
-
         res_data_list = process_predictions(predict_result)
         en_scores, cn_scores = ocrbench_v2_aggregate_accuracy(res_data_list)
         score_en_overall = sum(en_scores.values()) / len(en_scores)
         score_cn_overall = sum(cn_scores.values()) / len(cn_scores)
         final_score_dict = {**en_scores, **cn_scores}
-        final_score_dict["English Overall Score"]=score_en_overall
-        final_score_dict["Chinese Overall Score"]=score_cn_overall
+        final_score_dict["English Overall Score"] = score_en_overall
+        final_score_dict["Chinese Overall Score"] = score_cn_overall
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
         return final_score_dict
