@@ -505,6 +505,7 @@ class Physics_yale(ImageBaseDataset):
         'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
         'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
@@ -514,17 +515,36 @@ class Physics_yale(ImageBaseDataset):
         'optics_dataset': '39ab9028ae4a33c06f78ce8618668172',
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
-        'Physics': 'b4136f27f09339698f636111c07824e9'
+        'Physics_blankim': 'b4136f27f09339698f636111c07824e9',
+        'Physics': '528d66b7365f9d4db2b58fdeadeade71'
     }
+
+    def __init__(self, dataset='Physics', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', 'Physics')
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+        data['index'] = [str(x) for x in data['index']]
+        self.meta_only = False
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+        self.data = data
+        self.post_build(dataset)
 
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if self.meta_only:
-            tgt_path = toliststr(line['image'])
+        if pd.isna(line['image']):
+            tgt_path = None
         else:
-            tgt_path = self.dump_image(line)
+            if self.meta_only:
+                tgt_path = toliststr(line['image'])
+            else:
+                tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -546,10 +566,11 @@ class Physics_yale(ImageBaseDataset):
             f"Question: {line['question']}\nAnswer:")
 
         msgs = []
-        if isinstance(tgt_path, list):
-            msgs.extend([{"type": "image", "value": p} for p in tgt_path])
-        else:
-            msgs.append({"type": "image", "value": tgt_path})
+        if tgt_path is not None:
+            if isinstance(tgt_path, list):
+                msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+            else:
+                msgs.append({"type": "image", "value": tgt_path})
 
         msgs.append({"type": "text", "value": instruction})
 
