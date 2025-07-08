@@ -282,8 +282,8 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,
-                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus)
-            )
+                backend_config=TurbomindEngineConfig(session_len=32768, cache_max_entry_count=0.1, tp=num_gpus),
+                chat_template_config=ChatTemplateConfig(model_name='qwen2d5-vl'))
             torch.cuda.set_device(0)
             self.device = 'cuda'
         else:
@@ -547,7 +547,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             images, videos = process_vision_info(messages)
         print('finishing process vision info in vllm.')
 
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if DATASET_MODALITY(dataset) == 'VIDEO' and 'megabench' not in dataset.lower():
             assert len(videos) == 1
             videos_nd = [videos[0].detach().cpu().numpy().transpose(0, 2, 3, 1)]
 

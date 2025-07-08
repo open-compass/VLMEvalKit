@@ -401,6 +401,7 @@ class LLaVA_Next(BaseModel):
         output = self.model.generate(**inputs, **self.kwargs)
         answer = self.processor.decode(output[0], skip_special_token=True)
         answer = self.output_process(answer)
+        answer = answer.replace('<unk>', '')
         return answer
 
 
@@ -718,7 +719,7 @@ class LLaVA_OneVision(BaseModel):
         return spare_frames, frame_time, video_time
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if DATASET_MODALITY(dataset) == 'VIDEO' and 'megabench' not in dataset.lower():
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)
@@ -838,7 +839,7 @@ class LLaVA_OneVision_HF(BaseModel):
         return video_frames, frame_time_str, video_time
 
     def generate_inner(self, message, dataset=None):
-        if DATASET_MODALITY(dataset) == "VIDEO":
+        if DATASET_MODALITY(dataset) == "VIDEO" and 'megabench' not in dataset.lower():
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)

@@ -26,6 +26,23 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
+    if getattr(model,'backend', None) == 'genai':
+        if dataset.nframe > 0:
+            print(
+                'Gemini model (with genai backend) does not support nframe, '
+                'will set its VIDEO_LLM to False to enable multi-image input for video.'
+            )
+            setattr(model, 'VIDEO_LLM', False)
+        else:
+            print('Gemini model (with genai backend) is a video-llm, '
+                  'will reset fps setting in model to match the dataset.')
+            setattr(model, 'fps', dataset.fps)
+            print(f'The fps is set to {dataset.fps} for the model {model_name}.')
+    elif getattr(model,'backend', None) == 'vertex':
+        print('Gemini model (with vertex backend) does not support video input, '
+              'will set its VIDEO_LLM to False to enable multi-image input for video.')
+        setattr(model, 'VIDEO_LLM', False)
+
     structs = [dataset.build_prompt(samples_dict[idx], video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
 
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
@@ -97,6 +114,13 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         return model
 
     assert not getattr(dataset, 'pack', False), 'Current model not supported pack mode!'
+    if 'megabench' in dataset_name.lower() and 'llava_onevision' in model_name:
+        print(
+            'LLaVA-OneVision does not support Megabench dataset as video dataset, '
+            'will set its VIDEO_LLM to False to enable multi-image input for video.'
+        )
+        setattr(model, 'VIDEO_LLM', False)
+
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue
@@ -118,10 +142,15 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
                 raise ValueError(f'nframe is not suitable for {model_name}')
             else:
                 setattr(model, 'fps', None)
-        if getattr(model, 'nframe', None) is None and dataset.nframe > 0:
-            print(f'using {model_name} default setting for video, dataset.nframe is ommitted')
-        if getattr(model, 'fps', None) is None and dataset.fps > 0:
-            print(f'using {model_name} default setting for video, dataset.fps is ommitted')
+        if (
+            'Qwen2-VL' in model_name
+            or 'Qwen2.5-VL' in model_name
+            or 'Qwen2.5-Omni' in model_name
+        ):
+            if getattr(model, 'nframe', None) is None and dataset.nframe > 0:
+                print(f'using {model_name} default setting for video, dataset.nframe is ommitted')
+            if getattr(model, 'fps', None) is None and dataset.fps > 0:
+                print(f'using {model_name} default setting for video, dataset.fps is ommitted')
         if 'SUB_DATASET' in dataset.data.iloc[sample_map[idx]]:
             dataset_name = dataset.data.iloc[sample_map[idx]]['SUB_DATASET']
         if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):

@@ -79,7 +79,12 @@ def HD_transform(img, im_num=36, id_scale=1.5):
     new_w = int(scale * 560)
     new_h = int(new_w / ratio)
 
-    img = transforms.functional.resize(img, [new_h, new_w],)
+    try:
+        img = transforms.functional.resize(img, [new_h, new_w],)
+    except:
+        print((height, width))
+        print((new_h, new_w))
+        print(im_num)
     img = padding_560(img)
     width, height = img.size
     assert width * height <= im_num * 560 * 560
@@ -171,7 +176,7 @@ def model_gen(model, text, images, need_bos=True, padding=False, beams=3, max_to
                 image = Identity_transform(image)
             else:
                 if len(images) > 1:
-                    image = HD_transform(image, im_num=model.hd_num // len(images), id_scale=model.id_scale)
+                    image = HD_transform(image, im_num=max(4, model.hd_num // len(images)), id_scale=model.id_scale)
                 else:
                     image = HD_transform(
                         image, im_num=model.hd_num, id_scale=model.id_scale)
@@ -220,6 +225,7 @@ class XComposer2d5(BaseModel):
         model.tokenizer = tokenizer
         self.model = model
         self.device = self.model.model.tok_embeddings.weight.device
+        self.org_hd_num = 36
         self.model.hd_num = 36
         self.model.id_scale = self.id_scale
 
@@ -232,6 +238,10 @@ class XComposer2d5(BaseModel):
 
         else:
             image = [Image.open(x['value']).convert('RGB') for x in message if x['type'] == 'image']
+            if len(image) > 1:
+                self.model.hd_num = max(1, self.org_hd_num // len(image))
+            else:
+                self.set_max_num(dataset)
 
             if video_input:
                 im_prompt = '<IM_POS>Here are some frames of a video.'
@@ -306,9 +316,10 @@ class XComposer2d5(BaseModel):
     def set_max_num(self, dataset):
         if dataset is not None and listinstr(['MME-RealWorld', 'MME-RealWorld-CN'], dataset):
             self.model.hd_num = 25
+        else:
+            self.model.hd_num = self.org_hd_num
 
     def generate_inner(self, message, dataset=None):
-        self.set_max_num(dataset)
         with torch.cuda.amp.autocast():
             if dataset is None:
                 prompt, image_path = self.message_to_promptimg(message, dataset=dataset)

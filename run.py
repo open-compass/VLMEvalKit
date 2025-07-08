@@ -191,7 +191,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
     # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
-    parser.add_argument('--reuse-aux', type=bool, default=True, help='reuse auxiliary evaluation files')
+    parser.add_argument('--reuse-aux', type=int, default=True, help='reuse auxiliary evaluation files')
     parser.add_argument(
         '--use-vllm', action='store_true', help='use vllm to generate, the flag is only supported in Llama4 for now')
 
@@ -264,6 +264,7 @@ def main():
 
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
+        print(args.reuse_aux)
 
         for _, dataset_name in enumerate(args.data):
             if WORLD_SIZE > 1:
@@ -395,9 +396,9 @@ def main():
                 else:
                     print(dataset_name)
                     if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
-                        ['moviechat1k'], dataset_name.lower()
+                        ['moviechat1k', 'mme-reasoning'], dataset_name.lower()
                     ):
-                        if listinstr(['WeMath'], dataset_name):
+                        if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
                         elif listinstr(['VisuLogic'], dataset_name):
                             judge_kwargs['model'] = 'exact_matching'
@@ -411,10 +412,14 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['ChartMimic'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['VDC'], dataset_name):
                         judge_kwargs['model'] = 'llama31-8b'
-                    elif listinstr(['VideoMMLU_QA', 'VideoMMLU_CAP'], dataset_name):
+                    elif listinstr(['Video_MMLU_QA', 'Video_MMLU_CAP'], dataset_name):
                         judge_kwargs['model'] = 'qwen-72b'
+                    elif listinstr(['MMVMBench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
 
                 if RANK == 0:
                     logger.info(judge_kwargs)

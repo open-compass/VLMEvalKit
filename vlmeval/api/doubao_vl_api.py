@@ -42,18 +42,25 @@ class DoubaoVLWrapper(BaseAPI):
         assert key is not None, 'Please set the environment variable DOUBAO_VL_KEY. '
         self.key = key
 
-        # We will retrieve the endpoint based on model_name
-        assert self.model in ['Doubao-1.5-vision-pro', 'doubao-1-5-thinking-vision-pro-250428']
-        EP_KEY = 'DOUBAO_VL_ENDPOINT' + '_' + self.model.replace('.', '_').replace('-', '_').upper()
-        endpoint = os.getenv(EP_KEY, None)
-        assert endpoint is not None, f'Please set the environment variable {EP_KEY} as the endpoint of model {model}. '
-        self.endpoint = endpoint
-
         assert api_base is not None, 'Please set the variable API_BASE. '
         self.api_base = api_base
         self.timeout = timeout
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+
+        # Models that require an EP
+        # assert self.model in ['Doubao-1.5-vision-pro', 'doubao-1-5-thinking-vision-pro-250428']
+        EP_KEY = 'DOUBAO_VL_ENDPOINT' + '_' + self.model.replace('.', '_').replace('-', '_').upper()
+        endpoint = os.getenv(EP_KEY, None)
+
+        if endpoint is not None:
+            self.endpoint = endpoint
+        else:
+            self.logger.warning(
+                f'Endpoint for model {model} is not set (can be set w. environment var {EP_KEY}. '
+                f'By default, we will use the model name {model} as the EP if not set. '
+            )
+            self.endpoint = model
 
         self.client = OpenAI(
             api_key=self.key,
@@ -173,19 +180,14 @@ class DoubaoVLWrapper(BaseAPI):
         ret_code = -1
         answer = self.fail_msg
         response = None
+        payload = dict(model=self.endpoint, messages=input_msgs, max_tokens=max_tokens, temperature=temperature)
         try:
-            response = self.client.chat.completions.create(
-                model=self.endpoint,
-                messages=input_msgs,
-                max_tokens=max_tokens,
-                temperature=temperature
-            )
+            response = self.client.chat.completions.create(**payload)
             answer = response.choices[0].message.content.strip()
             ret_code = 0
         except Exception as err:
-            if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(response.text if hasattr(response, 'text') else response)
+            self.logger.error(f'{type(err)}: {err}')
+            self.logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 

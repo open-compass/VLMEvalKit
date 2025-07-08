@@ -199,14 +199,14 @@ class CharXiv(ImageBaseDataset):
                 f"The judge_model '{judge_model}' is not gpt-4o-mini. Evaluation results may not be accurate."
             )
 
-        judge_model = build_judge(**judge_kwargs)
+        judge_model = build_judge(model=judge_model, **judge_kwargs)
         judge_model_name = judge_model.model
 
         # Define file paths
         suffix = eval_file.split(".")[-1]
         result_file = eval_file.replace(f".{suffix}", f"_{judge_model_name}.xlsx")
         temp_result_file = eval_file.replace(f".{suffix}", f"_{judge_model_name}.pkl")
-        score_file = result_file.replace(".xlsx", "_score.csv")
+        score_file = result_file.replace(".xlsx", "_acc.csv")
 
         # Return existing results if available
         if os.path.exists(result_file):
@@ -227,7 +227,7 @@ class CharXiv(ImageBaseDataset):
 
         # Identify unprocessed indices
         indices = [i for i in range(len(data)) if i not in processed_results]
-        tups = [(judge_model, data.iloc[i]) for i in range(len(data))]
+        tups = [(judge_model, data.iloc[i]) for i in range(len(data)) if i not in processed_results]
 
         # Process remaining examples
         nproc = judge_kwargs.pop("nproc", 4)

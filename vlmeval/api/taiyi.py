@@ -63,12 +63,6 @@ class TaiyiWrapper(BaseAPI):
             input_msgs.append(dict(role='user', content=text))
         return input_msgs
 
-    def set_dump_image(self, dump_image_func):
-        self.dump_image_func = dump_image_func
-
-    def dump_image(self, line, dataset):
-        return self.dump_image_func(line)
-
     def image_first(self, msgs):
         nr_img = 0
         for s in msgs:
