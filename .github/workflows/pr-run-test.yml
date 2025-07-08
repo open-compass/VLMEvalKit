@@ -54,7 +54,7 @@ jobs:
             nvidia-smi
             LOG=$(python run.py --data ${{matrix.dataset}} --model $model_name 2>&1)
             echo "$LOG"
-            if echo "$LOG" | grep -q "OOM"; then
+            if echo "$LOG" | grep -q "CUDA out of memory"; then
               exit 1  # 触发重试
             fi
             python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
