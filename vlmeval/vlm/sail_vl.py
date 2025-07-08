@@ -181,6 +181,16 @@ def reorganize_prompt(message, image_num, dataset=None):
         for i in range(image_num):
             prompt = prompt.replace("<image>", f"<Image-{i + 1}>", 1)
         prompt = "".join([f"Image-{i + 1}: <image>\n" for i in range(image_num)]) + prompt
+    elif dataset is not None and listinstr(["bmmr"], dataset.lower()):
+        if image_num == 1:
+            prompt = "\n".join([x["value"] for x in message if x["type"] == "text"])
+        else:
+            prompt, image_idx = "", 1
+            for x in message:
+                if x["type"] == "text":
+                    prompt += x["value"]
+                elif x["type"] == "image":
+                    image_idx += 1
     elif image_num == 1:
         prompt = "<image>\n" + "\n".join([x["value"] for x in message if x["type"] == "text"])
     else:

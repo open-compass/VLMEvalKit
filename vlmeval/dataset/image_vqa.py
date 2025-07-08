@@ -2191,6 +2191,69 @@ class MMSci_Captioning(ImageBaseDataset):
         return rating
 
 
+class BMMR(ImageBaseDataset):
+    TYPE = 'BMMR'
+    DATASET_URL = {
+        'BMMR': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR.tsv'
+    }
+    DATASET_MD5 = {'BMMR': '3245ec52eb8dd689b81633cf7be06264'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.bmmr import get_acc_for_reference_based_metrics, merge_rating
+        refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
+        if not osp.exists(refer_based_metrics_output_file):
+            data = load(eval_file)
+            old_candidates = {}
+            old_references = {}
+            task_types = {}
+            for idx, item in data.iterrows():
+                image_id = item["index"]
+                task_types[image_id] = item["task_type"]
+                old_candidates[image_id] = [item["prediction"]]
+                old_references[image_id] = [item["answer"]]
+
+            candidates = []
+            references = []
+            image_id_list = []
+            task_type_list = []
+            image_ids = old_references.keys()
+            for cid in image_ids:
+                if cid in old_candidates:
+                    candidates.append(old_candidates[cid][0])
+                    references.append(old_references[cid])
+                    image_id_list.append(cid)
+                    task_type_list.append(task_types[cid])
+            if isinstance(references[0], str):
+                references = [[r] for r in references]
+
+            reference_based_metrics_file = eval_file.replace('.xlsx', '_reference_based_metrics.pkl')
+            assert len(references) == len(candidates) == len(image_id_list) == len(task_type_list)
+            existing_data = get_acc_for_reference_based_metrics(
+                references, candidates, image_id_list, task_type_list, reference_based_metrics_file
+            )
+            for idx, item in data.iterrows():
+                reference_based_metrics = str(existing_data[item["index"]])
+                data.loc[idx, 'reference_based_metrics'] = reference_based_metrics
+            dump(data, refer_based_metrics_output_file)
+
+        rating = merge_rating(
+            refer_based_metrics_output_file,
+        )
+        dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
+        return rating
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        question = line['question']
+        tgt_path = self.dump_image(line)
+
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+
 class TDBenchGrounding(ImageVQADataset):
     DATASET_URL = {
         'tdbench_grounding_rot0':
