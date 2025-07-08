@@ -35,17 +35,25 @@ jobs:
       - name: clone_repo
         uses: actions/checkout@v3
       - name: evaluation_model
-        run: |
-          . ${{env.CONDA_PATH}}/bin/activate
-          conda activate ${{env.CONDA_ENV}}
-          pip uninstall vlmeval -y
-          pip install -e .
-          pre_model=$(echo ${{matrix.model}} | awk -F'/' '{print $1}')
-          if [ "${{matrix.model}}" = "lmms-lab/llava-onevision-qwen2-7b-si" ];then
-              model_name="llava_onevision_qwen2_7b_si"
-          else
-              model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
-          fi
-          nvidia-smi
-          python run.py --data ${{matrix.dataset}} --model $model_name
-          python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
+        uses: nick-fields/retry@v3
+        with: 
+          max_attempts: 1
+          command: |
+            . ${{env.CONDA_PATH}}/bin/activate
+            conda activate ${{env.CONDA_ENV}}
+            pip uninstall vlmeval -y
+            pip install -e .
+            pre_model=$(echo ${{matrix.model}} | awk -F'/' '{print $1}')
+            if [ "${{matrix.model}}" = "lmms-lab/llava-onevision-qwen2-7b-si" ];then
+                model_name="llava_onevision_qwen2_7b_si"
+            else
+                model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
+            fi
+            nvidia-smi
+            LOG=$(python run.py --data ${{matrix.dataset}} --model $model_name 2>&1)
+            echo "$LOG"
+            if echo "$LOG" | grep -q "OOM"; then
+              exit 1  # 触发重试
+            fi
+            python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
+      
