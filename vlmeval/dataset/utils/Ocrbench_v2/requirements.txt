@@ -1,0 +1,13 @@
+apted
+distance
+distance
+editdistance
+ipdb
+jieba
+Levenshtein
+lxml
+nltk
+numpy
+Polygon3
+tqdm
+zss
