@@ -1,3 +1,4 @@
+# flake8: noqa
 # Copyright (c) 2024, NVIDIA CORPORATION.  All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -116,7 +117,7 @@ def normalize(answer, pi) -> str:
         bool(re.match(r'^\d+(\.\d+)?%$', answer)) or bool(re.match(r'^\d+(\.\d+)?\\%$', answer))
     ):
         return answer.replace("\\%", "").replace("%", "")
-    
+
     # handle base
     answer = handle_base(answer)
 
@@ -125,10 +126,11 @@ def normalize(answer, pi) -> str:
 
     return answer
 
+
 def handle_base(x) -> str:
     if isinstance(x, str) and "_" in x:
         try:
-        # Due to base
+            # Due to base
             x = x.split("_")[0]
             x = float(x)
             return int(x)
@@ -146,12 +148,12 @@ def handle_pi(string, pi):
         # Iterate over the string and find all occurrences of "\pi" with a valid previous character
         while idx != -1:
 
-            if idx > 0 and string[idx-1].isdigit():
+            if idx > 0 and string[idx - 1].isdigit():
                 # Replace "\pi" with "*math.pi" if the previous character is a digit
-                string = string[:idx] + f"*{pi}" + string[idx+3:]
+                string = string[:idx] + f"*{pi}" + string[idx + 3:]
             else:
                 # Replace "\pi" with "1*math.pi" if the previous character is not a digit
-                string = string[:idx] + f"1*{pi}" + string[idx+3:]
+                string = string[:idx] + f"1*{pi}" + string[idx + 3:]
 
             # Find the next occurrence of "\pi"
             idx = string.find("\pi", idx + 1)
@@ -161,8 +163,9 @@ def handle_pi(string, pi):
             string = eval(string)
         except:
             pass
-            
+
     return string
+
 
 def math_equal(
     prediction: Union[bool, float, str],
@@ -217,7 +220,7 @@ def math_equal(
     reference = str(reference).strip()
     prediction = str(prediction).strip()
 
-    ## deal with [], (), {}
+    # deal with [], (), {}
     prediction = format_intervals(prediction)
 
     pred_str, ref_str = prediction, reference
@@ -232,7 +235,7 @@ def math_equal(
     if pred_str == ref_str:
         return True
 
-    ## [a, b] vs. [c, d], return a==c and b==d
+    # [a, b] vs. [c, d], return a==c and b==d
     if (
         prediction
         and reference
@@ -268,10 +271,10 @@ def math_equal(
                 return False
 
     # if we have point == tuple of values
-    if len(reference) ==0:
+    if len(reference) == 0:
         return False
     if prediction.startswith("Point") and reference[0] == "(" and reference[-1] == ")":
-        pred_parts = prediction[prediction.find("(") + 1 : -1].split(",")
+        pred_parts = prediction[prediction.find("(") + 1: -1].split(",")
         ref_parts = reference[1:-1].split(",")
         if len(pred_parts) == len(ref_parts):
             if all(
@@ -428,10 +431,10 @@ def format_intervals(prediction):
     return prediction
 
 
-def _test_math_equal():
-    ref = "6,-2"
-    pred = "6"
-    print(math_equal(ref, pred))
+# def _test_math_equal():
+#     ref = "6,-2"
+#     pred = "6"
+#     print(math_equal(ref, pred))
 
 def _test_math_equal():
     pi = math.pi
@@ -456,11 +459,12 @@ def _test_math_equal():
     print(math_equal(pred, ref, pi=pi))
 
 
-def _test_math_equal():
-    ref = "\\begin{pmatrix}0&1\\1&0\end{pmatrix}"
-    # ref=ref.split()[1:-1:2]
-    pred = [[0,1], [1,0]]
-    print(math_equal(pred, ref))
+# def _test_math_equal():
+#     ref = "\\begin{pmatrix}0&1\\1&0\\end{pmatrix}"
+#     # ref=ref.split()[1:-1:2]
+#     pred = [[0,1], [1,0]]
+#     print(math_equal(pred, ref))
+
 
 if __name__ == "__main__":
     _test_math_equal()

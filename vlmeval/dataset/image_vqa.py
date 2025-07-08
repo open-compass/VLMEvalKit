@@ -2190,12 +2190,14 @@ class MMSci_Captioning(ImageBaseDataset):
         dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
         return rating
 
+
 class BMMR(ImageBaseDataset):
     TYPE = 'BMMR'
     DATASET_URL = {
         'BMMR': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR.tsv'
     }
     DATASET_MD5 = {'BMMR': '3245ec52eb8dd689b81633cf7be06264'}
+
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.bmmr import get_acc_for_reference_based_metrics, merge_rating
         refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
@@ -2233,12 +2235,13 @@ class BMMR(ImageBaseDataset):
                 reference_based_metrics = str(existing_data[item["index"]])
                 data.loc[idx, 'reference_based_metrics'] = reference_based_metrics
             dump(data, refer_based_metrics_output_file)
-            
+
         rating = merge_rating(
             refer_based_metrics_output_file,
         )
         dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
         return rating
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -2248,9 +2251,7 @@ class BMMR(ImageBaseDataset):
         msgs = []
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
         msgs.append(dict(type='text', value=question))
-        return msgs  
-
-
+        return msgs
 
 
 class TDBenchGrounding(ImageVQADataset):
