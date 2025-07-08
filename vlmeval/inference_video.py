@@ -114,6 +114,13 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         return model
 
     assert not getattr(dataset, 'pack', False), 'Current model not supported pack mode!'
+    if 'megabench' in dataset_name.lower() and 'llava_onevision' in model_name:
+        print(
+            'LLaVA-OneVision does not support Megabench dataset as video dataset, '
+            'will set its VIDEO_LLM to False to enable multi-image input for video.'
+        )
+        setattr(model, 'VIDEO_LLM', False)
+
     for i, idx in tqdm(enumerate(sample_indices_subrem)):
         if idx in res:
             continue

@@ -1446,6 +1446,33 @@ flash_vl = {
     'Flash-VL-2B-Dynamic-ISS': partial(FlashVL, model_path='FlashVL/FlashVL-2B-Dynamic-ISS')
 }
 
+
+oryx_series = {
+    'oryx': partial(Oryx, model_path="THUdyh/Oryx-1.5-7B"),
+}
+
+# recommend: vllm serve moonshotai/Kimi-VL-A3B-Thinking-2506 
+# --served-model-name api-kimi-vl-thinking-2506 --trust-remote-code
+# --tensor-parallel-size 2 --max-num-batched-tokens 131072 
+# --max-model-len 131072 --limit-mm-per-prompt image=256
+kimi_vllm_series = {
+    "api-kimi-vl-thinking-2506": partial(
+        KimiVLAPI,
+        model="api-kimi-vl-thinking-2506",
+    ),
+    "api-kimi-vl-thinking": partial(
+        KimiVLAPI,
+        model="api-kimi-vl-thinking",
+    ),
+    "api-kimi-vl": partial(
+        KimiVLAPI,
+        model="api-kimi-vl",
+        max_new_tokens=2048,
+        temperature=0,
+    ),
+}
+
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
@@ -1467,7 +1494,8 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
+    flash_vl, kimi_vllm_series, oryx_series
 ]
 
 for grp in model_groups:
