@@ -387,6 +387,9 @@ api_models = {
     "GLM4V_PLUS_20250111": partial(
         GLMVisionAPI, model="glm-4v-plus-0111", temperature=0, retry=10
     ),
+    "GLM4_1VThinkingFlash": partial(
+        GLM4_1VThinkingFlashAPI, model="GLM-4.1V-Thinking-Flash", temperature=0, retry=10
+    ),
     # MiniMax abab
     "abab6.5s": partial(
         GPT4V,
