@@ -103,7 +103,7 @@ class BlueLMWrapper(BaseAPI):
     is_api: bool = True
 
     def __init__(self,
-                 model: str = 'BlueLM-2.5',
+                 model: str = 'BlueLM-2.5-3B',
                  retry: int = 5,
                  wait: int = 5,
                  verbose: bool = True,
@@ -207,7 +207,7 @@ class BlueLMWrapper(BaseAPI):
             return -1, '', ''
 
 
-class BlueLM_V_API(BlueLMWrapper):
+class BlueLM_API(BlueLMWrapper):
 
     def generate(self, message, dataset=None):
-        return super(BlueLM_V_API, self).generate(message, dataset=dataset)
+        return super(BlueLM_API, self).generate(message, dataset=dataset)
