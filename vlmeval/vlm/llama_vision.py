@@ -10,7 +10,7 @@ from ..dataset import DATASET_TYPE
 class llama_vision(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct', **kwargs):
         try:
@@ -131,24 +131,69 @@ class llama_vision(BaseModel):
         message.extend([dict(type='image', value=s) for s in tgt_path])
         return message
 
-    def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-
+    def encode_image(self, image_path):
+        from mimetypes import guess_type
+        mime_type, _ = guess_type(image_path)
+        if mime_type is None:
+            mime_type = "image/jpeg"
+        image_format = mime_type.split("/")[-1].upper() if mime_type else "JPEG"
         image = Image.open(image_path)
+        # Handle the alpha channel
+        if image.mode == "RGBA":
+            image = self._rgba_to_rgb(image)
+
+        encoded_image = self._encode_image(image, image_format)
+
+        return encoded_image
+
+    def _encode_image(self, image, image_format):
+        from io import BytesIO
+        with BytesIO() as output:
+            image.convert("RGB").save(output, format=image_format)
+            base64_encoded_data = base64.b64encode(output.getvalue()).decode("utf-8")
+        return base64_encoded_data
+
+    @staticmethod
+    def _rgba_to_rgb(image):
+        background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+        return Image.alpha_composite(background, image).convert("RGB")
+
+    def message_to_promptimg(self, message, dataset=None):
+        processed_message = []
+        images = []
+        for item in message:
+            if item['type'] == 'text':
+                processed_message.append({
+                    "type": "text",
+                    "text": f"{item['value']}"
+                })
+            elif item['type'] == 'image':
+                image_path = item['value']
+                encoded_image = self.encode_image(image_path)
+                from io import BytesIO
+                image = Image.open(BytesIO(base64.b64decode(encoded_image)))
+                image.load()
+                images.append(image)
+                processed_message.append({
+                    "type": "image"
+                })
+        return processed_message, images
+
+    def generate_inner(self, message, dataset=None):
+        prompt, images = self.message_to_promptimg(message, dataset=dataset)
         messages = [
-            {'role': 'user', 'content': [
-                {'type': 'image'},
-                {'type': 'text', 'text': prompt}
-            ]}
+            {'role': 'user', 'content': prompt}
         ]
-        input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
-        inputs = self.processor(image, input_text, return_tensors='pt').to(self.device)
-        if not self.use_custom_prompt(dataset):
-            if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
-                self.kwargs['max_new_tokens'] = 128
-            else:
-                self.kwargs['max_new_tokens'] = 512
-        if "cot" in self.model_name or "CoT" in self.model_name:
-            self.kwargs['max_new_tokens'] = 2048
-        output = self.model.generate(**inputs, **self.kwargs)
-        return self.processor.decode(output[0][inputs['input_ids'].shape[1]:]).replace('<|eot_id|>', '')
+        input_text = self.processor.apply_chat_template(
+            messages,
+            add_generation_prompt=True,
+            return_dict=True,
+            return_tensors="pt",
+        )
+        inputs = self.processor(images, input_text, return_tensors='pt').to(self.device)
+        max_new_tokens = 8192
+        outputs = self.model.generate(**inputs, max_new_tokens=max_new_tokens)
+        generated_text = self.processor.batch_decode(
+            outputs[:, inputs["input_ids"].shape[-1]:]
+        )[0].replace('<|eot_id|>', '')
+        return generated_text
