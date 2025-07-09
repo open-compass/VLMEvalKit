@@ -505,6 +505,7 @@ class Physics_yale(ImageBaseDataset):
         'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
         'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
@@ -514,17 +515,36 @@ class Physics_yale(ImageBaseDataset):
         'optics_dataset': '39ab9028ae4a33c06f78ce8618668172',
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
-        'Physics': 'b4136f27f09339698f636111c07824e9'
+        'Physics_blankim': 'b4136f27f09339698f636111c07824e9',
+        'Physics': '528d66b7365f9d4db2b58fdeadeade71'
     }
+
+    def __init__(self, dataset='Physics', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', 'Physics')
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+        data['index'] = [str(x) for x in data['index']]
+        self.meta_only = False
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+        self.data = data
+        self.post_build(dataset)
 
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if self.meta_only:
-            tgt_path = toliststr(line['image'])
+        if pd.isna(line['image']):
+            tgt_path = None
         else:
-            tgt_path = self.dump_image(line)
+            if self.meta_only:
+                tgt_path = toliststr(line['image'])
+            else:
+                tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -546,10 +566,11 @@ class Physics_yale(ImageBaseDataset):
             f"Question: {line['question']}\nAnswer:")
 
         msgs = []
-        if isinstance(tgt_path, list):
-            msgs.extend([{"type": "image", "value": p} for p in tgt_path])
-        else:
-            msgs.append({"type": "image", "value": tgt_path})
+        if tgt_path is not None:
+            if isinstance(tgt_path, list):
+                msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+            else:
+                msgs.append({"type": "image", "value": tgt_path})
 
         msgs.append({"type": "text", "value": instruction})
 
@@ -3035,3 +3056,61 @@ class MMVMBench(ImageBaseDataset):
             dump(acc, acc_file)
 
             return acc
+
+
+class OCRBench_v2(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'OCRBench_v2':
+        'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+    }
+    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import ast
+        from .utils.ocrbrnch_v2_eval import process_predictions, ocrbench_v2_aggregate_accuracy
+        import pandas as pd
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        predict_result = []
+        for i in tqdm(range(len(lines))):
+            line = lines[i]
+            predict = str(line['prediction']) if pd.notna(line['prediction']) else ''
+            answers = ast.literal_eval(line['answer'])
+            category = line['category']
+            questions = line['question']
+            evals = line['eval']
+            bbox_raw = line['bbox']
+            content_raw = line['content']
+
+            # Process bbox and content fields
+            bbox = ast.literal_eval(bbox_raw) if bbox_raw != 'without bbox' else bbox_raw
+            content = ast.literal_eval(content_raw) if content_raw != 'without content' else content_raw
+
+            # Build result dictionary
+            result_entry = {
+                "type": category,
+                "question": questions,
+                "predict": predict,
+                "answers": answers,
+                "bbox": bbox,
+                "content": content
+            }
+            # Add eval field if present
+            if evals != 'without eval':
+                result_entry["eval"] = evals
+            predict_result.append(result_entry)
+        res_data_list = process_predictions(predict_result)
+        en_scores, cn_scores = ocrbench_v2_aggregate_accuracy(res_data_list)
+        score_en_overall = sum(en_scores.values()) / len(en_scores)
+        score_cn_overall = sum(cn_scores.values()) / len(cn_scores)
+        final_score_dict = {**en_scores, **cn_scores}
+        final_score_dict["English Overall Score"] = score_en_overall
+        final_score_dict["Chinese Overall Score"] = score_cn_overall
+        score_pth = eval_file.replace('.xlsx', '_score.json')
+        dump(final_score_dict, score_pth)
+        return final_score_dict
