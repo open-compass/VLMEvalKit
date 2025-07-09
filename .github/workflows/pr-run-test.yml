@@ -21,7 +21,7 @@ env:
   HF_HUB_OFFLINE: 1
   CONDA_PATH: ${{ secrets.WORKSPACE_PREFIX }}/miniconda3
   CONDA_ENV: vlm_pr_test
-  
+
 jobs:
   vlm_test:
     if: ${{!cancelled()}}
@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@v3
       - name: evaluation_model
         uses: nick-fields/retry@v3
-        with: 
+        with:
           max_attempts: 3
           timeout_minutes: 30
           command: |
@@ -67,4 +67,3 @@ jobs:
               model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
           fi
           python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
-      
