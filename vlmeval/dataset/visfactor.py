@@ -45,8 +45,8 @@ class VisFactor(ImageBaseDataset):
     def extract_last_numbers(self, s):
         return [num for num in re.findall(r'\d+', s)]
 
-    def extract_last_uppercase_letter(s):
-        for char in reversed(self, s):
+    def extract_last_uppercase_letter(self, s):
+        for char in reversed(s):
             if char.isupper():
                 return char
         return None
@@ -101,6 +101,7 @@ class VisFactor(ImageBaseDataset):
                 if prediction == '':
                     prediction = str(row['prediction'])
                 if cid == 'VZ3':
+                    print(prediction)
                     prediction = self.extract_last_uppercase_letter(prediction)
                 elif cid == 'CF3':
                     prediction = self.extract_last_numbers(prediction)
