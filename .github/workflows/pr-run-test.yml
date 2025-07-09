@@ -56,7 +56,7 @@ jobs:
             echo "$LOG"
             if echo "$LOG" | grep -q "CUDA out of memory"; then
               sleep 300
-              exit 1  # 触发重试
+              exit 1  # retry becuase of oom
             fi
       - name: assert_result
         run: |
