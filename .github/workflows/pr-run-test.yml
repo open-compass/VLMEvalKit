@@ -55,6 +55,7 @@ jobs:
             LOG=$(python run.py --data ${{matrix.dataset}} --model $model_name 2>&1)
             echo "$LOG"
             if echo "$LOG" | grep -q "CUDA out of memory"; then
+              sleep 300
               exit 1  # 触发重试
             fi
       - name: assert_result
