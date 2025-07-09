@@ -63,32 +63,32 @@ Judgement: 1
 Judgement: 0
 ---
 Now please provide your judgement (0 or 1), DONNOT output explanation:
-"""
+""" # noqa
 
 def get_example():
     example_1 = """
 Question: What is the net force acting on a 5 kg object accelerating at 3 m/s² to the right?\n
 Model response: Using F = ma, the net force is 15 N to the right.\n
 Extracted answer: the net force is 15 N to the right.
-"""
+""" # noqa
 
     example_2 = """
 Question: Calculate the charge of an electron. (Unit: C)\n
 Model response: The elementary charge of an electron is approximately -1.602 × 10⁻¹⁹ coulombs.\n
 Extracted answer: -1.602 × 10⁻¹⁹ C
-"""
+""" # noqa
 
     example_3 = """
 Question: How much money does Luca need to buy a sour apple candy and a butter-scotch candy? (Unit: $)\n
 Model response: Luca needs $1.45 to buy a sour apple candy and a butterscotch candy.\n
 Extracted answer: $1.45
-"""
+""" # noqa
 
     example_4 = """
 Question: Between which frequencies does human hearing typically range? \n
 Model response: Human hearing ranges between 20 Hz and 20,000 Hz.\n
 Extracted answer: [20 Hz, 20000 Hz]
-"""
+""" # noqa
 
     example_5 = """
 Question: List the wavelengths of visible light colors.\n
@@ -97,15 +97,16 @@ Model response: Visible light ranges from:\n
 - Green: ~550 nm\n
 - Blue: ~450 nanometre\n
 Extracted answer: Red: 700 nm; Green: 550 nm; Blue: 450 nanometre.
-"""
+""" # noqa
     return [example_1, example_2, example_3, example_4, example_5]
+
 
 def build_extract_prompt(line):
     task_description = """
 Please read the following example.
-Then extract the answer from the model response and type it at the end of the prompt.\n
+Then extract the answer from the model response and type it at the end of the prompt.\n # noqa
 """
-    question = "Please answer this question in the image." if str(line['question']) == 'nan' else line['question']
+    question = "Please answer this question in the image." if str(line['question']) == 'nan' else line['question'] # noqa
 
     prediction = extract_by_rule(line)
     prompt = task_description
@@ -117,8 +118,10 @@ Then extract the answer from the model response and type it at the end of the pr
     prompt += 'Extracted answer:'
     return prompt
 
+
 def list_to_dict(lst):
     return {chr(65 + i): val for i, val in enumerate(lst)}
+
 
 def extract_by_rule(line):
     response = line['prediction']
@@ -129,7 +132,7 @@ def extract_by_rule(line):
             response = match.group(1)
             return response
 
-    except Exception as e:
+    except Exception:
         pass
     try:
         pattern = r"the final answer is: (.+?)\."
@@ -137,7 +140,7 @@ def extract_by_rule(line):
         if match:
             response = match.group(1)
             return response
-    except Exception as e:
+    except Exception:
         pass
     try:
         pattern = r"The answer is: (.+?)\."
@@ -145,20 +148,21 @@ def extract_by_rule(line):
         if match:
             response = match.group(1)
             return response
-    except Exception as e:
+    except Exception:
         pass
 
     try:
         response = int(response)
         return str(response)
-    except Exception as e:
+    except Exception:
         pass
     try:
         response = float(response)
         return str(response)
-    except Exception as e:
+    except Exception:
         pass
     return str(response)
+
 
 def quick_compare(response, answer, tol=1e-6):
     if response is None or answer is None:
@@ -173,6 +177,7 @@ def quick_compare(response, answer, tol=1e-6):
 
     # 场景3：比较表达式（如 "\frac{x}{y}" vs "x/y"）
     return simplify(response - answer) == 0
+
 
 def post_check(line, prefetch=False):
     # prefetch: return extracted response
@@ -190,9 +195,10 @@ def post_check(line, prefetch=False):
         parsed_ans = parse_latex(ans)
         if quick_compare(parsed_res, parsed_ans):
             return latex(parsed_res) if prefetch else True
-    except Exception as e:
+    except Exception:
         return False
     return False
+
 
 def extract(model, line):
     log = ''
@@ -210,19 +216,22 @@ def extract(model, line):
             else:
                 log += 'Succeed'
                 score = score_func(model, res, line['question'], line['answer'])
-                if score == None:
+                if score is None:
                     log += '\nScore failed'
                     return dict(log=log, extract=res, score=-1)
                 return dict(log=log, extract=res, score=score)
     log += 'All 5 retries failed.\n'
     return dict(log=log, extract='', score=-1)
 
+
 def score_func(model, response, query, gt):
     if not response:
         return 0
     try:
-
-        full_prompt = prompt_scoring.strip() + f"""\n[Question]: {query}\n[Standard Answer]: {gt}\n[Model Answer] : {response}\nJudgement: """
+        full_prompt = prompt_scoring.strip() + f"""\n[Question]: \{query}\
+            \n[Standard Answer]: {gt}\
+            \n[Model Answer]: {response}\
+            \nJudgement: """
         try_n = 0
         while try_n < 5:
             score = model.generate(full_prompt, temperature=try_n * 0.3)
@@ -237,12 +246,13 @@ def score_func(model, response, query, gt):
             try:
                 if int(score) == 0 or int(score) == 1:
                     return int(score)
-            except Exception as e:
+            except Exception:
                 continue
     except Exception as e:
-        print(f"score_func Error!")
+        print("score_func Error!")
         print(e)
         return None
+
 
 def eval_acc(result_file):
     data = load(result_file)
@@ -334,7 +344,7 @@ def eval_acc(result_file):
         'source': defaultdict(lambda: 0),
         'sig_figs': defaultdict(lambda: 0),
         'vision_relevance': defaultdict(lambda: 0),
-        'img_category' : defaultdict(lambda: 0),
+        'img_category': defaultdict(lambda: 0),
     }
 
     res['acc'] = hit['Overall'] / tot['Overall'] * 100 if tot['Overall'] > 0 else 0
@@ -350,6 +360,7 @@ def eval_acc(result_file):
     for category in categories:
         calculate_accuracy(hit, tot, res, category)
     res_dict = {
-        'Overall': {'Accuracy (%)': res['acc'], 'PrefetchRate (%)': res['prefetch_rate'],}, **{cat: dict(res[cat]) for cat in categories}
+        'Overall': {'Accuracy (%)': res['acc'], 'PrefetchRate (%)': res['prefetch_rate'],}, \
+            **{cat: dict(res[cat]) for cat in categories}
     }
     return res_dict
