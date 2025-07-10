@@ -29,11 +29,12 @@ class GraniteVision3(BaseModel):
         # assert not use_vllm "vLLM is not yet supported for evaluations in VLMEvalKit"
         self.model_path = model_path
         self.processor = AutoProcessor.from_pretrained(self.model_path)
+        attn_impl = "flash_attention_2" if flash_attn_flag else "eager"
         model = AutoModelForVision2Seq.from_pretrained(
             self.model_path,
             torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
-            use_flash_attention_2=flash_attn_flag,
+            attn_implementation=attn_impl
         )
 
         model = model.eval()
