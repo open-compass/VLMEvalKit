@@ -848,9 +848,9 @@ class OlympiadBench(ImageBaseDataset):
 class SeePhys(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'SeePhys': 
+        'SeePhys':
         'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total.tsv',
-        'SeePhys_vo': 
+        'SeePhys_vo':
         'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total_vo.tsv',
     }
     DATASET_MD5 = {
