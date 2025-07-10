@@ -878,18 +878,14 @@ class SeePhys(ImageBaseDataset):
 
         if os.environ.get('USE_SEARCH', '0') == '1':
             if line['language'] == 'English':
-                question += "\nPlease search the Internet to answer the above question. First output your thinking process \
-                    in <think> </think> tags and then output the final answer in <answer> </answer> tags."  # noqa: E501
+                question += "\nPlease search the Internet to answer the above question. First output your thinking process in <think> </think> tags and then output the final answer in <answer> </answer> tags."  # noqa: E501
             else:
-                question += "\n请在互联网上搜索以回答上述问题。首先在<think></think>标签中输出你的思维过程，\
-                    然后在<answer></answer>标签中输入最终答案。"
+                question += "\n请在互联网上搜索以回答上述问题。首先在<think></think>标签中输出你的思维过程，然后在<answer></answer>标签中输入最终答案。"  # noqa: E501
         elif os.environ.get('USE_COT_PROMPT', '1') == '1':
             if line['language'] == 'English':
-                question += "\nPlease answer this question with reasoning. First output your reasoning process \
-                    in <think> </think> tags and then output the final answer in <answer> </answer> tags."
+                question += "\nPlease answer this question with reasoning. First output your reasoning process in <think> </think> tags and then output the final answer in <answer> </answer> tags."  # noqa: E501
             else:
-                question += "\n请用推理来回答这个问题。首先在<think></think>标签中输出推理过程，\
-                    然后在<answer></answer>标签中输入最终答案。"
+                question += "\n请用推理来回答这个问题。首先在<think></think>标签中输出推理过程，然后在<answer></answer>标签中输入最终答案。"  # noqa: E501
         else:
             if line['language'] == 'English':
                 question += "\nAnswer this question directly with numbers, formulas, or phrases"
