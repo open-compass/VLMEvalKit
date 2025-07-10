@@ -13,7 +13,7 @@ nltk
 numpy<2.0.0
 omegaconf
 openai
-opencv-python>=4.7.0.72
+opencv-python-headless<4.3
 openpyxl
 pandas
 pillow
