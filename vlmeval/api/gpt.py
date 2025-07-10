@@ -5,10 +5,6 @@ from typing import List, Dict, Any, Tuple
 from ..smp import *
 from .base import BaseAPI
 from io import BytesIO
-<<<<<<< HEAD
-=======
-import random
->>>>>>> 238e75b (update)
 import threading
 
 APIBASES = {
@@ -568,7 +564,11 @@ class VLLMAPIWrapper(BaseAPI):
                     from PIL import Image
                     fmt=get_image_fmt_from_image_path(msg['value'])
                     img = Image.open(msg['value'])
+<<<<<<< HEAD
                     b64 = custom_encode_image_to_base64(img, target_size=self.img_size, fmt=fmt)
+=======
+                    b64 = encode_image_to_base64(img, target_size=-1, fmt=fmt)
+>>>>>>> abfdf17 (update mmmupro)
                     if self.model == os.environ.get("DOUBAO_MODEL_NAME"):
                         b64 = compress_image(b64, format=fmt)
                     img_struct = dict(url=f'data:image/{fmt};base64,{b64}')
@@ -611,7 +611,7 @@ class VLLMAPIWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
-        print( f"Temperature={temperature}; Max_tokens={max_tokens}"  )
+
         # Will send request if use Azure, dk how to use openai client for it
         if self.key is None:
             headers = {'Content-Type': 'application/json'}
