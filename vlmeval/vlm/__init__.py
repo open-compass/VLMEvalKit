@@ -4,9 +4,11 @@ torch.set_grad_enabled(False)
 torch.manual_seed(1234)
 from .aria import Aria
 from .base import BaseModel
+from .hawk_vl import HawkVL
 from .cogvlm import CogVlm, GLM4v
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .eagle_x import Eagle
+from .granite_vision import GraniteVision3
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
 from .kosmos import Kosmos2
@@ -66,7 +68,7 @@ from .video_llm import (
     PLLaVA,
 )
 from .vila import VILA, NVILA
-from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2
+from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2, OvisU1
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
@@ -97,3 +99,4 @@ from .vlaa_thinker import VLAAThinkerChat
 from .kimi_vl import KimiVL
 from .wethink_vl import WeThinkVL
 from .flash_vl import FlashVL
+from .oryx import Oryx

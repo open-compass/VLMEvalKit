@@ -81,16 +81,44 @@ ungrouped = {
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
 }
 
-o1_key = 'XXX'  # noqa: E501
+o1_key = os.environ.get('O1_API_KEY', None)
+o1_base = os.environ.get('O1_API_BASE', None)
 o1_apis = {
     'o1': partial(
         GPT4V,
         model="o1-2024-12-17",
         key=o1_key,
-        api_base='OFFICIAL', 
+        api_base=o1_base, 
         temperature=0,
         img_detail='high',
-        retry=10,
+        retry=3,
+        timeout=1800, 
+        max_tokens=16384,
+        verbose=False,
+
+    ),
+    'o3': partial(
+        GPT4V, 
+        model="o3-2025-04-16",
+        key=o1_key,
+        api_base=o1_base, 
+        temperature=0,
+        img_detail='high',
+        retry=3,
+        timeout=1800, 
+        max_tokens=16384, 
+        verbose=False,
+    ),
+    'o4-mini': partial(
+        GPT4V, 
+        model="o4-mini-2025-04-16",
+        key=o1_key,
+        api_base=o1_base, 
+        temperature=0,
+        img_detail='high',
+        retry=3,
+        timeout=1800,
+        max_tokens=16384,
         verbose=False,
     ),
 }
@@ -372,17 +400,11 @@ api_models = {
     "GeminiFlashLite2-0": partial(
         Gemini, model="gemini-2.0-flash-lite", temperature=0, retry=10
     ),
-    "GeminiPro2-0": partial(
-        Gemini, model="gemini-2.0-pro-exp", temperature=0, retry=10
-    ),
     "GeminiFlash2-5": partial(
-        GPT4V, model="gemini-2.5-flash-preview-04-17", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-flash", temperature=0, retry=10, timeout=1800
     ),
     "GeminiPro2-5": partial(
-        GPT4V, model="gemini-2.5-pro-preview-03-25", temperature=0, retry=10
-    ),
-    "GeminiPro2-5-0506": partial(
-        GPT4V, model="gemini-2.5-pro-preview-05-06", temperature=0, retry=10
+        GPT4V, model="gemini-2.5-pro", temperature=0, retry=10, timeout=1800
     ),
     
     # Qwen-VL
@@ -475,6 +497,7 @@ api_models = {
         temperature=0,
         retry=10,
         verbose=False,
+        timeout=1800
     ),
     "Claude4_Sonnet": partial(
         Claude3V,
@@ -482,6 +505,7 @@ api_models = {
         temperature=0,
         retry=10,
         verbose=False,
+        timeout=1800
     ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
@@ -519,6 +543,9 @@ api_models = {
     ),
     "HunYuan-Standard-Vision": partial(
         HunyuanVision, model="hunyuan-standard-vision", temperature=0, retry=10
+    ),
+    "HunYuan-Large-Vision": partial(
+        HunyuanVision, model="hunyuan-large-vision", temperature=0, retry=10
     ),
     "BailingMM-Lite-1203": partial(
         bailingMMAPI, model="BailingMM-Lite-1203", temperature=0, retry=10
@@ -654,6 +681,13 @@ emu_series = {
     "emu3_chat": partial(Emu3_chat, model_path="BAAI/Emu3-Chat"),
     "emu3_gen": partial(Emu3_gen, model_path="BAAI/Emu3-Gen"),
 }
+
+granite_vision_series = {
+    'granite_vision_3.1_2b_preview': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.1-2b-preview"),
+    'granite_vision_3.2_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.2-2b"),
+    'granite_vision_3.3_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.3-2b"),
+}
+
 mmalaya_series = {
     "MMAlaya": partial(MMAlaya, model_path="DataCanvas/MMAlaya"),
     "MMAlaya2": partial(MMAlaya2, model_path="DataCanvas/MMAlaya2"),
@@ -1134,6 +1168,7 @@ ovis_series = {
     "Ovis2-8B": partial(Ovis2, model_path="AIDC-AI/Ovis2-8B"),
     "Ovis2-16B": partial(Ovis2, model_path="AIDC-AI/Ovis2-16B"),
     "Ovis2-34B": partial(Ovis2, model_path="AIDC-AI/Ovis2-34B"),
+    "Ovis-U1-3B": partial(OvisU1, model_path="AIDC-AI/Ovis-U1-3B"),
 }
 
 mantis_series = {
@@ -1167,6 +1202,16 @@ xgen_mm_series = {
     "xgen-mm-phi3-dpo-r-v1.5": partial(
         XGenMM, model_path="Salesforce/xgen-mm-phi3-mini-instruct-dpo-r-v1.5"
     ),
+}
+
+hawkvl_series = {
+    "HawkVL-2B": partial(
+        HawkVL,
+        model_path="xjtupanda/HawkVL-2B",
+        min_pixels=4 * 28 * 28,
+        max_pixels=6800 * 28 * 28,
+        use_custom_prompt=True
+    )
 }
 
 qwen2vl_series = {
@@ -1307,6 +1352,7 @@ qwen2vl_series = {
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
+        use_lmdeploy=True
     ),
     "MiMo-VL-7B-RL": partial(
         Qwen2VLChat,
@@ -1314,6 +1360,7 @@ qwen2vl_series = {
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
+        use_lmdeploy=True
     ),
     "Qwen2.5-VL-72B-Instruct-ForVideo": partial(
         Qwen2VLChat,
@@ -1517,12 +1564,40 @@ aguvis_series = {
 
 kimi_series = {
     'Kimi-VL-A3B-Thinking': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking'),
-    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct')
+    'Kimi-VL-A3B-Instruct': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Instruct'),
+    'Kimi-VL-A3B-Thinking-2506': partial(KimiVL, model_path='moonshotai/Kimi-VL-A3B-Thinking-2506', temperature=0.8, max_tokens=32768, extract_summary=True)
 }
 
 flash_vl = {
     'Flash-VL-2B-Dynamic-ISS': partial(FlashVL, model_path='FlashVL/FlashVL-2B-Dynamic-ISS')
 }
+
+
+oryx_series = {
+    'oryx': partial(Oryx, model_path="THUdyh/Oryx-1.5-7B"),
+}
+
+# recommend: vllm serve moonshotai/Kimi-VL-A3B-Thinking-2506 
+# --served-model-name api-kimi-vl-thinking-2506 --trust-remote-code
+# --tensor-parallel-size 2 --max-num-batched-tokens 131072 
+# --max-model-len 131072 --limit-mm-per-prompt image=256
+kimi_vllm_series = {
+    "api-kimi-vl-thinking-2506": partial(
+        KimiVLAPI,
+        model="api-kimi-vl-thinking-2506",
+    ),
+    "api-kimi-vl-thinking": partial(
+        KimiVLAPI,
+        model="api-kimi-vl-thinking",
+    ),
+    "api-kimi-vl": partial(
+        KimiVLAPI,
+        model="api-kimi-vl",
+        max_new_tokens=2048,
+        temperature=0,
+    ),
+}
+
 
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
@@ -1535,7 +1610,7 @@ for group in internvl_groups:
 supported_VLM = {}
 
 model_groups = [
-    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series,
+    ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
@@ -1545,7 +1620,8 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
+    flash_vl, kimi_vllm_series, oryx_series
 ]
 
 for grp in model_groups:

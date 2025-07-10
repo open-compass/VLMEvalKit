@@ -67,12 +67,6 @@ class TaichuVLWrapper(BaseAPI):
 
         super().__init__(wait=wait, retry=retry, system_prompt=self.system_prompt, verbose=verbose, **kwargs)
 
-    def set_dump_image(self, dump_image_func):
-        self.dump_image_func = dump_image_func
-
-    def dump_image(self, line, dataset):
-        return self.dump_image_func(line)
-
     def use_custom_prompt(self, dataset):
         if listinstr(['MCQ', 'VQA'], DATASET_TYPE(dataset)):
             return True
