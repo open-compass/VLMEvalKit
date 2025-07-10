@@ -285,6 +285,16 @@ class OpenAIWrapper(BaseAPI):
         return tot
 
 
+def get_image_fmt_from_image_path(image_path):
+    # 根据图片后缀获取图片格式
+    _, ext = os.path.splitext(image_path)
+    if ext.lower() == '.jpg' or ext.lower() == '.jpeg':
+        return 'jpeg'
+    elif ext.lower() == '.png':
+        return 'png'
+    else:
+        return 'jpeg'
+
 class GPT4V(OpenAIWrapper):
 
     def generate(self, message, dataset=None):
@@ -396,11 +406,12 @@ class VLLMAPIWrapper(BaseAPI):
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     from PIL import Image
+                    fmt=get_image_fmt_from_image_path(msg['value'])
                     img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img, target_size=-1)
+                    b64 = encode_image_to_base64(img, target_size=-1, fmt=fmt)
                     if self.model == os.environ.get("DOUBAO_MODEL_NAME"):
-                        b64 = compress_image(b64)
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
+                        b64 = compress_image(b64, format=fmt)
+                    img_struct = dict(url=f'data:image/{fmt};base64,{b64}')
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])
@@ -436,7 +447,7 @@ class VLLMAPIWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
-        print( f"Temperature={temperature}; Max_tokens={max_tokens}"  )
+
         # Will send request if use Azure, dk how to use openai client for it
         if self.key is None:
             headers = {'Content-Type': 'application/json'}
