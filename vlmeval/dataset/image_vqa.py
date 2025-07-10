@@ -912,14 +912,15 @@ class SeePhys(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.seephys import extract, eval_acc
-        model = judge_kwargs['model']
+
+        model = judge_kwargs.pop('model', 'deepseek')
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
         tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=1024, **judge_kwargs)
+            model = build_judge(model=model, max_tokens=1024, **judge_kwargs)
             assert model.working(), ('SeePhys evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
