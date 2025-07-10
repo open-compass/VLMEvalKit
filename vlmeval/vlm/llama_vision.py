@@ -10,7 +10,7 @@ from ..dataset import DATASET_TYPE
 class llama_vision(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='meta-llama/Llama-3.2-11B-Vision-Instruct', **kwargs):
         try:
@@ -132,17 +132,16 @@ class llama_vision(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        prompt, image_path = self.message_to_promptimg(message, dataset=dataset)
-
-        image = Image.open(image_path)
-        messages = [
-            {'role': 'user', 'content': [
-                {'type': 'image'},
-                {'type': 'text', 'text': prompt}
-            ]}
-        ]
+        payload, images = [], []
+        for msg in message:
+            if msg['type'] == 'text':
+                payload.append({'type': 'text', 'text': msg['value']})
+            else:
+                payload.append({'type': 'image'})
+                images.append(Image.open(msg['value']))
+        messages = [{'role': 'user', 'content': payload}]
         input_text = self.processor.apply_chat_template(messages, add_generation_prompt=True)
-        inputs = self.processor(image, input_text, return_tensors='pt').to(self.device)
+        inputs = self.processor(images, input_text, return_tensors='pt').to(self.device)
         if not self.use_custom_prompt(dataset):
             if dataset is not None and DATASET_TYPE(dataset) in ['MCQ', 'Y/N']:
                 self.kwargs['max_new_tokens'] = 128

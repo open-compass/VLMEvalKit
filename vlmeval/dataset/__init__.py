@@ -6,14 +6,14 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
-    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset
+    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
     CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
-    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA, ZEROBench,
-    Omni3DBench, TallyQA
+    MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
+    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2
 )
 
 from .image_ccocr import CCOCRDataset
@@ -41,12 +41,17 @@ from .longvideobench import LongVideoBench
 from .video_concat_dataset import ConcatVideoDataset
 from .mmgenbench import MMGenBench
 from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
+from .CGAVCounting.cg_av_counting import CGAVCounting
+
 from .megabench import MEGABench
 from .moviechat1k import MovieChat1k
-from .video_mmlu import VideoMMLU_CAP, VideoMMLU_QA
+from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .vdc import VDC
+from .vcrbench import VCRBench
 from .gobench import GOBenchDataset
-
+from .sfebench import SFE
+from .visfactor import VisFactor
+from .ost_bench import OSTDataset
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -66,6 +71,7 @@ from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
+from .chartmimic import ChartMimic
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -190,7 +196,9 @@ IMAGE_DATASET = [
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset, GOBenchDataset
+    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
+    MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
+    OmniEarthMCQBench, VisFactor, OSTDataset,OCRBench_v2
 ]
 
 
@@ -201,8 +209,8 @@ VIDEO_DATASET = [
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
-    VideoMMLU_CAP, VideoMMLU_QA,
-    Video_Holmes
+    Video_MMLU_CAP, Video_MMLU_QA,
+    Video_Holmes, VCRBench, CGAVCounting
 ]
 
 TEXT_DATASET = [

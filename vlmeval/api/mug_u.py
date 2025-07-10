@@ -43,12 +43,6 @@ class MUGUWrapper(BaseAPI):
 
         self.temperature = 0.0
 
-    def dump_image(self, line, dataset):
-        return self.dump_image_func(line)
-
-    def set_dump_image(self, dump_image_func):
-        self.dump_image_func = dump_image_func
-
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         assert DATASET_MODALITY(dataset) != 'VIDEO', 'not supported'
