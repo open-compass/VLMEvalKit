@@ -63,7 +63,6 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
             if "score" not in content or "extract_answer" not in content:
                 content = _content
             content["response"] = str(response)
-            return content
         except Exception as e:
             sleep(random.random() * retry)
             content = _content
