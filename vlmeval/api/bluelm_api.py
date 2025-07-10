@@ -5,6 +5,7 @@ import os
 import re
 import json
 
+
 def split_think(text: str) -> str:
     """
     提取think后的内容
@@ -16,6 +17,8 @@ def split_think(text: str) -> str:
             return 'Thinking mode too long to extract answer'
         return text
     return answer
+
+
 def remove_boxed(s:str):
     left = '\\boxed{'
     try:
@@ -24,6 +27,7 @@ def remove_boxed(s:str):
         return s[len(left):-1]
     except Exception:
         return None
+
 
 def last_boxed_only_string(string:str):
     idx = string.rfind('\\boxed')
@@ -52,23 +56,26 @@ def last_boxed_only_string(string:str):
 
     return retval
 
+
 def extract_boxed(pred_str:str, strip_double_curly_brace=False):
     boxed_str = last_boxed_only_string(pred_str)
     if boxed_str is None:
-        return pred_str  #返回原始字符串
+        return pred_str  # 返回原始字符串
     answer = remove_boxed(boxed_str)
     if answer is None:
-        return pred_str  #返回原始字符串
+        return pred_str  # 返回原始字符串
     if strip_double_curly_brace:
         match = re.match('^\{(.*)\}$', answer)  # noqa: W605
         if match:
             answer = match.group(1)
     return answer
 
+
 def extract_boxed_answer(pred_str:str):
     if pred_str.rfind('\\boxed') < 0 and pred_str.rfind('\\fbox') < 0:
         return pred_str
     return extract_boxed(pred_str, strip_double_curly_brace=True)
+
 
 def get_streaming_response(response: requests.Response):
     for chunk in response.iter_lines(chunk_size=4096,
@@ -78,16 +85,23 @@ def get_streaming_response(response: requests.Response):
             output = data.get("result")
             yield output
 
-def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=20, top_p=0.95, stream=True, history=[]):
+
+def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=20, top_p=0.95, stream=True, history=[]):  # noqa: E501
     if images:
         pics = []
         for image in images:
             with open(image, 'rb') as f:
                 pic = base64.b64encode(f.read()).decode('utf-8')
             pics.append(pic)
-        data = {'images': pics, 'text': text, 'key': key, 'temperature': temperature, 'max_tokens': max_tokens, 'top_k': top_k, 'top_p': top_p, 'stream': stream}
+        data = {
+            'images': pics, 'text': text, 'key': key, 'temperature': temperature,
+            'max_tokens': max_tokens, 'top_k': top_k, 'top_p': top_p, 'stream': stream
+        }
     else:
-        data = {'text': text, 'key': key, 'temperature': temperature, 'max_tokens': max_tokens, 'top_k': top_k, 'top_p': top_p, 'stream': stream}
+        data = {
+            'text': text, 'key': key, 'temperature': temperature,
+            'max_tokens': max_tokens, 'top_k': top_k, 'top_p': top_p, 'stream': stream
+        }
     response = requests.post(url, json=data, headers={"Content-Type": "application/json"})
     if stream:
         final_text = ''
@@ -156,7 +170,7 @@ class BlueLMWrapper(BaseAPI):
                        'AI2D_TEST', 'AI2D_TEST_TO_MASK', 'MMMU_DEV_VAL', 'MMStar']:
             prompt = prompt.replace('Please select the correct answer from the options above.',
                                     'Answer with the option’s letter from the given choices directly.')
-            prompt = prompt.replace('Question: Hint: Please answer the question and provide the correct option letter, e.g., A, B, C, D, at the end.\n','')
+            prompt = prompt.replace('Question: Hint: Please answer the question and provide the correct option letter, e.g., A, B, C, D, at the end.\n','')  # noqa: E501
         elif dataset in ['ChartQA_TEST']:
             prompt = prompt.replace('Answer the question using a single word or phrase.',
                                     'Answer the question using a single number or phrase.')
@@ -168,7 +182,8 @@ class BlueLMWrapper(BaseAPI):
                                     'When the provided information is insufficient, respond with ’Unanswerable’.'
                                     'Answer the question using a single word or phrase.')
         elif dataset in ['MTVQA_TEST']:
-            prompt = prompt.replace('\nAnswer the question using a word or phrase in the language of the question.', '')
+            prompt = prompt.replace(
+                '\nAnswer the question using a word or phrase in the language of the question.', '')
         elif dataset in ['MathVista_MINI']:
             if 'Choices:' in prompt:
                 prompt = prompt.replace('Choices:', 'Options:').replace('Hint:', 'Context:')
@@ -190,9 +205,13 @@ class BlueLMWrapper(BaseAPI):
         prompt, image_path = self.message_to_promptimg(inputs, kwargs['dataset'])
 
         try:
-            response = multimodal(image_path, prompt, self.url, self.key, self.temperature, self.max_tokens, self.top_k, self.top_p)
-            if kwargs['dataset'] in ['MMBench_DEV_EN_V11', 'MMBench_DEV_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_TEST_CN_V11', 
-                'AI2D_TEST', 'AI2D_TEST_TO_MASK', 'MMMU_DEV_VAL', 'MMStar', 'OCRBench', 'MMVet', 'MathVista_MINI', 'HallusionBench']:
+            response = multimodal(
+                image_path, prompt, self.url, self.key, self.temperature, self.max_tokens, self.top_k, self.top_p)
+            if kwargs['dataset'] in [
+                'MMBench_DEV_EN_V11', 'MMBench_DEV_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_TEST_CN_V11',
+                'AI2D_TEST', 'AI2D_TEST_TO_MASK', 'MMMU_DEV_VAL', 'MMStar',
+                'OCRBench', 'MMVet', 'MathVista_MINI', 'HallusionBench'
+            ]:
 
                 answer = split_think(response[0])
                 answer = extract_boxed_answer(answer)
