@@ -225,6 +225,12 @@ class OCRBench(ImageBaseDataset):
     }
     DATASET_MD5 = {'OCRBench': 'e953d98a987cc6e26ef717b61260b778'}
 
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1]['value'] += '\nPlease try to answer the question with short words or phrases if possible.'
+        return msgs
+
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
