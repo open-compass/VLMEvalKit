@@ -12,7 +12,7 @@ json_repair
 math-verify
 matplotlib
 nltk
-numpy
+numpy<2.0.0
 omegaconf
 openai
 opencv-python>=4.7.0.72
