@@ -65,6 +65,7 @@ Judgement: 0
 Now please provide your judgement (0 or 1), DONNOT output explanation:
 """ # noqa
 
+
 def get_example():
     example_1 = """
 Question: What is the net force acting on a 5 kg object accelerating at 3 m/s² to the right?\n
@@ -228,10 +229,7 @@ def score_func(model, response, query, gt):
     if not response:
         return 0
     try:
-        full_prompt = prompt_scoring.strip() + f"""\n[Question]: \{query}\
-            \n[Standard Answer]: {gt}\
-            \n[Model Answer]: {response}\
-            \nJudgement: """
+        full_prompt = prompt_scoring.strip() + f"\n[Question]: \{query}\\n[Standard Answer]: {gt}\\n[Model Answer]: {response}\\nJudgement: "  # noqa
         try_n = 0
         while try_n < 5:
             score = model.generate(full_prompt, temperature=try_n * 0.3)
@@ -360,7 +358,8 @@ def eval_acc(result_file):
     for category in categories:
         calculate_accuracy(hit, tot, res, category)
     res_dict = {
-        'Overall': {'Accuracy (%)': res['acc'], 'PrefetchRate (%)': res['prefetch_rate'],}, \
-            **{cat: dict(res[cat]) for cat in categories}
+        'Overall': {
+            'Accuracy (%)': res['acc'], 'PrefetchRate (%)': res['prefetch_rate']
+        }, **{cat: dict(res[cat]) for cat in categories}
     }
     return res_dict
