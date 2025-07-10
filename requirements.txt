@@ -26,6 +26,7 @@ rich
 sentencepiece
 setuptools
 sty
+sympy
 tabulate
 tiktoken
 timeout-decorator
