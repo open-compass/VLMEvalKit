@@ -3,6 +3,7 @@ from collections import OrderedDict, defaultdict
 import re
 from sympy.parsing.latex import parse_latex
 from sympy import latex, Eq, simplify
+FAIL_MSG = 'Failed to obtain answer via API.'
 
 prompt_scoring = r"""
 You are a physics professor, please determine if the Standard answer and Model Answer are equivalent. Note that the significant figures in the answer must meet the requirements. Your judgment should be 0 (non-equivalent) or 1 (equivalent).
@@ -254,96 +255,43 @@ def score_func(model, response, query, gt):
 
 def eval_acc(result_file):
     data = load(result_file)
-    tot = {
-        'Overall': 0,
-        'level': defaultdict(lambda: 0),
-        'subject': defaultdict(lambda: 0),
-        'language': defaultdict(lambda: 0),
-        'source': defaultdict(lambda: 0),
-        'vision_relevance': defaultdict(lambda: 0),
-        'img_category': defaultdict(lambda: 0),
-        'sig_figs': defaultdict(lambda: 0),
-    }
-    fetch = {
-        'Overall': 0,
-        'level': defaultdict(lambda: 0),
-        'subject': defaultdict(lambda: 0),
-        'language': defaultdict(lambda: 0),
-        'source': defaultdict(lambda: 0),
-        'vision_relevance': defaultdict(lambda: 0),
-        'img_category': defaultdict(lambda: 0),
-        'sig_figs': defaultdict(lambda: 0),
-    }
-    hit = {
-        'Overall': 0,
-        'level': defaultdict(lambda: 0),
-        'subject': defaultdict(lambda: 0),
-        'language': defaultdict(lambda: 0),
-        'source': defaultdict(lambda: 0),
-        'vision_relevance': defaultdict(lambda: 0),
-        'img_category': defaultdict(lambda: 0),
-        'sig_figs': defaultdict(lambda: 0),
-    }
+    keys = ['level', 'subject', 'language', 'source', 'vision_relevance', 'img_category', 'sig_figs']
+    keys = [k for k in keys if k in data]
+    tot = {k: defaultdict(lambda: 0) for k in keys}
+    fetch = {k: defaultdict(lambda: 0) for k in keys}
+    hit = {k: defaultdict(lambda: 0) for k in keys}
+    tot['Overall'] = 0
+    fetch['Overall'] = 0
+    hit['Overall'] = 0
+
     lt = len(data)
     for i in range(lt):
         item = data.iloc[i]
-        level = str(item['level'])
-        subject = str(item['subject'])
-        language = str(item['language'])
-        source = str(item['source'])
-        sig_figs = str(item['sig_figs'])
-        vision_relevance = str(item['vision_relevance'])
-        img_category = str(item['img_category'])
         tot['Overall'] += 1
-        tot['level'][level] += 1
-        tot['subject'][subject] += 1
-        tot['language'][language] += 1
-        tot['source'][source] += 1
-        tot['sig_figs'][sig_figs] += 1
-        tot['img_category'][img_category] += 1
-        tot['vision_relevance'][vision_relevance] += 1
+        for k in keys:
+            value = str(item[k])
+            tot[k][value] += 1
 
         if 'Prefetch succeed' in item['log']:
             fetch['Overall'] += 1
-            fetch['level'][level] += 1
-            fetch['subject'][subject] += 1
-            fetch['language'][language] += 1
-            fetch['source'][source] += 1
-            fetch['sig_figs'][sig_figs] += 1
-            fetch['img_category'][img_category] += 1
-            fetch['vision_relevance'][vision_relevance] += 1
+            for k in keys:
+                value = str(item[k])
+                fetch[k][value] += 1
 
         if post_check(item, prefetch=False):
             hit['Overall'] += 1
-            hit['level'][level] += 1
-            hit['subject'][subject] += 1
-            hit['language'][language] += 1
-            hit['source'][source] += 1
-            hit['sig_figs'][sig_figs] += 1
-            hit['img_category'][img_category] += 1
-            hit['vision_relevance'][vision_relevance] += 1
-
+            for k in keys:
+                value = str(item[k])
+                hit[k][value] += 1
         elif item['score'] == 1:
             hit['Overall'] += 1
-            hit['level'][level] += 1
-            hit['subject'][subject] += 1
-            hit['language'][language] += 1
-            hit['source'][source] += 1
-            hit['sig_figs'][sig_figs] += 1
-            hit['img_category'][img_category] += 1
-            hit['vision_relevance'][vision_relevance] += 1
+            for k in keys:
+                value = str(item[k])
+                hit[k][value] += 1
 
-    res = {
-        'acc': 0,
-        'prefetch_rate': 0,
-        'level': defaultdict(lambda: 0),
-        'subject': defaultdict(lambda: 0),
-        'language': defaultdict(lambda: 0),
-        'source': defaultdict(lambda: 0),
-        'sig_figs': defaultdict(lambda: 0),
-        'vision_relevance': defaultdict(lambda: 0),
-        'img_category': defaultdict(lambda: 0),
-    }
+    res = {k: defaultdict(lambda: 0) for k in keys}
+    res['acc'] = 0
+    res['prefetch_rate'] = 0
 
     res['acc'] = hit['Overall'] / tot['Overall'] * 100 if tot['Overall'] > 0 else 0
     res['prefetch_rate'] = fetch['Overall'] / tot['Overall'] * 100 if tot['Overall'] > 0 else 0
@@ -354,12 +302,11 @@ def eval_acc(result_file):
             hits = hit_dict[category][key]
             res_dict[category][key] = hits / total * 100 if total > 0 else 0
 
-    categories = ['level', 'subject', 'language', 'source', 'vision_relevance', 'img_category', 'sig_figs']
-    for category in categories:
+    for category in keys:
         calculate_accuracy(hit, tot, res, category)
     res_dict = {
         'Overall': {
             'Accuracy (%)': res['acc'], 'PrefetchRate (%)': res['prefetch_rate']
-        }, **{cat: dict(res[cat]) for cat in categories}
+        }, **{cat: dict(res[cat]) for cat in keys}
     }
     return res_dict
