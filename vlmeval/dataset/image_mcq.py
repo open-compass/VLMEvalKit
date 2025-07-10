@@ -616,6 +616,8 @@ class MMMUProDataset(MMMUDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         if 'COT' in self.dataset_name:
             data = load(eval_file)
+            from copy import deepcopy
+            data['original_prediction'] = deepcopy(data['prediction'])
             data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
             tgt = get_intermediate_file_path(eval_file, '_cotpost')
             dump(data, tgt)
