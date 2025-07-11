@@ -427,8 +427,8 @@ api_models = {
     "BailingMM-Pro-0120": partial(
         bailingMMAPI, model="BailingMM-Pro-0120", temperature=0, retry=10
     ),
-    # BlueLM-V
-    "BlueLM_V": partial(BlueLM_V_API, model="BlueLM-VL-v3.0", temperature=0, retry=10),
+    # BlueLM-2.5
+    "BlueLM-2.5-3B": partial(BlueLM_API, model="BlueLM-2.5-3B", temperature=0, retry=10),
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model="jt-vl-chat", temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
