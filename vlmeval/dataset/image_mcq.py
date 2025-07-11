@@ -2551,7 +2551,7 @@ class TreeBench(ImageMCQDataset):
                 return inter_area / union_area if union_area > 0 else 0.0
 
             pred_coords = pred_boxes
-            target_coords = target_boxes # x1,y1,x2,y2
+            target_coords = target_boxes
 
             total_iou = 0.0
             num_targets = len(target_boxes)

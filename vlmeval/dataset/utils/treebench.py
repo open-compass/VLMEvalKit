@@ -4,11 +4,6 @@ import re
 
 
 def get_dimension_rating(data_path):
-    TASKS = [
-        'Reasoning',
-        'Perception',
-    ]
-
     P_SUBTASKS = [
         'Attributes',
         'Material',
@@ -54,7 +49,10 @@ def get_dimension_rating(data_path):
             cnt_subtask, sum_subtask = 0, 0
             cnt_subtask += subtask_value['true']
             sum_subtask += subtask_value['false'] + subtask_value['true']
-            acc = subtask_value['true'] / (subtask_value['false'] + subtask_value['true']) if (subtask_value['false'] + subtask_value['true']) > 0 else 0
+            if (subtask_value['false'] + subtask_value['true']) > 0:
+                acc = subtask_value['true'] / (subtask_value['false'] + subtask_value['true'])
+            else:
+                acc = 0
             results[task][substask] = acc
 
             cnt_task += cnt_subtask

@@ -15,7 +15,7 @@ from ..smp import get_gpu_memory
 from ..dataset import DATASET_TYPE
 
 
-SYSTEM_PROMPT = """A conversation between user and assistant. The user asks a question, and the Assistant solves it. The assistant MUST first think about the reasoning process in the mind and then provide the user with the answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively. When referring to particular objects in the reasoning process, the assistant MUST localize the object with bounding box coordinates between <box> and </box>. You MUST strictly follow the format."""
+SYSTEM_PROMPT = """A conversation between user and assistant. The user asks a question, and the Assistant solves it. The assistant MUST first think about the reasoning process in the mind and then provide the user with the answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively. When referring to particular objects in the reasoning process, the assistant MUST localize the object with bounding box coordinates between <box> and </box>. You MUST strictly follow the format."""   # noqa: E501
 
 
 class TreeVGR(Qwen2VLPromptMixin, BaseModel):
@@ -239,7 +239,7 @@ class TreeVGR(Qwen2VLPromptMixin, BaseModel):
 
         post_prompt = ''
         if DATASET_TYPE(dataset) == "MCQ":
-            post_prompt = '\nSelect the best answer to the above multiple-choice question based on the image. After the reasoning process, respond with ONLY the letter of the correct option between <answer> and </answer>.'
+            post_prompt = '\nSelect the best answer to the above multiple-choice question based on the image. After the reasoning process, respond with ONLY the letter of the correct option between <answer> and </answer>.'  # noqa: E501
 
         for s in inputs:
             if s["type"] == "image":
@@ -275,7 +275,7 @@ class TreeVGR(Qwen2VLPromptMixin, BaseModel):
                     else:
                         item["nframes"] = self.nframe
             elif s["type"] == "text":
-                qs = s["value"].replace("\nPlease select the correct answer from the options above.", "").replace("\nAnswer with the option's letter directly", "")
+                qs = s["value"].replace("\nPlease select the correct answer from the options above.", "").replace("\nAnswer with the option's letter directly", "")     # noqa: E501
                 item = {"type": "text", "text": qs + post_prompt}
 
             else:
