@@ -28,7 +28,6 @@ class Claude_Wrapper(BaseAPI):
                  key: str = None,
                  retry: int = 10,
                  timeout: int = 60,
-                 wait: int = 3,
                  system_prompt: str = None,
                  verbose: bool = True,
                  temperature: float = 0,
@@ -57,7 +56,7 @@ class Claude_Wrapper(BaseAPI):
         else:
             self.headers['x-api-key'] = self.key
 
-        super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
+        super().__init__(retry=retry, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
     def encode_image_file_to_base64(self, image_path, target_size=-1, fmt='.jpg'):
         image = Image.open(image_path)

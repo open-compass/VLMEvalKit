@@ -27,7 +27,6 @@ class SenseChatVisionWrapper(BaseAPI):
         api_key: str = None,
         model: str = "SenseNova-V6-Pro",
         retry: int = 5,
-        wait: int = 5,
         verbose: bool = True,
         system_prompt: str = None,
         max_tokens: int = 8192,
@@ -42,7 +41,6 @@ class SenseChatVisionWrapper(BaseAPI):
         )
         self.max_new_tokens = max_tokens
         super().__init__(
-            wait=wait,
             retry=retry,
             system_prompt=system_prompt,
             verbose=verbose,

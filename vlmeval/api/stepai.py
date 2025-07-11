@@ -15,7 +15,6 @@ class StepAPI_INT(BaseAPI):
     def __init__(self,
                  model: str = 'step-1v-8k',
                  retry: int = 10,
-                 wait: int = 3,
                  key: str = None,
                  temperature: float = 0,
                  max_tokens: int = 300,
@@ -34,7 +33,7 @@ class StepAPI_INT(BaseAPI):
             self.key = os.environ.get('STEPAI_API_KEY', '')
         headers['Authorization'] = headers['Authorization'].format(self.key)
 
-        super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
+        super().__init__(retry=retry, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
     @staticmethod
     def build_msgs(msgs_raw):
