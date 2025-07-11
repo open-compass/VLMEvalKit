@@ -124,7 +124,6 @@ class QwenVLWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'qwen-vl-plus',
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = True,
                  temperature: float = 0.0,
@@ -148,7 +147,7 @@ class QwenVLWrapper(BaseAPI):
         dashscope.api_key = key
         if proxy is not None:
             proxy_set(proxy)
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text

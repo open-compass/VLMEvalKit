@@ -10,7 +10,6 @@ class CWWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'cw-congrong-v2.0',
                  retry: int = 10,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
@@ -41,7 +40,7 @@ class CWWrapper(BaseAPI):
         self.vision = True
         self.timeout = timeout
 
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text

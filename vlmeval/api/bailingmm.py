@@ -13,7 +13,6 @@ class bailingMMWrapper(BaseAPI):
     def __init__(self,
                  model: str,
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
@@ -28,7 +27,7 @@ class bailingMMWrapper(BaseAPI):
         assert key is not None, ('Please set the API Key for bailingMM.')
         self.key = key
         self.headers = {"Content-Type": "application/json"}
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def image_to_base64(self, image_path):
         with open(image_path, 'rb') as image_file:

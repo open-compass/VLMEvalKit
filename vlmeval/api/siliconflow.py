@@ -45,7 +45,6 @@ class SiliconFlowAPI(BaseAPI):
         self,
         model: str = "deepseek-ai/DeepSeek-V2.5",
         retry: int = 5,
-        wait: int = 5,
         key: str = None,
         api_base: str = API_BASE,
         verbose: bool = True,
@@ -77,7 +76,6 @@ class SiliconFlowAPI(BaseAPI):
         headers["Authorization"] = headers["Authorization"].format(self.key)
         self.headers = headers
         super().__init__(
-            wait=wait,
             retry=retry,
             system_prompt=system_prompt,
             verbose=verbose,

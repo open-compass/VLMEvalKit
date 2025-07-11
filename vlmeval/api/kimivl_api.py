@@ -24,7 +24,6 @@ class KimiVLAPIWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'api-kimi-vl-thinking-2506',
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
@@ -48,7 +47,7 @@ class KimiVLAPIWrapper(BaseAPI):
         self.key = key
         self.timeout = timeout
 
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if 'KIMI_VL_API_BASE' in os.environ and os.environ['KIMI_VL_API_BASE'] != '':
             self.logger.info('Environment variable KIMI_VL_API_BASE is set. Will use it as api_base. ')

@@ -172,7 +172,6 @@ class LMDeployWrapper(BaseAPI):
     def __init__(self,
                  model: str = None,
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = 'sk-123456',
                  verbose: bool = True,
                  temperature: float = 0.0,
@@ -191,7 +190,7 @@ class LMDeployWrapper(BaseAPI):
         assert api_base is not None, 'Please set the environment variable LMDEPLOY_API_BASE.'
         self.key = key
         self.api_base = api_base
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
         resp = requests.get(model_url)
