@@ -372,5 +372,5 @@ class TreeVGR(Qwen2VLPromptMixin, BaseModel):
 
         if 'treebench' in dataset.lower():
             return response
-        
+
         return ans

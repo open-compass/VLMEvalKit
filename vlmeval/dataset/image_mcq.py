@@ -2497,20 +2497,20 @@ class TreeBench(ImageMCQDataset):
         matches = re.findall(pattern, predict_str, re.DOTALL)
 
         all_boxes = []
-        
+
         for match in matches:
             box = match.strip()
-            
+
             coord_pattern = r'\[(\d+),(\d+),(\d+),(\d+)\]'
             coord_match = re.match(coord_pattern, box)
-            
+
             if coord_match:
                 x1, y1, x2, y2 = map(int, coord_match.groups())
-                
+
                 if x1 < x2 and y1 < y2:
                     # all_boxes.append([(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
                     all_boxes.append([x1, y1, x2, y2])
-        
+
         if len(all_boxes) == 0:
             return 0
 
