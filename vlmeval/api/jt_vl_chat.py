@@ -19,9 +19,8 @@ class JTVLChatWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'jt-vl-chat',
                  retry: int = 5,
-                 wait: int = 5,
-                 api_base: str = '',
-                 app_code: str = '',
+                 api_base: str = API_ENDPOINT,
+                 key: str = APP_CODE,
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0.7,
@@ -35,7 +34,14 @@ class JTVLChatWrapper(BaseAPI):
         self.api_base = API_ENDPOINT
         self.app_code = APP_CODE
 
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        if key is None:
+            key = os.environ.get('JTVLChat_API_KEY', None)
+        assert key is not None, (
+            'Please set the API Key (also called app_code, obtain it here: https://github.com/jiutiancv/JT-VL-Chat)'
+        )
+
+        self.key = key
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
         """Dump the image(s) of the input line to the corresponding dataset folder.
