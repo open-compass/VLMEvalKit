@@ -20,7 +20,6 @@ class JTVLChatWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'jt-vl-chat',
                  retry: int = 5,
-                 wait: int = 5,
                  api_base: str = API_ENDPOINT,
                  key: str = APP_CODE,
                  verbose: bool = True,
@@ -42,7 +41,7 @@ class JTVLChatWrapper(BaseAPI):
         )
 
         self.key = key
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
         """Dump the image(s) of the input line to the corresponding dataset folder.

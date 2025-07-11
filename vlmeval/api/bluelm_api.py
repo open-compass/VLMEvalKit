@@ -119,7 +119,6 @@ class BlueLMWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'BlueLM-2.5-3B',
                  retry: int = 5,
-                 wait: int = 5,
                  verbose: bool = True,
                  temperature: float = 0.6,
                  system_prompt: str = None,
@@ -146,7 +145,7 @@ class BlueLMWrapper(BaseAPI):
             'contact by email : shuai.ren@vivo.com'
         )
 
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def message_to_promptimg(self, message, dataset=None):
 

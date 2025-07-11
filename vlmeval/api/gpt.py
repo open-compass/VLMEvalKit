@@ -113,7 +113,6 @@ class OpenAIWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'gpt-3.5-turbo-0613',
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = False,
                  system_prompt: str = None,
@@ -190,7 +189,7 @@ class OpenAIWrapper(BaseAPI):
         self.img_detail = img_detail
         self.timeout = timeout
         self.o1_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if use_azure:
             if api_base is None:
