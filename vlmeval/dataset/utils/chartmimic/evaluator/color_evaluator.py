@@ -8,7 +8,7 @@ import os
 
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
-from eval_configs.global_config import run_script_safe
+from ..eval_configs.global_config import run_script_safe
 
 
 # from skimage.color import deltaE_cie76
