@@ -1212,11 +1212,7 @@ class CVBench(ImageMCQDataset):
             model = None
         name_str = model_name if model is not None else ""
 
-<<<<<<< HEAD
         result_file = get_intermediate_file_path(eval_file, f"_{model_name}_result", "pkl")
-=======
-        result_file = eval_file.replace(f".{suffix}", f"_{name_str}_result.pkl")
->>>>>>> 7a7b138 (update)
 
         data = load(eval_file)
         data = data.sort_values(by="index")
