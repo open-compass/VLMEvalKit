@@ -6,8 +6,6 @@ import re
 import logging
 import warnings
 
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-
 from .base import BaseModel
 from .qwen2_vl.prompt import Qwen2VLPromptMixin
 from .qwen2_vl.model import ensure_image_url, ensure_video_url
@@ -61,6 +59,7 @@ class TreeVGR(Qwen2VLPromptMixin, BaseModel):
         assert model_path is not None
         self.model_path = model_path
 
+        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
         MODEL_CLS = Qwen2_5_VLForConditionalGeneration
         self.processor = AutoProcessor.from_pretrained(model_path)
 
