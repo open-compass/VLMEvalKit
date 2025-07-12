@@ -1734,6 +1734,7 @@ treevgr_series = {
     ),
 }
 
+<<<<<<< HEAD
 # QTuneVL series
 qtunevl_series = {
     "QTuneVL1_5-2B": partial(
@@ -1750,6 +1751,8 @@ qtunevl_series = {
     ),
 }
 
+=======
+>>>>>>> 9e50e19 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
@@ -1772,7 +1775,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series
 ]
 
 for grp in model_groups:
