@@ -508,7 +508,11 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 28214,
+<<<<<<< HEAD
         timeout = 2048,
+=======
+        timeout = 1024,
+>>>>>>> 8614f4f (update temp)
         system_prompt=None,
     ),
     "xhs_api-temperature0.3-32k": partial(
@@ -517,7 +521,11 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 28214,
+<<<<<<< HEAD
         timeout = 2048,
+=======
+        timeout = 1024,
+>>>>>>> 8614f4f (update temp)
         system_prompt=None,
     ),
     "xhs_api-temperature0.1-32k": partial(
@@ -526,6 +534,7 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 28214,
+<<<<<<< HEAD
         timeout = 2048,
         system_prompt=None,
     ),
@@ -539,11 +548,18 @@ api_models = {
         system_prompt=None,
     ),
     "xhs_api-temperature0-32k": partial(
+=======
+        timeout = 1024,
+        system_prompt=None,
+    ),
+    "xhs_api-temperature0-8k": partial(
+>>>>>>> 8614f4f (update temp)
         XHSVLMAPI,
         temperature=0,
         retry=10,
         verbose=True,
         max_tokens= 28214,
+<<<<<<< HEAD
         timeout = 2048,
         system_prompt=None,
     ),
@@ -554,6 +570,9 @@ api_models = {
         verbose=True,
         max_tokens= 56000,
         timeout = 4096,
+=======
+        timeout = 1024,
+>>>>>>> 8614f4f (update temp)
         system_prompt=None,
     ),
     "xhs-seedvl-1.5" : partial(
