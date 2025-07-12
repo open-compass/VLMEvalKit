@@ -2291,6 +2291,7 @@ treevgr_series = {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 # QTuneVL series
 qtunevl_series = {
     "QTuneVL1_5-2B": partial(
@@ -2378,6 +2379,8 @@ lfm2vl_series = {
 >>>>>>> 8da4823 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 =======
 >>>>>>> f1d29e2 ([API] Support Grok-4)
+=======
+>>>>>>> 9e50e19 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
