@@ -4,7 +4,7 @@ from typing import List, Tuple
 # load_dotenv()
 
 import os
-from eval_configs.global_config import run_script_safe
+from ..eval_configs.global_config import run_script_safe
 
 
 
