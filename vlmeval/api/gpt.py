@@ -460,6 +460,9 @@ class VLLMAPIWrapper(BaseAPI):
             messages=input_msgs,
             temperature=temperature,
             **kwargs)
+        if temperature == 0:
+            payload.pop('temperature')
+            payload['top_k'] = 1
         if self.model == os.environ.get("DOUBAO_MODEL_NAME") and self.think_mode is False:
             payload['thinking'] = {"type" : "disabled"}
 
