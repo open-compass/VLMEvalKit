@@ -162,6 +162,12 @@ class OpenAIWrapper(BaseAPI):
             if key is None:
                 key = env_key
             api_base = os.environ.get('GOOGLE_API_BASE', "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
+        elif 'ernie' in model:
+            env_key = os.environ.get('BAIDU_API_KEY', '')
+            if key is None:
+                key = env_key
+            api_base = 'https://qianfan.baidubce.com/v2/chat/completions'
+            self.baidu_appid = os.environ.get('BAIDU_APP_ID', None)
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
