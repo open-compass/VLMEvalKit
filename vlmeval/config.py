@@ -741,9 +741,7 @@ api_models = {
         model="grok-4-0709",
         api_base="https://api.x.ai/v1/chat/completions",
         temperature=0,
-        retry=3,
-        timeout=1200, 
-        max_tokens=16384
+        retry=10,
     ),
     # kimi
     "moonshot-v1-8k": partial(
@@ -1734,25 +1732,6 @@ treevgr_series = {
     ),
 }
 
-<<<<<<< HEAD
-# QTuneVL series
-qtunevl_series = {
-    "QTuneVL1_5-2B": partial(
-        QTuneVLChat, model_path="hanchaow/QTuneVL1_5-2B", version="V1.5"
-    ),
-
-    "QTuneVL1_5-3B": partial(
-        QTuneVL,
-        model_path="hanchaow/QTuneVL1_5-3B",
-        min_pixels=1280 * 28 * 28,
-        max_pixels=16384 * 28 * 28,
-        use_custom_prompt=True,
-        post_process=True
-    ),
-}
-
-=======
->>>>>>> 9e50e19 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
