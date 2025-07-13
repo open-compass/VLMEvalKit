@@ -86,7 +86,7 @@ def get_streaming_response(response: requests.Response):
             yield output
 
 
-def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=20, top_p=0.95, stream=True, history=[]):  # noqa: E501
+def multimodal(images, text, url, key, temperature=0.6, max_tokens=32768, top_k=20, top_p=0.95, stream=False, history=[], timeout=60):  # noqa: E501
     if images:
         pics = []
         for image in images:
@@ -205,7 +205,8 @@ class BlueLMWrapper(BaseAPI):
 
         try:
             response = multimodal(
-                image_path, prompt, self.url, self.key, self.temperature, self.max_tokens, self.top_k, self.top_p)
+                images=image_path, text=prompt, url=self.url, key=self.key, temperature=self.temperature,
+                max_tokens=self.max_tokens, top_k=self.top_k, top_p=self.top_p, timeout=self.timeout)
             if kwargs['dataset'] in [
                 'MMBench_DEV_EN_V11', 'MMBench_DEV_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_TEST_CN_V11',
                 'AI2D_TEST', 'AI2D_TEST_TO_MASK', 'MMMU_DEV_VAL', 'MMStar',
