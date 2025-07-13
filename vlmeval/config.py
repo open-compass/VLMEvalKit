@@ -755,9 +755,7 @@ api_models = {
         model="grok-4-0709",
         api_base="https://api.x.ai/v1/chat/completions",
         temperature=0,
-        retry=3,
-        timeout=1200, 
-        max_tokens=16384
+        retry=10,
     ),
     # kimi
     "moonshot-v1-8k": partial(
@@ -2042,6 +2040,7 @@ treevgr_series = {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # QTuneVL series
 qtunevl_series = {
     "QTuneVL1_5-2B": partial(
@@ -2127,6 +2126,8 @@ lfm2vl_series = {
 =======
 >>>>>>> 9e50e19 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 >>>>>>> 8da4823 ([Benchmark] Support TreeBench and TreeVGR (#1152))
+=======
+>>>>>>> f1d29e2 ([API] Support Grok-4)
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -2155,15 +2156,10 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-<<<<<<< HEAD
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
     flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
     lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series
-=======
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series
->>>>>>> 8da4823 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 ]
 
 for grp in model_groups:
