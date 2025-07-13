@@ -548,6 +548,20 @@ api_models = {
         temperature=0,
         retry=10,
     ),
+    'ernie4.5-turbo': partial(
+        GPT4V,
+        model='ernie-4.5-turbo-vl-32k', 
+        temperature=0,
+        retry=3, 
+        max_tokens=12000, 
+    ),
+    'ernie4.5-a3b': partial(
+        GPT4V,
+        model='ernie-4.5-vl-28b-a3b', 
+        temperature=0,
+        retry=3, 
+        max_tokens=8000,
+    )
 }
 
 emu_series = {
