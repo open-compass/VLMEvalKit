@@ -526,6 +526,13 @@ api_models = {
         temperature=0,
         retry=10,
     ),
+    "grok-4-0709": partial(
+        GPT4V,
+        model="grok-4-0709",
+        api_base="https://api.x.ai/v1/chat/completions",
+        temperature=0,
+        retry=10,
+    ),
     # kimi
     "moonshot-v1-8k": partial(
         GPT4V,
