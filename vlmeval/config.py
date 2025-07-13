@@ -430,6 +430,15 @@ api_models = {
         timeout = 1024,
         system_prompt=None,
     ),
+    "xhs_api-temperature1-32k": partial(
+        XHSVLMAPI,
+        temperature=1,
+        retry=10,
+        verbose=True,
+        max_tokens= 28214,
+        timeout = 1024,
+        system_prompt=None,
+    ),
     "xhs_api-temperature0-32k": partial(
         XHSVLMAPI,
         temperature=0,
