@@ -650,7 +650,7 @@ api_models = {
         bailingMMAPI, model="BailingMM-Pro-0120", temperature=0, retry=10
     ),
     # BlueLM-2.5
-    "BlueLM-2.5-3B": partial(BlueLM_API, model="BlueLM-2.5-3B", temperature=0, retry=10),
+    "BlueLM-2.5-3B": partial(BlueLM_API, model="BlueLM-2.5-3B", temperature=0, retry=3),
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model="jt-vl-chat", temperature=0, retry=10),
     "JTVL-Mini": partial(JTVLChatAPI_Mini, model="jt-vl-chat-mini", temperature=0, retry=10),
@@ -755,7 +755,9 @@ api_models = {
         model="grok-4-0709",
         api_base="https://api.x.ai/v1/chat/completions",
         temperature=0,
-        retry=10,
+        retry=3,
+        timeout=1200, 
+        max_tokens=16384
     ),
     # kimi
     "moonshot-v1-8k": partial(
