@@ -43,6 +43,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
               'will set its VIDEO_LLM to False to enable multi-image input for video.')
         setattr(model, 'VIDEO_LLM', False)
 
+    breakpoint()
     structs = [dataset.build_prompt(samples_dict[idx], video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
 
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
