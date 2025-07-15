@@ -250,7 +250,7 @@ class MEGABench(VideoBaseDataset):
                     base_path = osp.splitext(current_path)[0]
                     rgb_path = f"{base_path}_rgb.jpg"
                     lock_path = f"{rgb_path}.lock"
-                    with portalocker.Lock(lock_path, 'w'):
+                    with portalocker.Lock(lock_path, 'w', timeout=30):
                         if not osp.exists(rgb_path):
                             try:
                                 background = Image.new("RGBA", image.size, (255, 255, 255, 255))
@@ -286,7 +286,7 @@ class MEGABench(VideoBaseDataset):
                     base_path = osp.splitext(current_path)[0]
                     resize_path = f"{base_path}_resize.jpg"
                     lock_path = f"{resize_path}.lock"
-                    with portalocker.Lock(lock_path, 'w'):
+                    with portalocker.Lock(lock_path, 'w', timeout=30):
                         if not osp.exists(resize_path):
                             try:
                                 new_size = (int(image.size[0] * resize_scale), int(image.size[1] * resize_scale))

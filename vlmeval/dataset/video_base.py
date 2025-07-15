@@ -94,7 +94,7 @@ class VideoBaseDataset:
                 return frame_paths
 
             lock_path = osp.join(self.frame_root, video + '.lock')
-            with portalocker.Lock(lock_path, 'w'):
+            with portalocker.Lock(lock_path, 'w', timeout=30):
                 if np.all([osp.exists(p) for p in frame_paths]):
                     return frame_paths
                 images = [vid[i].asnumpy() for i in indices]
@@ -110,7 +110,7 @@ class VideoBaseDataset:
             if flag:
                 return frame_paths
             lock_path = osp.join(self.frame_root, video + '.lock')
-            with portalocker.Lock(lock_path, 'w'):
+            with portalocker.Lock(lock_path, 'w', timeout=30):
                 if np.all([osp.exists(p) for p in frame_paths]):
                     return frame_paths
                 vid_path = osp.join(self.data_root, video + '.mp4')

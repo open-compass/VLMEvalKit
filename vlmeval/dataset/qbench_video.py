@@ -123,7 +123,7 @@ Please do not add any other answers beyond this.
 
         if not flag:
             lock_path = osp.splitext(vid_path)[0] + '.lock'
-            with portalocker.Lock(lock_path, 'w'):
+            with portalocker.Lock(lock_path, 'w', timeout=30):
                 if not np.all([osp.exists(p) for p in frame_paths]):
                     images = [vid[i].asnumpy() for i in indices]
                     images = [Image.fromarray(arr) for arr in images]
@@ -281,7 +281,7 @@ Please analyze these frames and provide a detailed and accurate answer from the 
 
         if not flag:
             lock_path = osp.splitext(vid_path)[0] + '.lock'
-            with portalocker.Lock(lock_path, 'w'):
+            with portalocker.Lock(lock_path, 'w', timeout=30):
                 if not np.all([osp.exists(p) for p in frame_paths]):
                     images = [vid[i].asnumpy() for i in indices]
                     images = [Image.fromarray(arr) for arr in images]

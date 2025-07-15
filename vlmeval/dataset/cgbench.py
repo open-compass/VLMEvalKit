@@ -397,7 +397,7 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
         valid_paths = []
         valid_indices = []
         lock_path = osp.splitext(vid_path)[0] + '.lock'
-        with portalocker.Lock(lock_path, 'w'):
+        with portalocker.Lock(lock_path, 'w', timeout=30):
             if not np.all([osp.exists(p) for p in frame_paths]):
                 images = [vid[i].asnumpy() for i in indices]
                 for i, (img_array, path) in enumerate(zip(images, frame_paths)):
@@ -723,7 +723,7 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
         valid_paths = []
         valid_indices = []
         lock_path = osp.splitext(vid_path)[0] + '.lock'
-        with portalocker.Lock(lock_path, 'w'):
+        with portalocker.Lock(lock_path, 'w', timeout=30):
             if not np.all([osp.exists(p) for p in frame_paths]):
                 images = [vid[i].asnumpy() for i in indices]
                 for i, (img_array, path) in enumerate(zip(images, frame_paths)):
@@ -1279,7 +1279,7 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
         valid_paths = []
         valid_indices = []
         lock_path = osp.splitext(vid_path)[0] + '.lock'
-        with portalocker.Lock(lock_path, 'w'):
+        with portalocker.Lock(lock_path, 'w', timeout=30):
             if not np.all([osp.exists(p) for p in frame_paths]):
                 images = [vid[i].asnumpy() for i in indices]
                 for i, (img_array, path) in enumerate(zip(images, frame_paths)):
@@ -1604,7 +1604,7 @@ class CGBench_OpenEnded(VideoBaseDataset):
         valid_paths = []
         valid_indices = []
         lock_path = osp.splitext(vid_path)[0] + '.lock'
-        with portalocker.Lock(lock_path, 'w'):
+        with portalocker.Lock(lock_path, 'w', timeout=30):
             if not np.all([osp.exists(p) for p in frame_paths]):
                 images = [vid[i].asnumpy() for i in indices]
                 for i, (img_array, path) in enumerate(zip(images, frame_paths)):

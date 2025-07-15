@@ -257,7 +257,7 @@ Based on your observations, select the best option that accurately addresses the
         if not flag:
             # 建议锁文件以 video_name 命名
             lock_path = osp.join(self.frame_root, f'{video_name}.lock')
-            with portalocker.Lock(lock_path, 'w'):
+            with portalocker.Lock(lock_path, 'w', timeout=30):
                 # 锁内再判断一次，防止重复写
                 if not np.all([osp.exists(p) for p in frame_paths]):
                     block_size = imgs.size(0) // frames
@@ -565,7 +565,7 @@ Based on your observations, select the best option that accurately addresses the
 
         if not flag:
             lock_path = osp.join(self.frame_root, f'{video_name}.lock')
-            with portalocker.Lock(lock_path, 'w'):
+            with portalocker.Lock(lock_path, 'w', timeout=30):
                 if not np.all([osp.exists(p) for p in frame_paths]):
                     block_size = imgs.size(0) // frames
                     split_tensors = torch.split(imgs, block_size)

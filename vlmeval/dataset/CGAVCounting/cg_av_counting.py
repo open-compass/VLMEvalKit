@@ -52,7 +52,7 @@ class CGAVCounting(VideoBaseDataset):
         # 获取视频的帧率
         fps = vid.get_avg_fps()
         lock_path = osp.splitext(vid_path)[0] + '.lock'
-        with portalocker.Lock(lock_path, 'w'):
+        with portalocker.Lock(lock_path, 'w', timeout=30):
             for timestamp_sec in timestamp_list:
                 # 计算视频帧对应的索引
                 frame_idx = int(timestamp_sec * fps)
@@ -324,7 +324,7 @@ class CGAVCounting(VideoBaseDataset):
         valid_paths = []
         valid_indices = []
         lock_path = osp.splitext(vid_path)[0] + '.lock'
-        with portalocker.Lock(lock_path, 'w'):
+        with portalocker.Lock(lock_path, 'w', timeout=30):
             if not np.all([osp.exists(p) for p in frame_paths]):
                 images = [vid[i].asnumpy() for i in indices]
                 for i, (img_array, path) in enumerate(zip(images, frame_paths)):

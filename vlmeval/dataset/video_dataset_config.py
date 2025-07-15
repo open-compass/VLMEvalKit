@@ -116,14 +116,6 @@ cgbench_dataset = {
     )
 }
 
-cg_av_counting_dataset = {
-    'CGAVCounting_64frame': partial(
-        CGAVCounting,
-        dataset='CGAVCounting',
-        nframe=64
-    )
-}
-
 megabench_dataset = {
     'MEGABench_core_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core"),
     'MEGABench_open_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="open"),
