@@ -420,7 +420,8 @@ def main():
                         judge_kwargs['model'] = 'qwen-72b'
                     elif listinstr(['MMVMBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
-
+                    elif listinstr(['M4Bench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
                 if RANK == 0:
                     logger.info(judge_kwargs)
 
