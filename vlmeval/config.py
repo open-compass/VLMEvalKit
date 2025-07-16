@@ -1023,6 +1023,8 @@ cogvlm_series = {
         CogVlm, model_path="THUDM/cogvlm2-llama3-chat-19B"
     ),
     "glm-4v-9b": partial(GLM4v, model_path="THUDM/glm-4v-9b"),
+    "glm-4.1v-9b-base": partial(GLM4_1v, model_path="THUDM/GLM-4.1V-9B-Base"),
+    "glm-4.1v-9b-thinking": partial(GLM4_1v, model_path="THUDM/GLM-4.1V-9B-Thinking"),
 }
 
 wemm_series = {
