@@ -1,5 +1,6 @@
 import json
 import pickle
+import warnings
 import pandas as pd
 import os
 import csv
@@ -379,3 +380,58 @@ def fetch_aux_files(eval_file):
         for d in to_handle:
             fs = [x for x in fs if d not in x]
     return fs
+
+
+def prepare_reuse_files(pred_root_meta, eval_id, model_name, dataset_name, reuse, reuse_aux):
+    import shutil
+    from .misc import timestr
+    work_dir = osp.join(pred_root_meta, eval_id)
+    os.makedirs(work_dir, exist_ok=True)
+    if not reuse:
+        files = ls(work_dir, match=f'{model_name}_{dataset_name}')
+        if len(files):
+            t_str = timestr('second')
+            bak_dir = osp.join(work_dir, f'bak_{t_str}_{dataset_name}')
+            os.makedirs(bak_dir, exist_ok=True)
+            for f in files:
+                shutil.move(f, bak_dir)
+            warnings.warn(
+                f'--reuse flag not set but history records detected in {work_dir}. '
+                f'Those files are moved to {bak_dir} for backup. '
+            )
+            return
+    # reuse flag is set
+    prev_pred_roots = ls(pred_root_meta, mode='dir')
+    prev_pred_roots.sort()
+    prev_pred_roots.remove(work_dir)
+
+    files = ls(work_dir, match=f'{model_name}_{dataset_name}.')
+    prev_file = None
+    prev_aux_files = None
+    if len(files):
+        pass
+    else:
+        for root in prev_pred_roots[::-1]:
+            fs = ls(root, match=f'{model_name}_{dataset_name}.')
+            if len(fs):
+                if len(fs) > 1:
+                    warnings.warn(f'Multiple candidates in {root}: {fs}. Will use {fs[0]}')
+                prev_file = fs[0]
+                prev_aux_files = fetch_aux_files(prev_file)
+                break
+        if prev_file is not None:
+            warnings.warn(f'--reuse is set, will reuse prediction file {prev_file}')
+            os.system(f'cp {prev_file} {work_dir}')
+
+    if not reuse_aux:
+        warnings.warn(f'--reuse-aux is not set, all auxiliary files in {work_dir} are removed. ')
+        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*openai*")}')
+        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*csv")}')
+        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*json")}')
+        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*pkl")}')
+        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*gpt*")}')
+    elif prev_aux_files is not None:
+        for f in prev_aux_files:
+            os.system(f'cp {f} {work_dir}')
+            warnings.warn(f'--reuse-aux is set, will reuse auxiliary file {f}')
+    return
