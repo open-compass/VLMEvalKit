@@ -182,6 +182,29 @@ def POPE_rating(data_file):
     return ret
 
 
+def VSR_rating(data_file):
+    def cal_f1_score(y_true, y_pred):
+        tp = sum((y_true == 1) & (y_pred == 1))
+        fp = sum((y_true == 0) & (y_pred == 1))
+        fn = sum((y_true == 1) & (y_pred == 0))
+
+        precision = tp / (tp + fp) if (tp + fp) != 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) != 0 else 0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) != 0 else 0
+        return f1_score, precision, recall
+    data = load(data_file)
+    res = {}
+    y_true = np.array([1 if i == 'Yes' else 0 for i in data['answer']])
+    y_pred = np.array([1 if i == 'Yes' else 0 for i in data['extracted']])
+    f1_score, precision, recall = cal_f1_score(y_true, y_pred)
+    res['precision'] = precision * 100
+    res['recall'] = recall * 100
+    res['acc'] = np.mean(data['score']) * 100
+    res['f1_score'] = f1_score
+    ret = d2df(res)
+    return ret
+
+
 def default_rating(data_file):
     data = load(data_file)
     res = {}
