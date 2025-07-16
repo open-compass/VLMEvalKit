@@ -264,7 +264,6 @@ def main():
 
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
-        print(args.reuse_aux)
 
         for _, dataset_name in enumerate(args.data):
             if WORLD_SIZE > 1:
@@ -303,44 +302,12 @@ def main():
                     result_file_base = result_file_base.replace('.xlsx', '.tsv')
 
                 result_file = osp.join(pred_root, result_file_base)
-
                 # Reuse the previous prediction file if exists
                 if RANK == 0 and len(prev_pred_roots):
-                    prev_result_files = []
-                    prev_pkl_file_list = []
-                    for root in prev_pred_roots[::-1]:
-                        if osp.exists(osp.join(root, result_file_base)):
-                            if args.reuse_aux:
-                                prev_result_files = fetch_aux_files(osp.join(root, result_file_base))
-                            else:
-                                prev_result_files = [osp.join(root, result_file_base)]
-                            break
-                        elif commit_id in root and len(ls(root)) and root != pred_root:
-                            temp_files = ls(root, match=[dataset_name, '.pkl'])
-                            if len(temp_files):
-                                prev_pkl_file_list.extend(temp_files)
-                                break
-                    if not args.reuse:
-                        prev_result_files = []
-                        prev_pkl_file_list = []
-                    if len(prev_result_files):
-                        for prev_result_file in prev_result_files:
-                            src = prev_result_file
-                            tgt = osp.join(pred_root, osp.basename(src))
-                            if not osp.exists(tgt):
-                                shutil.copy(src, tgt)
-                                logger.info(f'--reuse is set, will reuse the prediction file {src}.')
-                            else:
-                                logger.warning(f'File already exists: {tgt}')
-
-                    elif len(prev_pkl_file_list):
-                        for fname in prev_pkl_file_list:
-                            target_path = osp.join(pred_root, osp.basename(fname))
-                            if not osp.exists(target_path):
-                                shutil.copy(fname, target_path)
-                                logger.info(f'--reuse is set, will reuse the prediction pickle file {fname}.')
-                            else:
-                                logger.warning(f'File already exists: {target_path}')
+                    prepare_reuse_files(
+                        pred_root_meta=pred_root_meta, eval_id=eval_id, model_name=model_name,
+                        dataset_name=dataset_name, reuse=args.reuse, reuse_aux=args.reuse_aux
+                    )
 
                 if WORLD_SIZE > 1:
                     dist.barrier()
