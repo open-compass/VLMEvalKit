@@ -106,6 +106,9 @@ def post_check(line, prefetch=False):
     res = None
     ans = line['answer']
     response = line['prediction'] if prefetch else line['res']
+    match = re.search(r'\\boxed\{([^}]*)\}', response)
+    if match:
+        response = match.group(1)
     try:
         if len(eval(line['choices'])) > 0:
             ans = line['answer']
