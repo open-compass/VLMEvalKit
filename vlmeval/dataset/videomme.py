@@ -265,9 +265,9 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                         data.loc[data['index'] == idx].to_dict(orient='records')[0],
                         'Video-MME'
                     )
-                    data.loc[idx, 'score'] = int(extract_pred == ans)
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
                 else:
-                    data.loc[idx, 'score'] = int(extract_characters_regex(pred) == ans)
+                    data.loc[data['index'] == idx, 'score'] = int(extract_characters_regex(pred) == ans)
 
             rejected = [x for x in data['score'] if x == -1]
 
