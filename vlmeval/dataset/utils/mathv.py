@@ -1,3 +1,4 @@
+import re
 from ...smp import *
 from ...utils import can_infer
 import timeout_decorator
@@ -105,6 +106,9 @@ def post_check(line, prefetch=False):
     res = None
     ans = line['answer']
     response = line['prediction'] if prefetch else line['res']
+    match = re.search(r'\\boxed\{([^}]*)\}', response)
+    if match:
+        response = match.group(1)
     try:
         if len(eval(line['choices'])) > 0:
             ans = line['answer']
@@ -168,7 +172,7 @@ def MATH_V_acc(result_file):
         if score:
             hit['Overall'] += 1
             hit[cate] += 1
-        scores.append(float(score))
+        scores.append(int(score))
 
     data['score'] = scores
     data = dump(data, result_file)
