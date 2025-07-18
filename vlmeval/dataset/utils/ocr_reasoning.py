@@ -5,7 +5,19 @@ import re
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 judge_prompts = '''Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to the user question displayed below. Your evaluation should consider correctness and helpfulness. You will be given a reference answer and the assistant's answer. Begin your evaluation by comparing the assistant's answer with the reference answer. Identify and correct any mistakes. Be as objective as possible. After providing your explanation, you must rate the response on a scale of 1 to 10 by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".\n\n[Question]\n{question}\n\n[The Start of Reference Answer]\n{ref_answer_1}\n[The End of Reference Answer]\n\n[The Start of Assistant's Answer]\n{answer}\n[The End of Assistant's Answer]". Again, you must output a score by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".''' # noqa e501
+judge_prompts = """
+Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to the user question displayed below. 
+You will be given a reference answer and the assistant's answer. 
+Begin your evaluation by comparing the assistant's answer with the reference answer. 
 
+Scoring rules  
+1. If both answers can be parsed to the same exact int or str → score 10.  
+2. Else if both are floats (or ints coerced to float) AND the assistant’s value differs from the reference by ≤0.5×10^(–k), where k is the number of decimal places in the reference → score 8.  
+   Example: reference 3.142 → assistant 3.14 or 3.143 gets 8; 3.15 gets 5.  
+3. Otherwise → score 0.
+
+After providing your explanation, you must rate the response on a scale of 1 to 10 by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".\n\n[Question]\n{question}\n\n[The Start of Reference Answer]\n{ref_answer_1}\n[The End of Reference Answer]\n\n[The Start of Assistant's Answer]\n{answer}\n[The End of Assistant's Answer]". Again, you must output a score by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".
+"""
 
 def get_gpt4_ICE():
     example_1 = """
