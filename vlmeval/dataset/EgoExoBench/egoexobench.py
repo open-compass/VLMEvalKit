@@ -10,12 +10,13 @@ import os
 import re
 from .utils import *
 import torch
+import shutil
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 class EgoExoBench_MCQ(VideoBaseDataset):
-    MD5 = 'b5c3cfe5d316f1a67a4076991f16ca9c'
+    MD5 = '9c0aa8da235d766d02dd7e9a19182719'
     TYPE = 'Video-MCQ'
 
     def __init__(self, dataset='EgoExoBench_MCQ', nframe=64):
@@ -30,13 +31,11 @@ class EgoExoBench_MCQ(VideoBaseDataset):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
-            if not os.path.exists(data_file):
+            if not osp.exists(data_file):
                 return False
 
             if md5(data_file) != self.MD5:
                 return False
-
-            data = load(data_file)  # noqa: F841
 
             return True
         cache_path = get_cache_path(repo_id)
@@ -44,109 +43,10 @@ class EgoExoBench_MCQ(VideoBaseDataset):
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-            def generate_tsv(pth):
-                data_file = osp.join(pth, f'{dataset_name}.tsv')
-                if os.path.exists(data_file) and md5(data_file) == self.MD5:
-                    return
-                json_data_dir = os.path.join(dataset_path, 'MCQ')
-                task_types = ['Ego-Exo-Relation', 'Ego-Exo-View-Transition', 'Ego-Exo-Temporal-Reasoning']
-                self.data_list = []
-
-                def add_media(value, content, medias):
-                    if 'prefix' in value:
-                        content += '\n' + value['prefix']
-                    if 'video_path' in value:
-                        content += '\n' + '<video>'
-                        medias.append(
-                            {
-                                "type": "video",
-                                "video_path": value["video_path"],
-                                "video_start": value.get("video_start", None),
-                                "video_end": value.get("video_end", None),
-                                "nframes": value.get("nframes", None),
-                            }
-                        )
-                    elif 'image_paths' in value:
-                        content += '\n' + '<video>'
-                        type = 'image' if len(value['image_paths']) == 1 else 'frames'
-                        medias.append(
-                            {
-                                "type": type,
-                                "image_paths": value["image_paths"],
-                            }
-                        )
-                    return content
-
-                def process_item(item):
-                    question = ''
-                    options = []
-                    medias = []
-                    answer = ''
-                    response_format = 'Please respond with a single label (e.g., A, B, etc.). The answer is: '
-                    for key, value in item:
-                        if key == 'answer':
-                            answer = value
-                            continue
-                        elif key == 'options':
-                            for opt_idx, oitem in enumerate(value):
-                                if isinstance(oitem, str):
-                                    options.append('ABCD'[opt_idx] + '. ' + oitem)
-                                elif isinstance(oitem, dict):
-                                    opt = 'ABCD'[opt_idx] + '. '
-                                    opt = add_media(oitem, opt, medias)
-                                    options.append(opt)
-                            continue
-                        elif key == 'candidates' and isinstance(value, list):
-                            for cand_idx, citem in enumerate(value):
-                                question = add_media(citem, question, medias)
-                            continue
-                        elif key == 'response_format':
-                            response_format = value
-                            continue
-                        elif isinstance(value, str):
-                            if key == 'question':
-                                question += 'Question: ' + value
-                            else:
-                                question += '\n' + value
-                        elif isinstance(value, dict) and ('video_path' in value or 'image_paths' in value):
-                            question = add_media(value, question, medias)
-
-                    options = '\n'.join(options)
-                    return question, options, response_format, medias, answer
-
-                for task_type in task_types:
-                    task_dir = osp.join(json_data_dir, task_type)
-                    subtask_files = [f for f in os.listdir(task_dir) if f.endswith('.json')]
-                    subtask_files.sort()
-
-                    for subtask_file in subtask_files:
-                        subtask_path = os.path.join(task_dir, subtask_file)
-
-                        with open(subtask_path, 'r') as f:
-                            data = json.load(f)
-
-                        for key, value in data.items():
-                            question, options, response_format, medias, answer = process_item(value.items())
-
-                            self.data_list.append({
-                                'task_type': task_type,
-                                'subtask_type': subtask_file.replace('.json', ''),
-                                'question': question,
-                                'options': options,
-                                'response_format': response_format,
-                                'medias': medias,
-                                'answer': answer,
-                                'video': None,
-                            })
-
-                data_df = pd.DataFrame(self.data_list)
-                data_df = data_df.assign(index=range(len(data_df)))
-                data_df.to_csv(data_file, sep='\t', index=False)
-
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-            generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+
         # transform
         self.transform = T.Compose([
             Stack(),
@@ -173,11 +73,14 @@ class EgoExoBench_MCQ(VideoBaseDataset):
                 'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )
         video_root = self.video_root
-
-        if media['type'] in ['frames']:
+        if media['type'] in ['image']:
+            original_image_path = osp.join(video_root, media['image_paths'][0])
+            processed_video_path = osp.join(video_root, 'processed_videos', f'{mcq_idx}.jpg')
+            shutil.copy(original_image_path, processed_video_path)
+            return dict(type='image', value=processed_video_path)
+        elif media['type'] in ['frames']:
             input_images = [osp.join(video_root, im) for im in media['image_paths']]
-            processed_video_path = f'{mcq_idx}.mp4'
-            processed_video_path = osp.join(video_root, 'processed_video', processed_video_path)
+            processed_video_path = osp.join(video_root, 'processed_videos', f'{mcq_idx}.mp4')
             media['nframes'] = len(input_images) // 2 * 2
             if not os.path.exists(processed_video_path):
                 # using MoviePy to transform images into mp4
@@ -185,33 +88,38 @@ class EgoExoBench_MCQ(VideoBaseDataset):
                 image_clip = ImageSequenceClip(image_files, fps=self.frame_fps)
                 image_clip.write_videofile(processed_video_path, codec='libx264')
                 image_clip.close()
-        elif media['type'] in ['image']:
-            return dict(type='image', value=osp.join(video_root, media['image_paths'][0]))
         elif media['type'] in ['video']:
-            processed_video_path = osp.join(video_root, media['video_path'])
+            original_video_path = osp.join(video_root, media['video_path'])
+            processed_video_path = osp.join(video_root, 'processed_videos', f'{mcq_idx}.mp4')
+            if 'video_start' in media and 'video_end' in media and media['video_start'] is not None and media['video_end'] is not None:
+                video_start, video_end = media['video_start'], media['video_end']                    
+                if not os.path.exists(processed_video_path):                
+                    video_clip = VideoFileClip(original_video_path)
+                    clip = video_clip.subclipped(video_start, min(video_end, video_clip.duration))
+                    clip.write_videofile(processed_video_path)
+                    clip.close()
+            else:
+                if not os.path.exists(processed_video_path):
+                    shutil.copy(original_video_path, processed_video_path)
         else:
             raise ValueError(f"Unsupported media type: {media['type']}")
 
-        if 'video_start' in media and 'video_end' in media and media['video_start'] is not None and media['video_end'] is not None:  # noqa: E501
-            video_start, video_end = media['video_start'], media['video_end']
-            output_video_path = osp.join(video_root, 'processed_video', f'{mcq_idx}.mp4')
-
-            if not os.path.exists(output_video_path):
-                video_clip = VideoFileClip(processed_video_path)
-                clip = video_clip.subclipped(video_start, min(video_end, video_clip.duration))
-                clip.write_videofile(output_video_path)
-                clip.close()
-        else:
-            output_video_path = processed_video_path
-
-        return dict(type='video', value=output_video_path, nframes=media.get('nframes', 8))
+        return dict(type='video', value=processed_video_path, nframes=media.get('nframes', 8))
 
     def save_video_into_images(self, media, mcq_idx):
         bound = None
         video_root = self.video_root
 
         if media['type'] in ['frames', 'image']:
-            input_images = [osp.join(video_root, im) for im in media['image_paths']]
+            media_paths = [osp.join(video_root, im) for im in media['image_paths']]
+            save_dir = osp.join(video_root, 'processed_frames', str(mcq_idx))
+            os.makedirs(save_dir, exist_ok=True)
+            input_images = []
+            for media_path in media_paths:
+                img_path = media_path.split('/')[-1]
+                save_image_path = osp.join(save_dir, img_path)
+                shutil.copy(media_path, save_image_path)
+                input_images.append(save_image_path)
             return input_images
 
         if 'video_start' in media and 'video_end' in media and media['video_start'] is not None and media['video_end'] is not None:  # noqa: E501
@@ -228,6 +136,11 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
             images_group = list()
             frame_indices = self.get_index(bound, fps, max_frame, first_idx=0, num_segments=num_segments)
+            save_dir = osp.join(video_root, 'processed_frames', str(mcq_idx))
+            
+            if osp.exists(save_dir) and len(os.listdir(save_dir)) > 0:
+                return None, frame_indices
+            
             for frame_index in frame_indices:
                 img = Image.fromarray(vr[frame_index].asnumpy())
                 images_group.append(img)
@@ -235,10 +148,10 @@ class EgoExoBench_MCQ(VideoBaseDataset):
             return torch_imgs, frame_indices
 
         def save_video_frames(imgs, video_root, frame_indices, mcq_idx):
+            save_dir = osp.join(video_root, 'processed_frames', str(mcq_idx))
+            os.makedirs(save_dir, exist_ok=True)
+            frame_paths = [osp.join(save_dir, f'{fidx:07d}.jpg') for fidx in frame_indices]
 
-            frame_base_path = osp.join(video_root, 'processed_frames', str(mcq_idx))
-            os.makedirs(frame_base_path, exist_ok=True)
-            frame_paths = [osp.join(frame_base_path, f'{fidx}.jpg') for fidx in frame_indices]
             flag = np.all([osp.exists(pth) for pth in frame_paths])
 
             if not flag:
