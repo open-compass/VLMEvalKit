@@ -1,3 +1,5 @@
 pdf2image
 colormath
 squarify
+matplotlib_venn
+Pillow

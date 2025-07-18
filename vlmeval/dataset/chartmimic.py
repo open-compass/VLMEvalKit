@@ -162,8 +162,8 @@ def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
     try:
         images = convert_from_path(pdf_path, dpi=dpi)
         images[0].save(output_path, "PNG")
-    except Exception:
-        # logger.info(f"Error in converting pdf to image: {e}")
+    except Exception as e:
+        logger.info(f"Error in converting pdf to image: {e}")
         return False
     return True
 
@@ -520,19 +520,24 @@ class ChartMimic(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        # Way to access subset dataset name, for example, ChartMimic_1000
-        # logger.info(f"Evaluating for {self.dataset_name}")
-        # breakpoint()
+        def judge_one_item_success(item):
+            return item["high_level"]["resp"] not in [FAIL_MSG, "", None, "null", "None"] \
+                and item["high_level"]["msg"] not in ["Generated image file does not exist", ""]
 
-        # return {"score": 99.99}
-        # raw_tsv_data = ChartMimic(self.dataset).data
         try:
             from pdf2image import convert_from_path
             from colormath.color_objects import sRGBColor, LabColor
+            import squarify
+            import matplotlib_venn
+            import PIL
+            example_pdf_path = "./vlmeval/dataset/utils/chartmimic/example.pdf"
+            images = convert_from_path(example_pdf_path, dpi=350)
+            images[0].save("./vlmeval/dataset/utils/chartmimic/example.png", "PNG")
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
-                             to install dependency package for chartmimic evaluation."
+                             to install dependency package for chartmimic evaluation.\n\
+                             And install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
             )
             raise e
         infer_data_all = load(eval_file).to_dict(orient="records")
@@ -570,11 +575,9 @@ class ChartMimic(ImageBaseDataset):
             tmp_data = load(tmp_file)
             for k, v in tmp_data.items():
                 # -1 means error for getting response from judge model, so try to rejudge for this item
-                # if v[0] == 0:
-                if v[0] == 0 and v[1]["high_level"]["resp"] != FAIL_MSG:
+                if v[0] == 0 and judge_one_item_success(v[1]):
                     ans[k] = v
             logger.info(f"Tmp file exists, loaded {len(ans)} data from {tmp_file}")
-            # logger.info(f"ans: {ans}")
 
         tups = [x for x, i in zip(params_all, indices_all) if i not in ans]
         indices = [i for i in indices_all if i not in ans]
@@ -641,13 +644,11 @@ class ChartMimic(ImageBaseDataset):
         new_len = len(eval_data_all)
         logger.info(f"filter out {old_len - new_len} items for no judge_result in item")
 
-        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
-        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
         old_len = len(eval_data_all)
         eval_data_all = [
             item
             for item in eval_data_all
-            if item["judge_result"]["high_level"]["resp"] != FAIL_MSG
+            # if judge_one_item_success(item["judge_result"])
         ]
         new_len = len(eval_data_all)
         logger.info(
