@@ -23,6 +23,7 @@ from json import JSONDecoder
 from huggingface_hub import scan_cache_dir
 from huggingface_hub.utils._cache_manager import _scan_cached_repo
 from sty import fg, bg, ef, rs
+import portalocker
 
 
 def modelscope_flag_set():

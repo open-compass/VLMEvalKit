@@ -43,9 +43,20 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
               'will set its VIDEO_LLM to False to enable multi-image input for video.')
         setattr(model, 'VIDEO_LLM', False)
 
-    structs = [dataset.build_prompt(samples_dict[idx], video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
-
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
+    build_prompt_input = [(samples_dict[idx], getattr(model, 'VIDEO_LLM', False)) for idx in indices]
+    if dataset.nframe > 0:
+        struct_tmp_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}_structs.pkl'
+    else:
+        struct_tmp_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}_structs.pkl'
+    structs = track_progress_rich(
+        dataset.build_prompt,
+        tasks=build_prompt_input,
+        nproc=api_nproc,
+        save=struct_tmp_file,
+        keys=indices,
+    )
+
     if dataset.nframe > 0:
         out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.nframe}frame_{packstr}_supp.pkl'
     else:

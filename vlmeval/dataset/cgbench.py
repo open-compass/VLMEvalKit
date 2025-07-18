@@ -396,11 +396,30 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
         # Save and validate frames
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -408,24 +427,6 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
@@ -721,11 +722,30 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -733,24 +753,6 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
@@ -1276,11 +1278,30 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
         # Save and validate frames
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -1288,24 +1309,6 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
@@ -1600,11 +1603,30 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -1612,24 +1634,6 @@ class CGBench_OpenEnded(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 

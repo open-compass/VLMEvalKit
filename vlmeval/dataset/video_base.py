@@ -93,11 +93,15 @@ class VideoBaseDataset:
             if flag:
                 return frame_paths
 
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth):
-                    im.save(pth)
+            lock_path = osp.join(self.frame_root, video + '.lock')
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if np.all([osp.exists(p) for p in frame_paths]):
+                    return frame_paths
+                images = [vid[i].asnumpy() for i in indices]
+                images = [Image.fromarray(arr) for arr in images]
+                for im, pth in zip(images, frame_paths):
+                    if not osp.exists(pth):
+                        im.save(pth)
             return frame_paths
 
         else:
@@ -105,15 +109,19 @@ class VideoBaseDataset:
             flag = np.all([osp.exists(p) for p in frame_paths])
             if flag:
                 return frame_paths
-            vid_path = osp.join(self.data_root, video + '.mp4')
-            vid = decord.VideoReader(vid_path)
-            step_size = len(vid) / (self.nframe + 1)
-            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth):
-                    im.save(pth)
+            lock_path = osp.join(self.frame_root, video + '.lock')
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if np.all([osp.exists(p) for p in frame_paths]):
+                    return frame_paths
+                vid_path = osp.join(self.data_root, video + '.mp4')
+                vid = decord.VideoReader(vid_path)
+                step_size = len(vid) / (self.nframe + 1)
+                indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
+                images = [vid[i].asnumpy() for i in indices]
+                images = [Image.fromarray(arr) for arr in images]
+                for im, pth in zip(images, frame_paths):
+                    if not osp.exists(pth):
+                        im.save(pth)
             return frame_paths
 
     # Return a list of dataset names that are supported by this class, can override
