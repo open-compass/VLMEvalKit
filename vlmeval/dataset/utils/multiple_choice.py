@@ -616,6 +616,7 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     if match and match.group(1) in choices:
 =======
     if match:
@@ -626,6 +627,9 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
 =======
     if match:
 >>>>>>> 604d45d (update)
+=======
+    if match and match.group(1) in choices:
+>>>>>>> 4711557 (update mmmu and ocr_bench)
         return match.group(1)
 
     answer_prefixes = [
