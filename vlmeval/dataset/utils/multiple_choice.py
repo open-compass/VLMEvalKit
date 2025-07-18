@@ -361,7 +361,7 @@ def extract_answer_from_item(model, item, dataset_name=None):
 
     if dataset_name is not None and 'LEGO' in dataset_name:
         ret = can_infer_lego(item['prediction'], item['question_type'], choices)
-    elif len(item['prediction']) < 100:
+    elif len(item['prediction']) < 10:
         ret = can_infer(item['prediction'], choices)
     else:
         ret = None
@@ -576,10 +576,14 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
     s = s.strip()
     match = re.search(r'.*\\boxed\{([^}]*)\}', text)
 <<<<<<< HEAD
+<<<<<<< HEAD
     if match and match.group(1) in choices:
 =======
     if match:
 >>>>>>> 238e75b (update)
+=======
+    if match and match.group(1) in choices:
+>>>>>>> 8fd8627 (update mmmu and ocr_bench)
         return match.group(1)
 
     answer_prefixes = [
