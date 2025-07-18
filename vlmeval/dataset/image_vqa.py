@@ -2495,54 +2495,37 @@ class OCR_Reasoning(ImageBaseDataset):
 
     # It returns a DataFrame
     @classmethod
-    def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.ocr_reasoning import OcrR_auxeval, OcrR_acc
+    def evaluate(self, eval_file, **judge_kwargs): 
+        from .utils.xverify import VQAxVerifyEvaluator
+
 
         model = judge_kwargs['model']
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
-        nproc = judge_kwargs.pop('nproc', 4)
-        if not osp.exists(storage):
-            data = load(eval_file)
-            model = build_judge(max_tokens=1024, **judge_kwargs)
-            assert model.working(), 'OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
-            lt = len(data)
-            lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
-            indices = [line['index'] for line in lines]
+        data = load(eval_file)
 
-            ans = {}
-            if osp.exists(tmp_file):
-                ans = load(tmp_file)
-            tups = [x for x, i in zip(tups, indices) if i not in ans]
-            indices = [i for i in indices if i not in ans]
+        predictions = data['prediction'].tolist()
+        answers = data['answer'].tolist()
+        questions = data['question'].tolist()
+       
+        xverify = VQAxVerifyEvaluator(dataset_name="OCR_Reasoning")
+        results = xverify.score(predictions, answers, questions )
+        data['score'] = results
 
-            if len(indices):
-                new_results = track_progress_rich(
-                    OcrR_auxeval,
-                    tups,
-                    nproc=nproc,
-                    chunksize=nproc,
-                    keys=indices,
-                    save=tmp_file,
-                )
-                ans = load(tmp_file)
-                for k, v in zip(indices, new_results):
-                    assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
-                        'res']
-
-            data['res'] = [ans[idx]['res'] for idx in data['index']]
-            data['log'] = [ans[idx]['log'] for idx in data['index']]
-            data['reason_score'] = [
-                ans[idx]['reason_score'] for idx in data['index']
-            ]
-            dump(data, storage)
-        score = OcrR_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
-        dump(score, score_pth)
-        return score
+        def OcrR_acc(data):
+            "overall accuracy and category accuracy"
+            categories = data['task'].unique().tolist()
+            acc = {}
+            for cate in categories:
+                acc[cate] = np.mean(data[data['task'] == cate]['score'])
+            acc['Overall'] = np.mean(data['score'])
+            return acc
+        
+        dump(data, storage)
+        score_pth = storage.replace('.xlsx', '_score.json')
+        acc = OcrR_acc(data)
+        dump(acc, score_pth)
+        return acc
 
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
