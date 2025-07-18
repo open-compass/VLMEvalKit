@@ -45,32 +45,33 @@ class MEGABench(VideoBaseDataset):
 
         if hasattr(self, 'max_num_frames') and self.max_num_frames:
             if num_demo_videos > 0:
-                self.demo_video_frames = math.ceil(
+                demo_video_frames = math.ceil(
                     self.total_demo_video_frames / num_demo_videos
                 ) if hasattr(self, 'total_demo_video_frames') else 2
             else:
-                self.demo_video_frames = 0
+                demo_video_frames = 0
 
             if num_query_videos > 0:
                 total_query_video_frames = (
                     self.max_num_frames
-                    - self.demo_video_frames * num_demo_videos
+                    - demo_video_frames * num_demo_videos
                 )
                 if total_query_video_frames <= 0:
                     raise ValueError(
                         f"Cannot query <= 0 frames: please raise the number of maximum images allowed. "
-                        f"demo_video_frames={self.demo_video_frames}, num_demo_videos={num_demo_videos}, "
+                        f"demo_video_frames={demo_video_frames}, num_demo_videos={num_demo_videos}, "
                         f"max_num_frames={self.max_num_frames}"
                     )
-                self.query_video_frames = total_query_video_frames // num_query_videos
+                query_video_frames = total_query_video_frames // num_query_videos
             else:
-                self.query_video_frames = 0
+                query_video_frames = 0
 
         else:
-            self.demo_video_frames = 2
-            self.query_video_frames = 8
+            demo_video_frames = 2
+            query_video_frames = 8
 
-        # print("demo_video_frames, query_video_frames:", self.demo_video_frames, self.query_video_frames)
+        # print("demo_video_frames, query_video_frames:", demo_video_frames, query_video_frames)
+        return demo_video_frames, query_video_frames
 
     def is_video_file(self, file_path):
         from mimetypes import guess_type
@@ -176,6 +177,9 @@ class MEGABench(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
 
+        # 获取当前行的帧数配置
+        demo_video_frames, query_video_frames = self._set_sampling_config(line)
+
         def process_video(file_path, is_demo=False):
             if video_llm:
                 return (dict(type='video', value=file_path))
@@ -191,7 +195,7 @@ class MEGABench(VideoBaseDataset):
             cap = cv2.VideoCapture(file_path)
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
-            num_frames = self.demo_video_frames if is_demo else self.query_video_frames
+            num_frames = demo_video_frames if is_demo else query_video_frames
 
             # the sampling rate using max number of frames
             sampling_gap_maxframe = (
@@ -375,7 +379,6 @@ class MEGABench(VideoBaseDataset):
             return message
 
         message = []
-        self._set_sampling_config(line)
 
         if pd.notna(line['task_description']):
             global_media = process_media_list(line['global_media'])
