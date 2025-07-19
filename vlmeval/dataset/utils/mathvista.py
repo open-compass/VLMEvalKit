@@ -105,7 +105,7 @@ def MathVista_auxeval(model, line):
     prompt = build_mathvista_gpt4_prompt(line)
     log = ''
     retry = 5
-    if post_check(line, prefetch=True):
+    if len(line['prediction']) <= 100 and post_check(line, prefetch=True):
         res = post_check(line, prefetch=True)
         return dict(log='Prefetch succeed', res=res)
     for i in range(retry):
