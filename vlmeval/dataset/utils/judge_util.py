@@ -46,6 +46,7 @@ def build_judge(**kwargs):
             api_base=api_base, 
             key=key, 
             use_azure=True,
+            wait=30,
             **kwargs)
     elif model == 'gpt-4o':
         api_base = os.environ.get('XHS_OPENAI_GPT4O_API_BASE', None)
@@ -78,6 +79,7 @@ def build_judge(**kwargs):
             api_base=api_base, 
             key=key, 
             use_azure=True,
+            wait=30,
             **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)
