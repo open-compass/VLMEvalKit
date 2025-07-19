@@ -7,7 +7,6 @@ from .base import BaseAPI
 from io import BytesIO
 import threading
 import random
-import threading
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -621,6 +620,7 @@ class VLLMAPIWrapper(BaseAPI):
 
         payload['max_tokens'] = max_tokens
 
+
         if 'gemini' in self.model:
             payload.pop('max_tokens')
             payload.pop('n')
@@ -644,8 +644,6 @@ class VLLMAPIWrapper(BaseAPI):
                     self.logger.error(response.text if hasattr(response, 'text') else response)
 
             return ret_code, answer, response
-
-XHSVLMAPIWrapper = VLLMAPIWrapper
 
 XHSVLMAPIWrapper = VLLMAPIWrapper
 
