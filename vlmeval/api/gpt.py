@@ -583,27 +583,36 @@ class VLLMAPIWrapper(BaseAPI):
 
         payload['max_tokens'] = max_tokens
 
+
         if 'gemini' in self.model:
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
-        response = requests.post(
-            self._next_api_base(),
-            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
-        ret_code = response.status_code
-        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
-        answer = self.fail_msg
-        try:
-            resp_struct = json.loads(response.text)
-            answer = resp_struct['choices'][0]['message']['content'].strip()
-            if os.environ.get('ADD_THINK_NOTE', '0') == '1':
-                answer = "<think>" + answer
-        except Exception as err:
-            if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(response.text if hasattr(response, 'text') else response)
+        try_times = 0
+        while try_times < 3:
+            response = requests.post(
+                self._next_api_base(),
+                headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+            ret_code = response.status_code
+            ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
+            answer = self.fail_msg
+            try:
+                resp_struct = json.loads(response.text)
+                answer = resp_struct['choices'][0]['message']['content'].strip()
+                if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                    if '</think>' not in answer and len(answer) < 1000:
+                        if try_times == 2:
+                            return ret_code, answer, response
+                        try_times += 1
+                        continue
+                    else:
+                        answer = "<think>" + answer
+            except Exception as err:
+                if self.verbose:
+                    self.logger.error(f'{type(err)}: {err}')
+                    self.logger.error(response.text if hasattr(response, 'text') else response)
 
-        return ret_code, answer, response
+            return ret_code, answer, response
 
 XHSVLMAPIWrapper = VLLMAPIWrapper
 
