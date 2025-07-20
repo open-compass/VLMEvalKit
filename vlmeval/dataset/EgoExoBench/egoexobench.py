@@ -11,6 +11,7 @@ import re
 from .utils import *
 import torch
 import shutil
+import glob
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -19,15 +20,16 @@ class EgoExoBench_MCQ(VideoBaseDataset):
     MD5 = '9c0aa8da235d766d02dd7e9a19182719'
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='EgoExoBench_MCQ', nframe=64):
+    def __init__(self, dataset='EgoExoBench_MCQ', nframe=64, skip_EgoExo4D=False):
         super().__init__(dataset=dataset, nframe=nframe)
         self.frame_fps = 2
+        self.skip_EgoExo4D = skip_EgoExo4D
 
     @classmethod
     def supported_datasets(cls):
         return ['EgoExoBench_MCQ']
 
-    def prepare_dataset(self, dataset_name='EgoExoBench_MCQ', repo_id='Heleun/EgoExoBench_MCQ'):
+    def prepare_dataset(self, dataset_name='EgoExoBench_MCQ', repo_id='Heleun/EgoExoBench_MCQ', video_repo_id='onlyfaces/EgoExoBench'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
@@ -40,6 +42,29 @@ class EgoExoBench_MCQ(VideoBaseDataset):
             return True
         cache_path = get_cache_path(repo_id)
         self.video_root = LMUDataRoot()
+        if not osp.exists(osp.join(self.video_root, 'processed_videos')) or not osp.exists(osp.join(self.video_root, 'processed_frames')):
+            print("Downloading videos from HF...")
+            snapshot_download(
+                repo_id=video_repo_id,
+                repo_type='dataset',
+                allow_patterns=['*.tar.gz.part*'],
+                local_dir=self.video_root
+            )
+            print("Finished downloading.")
+            def combine_and_extract(root_dir, prefix):
+                parts_pattern = osp.join(root_dir, f'{prefix}.tar.gz.part*')
+                combined_archive = osp.join(root_dir, f'{prefix}.tar.gz')
+                if not osp.exists(combined_archive):
+                    parts = sorted(glob.glob(parts_pattern))
+                    with open(combined_archive, 'wb') as outfile:
+                        for part in parts:
+                            with open(part, 'rb') as infile:
+                                shutil.copyfileobj(infile, outfile)
+                shutil.unpack_archive(combined_archive, root_dir)
+                os.remove(combined_archive)
+            combine_and_extract(self.video_root, 'processed_videos')
+            combine_and_extract(self.video_root, 'processed_frames')
+
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
