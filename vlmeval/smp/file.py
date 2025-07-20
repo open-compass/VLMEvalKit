@@ -510,25 +510,6 @@ def get_file_extension(file_path):
     return file_path.split('.')[-1]
 
 
-def replace_file_extension(file_path, new_extension, suffix=''):
-    """
-    替换文件扩展名，支持添加后缀
-
-    Args:
-        file_path: 原文件路径
-        new_extension: 新的扩展名（不包含点）
-        suffix: 可选的后缀（在扩展名前添加）
-
-    Returns:
-        新的文件路径
-    """
-    base_path = '.'.join(file_path.split('.')[:-1])
-    if suffix:
-        return f"{base_path}{suffix}.{new_extension}"
-    else:
-        return f"{base_path}.{new_extension}"
-
-
 def get_intermediate_file_path(eval_file, suffix, target_format=None):
     """
     生成中间文件路径，支持环境变量格式控制
@@ -561,42 +542,3 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
 
     # 替换扩展名并添加后缀
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
-
-
-def get_judge_file_path(eval_file, judge_name, file_type='xlsx'):
-    """
-    生成judge相关的文件路径
-
-    Args:
-        eval_file: 原始评估文件路径
-        judge_name: judge模型名称
-        file_type: 文件类型，支持 'xlsx', 'json', 'pkl', 'csv', 'txt'
-
-    Returns:
-        judge文件路径
-    """
-    original_ext = get_file_extension(eval_file)
-
-    if file_type in ['xlsx', 'json', 'csv']:
-        # 这些格式跟随环境变量
-        if file_type == 'xlsx':
-            target_format = get_pred_file_format()
-        else:
-            target_format = file_type
-        return eval_file.replace(f'.{original_ext}', f'_{judge_name}.{target_format}')
-    else:
-        # pkl, txt 等格式保持不变
-        return eval_file.replace(f'.{original_ext}', f'_{judge_name}.{file_type}')
-
-
-def replace_excel_ext_with_env_format(file_path):
-    """
-    将.xlsx扩展名替换为环境变量指定的格式
-    这个函数专门用于处理现有代码中的.xlsx硬编码
-    Args:
-        file_path: 文件路径
-    Returns:
-        替换后的文件路径
-    """
-    target_format = get_pred_file_format()
-    return file_path.replace('.xlsx', f'.{target_format}')
