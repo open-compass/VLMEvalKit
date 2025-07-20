@@ -115,9 +115,9 @@ def MMBenchOfficialServer(dataset_name):
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
-                            np.int16, np.int32, np.int64, np.uint8,
-                            np.uint16, np.uint32, np.uint64)):
+        if isinstance(obj,
+                      (np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64,
+                       np.uint8, np.uint16, np.uint32, np.uint64)):
             return int(obj)
         elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
             return float(obj)
@@ -138,6 +138,10 @@ def dump(data, f, **kwargs):
         pickle.dump(data, open(pth, 'wb'))
 
     def dump_json(data, pth, **kwargs):
+        # 处理 DataFrame 对象
+        if isinstance(data, pd.DataFrame):
+            # 转换为 records 格式（列表格式）
+            data = data.to_dict('records')
         json.dump(data, open(pth, 'w'), indent=4, ensure_ascii=False, cls=NumpyEncoder)
 
     def dump_jsonl(data, f, **kwargs):
@@ -159,12 +163,132 @@ def dump(data, f, **kwargs):
     return handlers[suffix](data, f, **kwargs)
 
 
+def get_pred_file_format():
+    """获取预测文件格式，优先使用环境变量PRED_FORMAT"""
+    pred_format = os.getenv('PRED_FORMAT', '').lower()
+    if pred_format in ['tsv', 'xlsx', 'json']:
+        return pred_format
+    return 'xlsx'  # 默认格式
+
+
+def get_eval_file_format():
+    """获取评测文件格式，优先使用环境变量EVAL_FORMAT"""
+    eval_format = os.getenv('EVAL_FORMAT', '').lower()
+    if eval_format in ['csv', 'json']:
+        return eval_format
+    return 'csv'  # 默认格式
+
+
+def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
+    """生成预测文件路径，支持环境变量格式控制"""
+    if use_env_format:
+        file_format = get_pred_file_format()
+        if file_format == 'xlsx':
+            return osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
+        elif file_format == 'tsv':
+            return osp.join(work_dir, f'{model_name}_{dataset_name}.tsv')
+        elif file_format == 'json':
+            return osp.join(work_dir, f'{model_name}_{dataset_name}.json')
+    else:
+        # 保持原有行为
+        return osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
+
+
+def get_eval_file_path(eval_file, judge_model, use_env_format=True):
+    """生成评测文件路径，支持环境变量格式控制"""
+    suffix = eval_file.split('.')[-1]
+    if use_env_format:
+        file_format = get_eval_file_format()
+        if file_format == 'csv':
+            return eval_file.replace(f'.{suffix}', f'_{judge_model}.csv')
+        elif file_format == 'json':
+            return eval_file.replace(f'.{suffix}', f'_{judge_model}.json')
+    else:
+        # 保持原有行为
+        return eval_file.replace(f'.{suffix}', f'_{judge_model}.xlsx')
+
+
+def _should_convert_to_dataframe(data):
+    """
+    判断字典是否应该转换为DataFrame
+    Args:
+        data: 字典数据
+    Returns:
+        bool: 是否应该转换为DataFrame
+    """
+    if not isinstance(data, dict):
+        return False
+    # 如果是空字典，不转换
+    if not data:
+        return False
+    # 如果包含'columns'和'data'键，说明是空DataFrame的特殊格式
+    if 'columns' in data and 'data' in data:
+        return True
+    # 如果所有值都是标量（非列表、非字典），则不转换为DataFrame
+    # 这种情况通常是配置文件、评分结果等
+    values = list(data.values())
+    if all(not isinstance(v, (list, dict)) for v in values):
+        return False
+    # 如果至少有一个值是列表或字典，则可能需要转换为DataFrame
+    if any(isinstance(v, list) for v in values):
+        # 检查是否所有列表长度相同（DataFrame的基本要求）
+        lists = [v for v in values if isinstance(v, list)]
+        if lists and all(len(lst) == len(lists[0]) for lst in lists):
+            return True
+
+    return False
+
+
 def load(f, fmt=None):
     def load_pkl(pth):
         return pickle.load(open(pth, 'rb'))
 
     def load_json(pth):
-        return json.load(open(pth, 'r', encoding='utf-8'))
+        try:
+            with open(pth, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if not content:
+                    # 如果文件为空，返回空的DataFrame
+                    return pd.DataFrame()
+                data = json.loads(content)
+
+                # 如果是list格式（records），转换为DataFrame
+                if isinstance(data, list):
+                    return pd.DataFrame(data)
+                elif isinstance(data, dict):
+                    # 判断是否应该转换为DataFrame
+                    if _should_convert_to_dataframe(data):
+                        return pd.DataFrame(data)
+                    else:
+                        return data
+                else:
+                    return data
+
+        except json.JSONDecodeError as e:
+            # 如果JSON格式错误，尝试作为其他格式读取
+            print(f"Warning: JSON decode error for {pth}: {e}")
+            # 尝试按行读取，可能是JSONL格式
+            try:
+                with open(pth, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    if lines and lines[0].strip():
+                        # 尝试作为单行JSON解析
+                        data = json.loads(lines[0].strip())
+                        if isinstance(data, list):
+                            return pd.DataFrame(data)
+                        elif isinstance(data, dict):
+                            # 判断是否应该转换为DataFrame
+                            if _should_convert_to_dataframe(data):
+                                return pd.DataFrame(data)
+                            else:
+                                return data
+                        else:
+                            return data
+                    else:
+                        return pd.DataFrame()
+            except:
+                print(f"Warning: Could not parse {pth} as JSON, returning empty DataFrame")
+                return pd.DataFrame()
 
     def load_jsonl(f):
         lines = open(f, encoding='utf-8').readlines()
@@ -379,3 +503,100 @@ def fetch_aux_files(eval_file):
         for d in to_handle:
             fs = [x for x in fs if d not in x]
     return fs
+
+
+def get_file_extension(file_path):
+    """获取文件扩展名"""
+    return file_path.split('.')[-1]
+
+
+def replace_file_extension(file_path, new_extension, suffix=''):
+    """
+    替换文件扩展名，支持添加后缀
+
+    Args:
+        file_path: 原文件路径
+        new_extension: 新的扩展名（不包含点）
+        suffix: 可选的后缀（在扩展名前添加）
+
+    Returns:
+        新的文件路径
+    """
+    base_path = '.'.join(file_path.split('.')[:-1])
+    if suffix:
+        return f"{base_path}{suffix}.{new_extension}"
+    else:
+        return f"{base_path}.{new_extension}"
+
+
+def get_intermediate_file_path(eval_file, suffix, target_format=None):
+    """
+    生成中间文件路径，支持环境变量格式控制
+
+    Args:
+        eval_file: 原始评估文件路径
+        suffix: 文件后缀（如 '_tmp', '_score' 等）
+        target_format: 目标格式，如果为None则根据文件用途智能选择格式
+
+    Returns:
+        新的文件路径
+    """
+    # 获取原文件的扩展名
+    original_ext = get_file_extension(eval_file)
+
+    if target_format is None:
+        # 根据后缀智能选择格式
+        if suffix in ['_tmp', '_response', '_processed']:
+            # 临时文件保持pkl格式
+            target_format = 'pkl'
+        elif suffix in ['_rating', '_config', '_meta']:
+            # 配置和评分文件保持json格式
+            target_format = 'json'
+        elif suffix in ['_acc', '_fine', '_metrics']:
+            # 准确率和指标文件根据EVAL_FORMAT选择
+            target_format = get_eval_file_format()
+        else:
+            # 其他文件跟随PRED_FORMAT
+            target_format = get_pred_file_format()
+
+    # 替换扩展名并添加后缀
+    return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
+
+
+def get_judge_file_path(eval_file, judge_name, file_type='xlsx'):
+    """
+    生成judge相关的文件路径
+
+    Args:
+        eval_file: 原始评估文件路径
+        judge_name: judge模型名称
+        file_type: 文件类型，支持 'xlsx', 'json', 'pkl', 'csv', 'txt'
+
+    Returns:
+        judge文件路径
+    """
+    original_ext = get_file_extension(eval_file)
+
+    if file_type in ['xlsx', 'json', 'csv']:
+        # 这些格式跟随环境变量
+        if file_type == 'xlsx':
+            target_format = get_pred_file_format()
+        else:
+            target_format = file_type
+        return eval_file.replace(f'.{original_ext}', f'_{judge_name}.{target_format}')
+    else:
+        # pkl, txt 等格式保持不变
+        return eval_file.replace(f'.{original_ext}', f'_{judge_name}.{file_type}')
+
+
+def replace_excel_ext_with_env_format(file_path):
+    """
+    将.xlsx扩展名替换为环境变量指定的格式
+    这个函数专门用于处理现有代码中的.xlsx硬编码
+    Args:
+        file_path: 文件路径
+    Returns:
+        替换后的文件路径
+    """
+    target_format = get_pred_file_format()
+    return file_path.replace('.xlsx', f'.{target_format}')

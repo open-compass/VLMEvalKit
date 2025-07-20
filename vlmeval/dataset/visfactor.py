@@ -130,8 +130,8 @@ class VisFactor(ImageBaseDataset):
 
         accuracy['ALL'] = sum([accuracy[s] for s in accuracy]) / len([accuracy[s] for s in accuracy])
 
-        data.to_csv(eval_file.replace('.xlsx', '.csv'), index=False)
-        with open(eval_file.replace('.xlsx', '_acc.csv'), 'w') as f:
+        data.to_csv(get_intermediate_file_path(eval_file, '', 'csv'), index=False)
+        with open(get_intermediate_file_path(eval_file, '_acc', 'csv'), 'w') as f:
             for key in accuracy:
                 f.write(f'{key},{accuracy[key]}\n')
 

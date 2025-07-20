@@ -203,7 +203,7 @@ class DUDE(ImageBaseDataset):
             dump(data, storage)
 
         score = DUDE_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
 
         dump(score, score_pth)
         logger.info(f'DUDE successfully finished evaluating {eval_file}, results saved in {score_pth}')

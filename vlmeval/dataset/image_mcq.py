@@ -499,11 +499,11 @@ class MMMUProDataset(MMMUDataset):
         if 'COT' in self.dataset_name:
             data = load(eval_file)
             data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
-            tgt = eval_file.replace('.xlsx', '_cotpost.xlsx')
+            tgt = get_intermediate_file_path(eval_file, '_cotpost')
             dump(data, tgt)
             res = super().evaluate(tgt, **judge_kwargs)
-            acc_org = eval_file.replace('.xlsx', '_acc.csv')
-            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv')
+            acc_org = get_intermediate_file_path(eval_file, '_acc', 'csv')
+            acc_now = get_intermediate_file_path(eval_file, '_cotpost_acc', 'csv')
             shutil.copy(acc_now, acc_org)
             return res
         else:
@@ -901,11 +901,11 @@ class MMERealWorld(ImageMCQDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import extract_characters_regex, get_dimension_rating
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         FAIL_MSG = 'Failed to obtain answer via API.'
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
 
@@ -1321,7 +1321,7 @@ class WeMath(ImageBaseDataset):
             four_dim_scores = wemath_accuracy(eval_file)
         combine_score = {**accuracy_scores, **four_dim_scores}
         combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(combine_score, score_pth)
         return combine_score
 
@@ -1531,7 +1531,7 @@ class VisuLogic(ImageMCQDataset):
             accuracy_scores = VisuLogic_acc(eval_file)
         combine_score = {**accuracy_scores,}
         combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_acc.csv')
+        score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
         dump(combine_score, score_pth)
         return combine_score
 
@@ -2260,7 +2260,7 @@ class _3DSRBench(ImageMCQDataset):
             acc_map[k]['setting'] = [k] * len(acc_map[k])
             metrics.append(acc_map[k])
         res_all = pd.concat(metrics)
-        dump(res_all, eval_file.replace('.xlsx', '_acc_all.csv'))
+        dump(res_all, get_intermediate_file_path(eval_file, '_acc_all', 'csv'))
         return res_all
 
 
@@ -2443,11 +2443,11 @@ class TreeBench(ImageMCQDataset):
         import ast
         from .utils.multiple_choice import extract_characters_regex
         from .utils.treebench import get_dimension_rating
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         FAIL_MSG = 'Failed to obtain answer via API.'
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
 

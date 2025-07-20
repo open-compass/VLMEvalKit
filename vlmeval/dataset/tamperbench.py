@@ -451,15 +451,15 @@ Based on your observations, select the best option that accurately addresses the
             - Ratings are generated for different dimensions and saved to respective files.
         """
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_task_type_file = eval_file.replace('.xlsx', '_task_type_rating.json')
-        tgt_tamper_type_file = eval_file.replace('.xlsx', '_tamper_type_rating.json')
-        tgt_task_tamper_type_file = eval_file.replace('.xlsx', '_task_tamper_type_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
-        score_metrics_file = eval_file.replace('.xlsx', '_score_f1.xlsx')
-        action_metrics_file = eval_file.replace('.xlsx', '_action_f1.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_task_type_file = get_intermediate_file_path(eval_file, '_task_type_rating', 'json')
+        tgt_tamper_type_file = get_intermediate_file_path(eval_file, '_tamper_type_rating', 'json')
+        tgt_task_tamper_type_file = get_intermediate_file_path(eval_file, '_task_tamper_type_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        score_metrics_file = get_intermediate_file_path(eval_file, '_score_f1')
+        action_metrics_file = get_intermediate_file_path(eval_file, '_action_f1')
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')

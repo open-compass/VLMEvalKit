@@ -276,7 +276,7 @@ class Video_MMLU_CAP(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.video_mmlu import get_dimension_rating, prepare_response_prompt, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT_CAP, SYSTEM_GENER_PRED_PROMPT
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
         judge = judge_kwargs['model']
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
@@ -564,7 +564,7 @@ class Video_MMLU_QA(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.video_mmlu import get_dimension_rating, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT_QA
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
         judge = judge_kwargs['model']
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)

@@ -271,7 +271,9 @@ def main():
                 dist.barrier()
 
             try:
-                result_file_base = f'{model_name}_{dataset_name}.xlsx'
+                # 使用环境变量控制的文件格式，支持tsv, xlsx, json
+                pred_format = get_pred_file_format()
+                result_file_base = f'{model_name}_{dataset_name}.{pred_format}'
 
                 if use_config:
                     if WORLD_SIZE > 1:
@@ -299,8 +301,8 @@ def main():
                         continue
 
                 # Handling Multi-Turn Dataset
-                if dataset.TYPE == 'MT':
-                    result_file_base = result_file_base.replace('.xlsx', '.tsv')
+                # 注意：MT类型现在也支持通过环境变量控制文件格式，不再强制使用tsv
+                # 如果需要保持MT类型使用tsv的传统行为，可以在环境变量中设置PRED_FORMAT=tsv
 
                 result_file = osp.join(pred_root, result_file_base)
 

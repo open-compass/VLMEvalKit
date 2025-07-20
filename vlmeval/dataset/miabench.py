@@ -160,7 +160,7 @@ class MIABench(ImageBaseDataset):
 
         goresult = load(storage)
         results = get_score_dict(goresult, goresult['score_raw'])
-        result_pth = storage.replace('.xlsx', '_score.csv')
+        result_pth = get_intermediate_file_path(storage, '_score', 'csv')
         results_pd = pd.DataFrame.from_dict(list(results.items()))
         dump(results_pd, result_pth)
 
