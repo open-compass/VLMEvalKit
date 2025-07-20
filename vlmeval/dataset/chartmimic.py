@@ -519,23 +519,25 @@ class ChartMimic(ImageBaseDataset):
 
         return msgs
 
-
     def evaluate(self, eval_file, **judge_kwargs):
         def judge_one_item_success(item):
             return item["high_level"]["resp"] not in [FAIL_MSG, "", None, "null", "None"] \
                 and item["high_level"]["msg"] not in ["Generated image file does not exist", ""]
 
-        # Test dependencies first
         try:
             from pdf2image import convert_from_path
             from colormath.color_objects import sRGBColor, LabColor
             import squarify
             import matplotlib_venn
             import PIL
+            example_pdf_path = "./vlmeval/dataset/utils/chartmimic/example.pdf"
+            images = convert_from_path(example_pdf_path, dpi=350)
+            images[0].save("./vlmeval/dataset/utils/chartmimic/example.png", "PNG")
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
-                             to install dependency package for chartmimic evaluation."
+                             to install dependency package for chartmimic evaluation.\n\
+                             And install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
             )
             raise e
 
