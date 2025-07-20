@@ -162,13 +162,7 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('GOOGLE_API_KEY', '')
             if key is None:
                 key = env_key
-            api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        elif 'ernie' in model:
-            env_key = os.environ.get('BAIDU_API_KEY', '')
-            if key is None:
-                key = env_key
-            api_base = 'https://qianfan.baidubce.com/v2/chat/completions'
-            self.baidu_appid = os.environ.get('BAIDU_APP_ID', None)
+            api_base = os.environ.get('GOOGLE_API_BASE', "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -288,8 +282,11 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         elif self.key is None:
             headers = {'Content-Type': 'application/json'}
+        elif 'gemini' in self.model:
+            headers = {'Content-Type': 'application/json', 'api-key': self.key}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
+<<<<<<< HEAD
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
@@ -299,6 +296,27 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
+=======
+
+        if 'gemini' in self.model:
+            input_msgs, system_instruction = convert_openai_to_gemini_format(input_msgs)
+            payload = {
+                "generationConfig": {
+                    "temperature": temperature,
+                    "maxOutputTokens": max_tokens,
+                    "thinkingConfig": {"includeThoughts": True}
+                },
+                "system_instruction": {"parts": [{"text": system_instruction}]},
+                "contents": input_msgs
+            }
+        else:   
+            payload = dict(
+                model=self.model,
+                messages=input_msgs,
+                n=1,
+                temperature=temperature,
+                **kwargs)
+>>>>>>> 94d7a64 (update)
 
         if 'gemini' in self.model:
             input_msgs, system_instruction = convert_openai_to_gemini_format(input_msgs)
@@ -635,6 +653,7 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
+<<<<<<< HEAD
         try_times = 0
         while try_times < 3:
             response = requests.post(
@@ -655,6 +674,23 @@ class VLLMAPIWrapper(BaseAPI):
                 if self.verbose:
                     self.logger.error(f'{type(err)}: {err}')
                     self.logger.error(response.text if hasattr(response, 'text') else response)
+=======
+        response = requests.post(
+            self._next_api_base(),
+            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+        ret_code = response.status_code
+        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
+        answer = self.fail_msg
+        try:
+            resp_struct = json.loads(response.text)
+            answer = resp_struct['choices'][0]['message']['content'].strip()
+            if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                answer = "<think>" + answer
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
+>>>>>>> 94d7a64 (update)
 
             return ret_code, answer, response
 
