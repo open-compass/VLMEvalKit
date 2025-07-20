@@ -286,7 +286,6 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'api-key': self.key}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
-<<<<<<< HEAD
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
@@ -296,27 +295,6 @@ class OpenAIWrapper(BaseAPI):
             n=1,
             temperature=temperature,
             **kwargs)
-=======
-
-        if 'gemini' in self.model:
-            input_msgs, system_instruction = convert_openai_to_gemini_format(input_msgs)
-            payload = {
-                "generationConfig": {
-                    "temperature": temperature,
-                    "maxOutputTokens": max_tokens,
-                    "thinkingConfig": {"includeThoughts": True}
-                },
-                "system_instruction": {"parts": [{"text": system_instruction}]},
-                "contents": input_msgs
-            }
-        else:   
-            payload = dict(
-                model=self.model,
-                messages=input_msgs,
-                n=1,
-                temperature=temperature,
-                **kwargs)
->>>>>>> 94d7a64 (update)
 
         if 'gemini' in self.model:
             input_msgs, system_instruction = convert_openai_to_gemini_format(input_msgs)
@@ -582,11 +560,7 @@ class VLLMAPIWrapper(BaseAPI):
                     from PIL import Image
                     fmt=get_image_fmt_from_image_path(msg['value'])
                     img = Image.open(msg['value'])
-<<<<<<< HEAD
                     b64 = custom_encode_image_to_base64(img, target_size=self.img_size, fmt=fmt)
-=======
-                    b64 = encode_image_to_base64(img, target_size=-1, fmt=fmt)
->>>>>>> abfdf17 (update mmmupro)
                     if self.model == os.environ.get("DOUBAO_MODEL_NAME"):
                         b64 = compress_image(b64, format=fmt)
                     img_struct = dict(url=f'data:image/{fmt};base64,{b64}')
@@ -654,6 +628,9 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c7cffef (update)
         try_times = 0
         while try_times < 3:
             response = requests.post(
@@ -665,15 +642,27 @@ class VLLMAPIWrapper(BaseAPI):
             try:
                 resp_struct = json.loads(response.text)
                 answer = resp_struct['choices'][0]['message']['content'].strip()
+<<<<<<< HEAD
                 if answer == '':
                     answer = resp_struct['choices'][0]['message']['reasoning_content'].strip()
                 if os.environ.get('ADD_THINK_NOTE', '0') == '1' and (
                     "</think>" in answer or "<｜place▁holder▁no▁12｜>" in answer):
                     answer = "<think>" + answer
+=======
+                if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                    if '</think>' not in answer and len(answer) < 1000:
+                        if try_times == 2:
+                            return ret_code, answer, response
+                        try_times += 1
+                        continue
+                    else:
+                        answer = "<think>" + answer
+>>>>>>> c7cffef (update)
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'{type(err)}: {err}')
                     self.logger.error(response.text if hasattr(response, 'text') else response)
+<<<<<<< HEAD
 =======
         response = requests.post(
             self._next_api_base(),
@@ -691,6 +680,8 @@ class VLLMAPIWrapper(BaseAPI):
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
 >>>>>>> 94d7a64 (update)
+=======
+>>>>>>> c7cffef (update)
 
             return ret_code, answer, response
 
