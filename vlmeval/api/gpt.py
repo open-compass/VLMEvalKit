@@ -1,15 +1,89 @@
-from ..smp import *
 import os
-import sys
+import re
+from typing import List, Dict, Any, Tuple
+from ..smp import *
 from .base import BaseAPI
 from io import BytesIO
-import random
 import threading
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
 }
 
+
+def convert_openai_to_gemini_format(
+    input_messages: List[Dict[str, Any]]
+) -> Tuple[List[Dict[str, Any]], str]:
+    """
+    将OpenAI格式的消息转换为Gemini API兼容格式（修复字段层级问题）
+    
+    参数:
+    input_messages: [
+        {"role": "system/user/assistant", "content": "文本或内容数组"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "描述"},
+                {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}
+            ]
+        }
+    ]
+    
+    返回: (contents, system_instruction)
+    正确结构:
+        contents = [{
+            "role": "user",  # 顶层字段
+            "parts": [{"text": "内容"}, {"inlineData": ...}]  # 顶层字段
+        }]
+    """
+    contents = []
+    system_instruction = ""
+    IMAGE_PATTERN = re.compile(r'data:image/(\w+);base64,(.+)')
+
+    # 提取系统消息
+    system_msgs = [msg["content"] for msg in input_messages if msg.get("role") == "system"]
+    if system_msgs:
+        if all(isinstance(msg, str) for msg in system_msgs):
+            system_instruction = "\n".join(system_msgs)
+
+    def create_parts(content: Any) -> List[Dict]:
+        """创建Gemini parts数组"""
+        parts = []
+        if isinstance(content, list):
+            for item in content:
+                if item["type"] == "text":
+                    parts.append({"text": item["text"]})
+                elif item["type"] == "image_url":
+                    match = IMAGE_PATTERN.match(item["image_url"]["url"])
+                    if match:
+                        parts.append({
+                            "inlineData": {  # 使用正确字段名
+                                "mimeType": f"image/{match.group(1).lower()}",
+                                "data": match.group(2)
+                            }
+                        })
+        elif isinstance(content, str):
+            parts.append({"text": content})
+        return parts
+
+    # 处理对话消息
+    for msg in input_messages:
+        role = msg.get("role")
+        if role in ["system", "function"]:
+            continue  # 跳过系统消息
+
+        # 角色映射
+        gemini_role = "user" if role == "user" else "model"
+        
+        parts = create_parts(msg.get("content"))
+        if parts:
+            # 正确结构：role和parts在顶层
+            contents.append({
+                "role": gemini_role,  # 顶层字段
+                "parts": parts         # 顶层字段
+            })
+    
+    return contents, system_instruction
 
 def GPT_context_window(model):
     length_map = {
@@ -88,7 +162,7 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('GOOGLE_API_KEY', '')
             if key is None:
                 key = env_key
-            api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+            api_base = os.environ.get('GOOGLE_API_BASE', "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -208,14 +282,29 @@ class OpenAIWrapper(BaseAPI):
             headers = {'Content-Type': 'application/json', 'Authorization': self.key}
         elif self.key is None:
             headers = {'Content-Type': 'application/json'}
+        elif 'gemini' in self.model:
+            headers = {'Content-Type': 'application/json', 'api-key': self.key}
         else:
             headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
-        payload = dict(
-            model=self.model,
-            messages=input_msgs,
-            n=1,
-            temperature=temperature,
-            **kwargs)
+
+        if 'gemini' in self.model:
+            input_msgs, system_instruction = convert_openai_to_gemini_format(input_msgs)
+            payload = {
+                "generationConfig": {
+                    "temperature": temperature,
+                    "maxOutputTokens": max_tokens,
+                    "thinkingConfig": {"includeThoughts": True}
+                },
+                "system_instruction": {"parts": [{"text": system_instruction}]},
+                "contents": input_msgs
+            }
+        else:   
+            payload = dict(
+                model=self.model,
+                messages=input_msgs,
+                n=1,
+                temperature=temperature,
+                **kwargs)
 
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
@@ -225,8 +314,6 @@ class OpenAIWrapper(BaseAPI):
 
         if 'gemini' in self.model:
             payload.pop('max_tokens')
-            payload.pop('n')
-            payload['reasoning_effort'] = 'high'
 
         response = requests.post(
             self.api_base,
@@ -236,7 +323,10 @@ class OpenAIWrapper(BaseAPI):
         answer = self.fail_msg
         try:
             resp_struct = json.loads(response.text)
-            answer = resp_struct['choices'][0]['message']['content'].strip()
+            if 'gemini' in self.model:
+                answer = resp_struct["candidates"][0]["content"]["parts"][-1]["text"].strip()
+            else:
+                answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
@@ -433,6 +523,10 @@ class VLLMAPIWrapper(BaseAPI):
                 input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
         else:
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
+        if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+            input_msgs.append(
+                {"role": "assistant", "content":[{"type":"text", "text":"<think>\n"}]}
+            )
         return input_msgs
 
     def _next_api_base(self):
@@ -481,6 +575,8 @@ class VLLMAPIWrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
+            if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                answer = "<think>" + answer
         except Exception as err:
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
