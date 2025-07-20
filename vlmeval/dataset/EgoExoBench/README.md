@@ -13,9 +13,10 @@ Understanding in MLLMs]()
 * **Ego-Exo Temporal Reasoning**
 
 ## 📝 Data Preparation
-To get started with EgoExoBench, follow the steps below to prepare data:
-### Dataset Collection
-EgoExoBench builds upon six publicly available ego–exo datasets. Please download the videos from the following sources:
+
+### Video Data
+
+EgoExoBench builds upon six publicly available ego–exo datasets.
 
 * [Ego-Exo4D](https://ego-exo4d-data.org/)
 * [LEMMA](https://sites.google.com/view/lemma-activity)
@@ -24,7 +25,10 @@ EgoExoBench builds upon six publicly available ego–exo datasets. Please downlo
 * [EgoMe](https://huggingface.co/datasets/HeqianQiu/EgoMe)
 * [CVMHAT](https://github.com/RuizeHan/CVMHT)
 
-Place all datasets under the `[LMUData]` directory. The dataset structure is as follows:
+The script will automatically download the processed video data, **except Ego-Exo4D**, due to license restrictions. You need to manually download it from the [official website](https://ego-exo4d-data.org/) and organize it as shown below.
+
+If you prefer to download all datasets manually, you can simply create empty `processed_videos/` and `processed_frames/` folders and organize the datasets in the following structure:
+
 ```
 [LMUData]/
 ├── CVMHAT/
@@ -34,27 +38,40 @@ Place all datasets under the `[LMUData]` directory. The dataset structure is as 
 ├── EgoExoLearn/
 ├── EgoMe/
 ├── LEMMA/
-└── TF2023/
-    └── data/
+├── TF2023/
+│   └── data/
+├── processed_frames/
+└── processed_videos/
 ```
-### Data Preparation
-For the CVMHAT and TF2023 datasets, we utilize the bounding box annotations to augment the original frames by overlaying bounding boxes that indicate the target person. To generate these bboxes, run the following commands:
-```shell
-python cvmhat_preprocess.pypy
-python cvmhat_preprocess.py
-```
-### Download Multiple-Choice Questions (MCQs)
+### Multiple-Choice Questions (MCQs)
 
-The script will automatically download the EgoExoBench **multiple-choice questions (MCQs)** file [(link)](https://huggingface.co/datasets/Heleun/EgoExoBench_MCQ).
+The script will automatically download the EgoExoBench **multiple-choice questions (MCQs)** file from this [link](https://huggingface.co/datasets/Heleun/EgoExoBench_MCQ).
 
 ## 🚀 Model Evaluation
-```shell
-# for VLMs that consume small amounts of GPU memory
-torchrun --nproc-per-node=1 run.py --data EgoExoBench --model Qwen2.5-VL-7B-Instruct-ForVideo
 
-# for very large VLMs
-python run.py --data EgoExoBench --model Qwen2.5-VL-72B-Instruct-ForVideo
+Use the following commands to evaluate your VLMs on EgoExoBench:
+
+```shell
+# For lightweight vision-language models
+torchrun --nproc-per-node=1 run.py \
+    --data EgoExoBench_MCQ \
+    --model Qwen2.5-VL-7B-Instruct-ForVideo
+
+# For larger models with higher memory usage
+python run.py \
+    --data EgoExoBench_MCQ \
+    --model Qwen2.5-VL-72B-Instruct-ForVideo
+```
+
+To skip evaluation on the **EgoExo4D** portion of the benchmark, specify the `EgoExoBench_64frame_skip_EgoExo4D` configuration with the **`--data`** argument.
+
+```
+# Example command to skip EgoExo4D
+torchrun --nproc-per-node=1 run.py \
+    --data EgoExoBench_64frame_skip_EgoExo4D \
+    --model [Your_Model_Name]
 ```
 
 ## 🙏 Acknowledgements
+
 EgoExoBench builds upon publicly available ego–exo datasets: [Ego-Exo4D](https://ego-exo4d-data.org/), [LEMMA](https://sites.google.com/view/lemma-activity), [EgoExoLearn](https://huggingface.co/datasets/hyf015/EgoExoLearn), [TF2023](https://github.com/ziweizhao1993/PEN), [EgoMe](https://huggingface.co/datasets/HeqianQiu/EgoMe), [CVMHAT](https://github.com/RuizeHan/CVMHT). Thanks for open-sourcing!
