@@ -44,6 +44,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         setattr(model, 'VIDEO_LLM', False)
 
     structs = [dataset.build_prompt(samples_dict[idx], video_llm=getattr(model, 'VIDEO_LLM', False)) for idx in indices]
+    structs = [struct for struct in structs if struct is not None]
 
     packstr = 'pack' if getattr(dataset, 'pack', False) else 'nopack'
     if dataset.nframe > 0:

@@ -29,7 +29,7 @@ class EgoExoBench_MCQ(VideoBaseDataset):
     def supported_datasets(cls):
         return ['EgoExoBench_MCQ']
 
-    def prepare_dataset(self, dataset_name='EgoExoBench_MCQ', repo_id='Heleun/EgoExoBench_MCQ', video_repo_id='onlyfaces/EgoExoBench'):
+    def prepare_dataset(self, dataset_name='EgoExoBench_MCQ', repo_id='Heleun/EgoExoBench_MCQ', video_repo_id='onlyfaces/EgoExoBench'):  # noqa: E501
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
@@ -42,16 +42,15 @@ class EgoExoBench_MCQ(VideoBaseDataset):
             return True
         cache_path = get_cache_path(repo_id)
         self.video_root = LMUDataRoot()
-        if not osp.exists(osp.join(self.video_root, 'processed_videos')) or not osp.exists(osp.join(self.video_root, 'processed_frames')):
-            print("Downloading videos from HF...")
+        if not osp.exists(osp.join(self.video_root, 'processed_videos')) or not osp.exists(osp.join(self.video_root, 'processed_frames')):  # noqa: E501
             snapshot_download(
                 repo_id=video_repo_id,
                 repo_type='dataset',
                 allow_patterns=['*.tar.gz.part*'],
                 local_dir=self.video_root
             )
-            print("Finished downloading.")
-            def combine_and_extract(root_dir, prefix):
+
+            def combine_and_extract(root_dir, prefix, remove_parts=True):
                 parts_pattern = osp.join(root_dir, f'{prefix}.tar.gz.part*')
                 combined_archive = osp.join(root_dir, f'{prefix}.tar.gz')
                 if not osp.exists(combined_archive):
@@ -61,7 +60,11 @@ class EgoExoBench_MCQ(VideoBaseDataset):
                             with open(part, 'rb') as infile:
                                 shutil.copyfileobj(infile, outfile)
                 shutil.unpack_archive(combined_archive, root_dir)
-                os.remove(combined_archive)
+                if remove_parts:
+                    for part in parts:
+                        os.remove(part)
+                    os.remove(combined_archive)
+
             combine_and_extract(self.video_root, 'processed_videos')
             combine_and_extract(self.video_root, 'processed_frames')
 
@@ -116,9 +119,9 @@ class EgoExoBench_MCQ(VideoBaseDataset):
         elif media['type'] in ['video']:
             original_video_path = osp.join(video_root, media['video_path'])
             processed_video_path = osp.join(video_root, 'processed_videos', f'{mcq_idx}.mp4')
-            if 'video_start' in media and 'video_end' in media and media['video_start'] is not None and media['video_end'] is not None:
-                video_start, video_end = media['video_start'], media['video_end']                    
-                if not os.path.exists(processed_video_path):                
+            if 'video_start' in media and 'video_end' in media and media['video_start'] is not None and media['video_end'] is not None:  # noqa: E501
+                video_start, video_end = media['video_start'], media['video_end']
+                if not os.path.exists(processed_video_path):
                     video_clip = VideoFileClip(original_video_path)
                     clip = video_clip.subclipped(video_start, min(video_end, video_clip.duration))
                     clip.write_videofile(processed_video_path)
@@ -162,10 +165,10 @@ class EgoExoBench_MCQ(VideoBaseDataset):
             images_group = list()
             frame_indices = self.get_index(bound, fps, max_frame, first_idx=0, num_segments=num_segments)
             save_dir = osp.join(video_root, 'processed_frames', str(mcq_idx))
-            
+
             if osp.exists(save_dir) and len(os.listdir(save_dir)) > 0:
                 return None, frame_indices
-            
+
             for frame_index in frame_indices:
                 img = Image.fromarray(vr[frame_index].asnumpy())
                 images_group.append(img)
@@ -228,7 +231,8 @@ class EgoExoBench_MCQ(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
             mcq_idx = int(line['index'])
-
+        if self.skip_EgoExo4D and 'EgoExo4D' in line['medias']:
+            return None
         text = line['question'] + '\nOptions:\n' + line['options'] + '\n' + line['response_format']
         message = self.process_text_and_media(text, line['medias'], video_llm, mcq_idx)
         return message
