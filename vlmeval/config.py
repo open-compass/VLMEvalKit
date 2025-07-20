@@ -496,6 +496,9 @@ api_models = {
     "GeminiPro2-5": partial(
         Gemini, model="gemini-2.5-pro", temperature=0, retry=10
     ),
+    "GeminiPro2-5-32k": partial(
+        GPT4V, model="gemini-2.5-pro", temperature=0, retry=5, timeout=180, max_tokens=32768
+    ),
     
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
