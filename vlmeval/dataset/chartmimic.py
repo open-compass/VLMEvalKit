@@ -535,7 +535,8 @@ class ChartMimic(ImageBaseDataset):
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
-                             to install dependency package for chartmimic evaluation."
+                             to install dependency package for chartmimic evaluation.\n\
+                             And install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
             )
             raise e
 
