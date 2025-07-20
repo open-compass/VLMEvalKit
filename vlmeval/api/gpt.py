@@ -7,7 +7,6 @@ from .base import BaseAPI
 from io import BytesIO
 import threading
 import random
-import threading
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -625,6 +624,7 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
+<<<<<<< HEAD
         try_times = 0
         while try_times < 3:
             response = requests.post(
@@ -644,6 +644,23 @@ class VLLMAPIWrapper(BaseAPI):
                     self.logger.error(response.text if hasattr(response, 'text') else response)
 
             return ret_code, answer, response
+=======
+        response = requests.post(
+            self._next_api_base(),
+            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+        ret_code = response.status_code
+        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
+        answer = self.fail_msg
+        try:
+            resp_struct = json.loads(response.text)
+            answer = resp_struct['choices'][0]['message']['content'].strip()
+            if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                answer = "<think>" + answer
+        except Exception as err:
+            if self.verbose:
+                self.logger.error(f'{type(err)}: {err}')
+                self.logger.error(response.text if hasattr(response, 'text') else response)
+>>>>>>> 3d7c074 (update)
 
 
 XHSVLMAPIWrapper = VLLMAPIWrapper
