@@ -108,7 +108,7 @@ QUESTION_QUALITY_PROMPT_EN_COT = (
     "Analysis step by step and Final Judgment:"
 )
 
-
+import os
 from abc import ABC, abstractmethod
 
 
@@ -126,12 +126,17 @@ class BaseVerifierModel(ABC):
 class Verifier:
     """Main Verifier Class"""
 
-    def __init__(self, model_type="your/verifier/model", use_vllm=False, use_cot=False):
-        self.model_type = model_type
-        self.model = self._create_model(model_type, use_vllm=use_vllm, use_cot=use_cot)
+    def __init__(self, model_path, use_vllm=False, use_cot=False, **kwargs):
+        if 'VERIFIER_PATH' in os.environ and os.environ['VERIFIER_PATH'] != '':
+            self.logger.info('Environment variable VERIFIER_PATH is set. Will use it as model_path. ')
+            model_path = os.environ['VERIFIER_PATH']
+        else:
+            raise ValueError('VERIFIER_PATH is not set. Please set it in the .env file.')
+        self.model_path = model_path
+        self.model = self._create_model(model_path, use_vllm=use_vllm, use_cot=use_cot, **kwargs)
 
-    def _create_model(self, model_type, **kwargs):
-        return Verifier_Model(**kwargs)
+    def _create_model(self, model_path, **kwargs):
+        return Verifier_Model(model_path=model_path, **kwargs)
 
     def evaluate(self, question, prediction, groundtruth):
         return self.model.evaluate(question, prediction, groundtruth)
@@ -162,12 +167,12 @@ class Verifier_Model(BaseVerifierModel):
     _model_cache = {}
     _tokenizer_cache = {}
 
-    def __init__(self, use_vllm=False, use_cot=False):
+    def __init__(self, model_path, use_vllm=False, use_cot=False, **kwargs):
         self.model = None
         self.tokenizer = None
         self.use_vllm = use_vllm
         self.use_cot = use_cot
-        self.model_path = "your/verifier/model"
+        self.model_path = model_path
         self.load_model(model_path=self.model_path)
         print(
             f"Using Verifier_Model with use_vllm: {self.use_vllm}, use_cot: {self.use_cot}"
