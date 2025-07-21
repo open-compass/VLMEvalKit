@@ -41,7 +41,8 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
             return True
         cache_path = get_cache_path(repo_id)
-        self.video_root = LMUDataRoot()
+        self.video_root = os.path.join(LMUDataRoot(), 'videos', 'EgoExoBench')
+        os.makedirs(self.video_root, exist_ok=True)
         if not osp.exists(osp.join(self.video_root, 'processed_videos')) or not osp.exists(osp.join(self.video_root, 'processed_frames')):  # noqa: E501
             snapshot_download(
                 repo_id=video_repo_id,

@@ -1,5 +1,4 @@
 from vlmeval.dataset import *
-from vlmeval.dataset.EgoExoBench import EgoExoBench_MCQ
 from functools import partial
 
 vcrbench_dataset = {

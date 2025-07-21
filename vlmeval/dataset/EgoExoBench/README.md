@@ -30,7 +30,7 @@ The script will automatically download the processed video data, **except Ego-Ex
 If you prefer to download all datasets manually, you can simply create empty `processed_videos/` and `processed_frames/` folders and organize the datasets in the following structure:
 
 ```
-[LMUData]/
+[LMUData]/videos/EgoExoBench
 ├── CVMHAT/
 │   └── data/
 ├── Ego-Exo4D/
