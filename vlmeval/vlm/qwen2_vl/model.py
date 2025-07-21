@@ -547,7 +547,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             images, videos = process_vision_info(messages)
         print('finishing process vision info in vllm.')
 
-        if DATASET_MODALITY(dataset) == 'VIDEO':
+        if DATASET_MODALITY(dataset) == 'VIDEO' and 'megabench' not in dataset.lower():
             assert len(videos) == 1
             videos_nd = [videos[0].detach().cpu().numpy().transpose(0, 2, 3, 1)]
 

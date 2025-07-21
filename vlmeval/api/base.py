@@ -14,7 +14,7 @@ class BaseAPI:
 
     def __init__(self,
                  retry=10,
-                 wait=3,
+                 wait=1,
                  system_prompt=None,
                  verbose=True,
                  fail_msg='Failed to obtain answer via API.',
@@ -23,7 +23,7 @@ class BaseAPI:
 
         Args:
             retry (int, optional): The retry times for `generate_inner`. Defaults to 10.
-            wait (int, optional): The wait time after each failed retry of `generate_inner`. Defaults to 3.
+            wait (int, optional): The wait time after each failed retry of `generate_inner`. Defaults to 1.
             system_prompt (str, optional): Defaults to None.
             verbose (bool, optional): Defaults to True.
             fail_msg (str, optional): The message to return when failed to obtain answer.

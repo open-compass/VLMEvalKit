@@ -57,8 +57,8 @@ class VisFactor(ImageBaseDataset):
     def extract_last_numbers(self, s):
         return [num for num in re.findall(r'\d+', s)]
 
-    def extract_last_uppercase_letter(s):
-        for char in reversed(self, s):
+    def extract_last_uppercase_letter(self, s):
+        for char in reversed(s):
             if char.isupper():
                 return char
         return None

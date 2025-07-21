@@ -427,8 +427,8 @@ api_models = {
     "BailingMM-Pro-0120": partial(
         bailingMMAPI, model="BailingMM-Pro-0120", temperature=0, retry=10
     ),
-    # BlueLM-V
-    "BlueLM_V": partial(BlueLM_V_API, model="BlueLM-VL-v3.0", temperature=0, retry=10),
+    # BlueLM-2.5
+    "BlueLM-2.5-3B": partial(BlueLM_API, model="BlueLM-2.5-3B", temperature=0, retry=3),
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model="jt-vl-chat", temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
@@ -469,13 +469,13 @@ api_models = {
     ),
     # doubao_vl
     "DoubaoVL": partial(
-        DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=10, verbose=False
+        DoubaoVL, model="Doubao-1.5-vision-pro", temperature=0, retry=3, verbose=False
     ),
     "Seed1.5-VL": partial(
         DoubaoVL, 
         model="doubao-1-5-thinking-vision-pro-250428", 
         temperature=0,
-        retry=10, 
+        retry=3, 
         verbose=False, 
         max_tokens=16384,
     ),
@@ -483,7 +483,7 @@ api_models = {
         DoubaoVL, 
         model="doubao-seed-1.6-250615", 
         temperature=0,
-        retry=10, 
+        retry=3, 
         verbose=False, 
         max_tokens=16384,
     ),
@@ -491,7 +491,7 @@ api_models = {
         DoubaoVL, 
         model="doubao-seed-1.6-flash-250615", 
         temperature=0,
-        retry=10, 
+        retry=3, 
         verbose=False, 
         max_tokens=16384,
     ),
@@ -499,7 +499,7 @@ api_models = {
         DoubaoVL, 
         model="doubao-seed-1.6-thinking-250615", 
         temperature=0,
-        retry=10, 
+        retry=3, 
         verbose=False, 
         max_tokens=16384,
     ),
@@ -526,6 +526,15 @@ api_models = {
         temperature=0,
         retry=10,
     ),
+    "grok-4-0709": partial(
+        GPT4V,
+        model="grok-4-0709",
+        api_base="https://api.x.ai/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=1200, 
+        max_tokens=16384
+    ),
     # kimi
     "moonshot-v1-8k": partial(
         GPT4V,
@@ -548,6 +557,20 @@ api_models = {
         temperature=0,
         retry=10,
     ),
+    'ernie4.5-turbo': partial(
+        GPT4V,
+        model='ernie-4.5-turbo-vl-32k', 
+        temperature=0,
+        retry=3, 
+        max_tokens=12000, 
+    ),
+    'ernie4.5-a3b': partial(
+        GPT4V,
+        model='ernie-4.5-vl-28b-a3b', 
+        temperature=0,
+        retry=3, 
+        max_tokens=8000,
+    )
 }
 
 emu_series = {
@@ -1000,6 +1023,8 @@ cogvlm_series = {
         CogVlm, model_path="THUDM/cogvlm2-llama3-chat-19B"
     ),
     "glm-4v-9b": partial(GLM4v, model_path="THUDM/glm-4v-9b"),
+    "glm-4.1v-9b-base": partial(GLM4_1v, model_path="THUDM/GLM-4.1V-9B-Base"),
+    "glm-4.1v-9b-thinking": partial(GLM4_1v, model_path="THUDM/GLM-4.1V-9B-Thinking"),
 }
 
 wemm_series = {
@@ -1446,6 +1471,41 @@ flash_vl = {
     'Flash-VL-2B-Dynamic-ISS': partial(FlashVL, model_path='FlashVL/FlashVL-2B-Dynamic-ISS')
 }
 
+
+oryx_series = {
+    'oryx': partial(Oryx, model_path="THUdyh/Oryx-1.5-7B"),
+}
+
+# recommend: vllm serve moonshotai/Kimi-VL-A3B-Thinking-2506 
+# --served-model-name api-kimi-vl-thinking-2506 --trust-remote-code
+# --tensor-parallel-size 2 --max-num-batched-tokens 131072 
+# --max-model-len 131072 --limit-mm-per-prompt image=256
+kimi_vllm_series = {
+    "api-kimi-vl-thinking-2506": partial(
+        KimiVLAPI,
+        model="api-kimi-vl-thinking-2506",
+    ),
+    "api-kimi-vl-thinking": partial(
+        KimiVLAPI,
+        model="api-kimi-vl-thinking",
+    ),
+    "api-kimi-vl": partial(
+        KimiVLAPI,
+        model="api-kimi-vl",
+        max_new_tokens=2048,
+        temperature=0,
+    ),
+}
+
+
+treevgr_series = {
+    'TreeVGR-7B': partial(
+        TreeVGR, 
+        model_path='HaochenWang/TreeVGR-7B',
+        min_pixels=1280*28*28, max_pixels=16384*28*28,
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
@@ -1467,7 +1527,8 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, flash_vl
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series
 ]
 
 for grp in model_groups:

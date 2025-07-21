@@ -21,7 +21,6 @@ class DoubaoVLWrapper(BaseAPI):
     def __init__(self,
                  model: str = '',
                  retry: int = 5,
-                 wait: int = 5,
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0,
@@ -46,7 +45,7 @@ class DoubaoVLWrapper(BaseAPI):
         self.api_base = api_base
         self.timeout = timeout
 
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         # Models that require an EP
         # assert self.model in ['Doubao-1.5-vision-pro', 'doubao-1-5-thinking-vision-pro-250428']
@@ -65,6 +64,7 @@ class DoubaoVLWrapper(BaseAPI):
         self.client = OpenAI(
             api_key=self.key,
             base_url=self.api_base,
+            timeout=self.timeout
         )
 
         self.logger.info(f'Using API Base: {self.api_base}; End Point: {self.endpoint}; API Key: {self.key}')

@@ -2404,3 +2404,170 @@ class AffordanceDataset(ImageMCQDataset):
 
         selected_columns = ['index', 'question', 'prediction', 'match']
         return df[selected_columns]
+
+
+class TreeBench(ImageMCQDataset):
+
+    TYPE = 'MCQ'
+
+    DATASET_URL = {
+        'TreeBench': 'https://huggingface.co/datasets/HaochenWang/TreeBench/resolve/main/TreeBench.tsv',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        prompt = line['question']
+        if not line["category"] == "Perception/OCR":
+            prompt += "\nOptions:\n" + line["multi-choice options"]
+        prompt += "\nAnswer with the option's letter directly."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import ast
+        from .utils.multiple_choice import extract_characters_regex
+        from .utils.treebench import get_dimension_rating
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        FAIL_MSG = 'Failed to obtain answer via API.'
+        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', '_rating.json')
+        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+
+        if not osp.exists(score_file):
+
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+
+            data = load(eval_file)
+            cnt_rejected = 0
+            data_un = data[~pd.isna(data['prediction'])]
+
+            for idx in data['index']:
+                ans = data.loc[data['index'] == idx, 'answer'].values[0]
+                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+
+                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                cot = match_cot.group(1).strip() if match_cot else pred
+
+                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                iou = self.evaluate_box_iou(cot, target_instances)
+
+                data.loc[data['index'] == idx, 'iou'] = iou
+
+                match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
+                pred = match_pred.group(1).strip().upper() if match_pred else pred
+
+                extract_pred = extract_characters_regex(pred)
+                if extract_pred == '':
+                    cnt_rejected += 1
+                    data.loc[data['index'] == idx, 'score'] = 0
+                else:
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
+
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+                f'failed to obtain the score for another {cnt_rejected} questions. '
+                f'Those questions will be counted as 0 score in ALL rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating
+
+    def evaluate_box_iou(predict_str: str, target_instances: list) -> float:
+        pattern = r"<box>(.*?)</box>"
+        matches = re.findall(pattern, predict_str, re.DOTALL)
+
+        all_boxes = []
+
+        for match in matches:
+            box = match.strip()
+
+            coord_pattern = r'\[(\d+),(\d+),(\d+),(\d+)\]'
+            coord_match = re.match(coord_pattern, box)
+
+            if coord_match:
+                x1, y1, x2, y2 = map(int, coord_match.groups())
+
+                if x1 < x2 and y1 < y2:
+                    # all_boxes.append([(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
+                    all_boxes.append([x1, y1, x2, y2])
+
+        if len(all_boxes) == 0:
+            return 0
+
+        target_boxes = target_instances
+        if len(target_boxes) == 0:
+            return len(all_boxes) > 0
+
+        def calculate_average_iou(pred_boxes, target_boxes):
+            """
+            计算每个目标框与预测框中 IoU 最大的预测框之间的平均 IoU。
+
+            参数:
+                pred_boxes (List[List[float]]): 预测框列表，每个框为 [cx, cy, w, h]
+                target_boxes (List[List[float]]): 目标框列表，每个框为 [cx, cy, w, h]
+
+            返回:
+                float: 匹配上的平均 IoU
+            """
+            def compute_iou(box1, box2):
+                """计算两个框之间的 IoU"""
+                x1_min, y1_min, x1_max, y1_max = box1
+                x2_min, y2_min, x2_max, y2_max = box2
+
+                inter_x_min = max(x1_min, x2_min)
+                inter_y_min = max(y1_min, y2_min)
+                inter_x_max = min(x1_max, x2_max)
+                inter_y_max = min(y1_max, y2_max)
+
+                inter_width = max(0, inter_x_max - inter_x_min)
+                inter_height = max(0, inter_y_max - inter_y_min)
+                inter_area = inter_width * inter_height
+
+                area1 = (x1_max - x1_min) * (y1_max - y1_min)
+                area2 = (x2_max - x2_min) * (y2_max - y2_min)
+
+                union_area = area1 + area2 - inter_area
+
+                return inter_area / union_area if union_area > 0 else 0.0
+
+            pred_coords = pred_boxes
+            target_coords = target_boxes
+
+            total_iou = 0.0
+            num_targets = len(target_boxes)
+
+            if num_targets == 0:
+                return 0.0
+
+            # 为每个目标框找到最大 IoU 的预测框
+            for t_coord in target_coords:
+                best_iou = 0.0
+                for p_coord in pred_coords:
+                    iou = compute_iou(t_coord, p_coord)
+                    if iou > best_iou:
+                        best_iou = iou
+                total_iou += best_iou
+
+            return total_iou / num_targets
+
+        return calculate_average_iou(all_boxes, target_boxes)

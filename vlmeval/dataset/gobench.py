@@ -10,11 +10,10 @@ import warnings
 import json
 
 try:
-    from .utils import build_judge, DEBUG_MESSAGE
+    from .utils import build_judge
 except ImportError:
-    def build_judge(**kwargs):
-        raise NotImplementedError("Judge functionality is not available in your current VLMEvalKit version.")
-    DEBUG_MESSAGE = "Your VLMEvalKit version may not support Judge models."
+    raise NotImplementedError("Judge functionality is not available in your current VLMEvalKit version.")
+    # DEBUG_MESSAGE = "Your VLMEvalKit version may not support Judge models."
 
 
 class GOBenchDataset(ImageBaseDataset):

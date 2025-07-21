@@ -6,14 +6,15 @@ from .image_yorn import ImageYORNDataset
 from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
-    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench
+    MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
+    TreeBench
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, VGRPBench, MMVet, MTVQADataset, TableVQABench,
-    CustomVQADataset, CRPE, MathVerse, OlympiadBench, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
+    CustomVQADataset, CRPE, MathVerse, OlympiadBench, SeePhys, QSpatial, VizWiz, MMNIAH, LogicVista, MME_CoT,
     MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
-    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench
+    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2
 )
 
 from .image_ccocr import CCOCRDataset
@@ -188,7 +189,7 @@ IMAGE_DATASET = [
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
-    OlympiadBench, WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz,
+    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz,
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
@@ -196,9 +197,9 @@ IMAGE_DATASET = [
     MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, AffordanceDataset,
+    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench, VisFactor, OSTDataset
+    OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench
 ]
 
 
