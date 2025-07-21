@@ -579,13 +579,15 @@ class VLLMAPIWrapper(BaseAPI):
                 resp_struct = json.loads(response.text)
                 answer = resp_struct['choices'][0]['message']['content'].strip()
                 if os.environ.get('ADD_THINK_NOTE', '0') == '1':
-                    if '</think>' not in answer and len(answer) < 1000:
-                        if try_times == 2:
-                            return ret_code, answer, response
-                        try_times += 1
-                        continue
-                    else:
-                        answer = "<think>" + answer
+                    answer = "<think>" + answer
+                # if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                #     if '</think>' not in answer and len(answer) < 1000:
+                #         if try_times == 2:
+                #             return ret_code, answer, response
+                #         try_times += 1
+                #         continue
+                #     else:
+                #         answer = "<think>" + answer
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'{type(err)}: {err}')
