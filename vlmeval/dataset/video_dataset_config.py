@@ -14,6 +14,7 @@ mmbench_video_dataset = {
     'MMBench_Video_8frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=True),
     'MMBench_Video_16frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=16, pack=False),
     'MMBench_Video_64frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=64, pack=False),
+    'MMBench_Video_64frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=64, pack=True),
     'MMBench_Video_1fps_nopack': partial(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=False),
     'MMBench_Video_1fps_pack': partial(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=True)
 }
@@ -112,14 +113,6 @@ cgbench_dataset = {
         use_subtitle=True,
         use_subtitle_time=True,
         use_frame_time=True
-    )
-}
-
-cg_av_counting_dataset = {
-    'CGAVCounting_64frame': partial(
-        CGAVCounting,
-        dataset='CGAVCounting',
-        nframe=64
     )
 }
 
