@@ -519,27 +519,55 @@ class ChartMimic(ImageBaseDataset):
 
         return msgs
 
+
     def evaluate(self, eval_file, **judge_kwargs):
         def judge_one_item_success(item):
             return item["high_level"]["resp"] not in [FAIL_MSG, "", None, "null", "None"] \
                 and item["high_level"]["msg"] not in ["Generated image file does not exist", ""]
 
+        # Test dependencies first
         try:
             from pdf2image import convert_from_path
             from colormath.color_objects import sRGBColor, LabColor
             import squarify
             import matplotlib_venn
             import PIL
-            example_pdf_path = "./vlmeval/dataset/utils/chartmimic/example.pdf"
-            images = convert_from_path(example_pdf_path, dpi=350)
-            images[0].save("./vlmeval/dataset/utils/chartmimic/example.png", "PNG")
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
-                             to install dependency package for chartmimic evaluation.\n\
-                             And install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
+                             to install dependency package for chartmimic evaluation."
             )
             raise e
+        
+        # Test pdf2image functionality by creating a simple test PDF
+        example_pdf_path = os.path.join(LMUDataRoot(), "chartmimic_test.pdf")
+        output_png_path = os.path.join(LMUDataRoot(), "chartmimic_test.png")
+        
+        try:
+            # Create a simple test PDF using matplotlib
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+            ax.plot([1, 2, 3], [1, 4, 2])
+            ax.set_title("Test Chart")
+            plt.savefig(example_pdf_path, format='pdf')
+            plt.close()
+            
+            # Test pdf2image conversion
+            images = convert_from_path(example_pdf_path, dpi=350)
+            images[0].save(output_png_path, "PNG")
+            logger.info("Successfully tested pdf2image functionality with generated test PDF")
+        except Exception as e:
+            logging.critical(
+                "Please install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
+            )
+            raise e
+        finally:
+            # Clean up test files
+            if os.path.exists(example_pdf_path):
+                os.remove(example_pdf_path)
+            if os.path.exists(output_png_path):
+                os.remove(output_png_path)
+
         infer_data_all = load(eval_file).to_dict(orient="records")
 
         suffix = eval_file.split(".")[-1]
