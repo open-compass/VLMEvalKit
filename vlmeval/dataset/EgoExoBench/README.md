@@ -72,6 +72,8 @@ torchrun --nproc-per-node=1 run.py \
     --model [Your_Model_Name]
 ```
 
+> 💡 Note: If you encounter errors related to stacking videos with varying frame counts, try using `transformers==4.49.0` as a temporary workaround.
+
 ## 🙏 Acknowledgements
 
 EgoExoBench builds upon publicly available ego–exo datasets: [Ego-Exo4D](https://ego-exo4d-data.org/), [LEMMA](https://sites.google.com/view/lemma-activity), [EgoExoLearn](https://huggingface.co/datasets/hyf015/EgoExoLearn), [TF2023](https://github.com/ziweizhao1993/PEN), [EgoMe](https://huggingface.co/datasets/HeqianQiu/EgoMe), [CVMHAT](https://github.com/RuizeHan/CVMHT). Thanks for open-sourcing!
