@@ -599,7 +599,8 @@ class VLLMAPIWrapper(BaseAPI):
             try:
                 resp_struct = json.loads(response.text)
                 answer = resp_struct['choices'][0]['message']['content'].strip()
-                if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+                if os.environ.get('ADD_THINK_NOTE', '0') == '1' and (
+                    "</think>" in answer or "<｜place▁holder▁no▁12｜>" in answer):
                     answer = "<think>" + answer
                 # if os.environ.get('ADD_THINK_NOTE', '0') == '1':
                 #     if '</think>' not in answer and len(answer) < 1000:
