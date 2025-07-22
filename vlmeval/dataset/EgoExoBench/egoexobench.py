@@ -105,7 +105,8 @@ class EgoExoBench_MCQ(VideoBaseDataset):
         if media['type'] in ['image']:
             original_image_path = osp.join(video_root, media['image_paths'][0])
             processed_video_path = osp.join(video_root, 'processed_videos', f'{mcq_idx}.jpg')
-            shutil.copy(original_image_path, processed_video_path)
+            if not os.path.exists(processed_video_path):
+                shutil.copy(original_image_path, processed_video_path)
             return dict(type='image', value=processed_video_path)
         elif media['type'] in ['frames']:
             input_images = [osp.join(video_root, im) for im in media['image_paths']]
