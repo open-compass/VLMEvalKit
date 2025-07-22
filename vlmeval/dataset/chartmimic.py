@@ -535,8 +535,7 @@ class ChartMimic(ImageBaseDataset):
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
-                             to install dependency package for chartmimic evaluation.\n\
-                             And install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
+                             to install dependency package for chartmimic evaluation."
             )
             raise e
 
@@ -552,7 +551,6 @@ class ChartMimic(ImageBaseDataset):
             ax.set_title("Test Chart")
             plt.savefig(example_pdf_path, format='pdf')
             plt.close()
-
             # Test pdf2image conversion
             images = convert_from_path(example_pdf_path, dpi=350)
             images[0].save(output_png_path, "PNG")
