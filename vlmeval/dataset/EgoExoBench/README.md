@@ -33,7 +33,7 @@ If you prefer to download all datasets manually, you can simply create empty `pr
 [LMUData]/videos/EgoExoBench
 ├── CVMHAT/
 │   └── data/
-├── Ego-Exo4D/
+├── EgoExo4D/
 │   └── takes/
 ├── EgoExoLearn/
 ├── EgoMe/
@@ -63,10 +63,10 @@ python run.py \
     --model Qwen2.5-VL-72B-Instruct-ForVideo
 ```
 
-To skip evaluation on the **EgoExo4D** portion of the benchmark, specify the `EgoExoBench_64frame_skip_EgoExo4D` configuration with the **`--data`** argument.
+To skip evaluation on the **Ego-Exo4D** portion of the benchmark, specify the `EgoExoBench_64frame_skip_EgoExo4D` configuration with the **`--data`** argument.
 
 ```
-# Example command to skip EgoExo4D
+# Example command to skip Ego-Exo4D
 torchrun --nproc-per-node=1 run.py \
     --data EgoExoBench_64frame_skip_EgoExo4D \
     --model [Your_Model_Name]
