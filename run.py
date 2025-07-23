@@ -482,6 +482,11 @@ def main():
                 if args.use_vllm:
                     judge_kwargs['use_vllm'] = True
 
+                if args.use_verifier:
+                    judge_kwargs['use_verifier'] = True
+                if args.use_vllm:
+                    judge_kwargs['use_vllm'] = True
+
                 if RANK == 0:
                     logger.info(judge_kwargs)
 

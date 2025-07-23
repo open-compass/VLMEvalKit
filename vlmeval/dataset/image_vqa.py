@@ -179,6 +179,65 @@ class ImageVQADataset(ImageBaseDataset):
         dump(ret, result_file)
         return ret
 
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        assert 'answer' in data and 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        res = []
+        scores = []
+        for line in tqdm(lines):
+            score = verifier.evaluate(line['question'], line['prediction'], line['answer'])
+            scores.append(score)
+            res.append({
+                'gt': [line['answer']],
+                'pred': line['prediction'],
+                'match': [1.0 if score else 0.0]
+            })
+
+        data['verifier_score'] = scores
+        data['verifier_match'] = [1.0 if score else 0.0 for score in scores]
+
+        suffix = eval_file.split('.')[-1]
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        dump(data, detailed_result_file)
+
+        def hit_calculate(result):
+            return [np.mean(x['match']) for x in result]
+
+        hit = hit_calculate(res)
+        ret = dict()
+        if 'split' in data:
+            splits = set(data['split'])
+            for sp in splits:
+                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                # [np.mean(x['match']) >= full_score_weight for x in sub]
+                hit = hit_calculate(sub)
+                ret[sp] = np.mean(hit) * 100
+            sub = [r for l, r in zip(lines, res)]
+            hit = hit_calculate(sub)
+            ret['Overall'] = np.mean(hit) * 100
+        else:
+            ret['Overall'] = np.mean(hit) * 100
+            if 'category' in data:
+                cates = list(set(data['category']))
+                cates.sort()
+                for c in cates:
+                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    hit = hit_calculate(sub)
+                    ret[c] = np.mean(hit) * 100
+        ret = d2df(ret)
+        ret.round(2)
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(ret, result_file)
+        return ret
+
 
 class VizWiz(ImageBaseDataset):
     TYPE = 'VQA'
@@ -429,6 +488,71 @@ class MathVista(ImageBaseDataset):
 
         score = MathVista_acc_verifier(detailed_result_file)
         score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            dump(data, detailed_result_file)
+
+        def MathVista_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+            skill_list = []
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['task']
+                tot['Overall'] += 1
+                try:
+                    skills = eval(item['skills'])
+                except SyntaxError:
+                    skills = [item['skills']]
+                for skill in skills:
+                    if skill not in skill_list:
+                        skill_list.append(skill)
+                    tot[skill] += 1
+                tot[cate] += 1
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+                    for skill in skills:
+                        hit[skill] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Task&Skill'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res)
+            return res
+
+        score = MathVista_acc_verifier(detailed_result_file)
+        score_pth = eval_file.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
 
@@ -749,6 +873,68 @@ class MathVision(ImageBaseDataset):
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=question + hint))
         return msgs
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # Add verifier evaluation for MathVision
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            dump(data, detailed_result_file)
+
+        else:
+            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            if not osp.exists(detailed_result_file):
+                dump(data, detailed_result_file)
+
+        def MathVision_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['category'] if 'category' in item else 'Overall'
+                tot['Overall'] += 1
+                tot[cate] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Subject'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
+            return res
+
+        score = MathVision_acc_verifier(detailed_result_file)
+        score_pth = eval_file.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
 
 
 class Physics_yale(ImageBaseDataset):

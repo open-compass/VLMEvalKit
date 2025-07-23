@@ -385,6 +385,10 @@ class ImageMCQDataset(ImageBaseDataset):
         if circular:
             raise ValueError("circular is not supported for verifier evaluation")
 
+<<<<<<< HEAD
+=======
+        suffix = eval_file.split('.')[-1]
+>>>>>>> 1380da0 ([Feature] Add verifier for VQA/MCQ evaluation (#1136))
         data = load(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
