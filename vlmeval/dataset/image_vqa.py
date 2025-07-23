@@ -56,7 +56,14 @@ class ImageVQADataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.vqa_eval import hit_calculate, process_line, extract_boxed_answer
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    # It returns a DataFrame
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
+        from .utils.vqa_eval import hit_calculate, process_line
 
         data = load(eval_file)
         dataset = self.dataset_name
