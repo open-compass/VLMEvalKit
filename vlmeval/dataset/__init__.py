@@ -54,6 +54,8 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 
+from .EgoExoBench.egoexobench import EgoExoBench_MCQ
+
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
@@ -67,9 +69,10 @@ from .mmalignbench import MMAlignBench
 from .utils import *
 from .video_dataset_config import *
 from ..smp import *
-from .Omnidocbench.omnidocbench import OmniDocBench
+from .OmniDocBench.omnidocbench import OmniDocBench
 from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
+from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
@@ -194,7 +197,7 @@ IMAGE_DATASET = [
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
     LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot,
-    MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
+    ScreenSpotV2, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
     PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
@@ -211,7 +214,8 @@ VIDEO_DATASET = [
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
-    Video_Holmes, VCRBench, CGAVCounting
+    Video_Holmes, VCRBench, CGAVCounting,
+    EgoExoBench_MCQ,
 ]
 
 TEXT_DATASET = [
