@@ -246,7 +246,7 @@ class CGAVCounting(VideoBaseDataset):
                 message.append(
                     dict(type="text", value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
                 for idx,im in enumerate(image_paths):
-                    message.append(dict(type="text", value=f"Frame{idx+1}:"))
+                    message.append(dict(type="text", value=f"Frame{idx + 1}:"))
                     message.append(dict(type="image", value=im))
                 user_prompt += (
                     f"Answer the question '{line['question']}', "
@@ -278,7 +278,7 @@ class CGAVCounting(VideoBaseDataset):
                     type="text",
                     value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
                 for idx,im in enumerate(image_paths):
-                    message.append(dict(type="text", value=f"Frame{idx+1}:"))
+                    message.append(dict(type="text", value=f"Frame{idx + 1}:"))
                     message.append(dict(type="image", value=im))
                 user_prompt += (
                     f"Answer the question '{line['question']}', clustering the objects according to the question. "

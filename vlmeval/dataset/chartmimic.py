@@ -538,11 +538,11 @@ class ChartMimic(ImageBaseDataset):
                              to install dependency package for chartmimic evaluation."
             )
             raise e
-        
+
         # Test pdf2image functionality by creating a simple test PDF
         example_pdf_path = os.path.join(LMUDataRoot(), "chartmimic_test.pdf")
         output_png_path = os.path.join(LMUDataRoot(), "chartmimic_test.png")
-        
+
         try:
             # Create a simple test PDF using matplotlib
             import matplotlib.pyplot as plt
@@ -551,7 +551,7 @@ class ChartMimic(ImageBaseDataset):
             ax.set_title("Test Chart")
             plt.savefig(example_pdf_path, format='pdf')
             plt.close()
-            
+
             # Test pdf2image conversion
             images = convert_from_path(example_pdf_path, dpi=350)
             images[0].save(output_png_path, "PNG")

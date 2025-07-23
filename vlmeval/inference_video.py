@@ -64,6 +64,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     res = load(out_file) if osp.exists(out_file) else {}
 
     structs = [s for i, s in zip(indices, structs) if i not in res or res[i] == FAIL_MSG]
+    structs = [struct for struct in structs if struct is not None]
     indices = [i for i in indices if i not in res or res[i] == FAIL_MSG]
 
     gen_func = model.generate
@@ -174,6 +175,8 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
             struct = dataset.build_prompt(
                 sample_map[idx], video_llm=getattr(model, 'VIDEO_LLM', False)
             )
+        if struct is None:
+            continue
 
         # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
         if os.environ.get('SKIP_ERR', False) == '1':
