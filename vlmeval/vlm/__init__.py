@@ -68,7 +68,7 @@ from .video_llm import (
     PLLaVA,
 )
 from .vila import VILA, NVILA
-from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2
+from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2, OvisU1
 from .mantis import Mantis
 from .mixsense import LLama3Mixsense
 from .parrot import Parrot
@@ -99,3 +99,6 @@ from .vlaa_thinker import VLAAThinkerChat
 from .kimi_vl import KimiVL
 from .wethink_vl import WeThinkVL
 from .flash_vl import FlashVL
+from .oryx import Oryx
+from .treevgr import TreeVGR
+from .glm4_1v import GLM4_1v

@@ -22,7 +22,6 @@ class HunyuanWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'hunyuan-standard-vision',
                  retry: int = 5,
-                 wait: int = 5,
                  secret_key: str = None,
                  secret_id: str = None,
                  verbose: bool = True,
@@ -59,7 +58,7 @@ class HunyuanWrapper(BaseAPI):
             self.logger.critical('Please install tencentcloud-sdk-python to use Hunyuan API. ')
             raise err
 
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         cred = credential.Credential(self.secret_id, self.secret_key)
         httpProfile = HttpProfile(reqTimeout=300)

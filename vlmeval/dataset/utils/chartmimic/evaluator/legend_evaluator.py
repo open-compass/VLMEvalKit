@@ -6,7 +6,7 @@ from typing import List, Tuple
 import os
 # sys.path.insert(0, os.environ["PROJECT_PATH"])
 
-from eval_configs.global_config import run_script_safe
+from ..eval_configs.global_config import run_script_safe
 
 
 
@@ -155,7 +155,7 @@ def log_function(func):
 
         drawed_texts.append( (x, y, x_rel, y_rel, s) )
         return func(*args, **kwargs)
-
+    wrapper.__name__ = func.__name__
     return wrapper
 
 RendererPdf.draw_text = log_function(RendererPdf.draw_text)

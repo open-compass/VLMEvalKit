@@ -12,16 +12,10 @@ logger = get_logger("ChartMimic")
 # SET VLMEVAL_CHARTMIMIC_UTILS_PATH for chartmimic evaluator
 # ".../VLMEvalKit/vlmeval..."
 cur_path = os.path.abspath(__file__)
-# logger.info(f"cur_path: {cur_path}")
-# breakpoint()
-# get path before "VLMEvalKit/vlmeval", then add "VLMEvalKit/vlmeval"
-# is there a better way to get VLMEvalKit path?
 util_path = cur_path.replace("dataset/chartmimic.py", "dataset/utils/chartmimic")
 os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] = util_path
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
-    # logger.info(f"sys.path add: {os.environ['VLMEVAL_CHARTMIMIC_UTILS_PATH']}")
-    # logger.info(f"sys.path: {sys.path}")
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
@@ -168,15 +162,26 @@ def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
     try:
         images = convert_from_path(pdf_path, dpi=dpi)
         images[0].save(output_path, "PNG")
-    except Exception:
-        # logger.info(f"Error in converting pdf to image: {e}")
+    except Exception as e:
+        logger.info(f"Error in converting pdf to image: {e}")
         return False
     return True
 
 
 def extract_gpt_score(resp):
-    m = re.search(r"^\s*Score:\s*(\d+)\s*/\s*100", resp, re.IGNORECASE | re.MULTILINE)
-    return int(m.group(1)) if m else 0
+    # First match: standard or markdown-styled "Score: 91/100", "Score: **91/100**", etc
+    pattern = r"^\s*Score:\s*[*_~`]*\**\s*(\d+)\s*/\s*100\s*[*_~`]*\**"
+    m = re.search(pattern, resp, re.IGNORECASE | re.MULTILINE)
+    if m:
+        return int(m.group(1))
+
+    # Fallback match: match "Score: 91", "Score: **91**", "Score: *91*", etc
+    fallback_pattern = r"Score:\s*[*_~`]*\**\s*(\d+)\s*[*_~`]*\**"
+    matches = list(re.finditer(fallback_pattern, resp, re.IGNORECASE))
+    if matches:
+        return int(matches[-1].group(1))
+
+    return 0
 
 
 def judge_one_item(item):
@@ -326,34 +331,10 @@ def judge_one_item(item):
         "layout_metrics": layout_evaluator.metrics,
         "color_metrics": color_evaluator.metrics,
     }
-    # global cur_work_dir
-    # os.chdir(cur_work_dir)
 
     score_dict["low_level"] = low_level_score_dict
-    # logger.info(low_level_score_dict)
-    # breakpoint()
 
     # >>> 3. High Level Evaluation <<<
-    # generated_pdf_file = generated_py_file.replace(".py", ".pdf")
-    # # check if generated_pdf_file exists
-    # if not os.path.exists(generated_pdf_file):
-    #     logger.info(f"Generated PDF file {generated_pdf_file} does not exist")
-    #     score_dict["high_level"] = {
-    #         "resp": None,
-    #         "msg": "Generated PDF file does not exist",
-    #         "score": 0.0
-    #     }
-    #     return 0, score_dict
-
-    # pdf exsits
-    # convert pdf to image
-    # try:
-    # _convert_single_page_pdf_to_png(generated_pdf_file, generated_pdf_file.replace(".pdf", ".png"))
-    # logger.info(f"converted pdf to image: {generated_pdf_file.replace('.pdf', '.png')}")
-    # breakpoint()
-    # [Attention] Unable to get page count. Is poppler installed and in PATH?
-    # Solution：apt install poppler-utils
-
     generated_pdf_image_file = generated_py_file.replace(".py", ".png")
     # check if generated_pdf_image_file exists
     if not os.path.exists(generated_pdf_image_file):
@@ -404,7 +385,7 @@ class ChartMimic(ImageBaseDataset):
         "ChartMimic_v2_customized_1800": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_customized_1800.tsv",
         "ChartMimic_v2_direct": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct.tsv",
         "ChartMimic_v2_direct_600": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_600.tsv",
-        "ChartMimic_v2_direct_1800": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_1800.tsv",
+        "ChartMimic_v2_direct_1800": "https://opencompass.openxlab.space/utils/VLMEval/ChartMimic_v2_direct_1800.tsv"
     }
     DATASET_MD5 = {
         "ChartMimic_v1_customized": "d636eca077e75e39fd2600889bf0284e",
@@ -416,6 +397,14 @@ class ChartMimic(ImageBaseDataset):
         "ChartMimic_v2_direct_600": "3d8d8afecccb6e8feacbcec6834f45f5",
         "ChartMimic_v2_direct_1800": "340331019c7eaa56cc02080656b66c3c"
     }
+
+    def dump_image(self, line):
+        input_figure_path_rel = line["input_figure"]
+        ROOT = LMUDataRoot()
+        img_root = os.path.join(ROOT, 'images', 'ChartMimic')
+        input_figure_path = os.path.join(img_root, input_figure_path_rel)
+        tgt_path = [input_figure_path]
+        return tgt_path
 
     def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()
@@ -530,25 +519,59 @@ class ChartMimic(ImageBaseDataset):
 
         return msgs
 
-    def evaluate(self, eval_file, **judge_kwargs):
-        # Way to access subset dataset name, for example, ChartMimic_1000
-        # logger.info(f"Evaluating for {self.dataset_name}")
-        # breakpoint()
 
-        # return {"score": 99.99}
-        # raw_tsv_data = ChartMimic(self.dataset).data
+    def evaluate(self, eval_file, **judge_kwargs):
+        def judge_one_item_success(item):
+            return item["high_level"]["resp"] not in [FAIL_MSG, "", None, "null", "None"] \
+                and item["high_level"]["msg"] not in ["Generated image file does not exist", ""]
+
+        # Test dependencies first
         try:
             from pdf2image import convert_from_path
             from colormath.color_objects import sRGBColor, LabColor
+            import squarify
+            import matplotlib_venn
+            import PIL
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
                              to install dependency package for chartmimic evaluation."
             )
             raise e
+        
+        # Test pdf2image functionality by creating a simple test PDF
+        example_pdf_path = os.path.join(LMUDataRoot(), "chartmimic_test.pdf")
+        output_png_path = os.path.join(LMUDataRoot(), "chartmimic_test.png")
+        
+        try:
+            # Create a simple test PDF using matplotlib
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+            ax.plot([1, 2, 3], [1, 4, 2])
+            ax.set_title("Test Chart")
+            plt.savefig(example_pdf_path, format='pdf')
+            plt.close()
+            
+            # Test pdf2image conversion
+            images = convert_from_path(example_pdf_path, dpi=350)
+            images[0].save(output_png_path, "PNG")
+            logger.info("Successfully tested pdf2image functionality with generated test PDF")
+        except Exception as e:
+            logging.critical(
+                "Please install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
+            )
+            raise e
+        finally:
+            # Clean up test files
+            if os.path.exists(example_pdf_path):
+                os.remove(example_pdf_path)
+            if os.path.exists(output_png_path):
+                os.remove(output_png_path)
+
         infer_data_all = load(eval_file).to_dict(orient="records")
 
         suffix = eval_file.split(".")[-1]
+        print(f"judge_kwargs: {judge_kwargs}")
         infer_model = judge_kwargs["model"]
         storage = os.path.abspath(
             eval_file.replace(f".{suffix}", f"_{infer_model}.jsonl")
@@ -580,11 +603,9 @@ class ChartMimic(ImageBaseDataset):
             tmp_data = load(tmp_file)
             for k, v in tmp_data.items():
                 # -1 means error for getting response from judge model, so try to rejudge for this item
-                # if v[0] == 0:
-                if v[0] == 0 and v[1]["high_level"]["resp"] != FAIL_MSG:
+                if v[0] == 0 and judge_one_item_success(v[1]):
                     ans[k] = v
             logger.info(f"Tmp file exists, loaded {len(ans)} data from {tmp_file}")
-            # logger.info(f"ans: {ans}")
 
         tups = [x for x, i in zip(params_all, indices_all) if i not in ans]
         indices = [i for i in indices_all if i not in ans]
@@ -619,20 +640,15 @@ class ChartMimic(ImageBaseDataset):
             )
             for k, v in zip(indices, new_results):
                 ans[k] = v
-            # else:
-            #     for k, v in ans.items():
-            #         ans[k] = v
 
-            # filter out items that do not have judge_result["low_level"] and judge_result["high_level"]: failed item need rejudge
-            # infer_data_all = [item for item in infer_data_all if "judge_result" in item and "low_level" in item["judge_result"] and "high_level" in item["judge_result"]]
+        for item in infer_data_all:
+            # ans[i] is a tuple, (0 / -1, score_dict), only use score_dict
+            item["judge_result"] = ans[item["index"]][1]
+
+        # storage is a jsonl file
+        with open(storage, "w") as f:
             for item in infer_data_all:
-                # ans[i] is a tuple, (0 / -1, score_dict), only use score_dict
-                item["judge_result"] = ans[item["index"]][1]
-
-            # storage is a jsonl file
-            with open(storage, "w") as f:
-                for item in infer_data_all:
-                    f.write(json.dumps(item) + "\n")
+                f.write(json.dumps(item) + "\n")
 
         # judge finished, rm tmp dir
         os.chdir(cur_work_dir)
@@ -656,13 +672,11 @@ class ChartMimic(ImageBaseDataset):
         new_len = len(eval_data_all)
         logger.info(f"filter out {old_len - new_len} items for no judge_result in item")
 
-        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
-        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
         old_len = len(eval_data_all)
         eval_data_all = [
             item
             for item in eval_data_all
-            if item["judge_result"]["high_level"]["resp"] != FAIL_MSG
+            # if judge_one_item_success(item["judge_result"])
         ]
         new_len = len(eval_data_all)
         logger.info(

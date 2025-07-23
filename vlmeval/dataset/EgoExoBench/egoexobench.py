@@ -125,7 +125,7 @@ class EgoExoBench_MCQ(VideoBaseDataset):
                 video_start, video_end = media['video_start'], media['video_end']
                 if not os.path.exists(processed_video_path):
                     video_clip = VideoFileClip(original_video_path)
-                    clip = video_clip.subclipped(video_start, min(video_end, video_clip.duration))
+                    clip = video_clip.subclip(video_start, min(video_end, video_clip.duration))
                     clip.write_videofile(processed_video_path)
                     clip.close()
             else:

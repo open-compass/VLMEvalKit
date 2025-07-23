@@ -245,15 +245,10 @@ class InternVLChat(BaseModel):
 
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
-        # if dataset is not ChartMimic, dump image (assert "image_path" in line)
-        if not listinstr(['ChartMimic'], dataset):
-            tgt_path = self.dump_image(line, dataset)
-        else:
-            input_figure_path_rel = line["input_figure"]
-            ROOT = LMUDataRoot()
-            img_root = os.path.join(ROOT, 'images', 'ChartMimic')
-            input_figure_path = os.path.join(img_root, input_figure_path_rel)
-            tgt_path = [input_figure_path]
+        tgt_path = self.dump_image(line, dataset)
+        if dataset is not None and listinstr(['BMMR'], dataset):
+            self.kwargs['max_new_tokens'] = 8196
+            print(f'[Warning] BMMR dataset requires a larger max_new_tokens, set to {self.kwargs["max_new_tokens"]}')
 
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
             question = line['question']
@@ -321,7 +316,7 @@ class InternVLChat(BaseModel):
             self.max_num = 6
             return None
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
-                           'VCR_EN', 'VCR_ZH', 'OCRVQA']
+                           'VCR_EN', 'VCR_ZH', 'OCRVQA', 'BMMR']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
         if DATASET_MODALITY(dataset) == 'VIDEO':
