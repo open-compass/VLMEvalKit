@@ -67,6 +67,8 @@ from .videommmu import VideoMMMU
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
 
+from .EgoExoBench.egoexobench import EgoExoBench_MCQ
+
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
