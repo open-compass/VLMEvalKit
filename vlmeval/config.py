@@ -265,7 +265,7 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 8192,
-        timeout = 256,
+        timeout = 512,
         system_prompt=None,
     ),
     "xhs_api-temperature0.7-16k": partial(
@@ -274,7 +274,7 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 16384,
-        timeout = 512,
+        timeout = 1024,
         system_prompt=None,
     ),
     "xhs_api-temperature0.7": partial(
@@ -328,7 +328,7 @@ api_models = {
         retry=3,
         verbose=True,
         max_tokens= 60000,
-        timeout = 3000,
+        timeout = 4096,
         system_prompt=None,
     ),
     "xhs_api-temperature0.7-32k": partial(
@@ -391,7 +391,7 @@ api_models = {
         retry=10,
         verbose=True,
         max_tokens= 28214,
-        timeout = 1024,
+        timeout = 2048,
         system_prompt=None,
     ),
     "xhs_api-temperature0-32k": partial(
