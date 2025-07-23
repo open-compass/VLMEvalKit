@@ -194,6 +194,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--reuse-aux', type=int, default=True, help='reuse auxiliary evaluation files')
     parser.add_argument(
         '--use-vllm', action='store_true', help='use vllm to generate, the flag is only supported in Llama4 for now')
+    parser.add_argument('--use-verifier', action='store_true', help='use verifier to evaluate')
 
     args = parser.parse_args()
     return args
@@ -387,6 +388,11 @@ def main():
                         judge_kwargs['model'] = 'qwen-72b'
                     elif listinstr(['MMVMBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+
+                if args.use_verifier:
+                    judge_kwargs['use_verifier'] = True
+                if args.use_vllm:
+                    judge_kwargs['use_vllm'] = True
 
                 if RANK == 0:
                     logger.info(judge_kwargs)
