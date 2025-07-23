@@ -42,7 +42,7 @@ def can_infer_option(answer, choices):
                 logger = get_logger('Evaluation')
                 logger.info(f'A might be a quantifier in the string: {answer}.')
                 return False
-            if ch in splits and splits.index(ch) > (len(splits) - 5):
+            if ch in splits and splits.index(ch) < len(splits) - 5:
                 return ch
     elif count == 0 and count_choice(splits, {'Z', ''}) == 1:
         return 'Z'
