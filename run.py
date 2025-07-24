@@ -541,6 +541,8 @@ def main():
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
                     elif judge_kwargs.get('model', None) == 'gpt-4o':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
+                    elif judge_kwargs.get('model', None) == 'chatgpt-0125':
+                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 32)
 
                     # Perform the Evaluation
                     eval_results = dataset.evaluate(result_file, **judge_kwargs)
