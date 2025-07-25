@@ -49,6 +49,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_EN.tsv',
         'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_CN.tsv',
         'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_CN.tsv',
+        'MMBench_DEV_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMBench/resolve/main/MMBench_DEV_KO.tsv',
         'MMBench': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench.tsv',  # Internal
         'MMBench_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN.tsv',  # Internal
         # MMBench v1.1
@@ -60,6 +61,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN_V11.tsv',  # Internal
         # SEEDBench Series
         'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench_IMG.tsv',
+        'SEEDBench_IMG_KO': 'https://huggingface.co/datasets/NCSOFT/K-SEED/resolve/main/SEEDBench_IMG_KO.tsv',
         'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
         'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench2_Plus.tsv',
         # ScienceQA Series
@@ -87,6 +89,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
+        'MMStar_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMStar/resolve/main/MMStar_KO.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
@@ -104,6 +107,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
         "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
+        "K-DTCBench": "https://huggingface.co/datasets/NCSOFT/K-DTCBench/resolve/main/K-DTCBench.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -125,6 +129,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': '6939fadb0ce626fefc0bdc9c64efc528',
         'MMBench_DEV_CN': '08b8fc3324a5ed74155350f57be69fbd',
         'MMBench_TEST_CN': '7e1239baf0ee4c8b513e19705a0f317e',
+        'MMBench_DEV_KO': '72e1cde9124b5015be6d0dd5c9b5500d',
         'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
         'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
         # MMBench v1.1
@@ -136,6 +141,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+        'SEEDBench_IMG_KO': 'b354a9ac3493f3ccf294e69b216bfab3',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
         'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
         # ScienceQA
@@ -163,6 +169,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
+        'MMStar_KO': 'cc6049c7314bb54b9ac5e247a2bfb357',
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
@@ -173,6 +180,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '865144aa866e29b251bdc7d63a735b6b',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
+        "K-DTCBench": "fe72a85b010513d3840b5f3be2de6ed3",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
