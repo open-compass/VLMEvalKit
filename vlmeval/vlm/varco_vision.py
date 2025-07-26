@@ -52,11 +52,14 @@ class VarcoVision(BaseModel):
         image_processor.image_grid_pinpoints = config.image_grid_pinpoints = grid
 
     def set_res(self, dataset):
-        res_4_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
-                           'VCR_EN', 'VCR_ZH', 'OCRVQA', 'BMMR', 'MMStar', 'HallusionBench',
-                           'AI2D_MINI', 'AI2D_TEST', 'AI2D_TEST_NO_MASK', 'MMVet']
-        res_16_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'LLaVABench',
-                           'HRBench4K', 'HRBench8K', 'MathVista']
+        res_4_datasets = [
+            'ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST',
+            'MME-RealWorld', 'VCR_EN', 'VCR_ZH', 'OCRVQA',
+            'BMMR', 'MMStar', 'HallusionBench', 'MMVet',
+            'AI2D_MINI', 'AI2D_TEST', 'AI2D_TEST_NO_MASK']
+        res_16_datasets = [
+            'InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench',
+            'HRBench4K', 'HRBench8K', 'MathVista', 'LLaVABench']
         self.set_ratio(9)
         self.set_grid(6)
         if listinstr(res_4_datasets, dataset):
