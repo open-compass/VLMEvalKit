@@ -8,8 +8,9 @@ from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.dataset import img_root_map
 
-API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-b6f55f2068a546498ebcfe4fc893ade8/service-97bc0f7b638041d18be4c5c7df31c359/v1/chat/completions"  # noqa: E501
-APP_CODE = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI2ZTNiMmQ5OWNiNTE0ZmQ0Yjk1M2M3YTg2NjQzNTFmOCIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg5MDY4ODM2Nn0.GX61EKQ0hlQO4CisPwEwsAkmi7fvmc2Kl47EOq2IFpGWk9y4K1ocwM7aMbn7hJ-a4GkDoy3vyndTwPOFDn4y4t4J26tgwPziNS1-fUaQi6e1r7Dt372ZJEJgxxb99SkEulXrkOxOdwltJ87jnia7ZAyOzcfbQc6B4RdpCZERXn7Q-gED62emJbZ_8fuAu86lxtFUZ55lp8Jzmbu0QxNMR4c4Xy4tioxyfv5ZsFjo09GunDD875i__WFPEOl_I15NzhhOOGi3RKFVvZdTF4v3BCYNZoYF02pbM78XPkzcNxSpRHfjBKIjENBMEEygiZseGrcF6x-ThoTnjYsklu9HwA'  # noqa: E501
+
+API_ENDPOINT = 'https://jiutian.10086.cn/kunlun/ingress/api/h3t-dfac2f/92390745235a40a484d850be19e1f8b4/ai-15d6aa0e25df4a698662fcfd9b101bbe/service-46e2b9001b1e43f7941f7ccd1c9a6f4e/v1/chat/completions'  # noqa: E501
+APP_CODE = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI5ZGQwNmQ2ZjU4YTU0ZGY0OGEzNjRhMjQyNGMwODEyNSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg4MjkwNDA3OX0.k5t_T-955xWMndzBbx4WQQNAgm5DpMos9mHm7vkFipQ3yebCFMfyufpSxORSfEVpBaDS3Nly0dd8ygQYGnDgIQcC72vQ1xtkjCP49LNcqlceoET4rGc1zwRi76XLPSGFES4GcwvEmr7Ilth7XtqZNxcDF_Z7HyHyf1-zF0JIQETYSoxenqLU-gNteNfqRUnlyCgaKh03DscAbYvtoMUxEaFa2ZqyRSwekdHI_SPKCq9aC9G19yDPHTjeiwl1ubtyC5uMy5pERn_ClRsZS3Wyb-GmD5QQsFofrWvCiU_fVJuUiez39pYZvEP8awH0R9B7SkpQ4XOzj3fdytTPYy3g6g'  # noqa: E501
 
 
 class JTVLChatWrapper(BaseAPI):
@@ -174,9 +175,14 @@ class JTVLChatWrapper(BaseAPI):
             "image_base64": image,
             "max_tokens": max_tokens,
             "temperature": temperature,
+<<<<<<< HEAD
             "do_sample": False,
             "understanding_plus":understanding_plus,
             "stream": stream
+=======
+            "do_sample":False,
+            "understanding_plus":False
+>>>>>>> 97489e1 ([API] change app_code and app_endpoint (#1179))
         }
         return send_data
 
@@ -190,8 +196,13 @@ class JTVLChatWrapper(BaseAPI):
             ],
             "max_tokens": max_tokens,
             "temperature": temperature,
+<<<<<<< HEAD
             "stream": stream,
             "understanding_plus":understanding_plus
+=======
+            "do_sample":False,
+            "understanding_plus":False
+>>>>>>> 97489e1 ([API] change app_code and app_endpoint (#1179))
         }
         return send_data
 
