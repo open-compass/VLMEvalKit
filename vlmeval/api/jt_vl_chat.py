@@ -9,7 +9,7 @@ from vlmeval.dataset import DATASET_TYPE
 from vlmeval.dataset import img_root_map
 
 
-API_ENDPOINT = 'https://jiutian.10086.cn/kunlun/ingress/api/h3t-eeceff/92390745235a40a484d850be19e1f8b4/ai-5d7ae47ec93f4280953273c4001aafee/service-7544ea5ee3e841ad9d01e7af44acef7c/v1/chat/completions'  # noqa: E501
+API_ENDPOINT = 'https://jiutian.10086.cn/kunlun/ingress/api/h3t-dfac2f/92390745235a40a484d850be19e1f8b4/ai-15d6aa0e25df4a698662fcfd9b101bbe/service-46e2b9001b1e43f7941f7ccd1c9a6f4e/v1/chat/completions'  # noqa: E501
 APP_CODE = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI5ZGQwNmQ2ZjU4YTU0ZGY0OGEzNjRhMjQyNGMwODEyNSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg4MjkwNDA3OX0.k5t_T-955xWMndzBbx4WQQNAgm5DpMos9mHm7vkFipQ3yebCFMfyufpSxORSfEVpBaDS3Nly0dd8ygQYGnDgIQcC72vQ1xtkjCP49LNcqlceoET4rGc1zwRi76XLPSGFES4GcwvEmr7Ilth7XtqZNxcDF_Z7HyHyf1-zF0JIQETYSoxenqLU-gNteNfqRUnlyCgaKh03DscAbYvtoMUxEaFa2ZqyRSwekdHI_SPKCq9aC9G19yDPHTjeiwl1ubtyC5uMy5pERn_ClRsZS3Wyb-GmD5QQsFofrWvCiU_fVJuUiez39pYZvEP8awH0R9B7SkpQ4XOzj3fdytTPYy3g6g'  # noqa: E501
 
 
@@ -173,7 +173,9 @@ class JTVLChatWrapper(BaseAPI):
             ],
             "image_base64": image,
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
+            "do_sample":False,
+            "understanding_plus":False
         }
         return send_data
 
@@ -186,7 +188,9 @@ class JTVLChatWrapper(BaseAPI):
                 }
             ],
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
+            "do_sample":False,
+            "understanding_plus":False
         }
         return send_data
 
