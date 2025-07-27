@@ -175,14 +175,9 @@ class JTVLChatWrapper(BaseAPI):
             "image_base64": image,
             "max_tokens": max_tokens,
             "temperature": temperature,
-<<<<<<< HEAD
             "do_sample": False,
             "understanding_plus":understanding_plus,
             "stream": stream
-=======
-            "do_sample":False,
-            "understanding_plus":False
->>>>>>> 97489e1 ([API] change app_code and app_endpoint (#1179))
         }
         return send_data
 
@@ -197,8 +192,13 @@ class JTVLChatWrapper(BaseAPI):
             "max_tokens": max_tokens,
             "temperature": temperature,
 <<<<<<< HEAD
+<<<<<<< HEAD
             "stream": stream,
             "understanding_plus":understanding_plus
+=======
+            "do_sample":False,
+            "understanding_plus":False
+>>>>>>> 97489e1 ([API] change app_code and app_endpoint (#1179))
 =======
             "do_sample":False,
             "understanding_plus":False
