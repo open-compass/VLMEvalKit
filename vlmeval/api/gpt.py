@@ -434,6 +434,53 @@ def compress_image(base64_str, quality=85, format='JPEG'):
     byte_img = buf.getvalue()
     return base64.b64encode(byte_img).decode('utf-8')
 
+def custom_encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
+    # if target_size == -1, will not do resizing
+    # else, will set the max_size ot (target_size, target_size)
+    if img.mode in ('RGBA', 'P', 'LA'):
+        img = img.convert('RGB')
+    if target_size > 0:
+        img.thumbnail((target_size, target_size))
+    img_buffer = io.BytesIO()
+    img.save(img_buffer, format=fmt)
+    image_data = img_buffer.getvalue()
+    ret = base64.b64encode(image_data).decode('utf-8')
+    max_size = os.environ.get('VLMEVAL_MAX_IMAGE_SIZE', 1e9)
+    min_edge = os.environ.get('VLMEVAL_MIN_IMAGE_EDGE', 1e2)
+    max_size = int(max_size)
+    min_edge = int(min_edge)
+
+    image_size = img.size[0] * img.size[1]
+    if min(img.size) < min_edge:
+        factor = min_edge / min(img.size)
+        image_new = resize_image_by_factor(img, factor)
+        img_buffer = io.BytesIO()
+        image_new.save(img_buffer, format=fmt)
+        image_data = img_buffer.getvalue()
+        ret = base64.b64encode(image_data).decode('utf-8')
+        image_size = image_new.size[0] * image_new.size[1]
+    
+    factor = 1
+    while image_size > max_size:
+        factor = math.sqrt(max_size / image_size)
+        image_new = resize_image_by_factor(img, factor)
+        img_buffer = io.BytesIO()
+        image_new.save(img_buffer, format=fmt)
+        image_data = img_buffer.getvalue()
+        ret = base64.b64encode(image_data).decode('utf-8')
+        image_size = image_new.size[0] * image_new.size[1]
+
+    if factor < 1:
+        new_w, new_h = image_new.size
+        current_time = time.localtime()
+        if current_time.tm_sec == 0:
+            print(
+                f'Warning: image size is too large and exceeds `VLMEVAL_MAX_IMAGE_SIZE` {max_size}, '
+                f'resize to {factor:.2f} of original size: ({new_w}, {new_h})'
+            )
+
+    return ret
+
 class VLLMAPIWrapper(BaseAPI):
 
     is_api: bool = True
@@ -449,7 +496,7 @@ class VLLMAPIWrapper(BaseAPI):
                  timeout: int = 60,
                  api_base: str = None,
                  max_tokens: int = 2048,
-                 img_size: int = 512,
+                 img_size: int = -1,
                  **kwargs):
         
         if model is None:
@@ -514,7 +561,7 @@ class VLLMAPIWrapper(BaseAPI):
                     from PIL import Image
                     fmt=get_image_fmt_from_image_path(msg['value'])
                     img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img, target_size=-1, fmt=fmt)
+                    b64 = custom_encode_image_to_base64(img, target_size=self.img_size, fmt=fmt)
                     if self.model == os.environ.get("DOUBAO_MODEL_NAME"):
                         b64 = compress_image(b64, format=fmt)
                     img_struct = dict(url=f'data:image/{fmt};base64,{b64}')
