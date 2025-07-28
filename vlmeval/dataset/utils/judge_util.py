@@ -79,7 +79,7 @@ def build_judge(**kwargs):
             api_base=api_base, 
             key=key, 
             use_azure=True,
-            wait=30,
+            wait=50,
             **kwargs)
     else:
         model = OpenAIWrapper(model_version, **kwargs)
