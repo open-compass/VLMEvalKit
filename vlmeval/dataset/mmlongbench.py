@@ -450,10 +450,9 @@ class MMLongBench(ImageBaseDataset):
         if not listinstr(self.model_list, model_name):
             raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
         super(MMLongBench, self).__init__(dataset)
-
-        self.is_api = True if listinstr(['GPT4'], model_name) else False
+        self.is_api = True if listinstr(['GPT4', 'xhs_api', 'xhs-seedvl', "GeminiPro2-5-32k"], model_name) else False
         self.max_pages = 120
-        concat_num, column_num = self.SUPPORTED_MODELS.get(model_name)
+        concat_num, column_num = self.SUPPORTED_MODELS.get(model_name, (1, 1))
         self.concat_num = concat_num
         self.column_num = column_num
 
