@@ -524,6 +524,7 @@ class VLLMAPIWrapper(BaseAPI):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.temperature = temperature
+        self.img_size = img_size
 
         env_key = os.environ.get('VLLM_API_KEY', '')
         if key is None:
