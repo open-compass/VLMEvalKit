@@ -13,7 +13,6 @@ class Reka_Wrapper(BaseAPI):
                  model: str = 'reka-flash-20240226',
                  key: str = None,
                  retry: int = 10,
-                 wait: int = 3,
                  system_prompt: str = None,
                  verbose: bool = True,
                  temperature: float = 0,
@@ -33,7 +32,7 @@ class Reka_Wrapper(BaseAPI):
             self.key = key
         else:
             self.key = os.environ.get('REKA_API_KEY', '')
-        super().__init__(retry=retry, wait=wait, verbose=verbose, system_prompt=system_prompt, **kwargs)
+        super().__init__(retry=retry, verbose=verbose, system_prompt=system_prompt, **kwargs)
 
     def generate_inner(self, inputs, **kwargs) -> str:
         import reka

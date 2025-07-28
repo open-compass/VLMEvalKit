@@ -12,7 +12,6 @@ class QwenAPI(BaseAPI):
     def __init__(self,
                  model: str = 'qwen-max-1201',
                  retry: int = 5,
-                 wait: int = 5,
                  verbose: bool = True,
                  seed: int = 2680,
                  temperature: float = 0.0,
@@ -38,7 +37,7 @@ class QwenAPI(BaseAPI):
         dashscope.api_key = key
         if proxy is not None:
             proxy_set(proxy)
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     @staticmethod
     def build_msgs(msgs_raw, system_prompt=None):

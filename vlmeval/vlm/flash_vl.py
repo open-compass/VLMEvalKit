@@ -1,21 +1,10 @@
-import dataclasses
-import re
-import pickle
 import pandas as pd
 import torch
 import string
-import copy
-import torch.nn as nn
-from functools import partial
 from PIL import Image
-from enum import auto, Enum
-from typing import List, Tuple
-from transformers.modeling_utils import PreTrainedModel
-from transformers import PretrainedConfig
-from transformers.image_processing_utils import BatchFeature
 from .base import BaseModel
 from ..dataset import DATASET_TYPE
-from ..smp import isimg, listinstr, cn_string
+from ..smp import listinstr, cn_string
 from transformers import AutoModel, AutoTokenizer, CLIPImageProcessor
 
 

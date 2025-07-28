@@ -6,6 +6,7 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 import pandas as pd
+from tqdm import tqdm
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -223,6 +224,12 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, 
             mcq_vanilla_eval, report_acc_MMVP
@@ -351,6 +358,107 @@ class ImageMCQDataset(ImageBaseDataset):
                            chemistry__shape_multi split and uses a different evaluation prompt. Please \
                            explicitly specify the version of the dataset when you report results.')
 
+        return acc
+
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # assert dataset is not None
+        dataset_map = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+        }
+        dataset = self.dataset_name
+        if dataset in dataset_map:
+            dataset = dataset_map[dataset]
+
+        circular = False
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
+            circular = True
+
+        if circular:
+            raise ValueError("circular is not supported for verifier evaluation")
+
+        suffix = eval_file.split('.')[-1]
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        # Add verifier evaluation for specific datasets
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        verifier_scores = []
+        verifier_matches = []
+        for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+            question_text = row['question']
+            if 'A' in row and not pd.isna(row['A']):
+                options = []
+                for option_key in ['A', 'B', 'C', 'D', 'E']:
+                    if option_key in row and not pd.isna(row[option_key]):
+                        options.append(f"{option_key}. {row[option_key]}")
+                if options:
+                    question_text += "\nOptions:\n" + "\n".join(options)
+
+            correct_option = str(row['answer']).strip().upper()
+            if correct_option in row and not pd.isna(row[correct_option]):
+                answer_text = f"{correct_option}. {row[correct_option]}"
+            else:
+                answer_text = correct_option
+
+            score = verifier.evaluate(question_text, row['prediction'], answer_text)
+            verifier_scores.append(score)
+            verifier_matches.append(1.0 if score else 0.0)
+
+        data['verifier_score'] = verifier_scores
+        data['verifier_match'] = verifier_matches
+
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        dump(data, detailed_result_file)
+
+        def report_acc_verifier(result_file):
+            from collections import defaultdict
+
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                split_name = item.get('split', 'Overall')
+                if pd.isna(split_name):
+                    split_name = 'Overall'
+
+                tot['Overall'] += 1
+                tot[split_name] += 1
+
+                if 'category' in item and not pd.isna(item['category']):
+                    category = item['category']
+                    tot[category] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[split_name] += 1
+
+                    if 'category' in item and not pd.isna(item['category']):
+                        hit[category] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                if k == 'Overall':
+                    res['Category'].append('Overall')
+                else:
+                    res['Category'].append(k)
+                res['Total'].append(tot[k])
+                res['Hit'].append(hit[k])
+                res['Accuracy'].append(hit[k] / tot[k] * 100 if tot[k] > 0 else 0.0)
+
+            res_df = pd.DataFrame(res)
+            return res_df
+        acc = report_acc_verifier(detailed_result_file)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
         return acc
 
 
@@ -1450,7 +1558,7 @@ class LEGO(ImageMCQDataset):
         if len(options):
             prompt += options_prompt
             prompt += (
-                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "Please respond with only the sequence of letters (e.g., 'BDAC') "
                 "that correctly orders the steps.\n"
             )
 
@@ -2410,3 +2518,170 @@ class AffordanceDataset(ImageMCQDataset):
 
         selected_columns = ['index', 'question', 'prediction', 'match']
         return df[selected_columns]
+
+
+class TreeBench(ImageMCQDataset):
+
+    TYPE = 'MCQ'
+
+    DATASET_URL = {
+        'TreeBench': 'https://huggingface.co/datasets/HaochenWang/TreeBench/resolve/main/TreeBench.tsv',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        prompt = line['question']
+        if not line["category"] == "Perception/OCR":
+            prompt += "\nOptions:\n" + line["multi-choice options"]
+        prompt += "\nAnswer with the option's letter directly."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import ast
+        from .utils.multiple_choice import extract_characters_regex
+        from .utils.treebench import get_dimension_rating
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        FAIL_MSG = 'Failed to obtain answer via API.'
+        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', '_rating.json')
+        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+
+        if not osp.exists(score_file):
+
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+
+            data = load(eval_file)
+            cnt_rejected = 0
+            data_un = data[~pd.isna(data['prediction'])]
+
+            for idx in data['index']:
+                ans = data.loc[data['index'] == idx, 'answer'].values[0]
+                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+
+                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                cot = match_cot.group(1).strip() if match_cot else pred
+
+                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                iou = self.evaluate_box_iou(cot, target_instances)
+
+                data.loc[data['index'] == idx, 'iou'] = iou
+
+                match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
+                pred = match_pred.group(1).strip().upper() if match_pred else pred
+
+                extract_pred = extract_characters_regex(pred)
+                if extract_pred == '':
+                    cnt_rejected += 1
+                    data.loc[data['index'] == idx, 'score'] = 0
+                else:
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
+
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+                f'failed to obtain the score for another {cnt_rejected} questions. '
+                f'Those questions will be counted as 0 score in ALL rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating
+
+    def evaluate_box_iou(predict_str: str, target_instances: list) -> float:
+        pattern = r"<box>(.*?)</box>"
+        matches = re.findall(pattern, predict_str, re.DOTALL)
+
+        all_boxes = []
+
+        for match in matches:
+            box = match.strip()
+
+            coord_pattern = r'\[(\d+),(\d+),(\d+),(\d+)\]'
+            coord_match = re.match(coord_pattern, box)
+
+            if coord_match:
+                x1, y1, x2, y2 = map(int, coord_match.groups())
+
+                if x1 < x2 and y1 < y2:
+                    # all_boxes.append([(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
+                    all_boxes.append([x1, y1, x2, y2])
+
+        if len(all_boxes) == 0:
+            return 0
+
+        target_boxes = target_instances
+        if len(target_boxes) == 0:
+            return len(all_boxes) > 0
+
+        def calculate_average_iou(pred_boxes, target_boxes):
+            """
+            计算每个目标框与预测框中 IoU 最大的预测框之间的平均 IoU。
+
+            参数:
+                pred_boxes (List[List[float]]): 预测框列表，每个框为 [cx, cy, w, h]
+                target_boxes (List[List[float]]): 目标框列表，每个框为 [cx, cy, w, h]
+
+            返回:
+                float: 匹配上的平均 IoU
+            """
+            def compute_iou(box1, box2):
+                """计算两个框之间的 IoU"""
+                x1_min, y1_min, x1_max, y1_max = box1
+                x2_min, y2_min, x2_max, y2_max = box2
+
+                inter_x_min = max(x1_min, x2_min)
+                inter_y_min = max(y1_min, y2_min)
+                inter_x_max = min(x1_max, x2_max)
+                inter_y_max = min(y1_max, y2_max)
+
+                inter_width = max(0, inter_x_max - inter_x_min)
+                inter_height = max(0, inter_y_max - inter_y_min)
+                inter_area = inter_width * inter_height
+
+                area1 = (x1_max - x1_min) * (y1_max - y1_min)
+                area2 = (x2_max - x2_min) * (y2_max - y2_min)
+
+                union_area = area1 + area2 - inter_area
+
+                return inter_area / union_area if union_area > 0 else 0.0
+
+            pred_coords = pred_boxes
+            target_coords = target_boxes
+
+            total_iou = 0.0
+            num_targets = len(target_boxes)
+
+            if num_targets == 0:
+                return 0.0
+
+            # 为每个目标框找到最大 IoU 的预测框
+            for t_coord in target_coords:
+                best_iou = 0.0
+                for p_coord in pred_coords:
+                    iou = compute_iou(t_coord, p_coord)
+                    if iou > best_iou:
+                        best_iou = iou
+                total_iou += best_iou
+
+            return total_iou / num_targets
+
+        return calculate_average_iou(all_boxes, target_boxes)

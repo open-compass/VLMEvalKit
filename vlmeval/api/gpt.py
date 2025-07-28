@@ -113,7 +113,6 @@ class OpenAIWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'gpt-3.5-turbo-0613',
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = False,
                  system_prompt: str = None,
@@ -163,6 +162,12 @@ class OpenAIWrapper(BaseAPI):
             if key is None:
                 key = env_key
             api_base = os.environ.get('GOOGLE_API_BASE', "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
+        elif 'ernie' in model:
+            env_key = os.environ.get('BAIDU_API_KEY', '')
+            if key is None:
+                key = env_key
+            api_base = 'https://qianfan.baidubce.com/v2/chat/completions'
+            self.baidu_appid = os.environ.get('BAIDU_APP_ID', None)
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -190,7 +195,7 @@ class OpenAIWrapper(BaseAPI):
         self.img_detail = img_detail
         self.timeout = timeout
         self.o1_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if use_azure:
             if api_base is None:
@@ -305,6 +310,15 @@ class OpenAIWrapper(BaseAPI):
                 n=1,
                 temperature=temperature,
                 **kwargs)
+        if hasattr(self, 'baidu_appid'):
+            headers['appid'] = self.baidu_appid
+
+        payload = dict(
+            model=self.model,
+            messages=input_msgs,
+            n=1,
+            temperature=temperature,
+            **kwargs)
 
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
