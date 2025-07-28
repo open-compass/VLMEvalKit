@@ -229,7 +229,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
     # It returns a dictionary
     @classmethod
-    def evaluate(self, eval_file, **judge_kwargs):
+    def evaluate_(self, eval_file, **judge_kwargs):
         from .utils.videomme import get_dimension_rating, extract_characters_regex, extract_option
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
@@ -286,3 +286,32 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
+
+    # It returns a json dict
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs): 
+        from .utils.videomme import get_dimension_rating
+        from .utils.xverify import VQAxVerifyEvaluator
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        data = load(eval_file)
+
+        predictions = data['prediction'].tolist()
+        predictions = [x.split("</think>")[1].strip() if "</think>" in x else x for x in predictions]
+        answers = data['answer'].tolist()
+
+        questions = data['question'].tolist()
+        candidates = data['candidates'].tolist()
+        questions = [q + '\nOptions:\n' + '\n'.join(options) for q, options in zip(questions, candidates)]
+       
+        xverify = VQAxVerifyEvaluator(dataset_name="Video-MME")
+        results = xverify.score(predictions, answers, questions )
+        data['score'] = results
+        
+        dump(data, storage)
+        score_pth = storage.replace('.xlsx', '_score.json')
+        acc = get_dimension_rating(storage)
+        dump(acc, score_pth)
+        return acc
