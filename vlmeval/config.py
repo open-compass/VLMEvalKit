@@ -536,7 +536,6 @@ api_models = {
         verbose=True,
         max_tokens=16384,
         timeout = 3000,
-<<<<<<< HEAD
         system_prompt=None,
     ),
     "xhs-seedvl-1.5-nothink" : partial(
@@ -557,8 +556,6 @@ api_models = {
         think_mode=False,
         max_tokens= 16384,
         timeout = 1000,
-=======
->>>>>>> 87d999e (update long context)
         system_prompt=None,
     ),
     "xhs-seedvl-1.5-nothink" : partial(
