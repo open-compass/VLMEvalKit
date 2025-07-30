@@ -70,12 +70,11 @@ class VarcoVision(BaseModel):
             self.set_grid(8)
 
     def use_custom_prompt(self, dataset):
-        if any(dataset.startswith(prefix) for prefix in
-               ['MMVet', 'MathVista', 'MathVerse', 'MathVision', 'LLaVABench']):
-            return True
         if DATASET_TYPE(dataset) == 'Y/N':
             return True
         if DATASET_TYPE(dataset) == 'MCQ':
+            return True
+        if DATASET_TYPE(dataset) == 'VQA':
             return True
         return False
 
@@ -93,7 +92,16 @@ class VarcoVision(BaseModel):
         elif DATASET_TYPE(dataset) == 'MCQ':
             prompt = self.build_multi_choice_prompt(line, dataset)
         elif DATASET_TYPE(dataset) == 'VQA':
-            prompt = self.build_vqa_prompt(line, dataset)
+            question = line['question']
+            if listinstr(['LLaVABench', 'WildVision', 'MMVet',
+                          'MathVista', 'MathVerse', 'MathVision'], dataset):
+                prompt = self.build_vqa_prompt(line, dataset)
+            elif listinstr(['VCR', 'MTVQA', 'OCRBench',
+                            'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
+                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
+                prompt = question
+            else:
+                prompt = question + '\nAnswer the question using a single word or phrase.'
         else:
             raise RuntimeError(f'Invalid dataset type: {DATASET_TYPE(dataset)}')
         message = []
