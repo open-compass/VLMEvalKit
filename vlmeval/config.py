@@ -726,6 +726,9 @@ varco_vision_series = {
     "varco-vision-hf": partial(
         LLaVA_OneVision_HF, model_path="NCSOFT/VARCO-VISION-14B-HF"
     ),
+    "varco-vision-2-1.7b": partial(
+        VarcoVision, model_path="NCSOFT/VARCO-VISION-2.0-1.7B"
+    ),
     "varco-vision-2-14b": partial(
         VarcoVision, model_path="NCSOFT/VARCO-VISION-2.0-14B"
     ),

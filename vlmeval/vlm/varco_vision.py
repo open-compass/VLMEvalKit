@@ -70,11 +70,12 @@ class VarcoVision(BaseModel):
             self.set_grid(8)
 
     def use_custom_prompt(self, dataset):
+        if any(dataset.startswith(prefix) for prefix in
+               ['MMVet', 'MathVista', 'MathVerse', 'MathVision', 'LLaVABench']):
+            return True
         if DATASET_TYPE(dataset) == 'Y/N':
             return True
         if DATASET_TYPE(dataset) == 'MCQ':
-            return True
-        if DATASET_TYPE(dataset) == 'VQA' and not dataset.startswith('OCRBench'):
             return True
         return False
 
