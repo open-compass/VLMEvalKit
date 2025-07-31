@@ -58,7 +58,7 @@ def build_prompt_ko(line):
     ans1 = line['gpt4_ans']
     ans2 = line['prediction']
     category = 'llava_bench_' + line['category']
-    rule = rule_dict[category]
+    rule = rule_dict_ko[category]
     role, prompt = rule['role'], rule['prompt']
 
     content = (f'[설명]\n{cap_str}\n\n'
