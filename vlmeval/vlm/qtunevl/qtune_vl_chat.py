@@ -20,6 +20,21 @@ from ...smp import *
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+def auto_split_flag():
+    flag = os.environ.get('AUTO_SPLIT', '0')
+    if flag == '1':
+        return True
+    _, world_size = get_rank_and_world_size()
+    try:
+        import torch
+        device_count = torch.cuda.device_count()
+        if device_count > world_size and device_count % world_size == 0:
+            return True
+        else:
+            return False
+    except:
+        return False
+
 
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
