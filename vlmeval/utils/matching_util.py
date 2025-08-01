@@ -42,7 +42,7 @@ def can_infer_option(answer, choices):
                 logger = get_logger('Evaluation')
                 logger.info(f'A might be a quantifier in the string: {answer}.')
                 return False
-            if ch in splits:
+            if ch in splits and splits.index(ch) > (len(splits) - 5):
                 return ch
     elif count == 0 and count_choice(splits, {'Z', ''}) == 1:
         return 'Z'
@@ -96,6 +96,8 @@ def can_infer_sequence(answer, choices=None):
 
 def can_infer_text(answer, choices):
     answer = answer.lower()
+    if len(answer) > 2 * sum(len(str(v)) for v in choices.values()):
+        return False
     assert isinstance(choices, dict)
     for k in choices:
         assert k in string.ascii_uppercase
