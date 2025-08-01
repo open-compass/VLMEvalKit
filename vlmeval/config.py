@@ -1515,6 +1515,22 @@ treevgr_series = {
     ),
 }
 
+# QTuneVL series
+qtunevl_series = {
+    "QTuneVL1.5-2B": partial(
+        QTuneVLChat, model_path="hanchaow/QTuneVL1.5-2B", version="V1.5"
+    ),
+
+    "QTuneVL1-3B": partial(
+        QTuneVL,
+        model_path="hanchaow/QTuneVL1.5-3B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=True,
+        post_process=True
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
@@ -1537,7 +1553,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series
 ]
 
 for grp in model_groups:
