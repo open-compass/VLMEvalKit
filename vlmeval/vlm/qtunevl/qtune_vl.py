@@ -8,7 +8,6 @@ import torch
 
 from ..base import BaseModel
 from ...smp import listinstr
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
 
 
 class QTuneVLPromptMixin:
@@ -201,6 +200,7 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
         self.model_path = model_path
         self.processor = AutoProcessor.from_pretrained(model_path)
         
+        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_path, torch_dtype='auto', device_map="auto", attn_implementation='flash_attention_2'
         )
