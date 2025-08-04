@@ -98,18 +98,19 @@ class GLM4_1VThinkingFlashAPI(BaseAPI):
         self.fail_msg = 'Failed to obtain answer via API. '
         if key is None:
             key = os.environ.get('GLMV_API_KEY', None)
-        assert key is not None, (
-            'Please set the API Key (obtain it here: '
-            'https://bigmodel.cn)'
-        )
+            assert key is not None, (
+                'Please set the API Key (obtain it here: '
+                'https://bigmodel.cn)'
+            )
         self.client = ZhipuAI(api_key=key)
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def extract_answer(self, response_text, dataset=None):
-        # remove thinking content
-        pattern_think = r'<think>.*?</think>'
-        response_text = re.sub(pattern_think, '', response_text, flags=re.DOTALL).strip()
-        if dataset in {'OCRBench'}:
+        response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL).strip()
+        match = re.search(r'<answer>(.*?)</answer>', response_text, re.DOTALL)
+        if match:
+            response_text = match.group(1).strip()
+        if dataset in {'OCRBench', 'MMLongBench_DOC'}:
             return response_text
         # extract box
         pattern_box = r'<\|begin_of_box\|>(.*?)<\|end_of_box\|>'
@@ -153,6 +154,3 @@ class GLM4_1VThinkingFlashAPI(BaseAPI):
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(f'The input messages are {inputs}.')
             return -1, self.fail_msg, ''
-
-    def generate(self, message, dataset=None):
-        return self.generate_inner(message, dataset=dataset)

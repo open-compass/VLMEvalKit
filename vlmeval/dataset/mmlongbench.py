@@ -442,6 +442,8 @@ class MMLongBench(ImageBaseDataset):
         'InternVL-Chat-V1-5': (5, 2),
         'XComposer2_4KHD': (1, 5),
         'XComposer2d5': (1, -1),
+        'GLM4_1V9BThinking': (1, -1),
+        'GLM4_1V9BThinkingAPI': (1, -1)
     }
 
     def __init__(self, dataset, **kwargs):
