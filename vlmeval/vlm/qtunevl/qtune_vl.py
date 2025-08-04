@@ -130,7 +130,7 @@ class QTuneVLPromptMixin:
         assert msgs[-1]['type'] == 'text'
         msgs[-1]['value'] += VQA_PROMPT
         return msgs
-    
+
 
 def ensure_image_url(image: str) -> str:
     prefixes = ['http://', 'https://', 'file://', 'data:image;']
@@ -172,6 +172,7 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
         verbose: bool = False,
         **kwargs,
     ):
+        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
         super().__init__(use_custom_prompt=use_custom_prompt)
         self.min_pixels = min_pixels
         self.max_pixels = max_pixels
@@ -199,8 +200,7 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
         assert model_path is not None
         self.model_path = model_path
         self.processor = AutoProcessor.from_pretrained(model_path)
-        
-        from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             model_path, torch_dtype='auto', device_map="auto", attn_implementation='flash_attention_2'
         )
@@ -276,7 +276,7 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
             print(f'\033[31m{messages}\033[0m')
 
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
-        
+
         images, videos = process_vision_info([messages])
         inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')  # noqa: E501
         inputs = inputs.to('cuda')
@@ -316,4 +316,3 @@ class QTuneVL(QTuneVLPromptMixin, BaseModel):
 
     def generate_inner(self, message, dataset=None):
         return self.generate_inner_transformers(message, dataset=dataset)
-

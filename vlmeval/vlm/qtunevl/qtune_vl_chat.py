@@ -20,6 +20,7 @@ from ...smp import *
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+
 def auto_split_flag():
     flag = os.environ.get('AUTO_SPLIT', '0')
     if flag == '1':
@@ -62,6 +63,7 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
                 best_ratio = ratio
     return best_ratio
 
+
 ######################################################################################
 def preprocess_padding_global(image, net_input_size=448):
     # 不形变的resize方式
@@ -74,13 +76,14 @@ def preprocess_padding_global(image, net_input_size=448):
         scale_ratio = net_input_size / orig_width
         scale_h = int(orig_height * scale_ratio)
         scale_w = net_input_size
-        
+
     resized = image.resize((scale_w, scale_h), Image.BILINEAR)
     new_image = Image.new('RGB', (net_input_size, net_input_size), (0, 0, 0))
     paste_x = (net_input_size - scale_w) // 2
     paste_y = (net_input_size - scale_h) // 2
     new_image.paste(resized, (paste_x, paste_y))
     return new_image
+
 
 def dynamic_preprocess(image, min_num=5, max_num=6, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
@@ -195,7 +198,7 @@ def load_image2(image_file, input_size=448, target_aspect_ratio=(1, 1), min_num=
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
-	
+
 
 def dynamic_preprocess3(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
@@ -661,8 +664,7 @@ class QTuneVLChat(BaseModel):
             num_patches_list, pixel_values_list = [], []
             for image_idx, file_name in enumerate(image_path):
 
-                if dataset is not None and (listinstr(['MMBench'], dataset) or 
-                        listinstr(['MMStar'], dataset) or listinstr(['MMVet'], dataset)):
+                if dataset is not None and listinstr(['MMBench', 'MMStar', 'MMVet'], dataset):
                     upscale_flag = image_idx == 0 and dataset is not None and listinstr(['MMMU'], dataset)
                     curr_pixel_values = load_image3(
                         file_name, max_num=max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
@@ -676,8 +678,7 @@ class QTuneVLChat(BaseModel):
                     curr_pixel_values2 = load_image2(
                         file_name, target_aspect_ratio=target_aspect_ratio, max_num=max_num)
                     curr_pixel_values2 = curr_pixel_values2.cuda().to(torch.bfloat16)
-                    if (listinstr(['MathVista'], dataset) or 
-                        listinstr(['HallusionBench'], dataset) or listinstr(['OCRBench'], dataset)):
+                    if listinstr(['MathVista', 'HallusionBench', 'OCRBench'], dataset):
                         curr_pixel_values = torch.cat(
                             (curr_pixel_values[:-1], curr_pixel_values2[:-1], curr_pixel_values[-1:]), 0)
                     else:
@@ -687,15 +688,12 @@ class QTuneVLChat(BaseModel):
                     pixel_values_list.append(curr_pixel_values)
             pixel_values = torch.cat(pixel_values_list, dim=0)
         elif image_num == 1:
-
-            
-            if dataset is not None and (listinstr(['MMBench'], dataset) or 
-                        listinstr(['MMStar'], dataset) or listinstr(['MMVet'], dataset)):
+            if dataset is not None and listinstr(['MMBench', 'MMStar', 'MMVet'], dataset):
                 image_path = [x['value'] for x in message if x['type'] == 'image'][0]
                 upscale_flag = dataset is not None and listinstr(['MMMU'], dataset)
                 pixel_values = load_image3(
                     image_path, max_num=max_num, upscale=upscale_flag).to(self.device).to(torch.bfloat16)
-                num_patches_list = [pixel_values.size(0)]      
+                num_patches_list = [pixel_values.size(0)]
             else:
                 image_path = [x['value'] for x in message if x['type'] == 'image'][0]
                 upscale_flag = dataset is not None and listinstr(['MMMU'], dataset)
@@ -705,8 +703,7 @@ class QTuneVLChat(BaseModel):
                 pixel_values2 = load_image2(
                     image_path, target_aspect_ratio=target_aspect_ratio, max_num=max_num)
                 pixel_values2 = pixel_values2.cuda().to(torch.bfloat16)
-                if (listinstr(['MathVista'], dataset) or 
-                        listinstr(['HallusionBench'], dataset) or listinstr(['OCRBench'], dataset)):
+                if listinstr(['MathVista', 'HallusionBench', 'OCRBench'], dataset):
                     pixel_values = torch.cat((pixel_values[:-1], pixel_values2[:-1], pixel_values[-1:]), 0)
                 else:
                     pixel_values = torch.cat((pixel_values2[:-1], pixel_values[-1:]), 0)
