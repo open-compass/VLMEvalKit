@@ -1436,6 +1436,53 @@ class LLaVABench(ImageBaseDataset):
         return ret
 
 
+class LLaVABench_KO(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LLaVABench_KO':
+        'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
+    }
+    DATASET_MD5 = {'LLaVABench_KO': 'ef279346a8333b0bf1ba70aa7d0c7494'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.llavabench import (
+            build_prompt_ko,
+            LLaVABench_atomeval,
+            LLaVABench_score,
+        )
+
+        suffix = '.' + eval_file.split('.')[-1]
+        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
+        score_file = eval_file.replace(suffix, '_score.csv')
+        nproc = judge_kwargs.pop('nproc', 4)
+        system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
+
+        if not osp.exists(record_file):
+            data = load(eval_file)
+            lines = [data.iloc[i] for i in range(len(data))]
+            model = build_judge(temperature=0.2,
+                                system_prompt=system_prompt,
+                                **judge_kwargs)
+            assert model.working(), 'LLaVABench_KO evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+
+            prompts = [build_prompt_ko(line) for line in lines]
+            tups = [(model, prompt) for prompt in prompts]
+            scores = track_progress_rich(LLaVABench_atomeval,
+                                         tups,
+                                         nproc=nproc,
+                                         chunksize=nproc)
+            data['gpt4_score'] = [x[0] for x in scores]
+            data['score'] = [x[1] for x in scores]
+            dump(data, record_file)
+
+        data = load(record_file)
+        ret = LLaVABench_score(data).round(1)
+        dump(ret, score_file)
+        return ret
+
+
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
 
