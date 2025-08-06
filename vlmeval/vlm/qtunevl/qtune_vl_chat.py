@@ -527,7 +527,7 @@ class QTuneVLChat(BaseModel):
                 torch_dtype=torch.bfloat16,
                 load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
-                low_cpu_mem_usage=True).eval().cuda()
+                low_cpu_mem_usage=True).eval().to('cuda')
             self.device = 'cuda'
 
         if best_of_n > 1:
@@ -711,7 +711,8 @@ class QTuneVLChat(BaseModel):
         else:
             pixel_values = None
             num_patches_list = []
-
+        self.model.vision_model.to(self.device)
+        self.model.to(self.device)
         response_list = []
         for idx in range(self.best_of_n):
             kwargs_default = self.kwargs.copy()
