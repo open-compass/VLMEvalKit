@@ -1438,6 +1438,10 @@ ola_series = {
     "ola": partial(Ola, model_path="THUdyh/Ola-7b"),
 }
 
+xvl_series = {
+    "X-VL-4B": partial(X_VL_HF, model_path="YannQi/X-VL-4B", temperature=0, retry=10),
+}
+
 ross_series = {
     "ross-qwen2-7b": partial(Ross, model_path="HaochenWang/ross-qwen2-7b"),
 }
@@ -1553,7 +1557,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series
 ]
 
 for grp in model_groups:
