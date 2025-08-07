@@ -1517,13 +1517,13 @@ treevgr_series = {
 
 # QTuneVL series
 qtunevl_series = {
-    "QTuneVL1.5-2B": partial(
-        QTuneVLChat, model_path="hanchaow/QTuneVL1.5-2B", version="V1.5"
+    "QTuneVL1_5-2B": partial(
+        QTuneVLChat, model_path="hanchaow/QTuneVL1_5-2B", version="V1.5"
     ),
 
-    "QTuneVL1-3B": partial(
+    "QTuneVL1_5-3B": partial(
         QTuneVL,
-        model_path="hanchaow/QTuneVL1.5-3B",
+        model_path="hanchaow/QTuneVL1_5-3B",
         min_pixels=1280 * 28 * 28,
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=True,
