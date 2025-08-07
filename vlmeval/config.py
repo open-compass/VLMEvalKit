@@ -460,7 +460,7 @@ api_models = {
     "xhs-seedvl-1.5" : partial(
         XHSSEEDVL,
         temperature=0,
-        retry=300,
+        retry=10,
         verbose=True,
         max_tokens=16384,
         timeout = 3000,
