@@ -3,6 +3,8 @@ import math
 from urllib.request import urlopen
 from PIL import Image, ImageDraw, ImageFont
 import torchvision.transforms as transforms
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm import tqdm
 
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
 from vlmeval.smp import *
@@ -536,6 +538,7 @@ class MMLongBench(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         logger = get_logger('Evaluation')
         model = judge_kwargs['model']
+        max_workers = judge_kwargs['nproc']
 
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
@@ -559,9 +562,13 @@ class MMLongBench(ImageBaseDataset):
 
             if len(indices):
                 new_results = list()
-                for model, line in tqdm(tups):
-                    res = MMLongBench_auxeval(model, line)
-                    new_results.append(res)
+                results = [None] * len(tups)
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    future_to_idx = {executor.submit(MMLongBench_auxeval, model, line): i for i, (model, line) in enumerate(tups)}
+                    for future in tqdm(as_completed(future_to_idx), total=len(tups)):
+                        idx = future_to_idx[future]
+                        results[idx] = future.result()
+                new_results = results
 
             log_map, res_map, pred_map = {}, {}, {}
             all_inds = [line['index'] for line in lines]

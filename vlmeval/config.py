@@ -244,7 +244,7 @@ api_models = {
     "xhs_api-temperature0.1-64k": partial(
         XHSVLMAPI,
         temperature=0.1,
-        retry=3,
+        retry=10,
         verbose=True,
         max_tokens= 60000,
         timeout = 4096,
