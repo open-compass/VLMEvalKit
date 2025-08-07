@@ -216,8 +216,12 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         if video_llm:
             message.append(dict(type='video', value=osp.join(self.data_root, 'video', line['video'] + '.mp4')))
         else:
+            count = 0
             for im in frames:
                 message.append(dict(type='image', value=im))
+                count += 1
+
+            print(f"Image Count: {count}")
 
         text_prompt = self.FRAMES_TMPL_NOSUB if not self.use_subtitle else self.FRAMES_TMPL_SUB.format(subtitles)
         message.append(dict(type='text', value=text_prompt))
@@ -292,7 +296,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         from .utils.videomme import get_dimension_rating
         from .utils.xverify import VQAxVerifyEvaluator
 
-        model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'xverify')
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
         data = load(eval_file)
