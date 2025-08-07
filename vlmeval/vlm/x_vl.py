@@ -7,7 +7,6 @@ from ..smp import *
 from ..dataset import DATASET_TYPE, DATASET_MODALITY
 
 
-
 class X_VL_HF(BaseModel):
     INSTALL_REQ = True
     INTERLEAVE = True
@@ -39,7 +38,7 @@ class X_VL_HF(BaseModel):
                 image_sizes.append(img.size)
                 content += self.DEFAULT_IMAGE_TOKEN + "\n"
 
-        conversation = [    
+        conversation = [
             {
                 "role": "user",
                 "content": [
@@ -55,7 +54,7 @@ class X_VL_HF(BaseModel):
         answer = answer.split('</think>')[-1].strip()
         return answer
 
-    def generate_inner(self, message, dataset=None):    
+    def generate_inner(self, message, dataset=None):
         if DATASET_MODALITY(dataset) == "VIDEO" and 'megabench' not in dataset.lower():
             raise NotImplementedError("Video generation is not supported yet.")
         else:
