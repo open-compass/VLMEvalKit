@@ -157,12 +157,11 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('XAI_API_KEY', '')
             if key is None:
                 key = env_key
-        elif 'gemini' in model and 'preview' in model:
+        elif 'gemini' in model:
             # Will only handle preview models
             env_key = os.environ.get('GOOGLE_API_KEY', '')
             if key is None:
                 key = env_key
-<<<<<<< HEAD
             api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
         elif 'ernie' in model:
             env_key = os.environ.get('BAIDU_API_KEY', '')
@@ -170,18 +169,6 @@ class OpenAIWrapper(BaseAPI):
                 key = env_key
             api_base = 'https://qianfan.baidubce.com/v2/chat/completions'
             self.baidu_appid = os.environ.get('BAIDU_APP_ID', None)
-=======
-            api_base = os.environ.get('GOOGLE_API_BASE', "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
-<<<<<<< HEAD
->>>>>>> 3d7c074 (update)
-=======
-        elif 'ernie' in model:
-            env_key = os.environ.get('BAIDU_API_KEY', '')
-            if key is None:
-                key = env_key
-            api_base = 'https://qianfan.baidubce.com/v2/chat/completions'
-            self.baidu_appid = os.environ.get('BAIDU_APP_ID', None)
->>>>>>> 5fcde71 ([API] Support Ernie4.5-Turbo and Ernie4.5-A3B (#1156))
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -335,7 +322,9 @@ class OpenAIWrapper(BaseAPI):
                 n=1,
                 temperature=temperature,
                 **kwargs)
->>>>>>> 3d7c074 (update)
+
+        if hasattr(self, 'baidu_appid'):
+            headers['appid'] = self.baidu_appid
 
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
@@ -657,6 +646,8 @@ class VLLMAPIWrapper(BaseAPI):
             try:
                 resp_struct = json.loads(response.text)
                 answer = resp_struct['choices'][0]['message']['content'].strip()
+                if answer == '':
+                    answer = resp_struct['choices'][0]['message']['reasoning_content'].strip()
                 if os.environ.get('ADD_THINK_NOTE', '0') == '1' and (
                     "</think>" in answer or "<｜place▁holder▁no▁12｜>" in answer):
                     answer = "<think>" + answer

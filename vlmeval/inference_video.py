@@ -63,9 +63,9 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
         out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}_supp.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
 
-    structs = [s for i, s in zip(indices, structs) if i not in res or res[i] == FAIL_MSG]
+    structs = [s for i, s in zip(indices, structs) if i not in res or res[i].strip == FAIL_MSG]
     structs = [struct for struct in structs if struct is not None]
-    indices = [i for i in indices if i not in res or res[i] == FAIL_MSG]
+    indices = [i for i in indices if i not in res or res[i].strip() == FAIL_MSG]
 
     gen_func = model.generate
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]

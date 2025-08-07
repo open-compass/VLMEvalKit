@@ -61,7 +61,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     if osp.exists(out_file):
         res = load(out_file)
         if ignore_failed:
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+            res = {k: v for k, v in res.items() if FAIL_MSG.strip() not in v.strip()}
 
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
@@ -190,9 +190,9 @@ def infer_data_job(
     if osp.exists(result_file):
         if rank == 0:
             data = load(result_file)
-            results = {k: v for k, v in zip(data['index'], data['prediction'])}
+            results = {k: v for k, v in zip(data['index'], data['prediction']) if v.strip() != FAIL_MSG.strip()}
             if not ignore_failed:
-                results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}
+                results = {k: v for k, v in results.items() if FAIL_MSG.strip() not in str(v).strip()}
             dump(results, prev_file)
         if world_size > 1:
             dist.barrier()

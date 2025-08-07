@@ -447,8 +447,8 @@ class MMLongBench(ImageBaseDataset):
     def __init__(self, dataset, **kwargs):
         self.model_list = list(self.SUPPORTED_MODELS.keys())
         model_name = kwargs['model']
-        if not listinstr(self.model_list, model_name):
-            raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
+        # if not listinstr(self.model_list, model_name):
+        #     raise AssertionError("{} doesn't support the evaluation on MMLongBench_DOC.".format(model_name))
         super(MMLongBench, self).__init__(dataset)
         self.is_api = True if listinstr(['GPT4', 'xhs_api', 'xhs-seedvl', "GeminiPro2-5-32k"], model_name) else False
         self.max_pages = 120
