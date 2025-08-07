@@ -338,7 +338,6 @@ def main():
                             # 更新 dataset_name 为去除切片表达式的基础名称
                             dataset_name = dataset_name[:match.start()].strip()
 
-                    dataset_kwargs = {}
                     # 添加切片参数到 kwargs
                     if test_range:
                         dataset_kwargs['test_range'] = test_range
@@ -440,9 +439,9 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):
                         judge_kwargs['model'] = 'xhs-deepseek'   
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
+                    elif listinstr(['MMLongBench', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
+                    elif listinstr(['MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['ChartMimic'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
