@@ -451,7 +451,16 @@ api_models = {
     "xhs_api-temperature0.7-64k": partial(
         XHSVLMAPI,
         temperature=0.7,
-        retry=3,
+        retry=10,
+        verbose=True,
+        max_tokens= 60000,
+        timeout = 4096,
+        system_prompt=None,
+    ),
+    "xhs_api-temperature0-64k": partial(
+        XHSVLMAPI,
+        temperature=0,
+        retry=10,
         verbose=True,
         max_tokens= 60000,
         timeout = 4096,
@@ -523,10 +532,11 @@ api_models = {
     "xhs-seedvl-1.5" : partial(
         XHSSEEDVL,
         temperature=0,
-        retry=300,
+        retry=10,
         verbose=True,
         max_tokens=16384,
         timeout = 3000,
+<<<<<<< HEAD
         system_prompt=None,
     ),
     "xhs-seedvl-1.5-nothink" : partial(
@@ -547,6 +557,8 @@ api_models = {
         think_mode=False,
         max_tokens= 16384,
         timeout = 1000,
+=======
+>>>>>>> 87d999e (update long context)
         system_prompt=None,
     ),
     "xhs-seedvl-1.5-nothink" : partial(

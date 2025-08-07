@@ -341,7 +341,6 @@ def main():
                             # 更新 dataset_name 为去除切片表达式的基础名称
                             dataset_name = dataset_name[:match.start()].strip()
 
-                    dataset_kwargs = {}
                     # 添加切片参数到 kwargs
                     if test_range:
                         dataset_kwargs['test_range'] = test_range
