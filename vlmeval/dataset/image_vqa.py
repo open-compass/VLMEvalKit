@@ -63,7 +63,7 @@ class ImageVQADataset(ImageBaseDataset):
 
     # It returns a DataFrame
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
-        from .utils.vqa_eval import hit_calculate, process_line
+        from .utils.vqa_eval import hit_calculate, process_line, extract_boxed_answer
 
         data = load(eval_file)
         dataset = self.dataset_name
@@ -257,6 +257,7 @@ class OCRBench(ImageBaseDataset):
         data = load(eval_file)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
+        scores = [0 for _ in range(lt)]
         for i in tqdm(range(len(lines))):
             line = lines[i]
             predict = str(line['prediction'])
@@ -270,6 +271,7 @@ class OCRBench(ImageBaseDataset):
                                                       ' ').replace(' ', '')
                     if answer in predict:
                         OCRBench_score[category] += 1
+                        scores[i] = 1
                         break
             else:
                 for j in range(len(answers)):
@@ -277,8 +279,11 @@ class OCRBench(ImageBaseDataset):
                     predict = predict.lower().strip().replace('\n', ' ')
                     if answer in predict:
                         OCRBench_score[category] += 1
+                        scores[i] = 1
                         break
-
+        
+        data['score'] = scores
+        dump(data, eval_file)
         final_score_dict = {}
         final_score_dict['Text Recognition'] = \
             (OCRBench_score['Regular Text Recognition'] + OCRBench_score['Irregular Text Recognition']

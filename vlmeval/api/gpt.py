@@ -121,7 +121,7 @@ class OpenAIWrapper(BaseAPI):
                  timeout: int = 300,
                  api_base: str = None,
                  max_tokens: int = 2048,
-                 img_size: int = 512,
+                 img_size: int = -1,
                  img_detail: str = 'low',
                  use_azure: bool = False,
                  **kwargs):
@@ -157,7 +157,7 @@ class OpenAIWrapper(BaseAPI):
             env_key = os.environ.get('XAI_API_KEY', '')
             if key is None:
                 key = env_key
-        elif 'gemini' in model and 'preview' in model:
+        elif 'gemini' in model:
             # Will only handle preview models
             env_key = os.environ.get('GOOGLE_API_KEY', '')
             if key is None:
@@ -314,12 +314,12 @@ class OpenAIWrapper(BaseAPI):
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
-        payload = dict(
-            model=self.model,
-            messages=input_msgs,
-            n=1,
-            temperature=temperature,
-            **kwargs)
+        # payload = dict(
+            # model=self.model,
+            # messages=input_msgs,
+            # n=1,
+            # temperature=temperature,
+            # **kwargs)
 
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
@@ -641,6 +641,8 @@ class VLLMAPIWrapper(BaseAPI):
             try:
                 resp_struct = json.loads(response.text)
                 answer = resp_struct['choices'][0]['message']['content'].strip()
+                if answer == '':
+                    answer = resp_struct['choices'][0]['message']['reasoning_content'].strip()
                 if os.environ.get('ADD_THINK_NOTE', '0') == '1' and (
                     "</think>" in answer or "<｜place▁holder▁no▁12｜>" in answer):
                     answer = "<think>" + answer
