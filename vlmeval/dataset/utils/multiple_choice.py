@@ -361,10 +361,9 @@ def extract_answer_from_item(model, item, dataset_name=None):
 
     if dataset_name is not None and 'LEGO' in dataset_name:
         ret = can_infer_lego(item['prediction'], item['question_type'], choices)
-    elif len(item['prediction']) < 10:
-        ret = can_infer(item['prediction'], choices)
     else:
-        ret = None
+        ret = can_infer(item['prediction'], choices)
+
     if ret:
         return dict(opt=ret, log=item['prediction'])
     if model is None:
