@@ -252,6 +252,33 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "gpt-5-2025-08-07": partial(
+        GPT4V,
+        model="gpt-5-2025-08-07",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
+    "gpt-5-mini-2025-08-07": partial(
+        GPT4V,
+        model="gpt-5-mini-2025-08-07",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
+    "gpt-5-nano-2025-08-07": partial(
+        GPT4V,
+        model="gpt-5-nano-2025-08-07",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         Gemini, model="gemini-1.0-pro", temperature=0, retry=10
@@ -572,6 +599,11 @@ api_models = {
         max_tokens=8000,
     )
 }
+
+import copy as cp
+api_models['gpt-5'] = cp.deepcopy(api_models['gpt-5-2025-08-07'])
+api_models['gpt-5-mini'] = cp.deepcopy(api_models['gpt-5-mini-2025-08-07'])
+api_models['gpt-5-nano'] = cp.deepcopy(api_models['gpt-5-nano-2025-08-07'])
 
 emu_series = {
     "emu2_chat": partial(Emu, model_path="BAAI/Emu2-Chat"),
