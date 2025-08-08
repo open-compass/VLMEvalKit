@@ -117,3 +117,8 @@ from .cosmos import Cosmos
 from .liquid import LFM2VL
 from .insight_v import InsightV
 from .glm4_1v import GLM4_1v
+from .varco_vision import VarcoVision
+from .qtunevl import (
+    QTuneVL,
+    QTuneVLChat,
+)
