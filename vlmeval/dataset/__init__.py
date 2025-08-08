@@ -7,11 +7,7 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-<<<<<<< HEAD
     TreeBench, CVQA, TopViewRS
-=======
-    TreeBench
->>>>>>> 9e50e19 ([Benchmark] Support TreeBench and TreeVGR (#1152))
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
