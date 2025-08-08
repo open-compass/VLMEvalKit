@@ -89,8 +89,8 @@ class ImageShortQADataset(ImageBaseDataset):
         data['prediction'] = [str(x) for x in data['prediction']]
         data['answer'] = [str(x) for x in data['answer']]
 
-        storage = eval_file.replace('.xlsx', '_judge.xlsx')
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        storage = get_intermediate_file_path(eval_file, '_judge')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
@@ -137,7 +137,7 @@ class ImageShortQADataset(ImageBaseDataset):
         data = load(storage)
         acc = report_acc(data)
 
-        score_file = eval_file.replace('.xlsx', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(acc, score_file)
         return acc
 

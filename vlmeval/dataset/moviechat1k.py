@@ -215,7 +215,7 @@ class MovieChat1k(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.moviechat1k import get_dimension_rating, prepare_score_prompt
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs.setdefault('model', 'chatgpt-0125')
         assert judge in ['chatgpt-0125'], f'Invalid judge model for MovieChat1k: {judge}'
         nproc = judge_kwargs.pop('nproc', 4)

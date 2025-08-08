@@ -292,7 +292,7 @@ class OCRBench(ImageBaseDataset):
              + final_score_dict['Handwritten Mathematical Expression Recognition'])
         final_score_dict['Final Score Norm'] = (
             float(final_score_dict['Final Score']) / 10)
-        score_pth = eval_file.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict
 
@@ -357,7 +357,7 @@ class MathVista(ImageBaseDataset):
             dump(data, storage)
 
         score = MathVista_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(score, score_pth)
         return score
 
@@ -564,7 +564,7 @@ class MathVerse(ImageBaseDataset):
             dump(data, storage_score)
 
         score = MathVerse_acc(storage_score)
-        score_pth = storage_score.replace('.xlsx', '.csv')
+        score_pth = get_intermediate_file_path(storage_score, '', 'csv')
         dump(score, score_pth)
         return score
 
@@ -635,7 +635,7 @@ class MathVision(ImageBaseDataset):
             dump(data, storage)
 
         score = MATH_V_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(score, score_pth)
         return score
 
@@ -839,7 +839,7 @@ class Physics_yale(ImageBaseDataset):
             dump(data, storage)
 
         score = PHYSIC_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(score, score_pth)
         return score
 
@@ -1187,7 +1187,7 @@ class SeePhys(ImageBaseDataset):
             dump(data, storage)
 
         score = eval_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(storage, '_score', 'json')
         dump(score, score_pth)
         return score
 
@@ -1273,7 +1273,7 @@ class LogicVista(ImageBaseDataset):
             dump(data, storage)
         if osp.exists(storage):
             accuracy_scores = evaluate_logicvista(storage)
-            score_pth = storage.replace('.xlsx', '_score.csv')
+            score_pth = get_intermediate_file_path(storage, '_score', 'csv')
             dump(accuracy_scores, score_pth)
 
             return accuracy_scores
@@ -1606,8 +1606,8 @@ class MMVet(ImageBaseDataset):
             dump(data, storage)
 
         score, score_fine = MMVet_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
-        score_fine_pth = storage.replace('.xlsx', '_score_fine.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        score_fine_pth = get_intermediate_file_path(storage, '_score_fine', 'csv')
         dump(score, score_pth)
         dump(score_fine, score_fine_pth)
         return score
@@ -2004,7 +2004,7 @@ class CRPE(ImageBaseDataset):
             else:
                 final_score_dict[category] = None
 
-        score_pth = eval_file.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict
 
@@ -2268,7 +2268,7 @@ class QSpatial(ImageBaseDataset):
                 delta_1_point_5_per_question_type
             })
 
-        score_pth = eval_file.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict
 
@@ -2392,7 +2392,7 @@ class MMNIAH(ImageBaseDataset):
             else:
                 final_score_dict[category] = None
 
-        score_pth = eval_file.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict
 
@@ -2479,8 +2479,7 @@ class MMSci_Captioning(ImageBaseDataset):
                                   merge_rating, fact_score_generate)
         refer_based_metrics_output_file = eval_file.replace(
             '.xlsx', '_reference_based_metrics.xlsx')
-        g_eval_metrics_output_file = eval_file.replace('.xlsx',
-                                                       '_g_eval_metrics.xlsx')
+        g_eval_metrics_output_file = get_intermediate_file_path(eval_file, '_g_eval_metrics')
         fact_score_metrics_output_file = eval_file.replace(
             '.xlsx', '_fact_score.xlsx')
 
@@ -2581,7 +2580,7 @@ class MMSci_Captioning(ImageBaseDataset):
         rating = merge_rating(refer_based_metrics_output_file,
                               g_eval_metrics_output_file,
                               fact_score_metrics_output_file)
-        dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
+        dump(rating, get_intermediate_file_path(eval_file, '_final_rating'))
         return rating
 
 
@@ -2594,7 +2593,7 @@ class BMMR(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.bmmr import get_acc_for_reference_based_metrics, merge_rating
-        refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
+        refer_based_metrics_output_file = get_intermediate_file_path(eval_file, '_reference_based_metrics')
         if not osp.exists(refer_based_metrics_output_file):
             data = load(eval_file)
             old_candidates = {}
@@ -2620,7 +2619,7 @@ class BMMR(ImageBaseDataset):
             if isinstance(references[0], str):
                 references = [[r] for r in references]
 
-            reference_based_metrics_file = eval_file.replace('.xlsx', '_reference_based_metrics.pkl')
+            reference_based_metrics_file = get_intermediate_file_path(eval_file, '_reference_based_metrics', 'pkl')
             assert len(references) == len(candidates) == len(image_id_list) == len(task_type_list)
             existing_data = get_acc_for_reference_based_metrics(
                 references, candidates, image_id_list, task_type_list, reference_based_metrics_file
@@ -2633,7 +2632,7 @@ class BMMR(ImageBaseDataset):
         rating = merge_rating(
             refer_based_metrics_output_file,
         )
-        dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
+        dump(rating, get_intermediate_file_path(eval_file, '_final_rating'))
         return rating
 
     def build_prompt(self, line):
@@ -2874,7 +2873,7 @@ class OCR_Reasoning(ImageBaseDataset):
             ]
             dump(data, storage)
         score = OcrR_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(score, score_pth)
         return score
 
@@ -3054,7 +3053,7 @@ class PhyX(ImageBaseDataset):
                 dump(data, storage)
 
             score = PhyX_acc(storage)
-            score_pth = storage.replace('.xlsx', '_score.csv')
+            score_pth = get_intermediate_file_path(storage, '_score', 'csv')
             dump(score, score_pth)
             return score
 
@@ -3306,7 +3305,7 @@ class MMEReasoning(ImageBaseDataset):
             dump(data, storage_score)
 
         score = MMEReasoning_acc(storage_score)
-        score_pth = storage_score.replace('.xlsx', '.csv')
+        score_pth = get_intermediate_file_path(storage_score, '', 'csv')
         dump(score, score_pth)
         return score
 
@@ -3367,7 +3366,7 @@ class MMVMBench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs['model']
         nproc = judge_kwargs.pop('nproc', 4)
 
@@ -3484,6 +3483,6 @@ class OCRBench_v2(ImageBaseDataset):
         final_score_dict = {**en_scores, **cn_scores}
         final_score_dict["English Overall Score"] = score_en_overall
         final_score_dict["Chinese Overall Score"] = score_cn_overall
-        score_pth = eval_file.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict

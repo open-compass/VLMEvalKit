@@ -172,8 +172,8 @@ class SFE(ImageVQADataset):
         assert 'answer' in data and 'prediction' in data
         data['prediction'] = [str(x) for x in data['prediction']]
         data['answer'] = [str(x) for x in data['answer']]
-        storage = eval_file.replace('.xlsx', '_judge.xlsx')
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        storage = get_intermediate_file_path(eval_file, '_judge')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
@@ -216,6 +216,6 @@ class SFE(ImageVQADataset):
         data = load(storage)
         score = report_score(data)
 
-        score_file = eval_file.replace('.xlsx', '_score.csv')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_file)
         return score

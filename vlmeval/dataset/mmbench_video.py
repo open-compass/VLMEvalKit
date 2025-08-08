@@ -208,7 +208,7 @@ Please directly reply with your response to the only question.
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmbench_video import get_dimension_rating, system_prompt, build_prompt
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs['model']
         nproc = judge_kwargs.pop('nproc', 4)
 

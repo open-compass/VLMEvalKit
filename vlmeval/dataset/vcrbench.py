@@ -141,7 +141,7 @@ Please analyze these images and provide the answer to the question about the vid
         from .utils.vcrbench.eval import precision, recall
         from .utils.vcrbench.cau_total import calu_pre_recall
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs.pop('model','gpt-4o-0806')
         nproc = judge_kwargs.pop('nproc', 4)
 

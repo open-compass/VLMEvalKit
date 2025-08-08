@@ -662,7 +662,7 @@ class CreationMMBenchDataset(ImageBaseDataset):
             tgt = load(eval_file)
             tgt['reference_answer_by_gpt4o'] = src['prediction']
             tgt['prediction'] = src['reference_answer_by_gpt4o']
-            tgt_file_name = eval_file.replace('.xlsx', '_rev.xlsx')
+            tgt_file_name = get_intermediate_file_path(eval_file, '_rev')
             dump(tgt, tgt_file_name)
             judge_kwargs['dual_eval'] = False
             rating_rev = self.evaluate(tgt_file_name, **judge_kwargs)
