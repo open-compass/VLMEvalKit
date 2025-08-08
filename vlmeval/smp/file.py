@@ -544,7 +544,7 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
     # 替换扩展名并添加后缀
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
 
-  
+
 def prepare_reuse_files(pred_root_meta, eval_id, model_name, dataset_name, reuse, reuse_aux):
     import shutil
     from .misc import timestr
