@@ -314,13 +314,6 @@ class OpenAIWrapper(BaseAPI):
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
-        # payload = dict(
-            # model=self.model,
-            # messages=input_msgs,
-            # n=1,
-            # temperature=temperature,
-            # **kwargs)
-
         if self.o1_model:
             payload['max_completion_tokens'] = max_tokens
             payload.pop('temperature')
