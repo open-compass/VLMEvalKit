@@ -13,13 +13,16 @@ class ImageYORNDataset(ImageBaseDataset):
         'HallusionBench': 'https://opencompass.openxlab.space/utils/VLMEval/HallusionBench.tsv',
         'POPE': 'https://opencompass.openxlab.space/utils/VLMEval/POPE.tsv',
         'AMBER': 'https://huggingface.co/datasets/yifanzhang114/AMBER_base64/resolve/main/AMBER.tsv',
-    }
+        'VSR-zeroshot': (
+            "https://huggingface.co/datasets/ignoreandfly/"
+            "vsr_zeroshot_tsv/resolve/main/vsr_zeroshot_dataset_yn_strict.tsv"),}
 
     DATASET_MD5 = {
         'MME': 'b36b43c3f09801f5d368627fb92187c3',
         'HallusionBench': '0c23ac0dc9ef46832d7a24504f2a0c7c',
         'POPE': 'c12f5acb142f2ef1f85a26ba2fbe41d5',
         'AMBER': '970d94c0410916166e0a76ba75da7934',
+        'VSR-zeroshot': '5ff5e49908ac1cfad35c60b92b001aeb',
     }
 
     def build_prompt(self, line):
@@ -34,7 +37,7 @@ class ImageYORNDataset(ImageBaseDataset):
     # It returns a dataframe
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.yorn import YOrN_Extraction, YOrN_auxeval
-        from .utils.yorn import default_rating, MME_rating, Hallusion_rating, POPE_rating, AMBER_rating
+        from .utils.yorn import default_rating, MME_rating, Hallusion_rating, POPE_rating, AMBER_rating, VSR_rating
 
         dataset = self.dataset_name
         data = load(eval_file)
@@ -96,6 +99,8 @@ class ImageYORNDataset(ImageBaseDataset):
             score = POPE_rating(storage)
         elif dataset is not None and listinstr(['AMBER'], dataset):
             score = AMBER_rating(storage)
+        elif dataset is not None and listinstr(['VSR-zeroshot'], dataset):
+            score = VSR_rating(storage)
         else:
             score = default_rating(storage)
 

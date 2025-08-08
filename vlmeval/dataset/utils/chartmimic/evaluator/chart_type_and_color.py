@@ -106,6 +106,7 @@ def log_function_specific_for_draw_networkx_labels(func):
                 clip_on=clip_on
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -195,6 +196,7 @@ def log_function_specific_for_draw_networkx_edges(func):
                 min_target_margin=min_target_margin
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -266,6 +268,7 @@ def log_function_specific_for_draw_networkx_nodes(func):
                 margins=margins
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -327,6 +330,7 @@ def log_function_for_3d(func):
             return func(*args, **kwargs)
         return result
 
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -471,7 +475,7 @@ def log_function(func):
         else:
             return func(*args, **kwargs)
         return result
-
+    wrapper.__name__ = func.__name__
     return wrapper
 
 

@@ -51,20 +51,21 @@ class CGAVCounting(VideoBaseDataset):
         frames = []
         # 获取视频的帧率
         fps = vid.get_avg_fps()
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            for timestamp_sec in timestamp_list:
+                # 计算视频帧对应的索引
+                frame_idx = int(timestamp_sec * fps)
 
-        for timestamp_sec in timestamp_list:
-            # 计算视频帧对应的索引
-            frame_idx = int(timestamp_sec * fps)
+                # 获取对应帧
+                frame = vid[frame_idx]
 
-            # 获取对应帧
-            frame = vid[frame_idx]
-
-            # 将帧转换为PIL图像
-            img = Image.fromarray(frame.asnumpy())
-            frames.append(img)
-        for im, pth in zip(frames, frame_paths):
-            if not osp.exists(pth):
-                im.save(pth)
+                # 将帧转换为PIL图像
+                img = Image.fromarray(frame.asnumpy())
+                frames.append(img)
+            for im, pth in zip(frames, frame_paths):
+                if not osp.exists(pth):
+                    im.save(pth)
         return frame_paths,frames[0].width,frames[0].height
 
     def format_time(self,t):
@@ -245,7 +246,7 @@ class CGAVCounting(VideoBaseDataset):
                 message.append(
                     dict(type="text", value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
                 for idx,im in enumerate(image_paths):
-                    message.append(dict(type="text", value=f"Frame{idx+1}:"))
+                    message.append(dict(type="text", value=f"Frame{idx + 1}:"))
                     message.append(dict(type="image", value=im))
                 user_prompt += (
                     f"Answer the question '{line['question']}', "
@@ -277,7 +278,7 @@ class CGAVCounting(VideoBaseDataset):
                     type="text",
                     value=f"There are {len(image_paths)} frames in the size of {width}x{height}"))
                 for idx,im in enumerate(image_paths):
-                    message.append(dict(type="text", value=f"Frame{idx+1}:"))
+                    message.append(dict(type="text", value=f"Frame{idx + 1}:"))
                     message.append(dict(type="image", value=im))
                 user_prompt += (
                     f"Answer the question '{line['question']}', clustering the objects according to the question. "
@@ -322,11 +323,30 @@ class CGAVCounting(VideoBaseDataset):
         # Save and validate frames
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -334,24 +354,6 @@ class CGAVCounting(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 

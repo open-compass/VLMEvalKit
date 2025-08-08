@@ -6,6 +6,7 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 import pandas as pd
+from tqdm import tqdm
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -48,6 +49,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_EN.tsv',
         'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_CN.tsv',
         'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_CN.tsv',
+        'MMBench_DEV_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMBench/resolve/main/MMBench_DEV_KO.tsv',
         'MMBench': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench.tsv',  # Internal
         'MMBench_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN.tsv',  # Internal
         # MMBench v1.1
@@ -59,6 +61,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN_V11.tsv',  # Internal
         # SEEDBench Series
         'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench_IMG.tsv',
+        'SEEDBench_IMG_KO': 'https://huggingface.co/datasets/NCSOFT/K-SEED/resolve/main/SEEDBench_IMG_KO.tsv',
         'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
         'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench2_Plus.tsv',
         # ScienceQA Series
@@ -86,6 +89,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
+        'MMStar_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMStar/resolve/main/MMStar_KO.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
@@ -103,6 +107,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
         "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
+        "K-DTCBench": "https://huggingface.co/datasets/NCSOFT/K-DTCBench/resolve/main/K-DTCBench.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -124,6 +129,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': '6939fadb0ce626fefc0bdc9c64efc528',
         'MMBench_DEV_CN': '08b8fc3324a5ed74155350f57be69fbd',
         'MMBench_TEST_CN': '7e1239baf0ee4c8b513e19705a0f317e',
+        'MMBench_DEV_KO': '72e1cde9124b5015be6d0dd5c9b5500d',
         'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
         'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
         # MMBench v1.1
@@ -135,6 +141,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+        'SEEDBench_IMG_KO': 'b354a9ac3493f3ccf294e69b216bfab3',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
         'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
         # ScienceQA
@@ -162,6 +169,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
+        'MMStar_KO': 'cc6049c7314bb54b9ac5e247a2bfb357',
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
@@ -172,6 +180,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '865144aa866e29b251bdc7d63a735b6b',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
+        "K-DTCBench": "fe72a85b010513d3840b5f3be2de6ed3",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
@@ -223,6 +232,12 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
         )
@@ -348,6 +363,107 @@ class ImageMCQDataset(ImageBaseDataset):
                            chemistry__shape_multi split and uses a different evaluation prompt. Please \
                            explicitly specify the version of the dataset when you report results.')
 
+        return acc
+
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # assert dataset is not None
+        dataset_map = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+        }
+        dataset = self.dataset_name
+        if dataset in dataset_map:
+            dataset = dataset_map[dataset]
+
+        circular = False
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
+            circular = True
+
+        if circular:
+            raise ValueError("circular is not supported for verifier evaluation")
+
+        suffix = eval_file.split('.')[-1]
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        # Add verifier evaluation for specific datasets
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        verifier_scores = []
+        verifier_matches = []
+        for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+            question_text = row['question']
+            if 'A' in row and not pd.isna(row['A']):
+                options = []
+                for option_key in ['A', 'B', 'C', 'D', 'E']:
+                    if option_key in row and not pd.isna(row[option_key]):
+                        options.append(f"{option_key}. {row[option_key]}")
+                if options:
+                    question_text += "\nOptions:\n" + "\n".join(options)
+
+            correct_option = str(row['answer']).strip().upper()
+            if correct_option in row and not pd.isna(row[correct_option]):
+                answer_text = f"{correct_option}. {row[correct_option]}"
+            else:
+                answer_text = correct_option
+
+            score = verifier.evaluate(question_text, row['prediction'], answer_text)
+            verifier_scores.append(score)
+            verifier_matches.append(1.0 if score else 0.0)
+
+        data['verifier_score'] = verifier_scores
+        data['verifier_match'] = verifier_matches
+
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        dump(data, detailed_result_file)
+
+        def report_acc_verifier(result_file):
+            from collections import defaultdict
+
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                split_name = item.get('split', 'Overall')
+                if pd.isna(split_name):
+                    split_name = 'Overall'
+
+                tot['Overall'] += 1
+                tot[split_name] += 1
+
+                if 'category' in item and not pd.isna(item['category']):
+                    category = item['category']
+                    tot[category] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[split_name] += 1
+
+                    if 'category' in item and not pd.isna(item['category']):
+                        hit[category] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                if k == 'Overall':
+                    res['Category'].append('Overall')
+                else:
+                    res['Category'].append(k)
+                res['Total'].append(tot[k])
+                res['Hit'].append(hit[k])
+                res['Accuracy'].append(hit[k] / tot[k] * 100 if tot[k] > 0 else 0.0)
+
+            res_df = pd.DataFrame(res)
+            return res_df
+        acc = report_acc_verifier(detailed_result_file)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
         return acc
 
 
@@ -1444,7 +1560,7 @@ class LEGO(ImageMCQDataset):
         if len(options):
             prompt += options_prompt
             prompt += (
-                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "Please respond with only the sequence of letters (e.g., 'BDAC') "
                 "that correctly orders the steps.\n"
             )
 

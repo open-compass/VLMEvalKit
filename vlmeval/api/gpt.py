@@ -43,7 +43,7 @@ class OpenAIWrapper(BaseAPI):
                  timeout: int = 300,
                  api_base: str = None,
                  max_tokens: int = 2048,
-                 img_size: int = 512,
+                 img_size: int = -1,
                  img_detail: str = 'low',
                  use_azure: bool = False,
                  **kwargs):

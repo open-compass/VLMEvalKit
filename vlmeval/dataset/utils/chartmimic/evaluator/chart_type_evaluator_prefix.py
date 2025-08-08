@@ -1,13 +1,22 @@
-import inspect
-from matplotlib_venn._common import VennDiagram
-from matplotlib.patches import Ellipse, Circle
-from matplotlib.image import NonUniformImage
-from mpl_toolkits.mplot3d import Axes3D
-import networkx as nx
-import networkx.drawing.nx_pylab as nx_pylab
-import squarify
-from matplotlib.axes import Axes
+import os
+import sys
+# sys.path.insert(0, os.environ['PROJECT_PATH'])
+if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
+    sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
+
 from matplotlib.projections.polar import PolarAxes
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.axes._base import _process_plot_var_args
+import squarify
+import networkx.drawing.nx_pylab as nx_pylab
+import networkx as nx
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.image import NonUniformImage
+from matplotlib.patches import Ellipse, Circle
+from matplotlib.tri._tripcolor import tripcolor
+from matplotlib_venn._common import VennDiagram
+import inspect
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -79,6 +88,7 @@ def log_function_specific_for_draw_networkx_labels(func):
                 clip_on=clip_on
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -166,6 +176,7 @@ def log_function_specific_for_draw_networkx_edges(func):
                 min_target_margin=min_target_margin
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -235,6 +246,7 @@ def log_function_specific_for_draw_networkx_nodes(func):
                 margins=margins
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -256,6 +268,7 @@ def log_function(func):
             return result
         else:
             return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
     return wrapper
 
 

@@ -9,11 +9,23 @@ class VisFactor(ImageBaseDataset):
     DATASET_URL = {
         'VisFactor': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor.tsv',
         'VisFactor_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor.tsv',
+        'VisFactor_GE': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GE.tsv',
+        'VisFactor_GE_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GE.tsv',
+        'VisFactor_GN': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_G.tsv',
+        'VisFactor_GN_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_G.tsv',
+        'VisFactor_GH': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GH.tsv',
+        'VisFactor_GH_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GH.tsv',
     }
 
     DATASET_MD5 = {
         'VisFactor': 'a069bcd8eb529e1d8c66e4cd7e279d13',
         'VisFactor_CoT': 'a069bcd8eb529e1d8c66e4cd7e279d13',
+        'VisFactor_GE': '7e1377b46faff392409a7d4e56688dba',
+        'VisFactor_GE_CoT': '7e1377b46faff392409a7d4e56688dba',
+        'VisFactor_GN': '34bec098b47f87a8a6239a68f19b9ec8',
+        'VisFactor_GN_CoT': '34bec098b47f87a8a6239a68f19b9ec8',
+        'VisFactor_GH': '03c902ea44da8469814a8c1933baa923',
+        'VisFactor_GH_CoT': '03c902ea44da8469814a8c1933baa923',
     }
 
     def replace_additional_tags(self, text, additional):
@@ -101,7 +113,6 @@ class VisFactor(ImageBaseDataset):
                 if prediction == '':
                     prediction = str(row['prediction'])
                 if cid == 'VZ3':
-                    print(prediction)
                     prediction = self.extract_last_uppercase_letter(prediction)
                 elif cid == 'CF3':
                     prediction = self.extract_last_numbers(prediction)

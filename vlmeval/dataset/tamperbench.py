@@ -284,13 +284,16 @@ Based on your observations, select the best option that accurately addresses the
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            block_size = imgs.size(0) // frames
-            split_tensors = torch.split(imgs, block_size)
-            to_pil = transforms.ToPILImage()
-            images = [to_pil(arr) for arr in split_tensors]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth):
-                    im.save(pth)
+            lock_path = osp.join(self.frame_root, f'{video_name}.lock')
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if not np.all([osp.exists(p) for p in frame_paths]):
+                    block_size = imgs.size(0) // frames
+                    split_tensors = torch.split(imgs, block_size)
+                    to_pil = transforms.ToPILImage()
+                    images = [to_pil(arr) for arr in split_tensors]
+                    for im, pth in zip(images, frame_paths):
+                        if not osp.exists(pth):
+                            im.save(pth)
 
         return frame_paths
 

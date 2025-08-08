@@ -424,6 +424,8 @@ def EVAL(dataset_name, data_file, **kwargs):
             judge_kwargs['model'] = 'gpt-4o'
         elif listinstr(['DynaMath', 'MathVerse', 'MathVista', 'MathVision'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-mini'
+        elif listinstr(['SFE'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-1120'
     else:
         judge_kwargs['model'] = kwargs['model']
     judge_kwargs['nproc'] = kwargs.get('nproc', 4)

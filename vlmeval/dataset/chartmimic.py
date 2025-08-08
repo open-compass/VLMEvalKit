@@ -162,8 +162,8 @@ def _convert_single_page_pdf_to_png(pdf_path, output_path, dpi=350):
     try:
         images = convert_from_path(pdf_path, dpi=dpi)
         images[0].save(output_path, "PNG")
-    except Exception:
-        # logger.info(f"Error in converting pdf to image: {e}")
+    except Exception as e:
+        logger.info(f"Error in converting pdf to image: {e}")
         return False
     return True
 
@@ -519,22 +519,55 @@ class ChartMimic(ImageBaseDataset):
 
         return msgs
 
-    def evaluate(self, eval_file, **judge_kwargs):
-        # Way to access subset dataset name, for example, ChartMimic_1000
-        # logger.info(f"Evaluating for {self.dataset_name}")
-        # breakpoint()
 
-        # return {"score": 99.99}
-        # raw_tsv_data = ChartMimic(self.dataset).data
+    def evaluate(self, eval_file, **judge_kwargs):
+        def judge_one_item_success(item):
+            return item["high_level"]["resp"] not in [FAIL_MSG, "", None, "null", "None"] \
+                and item["high_level"]["msg"] not in ["Generated image file does not exist", ""]
+
+        # Test dependencies first
         try:
             from pdf2image import convert_from_path
             from colormath.color_objects import sRGBColor, LabColor
+            import squarify
+            import matplotlib_venn
+            import PIL
         except ImportError as e:
             logging.critical(
                 "Please follow the requirements (see vlmeval/dataset/utils/chartmimic/eval_req.txt) \
                              to install dependency package for chartmimic evaluation."
             )
             raise e
+
+        # Test pdf2image functionality by creating a simple test PDF
+        example_pdf_path = os.path.join(LMUDataRoot(), "chartmimic_test.pdf")
+        output_png_path = os.path.join(LMUDataRoot(), "chartmimic_test.png")
+
+        try:
+            # Create a simple test PDF using matplotlib
+            import matplotlib.pyplot as plt
+            fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+            ax.plot([1, 2, 3], [1, 4, 2])
+            ax.set_title("Test Chart")
+            plt.savefig(example_pdf_path, format='pdf')
+            plt.close()
+
+            # Test pdf2image conversion
+            images = convert_from_path(example_pdf_path, dpi=350)
+            images[0].save(output_png_path, "PNG")
+            logger.info("Successfully tested pdf2image functionality with generated test PDF")
+        except Exception as e:
+            logging.critical(
+                "Please install poppler-utils in your system (e.g. sudo apt-get install poppler-utils)."
+            )
+            raise e
+        finally:
+            # Clean up test files
+            if os.path.exists(example_pdf_path):
+                os.remove(example_pdf_path)
+            if os.path.exists(output_png_path):
+                os.remove(output_png_path)
+
         infer_data_all = load(eval_file).to_dict(orient="records")
 
         suffix = eval_file.split(".")[-1]
@@ -570,11 +603,9 @@ class ChartMimic(ImageBaseDataset):
             tmp_data = load(tmp_file)
             for k, v in tmp_data.items():
                 # -1 means error for getting response from judge model, so try to rejudge for this item
-                # if v[0] == 0:
-                if v[0] == 0 and v[1]["high_level"]["resp"] != FAIL_MSG:
+                if v[0] == 0 and judge_one_item_success(v[1]):
                     ans[k] = v
             logger.info(f"Tmp file exists, loaded {len(ans)} data from {tmp_file}")
-            # logger.info(f"ans: {ans}")
 
         tups = [x for x, i in zip(params_all, indices_all) if i not in ans]
         indices = [i for i in indices_all if i not in ans]
@@ -641,13 +672,11 @@ class ChartMimic(ImageBaseDataset):
         new_len = len(eval_data_all)
         logger.info(f"filter out {old_len - new_len} items for no judge_result in item")
 
-        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
-        # filter out items judge_result["high_level"]["resp"] = FAIL_MSG
         old_len = len(eval_data_all)
         eval_data_all = [
             item
             for item in eval_data_all
-            if item["judge_result"]["high_level"]["resp"] != FAIL_MSG
+            # if judge_one_item_success(item["judge_result"])
         ]
         new_len = len(eval_data_all)
         logger.info(
