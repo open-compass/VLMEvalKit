@@ -28,5 +28,4 @@ __all__ = [
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     "VLLMAPI", 'XHSVLMAPI', 'XHSSEEDVL', 'XHSVLMAPIWrapper'
-    
 ]
