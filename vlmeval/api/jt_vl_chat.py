@@ -32,7 +32,8 @@ class JTVLChatWrapper(BaseAPI):
 
         self.temperature = temperature
         self.max_tokens = max_tokens
-        self.api_base = api_base
+        self.api_base = API_ENDPOINT
+        self.app_code = APP_CODE
 
         if key is None:
             key = os.environ.get('JTVLChat_API_KEY', None)
@@ -160,7 +161,7 @@ class JTVLChatWrapper(BaseAPI):
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
 
-    def get_send_data(self,prompt, image_path, temperature, max_tokens):
+    def get_send_data(self,prompt, image_path, temperature, max_tokens,stream=False,understanding_plus=False):
         image = ''
         with open(image_path, 'rb') as f:
             image = str(base64.b64encode(f.read()), 'utf-8')
@@ -179,7 +180,7 @@ class JTVLChatWrapper(BaseAPI):
         }
         return send_data
 
-    def get_send_data_no_image(self,prompt, temperature, max_tokens):
+    def get_send_data_no_image(self,prompt, temperature, max_tokens, stream=False,understanding_plus=False):
         send_data = {
             "messages": [
                 {
@@ -189,8 +190,8 @@ class JTVLChatWrapper(BaseAPI):
             ],
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "do_sample":False,
-            "understanding_plus":False
+            "stream": stream,
+            "understanding_plus":understanding_plus
         }
         return send_data
 
@@ -205,35 +206,73 @@ class JTVLChatWrapper(BaseAPI):
                 prompt=prompt,
                 image_path=image_path,
                 temperature=self.temperature,
-                max_tokens=self.max_tokens)
+                max_tokens=self.max_tokens,
+                stream=True)
         else:
             send_data = self.get_send_data_no_image(
                 prompt=prompt,
                 temperature=self.temperature,
-                max_tokens=self.max_tokens)
+                max_tokens=self.max_tokens,
+                stream=True)
 
         json_data = json.dumps(send_data)
 
-        header_dict = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.key}
+        header_dict = {'Content-Type': 'application/json','Authorization': 'Bearer ' + self.app_code}
 
-        r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000)
+        r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000,stream=True)
         try:
-            assert r.status_code == 200
-            r_json = r.json()
-            output = r_json['choices'][0]['message']['content']
-            if self.verbose:
-                self.logger.info(f'inputs: {inputs}\nanswer: {output}')
+            if send_data.get('stream', False):
+                # 流式处理
+                chunks = []
+                full_content = ""
 
-            return 0,output,'Succeeded! '
+                try:
+                    for line in r.iter_lines():
+                        if line:
+                            decoded_line = line.decode('utf-8')
+                            if decoded_line.startswith('data: '):
+                                event_data = decoded_line[6:]
+                                if event_data == '[DONE]':
+                                    break
+                                try:
+                                    chunk = json.loads(event_data)
+                                    chunks.append(chunk)
 
-        except:
-            error_msg = f'Error! code {r.status_code} content: {r.content}'
-            error_con = r.content.decode('utf-8')
-            if self.verbose:
-                self.logger.error(error_msg)
-                self.logger.error(error_con)
-                self.logger.error(f'The input messages are {inputs}.')
-            return -1,error_msg,''
+                                    # 记录最后一个有效的usage（不累加）
+                                    if 'usage' in chunk:
+                                        _ = chunk['usage']
+
+                                    # 实时输出内容
+                                    if 'choices' in chunk:
+                                        for choice in chunk['choices']:
+                                            if 'delta' in choice and 'content' in choice['delta']:
+                                                content = choice['delta']['content']
+                                                print(content, end='', flush=True)
+                                                full_content += content
+                                except json.JSONDecodeError:
+                                    continue
+                    print("\n")  # 换行
+
+                    return 0,full_content,'Succeeded! '
+
+                except Exception as e:
+                    return -1,f'Error: {str(e)}',''
+            else:
+                # 非流式处理
+                try:
+                    r_json = r.json()
+                    output = r_json['choices'][0]['message']['content']
+                    return 0,output,'Succeeded! '
+                except:
+                    error_msg = f'Error! code {r.status_code} content: {r.content}'
+                    error_con = r.content.decode('utf-8')
+                    if self.verbose:
+                        self.logger.error(error_msg)
+                        self.logger.error(error_con)
+                        self.logger.error(f'The input messages are {inputs}.')
+                    return -1,error_msg,''
+        except Exception as e:
+            return -1,f'Error: {str(e)}',''
 
 
 class JTVLChatAPI(JTVLChatWrapper):

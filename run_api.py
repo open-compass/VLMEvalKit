@@ -311,7 +311,6 @@ def main():
                     api_nproc=args.api_nproc,
                     ignore_failed=args.ignore)
             else:
-                
                 model = infer_data_job(
                     model,
                     work_dir=pred_root,

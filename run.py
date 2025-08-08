@@ -434,7 +434,10 @@ def main():
                         else:
                             judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4-turbo'
+                        if listinstr(['LLaVABench_KO'], dataset_name):
+                            judge_kwargs['model'] = 'gpt-4o-0806'
+                        else:
+                            judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):

@@ -680,4 +680,3 @@ class XHSSEEDVL(VLLMAPIWrapper):
         self.think_mode = think_mode
 
         super(XHSSEEDVL,self).__init__(model=model, key=key, api_base=api_base, **kwargs)
-        

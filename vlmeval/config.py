@@ -134,6 +134,151 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "GPT4V_HIGH": partial(
+        GPT4V,
+        model="gpt-4-1106-vision-preview",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4V_20240409": partial(
+        GPT4V,
+        model="gpt-4-turbo-2024-04-09",
+        temperature=0,
+        img_size=512,
+        img_detail="low",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4V_20240409_HIGH": partial(
+        GPT4V,
+        model="gpt-4-turbo-2024-04-09",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4o": partial(
+        GPT4V,
+        model="gpt-4o-2024-05-13",
+        temperature=0,
+        img_size=512,
+        img_detail="low",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4o_HIGH": partial(
+        GPT4V,
+        model="gpt-4o-2024-05-13",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4o_20240806": partial(
+        GPT4V,
+        model="gpt-4o-2024-08-06",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4o_20241120": partial(
+        GPT4V,
+        model="gpt-4o-2024-11-20",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "ChatGPT4o": partial(
+        GPT4V,
+        model="chatgpt-4o-latest",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4o_MINI": partial(
+        GPT4V,
+        model="gpt-4o-mini-2024-07-18",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "GPT4.5": partial(
+        GPT4V, 
+        model='gpt-4.5-preview-2025-02-27',
+        temperature=0, 
+        timeout=600,
+        img_size=-1, 
+        img_detail='high', 
+        retry=10, 
+        verbose=False,
+    ),
+    "gpt-4.1-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-mini-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-mini-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-4.1-nano-2025-04-14": partial(
+        GPT4V,
+        model="gpt-4.1-nano-2025-04-14",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
+    "gpt-5-2025-08-07": partial(
+        GPT4V,
+        model="gpt-5-2025-08-07",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
+    "gpt-5-mini-2025-08-07": partial(
+        GPT4V,
+        model="gpt-5-mini-2025-08-07",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
+    "gpt-5-nano-2025-08-07": partial(
+        GPT4V,
+        model="gpt-5-nano-2025-08-07",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
     "xdg": partial(
         GPT4V,
         model="xdg_ds_v3_vlm",
@@ -341,124 +486,6 @@ api_models = {
         timeout = 1000,
         system_prompt=None,
     ),
-    "GPT4V_HIGH": partial(
-        GPT4V,
-        model="gpt-4-1106-vision-preview",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4V_20240409": partial(
-        GPT4V,
-        model="gpt-4-turbo-2024-04-09",
-        temperature=0,
-        img_size=512,
-        img_detail="low",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4V_20240409_HIGH": partial(
-        GPT4V,
-        model="gpt-4-turbo-2024-04-09",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4o": partial(
-        GPT4V,
-        model="gpt-4o-2024-05-13",
-        temperature=0,
-        img_size=512,
-        img_detail="low",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4o_HIGH": partial(
-        GPT4V,
-        model="gpt-4o-2024-05-13",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4o_20240806": partial(
-        GPT4V,
-        model="gpt-4o-2024-08-06",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4o_20241120": partial(
-        GPT4V,
-        model="gpt-4o-2024-11-20",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "ChatGPT4o": partial(
-        GPT4V,
-        model="chatgpt-4o-latest",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4o_MINI": partial(
-        GPT4V,
-        model="gpt-4o-mini-2024-07-18",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "GPT4.5": partial(
-        GPT4V, 
-        model='gpt-4.5-preview-2025-02-27',
-        temperature=0, 
-        timeout=600,
-        img_size=-1, 
-        img_detail='high', 
-        retry=10, 
-        verbose=False,
-    ),
-    "gpt-4.1-2025-04-14": partial(
-        GPT4V,
-        model="gpt-4.1-2025-04-14",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "gpt-4.1-mini-2025-04-14": partial(
-        GPT4V,
-        model="gpt-4.1-mini-2025-04-14",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
-    "gpt-4.1-nano-2025-04-14": partial(
-        GPT4V,
-        model="gpt-4.1-nano-2025-04-14",
-        temperature=0,
-        img_size=-1,
-        img_detail="high",
-        retry=10,
-        verbose=False,
-    ),
     # Gemini
     "GeminiPro1-0": partial(
         Gemini, model="gemini-1.0-pro", temperature=0, retry=10
@@ -486,9 +513,6 @@ api_models = {
     ),
     "GeminiPro2-5": partial(
         GPT4V, model="gemini-2.5-pro", temperature=0, retry=10, timeout=1800
-    ),
-    "GeminiPro2-5-32k": partial(
-        GPT4V, model="gemini-2.5-pro", temperature=0, retry=5, timeout=180, max_tokens=32768
     ),
     
     # Qwen-VL
@@ -783,6 +807,11 @@ api_models = {
     )
 }
 
+import copy as cp
+api_models['gpt-5'] = cp.deepcopy(api_models['gpt-5-2025-08-07'])
+api_models['gpt-5-mini'] = cp.deepcopy(api_models['gpt-5-mini-2025-08-07'])
+api_models['gpt-5-nano'] = cp.deepcopy(api_models['gpt-5-nano-2025-08-07'])
+
 emu_series = {
     "emu2_chat": partial(Emu, model_path="BAAI/Emu2-Chat"),
     "emu3_chat": partial(Emu3_chat, model_path="BAAI/Emu3-Chat"),
@@ -930,8 +959,17 @@ llava_series = {
     "llava_video_qwen2_72b": partial(
         LLaVA_OneVision, model_path="lmms-lab/LLaVA-Video-72B-Qwen2"
     ),
+}
+
+varco_vision_series = {
     "varco-vision-hf": partial(
         LLaVA_OneVision_HF, model_path="NCSOFT/VARCO-VISION-14B-HF"
+    ),
+    "varco-vision-2-1.7b": partial(
+        VarcoVision, model_path="NCSOFT/VARCO-VISION-2.0-1.7B"
+    ),
+    "varco-vision-2-14b": partial(
+        VarcoVision, model_path="NCSOFT/VARCO-VISION-2.0-14B"
     ),
 }
 
@@ -1639,6 +1677,10 @@ ola_series = {
     "ola": partial(Ola, model_path="THUdyh/Ola-7b"),
 }
 
+xvl_series = {
+    "X-VL-4B": partial(X_VL_HF, model_path="YannQi/X-VL-4B", temperature=0, retry=10),
+}
+
 ross_series = {
     "ross-qwen2-7b": partial(Ross, model_path="HaochenWang/ross-qwen2-7b"),
 }
@@ -1716,6 +1758,22 @@ treevgr_series = {
     ),
 }
 
+# QTuneVL series
+qtunevl_series = {
+    "QTuneVL1_5-2B": partial(
+        QTuneVLChat, model_path="hanchaow/QTuneVL1_5-2B", version="V1.5"
+    ),
+
+    "QTuneVL1_5-3B": partial(
+        QTuneVL,
+        model_path="hanchaow/QTuneVL1_5-3B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=True,
+        post_process=True
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3,
@@ -1738,7 +1796,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series
 ]
 
 for grp in model_groups:
