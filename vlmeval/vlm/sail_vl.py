@@ -520,7 +520,6 @@ class SailVL(BaseModel):
                 verbose=True,
             )
         response = process_response(response, dataset_name=dataset, use_cot=self.use_cot)
-        print(response)
         return response
 
     def build_history(self, message):
