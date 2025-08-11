@@ -9,6 +9,7 @@ from tqdm import tqdm
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from ..utils import track_progress_rich
 
 
@@ -89,8 +90,7 @@ class ImageVQADataset(ImageBaseDataset):
         data['eval_match'] = [r['match'] for r in res]
         data['eval_score'] = [np.mean(r['match']) for r in res]
 
-        suffix = eval_file.split('.')[-1]
-        detailed_result_file = eval_file.replace(f'.{suffix}', '_results.xlsx')
+        detailed_result_file = get_intermediate_file_path(eval_file, '_results')
         dump(data, detailed_result_file)
 
         hit = hit_calculate(res, dataset)
@@ -118,8 +118,7 @@ class ImageVQADataset(ImageBaseDataset):
         ret = d2df(ret)
         ret.round(2)
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        result_file = get_intermediate_file_path(eval_file, '_acc')
         dump(ret, result_file)
         return ret
 
@@ -146,8 +145,7 @@ class ImageVQADataset(ImageBaseDataset):
         data['verifier_score'] = scores
         data['verifier_match'] = [1.0 if score else 0.0 for score in scores]
 
-        suffix = eval_file.split('.')[-1]
-        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
         dump(data, detailed_result_file)
 
         def hit_calculate(result):
@@ -177,8 +175,7 @@ class ImageVQADataset(ImageBaseDataset):
         ret = d2df(ret)
         ret.round(2)
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        result_file = get_intermediate_file_path(eval_file, '_acc')
         dump(ret, result_file)
         return ret
 
@@ -194,8 +191,7 @@ class VizWiz(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.vqa_eval import hit_calculate, process_line
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        result_file = get_intermediate_file_path(eval_file, '_acc')
 
         if not osp.exists(result_file):
             data = load(eval_file)
@@ -217,7 +213,7 @@ class VizWiz(ImageBaseDataset):
 
             dump(ret, result_file)
 
-        retz = pd.read_csv(result_file)
+        retz = load(result_file)
         return retz
 
 
@@ -317,9 +313,8 @@ class MathVista(ImageBaseDataset):
         from .utils.mathvista import MathVista_auxeval, MathVista_acc
 
         model = judge_kwargs['model']
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
@@ -383,7 +378,7 @@ class MathVista(ImageBaseDataset):
             data['verifier_score'] = verifier_scores
             data['verifier_match'] = verifier_matches
 
-            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
             dump(data, detailed_result_file)
 
         def MathVista_acc_verifier(result_file):
@@ -422,7 +417,7 @@ class MathVista(ImageBaseDataset):
             return res
 
         score = MathVista_acc_verifier(detailed_result_file)
-        score_pth = eval_file.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_pth)
         return score
 
@@ -483,11 +478,10 @@ class MathVerse(ImageBaseDataset):
         from .utils.mathverse import MathVerse_auxeval_extract, MathVerse_auxeval_score, MathVerse_acc
 
         model = judge_kwargs['model']
-        suffix = eval_file.split('.')[-1]
-        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
-        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
-        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+        storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
+        tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract', 'pkl')
+        storage_score = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file_score = get_intermediate_file_path(eval_file, f'_{model}_score', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
         # stage1: extract the answer
         if not osp.exists(storage_extract):
@@ -517,8 +511,8 @@ class MathVerse(ImageBaseDataset):
                 ans = load(tmp_file_extract)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log_extract'] == v['log_extract'] and ans[
-                        k]['extract'] == v['extract']
+                    assert ans[k]['log_extract'] == v['log_extract'] and ans[k][
+                        'extract'] == v['extract']
 
             data['extract'] = [ans[idx]['extract'] for idx in data['index']]
             data['log_extract'] = [
@@ -595,9 +589,8 @@ class MathVision(ImageBaseDataset):
             model = judge_kwargs['model']
         else:
             model = os.path.basename(os.environ.get('LOCAL_LLM'))
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
@@ -662,11 +655,11 @@ class MathVision(ImageBaseDataset):
             data['verifier_score'] = verifier_scores
             data['verifier_match'] = verifier_matches
 
-            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
             dump(data, detailed_result_file)
 
         else:
-            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
             if not osp.exists(detailed_result_file):
                 dump(data, detailed_result_file)
 
@@ -697,7 +690,7 @@ class MathVision(ImageBaseDataset):
             return res
 
         score = MathVision_acc_verifier(detailed_result_file)
-        score_pth = eval_file.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_pth)
         return score
 
@@ -797,9 +790,8 @@ class Physics_yale(ImageBaseDataset):
             print(f'Using local model as judge model for PHYSICS: {model}')
         else:
             model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
@@ -961,13 +953,10 @@ class OlympiadBench(ImageBaseDataset):
         from .utils.olympiadbench import MathJudger, extract_answer
         judger = MathJudger()
 
-        suffix = eval_file.split('.')[-1]
         name_str1 = 'judge'
         name_str2 = 'score'
-        result_file = eval_file.replace(f'.{suffix}',
-                                        f'_{name_str1}_result.xlsx')
-        score_file = eval_file.replace(f'.{suffix}',
-                                       f'_{name_str2}_result.csv')
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str1}_result')
+        score_file = get_intermediate_file_path(eval_file, f'_{name_str2}_result', 'csv')
 
         if not osp.exists(result_file):
             data = load(eval_file)
@@ -1072,9 +1061,9 @@ class OlympiadBench(ImageBaseDataset):
             acc_dict['AVG'] = [acc]
 
             acc_pd = pd.DataFrame(acc_dict)
-            acc_pd.to_csv(score_file, index=False, encoding='gbk')
+            dump(acc_pd, score_file)
 
-        accdz = pd.read_csv(score_file)
+        accdz = load(score_file)
         return accdz
 
 
@@ -1147,9 +1136,8 @@ class SeePhys(ImageBaseDataset):
         from .utils.seephys import extract, eval_acc
 
         model = judge_kwargs.pop('model', 'deepseek')
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
         if not osp.exists(storage):
             data = load(eval_file)
@@ -1231,9 +1219,8 @@ class LogicVista(ImageBaseDataset):
             )
             model = None
 
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{name_str}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{name_str}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage) and model is not None:
@@ -1397,7 +1384,6 @@ class LLaVABench(ImageBaseDataset):
     }
     DATASET_MD5 = {'LLaVABench': 'd382a093f749a697820d3dadd61c8428'}
 
-    # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.llavabench import (
@@ -1406,9 +1392,8 @@ class LLaVABench(ImageBaseDataset):
             LLaVABench_score,
         )
 
-        suffix = '.' + eval_file.split('.')[-1]
-        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
-        score_file = eval_file.replace(suffix, '_score.csv')
+        record_file = get_intermediate_file_path(eval_file, '_openai_result')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
 
@@ -1453,9 +1438,8 @@ class LLaVABench_KO(ImageBaseDataset):
             LLaVABench_score,
         )
 
-        suffix = '.' + eval_file.split('.')[-1]
-        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
-        score_file = eval_file.replace(suffix, '_score.csv')
+        record_file = get_intermediate_file_path(eval_file, '_openai_result')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
 
@@ -1502,9 +1486,8 @@ class VGRPBench(ImageBaseDataset):
             VGRPBench_get_system_prompt,
         )
 
-        suffix = '.' + eval_file.split('.')[-1]
-        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
-        score_file = eval_file.replace(suffix, '_score.csv')
+        record_file = get_intermediate_file_path(eval_file, '_openai_result')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
 
         nproc = judge_kwargs.pop('nproc', 4)
 
@@ -1568,10 +1551,9 @@ class MMVet(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmvet import MMVet_auxeval, MMVet_acc
 
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs['model']
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
         if not osp.exists(storage):
             data = load(eval_file)
@@ -1646,8 +1628,7 @@ class MTVQADataset(ImageBaseDataset):
             for category, scores in category_scores.items()
         }
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_acc.json')
+        result_file = get_intermediate_file_path(eval_file, '_acc', 'json')
         dump(category_averages, result_file)
 
         return category_averages
@@ -1827,6 +1808,8 @@ class WildDocBenchmark(ImageBaseDataset):
             for task, metrics in eval_results.items()
             for metric, score in metrics.items()
         ])
+        result_file = get_intermediate_file_path(eval_file, '_acc')
+        dump(ret_df, result_file)
         return ret_df
 
     # WildDoc adopts a custom prompt for each subset
@@ -1898,8 +1881,7 @@ class TableVQABench(ImageBaseDataset):
             eval_result['average_scores'].append(
                 split_eval_meta['average_scores'])
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        result_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         eval_result = pd.DataFrame(eval_result)
         dump(eval_result, result_file)
 
@@ -2170,9 +2152,8 @@ class QSpatial(ImageBaseDataset):
 
             # extract using model
             model = judge_kwargs['model']
-            suffix = eval_file.split('.')[-1]
-            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            storage = get_intermediate_file_path(eval_file, f'_{model}')
+            tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
             nproc = judge_kwargs.pop('nproc', 4)
 
             if not osp.exists(storage):
@@ -2477,11 +2458,9 @@ class MMSci_Captioning(ImageBaseDataset):
         from .utils.mmsci import (get_all_metrics_for_g_eval_score,
                                   get_all_metrics_for_reference_based_metrics,
                                   merge_rating, fact_score_generate)
-        refer_based_metrics_output_file = eval_file.replace(
-            '.xlsx', '_reference_based_metrics.xlsx')
+        refer_based_metrics_output_file = get_intermediate_file_path(eval_file, '_reference_based_metrics')
         g_eval_metrics_output_file = get_intermediate_file_path(eval_file, '_g_eval_metrics')
-        fact_score_metrics_output_file = eval_file.replace(
-            '.xlsx', '_fact_score.xlsx')
+        fact_score_metrics_output_file = get_intermediate_file_path(eval_file, '_fact_score')
 
         # calculate reference-based metrics
         if not osp.exists(refer_based_metrics_output_file):
@@ -2506,8 +2485,7 @@ class MMSci_Captioning(ImageBaseDataset):
             if isinstance(references[0], str):
                 references = [[r] for r in references]
 
-            reference_based_metrics_file = eval_file.replace(
-                '.xlsx', '_reference_based_metrics.pkl')
+            reference_based_metrics_file = get_intermediate_file_path(eval_file, '_reference_based_metrics', 'pkl')
             existing_data = get_all_metrics_for_reference_based_metrics(
                 references, candidates, image_id_list,
                 reference_based_metrics_file)
@@ -2557,8 +2535,7 @@ class MMSci_Captioning(ImageBaseDataset):
 
             assert judge_model.working(), (
                 'Evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
-            suffix = '.' + eval_file.split('.')[-1]
-            tmp_file = eval_file.replace(suffix, f'_{model}_G_eval.pkl')
+            tmp_file = get_intermediate_file_path(eval_file, f'_{model}_G_eval', 'pkl')
 
             tmp_result = get_all_metrics_for_g_eval_score(
                 references,
@@ -2668,7 +2645,6 @@ class TDBenchGrounding(ImageVQADataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.tdbench import evaluate_bbox, extract_bbox_from_string, rotational_eval
-        suffix = eval_file.split('.')[-1]
         method = judge_kwargs.get('model', 'centroid')
         assert method in ['centroid',
                           'iou'], '--judge should be either centroid or iou'
@@ -2698,16 +2674,16 @@ class TDBenchGrounding(ImageVQADataset):
 
         data['hit'] = scores
         data['category'] = 'visual_grounding'
-        result_file = eval_file.replace(f'.{suffix}', f'_{method}_result.xlsx')
-        data.to_excel(result_file, index=False)
+        result_file = get_intermediate_file_path(eval_file, f'_{method}_result')
+        dump(data, result_file)
 
         metric_name = 'Average Centroid Containment' if method == 'centroid' else 'Average IoU'
         summary_scores = {metric_name: avg_score, 'Total Samples': len(scores)}
 
         score_df = pd.DataFrame(list(summary_scores.items()),
                                 columns=['Metric', 'Score'])
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
-        score_df.to_csv(score_file, index=False)
+        score_file = get_intermediate_file_path(eval_file, '_acc')
+        dump(score_df, score_file)
         re_result = rotational_eval(result_file)
         if method == 'centroid' and re_result is not None and re_result is not False:
             file_addr = osp.abspath(
@@ -2814,7 +2790,11 @@ class CountBenchQA(ImageVQADataset):
             if ans in pred:
                 correct_count += 1
         accuracy = correct_count / total_count if total_count > 0 else 0
-        return {'accuracy': accuracy}
+
+        result = {'accuracy': accuracy * 100}
+        result_file = get_intermediate_file_path(eval_file, '_acc')
+        dump(d2df(result), result_file)
+        return result
 
 
 class OCR_Reasoning(ImageBaseDataset):
@@ -2831,9 +2811,8 @@ class OCR_Reasoning(ImageBaseDataset):
         from .utils.ocr_reasoning import OcrR_auxeval, OcrR_acc
 
         model = judge_kwargs['model']
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
         nproc = 1
         if not osp.exists(storage):
@@ -2844,7 +2823,6 @@ class OCR_Reasoning(ImageBaseDataset):
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
             indices = [line['index'] for line in lines]
-
             ans = {}
             if osp.exists(tmp_file):
                 ans = load(tmp_file)
@@ -2970,8 +2948,7 @@ class PhyX(ImageBaseDataset):
                 # Open ended mode
                 res = pool.map(partial(PhyX_process_line), lines)
 
-            suffix = eval_file.split('.')[-1]
-            result_file = eval_file.replace(f'.{suffix}', '_predict.xlsx')
+            result_file = get_intermediate_file_path(eval_file, '_predict')
             df = pd.DataFrame(res)
             df.to_excel(result_file, index=False)
 
@@ -2989,8 +2966,7 @@ class PhyX(ImageBaseDataset):
             ret = d2df(ret)
             ret.round(2)
 
-            suffix = eval_file.split('.')[-1]
-            result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            result_file = get_intermediate_file_path(eval_file, '_acc')
             dump(ret, result_file)
             return ret
 
@@ -2998,9 +2974,8 @@ class PhyX(ImageBaseDataset):
             from .utils.phyx import PhyX_auxeval, PhyX_acc, PhyX_auxeval_MC
 
             model = judge_kwargs['model']
-            suffix = eval_file.split('.')[-1]
-            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            storage = get_intermediate_file_path(eval_file, f'_{model}')
+            tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
             nproc = judge_kwargs.pop('nproc', 4)
 
             if not osp.exists(storage):

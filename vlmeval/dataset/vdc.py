@@ -1,6 +1,7 @@
 # flake8: noqa
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
@@ -352,10 +353,10 @@ class VDC(VideoBaseDataset):
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)
 
-        response_file = eval_file.replace('.xlsx', f'_{judge}_response.pkl')
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
-        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        response_file = get_intermediate_file_path(eval_file, f'_{judge}_response', 'pkl')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, f'_{judge}_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, f'_{judge}_score')
 
         model = build_judge(**judge_kwargs)
 
