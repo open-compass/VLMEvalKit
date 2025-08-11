@@ -34,7 +34,17 @@ def build_transform(input_size):
     return transform
 
 
-def process_response(response, dataset_name):
+def get_cot_answer(response):
+    re_string = r"<think>(?P<think>.*?)</think>.*?\\boxed\{(?P<answer>[^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
+    match = re.search(re_string, response, re.DOTALL)
+    if match:
+        return match.group("answer")
+    return response
+
+
+def process_response(response, dataset_name, use_cot=False):
+    if use_cot:
+        response = get_cot_answer(response)
     if dataset_name is None:
         return response
     if listinstr(["ChartQA", "OCRVQA"], dataset_name):
@@ -326,7 +336,7 @@ class SailVL(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path="BytedanceDouyinContent/SAIL-VL-2B", load_in_8bit=False, use_msac=True, **kwargs):
+    def __init__(self, model_path="BytedanceDouyinContent/SAIL-VL-2B", load_in_8bit=False, use_msac=True, use_cot=False, **kwargs):
 
         assert model_path is not None
         assert version_cmp(transformers.__version__, "4.36.2", "ge")
@@ -337,7 +347,8 @@ class SailVL(BaseModel):
         self.pattern = r"Image(\d+)"
         # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
         self.replacement = r"Image-\1"
-
+        self.use_cot = use_cot
+        self.cot_prompt = r"You FIRST think about the reasoning process as an internal monologue and then provide the final answer. The reasoning process MUST BE enclosed within <think> </think> tags. The final answer MUST BE put in \boxed{}."
         # Convert InternVL2 response to dataset format
         # e.g. Image1 -> Image-1
 
@@ -376,6 +387,7 @@ class SailVL(BaseModel):
             return False
         else:
             return True
+
 
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
@@ -496,7 +508,8 @@ class SailVL(BaseModel):
         else:
             pixel_values = None
             num_patches_list = []
-
+        if self.use_cot:
+            prompt += f"\n{self.cot_prompt}"
         with torch.no_grad():
             response = self.model.chat(
                 self.tokenizer,
@@ -506,7 +519,8 @@ class SailVL(BaseModel):
                 generation_config=self.kwargs,
                 verbose=True,
             )
-        response = process_response(response, dataset_name=dataset)
+        response = process_response(response, dataset_name=dataset, use_cot=self.use_cot)
+        print(response)
         return response
 
     def build_history(self, message):
