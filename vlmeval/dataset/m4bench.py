@@ -1,15 +1,12 @@
 import os
 import re
-import tempfile
-from functools import partial
 
 import pandas as pd
 
+from os import path as osp
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..utils import track_progress_rich
-
+from ..smp import decode_base64_to_image_file, load, dump
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
@@ -39,6 +36,7 @@ class M4Bench(ImageBaseDataset):
         """
         Builds a multimodal prompt for the given data line.
         """
+        HF_HEADER = "https://huggingface.co/datasets/Anonymous8976/M4Bench/resolve/main/data"    # noqa: E501
 
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -51,10 +49,10 @@ class M4Bench(ImageBaseDataset):
         msgs = []
 
         if image1_base64 and image2_base64 and image1_url and image2_url:
-            image1_base_path = image1_url.replace('https://huggingface.co/datasets/Anonymous8976/M4Bench/resolve/main/data', '')
+            image1_base_path = image1_url.replace(HF_HEADER, '')
             image1_local_path = osp.join(self.img_root, image1_base_path)
 
-            image2_base_path = image2_url.replace('https://huggingface.co/datasets/Anonymous8976/M4Bench/resolve/main/data', '')
+            image2_base_path = image2_url.replace(HF_HEADER, '')
             image2_local_path = osp.join(self.img_root, image2_base_path)
 
             decode_base64_to_image_file(image1_base64, image1_local_path)
@@ -71,7 +69,7 @@ class M4Bench(ImageBaseDataset):
                 dict(type='image', value=image2_url)
             ]
         else:
-            raise ValueError("Both images must be provided either as base64 or URLs.")
+            raise ValueError("Both images must be provided either as base64 or URLs.")  # noqa: E501
 
         query = line['query']
 
@@ -92,7 +90,7 @@ class M4Bench(ImageBaseDataset):
 
         if dataset_name is None:
             raise ValueError(
-                f"Could not determine dataset name from eval_file path: {eval_file}")
+                f"Could not determine dataset name from eval_file path: {eval_file}")  # noqa: E501
 
         # # Load ground truth data
         # gt_file = get_cache_path(self.DATASET_URL[dataset_name])
@@ -100,21 +98,21 @@ class M4Bench(ImageBaseDataset):
 
         # # Merge predictions with ground truth
         df = results_df.copy()
+
         def get_ans(s):
             s = str(s)
             match = re.search(r'^\s*\(([A-Z])\)', s)
             if match:
                 return match.group(1)
-            
+
             options = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
             for op in options:
                 if s.startswith(op):
                     return op
             return None
-        
-        if judge_kwargs:
 
-            try :
+        if judge_kwargs:
+            try:
                 # Use LLM as a judge to parse the prediction
                 judge = build_judge(**judge_kwargs)
 
@@ -131,19 +129,19 @@ class M4Bench(ImageBaseDataset):
 
                 prompt_tmpl = (
                     'You are an AI assistant who will help me to match '
-                    'an answer with several options of a single-choice question. '
-                    'You are provided with a question, several options, and an answer, '
-                    'and you need to find which option is most similar to the answer. '
-                    'If the meaning of all options are significantly different from the answer, output Z. '
-                    'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'
+                    'an answer with several options of a single-choice question. '    # noqa: E501
+                    'You are provided with a question, several options, and an answer, '    # noqa: E501
+                    'and you need to find which option is most similar to the answer. '    # noqa: E501
+                    'If the meaning of all options are significantly different from the answer, output Z. '   # noqa: E501
+                    'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'    # noqa: E501
                     'Example 1: \n'
-                    'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
+                    'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
                     'Answer: a cute teddy bear\nYour output: A\n'
                     'Example 2: \n'
-                    'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
+                    'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'    # noqa: E501
                     'Answer: Spider\nYour output: Z\n'
                     'Example 3: \n'
-                    'Question: {question}\nOptions: {options}\nAnswer: {prediction}\nYour output: '
+                    'Question: {question}\nOptions: {options}\nAnswer: {prediction}\nYour output: '    # noqa: E501
                 )
 
                 prompts = [
@@ -156,7 +154,7 @@ class M4Bench(ImageBaseDataset):
                 ]
                 parsed_pred = []
                 for prompt in prompts:
-                    input_msg = [   
+                    input_msg = [
                         {
                             "role": "user",
                             "content": [
@@ -167,7 +165,7 @@ class M4Bench(ImageBaseDataset):
 
                     _, judge_output, res = judge.generate_inner(input_msg)
                     judge_ans = get_ans(judge_output)
-                    parsed_pred.append(judge_ans)       
+                    parsed_pred.append(judge_ans)
                 df['parsed_pred'] = pd.Series(parsed_pred)
 
             except Exception as e:
