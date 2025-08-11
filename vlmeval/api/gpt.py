@@ -116,7 +116,8 @@ class OpenAIWrapper(BaseAPI):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
-        self.o1_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
+        self.is_max_completion_tokens = ('o1' in model) or ('o3' in model) or ('o4' in model) or ('gpt-5' in model)
+        self.is_o_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if use_azure:
@@ -216,7 +217,7 @@ class OpenAIWrapper(BaseAPI):
             temperature=temperature,
             **kwargs)
 
-        if self.o1_model:
+        if self.is_max_completion_tokens:
             payload['max_completion_tokens'] = max_tokens
             payload.pop('temperature')
         else:
