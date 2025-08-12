@@ -73,8 +73,17 @@ Respond with only the letter (A, B, C, or D) of the correct option.
                     return False
             return True
 
+        dataset_path = None
+        lmu_root = LMUDataRoot()
+        if osp.exists(osp.join(lmu_root, f'{dataset_name}.tsv')):
+            md5sum = md5(osp.join(lmu_root, f'{dataset_name}.tsv'))
+            if md5sum == self.MD5:
+                dataset_path = lmu_root
+            else:
+                print(f'The dataset {dataset_name} is not found in LMUData, will download from HF.')
+
         cache_path = get_cache_path(repo_id)
-        if cache_path is not None and check_integrity(cache_path):
+        if dataset_path is None and cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
 
