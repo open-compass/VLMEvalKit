@@ -85,8 +85,8 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         cache_path = get_cache_path(repo_id)
         if dataset_path is None and cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
-        else:
-
+        
+        if dataset_path is None:
             def unzip_hf_zip(pth):
                 import zipfile
                 base_dir = pth
