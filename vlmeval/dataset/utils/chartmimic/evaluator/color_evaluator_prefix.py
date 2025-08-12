@@ -1,30 +1,35 @@
-# flake8: noqa
-from matplotlib.patches import Ellipse, Circle
-import inspect
-from matplotlib_venn._common import VennDiagram
-from matplotlib.image import NonUniformImage
-from matplotlib.projections.polar import PolarAxes
-import networkx.drawing.nx_pylab as nx_pylab
-import matplotlib.colors as mcolors
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.axes._axes import Axes
-from matplotlib.axes._base import _process_plot_var_args
-import networkx as nx
-import numpy as np
-import matplotlib
-import sys
+# # flake8: noqa
 import os
 import squarify
 
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# sys.path.insert(0, f'{os.environ["PROJECT_PATH"]}')
+import sys
 
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
+
+import networkx
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import networkx as nx
+from matplotlib.axes._base import _process_plot_var_args
+from matplotlib.axes._axes import Axes
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.colors as mcolors
+import networkx.drawing.nx_pylab as nx_pylab
+from matplotlib.projections.polar import PolarAxes
+from matplotlib.image import NonUniformImage
+from matplotlib.patches import Ellipse, Circle
+from matplotlib_venn._common import VennDiagram
+import inspect
+from evaluator.color_utils import filter_color
+# from chart2code.utils.evaluator.color_utils import filter_color
 
 
 drawed_colors = []
@@ -117,6 +122,7 @@ def log_function_specific_for_draw_networkx_labels(func):
                 clip_on=clip_on
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -216,6 +222,7 @@ def log_function_specific_for_draw_networkx_edges(func):
                 min_target_margin=min_target_margin
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -288,6 +295,7 @@ def log_function_specific_for_draw_networkx_nodes(func):
                 margins=margins
             )
         return result
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -378,7 +386,7 @@ def log_function_for_3d(func):
         else:
             return func(*args, **kwargs)
         return result
-
+    wrapper.__name__ = func.__name__
     return wrapper
 
 
@@ -597,6 +605,7 @@ def log_function(func):
             return func(*args, **kwargs)
         return result
 
+    wrapper.__name__ = func.__name__
     return wrapper
 
 

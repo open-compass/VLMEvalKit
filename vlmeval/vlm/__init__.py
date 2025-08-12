@@ -91,6 +91,7 @@ from .sail_vl import SailVL
 from .valley import Valley2Chat
 from .ross import Ross
 from .ola import Ola
+from .x_vl import X_VL_HF
 from .ursa import UrsaChat
 from .vlm_r1 import VLMR1Chat
 from .aki import AKI
@@ -101,3 +102,9 @@ from .wethink_vl import WeThinkVL
 from .flash_vl import FlashVL
 from .oryx import Oryx
 from .treevgr import TreeVGR
+from .glm4_1v import GLM4_1v
+from .varco_vision import VarcoVision
+from .qtunevl import (
+    QTuneVL,
+    QTuneVLChat,
+)

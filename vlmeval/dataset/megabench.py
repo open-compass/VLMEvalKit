@@ -45,32 +45,33 @@ class MEGABench(VideoBaseDataset):
 
         if hasattr(self, 'max_num_frames') and self.max_num_frames:
             if num_demo_videos > 0:
-                self.demo_video_frames = math.ceil(
+                demo_video_frames = math.ceil(
                     self.total_demo_video_frames / num_demo_videos
                 ) if hasattr(self, 'total_demo_video_frames') else 2
             else:
-                self.demo_video_frames = 0
+                demo_video_frames = 0
 
             if num_query_videos > 0:
                 total_query_video_frames = (
                     self.max_num_frames
-                    - self.demo_video_frames * num_demo_videos
+                    - demo_video_frames * num_demo_videos
                 )
                 if total_query_video_frames <= 0:
                     raise ValueError(
                         f"Cannot query <= 0 frames: please raise the number of maximum images allowed. "
-                        f"demo_video_frames={self.demo_video_frames}, num_demo_videos={num_demo_videos}, "
+                        f"demo_video_frames={demo_video_frames}, num_demo_videos={num_demo_videos}, "
                         f"max_num_frames={self.max_num_frames}"
                     )
-                self.query_video_frames = total_query_video_frames // num_query_videos
+                query_video_frames = total_query_video_frames // num_query_videos
             else:
-                self.query_video_frames = 0
+                query_video_frames = 0
 
         else:
-            self.demo_video_frames = 2
-            self.query_video_frames = 8
+            demo_video_frames = 2
+            query_video_frames = 8
 
-        # print("demo_video_frames, query_video_frames:", self.demo_video_frames, self.query_video_frames)
+        # print("demo_video_frames, query_video_frames:", demo_video_frames, query_video_frames)
+        return demo_video_frames, query_video_frames
 
     def is_video_file(self, file_path):
         from mimetypes import guess_type
@@ -176,6 +177,9 @@ class MEGABench(VideoBaseDataset):
             assert line < len(self)
             line = self.data.iloc[line]
 
+        # 获取当前行的帧数配置
+        demo_video_frames, query_video_frames = self._set_sampling_config(line)
+
         def process_video(file_path, is_demo=False):
             if video_llm:
                 return (dict(type='video', value=file_path))
@@ -191,7 +195,7 @@ class MEGABench(VideoBaseDataset):
             cap = cv2.VideoCapture(file_path)
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS)  # Frames per second
-            num_frames = self.demo_video_frames if is_demo else self.query_video_frames
+            num_frames = demo_video_frames if is_demo else query_video_frames
 
             # the sampling rate using max number of frames
             sampling_gap_maxframe = (
@@ -233,22 +237,49 @@ class MEGABench(VideoBaseDataset):
             image = None
             rgba_transform = False
 
+            def safe_open_image(path, retries=5, delay=0.1):
+                for _ in range(retries):
+                    try:
+                        with Image.open(path) as img:
+                            img.verify()
+                        return Image.open(path)
+                    except Exception:
+                        time.sleep(delay)
+                raise FileNotFoundError
+
             try:
                 # 第一阶段：RGBA 转换
-                image = Image.open(current_path)
+                image = safe_open_image(current_path)
                 if image.mode == 'RGBA':
-                    try:
-                        background = Image.new("RGBA", image.size, (255, 255, 255, 255))
-                        image = Image.alpha_composite(background, image).convert("RGB")
-                        base_path = osp.splitext(current_path)[0]
-                        current_path = f"{base_path}_rgb.jpg"
-                        image.save(current_path, "JPEG")
-                        print(f'Turn RGBA image into RGB mode, stored to {current_path}')
+                    base_path = osp.splitext(current_path)[0]
+                    rgb_path = f"{base_path}_rgb.jpg"
+                    lock_path = f"{rgb_path}.lock"
+                    with portalocker.Lock(lock_path, 'w', timeout=30):
+                        if not osp.exists(rgb_path):
+                            try:
+                                background = Image.new("RGBA", image.size, (255, 255, 255, 255))
+                                image = Image.alpha_composite(background, image).convert("RGB")
+                                # 使用临时文件保存
+                                tmp_path = rgb_path + '.tmp'
+                                if image.mode != "RGB":
+                                    image = image.convert("RGB")
+                                image.save(tmp_path, "JPEG")
+                                shutil.move(tmp_path, rgb_path)  # 原子性重命名
+                                # print(f'Turn RGBA image into RGB mode, stored to {rgb_path}')
+
+                                # 刷新文件系统缓存，确保文件完全写入
+                                with open(rgb_path, 'rb') as f:
+                                    f.flush()  # 刷新缓存
+                                    os.fsync(f.fileno())  # 确保数据完全写入磁盘
+
+                            except Exception as e:
+                                print(f"Warning: Failed to convert RGBA image {current_path}: {e}")
+                                image = safe_open_image(original_path)
+                        else:
+                            # 有可能别的进程刚写好
+                            image = safe_open_image(rgb_path)
+                        current_path = rgb_path
                         rgba_transform = True
-                    except Exception as e:
-                        print(f"Warning: Failed to convert RGBA image {current_path}: {e}")
-                        # 使用原始图像继续处理
-                        image = Image.open(original_path)
 
                 if rgba_transform:
                     original_path = current_path
@@ -256,16 +287,34 @@ class MEGABench(VideoBaseDataset):
                 # 第二阶段：调整大小
                 resize_scale = self.max_side / max(image.size)
                 if resize_scale < 1:
-                    try:
-                        new_size = (int(image.size[0] * resize_scale), int(image.size[1] * resize_scale))
-                        image = image.resize(new_size)
-                        base_path = osp.splitext(current_path)[0]
-                        current_path = f"{base_path}_resize.jpg"
-                        image.save(current_path)
-                        print(f'Resized image, stored to {current_path}')
-                    except Exception as e:
-                        print(f"Warning: Failed to resize image {current_path}: {e}")
-                        return original_path  # 返回当前路径（可能是 RGB 转换后的）
+                    base_path = osp.splitext(current_path)[0]
+                    resize_path = f"{base_path}_resize.jpg"
+                    lock_path = f"{resize_path}.lock"
+                    with portalocker.Lock(lock_path, 'w', timeout=30):
+                        if not osp.exists(resize_path):
+                            try:
+                                new_size = (int(image.size[0] * resize_scale), int(image.size[1] * resize_scale))
+                                image = image.resize(new_size)
+                                # 使用临时文件保存
+                                tmp_path = resize_path + '.tmp'
+                                if image.mode != "RGB":
+                                    image = image.convert("RGB")
+                                image.save(tmp_path, "JPEG")
+                                shutil.move(tmp_path, resize_path)  # 原子性重命名
+                                # print(f'Resized image, stored to {resize_path}')
+
+                                # 刷新文件系统缓存，确保文件完全写入
+                                with open(resize_path, 'rb') as f:
+                                    f.flush()  # 刷新缓存
+                                    os.fsync(f.fileno())  # 确保数据完全写入磁盘
+
+                            except Exception as e:
+                                print(f"Warning: Failed to resize image {current_path}: {e}")
+                                return original_path  # 返回当前路径（可能是 RGB 转换后的）
+                        else:
+                            # 复用其他进程已写的文件
+                            pass
+                        current_path = resize_path
 
                 return current_path
 
@@ -330,7 +379,6 @@ class MEGABench(VideoBaseDataset):
             return message
 
         message = []
-        self._set_sampling_config(line)
 
         if pd.notna(line['task_description']):
             global_media = process_media_list(line['global_media'])

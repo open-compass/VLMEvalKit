@@ -14,6 +14,7 @@ mmbench_video_dataset = {
     'MMBench_Video_8frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=True),
     'MMBench_Video_16frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=16, pack=False),
     'MMBench_Video_64frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=64, pack=False),
+    'MMBench_Video_64frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=64, pack=True),
     'MMBench_Video_1fps_nopack': partial(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=False),
     'MMBench_Video_1fps_pack': partial(MMBenchVideo, dataset='MMBench-Video', fps=1.0, pack=True)
 }
@@ -115,14 +116,6 @@ cgbench_dataset = {
     )
 }
 
-cg_av_counting_dataset = {
-    'CGAVCounting_64frame': partial(
-        CGAVCounting,
-        dataset='CGAVCounting',
-        nframe=64
-    )
-}
-
 megabench_dataset = {
     'MEGABench_core_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="core"),
     'MEGABench_open_16frame': partial(MEGABench, dataset='MEGABench', nframe=16, subset_name="open"),
@@ -180,13 +173,19 @@ cg_av_counting_dataset = {
     'CG-AV-Counting_64frame': partial(CGAVCounting, dataset='CG-AV-Counting', nframe=64, use_frame_time=False)
 }
 
+egoexobench_dataset = {
+    'EgoExoBench_64frame': partial(EgoExoBench_MCQ, dataset='EgoExoBench_MCQ', nframe=64, skip_EgoExo4D=False),  # noqa: E501
+    'EgoExoBench_64frame_skip_EgoExo4D': partial(EgoExoBench_MCQ, dataset='EgoExoBench_MCQ', nframe=64, skip_EgoExo4D=True)  # noqa: E501
+
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
-    cg_av_counting_dataset, video_mmlu_dataset
+    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset
 ]
 
 for grp in dataset_groups:
