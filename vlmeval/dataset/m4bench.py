@@ -1,6 +1,6 @@
 import os
 import re
-
+from tqdm import tqdm
 import pandas as pd
 
 from os import path as osp
@@ -36,7 +36,7 @@ class M4Bench(ImageBaseDataset):
         """
         Builds a multimodal prompt for the given data line.
         """
-        HF_HEADER = "https://huggingface.co/datasets/Anonymous8976/M4Bench/resolve/main/data"    # noqa: E501
+        HF_HEADER = "https://huggingface.co/datasets/Anonymous8976/M4Bench/resolve/main/data/"    # noqa: E501
 
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -55,8 +55,10 @@ class M4Bench(ImageBaseDataset):
             image2_base_path = image2_url.replace(HF_HEADER, '')
             image2_local_path = osp.join(self.img_root, image2_base_path)
 
-            decode_base64_to_image_file(image1_base64, image1_local_path)
-            decode_base64_to_image_file(image2_base64, image2_local_path)
+            if not osp.exists(image1_local_path) or not osp.exists(image2_local_path):
+                decode_base64_to_image_file(image1_base64, image1_local_path)
+                decode_base64_to_image_file(image2_base64, image2_local_path)
+
             # If both images are in base64 format
             msgs = [
                 dict(type='image', value=image1_local_path),
@@ -150,10 +152,11 @@ class M4Bench(ImageBaseDataset):
                         options=row['options_text'],
                         prediction=row['prediction']
                     )
-                    for _, row in df.iterrows()
+                    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows")
                 ]
                 parsed_pred = []
-                for prompt in prompts:
+
+                for prompt in tqdm(prompts, desc="Calling judge"):
                     input_msg = [
                         {
                             "role": "user",

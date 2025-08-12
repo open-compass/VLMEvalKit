@@ -394,7 +394,6 @@ def main():
                     elif listinstr(['M4Bench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
 
-
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True
                 if args.use_vllm:
