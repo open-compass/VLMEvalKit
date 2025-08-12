@@ -178,7 +178,7 @@ class SFE(ImageVQADataset):
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.get('model', 'gpt-4o-1120')
+            model = judge_kwargs.pop('model', 'gpt-4o-1120')
             if model == 'exact_matching':
                 model = None
             elif gpt_key_set():
