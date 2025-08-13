@@ -35,10 +35,14 @@ def build_transform(input_size):
 
 
 def get_cot_answer(response):
-    re_string = r"<think>(?P<think>.*?)</think>.*?\\boxed\{(?P<answer>[^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
-    match = re.search(re_string, response, re.DOTALL)
+    pattern1 = r"<think>(?P<think>.*?)</think>.*?\\boxed\{(?P<answer>[^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
+    match = re.search(pattern1, response, re.DOTALL)
     if match:
         return match.group("answer")
+    pattern2 = r"\\boxed\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
+    matches = re.findall(pattern2, response, re.DOTALL)
+    if matches:
+        return matches[-1]
     return response
 
 
@@ -368,7 +372,7 @@ class SailVL(BaseModel):
         self.cot_prompt = (
             "You FIRST think about the reasoning process as an internal monologue "
             "and then provide the final answer. The reasoning process MUST BE "
-            "enclosed within </think> </think> tags. The final answer MUST BE put in \\boxed{}."
+            "enclosed within <think> </think> tags. The final answer MUST BE put in \\boxed{}."
         )
         # Convert InternVL2 response to dataset format
         # e.g. Image1 -> Image-1
