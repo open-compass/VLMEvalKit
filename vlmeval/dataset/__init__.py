@@ -76,6 +76,7 @@ from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
+from .m4bench import M4Bench
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -94,6 +95,7 @@ class ConcatDataset(ImageBaseDataset):
         ],
         'ScreenSpot': ['ScreenSpot_Mobile', 'ScreenSpot_Desktop', 'ScreenSpot_Web'],
         'ScreenSpot_v2': ['ScreenSpot_v2_Mobile', 'ScreenSpot_v2_Desktop', 'ScreenSpot_v2_Web'],
+        'M4Bench': ['State_Invariance', 'State_Comparison', 'Spatial_Perception', 'Instance_Comparison', 'Detailed_Difference'],  # noqa: E501
     }
 
     def __init__(self, dataset):
@@ -202,7 +204,7 @@ IMAGE_DATASET = [
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench
+    OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, M4Bench
 ]
 
 
