@@ -205,6 +205,7 @@ IMAGE_DATASET = [
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench
+]
 
 VIDEO_DATASET = [
     MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench,
