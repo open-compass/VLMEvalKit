@@ -2687,3 +2687,64 @@ class TreeBench(ImageMCQDataset):
             return total_iou / num_targets
 
         return calculate_average_iou(all_boxes, target_boxes)
+
+
+class CVQA(ImageMCQDataset):
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['CVQA_LOC', 'CVQA_EN']
+
+    DATASET_URL = {
+        "CVQA_EN": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_ENG.tsv"
+        ),
+        "CVQA_LOC": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_LOC.tsv"
+        ),
+    }
+
+    DATASET_MD5 = {
+        "CVQA_EN": "f49ad8ad39dbc4208ea8985a3ca00804",
+        "CVQA_LOC": "b51dcf2820cb292aa5cb3430dd7d5049",
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+
+        prompt = f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += (
+                'Select the best answer to the above multiple-choice question '
+                'based on the image. Respond with only the letter of the '
+                'correct option (A, B, C, or D).\n'
+                'The best answer is: '
+            )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs

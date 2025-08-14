@@ -391,6 +391,8 @@ def main():
                         judge_kwargs['model'] = 'qwen-72b'
                     elif listinstr(['MMVMBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1'
                     elif listinstr(['M4Bench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
 
