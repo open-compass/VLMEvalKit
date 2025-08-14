@@ -1157,6 +1157,13 @@ hawkvl_series = {
 }
 
 qwen2vl_series = {
+    "Qwen-VL-Max-20250813": partial(
+        Qwen2VLAPI,
+        model="qwen-vl-max-2025-08-13",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        max_length=8192,
+    ),
     "Qwen-VL-Max-0809": partial(
         Qwen2VLAPI,
         model="qwen-vl-max-0809",
