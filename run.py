@@ -373,7 +373,10 @@ def main():
                         else:
                             judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4-turbo'
+                        if listinstr(['LLaVABench_KO'], dataset_name):
+                            judge_kwargs['model'] = 'gpt-4o-0806'
+                        else:
+                            judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
@@ -390,6 +393,8 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1'
+                    elif listinstr(['M4Bench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
 
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True
