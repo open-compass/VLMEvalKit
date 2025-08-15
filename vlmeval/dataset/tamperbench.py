@@ -1,6 +1,7 @@
 import huggingface_hub
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 import torchvision.transforms as T
@@ -11,6 +12,7 @@ import zipfile
 import os
 import glob
 from .utils.tamperbench import *
+import warnings
 
 # constants
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -25,8 +27,6 @@ class MVTamperBench(VideoBaseDataset):
         'MVTamperBenchEnd': 'aa2c19dd02e1b006ee2d4be9f6f2b62b',
     }
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
-the detail and movement of objects, and the action and pose of persons. \
-Based on your observations, select the best option that accurately addresses the question.
 """
 
     TYPE = 'Video-MCQ'
@@ -87,14 +87,14 @@ Based on your observations, select the best option that accurately addresses the
 
         def check_integrity(pth):
             """
-    Verifies the completeness and consistency of the dataset located at the specified path.
+            Verifies the completeness and consistency of the dataset located at the specified path.
 
-    Args:
-        path_to_dataset (str): The directory path where the dataset is stored.
+            Args:
+                path_to_dataset (str): The directory path where the dataset is stored.
 
-    Returns:
-        bool: True if the dataset is intact, False otherwise.
-    """
+            Returns:
+                bool: True if the dataset is intact, False otherwise.
+            """
             # Construct the full path to the data file
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
@@ -436,14 +436,14 @@ Based on your observations, select the best option that accurately addresses the
         Evaluates the given evaluation file and generates ratings based on different dimensions.
 
         Args:
-            eval_file (str): Path to the evaluation file. The file should be in .xlsx format.
+            eval_file (str): Path to the evaluation file. The file should be in a supported format (xlsx/json/tsv).
             **judge_kwargs: Additional keyword arguments for the judge model.
 
         Returns:
             dict: A dictionary containing ratings for task type, tamper type, and task-tamper type.
 
         Raises:
-            AssertionError: If the eval_file does not end with '.xlsx'.
+            AssertionError: If the eval_file is not a supported format.
             Warning: If the OPENAI API is not working properly or the API key is not set,
                      exact matching will be used for evaluation.
 
@@ -454,15 +454,15 @@ Based on your observations, select the best option that accurately addresses the
             - Ratings are generated for different dimensions and saved to respective files.
         """
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_task_type_file = eval_file.replace('.xlsx', '_task_type_rating.json')
-        tgt_tamper_type_file = eval_file.replace('.xlsx', '_tamper_type_rating.json')
-        tgt_task_tamper_type_file = eval_file.replace('.xlsx', '_task_tamper_type_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
-        score_metrics_file = eval_file.replace('.xlsx', '_score_f1.xlsx')
-        action_metrics_file = eval_file.replace('.xlsx', '_action_f1.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_task_type_file = get_intermediate_file_path(eval_file, '_task_type_rating', 'json')
+        tgt_tamper_type_file = get_intermediate_file_path(eval_file, '_tamper_type_rating', 'json')
+        tgt_task_tamper_type_file = get_intermediate_file_path(eval_file, '_task_tamper_type_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        score_metrics_file = get_intermediate_file_path(eval_file, '_score_f1')
+        action_metrics_file = get_intermediate_file_path(eval_file, '_action_f1')
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')

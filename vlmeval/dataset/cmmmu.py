@@ -5,6 +5,7 @@ import os
 import re
 import tempfile
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 
 
 def get_multi_choice_prediction(response, all_choices, index2ans):
@@ -223,8 +224,7 @@ class CMMMU(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        result_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
 
         if not osp.exists(result_file):
             data = load(eval_file)

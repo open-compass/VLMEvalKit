@@ -152,7 +152,7 @@ class GOBenchDataset(ImageBaseDataset):
             'Instruction_Consistency_Score': [avg_scores.get('consistency', 0) * 100]
         })
 
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        score_file = get_intermediate_file_path(eval_file, '_score')
         dump(final_df, score_file)
         print(f"Detailed scores including failed attempts saved to {score_file}")
 

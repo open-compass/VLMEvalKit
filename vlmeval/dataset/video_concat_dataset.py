@@ -1,4 +1,5 @@
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from .video_base import VideoBaseDataset
 
 
@@ -59,7 +60,6 @@ class ConcatVideoDataset(VideoBaseDataset):
         return []  # list(cls.DATASET_SETS)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
@@ -80,6 +80,6 @@ class ConcatVideoDataset(VideoBaseDataset):
         result = result.T
         for idx, item in result.iterrows():
             result.loc[idx, 'acc'] = round(item['success'] / item['overall'] * 100, 1)
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(result, score_file)
         return result
