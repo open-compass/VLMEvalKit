@@ -176,7 +176,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
-    parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
+    parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer', 'eval'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
     parser.add_argument('--api-nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
@@ -316,37 +316,38 @@ def main():
                 if model is None:
                     model = model_name  # which is only a name
 
-                # Perform the Inference
-                if dataset.MODALITY == 'VIDEO':
-                    model = infer_data_job_video(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        result_file_name=result_file_base,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        use_vllm=args.use_vllm)
-                elif dataset.TYPE == 'MT':
-                    model = infer_data_job_mt(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore,
-                        use_vllm=args.use_vllm)
-                else:
-                    model = infer_data_job(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore,
-                        use_vllm=args.use_vllm)
+                if args.model != "eval":
+                    # Perform the Inference
+                    if dataset.MODALITY == 'VIDEO':
+                        model = infer_data_job_video(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            result_file_name=result_file_base,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            use_vllm=args.use_vllm)
+                    elif dataset.TYPE == 'MT':
+                        model = infer_data_job_mt(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
+                    else:
+                        model = infer_data_job(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
 
                 # Set the judge kwargs first before evaluation or dumping
 
