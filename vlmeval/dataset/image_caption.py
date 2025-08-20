@@ -70,6 +70,6 @@ class ImageCaptionDataset(ImageBaseDataset):
 
         scorer = COCO_Caption_Scorer(ref, gt)
         coco_caption_score_dict = scorer.compute_scores()
-        score_pth = eval_file.replace('.xlsx', '_score.json')
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(coco_caption_score_dict, score_pth)
         return coco_caption_score_dict

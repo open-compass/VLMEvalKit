@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 from vlmeval.dataset.utils import build_judge, levenshtein_distance
 from vlmeval.smp import *
 from .image_base import ImageBaseDataset
+from ..smp.file import get_intermediate_file_path
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -538,9 +539,8 @@ class MMLongBench(ImageBaseDataset):
         logger = get_logger('Evaluation')
         model = judge_kwargs['model']
 
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
 
         if osp.exists(storage):
             logger.warning(f'GPT scoring file {storage} already exists, will reuse it in MMLongBench_eval. ')
@@ -576,7 +576,7 @@ class MMLongBench(ImageBaseDataset):
             dump(data, storage)
 
         score = MMLongBench_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
 
         dump(score, score_pth)
         logger.info(f'MMLongBench_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')

@@ -114,10 +114,9 @@ class MIABench(ImageBaseDataset):
         judge_name = judge_kwargs.pop('model', 'gpt-4o')
 
         model = build_judge(model=judge_name, **judge_kwargs)
-        suffix = eval_file.split('.')[-1]
 
-        storage = eval_file.replace(f'.{suffix}', f'_{judge_name}.xlsx')  # noqa: F841
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{judge_name}.pkl')  # noqa: F841
+        storage = get_intermediate_file_path(eval_file, f'_{judge_name}')  # noqa: F841
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')  # noqa: F841
         nproc = judge_kwargs.pop('nproc', 4)  # noqa: F841
 
         if not osp.exists(storage):
@@ -160,7 +159,7 @@ class MIABench(ImageBaseDataset):
 
         goresult = load(storage)
         results = get_score_dict(goresult, goresult['score_raw'])
-        result_pth = storage.replace('.xlsx', '_score.csv')
+        result_pth = get_intermediate_file_path(storage, '_score', 'csv')
         results_pd = pd.DataFrame.from_dict(list(results.items()))
         dump(results_pd, result_pth)
 

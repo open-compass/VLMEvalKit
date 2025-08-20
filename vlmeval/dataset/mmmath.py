@@ -11,7 +11,7 @@ import logging
 
 from .image_base import ImageBaseDataset
 from ..utils import track_progress_rich
-from ..smp import load, dump
+from ..smp import load, dump, get_intermediate_file_path
 
 try:
     import sympy as sp
@@ -432,7 +432,7 @@ class MMMath(ImageBaseDataset):
         data['hit'] = res
         dump(data, eval_file)
 
-        score_file = eval_file.replace('.xlsx', '_score.json')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'json')
         score = {}
         score['overall'] = np.mean(data['hit'])
         # Results by Difficulty

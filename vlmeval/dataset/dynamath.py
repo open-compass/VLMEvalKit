@@ -12,6 +12,7 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge
 from ..utils import track_progress_rich
 from ..smp import load, dump, d2df, toliststr
+from ..smp.file import get_intermediate_file_path
 
 
 def preprocess(str1):
@@ -170,11 +171,10 @@ Example of expected JSON response format:
         judge_name = judge_kwargs.pop('model', 'gpt-4o-mini')
 
         model = build_judge(model=judge_name, **judge_kwargs)
-        suffix = eval_file.split('.')[-1]
 
-        storage = eval_file.replace(f'.{suffix}', f'_{judge_name}.xlsx')  # noqa: F841
-        score_file = eval_file.replace(f'.{suffix}', f'_{judge_name}_score.csv')  # noqa: F841
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{judge_name}.pkl')  # noqa: F841
+        storage = get_intermediate_file_path(eval_file, f'_{judge_name}')
+        score_file = get_intermediate_file_path(eval_file, f'_{judge_name}_score', 'csv')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 6)  # noqa: F841
 
         res = load(tmp_file) if os.path.exists(tmp_file) else {}
