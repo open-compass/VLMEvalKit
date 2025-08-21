@@ -75,7 +75,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     res = load(out_file)
     if index_set is not None:
         res = {k: v for k, v in res.items() if k in index_set} 
-    os.remove(out_file)
+    # os.remove(out_file)
     return res
 
 
