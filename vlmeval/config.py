@@ -387,9 +387,6 @@ api_models = {
     "GLM4V_PLUS_20250111": partial(
         GLMVisionAPI, model="glm-4v-plus-0111", temperature=0, retry=10
     ),
-    "GLM4_1VThinkingAPI": partial(
-        GLM4_1VThinkingFlashAPI, model="glm-4.1v-thinking-flash", temperature=0, retry=10
-    ),
     # MiniMax abab
     "abab6.5s": partial(
         GPT4V,
@@ -1003,7 +1000,8 @@ cogvlm_series = {
         CogVlm, model_path="THUDM/cogvlm2-llama3-chat-19B"
     ),
     "glm-4v-9b": partial(GLM4v, model_path="THUDM/glm-4v-9b"),
-    "GLM4_1VThinking-9b": partial(GLM4_1V9BThinking, model_path="THUDM/GLM-4.1V-9B-Thinking"),
+    "GLM4_1VThinking-9b": partial(GLMThinking, model_path="THUDM/GLM-4.1V-9B-Thinking"),
+    "GLM4_5V": partial(GLMThinking, model_path="THUDM/GLM-4.5V"),
 }
 
 wemm_series = {

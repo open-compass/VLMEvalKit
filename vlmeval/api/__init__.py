@@ -5,7 +5,7 @@ from .qwen_vl_api import QwenVLWrapper, QwenVLAPI, Qwen2VLAPI
 from .qwen_api import QwenAPI
 from .claude import Claude_Wrapper, Claude3V
 from .reka import Reka
-from .glm_vision import GLMVisionAPI, GLM4_1VThinkingFlashAPI
+from .glm_vision import GLMVisionAPI
 from .cloudwalk import CWWrapper
 from .sensechat_vision import SenseChatVisionAPI
 from .siliconflow import SiliconFlowAPI, TeleMMAPI
@@ -25,5 +25,5 @@ __all__ = [
     'Reka', 'GLMVisionAPI', 'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision',
     'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_V_API', 'JTVLChatAPI',
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
-    'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", "GLM4_1VThinkingFlashAPI"
+    'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI"
 ]

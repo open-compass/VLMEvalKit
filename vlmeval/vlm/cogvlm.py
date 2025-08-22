@@ -44,13 +44,13 @@ class GLM4v(BaseModel):
             response = self.tokenizer.decode(outputs[0])
         return response.split(self.end_text_token)[0]
 
-class GLM4_1V9BThinking(BaseModel):
+class GLMThinking(BaseModel):
 
     INSTALL_REQ = False
     INTERLEAVE = False
 
     def __init__(self, model_path='THUDM/GLM-4.1V-9B-Thinking', **kwargs):
-        from transformers import AutoProcessor, Glm4vForConditionalGeneration
+        from transformers import AutoProcessor, Glm4vForConditionalGeneration, Glm4vMoeForConditionalGeneration
         self.device = 'cuda'
         
         print(f"Loading processor from {model_path}")
@@ -61,12 +61,22 @@ class GLM4_1V9BThinking(BaseModel):
             trust_remote_code=True
         )
 
-        self.model = Glm4vForConditionalGeneration.from_pretrained(
-            pretrained_model_name_or_path=model_path,
-            torch_dtype=torch.bfloat16,
-            local_files_only=True,
-            trust_remote_code=True
-        ).to(self.device)
+        if "GLM-4.5V" in model_path:
+            self.model = Glm4vMoeForConditionalGeneration.from_pretrained(
+                pretrained_model_name_or_path=model_path,
+                torch_dtype=torch.bfloat16,
+                local_files_only=True,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                device_map="auto"
+            )
+        elif "GLM-4.1V" in model_path:
+            self.model = Glm4vForConditionalGeneration.from_pretrained(
+                pretrained_model_name_or_path=model_path,
+                torch_dtype=torch.bfloat16,
+                local_files_only=True,
+                trust_remote_code=True
+            ).to(self.device)
 
     def build_msgs(self, msgs_raw, system_prompt=None, dataset=None):
         msgs = cp.deepcopy(msgs_raw)
@@ -111,6 +121,7 @@ class GLM4_1V9BThinking(BaseModel):
                 return_dict=True,
                 return_tensors="pt"
             ).to(self.device)
+            inputs.pop("token_type_ids", None)
 
             # ✅ 执行生成
             generated_ids = self.model.generate(**inputs, max_new_tokens=8192)

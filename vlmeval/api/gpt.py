@@ -2,7 +2,6 @@ from ..smp import *
 import os
 import sys
 from .base import BaseAPI
-from openai import OpenAI
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -37,7 +36,6 @@ class OpenAIWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'gpt-3.5-turbo-0613',
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = False,
                  system_prompt: str = None,
@@ -45,7 +43,7 @@ class OpenAIWrapper(BaseAPI):
                  timeout: int = 300,
                  api_base: str = None,
                  max_tokens: int = 2048,
-                 img_size: int = 512,
+                 img_size: int = -1,
                  img_detail: str = 'low',
                  use_azure: bool = False,
                  **kwargs):
@@ -87,6 +85,12 @@ class OpenAIWrapper(BaseAPI):
             if key is None:
                 key = env_key
             api_base = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+        elif 'ernie' in model:
+            env_key = os.environ.get('BAIDU_API_KEY', '')
+            if key is None:
+                key = env_key
+            api_base = 'https://qianfan.baidubce.com/v2/chat/completions'
+            self.baidu_appid = os.environ.get('BAIDU_APP_ID', None)
         else:
             if use_azure:
                 env_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
@@ -112,8 +116,9 @@ class OpenAIWrapper(BaseAPI):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
-        self.o1_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        self.is_max_completion_tokens = ('o1' in model) or ('o3' in model) or ('o4' in model) or ('gpt-5' in model)
+        self.is_o_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if use_azure:
             api_base_template = (
@@ -195,64 +200,47 @@ class OpenAIWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
 
-        client = OpenAI(
-            api_key="sk-eGMzK13PwrCaeWrcTHqwAVRAETeFHTgc",
-            base_url="https://api-gateway.glm.ai/v1")
+        # Will send request if use Azure, dk how to use openai client for it
+        if self.use_azure:
+            headers = {'Content-Type': 'application/json', 'api-key': self.key}
+        elif 'internvl2-pro' in self.model:
+            headers = {'Content-Type': 'application/json', 'Authorization': self.key}
+        else:
+            headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
+        if hasattr(self, 'baidu_appid'):
+            headers['appid'] = self.baidu_appid
 
-        response = client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+        payload = dict(
+            model=self.model,
             messages=input_msgs,
-            max_tokens=max_tokens,
-            temperature=temperature   
-        )
+            n=1,
+            temperature=temperature,
+            **kwargs)
+
+        if self.is_max_completion_tokens:
+            payload['max_completion_tokens'] = max_tokens
+            payload.pop('temperature')
+        else:
+            payload['max_tokens'] = max_tokens
+
+        if 'gemini' in self.model:
+            payload.pop('max_tokens')
+            payload.pop('n')
+            payload['reasoning_effort'] = 'high'
+
+        response = requests.post(
+            self.api_base,
+            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+        ret_code = response.status_code
+        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
+        answer = self.fail_msg
         try:
-            answer = response.choices[0].message.content
-            ret_code = 0
+            resp_struct = json.loads(response.text)
+            answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
-            ret_code = 1
-            answer = self.fail_msg
-        
-        # # Will send request if use Azure, dk how to use openai client for it
-        # if self.use_azure:
-        #     headers = {'Content-Type': 'application/json', 'api-key': self.key}
-        # elif 'internvl2-pro' in self.model:
-        #     headers = {'Content-Type': 'application/json', 'Authorization': self.key}
-        # else:
-        #     headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
-        # payload = dict(
-        #     model=self.model,
-        #     messages=input_msgs,
-        #     n=1,
-        #     temperature=temperature,
-        #     **kwargs)
-
-        # if self.o1_model:
-        #     payload['max_completion_tokens'] = max_tokens
-        #     payload.pop('temperature')
-        # else:
-        #     payload['max_tokens'] = max_tokens
-
-        # if 'gemini' in self.model:
-        #     payload.pop('max_tokens')
-        #     payload.pop('n')
-        #     payload['reasoning_effort'] = 'high'
-
-        # response = requests.post(
-        #     self.api_base,
-        #     headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
-        # ret_code = response.status_code
-        # ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
-        # answer = self.fail_msg
-        # try:
-        #     resp_struct = json.loads(response.text)
-        #     answer = resp_struct['choices'][0]['message']['content'].strip()
-        # except Exception as err:
-        #     if self.verbose:
-        #         self.logger.error(f'{type(err)}: {err}')
-        #         self.logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 
