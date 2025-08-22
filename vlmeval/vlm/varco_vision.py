@@ -178,7 +178,8 @@ class VarcoVision(BaseModel):
             if msg["type"] == "text":
                 content += msg["value"]
             elif msg["type"] == "image":
-                img = Image.open(msg["value"]).convert("RGB")
+                with Image.open(msg["value"]) as img:
+                    img = img.convert("RGB")
                 images.append(img)
                 image_sizes.append(img.size)
                 content += f"{self.DEFAULT_IMAGE_TOKEN}\n"
