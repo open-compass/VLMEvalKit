@@ -1,3 +1,4 @@
+import re
 import requests
 requests.packages.urllib3.disable_warnings()
 
@@ -52,13 +53,13 @@ class GLMVisionWrapper(BaseAPI):
 
         messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs.get('dataset', None))
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            do_sample=False,
-            max_tokens=2048
-        )
         try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                do_sample=False,
+                max_tokens=2048
+            )
             answer = response.choices[0].message.content.strip()
             if self.verbose:
                 self.logger.info(f'inputs: {inputs}\nanswer: {answer}')
