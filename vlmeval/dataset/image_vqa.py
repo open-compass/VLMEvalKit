@@ -4,6 +4,7 @@ import tempfile
 from functools import partial
 
 import pandas as pd
+from tqdm import tqdm
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
@@ -54,8 +55,14 @@ class ImageVQADataset(ImageBaseDataset):
             'value'] += '\nAnswer the question using a single word or phrase.'
         return msgs
 
-    # It returns a DataFrame
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    # It returns a DataFrame
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.vqa_eval import hit_calculate, process_line
 
         data = load(eval_file)
@@ -69,14 +76,23 @@ class ImageVQADataset(ImageBaseDataset):
         if listinstr(['TextVQA'], dataset):
             res = pool.map(partial(process_line, method='vqa_score'), lines)
         elif listinstr(['ChartQA'], dataset):
-            res = pool.map(partial(process_line, method='relaxed_accuracy'),
-                           lines)
+            res = pool.map(partial(process_line, method='relaxed_accuracy'), lines)
         elif listinstr(['OCRVQA', 'GQA'], dataset):
             res = pool.map(partial(process_line, method='accuracy'), lines)
         elif listinstr(['DocVQA', 'InfoVQA'], dataset):
             res = pool.map(partial(process_line, method='anls'), lines)
         else:  # default using vqa_score to calculate score
             res = pool.map(process_line, lines)
+
+        data['eval_gt'] = [r['gt'] for r in res]
+        data['eval_pred'] = [r['pred'] for r in res]
+        data['eval_match'] = [r['match'] for r in res]
+        data['eval_score'] = [np.mean(r['match']) for r in res]
+
+        suffix = eval_file.split('.')[-1]
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_results.xlsx')
+        dump(data, detailed_result_file)
+
         hit = hit_calculate(res, dataset)
         ret = dict()
         if 'split' in data:
@@ -98,6 +114,65 @@ class ImageVQADataset(ImageBaseDataset):
                     sub = [r for l, r in zip(lines, res) if l['category'] == c]
                     # [np.mean(x['match']) >= full_score_weight for x in sub]
                     hit = hit_calculate(sub, dataset)
+                    ret[c] = np.mean(hit) * 100
+        ret = d2df(ret)
+        ret.round(2)
+
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(ret, result_file)
+        return ret
+
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        assert 'answer' in data and 'prediction' in data
+        data['prediction'] = [str(x) for x in data['prediction']]
+        data['answer'] = [str(x) for x in data['answer']]
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        res = []
+        scores = []
+        for line in tqdm(lines):
+            score = verifier.evaluate(line['question'], line['prediction'], line['answer'])
+            scores.append(score)
+            res.append({
+                'gt': [line['answer']],
+                'pred': line['prediction'],
+                'match': [1.0 if score else 0.0]
+            })
+
+        data['verifier_score'] = scores
+        data['verifier_match'] = [1.0 if score else 0.0 for score in scores]
+
+        suffix = eval_file.split('.')[-1]
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        dump(data, detailed_result_file)
+
+        def hit_calculate(result):
+            return [np.mean(x['match']) for x in result]
+
+        hit = hit_calculate(res)
+        ret = dict()
+        if 'split' in data:
+            splits = set(data['split'])
+            for sp in splits:
+                sub = [r for l, r in zip(lines, res) if l['split'] == sp]
+                # [np.mean(x['match']) >= full_score_weight for x in sub]
+                hit = hit_calculate(sub)
+                ret[sp] = np.mean(hit) * 100
+            sub = [r for l, r in zip(lines, res)]
+            hit = hit_calculate(sub)
+            ret['Overall'] = np.mean(hit) * 100
+        else:
+            ret['Overall'] = np.mean(hit) * 100
+            if 'category' in data:
+                cates = list(set(data['category']))
+                cates.sort()
+                for c in cates:
+                    sub = [r for l, r in zip(lines, res) if l['category'] == c]
+                    hit = hit_calculate(sub)
                     ret[c] = np.mean(hit) * 100
         ret = d2df(ret)
         ret.round(2)
@@ -230,9 +305,15 @@ class MathVista(ImageBaseDataset):
     }
     DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
 
+    def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
     # It returns a DataFrame
     @classmethod
-    def evaluate(self, eval_file, **judge_kwargs):
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.mathvista import MathVista_auxeval, MathVista_acc
 
         model = judge_kwargs['model']
@@ -277,6 +358,71 @@ class MathVista(ImageBaseDataset):
 
         score = MathVista_acc(storage)
         score_pth = storage.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            dump(data, detailed_result_file)
+
+        def MathVista_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+            skill_list = []
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['task']
+                tot['Overall'] += 1
+                try:
+                    skills = eval(item['skills'])
+                except SyntaxError:
+                    skills = [item['skills']]
+                for skill in skills:
+                    if skill not in skill_list:
+                        skill_list.append(skill)
+                    tot[skill] += 1
+                tot[cate] += 1
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+                    for skill in skills:
+                        hit[skill] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Task&Skill'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res)
+            return res
+
+        score = MathVista_acc_verifier(detailed_result_file)
+        score_pth = eval_file.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
 
@@ -436,9 +582,13 @@ class MathVision(ImageBaseDataset):
         'MathVision_MINI': '060fe4fa5d868987ce179307bd5f8a33'
     }
 
-    # It returns a DataFrame
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.mathv import MATH_V_auxeval, MATH_V_acc
 
         if 'model' in judge_kwargs:
@@ -489,6 +639,68 @@ class MathVision(ImageBaseDataset):
         dump(score, score_pth)
         return score
 
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # Add verifier evaluation for MathVision
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            dump(data, detailed_result_file)
+
+        else:
+            detailed_result_file = eval_file.replace('.xlsx', '_detailed_results.xlsx')
+            if not osp.exists(detailed_result_file):
+                dump(data, detailed_result_file)
+
+        def MathVision_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['category'] if 'category' in item else 'Overall'
+                tot['Overall'] += 1
+                tot[cate] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Subject'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
+            return res
+
+        score = MathVision_acc_verifier(detailed_result_file)
+        score_pth = eval_file.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
 
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
@@ -505,6 +717,7 @@ class Physics_yale(ImageBaseDataset):
         'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
         'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
         'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
@@ -514,17 +727,36 @@ class Physics_yale(ImageBaseDataset):
         'optics_dataset': '39ab9028ae4a33c06f78ce8618668172',
         'quantum_dataset': 'd2610f9938ad1e848259ccbcd5ac3acf',
         'statistics_dataset': '78242aa2431a477782b5b3de1c18d633',
-        'Physics': 'b4136f27f09339698f636111c07824e9'
+        'Physics_blankim': 'b4136f27f09339698f636111c07824e9',
+        'Physics': '528d66b7365f9d4db2b58fdeadeade71'
     }
+
+    def __init__(self, dataset='Physics', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', 'Physics')
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+        data['index'] = [str(x) for x in data['index']]
+        self.meta_only = False
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+        self.data = data
+        self.post_build(dataset)
 
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if self.meta_only:
-            tgt_path = toliststr(line['image'])
+        if pd.isna(line['image']):
+            tgt_path = None
         else:
-            tgt_path = self.dump_image(line)
+            if self.meta_only:
+                tgt_path = toliststr(line['image'])
+            else:
+                tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -546,10 +778,11 @@ class Physics_yale(ImageBaseDataset):
             f"Question: {line['question']}\nAnswer:")
 
         msgs = []
-        if isinstance(tgt_path, list):
-            msgs.extend([{"type": "image", "value": p} for p in tgt_path])
-        else:
-            msgs.append({"type": "image", "value": tgt_path})
+        if tgt_path is not None:
+            if isinstance(tgt_path, list):
+                msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+            else:
+                msgs.append({"type": "image", "value": tgt_path})
 
         msgs.append({"type": "text", "value": instruction})
 
@@ -674,7 +907,7 @@ class OlympiadBench(ImageBaseDataset):
                     unit_text = '，注意答案的单位不要放在\\boxed{}中'
                 prompt = (
                     f'以下是中国{subject_content}竞赛中的解答题{answer_type_text}。请根据题目的要求和所提供的信息计算得出答案。'
-                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以“所以最终答案是{multiple_answer_text}。”'
+                    f'解答过程和结果中使用的变量和公式请使用LaTeX格式表示。请在最后以"所以最终答案是{multiple_answer_text}。"'
                     f'显式给出结果{unit_text}。')
         else:
             subject_content = 'Math' if self.is_math else 'Physics'
@@ -843,6 +1076,120 @@ class OlympiadBench(ImageBaseDataset):
 
         accdz = pd.read_csv(score_file)
         return accdz
+
+
+class SeePhys(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'SeePhys':
+        'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total.tsv',
+        'SeePhys_vo':
+        'https://huggingface.co/datasets/SeePhys/SeePhys/resolve/main/data_vlmevalkit/SeePhys_total_vo.tsv',
+    }
+    DATASET_MD5 = {
+        'SeePhys': 'c19612ca99cc8c1351b6c3aa556d25b8',
+        'SeePhys_vo': '542b4e78cbe6b34b247bdbc8aaddeb19',
+    }
+    # Text Vision is the default setting for SeePhys DATASET
+    # Vision Only: Use SeePhys_vo DATASET
+    # Text Caption: Add 'export USE_CAPTION=1' and 'export USE_IMAGE=0' before running the script
+    # Text Only: Add 'export USE_IMAGE=0' before running the script
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = "" if str(line['question']) == 'nan' else line['question']
+
+        if os.environ.get('USE_CAPTION', '0') == '1':
+            question += line['caption']
+
+        if os.environ.get('USE_SEARCH', '0') == '1':
+            if line['language'] == 'English':
+                question += "\nPlease search the Internet to answer the above question. First output your thinking process in <think> </think> tags and then output the final answer in <answer> </answer> tags."  # noqa: E501
+            else:
+                question += "\n请在互联网上搜索以回答上述问题。首先在<think></think>标签中输出你的思维过程，然后在<answer></answer>标签中输入最终答案。"  # noqa: E501
+        elif os.environ.get('USE_COT_PROMPT', '1') == '1':
+            if line['language'] == 'English':
+                question += "\nPlease answer this question with reasoning. First output your reasoning process in <think> </think> tags and then output the final answer in <answer> </answer> tags."  # noqa: E501
+            else:
+                question += "\n请用推理来回答这个问题。首先在<think></think>标签中输出推理过程，然后在<answer></answer>标签中输入最终答案。"  # noqa: E501
+        else:
+            if line['language'] == 'English':
+                question += "\nAnswer this question directly with numbers, formulas, or phrases"
+            else:
+                question += "\n请直接用数字、公式或短语回答这个问题。"
+        try:
+            if line['sig_figs']:
+                sf = str(int(line['sig_figs']))
+                if line['language'] == 'English':
+                    question += f"The final answer should retain {sf} significant figures."
+                else:
+                    question += f"最终答案应保留{sf}位有效数字。"
+        except Exception:
+            pass
+        msgs = []
+        if os.environ.get('USE_IMAGE', '1') == '1':
+            if isinstance(tgt_path, list):
+                msgs.extend([dict(type='image', value=p) for p in tgt_path])
+            else:
+                msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.seephys import extract, eval_acc
+
+        model = judge_kwargs.pop('model', 'deepseek')
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(model=model, max_tokens=1024, **judge_kwargs)
+            assert model.working(), ('SeePhys evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['extract'] == v['extract'] and ans[k]['score'] == v[
+                        'score']
+
+            data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+
+            dump(data, storage)
+
+        score = eval_acc(storage)
+        score_pth = storage.replace('.xlsx', '_score.json')
+        dump(score, score_pth)
+        return score
 
 
 class LogicVista(ImageBaseDataset):
@@ -1074,6 +1421,53 @@ class LLaVABench(ImageBaseDataset):
             assert model.working(), 'LLaVABench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
 
             prompts = [build_prompt(line) for line in lines]
+            tups = [(model, prompt) for prompt in prompts]
+            scores = track_progress_rich(LLaVABench_atomeval,
+                                         tups,
+                                         nproc=nproc,
+                                         chunksize=nproc)
+            data['gpt4_score'] = [x[0] for x in scores]
+            data['score'] = [x[1] for x in scores]
+            dump(data, record_file)
+
+        data = load(record_file)
+        ret = LLaVABench_score(data).round(1)
+        dump(ret, score_file)
+        return ret
+
+
+class LLaVABench_KO(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LLaVABench_KO':
+        'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
+    }
+    DATASET_MD5 = {'LLaVABench_KO': 'ef279346a8333b0bf1ba70aa7d0c7494'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.llavabench import (
+            build_prompt_ko,
+            LLaVABench_atomeval,
+            LLaVABench_score,
+        )
+
+        suffix = '.' + eval_file.split('.')[-1]
+        record_file = eval_file.replace(suffix, '_openai_result' + suffix)
+        score_file = eval_file.replace(suffix, '_score.csv')
+        nproc = judge_kwargs.pop('nproc', 4)
+        system_prompt = 'You are a helpful and precise assistant for checking the quality of the answer.'
+
+        if not osp.exists(record_file):
+            data = load(eval_file)
+            lines = [data.iloc[i] for i in range(len(data))]
+            model = build_judge(temperature=0.2,
+                                system_prompt=system_prompt,
+                                **judge_kwargs)
+            assert model.working(), 'LLaVABench_KO evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+
+            prompts = [build_prompt_ko(line) for line in lines]
             tups = [(model, prompt) for prompt in prompts]
             scores = track_progress_rich(LLaVABench_atomeval,
                                          tups,
@@ -2191,6 +2585,69 @@ class MMSci_Captioning(ImageBaseDataset):
         return rating
 
 
+class BMMR(ImageBaseDataset):
+    TYPE = 'BMMR'
+    DATASET_URL = {
+        'BMMR': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR.tsv'
+    }
+    DATASET_MD5 = {'BMMR': '3245ec52eb8dd689b81633cf7be06264'}
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.bmmr import get_acc_for_reference_based_metrics, merge_rating
+        refer_based_metrics_output_file = eval_file.replace('.xlsx', '_reference_based_metrics.xlsx')
+        if not osp.exists(refer_based_metrics_output_file):
+            data = load(eval_file)
+            old_candidates = {}
+            old_references = {}
+            task_types = {}
+            for idx, item in data.iterrows():
+                image_id = item["index"]
+                task_types[image_id] = item["task_type"]
+                old_candidates[image_id] = [item["prediction"]]
+                old_references[image_id] = [item["answer"]]
+
+            candidates = []
+            references = []
+            image_id_list = []
+            task_type_list = []
+            image_ids = old_references.keys()
+            for cid in image_ids:
+                if cid in old_candidates:
+                    candidates.append(old_candidates[cid][0])
+                    references.append(old_references[cid])
+                    image_id_list.append(cid)
+                    task_type_list.append(task_types[cid])
+            if isinstance(references[0], str):
+                references = [[r] for r in references]
+
+            reference_based_metrics_file = eval_file.replace('.xlsx', '_reference_based_metrics.pkl')
+            assert len(references) == len(candidates) == len(image_id_list) == len(task_type_list)
+            existing_data = get_acc_for_reference_based_metrics(
+                references, candidates, image_id_list, task_type_list, reference_based_metrics_file
+            )
+            for idx, item in data.iterrows():
+                reference_based_metrics = str(existing_data[item["index"]])
+                data.loc[idx, 'reference_based_metrics'] = reference_based_metrics
+            dump(data, refer_based_metrics_output_file)
+
+        rating = merge_rating(
+            refer_based_metrics_output_file,
+        )
+        dump(rating, eval_file.replace('.xlsx', '_final_rating.xlsx'))
+        return rating
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        question = line['question']
+        tgt_path = self.dump_image(line)
+
+        msgs = []
+        msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        msgs.append(dict(type='text', value=question))
+        return msgs
+
+
 class TDBenchGrounding(ImageVQADataset):
     DATASET_URL = {
         'tdbench_grounding_rot0':
@@ -2972,3 +3429,61 @@ class MMVMBench(ImageBaseDataset):
             dump(acc, acc_file)
 
             return acc
+
+
+class OCRBench_v2(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'OCRBench_v2':
+        'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+    }
+    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import ast
+        from .utils.ocrbrnch_v2_eval import process_predictions, ocrbench_v2_aggregate_accuracy
+        import pandas as pd
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        predict_result = []
+        for i in tqdm(range(len(lines))):
+            line = lines[i]
+            predict = str(line['prediction']) if pd.notna(line['prediction']) else ''
+            answers = ast.literal_eval(line['answer'])
+            category = line['category']
+            questions = line['question']
+            evals = line['eval']
+            bbox_raw = line['bbox']
+            content_raw = line['content']
+
+            # Process bbox and content fields
+            bbox = ast.literal_eval(bbox_raw) if bbox_raw != 'without bbox' else bbox_raw
+            content = ast.literal_eval(content_raw) if content_raw != 'without content' else content_raw
+
+            # Build result dictionary
+            result_entry = {
+                "type": category,
+                "question": questions,
+                "predict": predict,
+                "answers": answers,
+                "bbox": bbox,
+                "content": content
+            }
+            # Add eval field if present
+            if evals != 'without eval':
+                result_entry["eval"] = evals
+            predict_result.append(result_entry)
+        res_data_list = process_predictions(predict_result)
+        en_scores, cn_scores = ocrbench_v2_aggregate_accuracy(res_data_list)
+        score_en_overall = sum(en_scores.values()) / len(en_scores)
+        score_cn_overall = sum(cn_scores.values()) / len(cn_scores)
+        final_score_dict = {**en_scores, **cn_scores}
+        final_score_dict["English Overall Score"] = score_en_overall
+        final_score_dict["Chinese Overall Score"] = score_cn_overall
+        score_pth = eval_file.replace('.xlsx', '_score.json')
+        dump(final_score_dict, score_pth)
+        return final_score_dict

@@ -4,7 +4,7 @@ exclude: |
       assets/|
       vlmeval/config.py |
       vlmeval/dataset/utils/wemath.py |
-      vlmeval/dataset/Omnidocbench/ |
+      vlmeval/dataset/OmniDocBench/ |
       vlmeval/dataset/utils/megabench/ |
       vlmeval/dataset/utils/vgrpbench/ |
       vlmeval/dataset/utils/chartmimic/ |

@@ -6,6 +6,7 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 import pandas as pd
+from tqdm import tqdm
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -48,6 +49,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_EN.tsv',
         'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_CN.tsv',
         'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_CN.tsv',
+        'MMBench_DEV_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMBench/resolve/main/MMBench_DEV_KO.tsv',
         'MMBench': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench.tsv',  # Internal
         'MMBench_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN.tsv',  # Internal
         # MMBench v1.1
@@ -59,6 +61,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN_V11.tsv',  # Internal
         # SEEDBench Series
         'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench_IMG.tsv',
+        'SEEDBench_IMG_KO': 'https://huggingface.co/datasets/NCSOFT/K-SEED/resolve/main/SEEDBench_IMG_KO.tsv',
         'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
         'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench2_Plus.tsv',
         # ScienceQA Series
@@ -79,13 +82,14 @@ class ImageMCQDataset(ImageBaseDataset):
         'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
         'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
         # R-Bench
-        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-dis.tsv',
-        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-ref.tsv',
+        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-dis.tsv',
+        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-ref.tsv',
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
+        'MMStar_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMStar/resolve/main/MMStar_KO.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
@@ -103,6 +107,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
         "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
+        "K-DTCBench": "https://huggingface.co/datasets/NCSOFT/K-DTCBench/resolve/main/K-DTCBench.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -124,6 +129,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': '6939fadb0ce626fefc0bdc9c64efc528',
         'MMBench_DEV_CN': '08b8fc3324a5ed74155350f57be69fbd',
         'MMBench_TEST_CN': '7e1239baf0ee4c8b513e19705a0f317e',
+        'MMBench_DEV_KO': '72e1cde9124b5015be6d0dd5c9b5500d',
         'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
         'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
         # MMBench v1.1
@@ -135,6 +141,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+        'SEEDBench_IMG_KO': 'b354a9ac3493f3ccf294e69b216bfab3',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
         'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
         # ScienceQA
@@ -162,6 +169,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
+        'MMStar_KO': 'cc6049c7314bb54b9ac5e247a2bfb357',
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
@@ -172,6 +180,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '865144aa866e29b251bdc7d63a735b6b',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
+        "K-DTCBench": "fe72a85b010513d3840b5f3be2de6ed3",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
@@ -223,6 +232,12 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
         )
@@ -348,6 +363,107 @@ class ImageMCQDataset(ImageBaseDataset):
                            chemistry__shape_multi split and uses a different evaluation prompt. Please \
                            explicitly specify the version of the dataset when you report results.')
 
+        return acc
+
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # assert dataset is not None
+        dataset_map = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+        }
+        dataset = self.dataset_name
+        if dataset in dataset_map:
+            dataset = dataset_map[dataset]
+
+        circular = False
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
+            circular = True
+
+        if circular:
+            raise ValueError("circular is not supported for verifier evaluation")
+
+        suffix = eval_file.split('.')[-1]
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        # Add verifier evaluation for specific datasets
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        verifier_scores = []
+        verifier_matches = []
+        for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+            question_text = row['question']
+            if 'A' in row and not pd.isna(row['A']):
+                options = []
+                for option_key in ['A', 'B', 'C', 'D', 'E']:
+                    if option_key in row and not pd.isna(row[option_key]):
+                        options.append(f"{option_key}. {row[option_key]}")
+                if options:
+                    question_text += "\nOptions:\n" + "\n".join(options)
+
+            correct_option = str(row['answer']).strip().upper()
+            if correct_option in row and not pd.isna(row[correct_option]):
+                answer_text = f"{correct_option}. {row[correct_option]}"
+            else:
+                answer_text = correct_option
+
+            score = verifier.evaluate(question_text, row['prediction'], answer_text)
+            verifier_scores.append(score)
+            verifier_matches.append(1.0 if score else 0.0)
+
+        data['verifier_score'] = verifier_scores
+        data['verifier_match'] = verifier_matches
+
+        detailed_result_file = eval_file.replace(f'.{suffix}', '_detailed_results.xlsx')
+        dump(data, detailed_result_file)
+
+        def report_acc_verifier(result_file):
+            from collections import defaultdict
+
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                split_name = item.get('split', 'Overall')
+                if pd.isna(split_name):
+                    split_name = 'Overall'
+
+                tot['Overall'] += 1
+                tot[split_name] += 1
+
+                if 'category' in item and not pd.isna(item['category']):
+                    category = item['category']
+                    tot[category] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[split_name] += 1
+
+                    if 'category' in item and not pd.isna(item['category']):
+                        hit[category] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                if k == 'Overall':
+                    res['Category'].append('Overall')
+                else:
+                    res['Category'].append(k)
+                res['Total'].append(tot[k])
+                res['Hit'].append(hit[k])
+                res['Accuracy'].append(hit[k] / tot[k] * 100 if tot[k] > 0 else 0.0)
+
+            res_df = pd.DataFrame(res)
+            return res_df
+        acc = report_acc_verifier(detailed_result_file)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
         return acc
 
 
@@ -1444,7 +1560,7 @@ class LEGO(ImageMCQDataset):
         if len(options):
             prompt += options_prompt
             prompt += (
-                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "Please respond with only the sequence of letters (e.g., 'BDAC') "
                 "that correctly orders the steps.\n"
             )
 
@@ -2404,3 +2520,231 @@ class AffordanceDataset(ImageMCQDataset):
 
         selected_columns = ['index', 'question', 'prediction', 'match']
         return df[selected_columns]
+
+
+class TreeBench(ImageMCQDataset):
+
+    TYPE = 'MCQ'
+
+    DATASET_URL = {
+        'TreeBench': 'https://huggingface.co/datasets/HaochenWang/TreeBench/resolve/main/TreeBench.tsv',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        prompt = line['question']
+        if not line["category"] == "Perception/OCR":
+            prompt += "\nOptions:\n" + line["multi-choice options"]
+        prompt += "\nAnswer with the option's letter directly."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        import ast
+        from .utils.multiple_choice import extract_characters_regex
+        from .utils.treebench import get_dimension_rating
+        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        FAIL_MSG = 'Failed to obtain answer via API.'
+        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        tgt_file = eval_file.replace('.xlsx', '_rating.json')
+        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+
+        if not osp.exists(score_file):
+
+            res = {} if not osp.exists(tmp_file) else load(tmp_file)
+            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+
+            data = load(eval_file)
+            cnt_rejected = 0
+            data_un = data[~pd.isna(data['prediction'])]
+
+            for idx in data['index']:
+                ans = data.loc[data['index'] == idx, 'answer'].values[0]
+                pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+
+                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                cot = match_cot.group(1).strip() if match_cot else pred
+
+                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                iou = self.evaluate_box_iou(cot, target_instances)
+
+                data.loc[data['index'] == idx, 'iou'] = iou
+
+                match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
+                pred = match_pred.group(1).strip().upper() if match_pred else pred
+
+                extract_pred = extract_characters_regex(pred)
+                if extract_pred == '':
+                    cnt_rejected += 1
+                    data.loc[data['index'] == idx, 'score'] = 0
+                else:
+                    data.loc[data['index'] == idx, 'score'] = int(extract_pred == ans)
+
+            print(
+                f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
+                f'failed to obtain the score for another {cnt_rejected} questions. '
+                f'Those questions will be counted as 0 score in ALL rating.'
+            )
+
+            dump(data, score_file)
+
+        rating = get_dimension_rating(score_file)
+        dump(rating, tgt_file)
+        return rating
+
+    def evaluate_box_iou(predict_str: str, target_instances: list) -> float:
+        pattern = r"<box>(.*?)</box>"
+        matches = re.findall(pattern, predict_str, re.DOTALL)
+
+        all_boxes = []
+
+        for match in matches:
+            box = match.strip()
+
+            coord_pattern = r'\[(\d+),(\d+),(\d+),(\d+)\]'
+            coord_match = re.match(coord_pattern, box)
+
+            if coord_match:
+                x1, y1, x2, y2 = map(int, coord_match.groups())
+
+                if x1 < x2 and y1 < y2:
+                    # all_boxes.append([(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
+                    all_boxes.append([x1, y1, x2, y2])
+
+        if len(all_boxes) == 0:
+            return 0
+
+        target_boxes = target_instances
+        if len(target_boxes) == 0:
+            return len(all_boxes) > 0
+
+        def calculate_average_iou(pred_boxes, target_boxes):
+            """
+            计算每个目标框与预测框中 IoU 最大的预测框之间的平均 IoU。
+
+            参数:
+                pred_boxes (List[List[float]]): 预测框列表，每个框为 [cx, cy, w, h]
+                target_boxes (List[List[float]]): 目标框列表，每个框为 [cx, cy, w, h]
+
+            返回:
+                float: 匹配上的平均 IoU
+            """
+            def compute_iou(box1, box2):
+                """计算两个框之间的 IoU"""
+                x1_min, y1_min, x1_max, y1_max = box1
+                x2_min, y2_min, x2_max, y2_max = box2
+
+                inter_x_min = max(x1_min, x2_min)
+                inter_y_min = max(y1_min, y2_min)
+                inter_x_max = min(x1_max, x2_max)
+                inter_y_max = min(y1_max, y2_max)
+
+                inter_width = max(0, inter_x_max - inter_x_min)
+                inter_height = max(0, inter_y_max - inter_y_min)
+                inter_area = inter_width * inter_height
+
+                area1 = (x1_max - x1_min) * (y1_max - y1_min)
+                area2 = (x2_max - x2_min) * (y2_max - y2_min)
+
+                union_area = area1 + area2 - inter_area
+
+                return inter_area / union_area if union_area > 0 else 0.0
+
+            pred_coords = pred_boxes
+            target_coords = target_boxes
+
+            total_iou = 0.0
+            num_targets = len(target_boxes)
+
+            if num_targets == 0:
+                return 0.0
+
+            # 为每个目标框找到最大 IoU 的预测框
+            for t_coord in target_coords:
+                best_iou = 0.0
+                for p_coord in pred_coords:
+                    iou = compute_iou(t_coord, p_coord)
+                    if iou > best_iou:
+                        best_iou = iou
+                total_iou += best_iou
+
+            return total_iou / num_targets
+
+        return calculate_average_iou(all_boxes, target_boxes)
+
+
+class CVQA(ImageMCQDataset):
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['CVQA_LOC', 'CVQA_EN']
+
+    DATASET_URL = {
+        "CVQA_EN": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_ENG.tsv"
+        ),
+        "CVQA_LOC": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_LOC.tsv"
+        ),
+    }
+
+    DATASET_MD5 = {
+        "CVQA_EN": "f49ad8ad39dbc4208ea8985a3ca00804",
+        "CVQA_LOC": "b51dcf2820cb292aa5cb3430dd7d5049",
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+
+        prompt = f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += (
+                'Select the best answer to the above multiple-choice question '
+                'based on the image. Respond with only the letter of the '
+                'correct option (A, B, C, or D).\n'
+                'The best answer is: '
+            )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs

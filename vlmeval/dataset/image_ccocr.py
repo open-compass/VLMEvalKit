@@ -191,6 +191,7 @@ class CCOCRDataset(ImageBaseDataset):
         Evaluate the combined CCOCR dataset containing all sub-datasets
         """
         df = load(eval_file)
+        df['prediction'] = [str(x) for x in df['prediction']]
         required_colume_list = ['answer', 'prediction', "category", "image_name", "l2-category", "split"]
         for required_colume in required_colume_list:
             assert required_colume in df, "required_colume: {} NOT found".format(required_colume)

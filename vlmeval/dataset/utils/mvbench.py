@@ -23,9 +23,9 @@ def get_dimension_rating(data_path):
     for key, value in result_board.items():
         correct += value[0]
         total += value[1]
-        result_board[key].append(f'{value[0] / value[1] * 100 :.2f}%')
+        result_board[key].append(f'{value[0] / value[1] * 100:.2f}%')
 
-    result_board['overall'] = [correct, total, f'{correct / total * 100 :.2f}%']
+    result_board['overall'] = [correct, total, f'{correct / total * 100:.2f}%']
 
     return result_board
 

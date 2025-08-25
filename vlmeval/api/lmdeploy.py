@@ -100,7 +100,7 @@ class InternVL2_PromptUtil:
             return None
         res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']  # noqa: F841
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld',
-                           'VCR_EN', 'VCR_ZH', 'OCRVQA']
+                           'VCR_EN', 'VCR_ZH', 'OCRVQA', 'BMMR']
         res_18_datasets = ['DocVQA_VAL', 'DocVQA_TEST', 'DUDE', 'MMLongBench_DOC', 'SLIDEVQA']
         res_24_datasets = ['InfoVQA_VAL', 'InfoVQA_TEST', 'OCRBench', 'HRBench4K', 'HRBench8K']
         if DATASET_MODALITY(dataset) == 'VIDEO':
@@ -172,7 +172,6 @@ class LMDeployWrapper(BaseAPI):
     def __init__(self,
                  model: str = None,
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = 'sk-123456',
                  verbose: bool = True,
                  temperature: float = 0.0,
@@ -191,7 +190,7 @@ class LMDeployWrapper(BaseAPI):
         assert api_base is not None, 'Please set the environment variable LMDEPLOY_API_BASE.'
         self.key = key
         self.api_base = api_base
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
         resp = requests.get(model_url)
@@ -291,6 +290,11 @@ class LMDeployWrapper(BaseAPI):
         temperature = kwargs.pop('temperature', self.temperature)
         self.logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
+        dataset = kwargs.pop('dataset', None)
+        if dataset is not None and listinstr(['BMMR'], dataset):
+            # BMMR dataset has a very long prompt, so we need to increase max_tokens
+            max_tokens = 8196
+            self.logger.info('BMMR dataset detected, set max_tokens to 8196')
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
