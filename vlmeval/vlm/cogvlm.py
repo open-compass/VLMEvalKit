@@ -50,7 +50,7 @@ class GLMThinking(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path='THUDM/GLM-4.1V-9B-Thinking', **kwargs):
-        from transformers import AutoProcessor, Glm4vForConditionalGeneration, Glm4vMoeForConditionalGeneration
+        from transformers import AutoProcessor
         self.device = 'cuda'
         self.use_vllm = kwargs.get('use_vllm', False)
         self.limit_mm_per_prompt = 24
@@ -92,6 +92,7 @@ class GLMThinking(BaseModel):
             )
         else:        
             if "GLM-4.5V" in model_path:
+                from transformers import Glm4vMoeForConditionalGeneration
                 self.model = Glm4vMoeForConditionalGeneration.from_pretrained(
                     pretrained_model_name_or_path=model_path,
                     torch_dtype=torch.bfloat16,
@@ -101,6 +102,7 @@ class GLMThinking(BaseModel):
                     device_map="auto"
                 )
             elif "GLM-4.1V" in model_path:
+                from transformers import Glm4vForConditionalGeneration
                 self.model = Glm4vForConditionalGeneration.from_pretrained(
                     pretrained_model_name_or_path=model_path,
                     torch_dtype=torch.bfloat16,
