@@ -47,12 +47,14 @@ class GLM4v(BaseModel):
 class GLMThinking(BaseModel):
 
     INSTALL_REQ = False
-    INTERLEAVE = False
+    INTERLEAVE = True
 
     def __init__(self, model_path='THUDM/GLM-4.1V-9B-Thinking', **kwargs):
         from transformers import AutoProcessor, Glm4vForConditionalGeneration, Glm4vMoeForConditionalGeneration
         self.device = 'cuda'
-        
+        self.use_vllm = kwargs.get('use_vllm', False)
+        self.limit_mm_per_prompt = 24
+
         print(f"Loading processor from {model_path}")
         self.processor = AutoProcessor.from_pretrained(
             model_path,
@@ -60,23 +62,51 @@ class GLMThinking(BaseModel):
             local_files_only=True,
             trust_remote_code=True
         )
-
-        if "GLM-4.5V" in model_path:
-            self.model = Glm4vMoeForConditionalGeneration.from_pretrained(
-                pretrained_model_name_or_path=model_path,
-                torch_dtype=torch.bfloat16,
-                local_files_only=True,
-                trust_remote_code=True,
-                low_cpu_mem_usage=True,
-                device_map="auto"
+        if self.use_vllm:
+            from vllm import LLM
+            # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
+            gpu_count = torch.cuda.device_count()
+            if gpu_count >= 8:
+                tp_size = 8
+            elif gpu_count >= 4:
+                tp_size = 4
+            elif gpu_count >= 2:
+                tp_size = 2
+            else:
+                tp_size = 1
+            logging.info(
+                f'Using vLLM for Llama4 inference with {tp_size} GPUs (available: {gpu_count})'
             )
-        elif "GLM-4.1V" in model_path:
-            self.model = Glm4vForConditionalGeneration.from_pretrained(
-                pretrained_model_name_or_path=model_path,
-                torch_dtype=torch.bfloat16,
-                local_files_only=True,
-                trust_remote_code=True
-            ).to(self.device)
+            if os.environ.get('VLLM_WORKER_MULTIPROC_METHOD') != 'spawn':
+                logging.warning(
+                    'VLLM_WORKER_MULTIPROC_METHOD is not set to spawn.'
+                    'Use \'export VLLM_WORKER_MULTIPROC_METHOD=spawn\' to avoid potential multi-process issues'
+                )
+            self.llm = LLM(
+                model=model_path,
+                max_num_seqs=4,
+                max_model_len=32768,
+                limit_mm_per_prompt={"image": self.limit_mm_per_prompt},
+                tensor_parallel_size=tp_size,
+                gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
+            )
+        else:        
+            if "GLM-4.5V" in model_path:
+                self.model = Glm4vMoeForConditionalGeneration.from_pretrained(
+                    pretrained_model_name_or_path=model_path,
+                    torch_dtype=torch.bfloat16,
+                    local_files_only=True,
+                    trust_remote_code=True,
+                    low_cpu_mem_usage=True,
+                    device_map="auto"
+                )
+            elif "GLM-4.1V" in model_path:
+                self.model = Glm4vForConditionalGeneration.from_pretrained(
+                    pretrained_model_name_or_path=model_path,
+                    torch_dtype=torch.bfloat16,
+                    local_files_only=True,
+                    trust_remote_code=True
+                ).to(self.device)
 
     def build_msgs(self, msgs_raw, system_prompt=None, dataset=None):
         msgs = cp.deepcopy(msgs_raw)
@@ -91,6 +121,37 @@ class GLMThinking(BaseModel):
             content.append(dict(type="text", text="Please answer yes or no."))
         ret = [dict(role='user', content=content)]
         return ret
+
+    def build_msgs_vllm(self, message, dataset=None):
+        processed_message = []
+        images = []
+        num_images = 0
+        for item in message:
+            if item['type'] == 'text':
+                processed_message.append({
+                    "type": "text",
+                    "text": item['value']
+                })
+            elif item['type'] == 'image':
+                if num_images < self.limit_mm_per_prompt:
+                    image_path = item['value']
+                    img = Image.open(image_path).convert('RGB')
+                    img.load()
+                    processed_message.append({
+                        "type": "image",
+                        "url": "",
+                    })
+                    images.append(img)
+                    num_images += 1
+        if num_images >= self.limit_mm_per_prompt:
+            logging.warning(
+                f"Number of images exceeds the limit of {self.limit_mm_per_prompt}."
+                f"Only the first {self.limit_mm_per_prompt} images will be used."
+            )
+        if dataset in {'HallusionBench', 'POPE'}:
+            processed_message.append(dict(type="text", text="Please answer yes or no."))
+        ret = [dict(role='user', content=processed_message)]
+        return ret, images
     
     def extract_answer(self, response_text, dataset=None):
         response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL).strip()
@@ -106,7 +167,7 @@ class GLMThinking(BaseModel):
             return match.group(1).strip()
         return response_text
 
-    def generate_inner(self, message, dataset=None):
+    def generate_inner_transformers(self, message, dataset=None):
         try:
             inputs = message
             assert isinstance(inputs, str) or isinstance(inputs, list)
@@ -135,6 +196,40 @@ class GLMThinking(BaseModel):
         except Exception as err:
             print(err)
             return 'Failed to obtain answer.'
+
+    def generate_inner_vllm(self, message, dataset=None):
+        from vllm import SamplingParams
+        try:
+            messages, images = self.build_msgs_vllm(message, dataset=dataset)
+            prompt = self.processor.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True
+            )
+            sampling_params = SamplingParams(temperature=0,
+                                            max_tokens=8192)
+            outputs = self.llm.generate(
+                {
+                    "prompt": prompt,
+                    "multi_modal_data": {
+                        "image": images
+                    },
+                },
+                sampling_params=sampling_params
+            )
+
+            for o in outputs:
+                generated_text = o.outputs[0].text
+            return self.extract_answer(generated_text, dataset=dataset)
+        except Exception as err:
+            print(err)
+            return 'Failed to obtain answer.'
+
+    def generate_inner(self, message, dataset=None):
+        if self.use_vllm:
+            return self.generate_inner_vllm(message, dataset=dataset)
+        else:
+            return self.generate_inner_transformers(message, dataset=dataset)
 
 class CogVlm(BaseModel):
 
