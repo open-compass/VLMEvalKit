@@ -1985,14 +1985,18 @@ class CRPE(ImageBaseDataset):
         data = load(eval_file)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
-        for i in tqdm(range(len(lines))):
-            line = lines[i]
-            predict = str(line['prediction'])
-            answers = str(line['answer'])
-            # print("predict =", predict)
-            # print("answers =", answers)
-            category = line['category']
-            if is_correct(answers, predict):
+        assert len(lines) % 4 == 0
+        for i in tqdm(range(0, len(lines), 4)):
+            IsCorrect = True
+            for j in range(4):
+                line = lines[i + j]
+                predict = str(line['prediction'])
+                answers = str(line['answer'])
+                category = line['category']
+                if not is_correct(answers, predict):
+                    IsCorrect = False
+                    break
+            if IsCorrect:
                 score[category] += 1
                 score['total'] += 1
             num[category] += 1
