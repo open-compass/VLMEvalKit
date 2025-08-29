@@ -368,6 +368,9 @@ class MMIFEval(ImageBaseDataset):
     # @classmethod
 
     def evaluate(self, eval_file, **judge_kwargs):
+        import nltk
+        nltk.download('punkt')
+        
         raw_bench_data = MMIFEval("MM-IFEval").data
         global aux_data_dict
         suffix = eval_file.split(".")[-1]
