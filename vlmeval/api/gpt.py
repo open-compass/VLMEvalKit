@@ -583,6 +583,10 @@ class VLLMAPIWrapper(BaseAPI):
             input_msgs.append(
                 {"role": "assistant", "content":[{"type":"text", "text":"<think>\n"}]}
             )
+        if os.environ.get('ADD_NONTHINK_NOTE', '0') == '1':
+            input_msgs.append(
+                {"role": "user", "content":[{"type":"text", "text":"/no_think"}]}
+            )
         return input_msgs
 
     def _next_api_base(self):
