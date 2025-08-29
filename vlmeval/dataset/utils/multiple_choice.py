@@ -205,6 +205,67 @@ def report_acc_MMSci(df):
     full_acc_df = full_acc_df[column_order]
     return full_acc_df
 
+def build_prompt_plus(question, options, prediction):
+    tmpl = (
+        "### Instruction:\n"
+        "You are an intelligent evaluator. Your task is to match a model's prediction with the correct option from a multiple-choice question.\n"
+        "1. Read the Question, Options, and the Prediction.\n"
+        "2. Identify which option (A, B, C, D, etc.) is semantically closest to the Prediction.\n"
+        "3. If the Prediction matches the meaning of an option (even if not identical words), choose that option.\n"
+        "4. If the Prediction is completely unrelated or incorrect compared to all options, output Z.\n"
+        "5. Output ONLY the uppercase letter of the correct option. Do not output any explanation or punctuation.\n\n"
+        "### Examples:\n"
+        "Question: What is the main object in image?\n"
+        "Options: A. teddy bear B. rabbit C. cat D. dog\n"
+        "Prediction: a cute teddy bear\n"
+        "Output: A\n\n"
+        "Question: What is the color of the car?\n"
+        "Options: A. Red B. Blue C. Green\n"
+        "Prediction: Scarlet\n"
+        "Output: A\n\n"
+        "Question: What is the main object in image?\n"
+        "Options: A. teddy bear B. rabbit C. cat D. dog\n"
+        "Prediction: Spider\n"
+        "Output: Z\n\n"
+        "### Task Input:\n"
+        "Question: {}\n"
+        "Options: {}\n"
+        "Prediction: {}\n"
+        "Output: "
+    )
+    return tmpl.format(question, options, prediction)
+
+
+def build_prompt_cn_plus(question, options, prediction):
+    tmpl = (
+        "### 指令:\n"
+        "你是一个智能评估助手。你的任务是将模型的预测答案与单选题的选项进行匹配。\n"
+        "1. 阅读问题、选项列表和预测答案。\n"
+        "2. 找出与预测答案在语义上最接近的选项（A, B, C, D 等）。\n"
+        "3. 如果预测答案是选项的同义词、子类别或语义包含，请选择对应的选项。\n"
+        "4. 如果预测答案与所有选项的含义都完全不相关或明显错误，请输出 Z。\n"
+        "5. 请仅输出一个大写字母作为结果。不要输出任何解释、标点符号或其他文字。\n\n"
+        "### 示例:\n"
+        "问题: 图中最主要的物体是什么?\n"
+        "选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n"
+        "预测答案: 一只可爱的泰迪熊\n"
+        "输出: A\n\n"
+        "问题: 汽车是什么颜色的?\n"
+        "选项: A. 红色 B. 蓝色 C. 绿色\n"
+        "预测答案: 猩红\n"
+        "输出: A\n\n"
+        "问题: 图中最主要的物体是什么?\n"
+        "选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n"
+        "预测答案: 蜘蛛\n"
+        "输出: Z\n\n"
+        "### 待处理输入:\n"
+        "问题: {}\n"
+        "选项: {}\n"
+        "预测答案: {}\n"
+        "输出: "
+    )
+    return tmpl.format(question, options, prediction)
+
 
 def report_topviewrs_acc(df):
     # assert group in [None, 'category', 'l2-category']
@@ -378,6 +439,25 @@ def prefetch_answer(item):
     return can_infer(item['prediction'], choices)
 
 
+def process_judgment(judgment_str: str) -> str:
+    # First try to find the exact \boxed{letter} pattern
+    boxed_matches = re.findall(r'boxed{([A-Z][a-z]*)}', judgment_str)
+    if boxed_matches:
+        return boxed_matches[-1]
+
+    # Directly return the judgment if it is A, B, or C
+    if judgment_str in list(string.ascii_uppercase + string.ascii_lowercase):
+        return judgment_str
+    else:
+        final_judgment_str = judgment_str.split("Final Judgment:")[-1]
+        matches = re.findall(r'\(([A-Z][a-z]*)\)*', final_judgment_str)
+        if matches:
+            return matches[-1]
+        matches = re.findall(r'([A-Z][a-z]*)', final_judgment_str)
+        if matches:
+            return matches[-1]
+        return ""
+
 def extract_answer_from_item(model, item, dataset_name=None):
     logger = get_logger('Evaluation')
     # It will return: (pred, raw, llm_time)
@@ -389,11 +469,17 @@ def extract_answer_from_item(model, item, dataset_name=None):
     elif dataset_name == 'WeMath':
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
-        prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
+        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "chatgpt35") != "chatgpt35":
+            prompt = build_prompt_cn_plus(item['question'], option_str, item['prediction'])
+        else:
+            prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
     elif dataset_name is not None and 'LEGO' in dataset_name:
         prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'],item['question_type'])
     else:
-        prompt = build_prompt(item['question'], option_str, item['prediction'])
+        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "chatgpt35") != "chatgpt35":
+            prompt = build_prompt_plus(item['question'], option_str, item['prediction'])
+        else:
+            prompt = build_prompt(item['question'], option_str, item['prediction'])
     retry = 3
 
     if dataset_name is not None and 'LEGO' in dataset_name:
