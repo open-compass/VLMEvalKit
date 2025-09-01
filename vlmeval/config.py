@@ -960,6 +960,73 @@ internvl3 = {
     ),
 }
 
+internvl3_5 = {
+    "InternVL3_5-1B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-1B", version="V2.0"
+    ),
+    "InternVL3_5-2B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-2B", version="V2.0"
+    ),
+    "InternVL3_5-4B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-4B", version="V2.0"
+    ),
+    "InternVL3_5-8B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-8B", version="V2.0"
+    ),
+    "InternVL3_5-14B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-14B", version="V2.0"
+    ),
+    "InternVL3_5-GPT-OSS-20B-A4B-Preview": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-GPT-OSS-20B-A4B-Preview", version="V2.0"
+    ),
+    "InternVL3_5-30B-A3B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-30B-A3B", version="V2.0"
+    ),
+    "InternVL3_5-38B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-38B", version="V2.0"
+    ),
+    "InternVL3_5-241B-A28B": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-241B-A28B", version="V2.0"
+    ),
+
+    "InternVL3_5-1B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-1B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-2B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-2B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-4B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-4B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-8B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-8B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-14B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-14B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-GPT-OSS-20B-A4B-Preview-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-GPT-OSS-20B-A4B-Preview", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-30B-A3B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-30B-A3B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-38B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-38B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+    "InternVL3_5-241B-A28B-Thinking": partial(
+        InternVLChat, model_path="OpenGVLab/InternVL3_5-241B-A28B", use_lmdeploy=True,
+        max_new_tokens=2**16, cot_prompt_version="r1", do_sample=True, version="V2.0"
+    ),
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -1581,7 +1648,7 @@ qtunevl_series = {
 
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
-    internvl3,
+    internvl3, internvl3_5
 ]
 internvl_series = {}
 for group in internvl_groups:

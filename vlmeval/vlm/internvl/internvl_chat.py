@@ -413,8 +413,8 @@ class InternVLChat(BaseModel):
         response_list = []
         for idx in range(self.best_of_n):
             kwargs_default = self.kwargs.copy()
-            kwargs_default['do_sample'] = idx > 0
-            kwargs_default['temperature'] = 0.7
+            kwargs_default['do_sample'] = idx > 0 or kwargs_default.get('do_sample', False)
+            kwargs_default['temperature'] = 0.6
             kwargs_default['top_p'] = 0.95
 
             if self.use_lmdeploy:
