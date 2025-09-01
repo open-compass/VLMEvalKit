@@ -16,7 +16,6 @@ import sys
 import textwrap
 import types
 
-import autopep8
 import numpy
 import timeout_decorator  # For efficient timeout control
 from PIL import Image, UnidentifiedImageError
@@ -641,20 +640,17 @@ def _sandboxed_execution_target(
                 )
 
     code_to_execute = align_first_line_to_second(code_to_execute)
-    if autopep8:
-        try:
-            dedented_code = textwrap.dedent(code_to_execute).strip()
-            code_to_execute = dedented_code
-            formatted_code = autopep8.fix_code(
-                code_to_execute, options={"aggressive": 2}
-            )
-            # if formatted_code.strip() != code_to_execute.strip():
-            #     print(f"INFO: Attempted to auto-format code for {item_id} using autopep8.")
-            code_to_execute = formatted_code
-        except Exception:
-            pass
-    else:
-        # print(f"INFO: autopep8 not available, skipping auto-formatting for {item_id}.", file=sys.stderr)
+    try:
+        import autopep8
+        dedented_code = textwrap.dedent(code_to_execute).strip()
+        code_to_execute = dedented_code
+        formatted_code = autopep8.fix_code(
+            code_to_execute, options={"aggressive": 2}
+        )
+        # if formatted_code.strip() != code_to_execute.strip():
+        #     print(f"INFO: Attempted to auto-format code for {item_id} using autopep8.")
+        code_to_execute = formatted_code
+    except Exception:
         pass
 
     # ... (AST transformations: ImagePathTransformer, CropCoordinateTransformer, OpenCVNamespaceTransformer) ...
