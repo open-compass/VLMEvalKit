@@ -269,7 +269,12 @@ class InternVLChat(BaseModel):
             elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA', 'OCRBench',
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
-            elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
+            elif liststr(['MathVerse'], dataset):
+                question = question.replace("please directly answer the question and", "please")
+                prompt = question
+                if os.getenv('USE_COT') == '1':
+                    prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
+            elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
                             'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
                 prompt = question
@@ -408,8 +413,8 @@ class InternVLChat(BaseModel):
         response_list = []
         for idx in range(self.best_of_n):
             kwargs_default = self.kwargs.copy()
-            kwargs_default['do_sample'] = idx > 0
-            kwargs_default['temperature'] = 0.7
+            kwargs_default['do_sample'] = idx > 0 or kwargs_default.get('do_sample', False)
+            kwargs_default['temperature'] = 0.6
             kwargs_default['top_p'] = 0.95
 
             if self.use_lmdeploy:
