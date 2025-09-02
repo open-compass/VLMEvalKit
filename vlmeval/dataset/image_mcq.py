@@ -2752,7 +2752,11 @@ class CVQA(ImageMCQDataset):
 
 class TopViewRS(ImageMCQDataset):
     DATASET_URL = {
-        'TopViewRS': 'https://huggingface.co/datasets/ignoreandfly/TopViewRs_VLMEvalKit/resolve/main/TopViewRS.tsv'
+        'TopViewRS': 'https://opencompass.openxlab.space/utils/VLMEval/TopViewRS.tsv'
+    }
+
+    DATASET_MD5 = {
+        'TopViewRS': '5669bc122457979dd2ac3b69b5dc1622'
     }
 
     def evaluate(self, eval_file, **judge_kwargs):
