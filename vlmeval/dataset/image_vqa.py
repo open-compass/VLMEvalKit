@@ -3491,3 +3491,84 @@ class OCRBench_v2(ImageBaseDataset):
         score_pth = eval_file.replace('.xlsx', '_score.json')
         dump(final_score_dict, score_pth)
         return final_score_dict
+
+
+class AyaVisionBench(ImageVQADataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        "AyaVisionBench":
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_AyaVisionBench/resolve/main/aya_vision_bench.tsv"
+    }
+
+    DATASET_MD5 = {
+        "AyaVisionBench": "2bc7f64c767421ba86cf7c035ca74f95"
+    }
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1][
+            'value'] += '\nAnswer the question using a single word or phrase.'
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        model_name = judge_kwargs.get('model', None)
+        if not model_name:
+            raise ValueError("A model must be specified for "
+                             "AyaVisionBench evaluation. Please use --judge <model_name>.")
+
+        from .utils.ayavision import AyaVision_auxeval
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            raise RuntimeError("OPENAI API is not working properly. Please check your API key and configuration.")
+
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model_name}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model_name}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        tups = [(model, line) for line in lines]
+        indices = [line['index'] for line in lines]
+
+        ans = {}
+        if osp.exists(tmp_file):
+            ans = load(tmp_file)
+
+        tups = [x for x, i in zip(tups, indices) if i not in ans]
+        indices = [i for i in indices if i not in ans]
+
+        if len(indices):
+            new_results = track_progress_rich(
+                AyaVision_auxeval,
+                tups,
+                nproc=nproc,
+                chunksize=nproc,
+                keys=indices,
+                save=tmp_file,
+            )
+            tmp_results = load(tmp_file)
+            for k, v in zip(indices, new_results):
+                assert k in tmp_results and tmp_results[k] == v
+            ans.update(tmp_results)
+
+        data['hit'] = [ans[idx]['hit'] for idx in data['index']]
+        data['res'] = [ans[idx]['res'] for idx in data['index']]
+        data['log'] = [ans[idx]['log'] for idx in data['index']]
+
+        # Rename 'hit' to 'acc' for compatibility with report_acc
+        data['acc'] = data['hit']
+
+        dump(data, storage)
+
+        from .utils.multiple_choice import report_acc
+        ret = report_acc(data)
+
+        ret.round(2)
+
+        result_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(ret, result_file)
+        return ret
