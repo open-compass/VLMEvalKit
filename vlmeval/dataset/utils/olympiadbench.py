@@ -19,6 +19,7 @@ except ImportError:
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 def get_gpt4_extract_ICE():
     example_1 = """
 1.
@@ -57,6 +58,7 @@ Extracted answer: f(x) = -x^2 - 2x + 1
 """ # noqa
 
     return [example_1, example_2, example_3, example_4, example_5, example_6]
+
 
 def get_gpt4_score_ICE():
     example_1 = """

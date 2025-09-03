@@ -973,7 +973,7 @@ class OlympiadBench(ImageBaseDataset):
             if not osp.exists(storage_extract):
                 data = load(eval_file)
                 model = build_judge(max_tokens=128, **judge_kwargs)
-                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE  # noqa: E501
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
                 tups = [(model, line) for line in lines]
@@ -1010,7 +1010,7 @@ class OlympiadBench(ImageBaseDataset):
             if not osp.exists(result_file):
                 data = load(storage_extract)
                 model = build_judge(max_tokens=128, **judge_kwargs)
-                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE  # noqa: E501
                 lt = len(data)
                 lines = [data.iloc[i] for i in range(lt)]
                 tups = [(model, line) for line in lines]
@@ -1049,10 +1049,8 @@ class OlympiadBench(ImageBaseDataset):
             suffix = eval_file.split('.')[-1]
             name_str1 = 'judge'
             name_str2 = 'score'
-            result_file = eval_file.replace(f'.{suffix}',
-                                            f'_{name_str1}_result.xlsx')
-            score_file = eval_file.replace(f'.{suffix}',
-                                        f'_{name_str2}_result.csv')
+            result_file = eval_file.replace(f'.{suffix}', f'_{name_str1}_result.xlsx')
+            score_file = eval_file.replace(f'.{suffix}', f'_{name_str2}_result.csv')
 
             if not osp.exists(result_file):
                 data = load(eval_file)
@@ -1062,9 +1060,7 @@ class OlympiadBench(ImageBaseDataset):
                     line = i[1]
                     model_answer = line['prediction']
                     is_chinese = 'zh' in line['source']
-                    model_answer = extract_answer(is_chinese,
-                                                model_answer,
-                                                is_deepseek=False)
+                    model_answer = extract_answer(is_chinese, model_answer, is_deepseek=False)
                     answer_type = line['answer_type']
 
                     final_answer = line['final_answer'][2:-2]
