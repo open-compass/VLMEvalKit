@@ -688,6 +688,10 @@ qwen_series = {
     "minimonkey": partial(MiniMonkey, model_path="mx262/MiniMonkey"),
 }
 
+thyme_series = {
+    "Thyme-7B": partial(Thyme, model_path="Kwai-Keye/Thyme-RL")
+}
+
 llava_series = {
     "llava_v1.5_7b": partial(LLaVA, model_path="liuhaotian/llava-v1.5-7b"),
     "llava_v1.5_13b": partial(LLaVA, model_path="liuhaotian/llava-v1.5-13b"),
@@ -1668,7 +1672,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series
 ]
 
 for grp in model_groups:
