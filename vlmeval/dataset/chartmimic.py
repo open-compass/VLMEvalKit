@@ -570,19 +570,12 @@ class ChartMimic(ImageBaseDataset):
 
         infer_data_all = load(eval_file).to_dict(orient="records")
 
-        suffix = eval_file.split(".")[-1]
         print(f"judge_kwargs: {judge_kwargs}")
         infer_model = judge_kwargs["model"]
-        storage = os.path.abspath(
-            eval_file.replace(f".{suffix}", f"_{infer_model}.jsonl")
-        )
-        score_file = os.path.abspath(
-            eval_file.replace(f".{suffix}", f"_{infer_model}_score.csv")
-        )
+        storage = os.path.abspath(get_intermediate_file_path(eval_file, f'_{infer_model}', 'jsonl'))
+        score_file = os.path.abspath(get_intermediate_file_path(eval_file, f'_{infer_model}_score', 'csv'))
         # use abs path because of using os.chdir()
-        tmp_file = os.path.abspath(
-            eval_file.replace(f".{suffix}", f"_{infer_model}_tmp.pkl")
-        )
+        tmp_file = os.path.abspath(get_intermediate_file_path(eval_file, f'_{infer_model}_tmp', 'pkl'))
         # actually the --api-nproc
         nproc = judge_kwargs.pop("nproc", 8)
         logger.info(f"nproc: {nproc}")

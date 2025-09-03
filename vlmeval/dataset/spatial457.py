@@ -133,7 +133,7 @@ class Spatial457(ImageBaseDataset):
                 all_results[f"{level}_correct"] / all_results[level] if all_results[level] > 0 else 0
             )
 
-        score_pth = eval_file.replace(".xlsx", "_score.json")
+        score_pth = get_intermediate_file_path(eval_file, "_score", "json")
 
         dump(all_results, score_pth)
         return all_results

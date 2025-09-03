@@ -2,6 +2,8 @@ import uuid
 from functools import partial
 from .image_base import ImageBaseDataset
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
+
 
 rouge = None
 nlp_en = None
@@ -323,9 +325,7 @@ class VCRDataset(ImageBaseDataset):
             'Jaccard': vcr_score['Jaccard'],
             'Predictions': results_out,
         }
-        score_pth = eval_file.replace(
-            '.xlsx', f'{self.language}_{self.difficulty}_score.json'
-        )
+        score_pth = get_intermediate_file_path(eval_file, f'_{self.language}_{self.difficulty}_score', 'json')
         dump(results_with_metrics, score_pth)
         logger.info(
             f'VCR successfully finished evaluating {eval_file}, results saved in {score_pth}'

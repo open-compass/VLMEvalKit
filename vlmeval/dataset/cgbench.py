@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from .utils.cgbench import *
@@ -432,10 +433,10 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         data = load(eval_file)
 
@@ -760,12 +761,12 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
-        step_1_tmp_file = eval_file.replace(".xlsx", "_step_1.pkl")
-        step_2_tmp_file = eval_file.replace(".xlsx", "_step_2.pkl")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        step_1_tmp_file = get_intermediate_file_path(eval_file, '_step_1', 'pkl')
+        step_2_tmp_file = get_intermediate_file_path(eval_file, '_step_2', 'pkl')
 
         data = load(eval_file)
 
@@ -784,12 +785,12 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
             axis=1,
         )
 
-        data_no_model_result = data_pred_no_na[data_pred_no_na["model_result"] == -1]
-        data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
-
         if judge_kwargs.get("model", None) != "gpt-4o-0806":
             judge_kwargs["model"] = "gpt-4o-0806"
             print("The judge model in cg-bench is gpt-4o-0806!")
+
+        data_no_model_result = data_pred_no_na[data_pred_no_na["model_result"] == -1]
+        data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
 
         model_step_1 = build_judge(system_prompt=sys_prompt_open_eval_step_1, **judge_kwargs)
         nproc = judge_kwargs.pop("nproc", 32)
@@ -1314,10 +1315,10 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         data = load(eval_file)
 
@@ -1641,12 +1642,12 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
-        step_1_tmp_file = eval_file.replace(".xlsx", "_step_1.pkl")
-        step_2_tmp_file = eval_file.replace(".xlsx", "_step_2.pkl")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        step_1_tmp_file = get_intermediate_file_path(eval_file, '_step_1', 'pkl')
+        step_2_tmp_file = get_intermediate_file_path(eval_file, '_step_2', 'pkl')
 
         data = load(eval_file)
 

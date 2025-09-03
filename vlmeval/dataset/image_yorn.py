@@ -42,8 +42,8 @@ class ImageYORNDataset(ImageBaseDataset):
         dataset = self.dataset_name
         data = load(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
-        storage = eval_file.replace('.xlsx', '_auxmatch.xlsx')
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
+        storage = get_intermediate_file_path(eval_file, '_auxmatch')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
@@ -104,6 +104,6 @@ class ImageYORNDataset(ImageBaseDataset):
         else:
             score = default_rating(storage)
 
-        score_tgt = eval_file.replace('.xlsx', '_score.csv')
+        score_tgt = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_tgt)
         return score

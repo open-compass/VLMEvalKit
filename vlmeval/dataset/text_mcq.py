@@ -1,6 +1,7 @@
 from .text_base import TextBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 
 
 class TextMCQDataset(TextBaseDataset):
@@ -52,8 +53,6 @@ class TextMCQDataset(TextBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         circular = False
-
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
         assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
@@ -71,7 +70,7 @@ class TextMCQDataset(TextBaseDataset):
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -94,8 +93,9 @@ class TextMCQDataset(TextBaseDataset):
             data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # load split
-        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        eval_name_result = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        dump(data, eval_name_result)
+        data = load(eval_name_result)
 
         # May have different report acc functions for different datasets
         if 'MMT' in dataset:
@@ -103,7 +103,7 @@ class TextMCQDataset(TextBaseDataset):
         else:
             acc = report_acc(data)
 
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(acc, score_file)
 
         return acc
