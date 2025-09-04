@@ -180,7 +180,11 @@ class InternVLChat(BaseModel):
             self.model = pipeline(
                 model_path,
                 vision_config=vision_config,
-                backend_config=engine_type(session_len=max(16384, kwargs.get("max_new_tokens", 16384)), cache_max_entry_count=0.5, tp=num_gpus)
+                backend_config=engine_type(
+                    session_len=max(16384, kwargs.get("max_new_tokens", 16384)),
+                    cache_max_entry_count=0.5,
+                    tp=num_gpus,
+                )
             )
             torch.cuda.set_device(0)
             self.device = 'cuda'
