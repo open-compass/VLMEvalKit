@@ -958,53 +958,134 @@ class OlympiadBench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.olympiadbench import MathJudger, extract_answer
-        judger = MathJudger()
+        use_api_judger = judge_kwargs.pop("olympiad_use_api_judger", False)
+        if use_api_judger:
+            from .utils.olympiadbench import Olympiad_auxeval_extract, Olympiad_auxeval_score
+            model = judge_kwargs['model']
+            suffix = eval_file.split('.')[-1]
+            storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+            tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+            result_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+            tmp_result_file = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+            score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
+            nproc = judge_kwargs.pop('nproc', 4)
+            # stage1: extract the answer
+            if not osp.exists(storage_extract):
+                data = load(eval_file)
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE  # noqa: E501
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
 
-        suffix = eval_file.split('.')[-1]
-        name_str1 = 'judge'
-        name_str2 = 'score'
-        result_file = eval_file.replace(f'.{suffix}',
-                                        f'_{name_str1}_result.xlsx')
-        score_file = eval_file.replace(f'.{suffix}',
-                                       f'_{name_str2}_result.csv')
+                ans = {}
+                if osp.exists(tmp_file_extract):
+                    ans = load(tmp_file_extract)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
 
-        if not osp.exists(result_file):
-            data = load(eval_file)
-            scorez = []
+                if len(indices):
+                    new_results = track_progress_rich(
+                        Olympiad_auxeval_extract,
+                        tups,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=indices,
+                        save=tmp_file_extract,
+                    )
+                    ans = load(tmp_file_extract)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log_extract'] == v['log_extract'] and ans[
+                            k]['extract'] == v['extract']
 
-            for i in tqdm(data.iterrows()):
-                line = i[1]
-                model_answer = line['prediction']
-                is_chinese = 'zh' in line['source']
-                model_answer = extract_answer(is_chinese,
-                                              model_answer,
-                                              is_deepseek=False)
-                answer_type = line['answer_type']
+                data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+                data['log_extract'] = [
+                    ans[idx]['log_extract'] for idx in data['index']
+                ]
+                dump(data, storage_extract)
 
-                final_answer = line['final_answer'][2:-2]
+            # stage2: score the answer
+            if not osp.exists(result_file):
+                data = load(storage_extract)
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE  # noqa: E501
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
 
-                if str(answer_type) != 'nan' and 'Tuple' in answer_type:
-                    judge_result = judger.judge(model_answer, final_answer)
-                else:
-                    if str(line['error']) != 'nan':
-                        if ',' in line['error']:
-                            precisions = line['error'].split(',')
-                            precisions = [
-                                float(p) if p else 1e-8 for p in precisions
-                            ]
-                            judge_result = judger.judge(
-                                model_answer, final_answer, precisions)
-                        else:
-                            precision = float(line['error'])
-                            judge_result = judger.judge(
-                                model_answer, final_answer, precision)
-                    else:
+                ans = {}
+                if osp.exists(tmp_result_file):
+                    ans = load(tmp_result_file)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
+
+                if len(indices):
+                    new_results = track_progress_rich(
+                        Olympiad_auxeval_score,
+                        tups,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=indices,
+                        save=tmp_result_file,
+                    )
+                    ans = load(tmp_result_file)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log_score'] == v['log_score'] and ans[k][
+                            'score'] == v['score']
+
+                data['score'] = [ans[idx]['score'] for idx in data['index']]
+                data['log_score'] = [
+                    ans[idx]['log_score'] for idx in data['index']
+                ]
+                dump(data, result_file)
+        else:
+            from .utils.olympiadbench import MathJudger, extract_answer
+            judger = MathJudger()
+
+            suffix = eval_file.split('.')[-1]
+            name_str1 = 'judge'
+            name_str2 = 'score'
+            result_file = eval_file.replace(f'.{suffix}', f'_{name_str1}_result.xlsx')
+            score_file = eval_file.replace(f'.{suffix}', f'_{name_str2}_result.csv')
+
+            if not osp.exists(result_file):
+                data = load(eval_file)
+                scorez = []
+
+                for i in tqdm(data.iterrows()):
+                    line = i[1]
+                    model_answer = line['prediction']
+                    is_chinese = 'zh' in line['source']
+                    model_answer = extract_answer(is_chinese, model_answer, is_deepseek=False)
+                    answer_type = line['answer_type']
+
+                    final_answer = line['final_answer'][2:-2]
+
+                    if str(answer_type) != 'nan' and 'Tuple' in answer_type:
                         judge_result = judger.judge(model_answer, final_answer)
-                scorez.append(judge_result)
+                    else:
+                        if str(line['error']) != 'nan':
+                            if ',' in line['error']:
+                                precisions = line['error'].split(',')
+                                precisions = [
+                                    float(p) if p else 1e-8 for p in precisions
+                                ]
+                                judge_result = judger.judge(
+                                    model_answer, final_answer, precisions)
+                            else:
+                                precision = float(line['error'])
+                                judge_result = judger.judge(
+                                    model_answer, final_answer, precision)
+                        else:
+                            judge_result = judger.judge(model_answer, final_answer)
+                    scorez.append(judge_result)
 
-            data['score'] = scorez
-            dump(data, result_file)
+                data['score'] = scorez
+                dump(data, result_file)
 
         judge_file = load(result_file)
 

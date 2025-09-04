@@ -382,6 +382,10 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
+                    elif listinstr(['OlympiadBench'], dataset_name):
+                        use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
+                        if use_api_judger:
+                            judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['ChartMimic'], dataset_name):
