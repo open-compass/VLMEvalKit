@@ -131,6 +131,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+environment.yml
 
 # Spyder project settings
 .spyderproject
@@ -206,5 +207,6 @@ Seed1.5*
 aguvis*
 grok-*
 GLM4.5*
+SenseNova*
 
 .DS_Store
