@@ -44,6 +44,7 @@ class GLM4v(BaseModel):
             response = self.tokenizer.decode(outputs[0])
         return response.split(self.end_text_token)[0]
 
+
 class GLMThinking(BaseModel):
 
     INSTALL_REQ = False
@@ -208,8 +209,7 @@ class GLMThinking(BaseModel):
                 tokenize=False,
                 add_generation_prompt=True
             )
-            sampling_params = SamplingParams(temperature=0,
-                                            max_tokens=8192)
+            sampling_params = SamplingParams(temperature=0, max_tokens=8192)
             outputs = self.llm.generate(
                 {
                     "prompt": prompt,
@@ -232,6 +232,7 @@ class GLMThinking(BaseModel):
             return self.generate_inner_vllm(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
+
 
 class CogVlm(BaseModel):
 
