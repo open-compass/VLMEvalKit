@@ -27,6 +27,7 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
+from .vlmbias import VLMBias
 from .spatial457 import Spatial457
 from .charxiv import CharXiv
 
@@ -205,7 +206,7 @@ IMAGE_DATASET = [
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
-    AyaVisionBench, TopViewRS
+    AyaVisionBench, TopViewRS, VLMBias
 ]
 
 VIDEO_DATASET = [
