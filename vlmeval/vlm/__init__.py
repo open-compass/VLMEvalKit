@@ -6,7 +6,7 @@ from .aria import Aria
 from .base import BaseModel
 from .hawk_vl import HawkVL
 from .thyme import Thyme
-from .cogvlm import CogVlm, GLM4v
+from .cogvlm import CogVlm, GLM4v, GLMThinking
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .eagle_x import Eagle
 from .granite_vision import GraniteVision3
@@ -103,7 +103,6 @@ from .wethink_vl import WeThinkVL
 from .flash_vl import FlashVL
 from .oryx import Oryx
 from .treevgr import TreeVGR
-from .glm4_1v import GLM4_1v
 from .varco_vision import VarcoVision
 from .qtunevl import (
     QTuneVL,
