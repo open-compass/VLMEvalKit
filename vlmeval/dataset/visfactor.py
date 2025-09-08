@@ -11,8 +11,8 @@ class VisFactor(ImageBaseDataset):
         'VisFactor_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor.tsv',
         'VisFactor_GE': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GE.tsv',
         'VisFactor_GE_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GE.tsv',
-        'VisFactor_GN': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_G.tsv',
-        'VisFactor_GN_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_G.tsv',
+        'VisFactor_GN': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GN.tsv',
+        'VisFactor_GN_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GN.tsv',
         'VisFactor_GH': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GH.tsv',
         'VisFactor_GH_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GH.tsv',
     }
