@@ -91,7 +91,7 @@ class GLMThinking(BaseModel):
                 tensor_parallel_size=tp_size,
                 gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
             )
-        else:        
+        else:
             if "GLM-4.5V" in model_path:
                 from transformers import Glm4vMoeForConditionalGeneration
                 self.model = Glm4vMoeForConditionalGeneration.from_pretrained(
@@ -118,7 +118,7 @@ class GLMThinking(BaseModel):
             if msg['type'] == 'text':
                 content.append(dict(type='text', text=msg['value']))
             elif msg['type'] == 'image':
-                content.append(dict(type='image', 
+                content.append(dict(type='image',
                                     url=f"data:image/jpeg;base64,{encode_image_file_to_base64(msg['value'])}"))
         if dataset in {'HallusionBench', 'POPE'}:
             content.append(dict(type="text", text="Please answer yes or no."))
@@ -155,7 +155,7 @@ class GLMThinking(BaseModel):
             processed_message.append(dict(type="text", text="Please answer yes or no."))
         ret = [dict(role='user', content=processed_message)]
         return ret, images
-    
+
     def extract_answer(self, response_text, dataset=None):
         response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL).strip()
         match = re.search(r'<answer>(.*?)</answer>', response_text, re.DOTALL)

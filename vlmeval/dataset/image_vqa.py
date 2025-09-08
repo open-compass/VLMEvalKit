@@ -2735,8 +2735,6 @@ class BMMR(ImageBaseDataset):
         return msgs
 
 
-
-
 class TDBenchGrounding(ImageVQADataset):
     DATASET_URL = {
         'tdbench_grounding_rot0':
