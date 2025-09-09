@@ -16,9 +16,8 @@ class VLMBias(ImageVQADataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs.pop('model', 'gpt-4o')
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}_tmp')
         nproc = judge_kwargs.pop('nproc', 16)
 
         if not osp.exists(storage):
@@ -51,6 +50,6 @@ class VLMBias(ImageVQADataset):
 
         data = load(storage)
         acc = report_acc(data)
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc')
         dump(acc, score_file)
         return acc

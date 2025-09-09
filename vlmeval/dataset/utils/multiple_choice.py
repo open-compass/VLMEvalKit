@@ -562,7 +562,8 @@ def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
                 if k not in result:
                     result[k] = v
 
-    tmp_pth = f'/tmp/{timestr()}.xlsx'
+    tmp_ext = get_pred_file_format()
+    tmp_pth = f'/tmp/{timestr()}.{tmp_ext}'
     dump(data_main, tmp_pth)
     data_main = load(tmp_pth)
     indices = data_main['index']

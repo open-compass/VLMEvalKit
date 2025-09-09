@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
@@ -215,16 +216,16 @@ class MovieChat1k(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.moviechat1k import get_dimension_rating, prepare_score_prompt
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs.setdefault('model', 'chatgpt-0125')
         assert judge in ['chatgpt-0125'], f'Invalid judge model for MovieChat1k: {judge}'
         nproc = judge_kwargs.pop('nproc', 4)
         _ = judge_kwargs.pop('verbose', None)
         _ = judge_kwargs.pop('retry', None)
 
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
-        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, f'_{judge}_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, f'_{judge}_score')
 
         model = build_judge(**judge_kwargs)
 

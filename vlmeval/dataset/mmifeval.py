@@ -4,6 +4,7 @@ import re
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from ..utils import track_progress_rich
 from ..dataset.utils.mmif.function_and_compare import *
 
@@ -370,11 +371,10 @@ class MMIFEval(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         raw_bench_data = MMIFEval("MM-IFEval").data
         global aux_data_dict
-        suffix = eval_file.split(".")[-1]
         model = judge_kwargs["model"]
-        storage = eval_file.replace(f".{suffix}", f"_{model}.jsonl")
-        score_file = eval_file.replace(f".{suffix}", f"_{model}_score.csv")
-        tmp_file = eval_file.replace(f".{suffix}", f"_{model}_tmp.pkl")
+        storage = get_intermediate_file_path(eval_file, f"_{model}", "jsonl")
+        score_file = get_intermediate_file_path(eval_file, f"_{model}_score", "csv")
+        tmp_file = get_intermediate_file_path(eval_file, f"_{model}_tmp", "pkl")
         nproc = judge_kwargs.pop("nproc", 4)
 
         data_all = load(eval_file).to_dict(orient="records")

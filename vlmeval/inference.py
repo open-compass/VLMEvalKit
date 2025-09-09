@@ -47,7 +47,8 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
 
     # To reuse records in MMBench_V11
     if dataset_name in ['MMBench', 'MMBench_CN']:
-        v11_pred = f'{work_dir}/{model_name}_{dataset_name}_V11.xlsx'
+        pred_format = get_pred_file_format()
+        v11_pred = f'{work_dir}/{model_name}_{dataset_name}_V11.{pred_format}'
         if osp.exists(v11_pred):
             try:
                 reuse_inds = load('http://opencompass.openxlab.space/utils/mmb_reuse.pkl')
@@ -184,12 +185,14 @@ def infer_data_job(
 ):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
+    # 使用环境变量控制的文件格式
+    result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
 
     prev_file = f'{work_dir}/{model_name}_{dataset_name}_PREV.pkl'
     if osp.exists(result_file):
         if rank == 0:
             data = load(result_file)
+            # breakpoint()
             results = {k: v for k, v in zip(data['index'], data['prediction'])}
             if not ignore_failed:
                 results = {k: v for k, v in results.items() if FAIL_MSG not in str(v)}

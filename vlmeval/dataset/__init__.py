@@ -151,7 +151,6 @@ class ConcatDataset(ImageBaseDataset):
         return list(cls.DATASET_SETS)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
@@ -179,11 +178,11 @@ class ConcatDataset(ImageBaseDataset):
 
         if len(df_all):
             result = pd.concat(df_all)
-            score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
             dump(result, score_file)
             return result
         else:
-            score_file = eval_file.replace(f'.{suffix}', '_score.json')
+            score_file = get_intermediate_file_path(eval_file, '_score', 'json')
             dump(dict_all, score_file)
             return dict_all
 

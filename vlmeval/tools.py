@@ -497,7 +497,8 @@ def SCAN_ONE(root, model, dataset):
     from termcolor import colored
     FAIL_MSG = 'Failed to obtain answer via API.'
     root = osp.join(root, model)
-    fname = f'{model}_{dataset}.xlsx'
+    pred_format = get_pred_file_format()
+    fname = f'{model}_{dataset}.{pred_format}'
     pth = osp.join(root, fname)
     if osp.exists(pth):
         data = load(pth)
@@ -549,7 +550,8 @@ def SCAN(root, models, datasets):
         cur_datasets = []
         if len(datasets) == 0:
             for d in SUPPORTED_DATASETS:
-                if osp.exists(osp.join(root, m, f'{m}_{d}.xlsx')):
+                pred_format = get_pred_file_format()
+                if osp.exists(osp.join(root, m, f'{m}_{d}.{pred_format}')):
                     cur_datasets.append(d)
         else:
             cur_datasets = datasets

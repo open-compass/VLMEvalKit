@@ -9,6 +9,7 @@ import pandas as pd
 
 from .image_base import ImageBaseDataset
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 
 # should be the same as  FAIL_MSG definded in vlmeval/inference.py
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -230,13 +231,12 @@ class CCOCRDataset(ImageBaseDataset):
                 print(f"Failed to evaluate {sub_dataset_id}")
 
         # Save comprehensive results
-        base_name = os.path.splitext(os.path.abspath(eval_file))[0]
+        result_file = get_intermediate_file_path(eval_file, '_comprehensive_eval', 'json')
         comprehensive_result = {
             "meta": {"total_datasets": len(all_results), "datasets": list(all_results.keys())},
             "results": all_results,
             "summaries": all_summaries
         }
-        result_file = base_name + "_comprehensive_eval.json"
         dump(comprehensive_result, result_file)
         print(f"Comprehensive results saved to: {result_file}")
 
@@ -298,5 +298,6 @@ class CCOCRDataset(ImageBaseDataset):
             print(f"  {k.upper():<20}: {v:.4f}")
         print("="*80)
         df = d2df(res)
-        dump(df, base_name + '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        dump(df, score_file)
         return res
