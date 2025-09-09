@@ -82,8 +82,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
         'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
         # R-Bench
-        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-dis.tsv',
-        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-ref.tsv',
+        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-dis.tsv',
+        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-ref.tsv',
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
@@ -2676,3 +2676,198 @@ class TreeBench(ImageMCQDataset):
             return total_iou / num_targets
 
         return calculate_average_iou(all_boxes, target_boxes)
+
+
+class CVQA(ImageMCQDataset):
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['CVQA_LOC', 'CVQA_EN']
+
+    DATASET_URL = {
+        "CVQA_EN": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_ENG.tsv"
+        ),
+        "CVQA_LOC": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_LOC.tsv"
+        ),
+    }
+
+    DATASET_MD5 = {
+        "CVQA_EN": "f49ad8ad39dbc4208ea8985a3ca00804",
+        "CVQA_LOC": "b51dcf2820cb292aa5cb3430dd7d5049",
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+
+        prompt = f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += (
+                'Select the best answer to the above multiple-choice question '
+                'based on the image. Respond with only the letter of the '
+                'correct option (A, B, C, or D).\n'
+                'The best answer is: '
+            )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+
+class TopViewRS(ImageMCQDataset):
+    DATASET_URL = {
+        'TopViewRS': 'https://opencompass.openxlab.space/utils/VLMEval/TopViewRS.tsv'
+    }
+
+    DATASET_MD5 = {
+        'TopViewRS': '5669bc122457979dd2ac3b69b5dc1622'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import eval_vanilla, report_topviewrs_acc
+        from ..utils import track_progress_rich
+        from ..smp import load, dump, gpt_key_set
+        from collections import defaultdict
+        import numpy as np
+        import pandas as pd
+        import string
+        import warnings
+        import os.path as osp
+
+        def mcq_topviewrs_eval(model, data, meta, nproc, result_file, dataset_name=None):
+            result = {}
+            if osp.exists(result_file):
+                result = load(result_file)
+            answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
+
+            data = data[data['index'].isin(answer_map)]
+            data['GT'] = [answer_map[idx] for idx in data['index']]
+            items = []
+
+            for i in range(len(data)):
+                item = data.iloc[i]
+                if item['index'] not in result:
+                    items.append(item)
+
+            tups = [dict(model=model, item=x, dataset_name=dataset_name) for x in items]
+            keys = [x['index'] for x in items]
+            if len(tups):
+                res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
+                result = load(result_file)
+                for k, v in zip(keys, res):
+                    if k not in result:
+                        result[k] = v
+
+            data['hit'] = [result[i]['hit'] for i in data['index']]
+            data['log'] = [result[i]['log'] for i in data['index']]
+
+            def extract_letter(log_text):
+                if not log_text:
+                    return None
+                if "[" in log_text and "]" in log_text:
+                    return log_text[log_text.index("[") + 1:log_text.index("]")]
+                return log_text.rstrip(". ").split()[-1]
+
+            def partial_match_score(row):
+                """Calculate PM score using formula: |intersection| / max(|labels|, |predictions|)"""
+                model_letter = extract_letter(row['log'])
+                correct_letter = row['GT']
+
+                if not model_letter:
+                    return 0.0
+
+                # Get option texts
+                model_option = row.get(model_letter, '')
+                correct_option = row.get(correct_letter, '')
+
+                if not model_option or not correct_option:
+                    return 0.0
+
+                # Get word sets
+                model_words = set(str(model_option).lower().split())
+                correct_words = set(str(correct_option).lower().split())
+
+                # PM formula: |labels ∩ predictions| / max(|labels|, |predictions|)
+                intersection = len(model_words.intersection(correct_words))
+                max_len = max(len(model_words), len(correct_words))
+
+                if max_len == 0:
+                    return 0.0
+
+                pm_score = intersection / max_len
+                return pm_score
+
+            # Apply partial matching - returns float values (0.0 to 1.0)
+            data['partial_match'] = [partial_match_score(row) for _, row in data.iterrows()]
+
+            if 'GT' in data:
+                data.pop('GT')
+            return data
+        nproc = judge_kwargs.pop('nproc', 4)
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+        data = mcq_topviewrs_eval(model, data, meta, nproc, result_file, self.dataset_name)
+        eval_record = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        dump(data, eval_record)
+        data = load(eval_record)
+        acc = report_topviewrs_acc(data)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+        return acc

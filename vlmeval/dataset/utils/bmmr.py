@@ -237,11 +237,21 @@ def merge_rating(refer_based_metrics_output_file_name):
     }
 
     df['category_id'] = df['category_id'].apply(lambda x: eval(x) if isinstance(x, str) else x)
-    df['category_id'] = df['category_id'].apply(lambda x: x[0][:2])
+    df['category_id'] = df['category_id'].apply(lambda x: [item[:2] for item in x])
 
     # 只计算cot=True的数据
     cot_df = df[df['cot']]
-    category_id_df = cot_df.groupby('category_id')[metrics].mean()
+
+    # 为每个数据行创建多行，每个category_id一行
+    expanded_rows = []
+    for idx, row in cot_df.iterrows():
+        for cat_id in row['category_id']:
+            new_row = row.copy()
+            new_row['category_id'] = cat_id
+            expanded_rows.append(new_row)
+
+    expanded_df = pd.DataFrame(expanded_rows)
+    category_id_df = expanded_df.groupby('category_id')[metrics].mean()
     category_id_metrics = {
         'acc_score': category_id_df['acc_score'].values
     }

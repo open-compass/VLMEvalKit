@@ -173,14 +173,18 @@ class InternVLChat(BaseModel):
         self.screen_parse = screen_parse
 
         if use_lmdeploy:
-            from lmdeploy import TurbomindEngineConfig, VisionConfig, pipeline, ChatTemplateConfig
+            from lmdeploy import TurbomindEngineConfig, PytorchEngineConfig, VisionConfig, pipeline
+            engine_type = PytorchEngineConfig if "internvl3_5" in model_path.lower() else TurbomindEngineConfig
             vision_config = VisionConfig(max_batch_size=4)
             num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,
                 vision_config=vision_config,
-                chat_template_config=ChatTemplateConfig(model_name='internvl2_5'),
-                backend_config=TurbomindEngineConfig(session_len=16384, cache_max_entry_count=0.1, tp=num_gpus)
+                backend_config=engine_type(
+                    session_len=max(16384, kwargs.get("max_new_tokens", 16384)),
+                    cache_max_entry_count=0.5,
+                    tp=num_gpus,
+                )
             )
             torch.cuda.set_device(0)
             self.device = 'cuda'
@@ -247,7 +251,7 @@ class InternVLChat(BaseModel):
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
         if dataset is not None and listinstr(['BMMR'], dataset):
-            self.kwargs['max_new_tokens'] = 8196
+            self.kwargs['max_new_tokens'] = max(self.kwargs.get('max_new_tokens', 4096), 8196)
             print(f'[Warning] BMMR dataset requires a larger max_new_tokens, set to {self.kwargs["max_new_tokens"]}')
 
         if dataset is not None and DATASET_TYPE(dataset) == 'Y/N':
@@ -269,7 +273,12 @@ class InternVLChat(BaseModel):
             elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA', 'OCRBench',
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
-            elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
+            elif liststr(['MathVerse'], dataset):
+                question = question.replace("please directly answer the question and", "please")
+                prompt = question
+                if os.getenv('USE_COT') == '1':
+                    prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
+            elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
                             'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
                 prompt = question
@@ -408,8 +417,8 @@ class InternVLChat(BaseModel):
         response_list = []
         for idx in range(self.best_of_n):
             kwargs_default = self.kwargs.copy()
-            kwargs_default['do_sample'] = idx > 0
-            kwargs_default['temperature'] = 0.7
+            kwargs_default['do_sample'] = idx > 0 or kwargs_default.get('do_sample', False)
+            kwargs_default['temperature'] = 0.6
             kwargs_default['top_p'] = 0.95
 
             if self.use_lmdeploy:

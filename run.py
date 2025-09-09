@@ -176,7 +176,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
-    parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
+    parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer', 'eval'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
     parser.add_argument('--api-nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
@@ -271,7 +271,6 @@ def main():
                 dist.barrier()
 
             try:
-                # 使用环境变量控制的文件格式，支持tsv, xlsx, json
                 pred_format = get_pred_file_format()
                 result_file_base = f'{model_name}_{dataset_name}.{pred_format}'
 
@@ -301,9 +300,6 @@ def main():
                         continue
 
                 # Handling Multi-Turn Dataset
-                # 注意：MT类型现在也支持通过环境变量控制文件格式，不再强制使用tsv
-                # 如果需要保持MT类型使用tsv的传统行为，可以在环境变量中设置PRED_FORMAT=tsv
-
                 result_file = osp.join(pred_root, result_file_base)
                 # Reuse the previous prediction file if exists
                 if RANK == 0 and len(prev_pred_roots):
@@ -318,37 +314,38 @@ def main():
                 if model is None:
                     model = model_name  # which is only a name
 
-                # Perform the Inference
-                if dataset.MODALITY == 'VIDEO':
-                    model = infer_data_job_video(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        result_file_name=result_file_base,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        use_vllm=args.use_vllm)
-                elif dataset.TYPE == 'MT':
-                    model = infer_data_job_mt(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore,
-                        use_vllm=args.use_vllm)
-                else:
-                    model = infer_data_job(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore,
-                        use_vllm=args.use_vllm)
+                if args.model != "eval":
+                    # Perform the Inference
+                    if dataset.MODALITY == 'VIDEO':
+                        model = infer_data_job_video(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            result_file_name=result_file_base,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            use_vllm=args.use_vllm)
+                    elif dataset.TYPE == 'MT':
+                        model = infer_data_job_mt(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
+                    else:
+                        model = infer_data_job(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
 
                 # Set the judge kwargs first before evaluation or dumping
 
@@ -383,6 +380,10 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
+                    elif listinstr(['OlympiadBench'], dataset_name):
+                        use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
+                        if use_api_judger:
+                            judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['ChartMimic'], dataset_name):
@@ -393,6 +394,12 @@ def main():
                         judge_kwargs['model'] = 'qwen-72b'
                     elif listinstr(['MMVMBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1'
+                    elif listinstr(['M4Bench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['AyaVisionBench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1'
 
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True

@@ -950,8 +950,92 @@ class OlympiadBench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.olympiadbench import MathJudger, extract_answer
-        judger = MathJudger()
+        use_api_judger = judge_kwargs.pop("olympiad_use_api_judger", False)
+        if use_api_judger:
+            from .utils.olympiadbench import Olympiad_auxeval_extract, Olympiad_auxeval_score
+            model = judge_kwargs['model']
+            storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
+            tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract_tmp')
+            result_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+            tmp_result_file = get_intermediate_file_path(eval_file, f'_{model}_score_tmp')
+            score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+            nproc = judge_kwargs.pop('nproc', 4)
+            # stage1: extract the answer
+            if not osp.exists(storage_extract):
+                data = load(eval_file)
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE  # noqa: E501
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
+
+                ans = {}
+                if osp.exists(tmp_file_extract):
+                    ans = load(tmp_file_extract)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
+
+                if len(indices):
+                    new_results = track_progress_rich(
+                        Olympiad_auxeval_extract,
+                        tups,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=indices,
+                        save=tmp_file_extract,
+                    )
+                    ans = load(tmp_file_extract)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log_extract'] == v['log_extract'] and ans[
+                            k]['extract'] == v['extract']
+
+                data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+                data['log_extract'] = [
+                    ans[idx]['log_extract'] for idx in data['index']
+                ]
+                dump(data, storage_extract)
+
+            # stage2: score the answer
+            if not osp.exists(result_file):
+                data = load(storage_extract)
+                model = build_judge(max_tokens=128, **judge_kwargs)
+                assert model.working(), 'OlympiadBench API-based evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE  # noqa: E501
+                lt = len(data)
+                lines = [data.iloc[i] for i in range(lt)]
+                tups = [(model, line) for line in lines]
+                indices = [line['index'] for line in lines]
+
+                ans = {}
+                if osp.exists(tmp_result_file):
+                    ans = load(tmp_result_file)
+                tups = [x for x, i in zip(tups, indices) if i not in ans]
+                indices = [i for i in indices if i not in ans]
+
+                if len(indices):
+                    new_results = track_progress_rich(
+                        Olympiad_auxeval_score,
+                        tups,
+                        nproc=nproc,
+                        chunksize=nproc,
+                        keys=indices,
+                        save=tmp_result_file,
+                    )
+                    ans = load(tmp_result_file)
+                    for k, v in zip(indices, new_results):
+                        assert k in ans
+                        assert ans[k]['log_score'] == v['log_score'] and ans[k][
+                            'score'] == v['score']
+
+                data['score'] = [ans[idx]['score'] for idx in data['index']]
+                data['log_score'] = [
+                    ans[idx]['log_score'] for idx in data['index']
+                ]
+                dump(data, result_file)
+        else:
+            from .utils.olympiadbench import MathJudger, extract_answer
+            judger = MathJudger()
 
         name_str1 = 'judge'
         name_str2 = 'score'
@@ -1967,14 +2051,18 @@ class CRPE(ImageBaseDataset):
         data = load(eval_file)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
-        for i in tqdm(range(len(lines))):
-            line = lines[i]
-            predict = str(line['prediction'])
-            answers = str(line['answer'])
-            # print("predict =", predict)
-            # print("answers =", answers)
-            category = line['category']
-            if is_correct(answers, predict):
+        assert len(lines) % 4 == 0
+        for i in tqdm(range(0, len(lines), 4)):
+            IsCorrect = True
+            for j in range(4):
+                line = lines[i + j]
+                predict = str(line['prediction'])
+                answers = str(line['answer'])
+                category = line['category']
+                if not is_correct(answers, predict):
+                    IsCorrect = False
+                    break
+            if IsCorrect:
                 score[category] += 1
                 score['total'] += 1
             num[category] += 1
@@ -2564,9 +2652,11 @@ class MMSci_Captioning(ImageBaseDataset):
 class BMMR(ImageBaseDataset):
     TYPE = 'BMMR'
     DATASET_URL = {
-        'BMMR': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR.tsv'
+        'BMMR': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR.tsv',
+        'BMMR_mini': 'https://opencompass.openxlab.space/utils/VLMEval/BMMR_mini.tsv'
     }
-    DATASET_MD5 = {'BMMR': '3245ec52eb8dd689b81633cf7be06264'}
+    DATASET_MD5 = {'BMMR': '3245ec52eb8dd689b81633cf7be06264',
+                   'BMMR_mini': '4fd17afd00ce059a5f6496cf96f8b762'}
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.bmmr import get_acc_for_reference_based_metrics, merge_rating
@@ -3119,9 +3209,9 @@ class MMEReasoning(ImageBaseDataset):
         from .utils.mme_reasoning import MMEReasoning_extract, MMEReasoning_openeval, MMEReasoning_acc, FAIL_MSG, mme_reasoning_eval_functions  # noqa
 
         model = judge_kwargs.get('model', 'gpt-4o-mini')
-        suffix = eval_file.split('.')[-1]
-        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
-        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
+        tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract_tmp')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
         nproc = judge_kwargs.pop('nproc', 4)
 
         # stage 1: extract answers using LLM
@@ -3169,11 +3259,9 @@ class MMEReasoning(ImageBaseDataset):
             data['log'] = log_list
             dump(data, storage_extract)
 
-        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
-
+        tmp_file_score = get_intermediate_file_path(eval_file, f'_{model}_score_tmp')
         # stage 2: evaluate score
-        if not osp.exists(storage_score):
+        if not osp.exists(score_file):
             data = load(storage_extract)
             data = data.replace({float('nan'): None})
             model = build_judge(max_tokens=1024, **judge_kwargs)
@@ -3277,10 +3365,10 @@ class MMEReasoning(ImageBaseDataset):
 
             data['score'] = [ans[idx]['score'] for idx in data['index']]
             data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
-            dump(data, storage_score)
+            dump(data, score_file)
 
-        score = MMEReasoning_acc(storage_score)
-        score_pth = get_intermediate_file_path(storage_score, '', 'csv')
+        score = MMEReasoning_acc(score_file)
+        score_pth = get_intermediate_file_path(score_file, '', 'csv')
         dump(score, score_pth)
         return score
 
@@ -3344,11 +3432,9 @@ class MMVMBench(ImageBaseDataset):
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs['model']
         nproc = judge_kwargs.pop('nproc', 4)
-
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
-        acc_file = eval_file.replace('.xlsx', f'_{judge}_acc.xlsx')
-
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_tmp')
+        score_file = get_intermediate_file_path(eval_file, f'_{judge}_score')
+        acc_file = get_intermediate_file_path(eval_file, f'_{judge}_acc')
         judge_kwargs['temperature'] = 0.0
         model = build_judge(**judge_kwargs)
 
@@ -3461,3 +3547,82 @@ class OCRBench_v2(ImageBaseDataset):
         score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
         return final_score_dict
+
+
+class AyaVisionBench(ImageVQADataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        "AyaVisionBench":
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_AyaVisionBench/resolve/main/aya_vision_bench.tsv"
+    }
+
+    DATASET_MD5 = {
+        "AyaVisionBench": "2bc7f64c767421ba86cf7c035ca74f95"
+    }
+
+    def build_prompt(self, line):
+        msgs = super().build_prompt(line)
+        assert msgs[-1]['type'] == 'text'
+        msgs[-1][
+            'value'] += '\nAnswer the question using a single word or phrase.'
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        model_name = judge_kwargs.get('model', None)
+        if not model_name:
+            raise ValueError("A model must be specified for "
+                             "AyaVisionBench evaluation. Please use --judge <model_name>.")
+
+        from .utils.ayavision import AyaVision_auxeval
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            raise RuntimeError("OPENAI API is not working properly. Please check your API key and configuration.")
+        storage = get_intermediate_file_path(eval_file, f'_{model_name}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_tmp')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        data = load(eval_file)
+        lt = len(data)
+        lines = [data.iloc[i] for i in range(lt)]
+        tups = [(model, line) for line in lines]
+        indices = [line['index'] for line in lines]
+
+        ans = {}
+        if osp.exists(tmp_file):
+            ans = load(tmp_file)
+
+        tups = [x for x, i in zip(tups, indices) if i not in ans]
+        indices = [i for i in indices if i not in ans]
+
+        if len(indices):
+            new_results = track_progress_rich(
+                AyaVision_auxeval,
+                tups,
+                nproc=nproc,
+                chunksize=nproc,
+                keys=indices,
+                save=tmp_file,
+            )
+            tmp_results = load(tmp_file)
+            for k, v in zip(indices, new_results):
+                assert k in tmp_results and tmp_results[k] == v
+            ans.update(tmp_results)
+
+        data['hit'] = [ans[idx]['hit'] for idx in data['index']]
+        data['res'] = [ans[idx]['res'] for idx in data['index']]
+        data['log'] = [ans[idx]['log'] for idx in data['index']]
+
+        # Rename 'hit' to 'acc' for compatibility with report_acc
+        data['acc'] = data['hit']
+
+        dump(data, storage)
+
+        from .utils.multiple_choice import report_acc
+        ret = report_acc(data)
+
+        ret.round(2)
+
+        result_file = get_intermediate_file_path(eval_file, '_acc')
+        dump(ret, result_file)
+        return ret

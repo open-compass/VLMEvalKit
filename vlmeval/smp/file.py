@@ -165,7 +165,6 @@ def dump(data, f, **kwargs):
 
 
 def get_pred_file_format():
-    """获取预测文件格式，优先使用环境变量PRED_FORMAT"""
     pred_format = os.getenv('PRED_FORMAT', '').lower()
     if pred_format in ['tsv', 'xlsx', 'json']:
         return pred_format
@@ -173,7 +172,6 @@ def get_pred_file_format():
 
 
 def get_eval_file_format():
-    """获取评测文件格式，优先使用环境变量EVAL_FORMAT"""
     eval_format = os.getenv('EVAL_FORMAT', '').lower()
     if eval_format in ['csv', 'json']:
         return eval_format
@@ -181,7 +179,6 @@ def get_eval_file_format():
 
 
 def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
-    """生成预测文件路径，支持环境变量格式控制"""
     if use_env_format:
         file_format = get_pred_file_format()
         if file_format == 'xlsx':
@@ -196,7 +193,6 @@ def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
 
 
 def get_eval_file_path(eval_file, judge_model, use_env_format=True):
-    """生成评测文件路径，支持环境变量格式控制"""
     suffix = eval_file.split('.')[-1]
     if use_env_format:
         file_format = get_eval_file_format()
@@ -210,29 +206,16 @@ def get_eval_file_path(eval_file, judge_model, use_env_format=True):
 
 
 def _should_convert_to_dataframe(data):
-    """
-    判断字典是否应该转换为DataFrame
-    Args:
-        data: 字典数据
-    Returns:
-        bool: 是否应该转换为DataFrame
-    """
     if not isinstance(data, dict):
         return False
-    # 如果是空字典，不转换
     if not data:
         return False
-    # 如果包含'columns'和'data'键，说明是空DataFrame的特殊格式
     if 'columns' in data and 'data' in data:
         return True
-    # 如果所有值都是标量（非列表、非字典），则不转换为DataFrame
-    # 这种情况通常是配置文件、评分结果等
     values = list(data.values())
     if all(not isinstance(v, (list, dict)) for v in values):
         return False
-    # 如果至少有一个值是列表或字典，则可能需要转换为DataFrame
     if any(isinstance(v, list) for v in values):
-        # 检查是否所有列表长度相同（DataFrame的基本要求）
         lists = [v for v in values if isinstance(v, list)]
         if lists and all(len(lst) == len(lists[0]) for lst in lists):
             return True
@@ -245,51 +228,7 @@ def load(f, fmt=None):
         return pickle.load(open(pth, 'rb'))
 
     def load_json(pth):
-        try:
-            with open(pth, 'r', encoding='utf-8') as f:
-                content = f.read().strip()
-                if not content:
-                    # 如果文件为空，返回空的DataFrame
-                    return pd.DataFrame()
-                data = json.loads(content)
-
-                # 如果是list格式（records），转换为DataFrame
-                if isinstance(data, list):
-                    return pd.DataFrame(data)
-                elif isinstance(data, dict):
-                    # 判断是否应该转换为DataFrame
-                    if _should_convert_to_dataframe(data):
-                        return pd.DataFrame(data)
-                    else:
-                        return data
-                else:
-                    return data
-
-        except json.JSONDecodeError as e:
-            # 如果JSON格式错误，尝试作为其他格式读取
-            print(f"Warning: JSON decode error for {pth}: {e}")
-            # 尝试按行读取，可能是JSONL格式
-            try:
-                with open(pth, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                    if lines and lines[0].strip():
-                        # 尝试作为单行JSON解析
-                        data = json.loads(lines[0].strip())
-                        if isinstance(data, list):
-                            return pd.DataFrame(data)
-                        elif isinstance(data, dict):
-                            # 判断是否应该转换为DataFrame
-                            if _should_convert_to_dataframe(data):
-                                return pd.DataFrame(data)
-                            else:
-                                return data
-                        else:
-                            return data
-                    else:
-                        return pd.DataFrame()
-            except:
-                print(f"Warning: Could not parse {pth} as JSON, returning empty DataFrame")
-                return pd.DataFrame()
+        return json.load(open(pth, 'r', encoding='utf-8'))
 
     def load_jsonl(f):
         lines = open(f, encoding='utf-8').readlines()
@@ -507,41 +446,22 @@ def fetch_aux_files(eval_file):
 
 
 def get_file_extension(file_path):
-    """获取文件扩展名"""
     return file_path.split('.')[-1]
 
 
 def get_intermediate_file_path(eval_file, suffix, target_format=None):
-    """
-    生成中间文件路径，支持环境变量格式控制
-
-    Args:
-        eval_file: 原始评估文件路径
-        suffix: 文件后缀（如 '_tmp', '_score' 等）
-        target_format: 目标格式，如果为None则根据文件用途智能选择格式
-
-    Returns:
-        新的文件路径
-    """
-    # 获取原文件的扩展名
     original_ext = get_file_extension(eval_file)
 
     if target_format is None:
-        # 根据后缀智能选择格式
         if suffix in ['_tmp', '_response', '_processed']:
-            # 临时文件保持pkl格式
             target_format = 'pkl'
         elif suffix in ['_rating', '_config', '_meta']:
-            # 配置和评分文件保持json格式
             target_format = 'json'
         elif suffix in ['_acc', '_fine', '_metrics']:
-            # 准确率和指标文件根据EVAL_FORMAT选择
             target_format = get_eval_file_format()
         else:
-            # 其他文件跟随PRED_FORMAT
             target_format = get_pred_file_format()
 
-    # 替换扩展名并添加后缀
     return eval_file.replace(f'.{original_ext}', f'{suffix}.{target_format}')
 
 
