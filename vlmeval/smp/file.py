@@ -166,16 +166,22 @@ def dump(data, f, **kwargs):
 
 def get_pred_file_format():
     pred_format = os.getenv('PRED_FORMAT', '').lower()
-    if pred_format in ['tsv', 'xlsx', 'json']:
+    if pred_format == '':
+        return 'xlsx'  # default format
+    else:
+        assert pred_format in ['tsv', 'xlsx', 'json'], f'Unsupported PRED_FORMAT {pred_format}'
         return pred_format
-    return 'xlsx'  # 默认格式
+    
 
 
 def get_eval_file_format():
     eval_format = os.getenv('EVAL_FORMAT', '').lower()
-    if eval_format in ['csv', 'json']:
+    if eval_format == '':
+        return 'csv'  # default format
+    else:
+        assert eval_format in ['csv', 'json'], f'Unsupported EVAL_FORMAT {eval_format}'
         return eval_format
-    return 'csv'  # 默认格式
+    
 
 
 def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
@@ -188,7 +194,7 @@ def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
         elif file_format == 'json':
             return osp.join(work_dir, f'{model_name}_{dataset_name}.json')
     else:
-        # 保持原有行为
+        # default
         return osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
 
 
@@ -201,7 +207,7 @@ def get_eval_file_path(eval_file, judge_model, use_env_format=True):
         elif file_format == 'json':
             return eval_file.replace(f'.{suffix}', f'_{judge_model}.json')
     else:
-        # 保持原有行为
+        # default
         return eval_file.replace(f'.{suffix}', f'_{judge_model}.xlsx')
 
 
