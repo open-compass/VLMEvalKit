@@ -104,9 +104,9 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
             'resolve/main/visonlyqa_vlmevalkit.tsv'
         ),
-        'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
+        'MMCR': 'https://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
-        "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
+        "MMVP": "https://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
         "K-DTCBench": "https://huggingface.co/datasets/NCSOFT/K-DTCBench/resolve/main/K-DTCBench.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
@@ -629,7 +629,7 @@ class MMMUProDataset(MMMUDataset):
 class MUIRDataset(ImageMCQDataset):
 
     DATASET_URL = {
-        'MUIRBench': 'http://opencompass.openxxlab.com/utils/VLMEval/MUIRBench.tsv'
+        'MUIRBench': 'https://opencompass.openxlab.space/utils/VLMEval/MUIRBench.tsv'
     }
 
     DATASET_MD5 = {
@@ -1069,8 +1069,8 @@ class CVBench(ImageMCQDataset):
         See [Cambrian-1](https://arxiv.org/pdf/2406.16860) Appendix C
     """
     DATASET_URL = {
-        "CV-Bench-2D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-2D.tsv",
-        "CV-Bench-3D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-3D.tsv",
+        "CV-Bench-2D": "https://opencompass.openxlab.space/utils/VLMEval/CV-Bench-2D.tsv",
+        "CV-Bench-3D": "https://opencompass.openxlab.space/utils/VLMEval/CV-Bench-3D.tsv",
     }
 
     DATASET_MD5 = {
@@ -1585,7 +1585,7 @@ class LEGO(ImageMCQDataset):
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VisuLogic': 'http://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
+        'VisuLogic': 'https://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
     }
     DATASET_MD5 = {
         'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
@@ -2130,7 +2130,7 @@ class OmniMedVQA(ImageMCQDataset):
 class MSEarthMCQ(ImageMCQDataset):
 
     DATASET_URL = {
-        'MSEarthMCQ': 'http://opencompass.openxlab.space/utils/VLMEval/MSEarthMCQ.tsv',
+        'MSEarthMCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MSEarthMCQ.tsv',
     }
 
     DATASET_MD5 = {
@@ -2195,7 +2195,7 @@ directly state the correct option content. Do not give any explanation.
 class VLMBlind(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VLMBlind': 'http://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
+        'VLMBlind': 'https://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
     }
     DATASET_MD5 = {
         'VLMBlind': 'e0f960236afe08f9fa48e8ccc908b2a9',
@@ -2326,7 +2326,7 @@ class SCAM(ImageMCQDataset):
 
 class _3DSRBench(ImageMCQDataset):
 
-    DATASET_URL = {'3DSRBench': 'http://opencompass.openxlab.space/utils/VLMEval/3DSRBench.tsv'}
+    DATASET_URL = {'3DSRBench': 'https://opencompass.openxlab.space/utils/VLMEval/3DSRBench.tsv'}
     DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
 
     def evaluate(self, eval_file, **judge_kwargs):
@@ -2381,7 +2381,7 @@ class _3DSRBench(ImageMCQDataset):
 
 
 class AffordanceDataset(ImageMCQDataset):
-    DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
+    DATASET_URL = {'A4Bench': "https://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
     DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
 
     def build_prompt(self, line):

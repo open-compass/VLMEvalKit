@@ -431,19 +431,19 @@ class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MathVerse_MINI':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
         'MathVerse_MINI_Vision_Only':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Only_cot':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
         'MathVerse_MINI_Vision_Intensive':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
         'MathVerse_MINI_Text_Lite':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
         'MathVerse_MINI_Text_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -706,19 +706,19 @@ class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'atomic_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
         'electro_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
         'mechanics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
         'optics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
         'quantum_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
+        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -1637,7 +1637,7 @@ class MMVet(ImageBaseDataset):
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
         'MMVet_Hard':
-        'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
     DATASET_MD5 = {
         'MMVet': '748aa6d4aa9d4de798306a63718455e3',

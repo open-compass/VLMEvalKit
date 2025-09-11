@@ -140,12 +140,12 @@ class ScreenSpot(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Mobile": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Mobile.tsv",  # noqa
-        "ScreenSpot_Desktop": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Desktop.tsv",  # noqa
-        "ScreenSpot_Web": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Web.tsv",  # noqa
-        "ScreenSpot_v2_Mobile": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_v2/ScreenSpot_v2_Mobile.tsv",  # noqa
-        "ScreenSpot_v2_Desktop": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_v2/ScreenSpot_v2_Desktop.tsv",  # noqa
-        "ScreenSpot_v2_Web": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_v2/ScreenSpot_v2_Web.tsv",  # noqa
+        "ScreenSpot_Mobile": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Mobile.tsv",  # noqa
+        "ScreenSpot_Desktop": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Desktop.tsv",  # noqa
+        "ScreenSpot_Web": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot/ScreenSpot_Web.tsv",  # noqa
+        "ScreenSpot_v2_Mobile": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_v2/ScreenSpot_v2_Mobile.tsv",  # noqa
+        "ScreenSpot_v2_Desktop": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_v2/ScreenSpot_v2_Desktop.tsv",  # noqa
+        "ScreenSpot_v2_Web": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_v2/ScreenSpot_v2_Web.tsv",  # noqa
     }  # path
     DATASET_URL_V2 = {
         "ScreenSpot_Mobile": "$WORK_DIR/screenspot_mobile_ug.json",
