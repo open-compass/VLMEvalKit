@@ -9,7 +9,7 @@ from tqdm import tqdm
 import torch.distributed as dist
 from ..image_base import ImageBaseDataset
 from ...smp import *
-from .utils import get_intermediate_file_path, load, dump
+# from ..utils import get_intermediate_file_path, load, dump
 
 
 class OmniDocBench(ImageBaseDataset):
@@ -30,7 +30,7 @@ class OmniDocBench(ImageBaseDataset):
 
     2. Mathematical Formula Processing:
     - Convert all mathematical formulas to LaTeX format.
-    - Enclose inline formulas with \( \). For example: This is an inline formula \( E = mc^2 \)
+    # - Enclose inline formulas with \( \). For example: This is an inline formula \( E = mc^2 \)
     - Enclose block formulas with \\[ \\]. For example: \[ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} \]
 
     3. Table Processing:

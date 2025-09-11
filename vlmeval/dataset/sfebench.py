@@ -1,7 +1,7 @@
 import string
 from vlmeval import *
-from .smp import *
-from .smp.file import get_intermediate_file_path
+from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from .image_vqa import ImageVQADataset
 from .utils.judge_util import build_judge
 from ..utils import track_progress_rich
