@@ -6,7 +6,7 @@ import pandas as pd
 from os import path as osp
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import decode_base64_to_image_file, load, dump
+from ..smp import decode_base64_to_image_file, load, dump, get_intermediate_file_path
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
@@ -183,8 +183,7 @@ class M4Bench(ImageBaseDataset):
         df['score'] = (df['parsed_pred'] == df['response'])
 
         # Save detailed results
-        base_name = os.path.splitext(os.path.abspath(eval_file))[0]
-        details_file = base_name + '_details.xlsx'
+        details_file = get_intermediate_file_path(eval_file, '_details')
         dump(df, details_file)
 
         # Calculate and return accuracy

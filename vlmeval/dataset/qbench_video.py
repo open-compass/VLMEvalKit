@@ -2,6 +2,7 @@
 import huggingface_hub
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_concat_dataset import ConcatVideoDataset
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
@@ -31,8 +32,7 @@ class QBench_Video(ConcatVideoDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         result = super().evaluate(eval_file=eval_file, **judge_kwargs)
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc')
         result.at['open_ended', 'acc'] /= 2
         dump(result, score_file)
         return result
@@ -159,10 +159,10 @@ Please do not add any other answers beyond this.
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'exact_matching')
@@ -318,9 +318,8 @@ Please analyze these frames and provide a detailed and accurate answer from the 
         model = judge_kwargs.setdefault('model', 'gpt-4o-0806')
         assert model in ['gpt-4o-0806', 'gpt-4o']
 
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(score_file):

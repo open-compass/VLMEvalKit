@@ -244,11 +244,12 @@ class EgoExoBench_MCQ(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils import get_dimension_rating, extract_characters_regex, extract_option
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
+            'data file should be an supported format (xlsx/json/tsv) file'
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')

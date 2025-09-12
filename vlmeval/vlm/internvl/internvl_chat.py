@@ -273,7 +273,7 @@ class InternVLChat(BaseModel):
             elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA', 'OCRBench',
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
                 prompt = question + '\nAnswer the question using a single word or phrase.'
-            elif liststr(['MathVerse'], dataset):
+            elif listinstr(['MathVerse'], dataset):
                 question = question.replace("please directly answer the question and", "please")
                 prompt = question
                 if os.getenv('USE_COT') == '1':

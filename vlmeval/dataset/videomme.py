@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 
@@ -231,11 +232,11 @@ Respond with only the letter (A, B, C, or D) of the correct option.
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.videomme import get_dimension_rating, extract_characters_regex, extract_option
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')

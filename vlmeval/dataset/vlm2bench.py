@@ -8,6 +8,8 @@ from .utils.vlm2bench import (
     cnt_aggregate_metric,
     grp_aggregate_accuracy,
 )
+from ..smp import *
+from ..smp.file import get_intermediate_file_path
 
 
 class VLM2Bench(ImageBaseDataset):
@@ -69,25 +71,15 @@ class VLM2Bench(ImageBaseDataset):
         """
         model = judge_kwargs.get("model")
         if model:
-            suffix = eval_file.split('.')[-1]
-            storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-            score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
-            tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+            storage = get_intermediate_file_path(eval_file, f'_{model}')
+            score_file = get_intermediate_file_path(eval_file, f'_{model}_score', 'csv')
+            tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
             if os.path.exists(storage):
-                if storage.lower().endswith(".xlsx"):
-                    data = pd.read_excel(storage)
-                else:
-                    data = pd.read_csv(storage, sep="\t", encoding="latin1", engine="python")
+                data = load(storage)
             else:
-                if eval_file.lower().endswith(".xlsx"):
-                    data = pd.read_excel(eval_file)
-                else:
-                    data = pd.read_csv(eval_file, sep="\t", encoding="latin1", engine="python")
+                data = load(eval_file)
         else:
-            if eval_file.lower().endswith(".xlsx"):
-                data = pd.read_excel(eval_file)
-            else:
-                data = pd.read_csv(eval_file, sep="\t", encoding="latin1", engine="python")
+            data = load(eval_file)
 
         results = data.to_dict(orient="records")
         processed = common_process_results(results)
@@ -117,7 +109,6 @@ class VLM2Bench(ImageBaseDataset):
         if model:
             final_score_file = score_file
         else:
-            suffix = os.path.splitext(eval_file)[1]
-            final_score_file = eval_file.replace(suffix, "_score.csv")
-        score_df.to_csv(final_score_file, index=False)
+            final_score_file = get_intermediate_file_path(eval_file, "_score", "csv")
+        dump(score_df, final_score_file)
         return score_df

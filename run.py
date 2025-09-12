@@ -271,7 +271,8 @@ def main():
                 dist.barrier()
 
             try:
-                result_file_base = f'{model_name}_{dataset_name}.xlsx'
+                pred_format = get_pred_file_format()
+                result_file_base = f'{model_name}_{dataset_name}.{pred_format}'
 
                 if use_config:
                     if WORLD_SIZE > 1:
@@ -299,9 +300,6 @@ def main():
                         continue
 
                 # Handling Multi-Turn Dataset
-                if dataset.TYPE == 'MT':
-                    result_file_base = result_file_base.replace('.xlsx', '.tsv')
-
                 result_file = osp.join(pred_root, result_file_base)
                 # Reuse the previous prediction file if exists
                 if RANK == 0 and len(prev_pred_roots):

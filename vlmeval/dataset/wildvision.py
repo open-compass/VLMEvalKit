@@ -4,6 +4,7 @@ from functools import partial
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from ..utils import track_progress_rich
 
 
@@ -141,11 +142,10 @@ class WildVision(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         # We adopt pairwise evaluation (twice for a pair) for this dataset
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs['model']
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score', 'csv')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):

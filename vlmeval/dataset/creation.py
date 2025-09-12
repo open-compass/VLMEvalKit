@@ -3,6 +3,7 @@ from .image_base import ImageBaseDataset
 import numpy as np
 import pandas as pd
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
 import re
@@ -662,20 +663,18 @@ class CreationMMBenchDataset(ImageBaseDataset):
             tgt = load(eval_file)
             tgt['reference_answer_by_gpt4o'] = src['prediction']
             tgt['prediction'] = src['reference_answer_by_gpt4o']
-            tgt_file_name = eval_file.replace('.xlsx', '_rev.xlsx')
+            tgt_file_name = get_intermediate_file_path(eval_file, '_rev')
             dump(tgt, tgt_file_name)
             judge_kwargs['dual_eval'] = False
             rating_rev = self.evaluate(tgt_file_name, **judge_kwargs)
         judge_kwargs.pop('dual_eval', None)
 
-        suffix = '.' + eval_file.split('.')[-1]
-
-        score_file = eval_file.replace(suffix, '_score.csv')
-        tgt_file = eval_file.replace(suffix, '_rating.json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
 
         model = judge_kwargs.pop('model', 'gpt-4o-0806')
         model_name = model.split('/')[-1] if '/' in model else model
-        tmp_file = eval_file.replace(suffix, f'_{model_name}.pkl')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
 
         nproc = judge_kwargs.pop('nproc', 4)
 

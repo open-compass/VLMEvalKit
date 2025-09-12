@@ -1,6 +1,7 @@
 from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from ..utils import track_progress_rich
 
 
@@ -86,11 +87,10 @@ class MMDUDataset(ImageMTDataset):
         return pd.DataFrame([sp1, sp2])
 
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs['model']
 
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score', 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
 
         data = load(eval_file)
