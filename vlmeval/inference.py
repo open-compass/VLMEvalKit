@@ -219,7 +219,7 @@ def infer_data_job(
             assert x in data_all
         if os.getenv('SPLIT_THINK', False):
             prediction = [str(data_all[x]) for x in data['index']]
-            print(f'Prediction format: {os.getenv("SPLIT_THINK")}, splitting thinking if any.')
+
             def split_thinking(s):
                 if '</think>' in s:
                     splits = s.split('</think>')
@@ -229,12 +229,13 @@ def infer_data_job(
                     else:
                         thinking = '</think>'.join(splits[:-1])
                         thinking += '</think>'
-                        warnings.warn(f'Failed to parse thinking, multiple </think> tags or missing <think> tag. ')
+                        warnings.warn('Failed to parse thinking, multiple </think> tags or missing <think> tag.')
                 else:
                     thinking = ''
                     prediction = s
                 return (prediction, thinking)
             split_func = model.split_thinking if hasattr(model, 'split_thinking') else split_thinking
+            print(f'Prediction format: {os.getenv("SPLIT_THINK")},splitting func: {split_func}')
             tups = [split_func(x) for x in prediction]
             data['prediction'] = [x[0] for x in tups]
             data['thinking'] = [x[1] for x in tups]

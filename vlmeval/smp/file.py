@@ -171,7 +171,6 @@ def get_pred_file_format():
     else:
         assert pred_format in ['tsv', 'xlsx', 'json'], f'Unsupported PRED_FORMAT {pred_format}'
         return pred_format
-    
 
 
 def get_eval_file_format():
@@ -181,7 +180,6 @@ def get_eval_file_format():
     else:
         assert eval_format in ['csv', 'json'], f'Unsupported EVAL_FORMAT {eval_format}'
         return eval_format
-    
 
 
 def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
