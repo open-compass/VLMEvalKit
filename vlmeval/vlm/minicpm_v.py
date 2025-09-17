@@ -795,6 +795,7 @@ class MiniCPM_o_2_6(BaseModel):
 class MiniCPM_V_4(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
+
     def __init__(self, model_path='openbmb/MiniCPM-V-4', **kwargs):
         random.seed(0)
         np.random.seed(0)
@@ -834,10 +835,15 @@ class MiniCPM_V_4(BaseModel):
     def use_cot(self, dataset=None):
         if dataset is None:
             return False
-        if listinstr(['MMMU', 'MathVista', 'MMStar', 'HallusionBench', 'OCRBench', 'ChartQA', 'MathVision', 'MathVerse_MINI_Vision_Only'], dataset):
+        if listinstr([
+                'MMMU', 'MathVista', 'MMStar', 'HallusionBench', 'OCRBench',
+                'ChartQA', 'MathVision', 'MathVerse_MINI_Vision_Only'
+        ], dataset):
             return True
-        elif listinstr(['MMVet', 'MMBench',  'AI2D', 'RealWorldQA',
-                        'POPE', 'ScienceQA', 'TextVQA', 'DocVQA'], dataset):
+        elif listinstr([
+                'MMVet', 'MMBench', 'AI2D', 'RealWorldQA', 'POPE', 'ScienceQA',
+                'TextVQA', 'DocVQA'
+        ], dataset):
             return False
         else:
             return False
@@ -845,7 +851,10 @@ class MiniCPM_V_4(BaseModel):
     def use_upsize(self, dataset=None):
         if dataset is None:
             return False
-        if listinstr(['MathVista', 'MMVet', 'MMStar', 'AI2D', 'OCRBench', 'ChartQA', 'TextVQA'], dataset):
+        if listinstr([
+                'MathVista', 'MMVet', 'MMStar', 'AI2D', 'OCRBench', 'ChartQA',
+                'TextVQA'
+        ], dataset):
             return True
         else:
             return False
@@ -954,7 +963,7 @@ class MiniCPM_V_4(BaseModel):
             msgs = MMMUDataset.split_MMMU(msgs)
 
         return msgs
-    
+
     def extract_answer(self, res, dataset=None):
         if dataset is None:
             return res
@@ -1038,20 +1047,23 @@ class MiniCPM_V_4(BaseModel):
 class MiniCPM_V_4_5(MiniCPM_V_4):
     INSTALL_REQ = False
     INTERLEAVE = True
+
     def __init__(self, model_path='openbmb/MiniCPM-V-4_5', **kwargs):
         super().__init__(model_path, **kwargs)
         from transformers import AutoProcessor
         self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
         self._original_chat_template = self.tokenizer.chat_template
         self._long_cot_chat_template = self._original_chat_template.replace(
-            "{{- '<think>\\n' }}",
-            "{{- '<think>\\nI' }}"
-        )
+            "{{- '<think>\\n' }}", "{{- '<think>\\nI' }}")
 
     def use_long_cot(self, dataset=None):
         if dataset is None:
             return False
-        if listinstr(['MMMU', 'MathVista', 'MMVet', 'MMBench', 'HallusionBench', 'MMStar', 'MathVision', 'MathVerse_MINI', 'MathVerse_MINI_Vision_Only', 'DynaMath', 'LogicVista'], dataset):
+        if listinstr([
+                'MMMU', 'MathVista', 'MMVet', 'MMBench', 'HallusionBench',
+                'MMStar', 'MathVision', 'MathVerse_MINI',
+                'MathVerse_MINI_Vision_Only', 'DynaMath', 'LogicVista'
+        ], dataset):
             return True
         else:
             return False
@@ -1059,7 +1071,11 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
     def use_cot(self, dataset=None):
         if dataset is None:
             return False
-        if listinstr(['MMMU', 'MathVista', 'MMBench', 'HallusionBench', 'MMStar', 'OCRBench', 'ChartQA', 'MathVision', 'MathVerse_MINI', 'MathVerse_MINI_Vision_Only', 'DynaMath', 'LogicVista'], dataset):
+        if listinstr([
+                'MMMU', 'MathVista', 'MMBench', 'HallusionBench', 'MMStar',
+                'OCRBench', 'ChartQA', 'MathVision', 'MathVerse_MINI',
+                'MathVerse_MINI_Vision_Only', 'DynaMath', 'LogicVista'
+        ], dataset):
             return True
         else:
             return False
@@ -1079,7 +1095,7 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
             self.tokenizer.chat_template = self._long_cot_chat_template
         else:
             self.tokenizer.chat_template = self._original_chat_template
-        
+
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -1182,7 +1198,6 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
             msgs = MMMUDataset.split_MMMU(msgs)
 
         return msgs
-    
 
     def generate_inner(self, message, dataset=None):
         if self.use_long_cot(dataset):
@@ -1192,10 +1207,10 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
                 sampling=True,
                 temperature=0.7,
                 num_beams=1,
-                top_p=1.0, 
+                top_p=1.0,
                 top_k=0,
                 repetition_penalty=1.0,
-                no_repeat_ngram_size=0 
+                no_repeat_ngram_size=0
             )
         elif self.use_cot(dataset):
             default_kwargs = dict(
@@ -1211,7 +1226,7 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
                 num_beams=self.num_beams,
                 repetition_penalty=1.2
             )
-            
+
         default_kwargs.update(self.kwargs)
 
         content = []
@@ -1249,9 +1264,8 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
 
         if isinstance(res, tuple) and len(res) > 0:
             res = res[0]
-        
+
         res = res.replace('<think>\n', '<think>\nI ')
-        res = self.extract_answer(res, dataset)   
+        res = self.extract_answer(res, dataset)
 
         return res
- 
