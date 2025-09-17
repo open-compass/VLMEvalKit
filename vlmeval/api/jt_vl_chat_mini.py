@@ -236,3 +236,4 @@ class JTVLChatAPI_Mini(JTVLChatWrapper):
 
     def generate(self, message, dataset=None):
         return super(JTVLChatAPI_Mini, self).generate(message, dataset=dataset)
+
