@@ -57,7 +57,7 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_UgcLaion": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
         "CCOCR_MultiSceneOcr_ZhVertical": "https://www.modelscope.cn/datasets/Qwen/CC-OCR/resolve/master/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
-        "CCOCR": "http://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
+        "CCOCR": "https://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
     }
 
     DATASET_URL_HUGGINGFACE = {
@@ -100,7 +100,7 @@ class CCOCRDataset(ImageBaseDataset):
         "CCOCR_MultiSceneOcr_UgcLaion": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/ugc_laion_400.tsv",
         "CCOCR_MultiSceneOcr_ZhDense": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_dense_50.tsv",
         "CCOCR_MultiSceneOcr_ZhVertical": "https://huggingface.co/datasets/wulipc/CC-OCR/resolve/main/multi_scene_ocr/ugc_text/zh_vertical_100.tsv",
-        "CCOCR": "http://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
+        "CCOCR": "https://opencompass.openxlab.space/utils/VLMEval/CCOCR.tsv"
     }
 
     # define data path
