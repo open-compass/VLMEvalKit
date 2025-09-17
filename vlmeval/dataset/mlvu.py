@@ -24,7 +24,7 @@ class MLVU(ConcatVideoDataset):
     def __init__(self, dataset='MLVU', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['MLVU_MCQ', 'MLVU_OpenEnded']
         self.type_data_dict = {
-            'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning'],
+            'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning', 'order'],
             'G-Avg':['sub_scene', 'summary']
         }
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
