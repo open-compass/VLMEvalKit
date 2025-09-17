@@ -108,3 +108,5 @@ from .qtunevl import (
     QTuneVL,
     QTuneVLChat,
 )
+from .logics import Logics_Thinking
+
