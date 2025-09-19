@@ -435,7 +435,6 @@ class SailVL(BaseModel):
                 prompt = question + "\nAnswer this question in detail."
             elif listinstr(["MMVet"], dataset):
                 prompt = question + "\nProvide a step-by-step solution to the problem carefully."
-            
             elif listinstr(
                 [
                     "OCRVQA",
