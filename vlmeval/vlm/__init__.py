@@ -6,6 +6,7 @@ from .aria import Aria
 from .base import BaseModel
 from .hawk_vl import HawkVL
 from .thyme import Thyme
+from .keye_vl import KeyeVL
 from .cogvlm import CogVlm, GLM4v, GLMThinking
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .eagle_x import Eagle
@@ -20,6 +21,7 @@ from .llava import (
     LLaVA_Next2,
     LLaVA_OneVision,
     LLaVA_OneVision_HF,
+    LLaVA_OneVision_1_5,
 )
 from .vita import VITA, VITAQwen2
 from .long_vita import LongVITA
@@ -67,6 +69,8 @@ from .video_llm import (
     LLaMAVID,
     VideoChat2_HD,
     PLLaVA,
+    InternVideo,
+    VideoLLaMA3,
 )
 from .vila import VILA, NVILA
 from .ovis import Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2, OvisU1

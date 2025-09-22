@@ -4,5 +4,10 @@ from .chat_uni_vi import Chatunivi
 from .video_chatgpt import VideoChatGPT
 from .llama_vid import LLaMAVID
 from .pllava import PLLaVA
+from .internvideo import InternVideo
+from .videollama3 import VideoLLaMA3
 
-__all__ = ['VideoLLaVA', 'VideoLLaVA_HF', 'Chatunivi', 'VideoChatGPT', 'LLaMAVID', 'VideoChat2_HD', 'PLLaVA']
+__all__ = [
+    'VideoLLaVA', 'VideoLLaVA_HF', 'Chatunivi', 'VideoChatGPT', 'LLaMAVID', 'VideoChat2_HD', 'PLLaVA', 
+    'InternVideo', 'VideoLLaMA3'
+]

@@ -169,7 +169,7 @@ def get_pred_file_format():
     if pred_format == '':
         return 'xlsx'  # default format
     else:
-        assert pred_format in ['tsv', 'xlsx', 'json'], f'Unsupported PRED_FORMAT {pred_format}'
+        assert pred_format in ['tsv', 'xlsx', 'csv'], f'Unsupported PRED_FORMAT {pred_format}'
         return pred_format
 
 
