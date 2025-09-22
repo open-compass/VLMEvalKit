@@ -501,6 +501,7 @@ class LLaVA_OneVision(BaseModel):
     IMAGE_TOKEN_INDEX = -200
 
     def __init__(self, model_path="lmms-lab/llava-onevision-qwen2-7b-si", **kwargs):
+        self.model_path = model_path
         assert model_path is not None
         try:
             from llava.model.builder import load_pretrained_model
@@ -518,7 +519,7 @@ class LLaVA_OneVision(BaseModel):
             raise err
 
         video_kwargs_default = dict(
-            overwrite=True, mm_spatial_pool_mode="average", force_sample=True
+            overwrite=True, mm_spatial_pool_mode="average", force_sample=False
         )
         video_kwargs_default.update(kwargs)
         self.video_kwargs = video_kwargs_default
@@ -549,6 +550,7 @@ class LLaVA_OneVision(BaseModel):
             conv_mode = "qwen_1_5"
         if 'llava-video' in model_path.lower():
             self.nframe = 64
+            self.fps = 1
         else:
             self.nframe = 16
             if "72b" in model_path.lower():
@@ -622,7 +624,7 @@ class LLaVA_OneVision(BaseModel):
         return text_outputs
 
     def generate_inner_video(self, message, dataset=None):
-        content, text_content, visual_content, videos = "", "", "", []
+        content, text_content, visual_content, videos, images = "", "", "", [], []
 
         for msg in message:
             if msg["type"] == "text":
@@ -636,9 +638,15 @@ class LLaVA_OneVision(BaseModel):
                 "LLaVA-OneVision does not support multiple videos as input."
             )
 
-        video_frames, frame_time, video_time = self.load_video(
-            videos[0], self.nframe, 1, self.force_sample
-        )
+        if self.fps is not None and self.fps > 0:
+            print(f'{self.model_path} is a video-llm model, using fps {self.fps} to sample video, max frames is 64')
+            video_frames, frame_time, video_time = self.load_video(
+                videos[0], 64, self.fps, self.force_sample
+            )  # set the frame number to 64
+        else:
+            video_frames, frame_time, video_time = self.load_video(
+                videos[0], self.nframe, 1, self.force_sample
+            )
 
         time_instruciton = (
             f"The video lasts for {video_time:.2f} seconds,"
@@ -715,12 +723,81 @@ class LLaVA_OneVision(BaseModel):
             frame_time = [i / vr.get_avg_fps() for i in frame_idx]
         frame_time = ",".join([f"{i:.2f}s" for i in frame_time])
         spare_frames = vr.get_batch(frame_idx).asnumpy()
-        # import pdb;pdb.set_trace()
         return spare_frames, frame_time, video_time
+
+    def generate_inner_image_and_video(self, message, dataset=None):
+        content, images, videos = "", [], []
+        for msg in message:
+            if msg["type"] == "text":
+                content += msg["value"]
+            elif msg["type"] == "image":
+                images.append(msg["value"])
+            elif msg["type"] == "video":
+                videos.append(msg["value"])
+
+        if len(videos) > 1:
+            raise ValueError("LLaVA-OneVision does not support multiple videos as input.")
+
+        if self.fps > 0:
+            print(f'{self.model_path} is a video-llm model, using fps {self.fps} to sample video, max frames is 64')
+            video, frame_time, video_time = self.load_video(
+                videos[0], 64, self.fps, self.force_sample
+            )  # set the frame number to 64
+        else:
+            video, frame_time, video_time = self.load_video(
+                videos[0], self.nframe, 1, self.force_sample
+            )
+        
+        frame_height, frame_width = video.shape[1:3]
+        images_array = []
+        for image_path in images:
+            image = Image.open(image_path).convert("RGB")
+            image = image.resize((frame_width, frame_height))
+            image_array = np.array(image)
+            images_array.append(image_array)
+        images_array = np.array(images_array)
+
+        image_sizes = [(frame_width, frame_height) for frame in video] + [(frame_width, frame_height) for image in images_array]
+
+        if video.dtype != images_array.dtype:
+            images_array = images_array.astype(video.dtype)
+
+        print(f"Video shape: {video.shape}, Images array shape: {images_array.shape}")
+        if video.shape[1:] != images_array.shape[1:]:
+            raise ValueError(f"Shape mismatch: video shape {video.shape}, image shape {image_array.shape}")
+
+        video = self.image_processor.preprocess(video, return_tensors="pt")["pixel_values"].half().cuda()
+        image = self.image_processor.preprocess(images_array, return_tensors="pt")["pixel_values"].half().cuda()
+        video_image = [video, image]
+        
+        conv_template = "qwen_1_5"  # Make sure you use correct chat template for different models
+        time_instruciton = f"The video lasts for {video_time:.2f} seconds, and {len(video[0])} frames are uniformly sampled from it. These frames are located at {frame_time}.Please answer the following questions related to this video."
+        question = self.DEFAULT_IMAGE_TOKEN + f"\n{time_instruciton}\n" + self.DEFAULT_IMAGE_TOKEN + content
+        conv = copy.deepcopy(self.conv_templates[conv_template])
+        conv.append_message(conv.roles[0], question)
+        conv.append_message(conv.roles[1], None)
+        prompt_question = conv.get_prompt()
+        input_ids = self.tokenizer_image_token(prompt_question, self.tokenizer, self.IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(self.model.device)
+        cont = self.model.generate(
+            input_ids,
+            images=video_image,
+            image_sizes=image_sizes,
+            modalities= ["video", "image"],
+            do_sample=False,
+            temperature=0,
+            max_new_tokens=4096,
+        )
+        text_outputs = self.tokenizer.batch_decode(cont, skip_special_tokens=True)[0].strip()
+        return text_outputs
+
 
     def generate_inner(self, message, dataset=None):
         if DATASET_MODALITY(dataset) == 'VIDEO' and 'megabench' not in dataset.lower():
-            return self.generate_inner_video(message, dataset)
+            msg_type = [m['type'] for m in message]
+            if 'image' in msg_type:
+                return self.generate_inner_image_and_video(message, dataset)
+            else:
+                return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)
 
@@ -843,3 +920,100 @@ class LLaVA_OneVision_HF(BaseModel):
             return self.generate_inner_video(message, dataset)
         else:
             return self.generate_inner_image(message, dataset)
+
+class LLaVA_OneVision_1_5(BaseModel):
+
+    def __init__(self, model_path = "lmms-lab/LLaVA-One-Vision-1.5-8B-Instruct", **kwargs):
+        from transformers import AutoTokenizer, AutoProcessor, AutoModelForCausalLM
+        from qwen_vl_utils import process_vision_info
+
+        # default: Load the model on the available device(s)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype="auto", device_map="auto", trust_remote_code=True
+        )
+
+        # default processer
+        self.processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
+        self.kwargs = kwargs
+        self.fps = kwargs.pop('fps', 2)
+        self.nframe = kwargs.pop('nframe', 128)
+        self.FRAME_FACTOR = 2
+
+    def ensure_image_url(self, image: str) -> str:
+        prefixes = ['http://', 'https://', 'file://', 'data:image;']
+        if any(image.startswith(prefix) for prefix in prefixes):
+            return image
+        if os.path.exists(image):
+            return 'file://' + image
+        raise ValueError(f'Invalid image: {image}')
+
+    
+    def ensure_video_url(self, video: str) -> str:
+        prefixes = ['http://', 'https://', 'file://', 'data:video;']
+        if any(video.startswith(prefix) for prefix in prefixes):
+            return video
+        if os.path.exists(video):
+            return 'file://' + video
+        raise ValueError(f'Invalid video: {video}')
+
+    def generate_inner(self, message, dataset=None):
+        content_list = []
+        for msg in message:
+            if msg["type"] == "text":
+                content_list.append({"type": "text", "text": msg["value"]})
+            elif msg["type"] == "video":
+                item = {
+                    'type': 'video',
+                    'video': self.ensure_video_url(msg['value'])
+                }
+                item['min_pixels'] = 128 * 28 * 28
+                item['max_pixels'] = 768 * 28 * 28
+                item['total_pixels'] = 24576 * 28 * 28
+                if self.fps is not None and self.fps > 0:
+                    item['fps'] = self.fps
+                elif self.nframe is not None and self.nframe > 0:
+                    import cv2
+                    video = cv2.VideoCapture(msg['value'])
+                    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                    video.release()
+                    if frame_count < self.nframe:
+                        new_frame_count = frame_count // self.FRAME_FACTOR * self.FRAME_FACTOR
+                        print(f"use {new_frame_count} for {msg['value']}")
+                        item['nframes'] = new_frame_count
+                    else:
+                        item['nframes'] = self.nframe
+                content_list.append(item)
+            elif msg["type"] == "image":
+                content_list.append({"type": "image", "image": self.ensure_image_url(msg["value"])})
+            else:
+                raise ValueError(f"Invalid message type: {msg['type']}, {msg}")
+        
+        messages = [
+            {"role": "user", "content": content_list}
+        ]
+
+        # Preparation for inference
+        text = self.processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        from qwen_vl_utils import process_vision_info
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = self.processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to("cuda")
+
+        # Inference: Generation of the output
+        generated_ids = self.model.generate(**inputs, **self.kwargs)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = self.processor.batch_decode(
+            generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        # print(len(output_text), output_text[0])
+        return output_text[0]
