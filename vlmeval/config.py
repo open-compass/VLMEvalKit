@@ -45,6 +45,8 @@ video_models = {
     "PLLaVA-34B": partial(
         PLLaVA, model_path="ermu2001/pllava-34b", dir_root=PLLaVA_ROOT
     ),
+    "InternVideo-2.5-Chat-8B": partial(InternVideo, model_path="OpenGVLab/InternVideo2_5_Chat_8B", max_new_tokens=4096),
+    "VideoLLaMA3-7B": partial(VideoLLaMA3, model_path="DAMO-NLP-SG/VideoLLaMA3-7B", max_new_tokens=4096),
 }
 
 ungrouped = {
@@ -694,6 +696,10 @@ thyme_series = {
     "Thyme-7B": partial(Thyme, model_path="Kwai-Keye/Thyme-RL")
 }
 
+keye_vl_series = {
+    "Keye-VL-1_5-8B": partial(KeyeVL, model_path="/fs-computility/llm/shared/mllm/hub/models--Kwai-Keye--Keye-VL-1_5-8B/snapshots/3921b3d6a81870b107ff76e54c320d8aab66a0da", use_vllm=False, max_new_tokens=4096)
+}
+
 llava_series = {
     "llava_v1.5_7b": partial(LLaVA, model_path="liuhaotian/llava-v1.5-7b"),
     "llava_v1.5_13b": partial(LLaVA, model_path="liuhaotian/llava-v1.5-13b"),
@@ -760,6 +766,9 @@ llava_series = {
     ),
     "llava_video_qwen2_72b": partial(
         LLaVA_OneVision, model_path="lmms-lab/LLaVA-Video-72B-Qwen2"
+    ),
+    "llava_onevision_1_5_8b": partial(
+        LLaVA_OneVision_1_5, model_path="lmms-lab/LLaVA-OneVision-1.5-8B-Instruct", max_new_tokens=4096
     ),
 }
 
@@ -1674,7 +1683,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series, keye_vl_series
 ]
 
 for grp in model_groups:

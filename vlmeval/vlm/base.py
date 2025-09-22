@@ -90,7 +90,7 @@ class BaseModel:
                 assert 'type' in item and 'value' in item
                 mime, s = parse_file(item['value'])
                 if mime is None:
-                    assert item['type'] == 'text'
+                    assert item['type'] == 'text', f'Invalid input type: {item}'
                 else:
                     assert mime.split('/')[0] == item['type']
                     item['value'] = s

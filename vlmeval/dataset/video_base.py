@@ -67,7 +67,7 @@ class VideoBaseDataset:
         return [osp.join(frame_root,
                          self.frame_tmpl_fps.format(i, num_frames, self.fps)) for i in range(1, num_frames + 1)]
 
-    def save_video_frames(self, video):
+    def save_video_frames(self, video, max_frames=-1):
         import decord
         if self.fps > 0:
             vid_path = osp.join(self.data_root, video + '.mp4')
@@ -80,12 +80,18 @@ class VideoBaseDataset:
 
             # 计算需要提取的总帧数
             required_frames = int(total_duration * self.fps)
+            if max_frames > 0 and required_frames > max_frames:
+                print(f"video {video} requires {self.fps} fps sampling, \
+                        but all need sampled frames {required_frames} > max_frames {max_frames}, sample down to {max_frames} frames")
+                required_frames = max_frames
+                step_size = total_frames / (required_frames+1)
+                indices = [int(i * step_size) for i in range(1, required_frames + 1)]
+            else:
+                # 计算提取帧的间隔
+                step_size = video_fps / self.fps
 
-            # 计算提取帧的间隔
-            step_size = video_fps / self.fps
-
-            # 计算提取帧的索引
-            indices = [int(i * step_size) for i in range(required_frames)]
+                # 计算提取帧的索引
+                indices = [int(i * step_size) for i in range(required_frames)]
 
             # 提取帧并保存
             frame_paths = self.frame_paths_fps(video, len(indices))
