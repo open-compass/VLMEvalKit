@@ -357,6 +357,7 @@ class SailVL(BaseModel):
         load_in_8bit=False,
         use_msac=True,
         use_cot=False,
+        max_new_tokens=1024,
         **kwargs,
     ):
         assert model_path is not None
@@ -396,7 +397,7 @@ class SailVL(BaseModel):
         self.device = "cuda"
 
         self.image_size = self.model.config.vision_config.image_size
-        kwargs_default = dict(do_sample=False, max_new_tokens=4096, top_p=None)
+        kwargs_default = dict(do_sample=False, max_new_tokens=max_new_tokens, top_p=None)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
 
@@ -432,6 +433,8 @@ class SailVL(BaseModel):
             question = line["question"]
             if listinstr(["LLaVABench", "WildVision"], dataset):
                 prompt = question + "\nAnswer this question in detail."
+            elif listinstr(["MMVet"], dataset):
+                prompt = question + "\nProvide a step-by-step solution to the problem carefully."
             elif listinstr(
                 [
                     "OCRVQA",
@@ -454,7 +457,6 @@ class SailVL(BaseModel):
                     "MathVision",
                     "VCR",
                     "MTVQA",
-                    "MMVet",
                     "MathVerse",
                     "MMDU",
                     "CRPE",
