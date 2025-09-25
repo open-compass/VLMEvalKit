@@ -433,8 +433,6 @@ class SailVL(BaseModel):
             question = line["question"]
             if listinstr(["LLaVABench", "WildVision"], dataset):
                 prompt = question + "\nAnswer this question in detail."
-            elif listinstr(["MMVet"], dataset):
-                prompt = question + "\nProvide a step-by-step solution to the problem carefully."
             elif listinstr(
                 [
                     "OCRVQA",
@@ -456,6 +454,7 @@ class SailVL(BaseModel):
                     "MathVista",
                     "MathVision",
                     "VCR",
+                    "MMVet",
                     "MTVQA",
                     "MathVerse",
                     "MMDU",
