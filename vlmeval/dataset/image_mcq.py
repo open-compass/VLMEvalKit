@@ -6,6 +6,7 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 import pandas as pd
+from tqdm import tqdm
 
 MMMB_URLS = {
     'MMMB_ar': 'https://huggingface.co/datasets/AIDC-AI/Parrot-dataset/resolve/main/mmmb/mmmb_ar.tsv',
@@ -48,6 +49,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_EN.tsv',
         'MMBench_DEV_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_DEV_CN.tsv',
         'MMBench_TEST_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_TEST_CN.tsv',
+        'MMBench_DEV_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMBench/resolve/main/MMBench_DEV_KO.tsv',
         'MMBench': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench.tsv',  # Internal
         'MMBench_CN': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN.tsv',  # Internal
         # MMBench v1.1
@@ -59,6 +61,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': 'https://opencompass.openxlab.space/utils/benchmarks/MMBench/MMBench_CN_V11.tsv',  # Internal
         # SEEDBench Series
         'SEEDBench_IMG': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench_IMG.tsv',
+        'SEEDBench_IMG_KO': 'https://huggingface.co/datasets/NCSOFT/K-SEED/resolve/main/SEEDBench_IMG_KO.tsv',
         'SEEDBench2': 'https://huggingface.co/datasets/VLMEval/SEEDBench2/resolve/main/SEEDBench2.tsv',
         'SEEDBench2_Plus': 'https://opencompass.openxlab.space/utils/benchmarks/SEEDBench/SEEDBench2_Plus.tsv',
         # ScienceQA Series
@@ -79,13 +82,14 @@ class ImageMCQDataset(ImageBaseDataset):
         'A-Bench_VAL': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_VAL.tsv',
         'A-Bench_TEST': 'https://huggingface.co/datasets/zhangzicheng/abench_tsv/resolve/main/A-bench_TEST.tsv',
         # R-Bench
-        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-dis.tsv',
-        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/blob/main/R-bench-ref.tsv',
+        'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-dis.tsv',
+        'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-ref.tsv',
         # Other Benchmarks
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
+        'MMStar_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMStar/resolve/main/MMStar_KO.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
@@ -103,6 +107,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
         "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
+        "K-DTCBench": "https://huggingface.co/datasets/NCSOFT/K-DTCBench/resolve/main/K-DTCBench.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
         'MMStar_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMStar_MINI.tsv',
@@ -114,6 +119,8 @@ class ImageMCQDataset(ImageBaseDataset):
         'MicroVQA': 'https://opencompass.openxlab.space/utils/VLMEval/MicroVQA.tsv',
         'MMSIBench_circular': 'https://opencompass.openxlab.space/utils/VLMEval/MMSIBench_circular.tsv',
         'SpatialEval': 'https://opencompass.openxlab.space/utils/VLMEval/SpatialEval.tsv',
+        "StaticEmbodiedBench": "https://huggingface.co/datasets/xiaojiahao/StaticEmbodiedBench/resolve/main/StaticEmbodiedBench.tsv",  # noqa
+        "StaticEmbodiedBench_circular": "https://huggingface.co/datasets/xiaojiahao/StaticEmbodiedBench/resolve/main/StaticEmbodiedBench_circular.tsv"  # noqa
     }
 
     DATASET_MD5 = {
@@ -122,6 +129,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_TEST_EN': '6939fadb0ce626fefc0bdc9c64efc528',
         'MMBench_DEV_CN': '08b8fc3324a5ed74155350f57be69fbd',
         'MMBench_TEST_CN': '7e1239baf0ee4c8b513e19705a0f317e',
+        'MMBench_DEV_KO': '72e1cde9124b5015be6d0dd5c9b5500d',
         'MMBench': '4115aea3383f3dd0083be6a633e0f820',  # Internal Only
         'MMBench_CN': '2e053ffc90ea598b1feae13c36dc13ee',    # Internal Only
         # MMBench v1.1
@@ -133,6 +141,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMBench_CN_V11': '95f6980dd1b4de38e3cbffe0305a3f25',    # Internal Only
         # SEEDBench
         'SEEDBench_IMG': '68017231464752261a2526d6ca3a10c0',
+        'SEEDBench_IMG_KO': 'b354a9ac3493f3ccf294e69b216bfab3',
         'SEEDBench2': '4ec15cf864c4f16274112284f531813e',
         'SEEDBench2_Plus': 'e32d3216dc4f452b0fe497a52015d1fd',
         # ScienceQA
@@ -160,6 +169,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
+        'MMStar_KO': 'cc6049c7314bb54b9ac5e247a2bfb357',
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',
         'MLLMGuard_DS': '975fc0dd7119386e198c37d71e274b3f',
         'BLINK': '3b6649b6a662184ea046908e5506260e',
@@ -170,10 +180,13 @@ class ImageMCQDataset(ImageBaseDataset):
         'MMCR': '9052635f2c3835bdb87755ef73564f5e',
         'MMSci_DEV_MCQ': '865144aa866e29b251bdc7d63a735b6b',
         "MMVP": "8cb732b141a0cba5b42159df2839e557",
+        "K-DTCBench": "fe72a85b010513d3840b5f3be2de6ed3",
         "VStarBench": "b18854d7075574be06b631cd5f7d2d6a",
         'MicroVQA': 'd7506438701a2076ec277f8bb3586c1a',
         'MMSIBench_circular': '7be2b9e8a280863272e89fab5ba40807',
-        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b'
+        'SpatialEval': '4c8eb33142b26be2916fb9164287b72b',
+        "StaticEmbodiedBench": "5c50611650ca966970180a80d49429f0",
+        "StaticEmbodiedBench_circular": "034cf398a3c7d848d966e1081e4baf68"
     }
 
     DATASET_URL.update(MMMB_URLS)
@@ -219,6 +232,12 @@ class ImageMCQDataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
             report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
         )
@@ -239,7 +258,6 @@ class ImageMCQDataset(ImageBaseDataset):
             dump(data, eval_file)
             circular = True
 
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
         assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
@@ -257,7 +275,7 @@ class ImageMCQDataset(ImageBaseDataset):
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -280,7 +298,7 @@ class ImageMCQDataset(ImageBaseDataset):
             data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # load split
-        eval_record = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        eval_record = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, eval_record)
         data = load(eval_record)
 
@@ -292,7 +310,7 @@ class ImageMCQDataset(ImageBaseDataset):
         else:
             acc = report_acc(data)
 
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(acc, score_file)
 
         # The piece of code is for internal use, to check vanilla acc (circ0 & all) for circular datasets
@@ -308,16 +326,16 @@ class ImageMCQDataset(ImageBaseDataset):
             else:
                 offset = 1e6
                 circ0 = data[data['index'] <= offset]
-            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_result.pkl')
+            result_file = get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_result', 'pkl')
             data0 = mcq_vanilla_eval(model, circ0, meta, nproc, result_file, self.dataset_name)
-            dump(data0, eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_circ0_result.{suffix}'))
-            data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_circ0_result.{suffix}'))
+            dump(data0, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
+            data = load(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_circ0_result'))
             acc_map['vanilla_0'] = report_acc(data)
             # Vanilla ALL Acc
             data = load(eval_file)
             dataall = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
-            dump(dataall, eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_all_result.{suffix}'))
-            data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_vanilla_all_result.{suffix}'))
+            dump(dataall, get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
+            data = load(get_intermediate_file_path(eval_file, f'_{name_str}_vanilla_all_result'))
             acc_map['vanilla_all'] = report_acc(data)
             # Merge & Print the Evaluation Results
             for k, v in acc_map.items():
@@ -331,7 +349,7 @@ class ImageMCQDataset(ImageBaseDataset):
             score_all = [acc_map['vanilla_0'], acc_map['vanilla_all'], acc_map['circular']]
             score_all = pd.concat(score_all)
             print(score_all)
-            score_file = eval_file.replace(f'.{suffix}', '_acc_all.csv')
+            score_file = get_intermediate_file_path(eval_file, '_acc_all', 'csv')
             dump(score_all, score_file)
 
         if dataset == 'AesBench_VAL':
@@ -344,6 +362,106 @@ class ImageMCQDataset(ImageBaseDataset):
                            chemistry__shape_multi split and uses a different evaluation prompt. Please \
                            explicitly specify the version of the dataset when you report results.')
 
+        return acc
+
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # assert dataset is not None
+        dataset_map = {
+            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
+            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
+        }
+        dataset = self.dataset_name
+        if dataset in dataset_map:
+            dataset = dataset_map[dataset]
+
+        circular = False
+        if listinstr(['mmbench', 'ccbench', 'circular', 'mmcr'], dataset.lower()):
+            circular = True
+
+        if circular:
+            raise ValueError("circular is not supported for verifier evaluation")
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        # If not choice label, then use lower case
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        # Add verifier evaluation for specific datasets
+        from .utils.verifier import Verifier
+        verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+        verifier_scores = []
+        verifier_matches = []
+        for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+            question_text = row['question']
+            if 'A' in row and not pd.isna(row['A']):
+                options = []
+                for option_key in ['A', 'B', 'C', 'D', 'E']:
+                    if option_key in row and not pd.isna(row[option_key]):
+                        options.append(f"{option_key}. {row[option_key]}")
+                if options:
+                    question_text += "\nOptions:\n" + "\n".join(options)
+
+            correct_option = str(row['answer']).strip().upper()
+            if correct_option in row and not pd.isna(row[correct_option]):
+                answer_text = f"{correct_option}. {row[correct_option]}"
+            else:
+                answer_text = correct_option
+
+            score = verifier.evaluate(question_text, row['prediction'], answer_text)
+            verifier_scores.append(score)
+            verifier_matches.append(1.0 if score else 0.0)
+
+        data['verifier_score'] = verifier_scores
+        data['verifier_match'] = verifier_matches
+
+        detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+        dump(data, detailed_result_file)
+
+        def report_acc_verifier(result_file):
+            from collections import defaultdict
+
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                split_name = item.get('split', 'Overall')
+                if pd.isna(split_name):
+                    split_name = 'Overall'
+
+                tot['Overall'] += 1
+                tot[split_name] += 1
+
+                if 'category' in item and not pd.isna(item['category']):
+                    category = item['category']
+                    tot[category] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[split_name] += 1
+
+                    if 'category' in item and not pd.isna(item['category']):
+                        hit[category] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                if k == 'Overall':
+                    res['Category'].append('Overall')
+                else:
+                    res['Category'].append(k)
+                res['Total'].append(tot[k])
+                res['Hit'].append(hit[k])
+                res['Accuracy'].append(hit[k] / tot[k] * 100 if tot[k] > 0 else 0.0)
+
+            res_df = pd.DataFrame(res)
+            return res_df
+        acc = report_acc_verifier(detailed_result_file)
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        dump(acc, score_file)
         return acc
 
 
@@ -495,11 +613,11 @@ class MMMUProDataset(MMMUDataset):
         if 'COT' in self.dataset_name:
             data = load(eval_file)
             data['prediction'] = [self.cot_postproc(x) for x in data['prediction']]
-            tgt = eval_file.replace('.xlsx', '_cotpost.xlsx')
+            tgt = get_intermediate_file_path(eval_file, '_cotpost')
             dump(data, tgt)
             res = super().evaluate(tgt, **judge_kwargs)
-            acc_org = eval_file.replace('.xlsx', '_acc.csv')
-            acc_now = eval_file.replace('.xlsx', '_cotpost_acc.csv')
+            acc_org = get_intermediate_file_path(eval_file, '_acc', 'csv')
+            acc_now = get_intermediate_file_path(eval_file, '_cotpost_acc', 'csv')
             shutil.copy(acc_now, acc_org)
             return res
         else:
@@ -897,11 +1015,11 @@ class MMERealWorld(ImageMCQDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import extract_characters_regex, get_dimension_rating
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         FAIL_MSG = 'Failed to obtain answer via API.'
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
 
@@ -915,6 +1033,17 @@ class MMERealWorld(ImageMCQDataset):
             for idx in data['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
+
+                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                cot = match_cot.group(1).strip() if match_cot else pred
+
+                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                iou = self.evaluate_box_iou(cot, target_instances)
+
+                data.loc[data['index'] == idx, 'iou'] = iou
+
+                match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
+                pred = match_pred.group(1).strip().upper() if match_pred else pred
 
                 extract_pred = extract_characters_regex(pred)
                 if extract_pred == '':
@@ -934,6 +1063,86 @@ class MMERealWorld(ImageMCQDataset):
         rating = get_dimension_rating(score_file)
         dump(rating, tgt_file)
         return rating
+
+    def evaluate_box_iou(predict_str: str, target_instances: list) -> float:
+        pattern = r"<box>(.*?)</box>"
+        matches = re.findall(pattern, predict_str, re.DOTALL)
+
+        all_boxes = []
+
+        for match in matches:
+            box = match.strip()
+
+            coord_pattern = r'\[(\d+),(\d+),(\d+),(\d+)\]'
+            coord_match = re.match(coord_pattern, box)
+
+            if coord_match:
+                x1, y1, x2, y2 = map(int, coord_match.groups())
+
+                if x1 < x2 and y1 < y2:
+                    # all_boxes.append([(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
+                    all_boxes.append([x1, y1, x2, y2])
+
+        if len(all_boxes) == 0:
+            return 0
+
+        target_boxes = target_instances
+        if len(target_boxes) == 0:
+            return len(all_boxes) > 0
+
+        def calculate_average_iou(pred_boxes, target_boxes):
+            """
+            计算每个目标框与预测框中 IoU 最大的预测框之间的平均 IoU。
+
+            参数:
+                pred_boxes (List[List[float]]): 预测框列表，每个框为 [cx, cy, w, h]
+                target_boxes (List[List[float]]): 目标框列表，每个框为 [cx, cy, w, h]
+
+            返回:
+                float: 匹配上的平均 IoU
+            """
+            def compute_iou(box1, box2):
+                """计算两个框之间的 IoU"""
+                x1_min, y1_min, x1_max, y1_max = box1
+                x2_min, y2_min, x2_max, y2_max = box2
+
+                inter_x_min = max(x1_min, x2_min)
+                inter_y_min = max(y1_min, y2_min)
+                inter_x_max = min(x1_max, x2_max)
+                inter_y_max = min(y1_max, y2_max)
+
+                inter_width = max(0, inter_x_max - inter_x_min)
+                inter_height = max(0, inter_y_max - inter_y_min)
+                inter_area = inter_width * inter_height
+
+                area1 = (x1_max - x1_min) * (y1_max - y1_min)
+                area2 = (x2_max - x2_min) * (y2_max - y2_min)
+
+                union_area = area1 + area2 - inter_area
+
+                return inter_area / union_area if union_area > 0 else 0.0
+
+            pred_coords = pred_boxes
+            target_coords = target_boxes
+
+            total_iou = 0.0
+            num_targets = len(target_boxes)
+
+            if num_targets == 0:
+                return 0.0
+
+            # 为每个目标框找到最大 IoU 的预测框
+            for t_coord in target_coords:
+                best_iou = 0.0
+                for p_coord in pred_coords:
+                    iou = compute_iou(t_coord, p_coord)
+                    if iou > best_iou:
+                        best_iou = iou
+                total_iou += best_iou
+
+            return total_iou / num_targets
+
+        return calculate_average_iou(all_boxes, target_boxes)
 
 
 class CVBench(ImageMCQDataset):
@@ -981,7 +1190,6 @@ class CVBench(ImageMCQDataset):
 
         nproc = judge_kwargs.pop("nproc", 4)
 
-        suffix = eval_file.split(".")[-1]
         model_name = judge_kwargs.get("model", "extract_matching")
 
         if model_name == "exact_matching":
@@ -997,7 +1205,7 @@ class CVBench(ImageMCQDataset):
             )
             model = None
 
-        result_file = eval_file.replace(f".{suffix}", f"_{model_name}_result.pkl")
+        result_file = get_intermediate_file_path(eval_file, f"_{model_name}_result", "pkl")
 
         data = load(eval_file)
         data = data.sort_values(by="index")
@@ -1016,7 +1224,7 @@ class CVBench(ImageMCQDataset):
                 k in meta_q_map
             ), f"eval_file should be the same as or a subset of dataset {self.dataset_name}"
 
-        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
+        score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
 
         if osp.exists(score_file):
             acc = load(score_file)
@@ -1024,15 +1232,14 @@ class CVBench(ImageMCQDataset):
         data = mcq_vanilla_eval(
             model, data, meta, nproc, result_file, self.dataset_name
         )
-        dump(data, eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
-        data = load(eval_file.replace(f".{suffix}", f"_{model}_result.{suffix}"))
+        dump(data, get_intermediate_file_path(eval_file, f"_{model_name}_result"))
+        data = load(get_intermediate_file_path(eval_file, f"_{model_name}_result"))
 
         if all(data["split"] == "2D"):  # 2D
             acc = self.report_accuracy(data)
         else:  # 3D, use default evaluation strategy
             acc = report_acc(data)
 
-        score_file = eval_file.replace(f".{suffix}", "_acc.csv")
         dump(acc, score_file)
 
         return acc
@@ -1078,7 +1285,6 @@ class HRBenchDataset(ImageMCQDataset):
         from .utils.hrbench import report_acc_hrbench
         nproc = judge_kwargs.pop('nproc', 4)
 
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'extract_matching')
         assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
@@ -1096,7 +1302,7 @@ class HRBenchDataset(ImageMCQDataset):
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -1113,18 +1319,17 @@ class HRBenchDataset(ImageMCQDataset):
                 f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
             )
 
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
 
         if osp.exists(score_file):
             acc = load(score_file)
             return acc
         data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
-        dump(data, eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
-        data = load(eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}'))
+        dump(data, get_intermediate_file_path(eval_file, f'_{name_str}_result'))
+        data = load(get_intermediate_file_path(eval_file, f'_{name_str}_result'))
 
         acc = report_acc_hrbench(data)
 
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
         dump(acc, score_file)
 
         return acc
@@ -1203,7 +1408,7 @@ class NaturalBenchDataset(ImageMCQDataset):
 
         scores = get_scores(results)
         print(scores)
-        score_file = 'NaturalBench_acc.csv'
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         df = pd.DataFrame(list(scores.items()), columns=['Metric', 'Score'])
         dump(df, score_file)
 
@@ -1281,13 +1486,12 @@ class WeMath(ImageBaseDataset):
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage) and model is not None:
             data = load(eval_file)
-            result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+            result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
             data = load(eval_file)
             data = data.sort_values(by='index')
@@ -1317,7 +1521,7 @@ class WeMath(ImageBaseDataset):
             four_dim_scores = wemath_accuracy(eval_file)
         combine_score = {**accuracy_scores, **four_dim_scores}
         combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
         dump(combine_score, score_pth)
         return combine_score
 
@@ -1368,15 +1572,14 @@ class VMCBenchDataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.vmcbench import get_mc_score, report_vmc_acc
-        suffix = eval_file.split('.')[-1]
         data = load(eval_file)
         data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
         data['hit'] = data.apply(get_mc_score, axis=1)
-        result_file = eval_file.replace(f'.{suffix}', f'_result.{suffix}')
+        result_file = get_intermediate_file_path(eval_file, '_result')
         dump(data, result_file)
         acc = report_vmc_acc(data)
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(acc, score_file)
 
         return acc
@@ -1440,7 +1643,7 @@ class LEGO(ImageMCQDataset):
         if len(options):
             prompt += options_prompt
             prompt += (
-                "Please respond with only the sequence of letters (e.g., ‘BDAC’) "
+                "Please respond with only the sequence of letters (e.g., 'BDAC') "
                 "that correctly orders the steps.\n"
             )
 
@@ -1518,8 +1721,7 @@ class VisuLogic(ImageMCQDataset):
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{name_str}.xlsx')
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
 
         if osp.exists(storage):
             accuracy_scores = VisuLogic_acc(storage)
@@ -1527,7 +1729,7 @@ class VisuLogic(ImageMCQDataset):
             accuracy_scores = VisuLogic_acc(eval_file)
         combine_score = {**accuracy_scores,}
         combine_score = pd.DataFrame(combine_score)
-        score_pth = storage.replace('.xlsx', '_acc.csv')
+        score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
         dump(combine_score, score_pth)
         return combine_score
 
@@ -1578,7 +1780,6 @@ class TDBench(ImageMCQDataset):
         from .utils.multiple_choice import report_acc, mcq_vanilla_eval
         nproc = judge_kwargs.pop('nproc', 4)
 
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
         assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125', 'gpt-4o-mini']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini'}
@@ -1596,7 +1797,7 @@ class TDBench(ImageMCQDataset):
             warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
             model = None
 
-        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -1616,12 +1817,12 @@ class TDBench(ImageMCQDataset):
         data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
 
         # Save evaluation results
-        judged_result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        judged_result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
         dump(data, judged_result_file)
 
         acc = report_acc(data)
 
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(acc, score_file)
 
         return acc, judged_result_file
@@ -1800,8 +2001,7 @@ class XLRSBench(ImageMCQDataset):
         result_df = pd.DataFrame(accuracy_dict)
         result_df['Overall macro'] = result_df.mean(axis=1)
         result_df['Overall micro'] = micro_metric['correct'] / micro_metric['total']
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(result_df, score_file)
         return result_df
 
@@ -1942,8 +2142,7 @@ class OmniEarthMCQBench(ImageMCQDataset):
             result_df[f"Sphere macro: {sphere}"] = sum(accs) / len(accs)
         result_df["Overall macro"] = result_df.mean(axis=1)
         result_df["Overall micro"] = micro_metric["correct"] / micro_metric["total"]
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(result_df, score_file)
         return result_df
 
@@ -2134,31 +2333,15 @@ class VLMBlind(ImageMCQDataset):
                 ans = self.extract_content_in_braces(data_item["prediction"])
                 if ans == data_item["answers"]:
                     task_stats[task]['correct'] += 1
-            elif data_item["task"] == "Touching Circles":
-                if str.lower(data_item["answers"]) in str.lower(data_item["prediction"]):
-                    task_stats[task]['correct'] += 1
-            elif data_item["task"] == "Counting Grid - Word Grids":
+            elif data_item["task"] == "Touchdown Reading":
                 if self.compare_string_with_values(data_item["prediction"], data_item["answers"]):
                     task_stats[task]['correct'] += 1
-            elif data_item["task"] == "Counting Grid - Blank Grids":
-                if self.compare_string_with_values(data_item["prediction"], data_item["answers"]):
-                    task_stats[task]['correct'] += 1
-            elif data_item["task"] == "Olympic Counting - Pentagons":
-                if data_item["answers"] in data_item["prediction"]:
-                    task_stats[task]['correct'] += 1
-            elif data_item["task"] == "Olympic Counting - Circles":
-                if data_item["answers"] in data_item["prediction"]:
-                    task_stats[task]['correct'] += 1
-            elif data_item["task"] == "Circled Letter":
-                ans = self.extract_content_in_braces(data_item["prediction"])
-                if ans == data_item["answers"]:
-                    task_stats[task]['correct'] += 1
 
-        accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in task_stats.items()}
-        result_df = pd.DataFrame(accuracy_dict)
-        result_df['overall'] = result_df.mean(axis=1)
-
-        return result_df
+        accuracy_dict = {task: [stats['correct'] / stats['total']] for task, stats in sorted(task_stats.items())}
+        accuracy_df = pd.DataFrame(accuracy_dict)
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        dump(accuracy_df, score_file)
+        return accuracy_df
 
 
 class SCAM(ImageMCQDataset):
@@ -2210,54 +2393,23 @@ class _3DSRBench(ImageMCQDataset):
     DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
 
     def evaluate(self, eval_file, **judge_kwargs):
-        super().evaluate(eval_file, **judge_kwargs)
         from .utils.multiple_choice import report_acc
-        dname = osp.dirname(eval_file)
-        base = osp.basename(eval_file).split('.')[:-1]
-        base = '.'.join(base)
-        result_file = ls(dname, match=[base + '_', 'result.xlsx'])
-        assert len(result_file) == 1, result_file
-        result_file = result_file[0]
-        data = load(result_file)
-
-        acc_map = {}
-        acc_map['vanilla'] = report_acc(data)
-        # Flip Acc
-        qid2key = {x: x.replace('-flip', '') for x in data['qid']}
-        key_set = set(list(qid2key.values()))
-        main = cp.deepcopy(data[data['qid'].isin(key_set)])
-        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
-        for x, y in zip(data['qid'], data['hit']):
-            hit_map[qid2key[x]] *= y
-        main['hit'] = [hit_map[x] for x in main['qid']]
-        acc_map['flip_eval'] = report_acc(main)
-        # Circ Acc
-        qid2key = {x: x[:8] if '-flip' not in x else x[:13] for x in data['qid']}
-        key_set = set(list(qid2key.values()))
-        main = cp.deepcopy(data[data['qid'].isin(key_set)])
-        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
-        for x, y in zip(data['qid'], data['hit']):
-            hit_map[qid2key[x]] *= y
-        main['hit'] = [hit_map[x] for x in main['qid']]
-        acc_map['circ_eval'] = report_acc(main)
-        # Flip Circ Acc
-        qid2key = {x: x[:8] for x in data['qid']}
-        key_set = set(list(qid2key.values()))
-        main = cp.deepcopy(data[data['qid'].isin(key_set)])
-        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
-        for x, y in zip(data['qid'], data['hit']):
-            hit_map[qid2key[x]] *= y
-        main['hit'] = [hit_map[x] for x in main['qid']]
-        acc_map['flip_circ_eval'] = report_acc(main)
-
-        metrics = []
-        for k in acc_map:
-            acc_map[k].pop('split')
-            acc_map[k]['setting'] = [k] * len(acc_map[k])
-            metrics.append(acc_map[k])
-        res_all = pd.concat(metrics)
-        dump(res_all, eval_file.replace('.xlsx', '_acc_all.csv'))
-        return res_all
+        from .utils.sr3d import parse_3dsr_prediction, eval_3dsr
+        from ..smp import dump, load
+        from ..utils.dataset_util import TDBench_grounding_eval
+        from ..dataset import parse_img_path_list
+        from ..config import VLM_EVAL_WITH_SUBSET
+        data = load(eval_file)
+        # parse the model predictions
+        data = parse_img_path_list(data)
+        data = parse_3dsr_prediction(data)
+        # rotate the image and boxes
+        data['hit'] = eval_3dsr(data)
+        result_file = get_intermediate_file_path(eval_file, '_acc')
+        if VLM_EVAL_WITH_SUBSET:
+            data['subset'] = [x.split('|')[0] for x in data['index']]
+        dump(data, result_file)
+        return report_acc(data)
 
 
 class AffordanceDataset(ImageMCQDataset):
@@ -2400,3 +2552,322 @@ class AffordanceDataset(ImageMCQDataset):
 
         selected_columns = ['index', 'question', 'prediction', 'match']
         return df[selected_columns]
+
+
+class TreeBench(ImageMCQDataset):
+
+    TYPE = 'MCQ'
+
+    DATASET_URL = {
+        'TreeBench': 'https://huggingface.co/datasets/HaochenWang/TreeBench/resolve/main/TreeBench.tsv',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        prompt = line['question']
+        if not line["category"] == "Perception/OCR":
+            prompt += "\nOptions:\n" + line["multi-choice options"]
+        prompt += "\nAnswer with the option's letter directly."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    # It returns a dictionary
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.treebench import get_acc
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        try:
+            res = get_acc(eval_file)
+            dump(res, score_file)
+            return res
+        except:
+            return 0
+
+    def evaluate_box_iou(predict_str: str, target_instances: list) -> float:
+        pattern = r"<box>(.*?)</box>"
+        matches = re.findall(pattern, predict_str, re.DOTALL)
+
+        all_boxes = []
+
+        for match in matches:
+            box = match.strip()
+
+            coord_pattern = r'\[(\d+),(\d+),(\d+),(\d+)\]'
+            coord_match = re.match(coord_pattern, box)
+
+            if coord_match:
+                x1, y1, x2, y2 = map(int, coord_match.groups())
+
+                if x1 < x2 and y1 < y2:
+                    # all_boxes.append([(x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1])
+                    all_boxes.append([x1, y1, x2, y2])
+
+        if len(all_boxes) == 0:
+            return 0
+
+        target_boxes = target_instances
+        if len(target_boxes) == 0:
+            return len(all_boxes) > 0
+
+        def calculate_average_iou(pred_boxes, target_boxes):
+            """
+            计算每个目标框与预测框中 IoU 最大的预测框之间的平均 IoU。
+
+            参数:
+                pred_boxes (List[List[float]]): 预测框列表，每个框为 [cx, cy, w, h]
+                target_boxes (List[List[float]]): 目标框列表，每个框为 [cx, cy, w, h]
+
+            返回:
+                float: 匹配上的平均 IoU
+            """
+            def compute_iou(box1, box2):
+                """计算两个框之间的 IoU"""
+                x1_min, y1_min, x1_max, y1_max = box1
+                x2_min, y2_min, x2_max, y2_max = box2
+
+                inter_x_min = max(x1_min, x2_min)
+                inter_y_min = max(y1_min, y2_min)
+                inter_x_max = min(x1_max, x2_max)
+                inter_y_max = min(y1_max, y2_max)
+
+                inter_width = max(0, inter_x_max - inter_x_min)
+                inter_height = max(0, inter_y_max - inter_y_min)
+                inter_area = inter_width * inter_height
+
+                area1 = (x1_max - x1_min) * (y1_max - y1_min)
+                area2 = (x2_max - x2_min) * (y2_max - y2_min)
+
+                union_area = area1 + area2 - inter_area
+
+                return inter_area / union_area if union_area > 0 else 0.0
+
+            pred_coords = pred_boxes
+            target_coords = target_boxes
+
+            total_iou = 0.0
+            num_targets = len(target_boxes)
+
+            if num_targets == 0:
+                return 0.0
+
+            # 为每个目标框找到最大 IoU 的预测框
+            for t_coord in target_coords:
+                best_iou = 0.0
+                for p_coord in pred_coords:
+                    iou = compute_iou(t_coord, p_coord)
+                    if iou > best_iou:
+                        best_iou = iou
+                total_iou += best_iou
+
+            return total_iou / num_targets
+
+        return calculate_average_iou(all_boxes, target_boxes)
+
+
+class CVQA(ImageMCQDataset):
+
+    @classmethod
+    def supported_datasets(cls):
+        return ['CVQA_LOC', 'CVQA_EN']
+
+    DATASET_URL = {
+        "CVQA_EN": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_ENG.tsv"
+        ),
+        "CVQA_LOC": (
+            "https://huggingface.co/datasets/timothycdc/"
+            "VLMEvalKit_CVQA/resolve/main/CVQA_LOC.tsv"
+        ),
+    }
+
+    DATASET_MD5 = {
+        "CVQA_EN": "f49ad8ad39dbc4208ea8985a3ca00804",
+        "CVQA_LOC": "b51dcf2820cb292aa5cb3430dd7d5049",
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        options_prompt = 'Options:\n'
+        for key, item in options.items():
+            options_prompt += f'{key}. {item}\n'
+
+        prompt = f'Question: {question}\n'
+        if len(options):
+            prompt += options_prompt
+            prompt += (
+                'Select the best answer to the above multiple-choice question '
+                'based on the image. Respond with only the letter of the '
+                'correct option (A, B, C, or D).\n'
+                'The best answer is: '
+            )
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+
+class TopViewRS(ImageMCQDataset):
+    DATASET_URL = {
+        'TopViewRS': 'https://opencompass.openxlab.space/utils/VLMEval/TopViewRS.tsv'
+    }
+
+    DATASET_MD5 = {
+        'TopViewRS': '5669bc122457979dd2ac3b69b5dc1622'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.multiple_choice import eval_vanilla, report_topviewrs_acc
+        from ..utils import track_progress_rich
+        from ..smp import load, dump, gpt_key_set
+        from collections import defaultdict
+        import numpy as np
+        import pandas as pd
+        import string
+        import warnings
+        import os.path as osp
+
+        def mcq_topviewrs_eval(model, data, meta, nproc, result_file, dataset_name=None):
+            result = {}
+            if osp.exists(result_file):
+                result = load(result_file)
+            answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
+
+            data = data[data['index'].isin(answer_map)]
+            data['GT'] = [answer_map[idx] for idx in data['index']]
+            items = []
+
+            for i in range(len(data)):
+                item = data.iloc[i]
+                if item['index'] not in result:
+                    items.append(item)
+
+            tups = [dict(model=model, item=x, dataset_name=dataset_name) for x in items]
+            keys = [x['index'] for x in items]
+            if len(tups):
+                res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
+                result = load(result_file)
+                for k, v in zip(keys, res):
+                    if k not in result:
+                        result[k] = v
+
+            data['hit'] = [result[i]['hit'] for i in data['index']]
+            data['log'] = [result[i]['log'] for i in data['index']]
+
+            def extract_letter(log_text):
+                if not log_text:
+                    return None
+                if "[" in log_text and "]" in log_text:
+                    return log_text[log_text.index("[") + 1:log_text.index("]")]
+                return log_text.rstrip(". ").split()[-1]
+
+            def partial_match_score(row):
+                """Calculate PM score using formula: |intersection| / max(|labels|, |predictions|)"""
+                model_letter = extract_letter(row['log'])
+                correct_letter = row['GT']
+
+                if not model_letter:
+                    return 0.0
+
+                # Get option texts
+                model_option = row.get(model_letter, '')
+                correct_option = row.get(correct_letter, '')
+
+                if not model_option or not correct_option:
+                    return 0.0
+
+                # Get word sets
+                model_words = set(str(model_option).lower().split())
+                correct_words = set(str(correct_option).lower().split())
+
+                # PM formula: |labels ∩ predictions| / max(|labels|, |predictions|)
+                intersection = len(model_words.intersection(correct_words))
+                max_len = max(len(model_words), len(correct_words))
+
+                if max_len == 0:
+                    return 0.0
+
+                pm_score = intersection / max_len
+                return pm_score
+
+            # Apply partial matching - returns float values (0.0 to 1.0)
+            data['partial_match'] = [partial_match_score(row) for _, row in data.iterrows()]
+
+            if 'GT' in data:
+                data.pop('GT')
+            return data
+        nproc = judge_kwargs.pop('nproc', 4)
+        suffix = eval_file.split('.')[-1]
+        model = judge_kwargs.get('model', 'exact_matching')
+        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        elif gpt_key_set():
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                model = None
+        else:
+            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
+            model = None
+
+        result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+        data = mcq_topviewrs_eval(model, data, meta, nproc, result_file, self.dataset_name)
+        eval_record = eval_file.replace(f'.{suffix}', f'_{name_str}_result.{suffix}')
+        dump(data, eval_record)
+        data = load(eval_record)
+        acc = report_topviewrs_acc(data)
+        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        dump(acc, score_file)
+        return acc

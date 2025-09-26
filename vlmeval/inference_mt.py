@@ -169,7 +169,7 @@ def infer_data_job_mt(
 ):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
-    result_file = osp.join(work_dir, f'{model_name}_{dataset_name}.tsv')
+    result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
 
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)

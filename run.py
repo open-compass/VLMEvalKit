@@ -176,7 +176,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     # Work Dir
     parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
-    parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer'])
+    parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer', 'eval'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
     parser.add_argument('--api-nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
@@ -194,6 +194,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--reuse-aux', type=int, default=True, help='reuse auxiliary evaluation files')
     parser.add_argument(
         '--use-vllm', action='store_true', help='use vllm to generate, the flag is only supported in Llama4 for now')
+    parser.add_argument('--use-verifier', action='store_true', help='use verifier to evaluate')
 
     args = parser.parse_args()
     return args
@@ -264,14 +265,14 @@ def main():
 
         if use_config:
             model = build_model_from_config(cfg['model'], model_name, args.use_vllm)
-        print(args.reuse_aux)
 
         for _, dataset_name in enumerate(args.data):
             if WORLD_SIZE > 1:
                 dist.barrier()
 
             try:
-                result_file_base = f'{model_name}_{dataset_name}.xlsx'
+                pred_format = get_pred_file_format()
+                result_file_base = f'{model_name}_{dataset_name}.{pred_format}'
 
                 if use_config:
                     if WORLD_SIZE > 1:
@@ -299,48 +300,13 @@ def main():
                         continue
 
                 # Handling Multi-Turn Dataset
-                if dataset.TYPE == 'MT':
-                    result_file_base = result_file_base.replace('.xlsx', '.tsv')
-
                 result_file = osp.join(pred_root, result_file_base)
-
                 # Reuse the previous prediction file if exists
                 if RANK == 0 and len(prev_pred_roots):
-                    prev_result_files = []
-                    prev_pkl_file_list = []
-                    for root in prev_pred_roots[::-1]:
-                        if osp.exists(osp.join(root, result_file_base)):
-                            if args.reuse_aux:
-                                prev_result_files = fetch_aux_files(osp.join(root, result_file_base))
-                            else:
-                                prev_result_files = [osp.join(root, result_file_base)]
-                            break
-                        elif commit_id in root and len(ls(root)) and root != pred_root:
-                            temp_files = ls(root, match=[dataset_name, '.pkl'])
-                            if len(temp_files):
-                                prev_pkl_file_list.extend(temp_files)
-                                break
-                    if not args.reuse:
-                        prev_result_files = []
-                        prev_pkl_file_list = []
-                    if len(prev_result_files):
-                        for prev_result_file in prev_result_files:
-                            src = prev_result_file
-                            tgt = osp.join(pred_root, osp.basename(src))
-                            if not osp.exists(tgt):
-                                shutil.copy(src, tgt)
-                                logger.info(f'--reuse is set, will reuse the prediction file {src}.')
-                            else:
-                                logger.warning(f'File already exists: {tgt}')
-
-                    elif len(prev_pkl_file_list):
-                        for fname in prev_pkl_file_list:
-                            target_path = osp.join(pred_root, osp.basename(fname))
-                            if not osp.exists(target_path):
-                                shutil.copy(fname, target_path)
-                                logger.info(f'--reuse is set, will reuse the prediction pickle file {fname}.')
-                            else:
-                                logger.warning(f'File already exists: {target_path}')
+                    prepare_reuse_files(
+                        pred_root_meta=pred_root_meta, eval_id=eval_id, model_name=model_name,
+                        dataset_name=dataset_name, reuse=args.reuse, reuse_aux=args.reuse_aux
+                    )
 
                 if WORLD_SIZE > 1:
                     dist.barrier()
@@ -348,37 +314,38 @@ def main():
                 if model is None:
                     model = model_name  # which is only a name
 
-                # Perform the Inference
-                if dataset.MODALITY == 'VIDEO':
-                    model = infer_data_job_video(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        result_file_name=result_file_base,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        use_vllm=args.use_vllm)
-                elif dataset.TYPE == 'MT':
-                    model = infer_data_job_mt(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore,
-                        use_vllm=args.use_vllm)
-                else:
-                    model = infer_data_job(
-                        model,
-                        work_dir=pred_root,
-                        model_name=model_name,
-                        dataset=dataset,
-                        verbose=args.verbose,
-                        api_nproc=args.api_nproc,
-                        ignore_failed=args.ignore,
-                        use_vllm=args.use_vllm)
+                if args.model != "eval":
+                    # Perform the Inference
+                    if dataset.MODALITY == 'VIDEO':
+                        model = infer_data_job_video(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            result_file_name=result_file_base,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            use_vllm=args.use_vllm)
+                    elif dataset.TYPE == 'MT':
+                        model = infer_data_job_mt(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
+                    else:
+                        model = infer_data_job(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
 
                 # Set the judge kwargs first before evaluation or dumping
 
@@ -405,11 +372,18 @@ def main():
                         else:
                             judge_kwargs['model'] = 'chatgpt-0125'
                     elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4-turbo'
+                        if listinstr(['LLaVABench_KO'], dataset_name):
+                            judge_kwargs['model'] = 'gpt-4o-0806'
+                        else:
+                            judge_kwargs['model'] = 'gpt-4-turbo'
                     elif listinstr(['VGRPBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
+                    elif listinstr(['OlympiadBench'], dataset_name):
+                        use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
+                        if use_api_judger:
+                            judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['ChartMimic'], dataset_name):
@@ -420,6 +394,17 @@ def main():
                         judge_kwargs['model'] = 'qwen-72b'
                     elif listinstr(['MMVMBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1'
+                    elif listinstr(['M4Bench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o'
+                    elif listinstr(['AyaVisionBench'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1'
+
+                if args.use_verifier:
+                    judge_kwargs['use_verifier'] = True
+                if args.use_vllm:
+                    judge_kwargs['use_vllm'] = True
 
                 if RANK == 0:
                     logger.info(judge_kwargs)

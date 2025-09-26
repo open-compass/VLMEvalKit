@@ -272,7 +272,7 @@ def process_line(line, method='vqa_score'):
     elif method == 'relaxed_accuracy':
         ret['gt'] = answers
         ret['pred'] = line['prediction'].strip()
-        ret['match'] = [relaxed_correctness(ret['pred'], x) for x in ret['gt']]
+        ret['match'] = [relaxed_correctness(x, ret['pred']) for x in ret['gt']]
     elif method == 'accuracy':
         ret['gt'] = answers
         ret['pred'] = line['prediction'].strip()
@@ -314,7 +314,7 @@ def process_line_WildDoc(line, method='vqa_score'):
     elif method == 'relaxed_accuracy':
         ret['gt'] = answers
         ret['pred'] = line['prediction'].strip()
-        ret['match'] = [relaxed_correctness(ret['pred'], x) for x in ret['gt']]
+        ret['match'] = [relaxed_correctness(x, ret['pred']) for x in ret['gt']]
     elif method == 'accuracy':
         ret['gt'] = answers
         ret['pred'] = line['prediction'].strip()

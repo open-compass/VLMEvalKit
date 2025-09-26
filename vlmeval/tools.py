@@ -424,6 +424,8 @@ def EVAL(dataset_name, data_file, **kwargs):
             judge_kwargs['model'] = 'gpt-4o'
         elif listinstr(['DynaMath', 'MathVerse', 'MathVista', 'MathVision'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-mini'
+        elif listinstr(['SFE'], dataset_name):
+            judge_kwargs['model'] = 'gpt-4o-1120'
     else:
         judge_kwargs['model'] = kwargs['model']
     judge_kwargs['nproc'] = kwargs.get('nproc', 4)
@@ -495,7 +497,8 @@ def SCAN_ONE(root, model, dataset):
     from termcolor import colored
     FAIL_MSG = 'Failed to obtain answer via API.'
     root = osp.join(root, model)
-    fname = f'{model}_{dataset}.xlsx'
+    pred_format = get_pred_file_format()
+    fname = f'{model}_{dataset}.{pred_format}'
     pth = osp.join(root, fname)
     if osp.exists(pth):
         data = load(pth)
@@ -547,7 +550,8 @@ def SCAN(root, models, datasets):
         cur_datasets = []
         if len(datasets) == 0:
             for d in SUPPORTED_DATASETS:
-                if osp.exists(osp.join(root, m, f'{m}_{d}.xlsx')):
+                pred_format = get_pred_file_format()
+                if osp.exists(osp.join(root, m, f'{m}_{d}.{pred_format}')):
                     cur_datasets.append(d)
         else:
             cur_datasets = datasets

@@ -60,6 +60,19 @@ class MEGABenchEvaluator:
 
         eval_context = ast.literal_eval(eval_context)
         return eval_context
+    
+    def _determine_eval_style(self, task):
+        metric_info = self.scoring_functions[task["task_name"]]
+        all_task_metrics = list(metric_info["field_score_function"].values())
+        eval_type = (
+            "rule"
+            if (
+                "gpt_4o_as_judge" not in all_task_metrics
+                and "ascii_art_gpt4o_judge" not in all_task_metrics
+            )
+            else "llm"
+        )
+        return eval_type
 
     def evaluate(self):
         """
@@ -182,6 +195,7 @@ class MEGABenchEvaluator:
                 mean_score = 0.0
             task["task_score"] = task_score_sum
             task["mean_task_score"] = mean_score
+            task["eval_type"] = self._determine_eval_style(task)
 
             total_query_score += task_score_sum
             total_task_score += mean_score

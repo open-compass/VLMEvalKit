@@ -4,10 +4,12 @@ import copy
 import pandas as pd
 import tempfile
 import base64
+import numpy as np
 from tqdm import tqdm
 import torch.distributed as dist
 from ..image_base import ImageBaseDataset
 from ...smp import *
+# from ..utils import get_intermediate_file_path, load, dump
 
 
 class OmniDocBench(ImageBaseDataset):
@@ -28,7 +30,7 @@ class OmniDocBench(ImageBaseDataset):
 
     2. Mathematical Formula Processing:
     - Convert all mathematical formulas to LaTeX format.
-    - Enclose inline formulas with \( \). For example: This is an inline formula \( E = mc^2 \)
+    # - Enclose inline formulas with \( \). For example: This is an inline formula \( E = mc^2 \)
     - Enclose block formulas with \\[ \\]. For example: \[ \frac{-b \pm \sqrt{b^2 - 4ac}}{2a} \]
 
     3. Table Processing:
@@ -75,9 +77,6 @@ class end2end_evaluator():
                  tsv_path,
                  match_method:str='quick_match',
                  filter_types:dict=None):
-        self.result_foler='../../../outputs/OmniDocBench'
-        if not os.path.exists(self.result_foler):
-            os.makedirs(self.result_foler)
         self.eval_file=eval_file
         self.match_method=match_method
         self.references=[]
@@ -374,17 +373,18 @@ class end2end_evaluator():
                 'group':group_result,
                 'page':page_result
             }
-            if not os.path.exists('./output/OmniDocBench'):
-                os.makedirs('./output/OmniDocBench')
             if isinstance(cur_samples,list):
                 saved_samples=cur_samples
             else:
                 saved_samples=cur_samples.samples
-            with open(os.path.join(self.result_foler,f'{save_name}_result.josn'),'w',encoding='utf-8') as f:
-                json.dump(saved_samples,f,indent=4,ensure_ascii=False)
+            # NOTE: The original code has a bug here, it will overwrite the result file in each iteration.
+            # I will fix it by adding element to the filename.
+            # NOTE: Fixed typo .josn -> .json
+            result_file = get_intermediate_file_path(self.eval_file, f'_{save_name}_{element}_result', 'json')
+            dump(saved_samples, result_file)
 
-        with open(os.path.join(self.result_foler,f'{save_name}_metric_result.json'),'w',encoding='utf-8') as f:
-            json.dump(result_all,f,indent=4,ensure_ascii=False)
+        metric_result_file = get_intermediate_file_path(self.eval_file, f'_{save_name}_metric_result', 'json')
+        dump(result_all, metric_result_file)
 
         dict_list = []
         save_dict={}
@@ -409,20 +409,20 @@ class end2end_evaluator():
         dict_list.append(save_dict)
         df = pd.DataFrame(dict_list,index=['end2end',]).round(3)
 
-        with open(os.path.join(self.result_foler,'End2End_Evaluation.json'),'w',encoding='utf-8') as f:
-            json.dump(result_all,f,indent=4,ensure_ascii=False)
-        df.to_csv(os.path.join(self.result_foler,'overall.csv'))
-        over_all_path=os.path.join(self.result_foler,'End2End_Evaluation.json')
-        print(f"The save path of overall.csv is :{over_all_path}")
+        e2e_eval_file = get_intermediate_file_path(self.eval_file, '_End2End_Evaluation', 'json')
+        dump(result_all, e2e_eval_file)
+        
+        overall_file = get_intermediate_file_path(self.eval_file, '_overall')
+        dump(df, overall_file)
+
+        print(f"The save path of End2End_Evaluation is: {e2e_eval_file}")
+        print(f"The save path of overall metrics is: {overall_file}")
         return df
 
 
 class table_evalutor():
     def __init__(self,eval_file,tsv_path):
-
-        self.result_foler='../../../outputs/OmniDocBench'
-        if not os.path.exists(self.result_foler):
-            os.makedirs(self.result_foler)
+        self.eval_file = eval_file
         gt_key='html'
         pred_key='pred'
         self.category_filter='table'
@@ -434,8 +434,8 @@ class table_evalutor():
         from .data_preprocess import clean_string, normalized_formula, textblock2unicode, normalized_table
         samples=[]
         preds=[]
-        predictions=pd.read_excel(eval_file)['prediction'].tolist()
-        gt_samples=pd.read_csv(gt_file,sep='\t')['answer'].tolist()
+        predictions=load(eval_file)['prediction'].tolist()
+        gt_samples=load(gt_file)['answer'].tolist()
         load_success,load_fail=0,0
         for i,gt_sample in tqdm(enumerate(gt_samples),desc='Loading data'):
             try:
@@ -533,8 +533,8 @@ class table_evalutor():
             'page':page_result
         }
 
-        with open(os.path.join(self.result_foler,f'{save_name}_metric_result.json'),'w',encoding='utf-8') as f:
-            json.dump(result_all,f,indent=4,ensure_ascii=False)
+        metric_result_file = get_intermediate_file_path(self.eval_file, f'_{save_name}_metric_result', 'json')
+        dump(result_all, metric_result_file)
 
         dict_list=[]
         dict_list.append(result_all["group"]["TEDS"])
@@ -545,10 +545,7 @@ class table_evalutor():
         selected_columns = df4[["language: table_en", "language: table_simplified_chinese", "language: table_en_ch_mixed", "line: full_line", "line: less_line", "line: fewer_line", "line: wireless_line",
                         "with_span: True", "with_span: False", "include_equation: True", "include_equation: False", "include_background: True", "include_background: False", "table_layout: vertical", "table_layout: horizontal"]]
 
-        selected_columns.to_csv(os.path.join(self.result_foler,'table_attribute.csv'))
-        table_attribute_path=os.path.join(self.result_foler,'table_attribute.csv')
-        print(f'The save path of table_attribute.csv is :{table_attribute_path}')
-        selected_columns
-
-
+        table_attr_file = get_intermediate_file_path(self.eval_file, '_table_attribute')
+        dump(selected_columns, table_attr_file)
+        print(f'The save path of table_attribute is :{table_attr_file}')
         return selected_columns

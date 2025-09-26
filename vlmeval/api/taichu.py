@@ -35,7 +35,6 @@ class TaichuVLWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'Taichu-VL-2B',
                  retry: int = 5,
-                 wait: int = 5,
                  verbose: bool = True,
                  temperature: float = 0.0,
                  system_prompt: str = None,
@@ -65,7 +64,7 @@ class TaichuVLWrapper(BaseAPI):
 
         assert self.api_key is not None, 'Please set the API Key'
 
-        super().__init__(wait=wait, retry=retry, system_prompt=self.system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=self.system_prompt, verbose=verbose, **kwargs)
 
     def use_custom_prompt(self, dataset):
         if listinstr(['MCQ', 'VQA'], DATASET_TYPE(dataset)):
@@ -218,7 +217,6 @@ class TaichuVLRWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'taichu_vlr_3b',
                  retry: int = 5,
-                 wait: int = 5,
                  verbose: bool = True,
                  temperature: float = 0.0,
                  system_prompt: str = None,
@@ -246,7 +244,7 @@ class TaichuVLRWrapper(BaseAPI):
 
         assert self.api_key is not None, 'Please set the API Key'
 
-        super().__init__(wait=wait, retry=retry, system_prompt=self.system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=self.system_prompt, verbose=verbose, **kwargs)
 
     def use_custom_prompt(self, dataset):
         return False

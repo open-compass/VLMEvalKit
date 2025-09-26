@@ -25,9 +25,8 @@ class TempCompass(ConcatVideoDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         result = super().evaluate(eval_file=eval_file, **judge_kwargs)
-        suffix = eval_file.split('.')[-1]
         result = result.reset_index().rename(columns={'index': 'dim.task_type'})
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         avg_dict = {}
         for idx, item in result.iterrows():
             dim, task_type = item['dim.task_type'].split('. ')
@@ -170,11 +169,14 @@ class TempCompass_MCQ(VideoBaseDataset):
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth):
-                    im.save(pth)
+            lock_path = osp.splitext(vid_path)[0] + '.lock'
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if not np.all([osp.exists(p) for p in frame_paths]):
+                    images = [vid[i].asnumpy() for i in indices]
+                    images = [Image.fromarray(arr) for arr in images]
+                    for im, pth in zip(images, frame_paths):
+                        if not osp.exists(pth):
+                            im.save(pth)
 
         return frame_paths
 
@@ -211,9 +213,8 @@ class TempCompass_MCQ(VideoBaseDataset):
             "presence_penalty": 1,
         })
 
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(score_file):
@@ -366,11 +367,14 @@ class TempCompass_Captioning(VideoBaseDataset):
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth):
-                    im.save(pth)
+            lock_path = osp.splitext(vid_path)[0] + '.lock'
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if not np.all([osp.exists(p) for p in frame_paths]):
+                    images = [vid[i].asnumpy() for i in indices]
+                    images = [Image.fromarray(arr) for arr in images]
+                    for im, pth in zip(images, frame_paths):
+                        if not osp.exists(pth):
+                            im.save(pth)
 
         return frame_paths
 
@@ -406,9 +410,8 @@ class TempCompass_Captioning(VideoBaseDataset):
             "presence_penalty": 1,
         })
 
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(score_file):
@@ -559,11 +562,14 @@ class TempCompass_YorN(VideoBaseDataset):
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth):
-                    im.save(pth)
+            lock_path = osp.splitext(vid_path)[0] + '.lock'
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if not np.all([osp.exists(p) for p in frame_paths]):
+                    images = [vid[i].asnumpy() for i in indices]
+                    images = [Image.fromarray(arr) for arr in images]
+                    for im, pth in zip(images, frame_paths):
+                        if not osp.exists(pth):
+                            im.save(pth)
 
         return frame_paths
 
@@ -600,9 +606,8 @@ class TempCompass_YorN(VideoBaseDataset):
             "presence_penalty": 1,
         })
 
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(score_file):

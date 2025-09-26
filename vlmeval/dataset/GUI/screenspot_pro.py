@@ -32,11 +32,11 @@ logger = get_logger("RUN")
 }
 """
 
-SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task."""  # noqa: E501
+SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
 
 USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""  # noqa: E501
 
-SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`."""  # noqa: E501
+SYSTEM_PROMPT_V2 = """You are a GUI agent. You are given a screenshot of the screen and the description of a target element. You need to click the target element using `pyautogui.click`. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
 USER_INSTRUCTION_V2 = """Please click the following target element using `pyautogui.click`:\n{description}"""
 
 
@@ -312,7 +312,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
                 results_dict[key] = str(0)
             else:
                 results_dict[key] = str(sum(results_dict[key]) / len(results_dict[key]))
-        score_pth = eval_file.replace(".xlsx", "_score.json")
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(results_dict, score_pth)
 
         failure_cases_path = os.environ.get("FAILURE_CASES_PATH", None)
@@ -422,7 +422,7 @@ class ScreenSpot_Pro(ImageBaseDataset):
             sub_stats = itertools.chain(*sub_stats)
             final_score_dict[c + '_Accuracy'] = np.mean([x > 0 for x in sub_stats]) * 100
 
-        score_pth = eval_file.replace(".xlsx", "_score.json")
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(final_score_dict, score_pth)
 
         failure_cases_path = os.environ.get("FAILURE_CASES_PATH", None)

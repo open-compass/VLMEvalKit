@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 
@@ -166,11 +167,14 @@ class Video_Holmes(VideoBaseDataset):
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not osp.exists(pth) and not video_llm:
-                    im.save(pth)
+            lock_path = osp.splitext(vid_path)[0] + '.lock'
+            with portalocker.Lock(lock_path, 'w', timeout=30):
+                if not np.all([osp.exists(p) for p in frame_paths]):
+                    images = [vid[i].asnumpy() for i in indices]
+                    images = [Image.fromarray(arr) for arr in images]
+                    for im, pth in zip(images, frame_paths):
+                        if not osp.exists(pth):
+                            im.save(pth)
 
         return frame_paths, indices, video_info
 
@@ -201,11 +205,11 @@ class Video_Holmes(VideoBaseDataset):
 
         from .utils.videoholmes import get_dimension_rating, extract_option
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')

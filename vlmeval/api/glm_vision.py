@@ -1,3 +1,4 @@
+import re
 import requests
 requests.packages.urllib3.disable_warnings()
 
@@ -14,7 +15,6 @@ class GLMVisionWrapper(BaseAPI):
     def __init__(self,
                  model: str,
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = True,
                  system_prompt: str = None,
@@ -32,7 +32,7 @@ class GLMVisionWrapper(BaseAPI):
             'https://bigmodel.cn)'
         )
         self.client = ZhipuAI(api_key=key)
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def build_msgs(self, msgs_raw, system_prompt=None, dataset=None):
         msgs = cp.deepcopy(msgs_raw)
@@ -53,13 +53,13 @@ class GLMVisionWrapper(BaseAPI):
 
         messages = self.build_msgs(msgs_raw=inputs, dataset=kwargs.get('dataset', None))
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            do_sample=False,
-            max_tokens=2048
-        )
         try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                do_sample=False,
+                max_tokens=2048
+            )
             answer = response.choices[0].message.content.strip()
             if self.verbose:
                 self.logger.info(f'inputs: {inputs}\nanswer: {answer}')

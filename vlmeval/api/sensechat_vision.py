@@ -25,12 +25,12 @@ class SenseChatVisionWrapper(BaseAPI):
         self,
         base_url: str = "https://api.sensenova.cn/v1/llm/chat-completions",
         api_key: str = None,
-        model: str = "SenseNova-V6-Pro",
+        model: str = "SenseNova-V6-5-Pro",
         retry: int = 5,
         wait: int = 5,
         verbose: bool = True,
         system_prompt: str = None,
-        max_tokens: int = 8192,
+        max_tokens: int = 16384,
         **kwargs,
     ):
         self.base_url = base_url
@@ -41,6 +41,7 @@ class SenseChatVisionWrapper(BaseAPI):
             "Please set the `SENSENOVA_API_KEY` environment variable or pass `api_key` in the config.json."
         )
         self.max_new_tokens = max_tokens
+        self.thinking = False
         super().__init__(
             wait=wait,
             retry=retry,
@@ -134,8 +135,8 @@ class SenseChatVisionWrapper(BaseAPI):
         for key, item in options.items():
             question += f'\n{key}. {item}'
         prompt = {
-'multiple-choice': "You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Answer the preceding multiple choice question. The last line of your response should follow this format: 'Answer: \\boxed LETTER', where LETTER is one of the options. If you are uncertain or the problem is too complex, make a reasoned guess based on the information provided. Avoid repeating steps indefinitely—provide your best guess even if unsure. Think step by step logically, considering all relevant information before answering.",  # noqa: E122, E501
-'open': 'You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Your output should be divided into two parts: First, reason about the correct answer. Then write the answer in the following format where X is only the answer and nothing else: "ANSWER: X"'  # noqa: E122, E501
+            'multiple-choice': "You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Answer the preceding multiple choice question. The last line of your response should follow this format: 'Answer: \\boxed LETTER', where LETTER is one of the options. If you are uncertain or the problem is too complex, make a reasoned guess based on the information provided. Avoid repeating steps indefinitely—provide your best guess even if unsure. Think step by step logically, considering all relevant information before answering.",  # noqa: E501
+            'open': 'You are an expert in {}. Please solve the university-level {} examination question, which includes interleaved images and text. Your output should be divided into two parts: First, reason about the correct answer. Then write the answer in the following format where X is only the answer and nothing else: "ANSWER: X"'  # noqa: E501
         }
         subject = '_'.join(line['id'].split('_')[1:-1])
         prompt = prompt[line['question_type']].format(subject, subject) + '\n' + question
@@ -160,9 +161,11 @@ class SenseChatVisionWrapper(BaseAPI):
             prompt = self.build_multi_choice_prompt(line, dataset)
             if "MMMU" in dataset:
                 prompt = self.build_mcq_cot_prompt(line, prompt)
+                self.thinking = True
         elif dataset is not None and DATASET_TYPE(dataset) == "VQA":
             if "MathVista" in dataset:
                 prompt = line["question"]
+                self.thinking = True
             elif listinstr(["LLaVABench"], dataset):
                 question = line["question"]
                 prompt = question + "\nAnswer this question in detail."
@@ -241,22 +244,19 @@ class SenseChatVisionWrapper(BaseAPI):
                 "type": "text",
             }
         )
-        message = [{
-            "role": "system",
-            "content": [{"text": " ", "type": "text"}]
-        }]
-        message.append({"content": content, "role": "user"})
+
+        message = [{"content": content, "role": "user"}]
         data = {
             "messages": message,
-            "max_new_tokens": self.max_new_tokens,  # 1024
-            "temperature": 1e-5,
-            "top_k": 1,
-            "top_p": 0.99,
-            "repetition_penalty": 1.05,
+            "max_new_tokens": self.max_new_tokens,
             "model": self.model,
             "stream": False,
             "image_split_count": self.max_num,
+            "thinking": {
+                "enabled": self.thinking,
+            }
         }
+
         headers = {
             "Content-type": "application/json",
             "Authorization": self.api_key,
@@ -267,7 +267,7 @@ class SenseChatVisionWrapper(BaseAPI):
             headers=headers,
             json=data,
         )
-        request_id = response.headers["x-request-id"]
+        request_id = response.headers.get("x-request-id", "")
         self.logger.info(f"Request-id: {request_id}")
 
         time.sleep(1)

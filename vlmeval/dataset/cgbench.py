@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from .utils.cgbench import *
@@ -396,11 +397,30 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
         # Save and validate frames
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -408,33 +428,15 @@ class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         data = load(eval_file)
 
@@ -721,11 +723,30 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -733,24 +754,6 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
@@ -758,12 +761,12 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
 
         from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
-        step_1_tmp_file = eval_file.replace(".xlsx", "_step_1.pkl")
-        step_2_tmp_file = eval_file.replace(".xlsx", "_step_2.pkl")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        step_1_tmp_file = get_intermediate_file_path(eval_file, '_step_1', 'pkl')
+        step_2_tmp_file = get_intermediate_file_path(eval_file, '_step_2', 'pkl')
 
         data = load(eval_file)
 
@@ -782,12 +785,12 @@ class CGBench_OpenEnded_Mini(VideoBaseDataset):
             axis=1,
         )
 
-        data_no_model_result = data_pred_no_na[data_pred_no_na["model_result"] == -1]
-        data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
-
         if judge_kwargs.get("model", None) != "gpt-4o-0806":
             judge_kwargs["model"] = "gpt-4o-0806"
             print("The judge model in cg-bench is gpt-4o-0806!")
+
+        data_no_model_result = data_pred_no_na[data_pred_no_na["model_result"] == -1]
+        data_step_1 = data_pred_no_na[data_pred_no_na["model_result"] != -1]
 
         model_step_1 = build_judge(system_prompt=sys_prompt_open_eval_step_1, **judge_kwargs)
         nproc = judge_kwargs.pop("nproc", 32)
@@ -1276,11 +1279,30 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
         # Save and validate frames
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -1288,33 +1310,15 @@ class CGBench_MCQ_Grounding(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
     def evaluate(self, eval_file, **judge_kwargs):
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         data = load(eval_file)
 
@@ -1600,11 +1604,30 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         valid_paths = []
         valid_indices = []
-
-        if not np.all([osp.exists(p) for p in frame_paths]):
-            images = [vid[i].asnumpy() for i in indices]
-            for i, (img_array, path) in enumerate(zip(images, frame_paths)):
-                if osp.exists(path):
+        lock_path = osp.splitext(vid_path)[0] + '.lock'
+        with portalocker.Lock(lock_path, 'w', timeout=30):
+            if not np.all([osp.exists(p) for p in frame_paths]):
+                images = [vid[i].asnumpy() for i in indices]
+                for i, (img_array, path) in enumerate(zip(images, frame_paths)):
+                    if osp.exists(path):
+                        try:
+                            with Image.open(path) as img:
+                                img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+                    else:
+                        try:
+                            img = Image.fromarray(img_array)
+                            img.save(path)
+                            img.verify()
+                            valid_paths.append(path)
+                            valid_indices.append(indices[i])
+                        except Exception:
+                            continue
+            else:
+                for i, path in enumerate(frame_paths):
                     try:
                         with Image.open(path) as img:
                             img.verify()
@@ -1612,24 +1635,6 @@ class CGBench_OpenEnded(VideoBaseDataset):
                         valid_indices.append(indices[i])
                     except Exception:
                         continue
-                else:
-                    try:
-                        img = Image.fromarray(img_array)
-                        img.save(path)
-                        img.verify()
-                        valid_paths.append(path)
-                        valid_indices.append(indices[i])
-                    except Exception:
-                        continue
-        else:
-            for i, path in enumerate(frame_paths):
-                try:
-                    with Image.open(path) as img:
-                        img.verify()
-                    valid_paths.append(path)
-                    valid_indices.append(indices[i])
-                except Exception:
-                    continue
 
         return valid_paths, valid_indices, vid_fps
 
@@ -1637,12 +1642,12 @@ class CGBench_OpenEnded(VideoBaseDataset):
 
         from .utils.cgbench import get_dimention_rating_open_ended, post_process_open
 
-        assert eval_file.endswith(".xlsx"), "data file should be an xlsx file"
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], "data file should be a supported format"
 
-        tgt_file = eval_file.replace(".xlsx", "_rating.json")
-        score_file = eval_file.replace(".xlsx", "_score.xlsx")
-        step_1_tmp_file = eval_file.replace(".xlsx", "_step_1.pkl")
-        step_2_tmp_file = eval_file.replace(".xlsx", "_step_2.pkl")
+        tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_score')
+        step_1_tmp_file = get_intermediate_file_path(eval_file, '_step_1', 'pkl')
+        step_2_tmp_file = get_intermediate_file_path(eval_file, '_step_2', 'pkl')
 
         data = load(eval_file)
 

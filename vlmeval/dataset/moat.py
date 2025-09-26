@@ -4,6 +4,7 @@ from .image_base import ImageBaseDataset
 from ..utils import track_progress_rich
 from ..smp import load, dump, decode_base64_to_image
 from .utils import DEBUG_MESSAGE
+from ..smp.file import get_intermediate_file_path
 
 import zipfile
 from random import shuffle, seed
@@ -99,8 +100,7 @@ class MOAT(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs['model']
-        suffix = eval_file.split('.')[-1]
-        result_path = eval_file.replace(f'.{suffix}', f"_{model}.xlsx")
+        result_path = get_intermediate_file_path(eval_file, f"_{model}")
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(result_path):
@@ -164,7 +164,7 @@ class MOAT(ImageBaseDataset):
             'result_path': result_path,
             'capability_acc': capability_score_map,
         }
-        score_pth = eval_file.replace(f'.{suffix}', "_score.json")
+        score_pth = get_intermediate_file_path(eval_file, "_score", "json")
         dump(metrics, score_pth)
 
         return metrics

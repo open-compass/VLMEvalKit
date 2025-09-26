@@ -191,6 +191,7 @@ def collect_results(static_results):
 
     overall_dict['AO(Esti)'] = (full_dict['Agent_object_spatial-direction(Estimation)'] + full_dict['Agent_object_spatial-distance(Estimation)']) / 2.0  # noqa
     overall_dict['AO(Temp)'] = (full_dict['Agent_object_spatial-direction(Temporal-loc)'] + full_dict['Agent_object_spatial-distance(Temporal-loc)']) / 2.0  # noqa
+    overall_dict['AO(Judge)'] = (full_dict['Agent_object_spatial-direction(Judgement)'] + full_dict['Agent_object_spatial-distance(Judgement)']) / 2.0  # noqa
 
     overall_dict['Judgement'] = (full_dict['Agent_object_spatial-direction(Judgement)'] + full_dict['Agent_object_spatial-distance(Judgement)'] + full_dict['Agent_visible_info-existence(Judgement)'] + full_dict['Agent_visible_info-order(Judgement)'] + full_dict['Agent_visible_info-diversity(Judgement)'] + full_dict['Agent_state-orientation(Judgement)'] + full_dict['Agent_state-position(Judgement)']) / 7.0  # noqa
     overall_dict['Estimation'] = (full_dict['Agent_object_spatial-direction(Estimation)'] + full_dict['Agent_object_spatial-distance(Estimation)'] + full_dict['Agent_state-orientation(Estimation)'] + full_dict['Agent_state-position(Estimation)']) / 4.0  # noqa

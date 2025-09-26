@@ -102,11 +102,10 @@ class VLRewardBench(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
         model = judge_kwargs['model']
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.csv')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score', 'csv')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):

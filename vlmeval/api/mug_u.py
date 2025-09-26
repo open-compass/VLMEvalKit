@@ -13,7 +13,6 @@ class MUGUWrapper(BaseAPI):
     def __init__(self,
                  model: str,
                  retry: int = 5,
-                 wait: int = 5,
                  key: str = None,
                  verbose: bool = True,
                  temperature: float = 0.0,
@@ -30,7 +29,7 @@ class MUGUWrapper(BaseAPI):
         api_base = 'https://shopee.sg/api/v1/compassllvm/v1/chat/completions'
         assert api_base is not None, 'Please set the environment variable LMDEPLOY_API_BASE.'
         self.api_base = api_base
-        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
         _ = requests.get(model_url)
