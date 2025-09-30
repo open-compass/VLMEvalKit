@@ -1655,7 +1655,8 @@ qtunevl_series = {
 }
 
 logics_series = {
-    "Logics-Thinking": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking'),
+    "Logics-Thinking-8B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-8B'),
+    "Logics-Thinking-32B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-32B'),
 }
 
 
