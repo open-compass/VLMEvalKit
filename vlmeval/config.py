@@ -633,6 +633,8 @@ minicpm_series = {
     ),
     "MiniCPM-V-2_6": partial(MiniCPM_V_2_6, model_path="openbmb/MiniCPM-V-2_6"),
     "MiniCPM-o-2_6": partial(MiniCPM_o_2_6, model_path="openbmb/MiniCPM-o-2_6"),
+    "MiniCPM-V-4": partial(MiniCPM_V_4, model_path="openbmb/MiniCPM-V-4"),
+    "MiniCPM-V-4_5": partial(MiniCPM_V_4_5, model_path="openbmb/MiniCPM-V-4_5"),
 }
 
 xtuner_series = {
@@ -1036,8 +1038,10 @@ sail_series = {
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
     "SAIL-VL-1.5-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-8B", use_msac = True),
     "SAIL-VL-1.6-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d6-8B", use_msac = True),
-    "SAIL-VL-1.7-Thinking-2B-2507": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d7-Thinking-2B-2507", use_msac = True, use_cot=True),
-    "SAIL-VL-1.7-Thinking-8B-2507": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d7-Thinking-8B-2507", use_msac = True, use_cot=True),
+    "SAIL-VL-1.7-Thinking-2B-2507": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d7-Thinking-2B-2507", use_msac = True, use_cot=True, max_new_tokens=4096),
+    "SAIL-VL-1.7-Thinking-8B-2507": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d7-Thinking-8B-2507", use_msac = True, use_cot=True, max_new_tokens=4096),
+    "SAIL-VL2-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL2-2B", use_msac = True),
+    "SAIL-VL2-8B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL2-8B", use_msac = True),
 }
 
 ristretto_series = {

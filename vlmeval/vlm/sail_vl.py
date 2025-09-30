@@ -357,6 +357,7 @@ class SailVL(BaseModel):
         load_in_8bit=False,
         use_msac=True,
         use_cot=False,
+        max_new_tokens=1024,
         **kwargs,
     ):
         assert model_path is not None
@@ -396,7 +397,7 @@ class SailVL(BaseModel):
         self.device = "cuda"
 
         self.image_size = self.model.config.vision_config.image_size
-        kwargs_default = dict(do_sample=False, max_new_tokens=4096, top_p=None)
+        kwargs_default = dict(do_sample=False, max_new_tokens=max_new_tokens, top_p=None)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
 
@@ -453,8 +454,8 @@ class SailVL(BaseModel):
                     "MathVista",
                     "MathVision",
                     "VCR",
-                    "MTVQA",
                     "MMVet",
+                    "MTVQA",
                     "MathVerse",
                     "MMDU",
                     "CRPE",
