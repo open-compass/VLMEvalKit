@@ -79,6 +79,10 @@ from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
 from .m4bench import M4Bench
 
+from .medqbench_mcq import MedqbenchMCQDataset
+from .medqbench_caption import MedqbenchCaptionDataset
+from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -205,7 +209,8 @@ IMAGE_DATASET = [
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
-    AyaVisionBench, TopViewRS, VLMBias
+    AyaVisionBench, TopViewRS, VLMBias, MedqbenchMCQDataset, MedqbenchPairedDescriptionDataset,
+    MedqbenchCaptionDataset
 ]
 
 VIDEO_DATASET = [
