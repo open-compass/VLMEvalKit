@@ -57,7 +57,7 @@ class VLRMBenchBase(ImageBaseDataset):
         """
         # Extract subset name from dataset name
         if dataset.startswith("VLRMBench_"):
-            subset = dataset[len("VLRMBench_") :]
+            subset = dataset[len("VLRMBench_"):]
         else:
             subset = "attribute_hallucination"  # Default subset
 
@@ -82,7 +82,7 @@ class VLRMBenchBase(ImageBaseDataset):
         for i, item in enumerate(data):
             if 'index' not in item:
                 item['index'] = i
-        
+
         # Convert to DataFrame format
         self.data = pd.DataFrame(data)
 
@@ -110,7 +110,6 @@ class VLRMBenchBase(ImageBaseDataset):
             return local_dir
 
         print(f"Downloading VLRMBench from HuggingFace: {self.HF_REPO}")
-
 
         # Download data
         snapshot_download(
@@ -313,7 +312,7 @@ class VLRMBenchBase(ImageBaseDataset):
         result = [int(num) for num in numbers]
 
         if len(result) >= len(task_gt):
-            return result[-len(task_gt) :]
+            return result[-len(task_gt):]
         else:
             return result + [0] * (len(task_gt) - len(result))
 
@@ -369,10 +368,10 @@ class VLRMBenchBase(ImageBaseDataset):
         total = len(predictions)
 
         for pred, gt in zip(predictions, ground_truths):
-            if gt == True:
+            if gt is True:
                 if re.search(r"\b(yes|true)\b", pred, re.IGNORECASE):
                     correct += 1
-            elif gt == False:
+            elif gt is False:
                 if re.search(r"\b(no|false)\b", pred, re.IGNORECASE):
                     correct += 1
 
