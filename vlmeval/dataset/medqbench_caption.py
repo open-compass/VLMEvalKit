@@ -237,13 +237,13 @@ class MedqbenchCaptionDataset(ImageBaseDataset):
 
         if not os.path.exists(data_path):
             raise FileNotFoundError(f"Data file not found: {data_path}")
-        
+
         print(f"Loading MedQ-Bench Caption data file: {data_path}")
         data = load(data_path)
 
         # Set data_root for image loading
         self.data_root = data_root
-        
+
         if 'index' in data.columns:
             data['index'] = data['index'].astype(str)
 
@@ -443,8 +443,6 @@ class MedqbenchCaptionDataset(ImageBaseDataset):
         print(f"Results saved to {score_file}")
 
         return result
-
-
 
 
 if __name__ == "__main__":
