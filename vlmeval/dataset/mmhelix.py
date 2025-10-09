@@ -12,10 +12,7 @@ class MMHELIX(ImageBaseDataset):
     DATASET_URL = {
         'MM-HELIX': '',
         'MM-HELIX_lang': '',
-        'MM-HELIX_internvl': '',
-        'MM-HELIX_internvl_lang': '',
     }
-
     GROUP_LIST = {
         'graph_problems': [
             'connectivity_test', 'eulerian_cycle', 'eulerian_path',
@@ -45,8 +42,6 @@ class MMHELIX(ImageBaseDataset):
         super().__init__(dataset, skip_noimg)
         # import pdb; pdb.set_trace()
         self.language_only = 'lang' in dataset
-        self.internvl_prompt = 'internvl' in dataset
-        self.internvl_cot_prompt = 'internvl_cot' in dataset
         self.image_base_path = osp.join(LMUDataRoot(), 'images', 'MM-HELIX')
 
     def load_data(self, dataset):
@@ -153,19 +148,7 @@ class MMHELIX(ImageBaseDataset):
         return df
 
     def build_prompt(self, line):
-        if self.internvl_cot_prompt:
-            instruction_following = (
-                "Answer the preceding question. The last line of your response should follow this format: "
-                "'Answer: \\boxed{$FINAL_ANSWER}' (without quotes), where 'FINAL_ANSWER' is your conclusion "
-                "based on the reasoning provided. If you are uncertain or the problem is too complex, make "
-                "a reasoned guess based on the information provided. Avoid repeating steps indefinitely—"
-                "provide your best guess even if unsure. Think step by step logically, considering all "
-                "relevant information before answering."
-            )
-        elif self.internvl_prompt:
-            instruction_following = r'Please answer the question and put the final answer within \\boxed{}.'
-        else:
-            instruction_following = r'The final answer MUST BE enclosed within \boxed{}'
+        instruction_following = r'The final answer MUST BE enclosed within \boxed{}'
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
