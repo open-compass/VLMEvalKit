@@ -1189,6 +1189,8 @@ ovis_series = {
     "Ovis2-16B": partial(Ovis2, model_path="AIDC-AI/Ovis2-16B"),
     "Ovis2-34B": partial(Ovis2, model_path="AIDC-AI/Ovis2-34B"),
     "Ovis-U1-3B": partial(OvisU1, model_path="AIDC-AI/Ovis-U1-3B"),
+    "Ovis2.5-2B": partial(Ovis2_5, model_path="AIDC-AI/Ovis2.5-2B"),
+    "Ovis2.5-9B": partial(Ovis2_5, model_path="AIDC-AI/Ovis2.5-9B")
 }
 
 mantis_series = {
@@ -1655,7 +1657,8 @@ qtunevl_series = {
 }
 
 logics_series = {
-    "Logics-Thinking": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking'),
+    "Logics-Thinking-8B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-8B'),
+    "Logics-Thinking-32B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-32B'),
 }
 
 
