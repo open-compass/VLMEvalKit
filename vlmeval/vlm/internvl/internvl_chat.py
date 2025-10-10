@@ -241,6 +241,9 @@ class InternVLChat(BaseModel):
         if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
             return False
+        if DATASET_TYPE(dataset) == 'MCQ':
+            if dataset is not None and 'LEGO' in dataset:
+                return False
         else:
             return True
 
