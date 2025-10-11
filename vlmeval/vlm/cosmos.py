@@ -14,7 +14,7 @@ class Cosmos(BaseModel):
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.llm = LLM(
             model=model_path,
-            limit_mm_per_prompt={"image": 10, "video": 10},
+            limit_mm_per_prompt={"image": 10, "video": 10}
         )
         self.sampling_params = SamplingParams(
             temperature=0.6,
