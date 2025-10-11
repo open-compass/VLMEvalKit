@@ -15,7 +15,6 @@ class Cosmos(BaseModel):
         self.llm = LLM(
             model=model_path,
             limit_mm_per_prompt={"image": 10, "video": 10},
-            max_model_len=64000
         )
         self.sampling_params = SamplingParams(
             temperature=0.6,
