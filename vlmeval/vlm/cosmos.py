@@ -76,6 +76,3 @@ class Cosmos(BaseModel):
 
         outputs = self.llm.generate([llm_inputs], sampling_params=self.sampling_params)
         return outputs[0].outputs[0].text
-    
-    
-    
