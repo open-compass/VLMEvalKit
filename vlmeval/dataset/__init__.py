@@ -80,21 +80,7 @@ from .chartmimic import ChartMimic
 from .m4bench import M4Bench
 
 # VLRMBench imports
-from .vlrmbench import (
-    VLRMBenchBase,
-    VLRMBenchAttributeHallucination,
-    VLRMBenchDetailError,
-    VLRMBenchStepCorrectness,
-    VLRMBenchForesight,
-    VLRMBenchErrorCorrection,
-    VLRMBenchErrorReasonAnalysis,
-    VLRMBenchExistenceHallucination,
-    VLRMBenchImageRefError,
-    VLRMBenchLocationError,
-    VLRMBenchMostConfidence,
-    VLRMBenchMultiSolution,
-    VLRMBenchRedundantDet,
-)
+from .vlrmbench import VLRMBench
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -223,11 +209,8 @@ IMAGE_DATASET = [
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias,
-    # VLRMBench datasets
-    VLRMBenchAttributeHallucination, VLRMBenchDetailError, VLRMBenchStepCorrectness,
-    VLRMBenchForesight, VLRMBenchErrorCorrection, VLRMBenchErrorReasonAnalysis,
-    VLRMBenchExistenceHallucination, VLRMBenchImageRefError, VLRMBenchLocationError,
-    VLRMBenchMostConfidence, VLRMBenchMultiSolution, VLRMBenchRedundantDet
+    # VLRMBench dataset
+    VLRMBench
 ]
 
 VIDEO_DATASET = [
