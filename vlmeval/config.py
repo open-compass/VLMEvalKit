@@ -1472,6 +1472,38 @@ qwen2vl_series = {
     ),
 }
 
+
+qwen3vl_series = {
+    "Qwen3-VL-4B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-4B-Instruct",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen3-VL-4B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-4B-Thinking",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen3-VL-8B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-8B-Instruct",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Qwen3-VL-8B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-8B-Thinking",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    )
+}
+
 slime_series = {
     "Slime-7B": partial(SliME, model_path="yifanzhang114/SliME-vicuna-7B"),
     "Slime-8B": partial(SliME, model_path="yifanzhang114/SliME-Llama3-8B"),
@@ -1666,6 +1698,13 @@ cosmos_series = {
     'Cosmos-Reason1-7B': partial(Cosmos, model_path='nvidia/Cosmos-Reason1-7B', use_vllm=True),
 }
 
+fastvlm_series = {
+    "FastVLM-0.5B": partial(FastVLM, model_path="apple/FastVLM-0.5B"),
+    "FastVLM-1.5B": partial(FastVLM, model_path="apple/FastVLM-1.5B"),
+    "FastVLM-7B": partial(FastVLM, model_path="apple/FastVLM-7B"),
+}
+
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -1688,7 +1727,7 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series,logics_series, cosmos_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series,logics_series, cosmos_series, fastvlm_series
 ]
 
 for grp in model_groups:
