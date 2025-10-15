@@ -78,8 +78,6 @@ from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
 from .m4bench import M4Bench
-
-# VLRMBench imports
 from .vlrmbench import VLRMBench
 
 
