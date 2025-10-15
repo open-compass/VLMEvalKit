@@ -238,6 +238,9 @@ class InternVLChat(BaseModel):
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
             # For Multi-Turn we don't have custom prompt
             return False
+        if DATASET_TYPE(dataset) == 'MCQ':
+            if dataset is not None and 'LEGO' in dataset:
+                return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
             return False
