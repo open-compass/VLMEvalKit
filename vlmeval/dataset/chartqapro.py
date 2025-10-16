@@ -48,9 +48,9 @@ class ChartQAPro(ImageBaseDataset):
 
         # determine qa_type, default value : 'Direct' 
         if "CoT" in self.dataset_name:
-            qa_type == "CoT"
+            qa_type = "CoT"
         elif "PoT" in self.dataset_name:
-            qa_type == "PoT"
+            qa_type = "PoT"
 
         # load data line elements
         question = ast.literal_eval(line['question'])
