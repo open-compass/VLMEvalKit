@@ -115,7 +115,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             enable_expert_parallel = is_moe_model(self.model_path)
             self.llm = LLM(
                 model=self.model_path,
-                max_num_seqs=64,
+                max_num_seqs=5,
                 max_model_len=self.max_new_tokens,
                 limit_mm_per_prompt={"image": self.limit_mm_per_prompt},
                 tensor_parallel_size=tp_size,
