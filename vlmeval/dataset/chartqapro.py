@@ -88,6 +88,10 @@ class ChartQAPro(ImageBaseDataset):
         Raises:
             ValueError: If the dataset name is invalid
         """
+
+        if "CoT" in self.dataset_name or "PoT" in self.dataset_name:
+            print("********** Warning: We follow the evaluation script for Direct to assess CoT and PoT, the scores can be very low! **********")
+            
         data = file.load(result_file)
 
         ans_list = []
