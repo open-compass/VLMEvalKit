@@ -13,7 +13,6 @@ from vlmeval.dataset.utils.chartqapro import *
 
 import pdb
 
-
 class ChartQAPro(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
