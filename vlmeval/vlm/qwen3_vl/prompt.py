@@ -156,5 +156,3 @@ class Qwen3VLPromptMixin:
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=prompt))
         return msgs
-
-

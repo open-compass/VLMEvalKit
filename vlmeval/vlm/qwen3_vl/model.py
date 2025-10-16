@@ -13,14 +13,16 @@ from ...smp import get_gpu_memory
 
 VLLM_MAX_IMAGE_INPUT_NUM = 24
 
+
 def is_moe_model(model_path: str) -> bool:
     """Check if the model is a Mixture of Experts model."""
     path_parts = model_path.split('/')
     non_moe_patterns = ['4B', '8B']
     for part in path_parts:
         if any(pattern in part for pattern in non_moe_patterns):
-            return False     
+            return False
     return True
+
 
 def ensure_image_url(image: str) -> str:
     prefixes = ['http://', 'https://', 'file://', 'data:image']
@@ -73,7 +75,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.presence_penalty = 1.5
         self.temperature = temperature
         if self.total_pixels and self.total_pixels > 24576 * 32 * 32:
-            print('The total number of video tokens might become too large, resulting in an overly long input sequence. We recommend lowering **total_pixels** to below **24576 × 28 × 28**.')
+            print('The total number of video tokens might too large, resulting in an overly long input sequence.')
         self.generate_kwargs = dict(
             max_new_tokens=self.max_new_tokens,
             top_p=top_p,
@@ -90,7 +92,6 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
 
         assert model_path is not None
         self.model_path = model_path
-        from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
         from transformers import AutoProcessor, AutoModelForImageTextToText
         self.processor = AutoProcessor.from_pretrained(model_path)
 
@@ -110,7 +111,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             )
             if os.environ.get('VLLM_WORKER_MULTIPROC_METHOD') != 'spawn':
                 logging.warning(
-                    "VLLM_WORKER_MULTIPROC_METHOD is not set to spawn. Use 'export VLLM_WORKER_MULTIPROC_METHOD=spawn' to avoid potential multi-process issues"
+                    "VLLM_WORKER_MULTIPROC_METHOD is not set to spawn. Use 'export VLLM_WORKER_MULTIPROC_METHOD=spawn'"
                 )
             enable_expert_parallel = is_moe_model(self.model_path)
             self.llm = LLM(
@@ -167,11 +168,9 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                     item['max_pixels'] = self.max_pixels
                 if self.total_pixels is not None:
                     item['total_pixels'] = self.total_pixels
-                # Allow per-item overrides if present in input message
-                for key in ['min_pixels', 'max_pixels', 'total_pixels', 'resized_height', 'resized_width', 'fps', 'nframes', 'sample_fps']:
+                for key in ['resized_height', 'resized_width', 'fps', 'nframes', 'sample_fps']:
                     if key in s and s[key] is not None:
                         item[key] = s[key]
-                # Only apply default fps/nframes for single video path/URL
                 if not isinstance(value, list):
                     if self.fps is not None and 'fps' not in item:
                         item['fps'] = self.fps
@@ -340,5 +339,3 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             return self.generate_inner_vllm(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
-
-
