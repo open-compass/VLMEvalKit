@@ -89,10 +89,11 @@ class ReasonMap_Plus(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
         "ReasonMap-Plus": "https://opencompass.openxlab.space/utils/VLMEval/ReasonMap-Plus.tsv"
+        # "ReasonMap-Plus": "/home/tuokaiwen/LMUData/ReasonMap-Plus.tsv"
     }
     
     # TODO: get md5 code
-    DATASET_MD5 = {"ReasonMap-Plus": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+    # DATASET_MD5 = {"ReasonMap-Plus": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
     
     @classmethod
     def supported_datasets(cls):
@@ -103,6 +104,8 @@ class ReasonMap_Plus(ImageBaseDataset):
             line = self.data_df.iloc[line]
 
         img_val = line.get("image", None)
+        if not img_val:
+            img_val = line.get("image_path", "")
         prompt = line.get("question", "")
         
         return [
