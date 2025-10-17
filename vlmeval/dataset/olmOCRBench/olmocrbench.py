@@ -17,7 +17,7 @@ class olmOCRBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
     TYPE = 'QA'
 
-    DATASET_URL = {'olmOCRBench':'./olmOCRBench.tsv'}
+    DATASET_URL = {'olmOCRBench':'https://opencompass.openxlab.space/utils/VLMEval/olmOCRBench.tsv'}
     DATASET_MD5 = {'olmOCRBench': '25fe250887fee675f887a2a2d24df185'}  # 完整版本的tsv文件
 
     # base prompt
