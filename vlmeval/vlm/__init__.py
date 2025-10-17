@@ -109,5 +109,6 @@ from .qtunevl import (
     QTuneVL,
     QTuneVLChat,
 )
+from .qianfan_vl import Qianfan_VL
 from .logics import Logics_Thinking
 from .cosmos import Cosmos
