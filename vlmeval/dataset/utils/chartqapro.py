@@ -1,3 +1,4 @@
+# flake8: noqa
 import ast
 import re
 from typing import List, Optional, Any, Tuple, Dict
@@ -6,6 +7,7 @@ from anls import anls_score
 import json
 import argparse
 import pdb
+
 
 def prompt_context(question, answer, q_type, vqa_type):
     assert vqa_type in ["Direct", "CoT", "PoT"]
@@ -188,10 +190,12 @@ def prompt_context(question, answer, q_type, vqa_type):
             '''
     return question_context
 
+
 def load_predictions(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         predictions = json.load(f)
     return predictions
+
 
 def fix_list_format(item: str) -> Any:
     """
@@ -248,7 +252,7 @@ def evaluate_single_answer(
     """
     t = target.strip().strip('%').strip()
     p = prediction.strip().strip('%').strip()
-    #print("Stripped", t, p)
+    # print("Stripped", t, p)
     # Attempt numeric
     t_f = to_float(t)
     p_f = to_float(p)
@@ -258,7 +262,7 @@ def evaluate_single_answer(
         change = abs(p_f - t_f) / abs(t_f)
         return 1.0 if change <= max_relative_change else 0.0
     # Fallback text
-    #print("P:", p, "T: ", t)
+    # print("P:", p, "T: ", t)
     return anls_score(prediction=p.lower(), gold_labels=[t.lower()], threshold=0.5)
 
 
@@ -277,7 +281,7 @@ def relaxed_correctness_chartqapro(
     t_list = parse_to_list(str(fixed_t)) or [str(target)]
     p_list = parse_to_list(str(prediction)) or [str(prediction)]
     n = len(t_list)
-    # Expand year_flags for questions with multiple answers. 
+    # Expand year_flags for questions with multiple answers.
     if year_flags is not None and len(year_flags) < n:
         year_flags = year_flags * n
 
@@ -286,11 +290,11 @@ def relaxed_correctness_chartqapro(
     # print(t_list, p_list)
     for idx in range(max(len(t_list), len(p_list))):
         if idx >= len(t_list) or idx >= len(p_list):
-            # Model predicted more or less elements that necessary. 
+            # Model predicted more or less elements that necessary.
             scores.append(0.0)
             continue
         t_item, p_item, flag = t_list[idx], p_list[idx], year_flags[idx]
-        flag_cond = True if flag.upper()=='YES' else False
+        flag_cond = True if flag.upper() == 'YES' else False
         if flag_cond or always_use_exact_match:
             # Exact integer match for years, fact checking, or multichoice
             try:
@@ -305,31 +309,31 @@ def relaxed_correctness_chartqapro(
 
 
 def evaluate_predictions_chartqapro(predictions, pred_key='prediction'):
-  gts = [x['Answer'][-1].strip(".").strip("\n") for x in predictions]
-  preds = [x[pred_key].strip(".").strip("\n") for x in predictions]
-  splits = [x['Question Type'] for x in predictions]
-  year_flags =  [x['Year'] for x in predictions]
-  # Calculate accuracy by splits
-  match_nums_per_split = {}
-  match_nums = []
-  for gt, pred, split, year_flags_per_row in zip(gts, preds, splits, year_flags):
-    # check split and calculate
-    if split == 'Conversational':
-      year_flags_per_row = year_flags_per_row[-1:]
-    if split not in match_nums_per_split:
-      match_nums_per_split[split] = []
+    gts = [x['Answer'][-1].strip(".").strip("\n") for x in predictions]
+    preds = [x[pred_key].strip(".").strip("\n") for x in predictions]
+    splits = [x['Question Type'] for x in predictions]
+    year_flags = [x['Year'] for x in predictions]
+    # Calculate accuracy by splits
+    match_nums_per_split = {}
+    match_nums = []
+    for gt, pred, split, year_flags_per_row in zip(gts, preds, splits, year_flags):
+        # check split and calculate
+        if split == 'Conversational':
+            year_flags_per_row = year_flags_per_row[-1:]
+        if split not in match_nums_per_split:
+            match_nums_per_split[split] = []
 
-    always_use_exact_match = True if split in ['Fact Checking', 'Multi Choice'] else False
-    score = relaxed_correctness_chartqapro(gt, pred, year_flags=year_flags_per_row)
-    #print(gt, pred, year_flags_per_row, score)
-    match_nums_per_split[split].append(score)
-    match_nums.append(score)
+        always_use_exact_match = True if split in ['Fact Checking', 'Multi Choice'] else False
+        score = relaxed_correctness_chartqapro(gt, pred, year_flags=year_flags_per_row)
+        # print(gt, pred, year_flags_per_row, score)
+        match_nums_per_split[split].append(score)
+        match_nums.append(score)
 
-  final_numbers = {}
-  for split in match_nums_per_split:
-    final_numbers[split] = sum(match_nums_per_split[split]) / len(match_nums_per_split[split])
-  final_numbers['Overall'] = sum(match_nums) / len(match_nums)
-  return final_numbers
+    final_numbers = {}
+    for split in match_nums_per_split:
+        final_numbers[split] = sum(match_nums_per_split[split]) / len(match_nums_per_split[split])
+    final_numbers['Overall'] = sum(match_nums) / len(match_nums)
+    return final_numbers
 
 
 def main():
@@ -346,6 +350,7 @@ def main():
     print("📊 Evaluation Results:")
     for k, v in scores.items():
         print(f"  • {k:<15}: {v * 100:.2f}%")
+
 
 if __name__ == "__main__":
     main()

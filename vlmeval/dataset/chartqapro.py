@@ -13,6 +13,7 @@ from vlmeval.dataset.utils.chartqapro import *
 
 import pdb
 
+
 class ChartQAPro(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
@@ -21,9 +22,9 @@ class ChartQAPro(ImageBaseDataset):
         "ChartQAPro_PoT": "https://opencompass.openxlab.space/utils/VLMEval/chartqapro.tsv",
     }
     DATASET_MD5 = {
-        "ChartQAPro": "27653ea8dd8dd3a85bc4f432db96447a", 
-        "ChartQAPro_CoT": "27653ea8dd8dd3a85bc4f432db96447a", 
-        "ChartQAPro_PoT": "27653ea8dd8dd3a85bc4f432db96447a", 
+        "ChartQAPro": "27653ea8dd8dd3a85bc4f432db96447a",
+        "ChartQAPro_CoT": "27653ea8dd8dd3a85bc4f432db96447a",
+        "ChartQAPro_PoT": "27653ea8dd8dd3a85bc4f432db96447a",
     }
 
     def build_prompt(self, line: Union[int, pd.Series], qa_type: str = 'Direct') -> List[Dict[str, str]]:
@@ -45,7 +46,7 @@ class ChartQAPro(ImageBaseDataset):
         else:
             tgt_path = self.dump_image(line)
 
-        # determine qa_type, default value : 'Direct' 
+        # determine qa_type, default value : 'Direct'
         if "CoT" in self.dataset_name:
             qa_type = "CoT"
         elif "PoT" in self.dataset_name:
@@ -55,11 +56,11 @@ class ChartQAPro(ImageBaseDataset):
         question = ast.literal_eval(line['question'])
         answer = ast.literal_eval(line['answer'])
         question_type = line['question_type']
-        image = line['image']
-        year = ast.literal_eval(line['year'])
+        # image = line['image']
+        # year = ast.literal_eval(line['year'])
         paragraph = line['paragraph']
-        if paragraph != paragraph: # treat nan
-            paragraph = '' 
+        if paragraph != paragraph:  # treat nan
+            paragraph = ''
         assert isinstance(question, list)
         assert len(tgt_path) == 1
 
@@ -73,7 +74,6 @@ class ChartQAPro(ImageBaseDataset):
         msgs.append(dict(type='text', value=question_context))
 
         return msgs
-
 
     def get_scores(self, result_file: str) -> pd.DataFrame:
         """
@@ -90,8 +90,9 @@ class ChartQAPro(ImageBaseDataset):
         """
 
         if "CoT" in self.dataset_name or "PoT" in self.dataset_name:
-            print("********** Warning: We follow the evaluation script for Direct to assess CoT and PoT, the scores can be very low! **********")
-            
+            print("********** Warning: We follow the evaluation script for Direct to assess CoT and PoT, \
+                    the scores can be very low! **********")
+
         data = file.load(result_file)
 
         ans_list = []
@@ -104,9 +105,8 @@ class ChartQAPro(ImageBaseDataset):
             ans_list.append(llm_ans)
 
         scores = evaluate_predictions_chartqapro(ans_list)
-        
-        return pd.DataFrame(list(scores.items()))
 
+        return pd.DataFrame(list(scores.items()))
 
     def evaluate(self, eval_file: str, **judge_kwargs: Any) -> pd.DataFrame:
         """
