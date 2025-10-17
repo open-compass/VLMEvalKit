@@ -47,6 +47,7 @@ from .xcomposer import (
 )
 from .yi_vl import Yi_VL
 from .internvl import InternVLChat
+from .interns1 import InternS1Chat
 from .deepseek_vl import DeepSeekVL
 from .deepseek_vl2 import DeepSeekVL2
 from .janus import Janus
