@@ -405,7 +405,7 @@ class SailVL(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(["MMDU", "MME-RealWorld", "MME-RealWorld-CN", "ChartQAPro"], dataset):  # noqa: E501
+        if listinstr(["MMDU", "MME-RealWorld", "MME-RealWorld-CN", "ChartQAPro", "ChartMuseum"], dataset):  # noqa: E501
             # For Multi-Turn and some special datasets we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == "VIDEO":

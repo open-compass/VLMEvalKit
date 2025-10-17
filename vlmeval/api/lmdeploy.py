@@ -22,7 +22,7 @@ class InternVL2_PromptUtil:
             'optics_dataset', 'quantum_dataset', 'statistics_dataset'
         ]:
             return False
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro'], dataset):  # noqa: E501
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum'], dataset):  # noqa: E501
             # For Multi-Turn and some special datasets we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
