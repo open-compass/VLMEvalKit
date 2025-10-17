@@ -78,6 +78,7 @@ from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
 from .m4bench import M4Bench
+from .vlrmbench import VLRMBench
 from .mmhelix import MMHELIX
 
 from .medqbench_mcq import MedqbenchMCQDataset
@@ -211,7 +212,7 @@ IMAGE_DATASET = [
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset,
-    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, VLRMBench
 ]
 
 VIDEO_DATASET = [
