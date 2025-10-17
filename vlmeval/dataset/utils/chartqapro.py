@@ -3,10 +3,8 @@ import ast
 import re
 from typing import List, Optional, Any, Tuple, Dict
 import pandas as pd
-from anls import anls_score
 import json
 import argparse
-import pdb
 
 
 def prompt_context(question, answer, q_type, vqa_type):
@@ -250,6 +248,7 @@ def evaluate_single_answer(
     - Numeric within tolerance or exact year match inside this helper.
     - Falls back to ANLS for text.
     """
+    from anls import anls_score
     t = target.strip().strip('%').strip()
     p = prediction.strip().strip('%').strip()
     # print("Stripped", t, p)

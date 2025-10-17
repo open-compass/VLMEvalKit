@@ -11,8 +11,6 @@ from vlmeval.smp import misc, file
 from vlmeval.smp.file import get_intermediate_file_path
 from vlmeval.dataset.utils.chartqapro import *
 
-import pdb
-
 
 class ChartQAPro(ImageBaseDataset):
     TYPE = "VQA"

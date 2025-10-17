@@ -81,7 +81,9 @@ from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
 from .m4bench import M4Bench
 from .mmhelix import MMHELIX
-
+from .medqbench_mcq import MedqbenchMCQDataset
+from .medqbench_caption import MedqbenchCaptionDataset
+from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 
 
 class ConcatDataset(ImageBaseDataset):

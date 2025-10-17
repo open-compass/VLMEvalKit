@@ -1,3 +1,4 @@
+# flake8: noqa
 import os
 import json
 from typing import Dict, List, Tuple, Any, Union
@@ -5,15 +6,15 @@ import pandas as pd
 import warnings
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
-from vlmeval import utils
-from vlmeval.dataset.utils import build_judge
+from ..smp import *
+from ..smp.file import get_intermediate_file_path
+from ..utils import track_progress_rich
+from .utils import build_judge
 from openai import OpenAI
 from tqdm import tqdm
 from datasets import load_dataset
 import re
 from collections import defaultdict
-from vlmeval.smp.file import get_intermediate_file_path
 
 
 # gpt4_key = "your-key"
@@ -22,7 +23,7 @@ from vlmeval.smp.file import get_intermediate_file_path
 COMPARE_ANSWER_PROMPT = """You are provided with a question and two answers. Please determine if these answers are equivalent. Follow these guidelines:
 
 1. Numerical Comparison:
-   - For decimal numbers, consider them as equivalent if their relative difference is sufficiently small. 
+   - For decimal numbers, consider them as equivalent if their relative difference is sufficiently small.
    For example, the following pairs are equivalent:
     - 32.35 and 32.34
     - 90.05 and 90.00
@@ -67,20 +68,22 @@ def get_question(QUESTION):
 
     Please first generate your reasoning process and then provide the user with the answer. Use the following format:
 
-    <think> 
-    ... your thinking process here ... 
-    </think> 
-    <answer> 
+    <think>
+    ... your thinking process here ...
+    </think>
+    <answer>
     ... your final answer (entity(s) or number) ...
     </answer>"""
 
     return QA_PROMPT
 
+
 def extract_answer(text: str) -> str:
     m = re.search(r"<answer>(.*?)</answer>", text + "</answer>", re.DOTALL)
     return m.group(1).strip() if m else ""
 
-def gpt_compare(question: str, answer1: str, answer2: str) -> bool:
+
+def gpt_compare(category, question, answer1, answer2, idx, judge_model):
 
     prompt = (
         COMPARE_ANSWER_PROMPT
@@ -88,12 +91,9 @@ def gpt_compare(question: str, answer1: str, answer2: str) -> bool:
         .replace("[ANSWER1]", answer1)
         .replace("[ANSWER2]", answer2)
     )
-    resp = client.chat.completions.create(
-        model="gpt-4.1-mini-2025-04-14"  ,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
-    )
-    return "yes" in resp.choices[0].message.content.strip().lower()
+    response = judge_model.generate(prompt)
+
+    return response, category
 
 
 class ChartMuseum(ImageBaseDataset):
@@ -107,13 +107,12 @@ class ChartMuseum(ImageBaseDataset):
         "ChartMuseum_test": "983586eace6ee33cdb189d63124768c8",
     }
 
-    def build_prompt(self, line: Union[int, pd.Series], qa_type: str = 'test') -> List[Dict[str, str]]:
+    def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
         """
         Build a prompt for the model from a data line.
 
         Args:
             line: Either an index into the dataset or a pandas Series
-            qa_type: Choose from ['dev', 'test']
 
         Returns:
             List of message dictionaries containing the image and question
@@ -126,16 +125,10 @@ class ChartMuseum(ImageBaseDataset):
         else:
             tgt_path = self.dump_image(line)
 
-        # determine qa_type, default value : 'test' 
-        if "dev" in self.dataset_name:
-            qa_type = "dev"
-        elif "test" in self.dataset_name:
-            qa_type = "test"
-
         # load data line elements
         question = line['question']
-        answer = line['answer']
-        category = line['category']
+        # answer = line['answer']
+        # category = line['category']
 
         # build prompt from question
         question_context = get_question(question)
@@ -157,25 +150,44 @@ class ChartMuseum(ImageBaseDataset):
             DataFrame with evaluation scores by category
         """
 
-        if "dev" in self.dataset_name:
-            qa_type = "dev"
-        elif "test" in self.dataset_name:
-            qa_type = "test"
-
-        benchmark = pd.DataFrame(load_dataset("lytang/ChartMuseum")[qa_type])
+        benchmark = self.data
         questions = benchmark["question"].tolist()
         gts = benchmark["answer"].astype(str).tolist()
-        categories = benchmark['reasoning_type'].astype(str).tolist()
+        categories = benchmark['category'].astype(str).tolist()
 
         data = file.load(eval_file)
         pred_list = data['prediction'].astype(str).tolist()
+        id_list = data['index'].astype(int).tolist()
         pred_answers = [extract_answer(p) for p in pred_list]
+        assert len(id_list) == len(pred_answers)
 
         category_flags = defaultdict(list)
+        judge_model_name = judge_kwargs.pop('judge_model', 'gpt-4.1-mini-2025-04-14')
+        nproc = judge_kwargs.pop('nproc', 4)
+        if judge_model_name != 'gpt-4.1-mini-2025-04-14':
+            print(f"Recommend to use gpt-4.1-mini-2025-04-14 as judge model for ChartMuseum, Now using {judge_model_name}")
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge_model_name}', 'pkl')
+        if osp.exists(tmp_file):
+            already_judged = load(tmp_file)
+        else:
+            already_judged = {}
+        judge_model = build_judge(model=judge_model_name, **judge_kwargs)
 
-        for cat, q, gt, pa in tqdm(zip(categories, questions, gts, pred_answers), total=len(pred_answers)):
-            flag = int(gpt_compare(q, gt, pa))
-            category_flags[cat].append(flag)
+        input_tuples = [(cat, q, gt, pa, idx, judge_model) for cat, q, gt, pa, idx in zip(categories, questions, gts, pred_answers, id_list) if idx not in already_judged]
+        indices = [idx for _, _, _, _, idx, _ in input_tuples]
+        if len(indices):
+            _ = track_progress_rich(
+                gpt_compare,
+                input_tuples,
+                nproc=nproc,
+                chunksize=nproc,
+                keys=indices,
+                save=tmp_file,
+            )
+        ans = load(tmp_file)
+        for value in ans.values():
+            flag = 'yes' in value[0].lower()
+            category_flags[value[1]].append(int(flag))
 
         score = {}
         for cat, flags in category_flags.items():
@@ -186,5 +198,5 @@ class ChartMuseum(ImageBaseDataset):
         score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
         out_score = pd.DataFrame(score)
         file.dump(out_score, score_file)
-        
+
         return out_score
