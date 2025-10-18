@@ -95,11 +95,11 @@ class ReasonMap_Plus(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
         "ReasonMap-Plus": "https://opencompass.openxlab.space/utils/VLMEval/ReasonMap-Plus.tsv"
-        # "ReasonMap-Plus": "/home/tuokaiwen/LMUData/ReasonMap-Plus.tsv"
     }
     
-    # TODO: get md5 code
-    # DATASET_MD5 = {"ReasonMap-Plus": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+    DATASET_MD5 = {
+        "ReasonMap-Plus": "205d3ac1c3af07d3e4930f25e01008be"
+    }
     
     @classmethod
     def supported_datasets(cls):
@@ -200,11 +200,5 @@ class ReasonMap_Plus(ImageBaseDataset):
             if len(sub):
                 out_rows.append(dict(metric=f"accuracy[{tname}]", value=float(np.mean(sub["_correct"])), n=len(sub)))
                 out_rows.append(dict(metric=f"weighted_accuracy[{tname}]", value=float(np.sum(sub["_weighted_correct"]) / total_sub), n=len(sub)))
-
-        # add some another info to the result .xlsx file
-        # if "difficulty_city" in df.columns:
-        #     for k, sub in df.groupby("difficulty_city"):
-        #         if len(sub):
-        #             out_rows.append(dict(metric=f"accuracy[difficulty={k}]", value=float(np.mean(sub["_correct"])), n=len(sub)))
 
         return pd.DataFrame(out_rows, columns=["metric", "value", "n"])
