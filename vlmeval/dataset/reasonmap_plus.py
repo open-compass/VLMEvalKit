@@ -143,17 +143,57 @@ class ReasonMap_Plus(ImageBaseDataset):
                 return 1 if _strip(a).lower() == _strip(p).lower() else 0
             except Exception:
                 return 0
+           
+        difficulty_weights = {
+            "easy": 1.0,
+            "middle": 1.5,
+            "hard": 2.0
+            } 
+        def _score_weighted_one(a, p, t, difficulty):
+
+            weighted_acc = difficulty_weights[difficulty]
+            tlo = (t or "").lower()
+            try:
+                if "torf" in tlo:
+                    gt = "yes" if int(a) == 1 else "no"
+                    pp = _normalize_yesno(p)
+                    return weighted_acc if (pp == gt) else 0
+
+                if tlo == "counting1" or "counting1" in tlo:
+                    mapping = {"A": 0, "B": 1, "C": 2, "D": 3}
+                    pp = _normalize_abcd(p)
+                    if pp is None:
+                        return 0
+                    return weighted_acc if mapping[pp] == int(a) else 0
+
+                if tlo in {"counting2", "counting3"} or tlo.startswith("counting"):
+                    return weighted_acc if int(str(p)) == int(a) else 0
+
+                return weighted_acc if _strip(a).lower() == _strip(p).lower() else 0
+            except Exception:
+                return 0
 
         df["_correct"] = [
             _score_one(a, p, t) for a, p, t in zip(df.get("answer", ""), df["_pred_norm"], df.get("type", ""))
         ]
+        
+        df["_weighted_correct"] = [
+            _score_weighted_one(a, p, t, difficulty) for a, p, t, difficulty in zip(df.get("answer", ""), df["_pred_norm"], df.get("type", ""), df.get("difficulty_city", ""))
+        ]
+        
+        total = np.sum(difficulty_weights[a] for a in df.get("difficulty_city", ""))
+        
+        
 
         overall = float(np.mean(df["_correct"])) if len(df) else 0.0
-        out_rows = [dict(metric="accuracy", value=overall, n=len(df))]
+        weighted_overall = float(np.sum(df["_weighted_correct"]) / total) if len(df) else 0.0
+        out_rows = [dict(metric="accuracy", value=overall, n=len(df)), dict(metric="weighted_accuracy", value=weighted_overall, n=len(df))]
 
         for tname, sub in df.groupby(df.get("type", "")):
+            total_sub = np.sum(difficulty_weights[a] for a in sub.get("difficulty_city", ""))
             if len(sub):
                 out_rows.append(dict(metric=f"accuracy[{tname}]", value=float(np.mean(sub["_correct"])), n=len(sub)))
+                out_rows.append(dict(metric=f"weighted_accuracy[{tname}]", value=float(np.sum(sub["_weighted_correct"]) / total_sub), n=len(sub)))
 
         # add some another info to the result .xlsx file
         # if "difficulty_city" in df.columns:
