@@ -1,4 +1,10 @@
-# vlmeval/dataset/reasonmap_plus_vqa.py
+# ReasonMap Plus Dataset is an extension of the original ReasonMap dataset, designed for providing more dense rewards in visual understanding and reasoning tasks.
+# The reference paper is:
+#   1. Can MLLMs Guide Me Home? A Benchmark Study on Fine-Grained Visual Reasoning from Transit Maps: https://arxiv.org/abs/2505.18675
+#   2. RewardMap: Tackling Sparse Rewards in Fine-grained Visual Reasoning via Multi-Stage Reinforcement Learning: https://arxiv.org/abs/2510.02240
+
+# If any problem occurs, please open an issue on GitHub (https://github.com/fscdc/RewardMap or https://github.com/fscdc/ReasonMap).
+
 import re
 import pandas as pd
 import numpy as np
