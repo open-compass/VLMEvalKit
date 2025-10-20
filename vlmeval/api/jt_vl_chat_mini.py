@@ -4,8 +4,9 @@ from vlmeval.dataset import img_root_map
 from vlmeval.smp import *
 
 # JT-VL-Chat-mini
-API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-e7d64e71b61e421b8a41c0d43424d73a/service-cd5a067331e34cfea25f5a9d7960ffe8/infer"  # noqa: E501
-APP_CODE = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI1YjYyODY0ZjZmMWI0Yzg4YWE2ZDk1NzBhNDY1MWI3OSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg5ODU1NzAwN30.jLUbctPdJ74VC3Vwlr0nB4x9N2QxWtSGYE0vWsceZN-agDecVnH8pH8Q5SoCQ3-SBYx5jDx-UOg3kkoMqY9CdxiALauKU_UZ56CV2NKCcHUVeJIgNvfQJMb0z6yCCbSe80e1T8FxrxQXDvubyWtl4pTAhixYaEUqNG8rjUrDuA-vRgZ1e7HilBmU487OI76D9LUnU-zEdMWhzsCkh_Yy3M1Ur4PsKgMFi5QSmMuGSUGJjkpJHiGNx1QcevBLQSOCL2jvg15ifB2n2dD6zb8iPXFkfQTtmvbZofxWACSvkri-x9V3gFWg7DODwKUZsyyogPzRJVbmxDGruMsgiiCsPg"  # noqa: E501
+# API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-e7d64e71b61e421b8a41c0d43424d73a/service-cd5a067331e34cfea25f5a9d7960ffe8/infer"
+API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-e7d64e71b61e421b8a41c0d43424d73a/service-cd5a067331e34cfea25f5a9d7960ffe8//v1/chat/completions"
+APP_CODE = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI1YjYyODY0ZjZmMWI0Yzg4YWE2ZDk1NzBhNDY1MWI3OSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg5ODU1NzAwN30.jLUbctPdJ74VC3Vwlr0nB4x9N2QxWtSGYE0vWsceZN-agDecVnH8pH8Q5SoCQ3-SBYx5jDx-UOg3kkoMqY9CdxiALauKU_UZ56CV2NKCcHUVeJIgNvfQJMb0z6yCCbSe80e1T8FxrxQXDvubyWtl4pTAhixYaEUqNG8rjUrDuA-vRgZ1e7HilBmU487OI76D9LUnU-zEdMWhzsCkh_Yy3M1Ur4PsKgMFi5QSmMuGSUGJjkpJHiGNx1QcevBLQSOCL2jvg15ifB2n2dD6zb8iPXFkfQTtmvbZofxWACSvkri-x9V3gFWg7DODwKUZsyyogPzRJVbmxDGruMsgiiCsPg"
 
 
 class JTVLChatWrapper(BaseAPI):
@@ -22,13 +23,14 @@ class JTVLChatWrapper(BaseAPI):
                  temperature: float = 0.7,
                  max_tokens: int = 2048,
                  proxy: str = None,
+                 stream=False,
                  **kwargs):
         self.model = model
 
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.api_base = api_base
-
+        self.stream = stream
         if key is None:
             key = os.environ.get('JTVLChat_API_KEY', None)
         assert key is not None, (
@@ -156,36 +158,34 @@ class JTVLChatWrapper(BaseAPI):
         return prompt, image
 
     def get_send_data(self, prompt, image_path, temperature, max_tokens):
-        image = ''
         with open(image_path, 'rb') as f:
             image = str(base64.b64encode(f.read()), 'utf-8')
-        # send_data = {
-        #     "messages": [
-        #         {
-        #             "role": "user",
-        #             "content": prompt
-        #         }
-        #     ],
-        #     "image_base64": image,
-        #     "max_tokens": max_tokens,
-        #     "temperature": temperature
-        # }
-        send_data = {"prompt": prompt, "image_base64": image}
+        send_data = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "image_base64": image,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "do_sample": False,
+            "stream": self.stream,
+        }
         return send_data
 
     def get_send_data_no_image(self, prompt, temperature, max_tokens):
-        # send_data = {
-        #     "messages": [
-        #         {
-        #             "role": "user",
-        #             "content": prompt
-        #         }
-        #     ],
-        #     "max_tokens": max_tokens,
-        #     "temperature": temperature
-        # }
         send_data = {
-            "prompt": prompt, "image_base64": ""
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": self.stream
         }
         return send_data
 
@@ -210,18 +210,47 @@ class JTVLChatWrapper(BaseAPI):
         json_data = json.dumps(send_data)
 
         header_dict = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.key}
-
-        r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000)
+        stream = send_data.get("stream", False)
         try:
-            assert r.status_code == 200
-            # r_json = r.json()
-            # output = r_json['choices'][0]['message']['content']
-            output = r.text
+            if stream:
+                r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000, stream=True)
+                # 流式处理
+                chunks = []
+                output = ""
+                last_valid_usage = None  # 用于记录最后一个有效的usage
+                print("流式输出内容:")  # 实时输出提示
+                for line in r.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        if decoded_line.startswith('data: '):
+                            event_data = decoded_line[6:]
+                            if event_data == '[DONE]':
+                                break
+                            try:
+                                chunk = json.loads(event_data)
+                                chunks.append(chunk)
+                                # 记录最后一个有效的usage（不累加）
+                                if 'usage' in chunk:
+                                    last_valid_usage = chunk['usage']
+                                # 实时输出内容
+                                if 'choices' in chunk:
+                                    for choice in chunk['choices']:
+                                        if 'delta' in choice and 'content' in choice['delta']:
+                                            content = choice['delta']['content']
+                                            print(content, end='', flush=True)
+                                            output += content
+                            except json.JSONDecodeError:
+                                continue
+                print("\n")  # 换行
+            else:
+                r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000)
+                assert r.status_code == 200
+                # r_json = r.json()
+                # output = r_json['choices'][0]['message']['content']
+                output = r.text
             if self.verbose:
                 self.logger.info(f'inputs: {inputs}\nanswer: {output}')
-
             return 0, output, 'Succeeded! '
-
         except:
             error_msg = f'Error! code {r.status_code} content: {r.content}'
             error_con = r.content.decode('utf-8')
