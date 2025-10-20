@@ -1,10 +1,13 @@
+import pandas as pd
+import requests
+import json
+import os
+import base64
+from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import DATASET_TYPE
 from vlmeval.dataset import img_root_map
-from vlmeval.smp import *
 
-# JT-VL-Chat-mini
-# API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-e7d64e71b61e421b8a41c0d43424d73a/service-cd5a067331e34cfea25f5a9d7960ffe8/infer"
 API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-e7d64e71b61e421b8a41c0d43424d73a/service-cd5a067331e34cfea25f5a9d7960ffe8//v1/chat/completions"
 APP_CODE = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI1YjYyODY0ZjZmMWI0Yzg4YWE2ZDk1NzBhNDY1MWI3OSIsImlzcyI6ImFwaS1hdXRoLWtleSIsImV4cCI6NDg5ODU1NzAwN30.jLUbctPdJ74VC3Vwlr0nB4x9N2QxWtSGYE0vWsceZN-agDecVnH8pH8Q5SoCQ3-SBYx5jDx-UOg3kkoMqY9CdxiALauKU_UZ56CV2NKCcHUVeJIgNvfQJMb0z6yCCbSe80e1T8FxrxQXDvubyWtl4pTAhixYaEUqNG8rjUrDuA-vRgZ1e7HilBmU487OI76D9LUnU-zEdMWhzsCkh_Yy3M1Ur4PsKgMFi5QSmMuGSUGJjkpJHiGNx1QcevBLQSOCL2jvg15ifB2n2dD6zb8iPXFkfQTtmvbZofxWACSvkri-x9V3gFWg7DODwKUZsyyogPzRJVbmxDGruMsgiiCsPg"
 
@@ -16,29 +19,23 @@ class JTVLChatWrapper(BaseAPI):
     def __init__(self,
                  model: str = 'jt-vl-chat',
                  retry: int = 5,
-                 api_base: str = API_ENDPOINT,
-                 key: str = APP_CODE,
+                 wait: int = 5,
+                 api_base: str = '',
+                 app_code: str = '',
                  verbose: bool = True,
                  system_prompt: str = None,
                  temperature: float = 0.7,
                  max_tokens: int = 2048,
                  proxy: str = None,
-                 stream=False,
                  **kwargs):
         self.model = model
 
         self.temperature = temperature
         self.max_tokens = max_tokens
-        self.api_base = api_base
-        self.stream = stream
-        if key is None:
-            key = os.environ.get('JTVLChat_API_KEY', None)
-        assert key is not None, (
-            'Please set the API Key (also called app_code, obtain it here: https://github.com/jiutiancv/JT-VL-Chat)'
-        )
+        self.api_base = API_ENDPOINT
+        self.app_code = APP_CODE
 
-        self.key = key
-        super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
         """Dump the image(s) of the input line to the corresponding dataset folder.
@@ -157,7 +154,8 @@ class JTVLChatWrapper(BaseAPI):
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
 
-    def get_send_data(self, prompt, image_path, temperature, max_tokens):
+    def get_send_data(self, prompt, image_path, temperature, max_tokens, stream=False):
+        image = ''
         with open(image_path, 'rb') as f:
             image = str(base64.b64encode(f.read()), 'utf-8')
         send_data = {
@@ -171,11 +169,11 @@ class JTVLChatWrapper(BaseAPI):
             "max_tokens": max_tokens,
             "temperature": temperature,
             "do_sample": False,
-            "stream": self.stream,
+            "stream": stream
         }
         return send_data
 
-    def get_send_data_no_image(self, prompt, temperature, max_tokens):
+    def get_send_data_no_image(self, prompt, temperature, max_tokens, stream=False):
         send_data = {
             "messages": [
                 {
@@ -185,7 +183,7 @@ class JTVLChatWrapper(BaseAPI):
             ],
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "stream": self.stream
+            "stream": stream,
         }
         return send_data
 
@@ -200,65 +198,73 @@ class JTVLChatWrapper(BaseAPI):
                 prompt=prompt,
                 image_path=image_path,
                 temperature=self.temperature,
-                max_tokens=self.max_tokens)
+                max_tokens=self.max_tokens,
+                stream=True)
         else:
             send_data = self.get_send_data_no_image(
                 prompt=prompt,
                 temperature=self.temperature,
-                max_tokens=self.max_tokens)
+                max_tokens=self.max_tokens,
+                stream=True)
 
         json_data = json.dumps(send_data)
 
-        header_dict = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.key}
-        stream = send_data.get("stream", False)
+        header_dict = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.app_code}
+
+        r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000, stream=True)
         try:
-            if stream:
-                r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000, stream=True)
+            if send_data.get('stream', False):
                 # 流式处理
                 chunks = []
-                output = ""
-                last_valid_usage = None  # 用于记录最后一个有效的usage
-                print("流式输出内容:")  # 实时输出提示
-                for line in r.iter_lines():
-                    if line:
-                        decoded_line = line.decode('utf-8')
-                        if decoded_line.startswith('data: '):
-                            event_data = decoded_line[6:]
-                            if event_data == '[DONE]':
-                                break
-                            try:
-                                chunk = json.loads(event_data)
-                                chunks.append(chunk)
-                                # 记录最后一个有效的usage（不累加）
-                                if 'usage' in chunk:
-                                    last_valid_usage = chunk['usage']
-                                # 实时输出内容
-                                if 'choices' in chunk:
-                                    for choice in chunk['choices']:
-                                        if 'delta' in choice and 'content' in choice['delta']:
-                                            content = choice['delta']['content']
-                                            print(content, end='', flush=True)
-                                            output += content
-                            except json.JSONDecodeError:
-                                continue
-                print("\n")  # 换行
+                full_content = ""
+
+                try:
+                    for line in r.iter_lines():
+                        if line:
+                            decoded_line = line.decode('utf-8')
+                            if decoded_line.startswith('data: '):
+                                event_data = decoded_line[6:]
+                                if event_data == '[DONE]':
+                                    break
+                                try:
+                                    chunk = json.loads(event_data)
+                                    chunks.append(chunk)
+
+                                    # 记录最后一个有效的usage（不累加）
+                                    if 'usage' in chunk:
+                                        _ = chunk['usage']
+
+                                    # 实时输出内容
+                                    if 'choices' in chunk:
+                                        for choice in chunk['choices']:
+                                            if 'delta' in choice and 'content' in choice['delta']:
+                                                content = choice['delta']['content']
+                                                print(content, end='', flush=True)
+                                                full_content += content
+                                except json.JSONDecodeError:
+                                    continue
+                    print("\n")  # 换行
+
+                    return 0, full_content, 'Succeeded! '
+
+                except Exception as e:
+                    return -1, f'Error: {str(e)}', ''
             else:
-                r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000)
-                assert r.status_code == 200
-                # r_json = r.json()
-                # output = r_json['choices'][0]['message']['content']
-                output = r.text
-            if self.verbose:
-                self.logger.info(f'inputs: {inputs}\nanswer: {output}')
-            return 0, output, 'Succeeded! '
-        except:
-            error_msg = f'Error! code {r.status_code} content: {r.content}'
-            error_con = r.content.decode('utf-8')
-            if self.verbose:
-                self.logger.error(error_msg)
-                self.logger.error(error_con)
-                self.logger.error(f'The input messages are {inputs}.')
-            return -1, error_msg, ''
+                # 非流式处理
+                try:
+                    r_json = r.json()
+                    output = r_json['choices'][0]['message']['content']
+                    return 0, output, 'Succeeded! '
+                except:
+                    error_msg = f'Error! code {r.status_code} content: {r.content}'
+                    error_con = r.content.decode('utf-8')
+                    if self.verbose:
+                        self.logger.error(error_msg)
+                        self.logger.error(error_con)
+                        self.logger.error(f'The input messages are {inputs}.')
+                    return -1, error_msg, ''
+        except Exception as e:
+            return -1, f'Error: {str(e)}', ''
 
 
 class JTVLChatAPI_Mini(JTVLChatWrapper):
