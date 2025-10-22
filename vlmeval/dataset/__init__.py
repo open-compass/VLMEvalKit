@@ -21,6 +21,7 @@ from .image_ccocr import CCOCRDataset
 from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
+from .PHYSICS import PHYSICS
 from .vcr import VCRDataset
 from .mmlongbench import MMLongBench
 from .dude import DUDE
@@ -228,7 +229,7 @@ VIDEO_DATASET = [
 ]
 
 TEXT_DATASET = [
-    TextMCQDataset
+    TextMCQDataset, PHYSICS
 ]
 
 CUSTOM_DATASET = [

@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: 'Math-Verify: Math Verification Library'
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - given-names: Hynek
+    family-names: Kydlíček
+repository-code: 'https://github.com/huggingface/math-verify'
+abstract: "Math-Verify is a library to rule-based verify mathematical answers"
+keywords:
+  - verification
+  - math
+  - evaluation
+license: Apache-2.0
+version: 0.6.1

@@ -1,0 +1,83 @@
+[project]
+name = "math-verify"
+version = "0.7.0"
+description = "HuggingFace library for verifying mathematical answers"
+authors = [
+    { name = "Hynek Kydlíček", email = "hynek.kydlicek@huggingface.co" }
+]
+license = { text = "Apache 2.0" }
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+keywords = ["verification", "math", "evaluation"]
+dependencies = [
+    "latex2sympy2_extended==1.10.1",
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+inference = [
+    "lighteval[math]"
+]
+
+test = [
+    "pytest",
+]
+
+format = [
+    "ruff",
+]
+
+dev = [
+    "math-verify[test]",
+    "math-verify[format]",
+]
+
+antlr4_9_3 = [
+    "latex2sympy2_extended[antlr4_9_3]"
+]
+
+antlr4_11_0 = [
+    "latex2sympy2_extended[antlr4_11_0]"
+]
+
+antlr4_13_2 = [
+    "latex2sympy2_extended[antlr4_13_2]"
+]
+
+[project.urls]
+Repository = "https://github.com/huggingface/math-verify"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 88
+lint.select = ["E", "F", "I", "N", "W", "B", "A"]
+lint.ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["math_verify"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.black]
+line-length = 88
+preview = true

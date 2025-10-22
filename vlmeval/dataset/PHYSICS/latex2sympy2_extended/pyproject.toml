@@ -1,0 +1,50 @@
+[project]
+name = "latex2sympy2_extended"
+version = "1.10.1"
+description = "Convert LaTeX math to SymPy expressions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Hynek Kydlíček", email = "hynek.kydlicek@huggingface.co" }
+]
+dependencies = [
+    "sympy",
+    "antlr4-python3-runtime>=4.9.3,<=4.13.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+antlr4_9_3 = [
+    "antlr4-python3-runtime==4.9.3"
+]
+
+antlr4_11_0 = [
+    "antlr4-python3-runtime==4.11.0"
+]
+
+antlr4_13_2 = [
+    "antlr4-python3-runtime==4.13.2"
+]
+
+[project.urls]
+Homepage = "https://github.com/OrangeX4/latex2sympy2"
+Repository = "https://github.com/OrangeX4/latex2sympy2.git"
+
+[tool.hatch.build]
+packages = ["src/latex2sympy2_extended"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["*_test.py"] 
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

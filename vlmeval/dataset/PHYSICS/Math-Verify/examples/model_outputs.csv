@@ -1,0 +1,7 @@
+answer,gold
+"so that x == 1 or x == 2, thus the result is $2*\pi*r$","$2*\pi*r$"
+"The answer is $$\sin(x)$$","$$\sin(x)$$"
+"After solving, we get $1/2$","$1/2$"
+"The final result is $$(a + b)^2$$","$(a + b)^2$"
+"Therefore, $$3!$$","$3!$"
+"The point coordinates are $(1,2)$","$(1,2)$" 
