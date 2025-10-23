@@ -98,6 +98,10 @@ class VLRMBench(ImageBaseDataset):
     - image_ref_error: Image reference error detection
     - location_error: Location error detection
     - multi_solution: Position bias resistance evaluation
+    - foresight: Reasoning foresight capability evaluation
+
+    Note: Currently only supports Outcome-based tasks and Step-based tasks.
+    Criticism-based tasks are not supported in this implementation.
     """
 
     TYPE = 'VQA'
@@ -105,12 +109,29 @@ class VLRMBench(ImageBaseDataset):
         'VLRMBench': 'https://huggingface.co/datasets/Winston-Yuan/VLRMBench/resolve/main/VLRMBench.tsv',
         'VLRMBench_MultiSolution': (
             'https://huggingface.co/datasets/Winston-Yuan/VLRMBench/resolve/main/VLRMBench_MultiSolution.tsv'
+        ),
+        'VLRMBench_Foresight': (
+            'https://huggingface.co/datasets/Winston-Yuan/VLRMBench/resolve/main/VLRMBench_Foresight.tsv'
         )
     }
     DATASET_MD5 = {
         'VLRMBench': 'f1dedeac74fc1112545390d6e2ecf4a2',
-        'VLRMBench_MultiSolution': 'e8c15ab7c24568ba4d72375530389387'
+        'VLRMBench_MultiSolution': 'e8c15ab7c24568ba4d72375530389387',
+        'VLRMBench_Foresight': '1e22f1b94afbd6f4f3a4028c91749311'
     }
+
+    def __init__(self, **kwargs):
+        """
+        Initialize VLRMBench dataset with warning about supported task types.
+        """
+        import warnings
+        warnings.warn(
+            "VLRMBench currently only supports Outcome-based tasks and Step-based tasks. "
+            "Criticism-based tasks are not supported in this implementation.",
+            UserWarning,
+            stacklevel=2
+        )
+        super().__init__(**kwargs)
 
     def build_prompt(self, line):
         """
@@ -213,10 +234,53 @@ class VLRMBench(ImageBaseDataset):
         return results
 
     @classmethod
+    def evaluate_foresight(cls, data):
+        """
+        Evaluate foresight type data (reasoning foresight capability)
+
+        Args:
+            data: DataFrame containing foresight predictions
+
+        Returns:
+            dict: Evaluation results with accuracy metric
+        """
+        acc_sample = 0
+        overall_sample = 0
+        skipped = 0
+
+        for idx in range(len(data)):
+            item = data.iloc[idx]
+
+            try:
+                task_gt = item['task_gt']  # True/False
+                model_answer = item.get('prediction', '')
+
+                # 关键词匹配逻辑（与get_fores_eval_res.py一致）
+                if task_gt is True:
+                    if re.search(r'\b(yes|true)\b', model_answer, re.IGNORECASE):
+                        acc_sample += 1
+                elif task_gt is False:
+                    if re.search(r'\b(no|false)\b', model_answer, re.IGNORECASE):
+                        acc_sample += 1
+
+                overall_sample += 1
+            except Exception as e:
+                print(f"Failed to process foresight sample (idx={idx}): {e}")
+                skipped += 1
+
+        results = {
+            'foresight_accuracy': acc_sample / overall_sample if overall_sample > 0 else 0.0,
+            'foresight_count': overall_sample,
+            'foresight_skipped': skipped
+        }
+
+        return results
+
+    @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
         """
         Evaluate model prediction results
-        Automatically detects and handles both step-based and multi_solution data
+        Automatically detects and handles step-based, multi_solution, and foresight data
 
         Args:
             eval_file: Path to model prediction results file
@@ -235,14 +299,15 @@ class VLRMBench(ImageBaseDataset):
         # Detect data types
         categories = data['category'].unique()
         has_multi_solution = 'multi_solution' in categories
-        has_step_based = any(c != 'multi_solution' for c in categories)
+        has_foresight = 'foresight' in categories
+        has_step_based = any(c not in ['multi_solution', 'foresight'] for c in categories)
 
         results = {}
 
         # Process step-based categories
         if has_step_based:
             # Filter step-based data
-            step_data = data[data['category'] != 'multi_solution']
+            step_data = data[~data['category'].isin(['multi_solution', 'foresight'])]
 
             # Ensure answer field exists for step-based data
             if 'answer' not in step_data.columns:
@@ -321,6 +386,12 @@ class VLRMBench(ImageBaseDataset):
             ms_data = data[data['category'] == 'multi_solution']
             ms_results = cls.evaluate_multi_solution(ms_data)
             results.update(ms_results)
+
+        # Process foresight category
+        if has_foresight:
+            foresight_data = data[data['category'] == 'foresight']
+            foresight_results = cls.evaluate_foresight(foresight_data)
+            results.update(foresight_results)
 
         # Convert to DataFrame format
         results_df = pd.DataFrame([results])
