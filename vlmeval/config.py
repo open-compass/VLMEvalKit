@@ -1034,6 +1034,73 @@ internvl3_5 = {
     ),
 }
 
+
+qwen3vl_series = {
+    "Qwen3-VL-235B-A22B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-235B-A22B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.0, 
+        max_new_tokens=32768
+    ),
+    "Qwen3-VL-235B-A22B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-235B-A22B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.0, 
+        max_new_tokens=32768
+    ),
+    "Qwen3-VL-30B-A3B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-30B-A3B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.0, 
+        max_new_tokens=32768
+    ),
+    "Qwen3-VL-30B-A3B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-30B-A3B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.0, 
+        max_new_tokens=32768
+    ),
+    "Qwen3-VL-8B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-8B-Thinking",
+        use_custom_prompt=False,
+        temperature=0.7, 
+        max_new_tokens=16384
+    ),
+    "Qwen3-VL-4B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-4B-Thinking",
+        use_custom_prompt=False,
+        temperature=0.7, 
+        max_new_tokens=16384
+    ),
+    "Qwen3-VL-8B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-8B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+    ),
+    "Qwen3-VL-4B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-4B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384
+    ),
+    
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -1682,7 +1749,7 @@ model_groups = [
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
-    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,qwen3vl_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,

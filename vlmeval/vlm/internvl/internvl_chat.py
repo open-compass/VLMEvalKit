@@ -235,7 +235,7 @@ class InternVLChat(BaseModel):
             'optics_dataset', 'quantum_dataset', 'statistics_dataset'
         ]:
             return False
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum'], dataset):  # noqa: E501
             # For Multi-Turn we don't have custom prompt
             return False
         if DATASET_TYPE(dataset) == 'MCQ':
