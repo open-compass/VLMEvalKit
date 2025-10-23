@@ -111,3 +111,4 @@ from .qtunevl import (
 )
 from .logics import Logics_Thinking
 from .cosmos import Cosmos
+from .liquid import LFM2VL

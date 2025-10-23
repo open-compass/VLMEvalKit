@@ -1733,6 +1733,12 @@ cosmos_series = {
     'Cosmos-Reason1-7B': partial(Cosmos, model_path='nvidia/Cosmos-Reason1-7B', use_vllm=True),
 }
 
+lfm2vl_series = {
+    "LFM2-VL-450M": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-450M"),
+    "LFM2-VL-1.6B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-1.6B"),
+    "LFM2-VL-3B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -1755,7 +1761,8 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series,logics_series, cosmos_series
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, 
+    qtunevl_series, xvl_series, thyme_series, logics_series, cosmos_series, lfm2vl_series
 ]
 
 for grp in model_groups:
