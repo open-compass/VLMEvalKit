@@ -1,0 +1,70 @@
+name: pr_run_test
+
+on:
+  pull_request:
+    branches:
+      - "main"
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  workflow_dispatch:
+  schedule:
+    - cron:  '56 01 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  BASE_SCORE: '{"MMBench_V11_MINI":{"Qwen2-VL-7B-Instruct":0.8727272727272727,"InternVL2_5-8B":0.89090909,"llava_onevision_qwen2_7b_si":0.8363636363636363},"MMStar_MINI":{"Qwen2-VL-7B-Instruct":0.6266666666666667,"InternVL2_5-8B":0.6333333333333333,"llava_onevision_qwen2_7b_si":0.49333333333333335},"AI2D_MINI":{"Qwen2-VL-7B-Instruct":0.7975708502024291,"InternVL2_5-8B":0.854251012145749,"llava_onevision_qwen2_7b_si":0.8178137651821862},"OCRBench_MINI":{"Qwen2-VL-7B-Instruct":16.6,"InternVL2_5-8B":16.7,"llava_onevision_qwen2_7b_si":13.0}}'
+  HF_HUB_CACHE: /fs-computility/llm/shared/llmeval/models/opencompass_hf_hub
+  HF_HUB_OFFLINE: 1
+  CONDA_PATH: /fs-computility/llm/qa-llm-cicd/miniconda3
+  CONDA_ENV: vlm_pr_test
+
+jobs:
+  vlm_test:
+    if: ${{!cancelled()}}
+    runs-on: [volc_cu12_mllm]
+    strategy:
+      fail-fast: false
+      matrix:
+        model: [Qwen/Qwen2-VL-7B-Instruct,OpenGVLab/InternVL2_5-8B,lmms-lab/llava-onevision-qwen2-7b-si]
+        dataset: ["MMBench_V11_MINI MMStar_MINI AI2D_MINI","OCRBench_MINI"]
+    steps:
+      - name: clone_repo
+        uses: actions/checkout@v3
+      - name: evaluation_model
+        uses: nick-fields/retry@v3
+        with:
+          max_attempts: 3
+          timeout_minutes: 30
+          command: |
+            . ${{env.CONDA_PATH}}/bin/activate
+            conda activate ${{env.CONDA_ENV}}
+            pip uninstall vlmeval -y
+            pip install -e .
+            pre_model=$(echo ${{matrix.model}} | awk -F'/' '{print $1}')
+            if [ "${{matrix.model}}" = "lmms-lab/llava-onevision-qwen2-7b-si" ];then
+                model_name="llava_onevision_qwen2_7b_si"
+            else
+                model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
+            fi
+            pip list
+            nvidia-smi
+            LOG=$(python run.py --data ${{matrix.dataset}} --model $model_name 2>&1)
+            echo "$LOG"
+            if echo "$LOG" | grep -q "CUDA out of memory"; then
+              sleep 300
+              exit 1  # retry becuase of oom
+            fi
+      - name: assert_result
+        run: |
+          . ${{env.CONDA_PATH}}/bin/activate
+          conda activate ${{env.CONDA_ENV}}
+          if [ "${{matrix.model}}" = "lmms-lab/llava-onevision-qwen2-7b-si" ];then
+              model_name="llava_onevision_qwen2_7b_si"
+          else
+              model_name=$(echo ${{matrix.model}} | awk -F'/' '{print $2}')
+          fi
+          python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name $model_name
