@@ -111,3 +111,4 @@ from .qtunevl import (
 )
 from .logics import Logics_Thinking
 from .cosmos import Cosmos
+from .rbdashmm import RBdashMMChat3, RBdashMMChat3_5
