@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 
-# Adapted from vlmeval/vlm/qwen2_vl/prompt.py
-class HawkVLPromptMixin:
+class Qwen3VLPromptMixin:
     """
-    Mixin class for HawkVL to build custom prompt for different datasets.
+    Mixin class for Qwen3VLChat to build prompts consistent with Qwen3-VL README.
 
     Requires the following methods to be implemented in the subclass:
         - dump_image(line, dataset: str) -> str | list[str]
@@ -30,15 +29,14 @@ class HawkVLPromptMixin:
 
         if not self._use_custom_prompt:
             return False
+        # Follow Qwen3-VL convention: apply concise, task-specified prompts for MCQ/YN/VQA
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True
         if dataset_type == 'MCQ':
-            if dataset == 'LEGO':
-                return False
             return True
-        if dataset_type == 'Y/N' and dataset in {'HallusionBench', 'POPE'}:  # MME has it's own prompt
+        if dataset_type == 'Y/N':
             return True
-        if dataset_type == 'VQA' and dataset not in {'MMVet', 'ChartQAPro', 'ChartQAPro_CoT', 'ChartQAPro_PoT', 'ChartMuseum'}:  # noqa: E501
+        if dataset_type == 'VQA':
             return True
         return False
 
@@ -47,6 +45,7 @@ class HawkVLPromptMixin:
 
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return self._build_mmmu_prompt(line, dataset)
+
         dataset_type = DATASET_TYPE(dataset, default=None)
         if dataset_type == 'MCQ':
             return self._build_mcq_prompt(line, dataset)
@@ -57,18 +56,22 @@ class HawkVLPromptMixin:
         raise ValueError(f'Unsupported dataset: {dataset}')
 
     def _build_mmmu_prompt(self, line, dataset: str) -> list[dict[str, str]]:
-        """change the prompt for MMMU dataset: keep all images at beginning."""
-
+        """Keep all images at the beginning; then a single user text message.
+        Matches Qwen3-VL multi-image style shown in README examples.
+        """
         import string
-
         import pandas as pd
 
         tgt_path = self.dump_image(line, dataset)
         question = line['question']
         options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
-        options_prompt = 'Options:\n'
-        for key, item in options.items():
-            options_prompt += f'{key}. {item}\n'
+
+        options_prompt = ''
+        if len(options):
+            options_prompt = 'Options:\n'
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         prompt = ''
         if hint is not None:
@@ -76,8 +79,9 @@ class HawkVLPromptMixin:
         prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
-            prompt += "Answer with the option's letter from the given choices directly. \n"
+            prompt += 'Please select the correct answer from the options above.'
         prompt = prompt.rstrip()
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
@@ -87,27 +91,22 @@ class HawkVLPromptMixin:
         return msgs
 
     def _build_mcq_prompt(self, line, dataset: str) -> list[dict[str, str]]:
-        """change the prompt for MCQ dataset: use chinese prompt if the question contains chinese characters."""
-        MCQ_CN_PROMPT = '请直接回答选项字母。'
-        MCQ_EN_PROMPT = "Answer with the option's letter from the given choices directly."
-
+        """Multi-choice prompt: include options and require a single option letter.
+        Keep images before the text per Qwen3-VL convention.
+        """
         import string
-
         import pandas as pd
-
-        def cn_string(s):
-            import re
-
-            if re.search('[\u4e00-\u9fff]', s):
-                return True
-            return False
 
         tgt_path = self.dump_image(line, dataset)
         question = line['question']
         options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
-        options_prompt = 'Options:\n'
-        for key, item in options.items():
-            options_prompt += f'{key}. {item}\n'
+
+        options_prompt = ''
+        if len(options):
+            options_prompt = 'Options:\n'
+            for key, item in options.items():
+                options_prompt += f'{key}. {item}\n'
+
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
         prompt = ''
         if hint is not None:
@@ -115,8 +114,9 @@ class HawkVLPromptMixin:
         prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
-            prompt += MCQ_CN_PROMPT if cn_string(prompt) else MCQ_EN_PROMPT
+            prompt += 'Answer with the option letter only.'
         prompt = prompt.rstrip()
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
@@ -126,33 +126,33 @@ class HawkVLPromptMixin:
         return msgs
 
     def _build_yorn_prompt(self, line, dataset: str) -> list[dict[str, str]]:
-        """change the prompt for YORN dataset:"""
-        YORN_PROMPT = ' Please answer yes or no.'
-
+        """Yes/No prompt: require explicit yes or no answer only.
+        Keep images before the text.
+        """
         tgt_path = self.dump_image(line, dataset)
         question = line['question']
+        prompt = f'{question} Please answer yes or no.'
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
         else:
             msgs = [dict(type='image', value=tgt_path)]
-        msgs.append(dict(type='text', value=question))
-        assert msgs[-1]['type'] == 'text'
-        msgs[-1]['value'] += YORN_PROMPT
+        msgs.append(dict(type='text', value=prompt))
         return msgs
 
     def _build_vqa_prompt(self, line, dataset: str) -> list[dict[str, str]]:
-        """change the prompt for VQA dataset:"""
-        VQA_PROMPT = "\nAnswer the question using a single word or phrase."
-
+        """VQA prompt: concise question with preference for short answers.
+        Keep images before the text.
+        """
         tgt_path = self.dump_image(line, dataset)
         question = line['question']
+        prompt = question + '\nPlease answer concisely with short words or phrases when possible.'
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
         else:
             msgs = [dict(type='image', value=tgt_path)]
-        msgs.append(dict(type='text', value=question))
-        assert msgs[-1]['type'] == 'text'
-        msgs[-1]['value'] += VQA_PROMPT
+        msgs.append(dict(type='text', value=prompt))
         return msgs
