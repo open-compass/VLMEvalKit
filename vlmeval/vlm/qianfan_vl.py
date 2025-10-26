@@ -9,6 +9,7 @@ from ..smp import *
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+
 def build_transform(input_size):
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
     transform = T.Compose([
@@ -18,6 +19,7 @@ def build_transform(input_size):
         T.Normalize(mean=MEAN, std=STD)
     ])
     return transform
+
 
 def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_size):
     best_ratio_diff = float('inf')
@@ -33,6 +35,7 @@ def find_closest_aspect_ratio(aspect_ratio, target_ratios, width, height, image_
             if area > 0.5 * image_size * image_size * ratio[0] * ratio[1]:
                 best_ratio = ratio
     return best_ratio
+
 
 def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbnail=False):
     orig_width, orig_height = image.size
@@ -72,6 +75,7 @@ def dynamic_preprocess(image, min_num=1, max_num=12, image_size=448, use_thumbna
         processed_images.append(thumbnail_img)
     return processed_images
 
+
 def load_image(image_file, input_size=448, max_num=12):
     image = Image.open(image_file).convert('RGB')
     transform = build_transform(input_size=input_size)
@@ -79,6 +83,7 @@ def load_image(image_file, input_size=448, max_num=12):
     pixel_values = [transform(image) for image in images]
     pixel_values = torch.stack(pixel_values)
     return pixel_values
+
 
 class Qianfan_VL(BaseModel):
 
@@ -95,7 +100,7 @@ class Qianfan_VL(BaseModel):
         model = AutoModel.from_pretrained(
             model_path, device_map='cuda', trust_remote_code=True, torch_dtype='auto'
         ).eval()
-        
+
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, trust_remote_code=True
         )
@@ -116,4 +121,3 @@ class Qianfan_VL(BaseModel):
                 verbose=False
             )
         return response
-
