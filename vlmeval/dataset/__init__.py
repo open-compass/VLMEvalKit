@@ -87,6 +87,7 @@ from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 
 from .reasonmap_plus import ReasonMap_Plus
 
+
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
     # Each single dataset should not have a field named `SUB_DATASET`
