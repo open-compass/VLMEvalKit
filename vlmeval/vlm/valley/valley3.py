@@ -12,12 +12,15 @@ from ...smp import *
 GTHINKER_SYS_PROMPT = (
     "A conversation between User and Assistant. The user asks a question, and the Assistant solves it. "
     "The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. "
-    "The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., "
-    "<think> reasoning process here </think><answer> answer here </answer>. In the reasoning process enclosed within <think> </think>,"
-    " each specific visual cue is enclosed within <vcues_*>...</vcues_*>, where * indicates the index of the specific cue. "
-    "Before concluding the final answer, pause for a quick consistency check: verify whether the visual cues support the reasoning "
-    "and whether each step logically follows from what is seen. If correct, conclude the answer; otherwise, revise the visual cues and reasoning, then conclude."
+    "The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, "
+    "respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>. "
+    "In the reasoning process enclosed within <think> </think>, each specific visual cue is enclosed within "
+    "<vcues_*>...</vcues_*>, where * indicates the index of the specific cue. Before concluding the final answer, "
+    "pause for a quick consistency check: verify whether the visual cues support the reasoning "
+    "and whether each step logically follows from what is seen. If correct, conclude the answer; "
+    "otherwise, revise the visual cues and reasoning, then conclude."
 )
+
 
 class Valley3Chat(BaseModel):
     """
@@ -32,23 +35,24 @@ class Valley3Chat(BaseModel):
         - min_pixels (int): Minimum number of image pixels allowed after preprocessing. Default is 1280*28*28.
         - max_pixels (int): Maximum number of image pixels allowed after preprocessing. Default is 16384*28*28.
         - use_custom_prompt (bool): Whether to enable custom prompts tailored to specific benchmarks. These prompts
-            have been manually optimized for individual datasets. 
+            have been manually optimized for individual datasets.
         - use_custom_pixels (bool): Whether to enable benchmark-specific custom image pixel limits during
             preprocessing. Some datasets benefit from lower or higher resolution constraints. Default is True.
     """
 
-    def __init__(self,
-                model_path='bytedance-research/Valley3-8B-Instruct', # bytedance-research/Valley3-8B-Thinking'
-                max_new_tokens: int = 2048,
-                seed=42,
-                torch_dtype=torch.bfloat16,
-                min_pixels=1280 * 28 * 28,
-                max_pixels=16384 * 28 * 28,
-                use_custom_prompt=True,
-                use_custom_pixels_limit=True,
-                use_gthinker_thinking=False,
-                **kwargs
-        ):
+    def __init__(
+        self,
+        model_path='bytedance-research/Valley3',
+        max_new_tokens: int = 2048,
+        seed=42,
+        torch_dtype=torch.bfloat16,
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=True,
+        use_custom_pixels_limit=True,
+        use_gthinker_thinking=False,
+        **kwargs
+    ):
         set_seed(seed)
         self.torch_dtype = torch_dtype
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -69,7 +73,7 @@ class Valley3Chat(BaseModel):
         self._use_gthinker_thinking = use_gthinker_thinking
         self.max_pixels = max_pixels
         self.min_pixels = min_pixels
-        self.screen_parse=True
+        self.screen_parse = True
 
         kwargs_default = dict(do_sample=False, max_new_tokens=max_new_tokens, repetition_penalty=1.0) # noqa E501
         kwargs_default.update(kwargs)
@@ -82,10 +86,14 @@ class Valley3Chat(BaseModel):
         prompt = line['question']
         prompt += '\nAnswer the question using a single word or phrase.'
         return prompt
-    
+
     def build_yorn_prompt_gthinker(self, line, dataset=None):
         prompt = line['question']
-        prompt += '\nAnswer this question and the answer enclosed by <answer> </answer> should be a single word or phrase.'
+        prompt += (
+            '\nAnswer this question and the answer enclosed by '
+            '<answer> </answer> should be a single word or phrase.'
+        )
+
         return prompt
 
     def build_multi_choice_prompt(self, line, dataset=None):
@@ -106,7 +114,7 @@ class Valley3Chat(BaseModel):
             prompt += "\nAnswer with the option's letter from the given choices directly."
 
         return prompt
-    
+
     def build_multi_choice_prompt_gthinker(self, line, dataset=None):
         prompt = line['question']
         hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
@@ -122,9 +130,11 @@ class Valley3Chat(BaseModel):
             prompt += f'\n{key}. {item}'
 
         if len(options):
-            prompt += ("\nAnswer the multiple-choice question. " 
-                        "The answer enclosed by <answer> </answer> should be '$LETTER' (without quotes) where LETTER is one of the options. "
-                    )
+            prompt += (
+                "\nAnswer the multiple-choice question. "
+                "The answer enclosed by <answer> </answer> should be "
+                "'$LETTER' (without quotes) where LETTER is one of the options. "
+            )
 
         return prompt
 
@@ -132,7 +142,7 @@ class Valley3Chat(BaseModel):
         prompt = line['question']
         prompt += "\nProvide a step-by-step solution to the problem carefully.\nPlease think step by step."
         return prompt
-    
+
     def build_mmvet_prompt_gthinker(self, line, dataset=None):
         prompt = line['question']
         prompt += "\nProvide a step-by-step solution to the problem carefully.\nPlease think step by step."
@@ -150,27 +160,42 @@ class Valley3Chat(BaseModel):
         prompt = line["question"]
         type_ = line["question_type"]
         if type_ == "multi_choice":
-            prompt = prompt + "\nAnswer the multiple-choice question. The answer enclosed by <answer> </answer> should be '$LETTER' (without quotes) where LETTER is one of the options."
+            prompt = prompt + (
+                "\nAnswer the multiple-choice question. The answer enclosed by <answer> </answer> "
+                "should be '$LETTER' (without quotes) where LETTER is one of the options."
+            )
         elif type_ == "free_form":
-            prompt = prompt + "\nAnswer this question and the answer enclosed by <answer> </answer> should be single word or phrase as indicated by the hint."
+            prompt = prompt + (
+                "\nAnswer this question and the answer enclosed by <answer> </answer> "
+                "should be single word or phrase as indicated by the hint."
+            )
         else:
             raise AssertionError
         # return msgs
         return prompt
-    
+
     def build_mathvision_prompt_gthinker(self, line, dataset=None):
-        
+
         prompt = line["question"]
         hint = prompt.split("\n")[0]
-        if hint == "Hint: Please answer the question and provide the correct option letter, e.g., A, B, C, D, at the end.":
-            prompt = prompt.replace(hint, "") + "\nAnswer the multiple-choice question. The answer enclosed by <answer> </answer> should be '$LETTER' (without quotes) where LETTER is one of the options."
-            prompt = prompt.replace("(A)", "A.").replace("(B)", "B.").replace("(C)", "C.").replace("(D)", "D.").replace("(E)", "E.")
+        if hint == (
+            "Hint: Please answer the question and provide the correct option letter,"
+            " e.g., A, B, C, D, at the end."
+        ):
+            prompt = prompt.replace(hint, "") + (
+                "\nAnswer the multiple-choice question. The answer enclosed by <answer> </answer> "
+                "should be '$LETTER' (without quotes) where LETTER is one of the options."
+            )
+            prompt = prompt.replace("(A)", "A.").replace("(B)", "B.").replace("(C)", "C.")
+            prompt = prompt.replace("(D)", "D.").replace("(E)", "E.")
         elif hint == 'Hint: Please answer the question and provide the final answer at the end.':
-            prompt = prompt.replace(hint, "") + "\nAnswer this question and the answer enclosed by <answer> </answer> should be single word or phrase."
+            prompt = prompt.replace(hint, "") + (
+                "\nAnswer this question and the answer enclosed by <answer> </answer> should be single word or phrase."
+            )
         else:
             raise AssertionError
         return prompt
-    
+
     def build_ocr_cmmmu_prompt(self, line, dataset=None):
         prompt = line['question']
         prompt += "\nPlease try to answer the question with short words or phrases if possible."
@@ -183,81 +208,18 @@ class Valley3Chat(BaseModel):
 
     def build_ocrbench_prompt_gthinker(self, line, dataset=None):
         prompt = line["question"]
-        
+
         if line["category"] == "Handwritten Mathematical Expression Recognition":
-            prompt += "\nAnswer this question withou solving the math problem and the answer enclosed by <answer> </answer> should be the OCR result without missing any character."
+            prompt += (
+                "\nAnswer this question withou solving the math problem and the answer enclosed by <answer> </answer>"
+                " should be the OCR result without missing any character."
+            )
         else:
-            prompt += "\nAnswer this question and the answer enclosed by <answer> </answer> should be the OCR result without missing any character."
+            prompt += (
+                "\nAnswer this question and the answer enclosed by <answer> </answer> "
+                "should be the OCR result without missing any character."
+            )
         return prompt
-
-    def build_screenspot_prompt_gthinker(self, line, dataset=None):
-        GUI_TEMPLATE = {
-            "ScreenSpot": {
-                "template_zeroshot": "Based on the screenshot of the page, I give a text description and you give the bounding box coordinate of the region this sentence describes: {task}",
-                "template": "{task}",
-                "placeholders": ["task"]
-            },
-            "ScreenSpot_Pro": {
-                "template_zeroshot": "Based on the screenshot of the page, I give a text description and you give the bounding box coordinate of the region this sentence describes: {task}",
-                "template": "{task}",
-                "placeholders": ["task"]
-            },
-            "ScreenSpot_v2": {
-                "template_zeroshot": "Based on the screenshot of the page, I give a text description and you give the bounding box coordinate of the region this sentence describes: {task}",
-                "template": "{task}",
-                "placeholders": ["task"]
-            },
-            "MM_Mind2Web": {
-                "system_prompt": """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform a series of pyautogui actions to complete the task.
-
-        You have access to the following functions:
-        - {"name": "mobile.swipe", "description": "swipe on the screen", "parameters": {"type": "object", "properties": {"from_coord": {"type": "array", "items": {"type": "number"}, "description": "The starting coordinates of the swipe"}, "to_coord": {"type": "array", "items": {"type": "number"}, "description": "The ending coordinates of the swipe"}}, "required": ["from_coord", "to_coord"]}}
-        - {"name": "mobile.home", "description": "Press the home button"}
-        - {"name": "mobile.back", "description": "Press the back button"}""",
-                "template": """Please generate the next move according to the ui screenshot, instruction and previous actions.
-
-        Instruction:
-        {task}.
-
-        Previous actions:
-        {history}.""",
-                "placeholders": ["task", "history"]
-            }
-        }
-
-        def pile_action_history(history, max_num=4):
-            if len(history) > 0:
-                return '\n'.join(history[-max_num:])
-            else:
-                return 'None'
-
-        def format_nav_prompt(template, placeholders, **kwargs):
-            prompt = template
-            for placeholder in placeholders:
-                value = kwargs.get(placeholder, '')
-                prompt = prompt.replace(f"{{{placeholder}}}", str(value))
-            return prompt
-    
-        ds_basename = infer_dataset_basename(dataset)
-        ds = build_dataset(dataset, skeleton=True)
-        action_space = ds.get_action_space()
-        traj_dict = ds.get_trajectory(line)
-
-        prompt_config = GUI_TEMPLATE[ds_basename]
-        if 'history' in prompt_config["placeholders"]:
-            traj_dict['history'] = pile_action_history(traj_dict['history'])
-        prompt = format_nav_prompt(
-            (
-                "Please provide the bounding box coordinate of the region this sentence describes: <ref>{task}</ref>"  # noqa: E501
-                if self.screen_parse
-                else prompt_config["template"]
-            ),
-            prompt_config["placeholders"],
-            action_space=action_space,
-            **traj_dict,
-        )
-        return prompt
-
 
     def build_m3cot_prompt(self, line, dataset=None, use_cot=False):
         prompt = line['question']
@@ -272,7 +234,10 @@ class Valley3Chat(BaseModel):
         }
         for key, item in options.items():
             prompt += f'\n{key}. {item}'
-        prompt += "\nProvide a step-by-step solution to the problem, and conclude with 'the answer is' followed by the '$LETTER' (without quotes) where LETTER is one of the options."
+        prompt += (
+            "\nProvide a step-by-step solution to the problem, and conclude with 'the answer is' followed by "
+            "the '$LETTER' (without quotes) where LETTER is one of the options."
+        )
         return prompt
 
     def build_prompt(self, line, dataset=None):
@@ -280,9 +245,11 @@ class Valley3Chat(BaseModel):
         assert isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
 
-        # ========== thinking ========== # 
+        # ========== thinking ========== #
         if self._use_gthinker_thinking:
-            if any(dataset.startswith(prefix) for prefix in ('MMStar', 'AI2D_TEST', 'AI2D_TEST_NO_MASK', 'MMMU', 'MMBench', 'M3CoT', 'MME-RealWorld')):
+            if any(dataset.startswith(prefix) for prefix in (
+                'MMStar', 'AI2D_TEST', 'AI2D_TEST_NO_MASK', 'MMMU', 'MMBench', 'M3CoT', 'MME-RealWorld'
+            )):
                 prompt = self.build_multi_choice_prompt_gthinker(line, dataset)
             elif any(dataset.startswith(prefix) for prefix in ('HallusionBench',)):
                 prompt = self.build_yorn_prompt_gthinker(line, dataset)
@@ -302,13 +269,13 @@ class Valley3Chat(BaseModel):
                 prompt = self.build_multi_choice_prompt_gthinker(line, dataset)
             else:
                 prompt = line['question']
-        
+
         # ========== no_thinking ==========
         else:
             if dataset == 'MMVet':
-                prompt = self.build_mmvet_prompt(line, dataset) # Please think step by step
+                prompt = self.build_mmvet_prompt(line, dataset)
             elif dataset == 'OCRBench':
-                prompt = self.build_ocrbench_prompt(line, dataset) # Please think step by step
+                prompt = self.build_ocrbench_prompt(line, dataset)
             elif dataset == 'M3CoT_Test':
                 prompt = self.build_m3cot_prompt(line, dataset)
             elif any(dataset.startswith(prefix) for prefix in ('TextVQA', 'ChartQA', 'InfoVQA', 'DocVQA','CMMMU')):
@@ -336,7 +303,7 @@ class Valley3Chat(BaseModel):
     def post_process(self, generation_text, dataset=None):
         # print(f">>> RAW RESPONSE:\n{generation_text}")
         if dataset.startswith("MMVet"):
-            generation_text += "(Please only output the final score.)" 
+            generation_text += "(Please only output the final score.)"
             return generation_text
 
         if dataset.startswith("OCRBench"):
@@ -376,17 +343,18 @@ class Valley3Chat(BaseModel):
             elif item['type'] == 'image':
                 text += ' <image> '
                 images.append(item['value'])
-        
+
         if self._use_gthinker_thinking:
             gthinker_system_prompt = None
-            
+
             if any(dataset.startswith(prefix) for prefix in ('MMBench', 'MMMU', 'AI2D')):
                 gthinker_system_prompt = GTHINKER_SYS_PROMPT
-            elif any(dataset.startswith(prefix) for prefix in ('MMStar', 'MathVista', 'HallusionBench')): 
-                gthinker_system_prompt = GTHINKER_SYS_PROMPT.replace("<think>", "<reason>").replace("</think>", "</reason>")
+            elif any(dataset.startswith(prefix) for prefix in ('MMStar', 'MathVista', 'HallusionBench')):
+                gthinker_system_prompt = \
+                    GTHINKER_SYS_PROMPT.replace("<think>", "<reason>").replace("</think>", "</reason>")
             else:
                 gthinker_system_prompt = GTHINKER_SYS_PROMPT
-            
+
             if gthinker_system_prompt is not None:
                 messages.append({"role": 'system', "content": gthinker_system_prompt})
 
@@ -435,13 +403,10 @@ class Valley3Chat(BaseModel):
             )
         input_token_len = data_dict["input_ids"].shape[1]
 
-               
-        sequences = output_ids.sequences.clone()
-        sequences[sequences < 0] = 0
-        full_seq = self.processor.batch_decode(sequences)[0]
+        # sequences = output_ids.sequences.clone()
+        # sequences[sequences < 0] = 0
+        # full_seq = self.processor.batch_decode(sequences)[0]
         # print(f">>> FULL_SEQ: {full_seq}")
-        
-
 
         generation_text = self.processor.batch_decode(output_ids.sequences[:, input_token_len:])[0]
         generation_text = generation_text.replace("<|im_end|>", "")
