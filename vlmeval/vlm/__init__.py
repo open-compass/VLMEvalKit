@@ -90,7 +90,7 @@ from .h2ovl_mississippi import H2OVLChat
 from .falcon_vlm import Falcon2VLM
 from .smolvlm import SmolVLM, SmolVLM2
 from .sail_vl import SailVL
-from .valley import Valley2Chat
+from .valley import Valley2Chat, Valley3Chat
 from .ross import Ross
 from .ola import Ola
 from .x_vl import X_VL_HF
