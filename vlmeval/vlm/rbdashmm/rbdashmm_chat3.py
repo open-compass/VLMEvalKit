@@ -70,26 +70,28 @@ class RBdashMMChat3(BaseModel):
 
     def build_prompt(self, line, dataset=None):
         tgt_path = self.dump_image(line, dataset)
-        if dataset is not None and listinstr(['MMBench_V11'], dataset):  # cot0, v1: self.system_prompt = None
+        if dataset is not None and listinstr(['MMBench_V11'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
         elif dataset is not None and listinstr(['MMStar'], dataset):
-            prompt = build_multi_choice_prompt(line, dataset)  # cot0, v1: self.system_prompt = None
+            prompt = build_multi_choice_prompt(line, dataset)
         elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):
-            prompt = build_multi_choice_prompt(line, dataset)  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+            prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):
             prompt = line['question']
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['OCRBench'], dataset):  # cot0, v1: self.system_prompt = None
-            prompt = line['question'] + '\nAnswer the question using a single word or phrase. The image is guaranteed to contain the correct answer. Please provide the most likely answer — do not answer "No." Let us think step by step.'
-        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):  # cot0, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['OCRBench'], dataset):
+            prompt = line['question'] + '\nAnswer the question using a single word or phrase. \
+            The image is guaranteed to contain the correct answer. Please provide the most likely \
+            answer — do not answer "No." Let us think step by step.'
+        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):  # cot自定义, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['HallusionBench'], dataset):
             self.cot_prompt = None
             prompt = build_yesorno_cot_prompt(line, line['question'], self.cot_prompt)
-        elif dataset is not None and listinstr(['MMVet'], dataset):  # cot0 v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['MMVet'], dataset):
             prompt = line['question']
 
         message = [dict(type='text', value=prompt)]
@@ -116,15 +118,15 @@ class RBdashMMChat3(BaseModel):
             self.max_num = 24
         else:
             self.max_num = 6
-    
+
     @torch.no_grad()
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)
         image_num = len([x for x in message if x['type'] == 'image'])
         max_num = max(1, min(self.max_num, self.total_max_num // image_num))
-        
+
         prompt = reorganize_prompt(message, image_num, dataset=dataset)
-        
+
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             num_patches_list, pixel_values_list = [], []
@@ -156,8 +158,8 @@ class RBdashMMChat3(BaseModel):
             self.system_prompt = None
 
         if self.system_prompt is not None:
-                self.model.system_message = self.system_prompt
-                
+            self.model.system_message = self.system_prompt
+
         response = self.model.chat(
             self.tokenizer,
             pixel_values=pixel_values,
@@ -209,30 +211,32 @@ class RBdashMMChat3_5(BaseModel):
 
     def build_prompt(self, line, dataset=None):
         tgt_path = self.dump_image(line, dataset)
-        if dataset is not None and listinstr(['MMBench_V11'], dataset):  # cot1, v1: self.system_prompt = R1_SYSTEM_PROMPT
+        if dataset is not None and listinstr(['MMBench_V11'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MMStar'], dataset):  # cot1, v1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MMStar'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):
             prompt = line['question']
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['OCRBench'], dataset):  # cot0, v1: self.system_prompt = None
-            prompt = line['question'] + '\nAnswer the question using a single word or phrase. The image is guaranteed to contain the correct answer. Please provide the most likely answer — do not answer "No." Let us think step by step.'
-        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):  # cot0, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['OCRBench'], dataset):
+            prompt = line['question'] + '\nAnswer the question using a single word or phrase. \
+            The image is guaranteed to contain the correct answer. Please provide the most likely \
+            answer — do not answer "No." Let us think step by step.'
+        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):  # cot自定义, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['HallusionBench'], dataset):
             self.cot_prompt = None
             prompt = build_yesorno_cot_prompt(line, line['question'], self.cot_prompt)
-        elif dataset is not None and listinstr(['MMVet'], dataset):  # cot0 v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['MMVet'], dataset):
             prompt = line['question']
 
         message = [dict(type='text', value=prompt)]
@@ -259,15 +263,15 @@ class RBdashMMChat3_5(BaseModel):
             self.max_num = 12
         else:
             self.max_num = 6
-    
+
     @torch.no_grad()
     def generate_inner(self, message, dataset=None):
         self.set_max_num(dataset)
         image_num = len([x for x in message if x['type'] == 'image'])
         max_num = max(1, min(self.max_num, self.total_max_num // image_num))
-        
+
         prompt = reorganize_prompt(message, image_num, dataset=dataset)
-        
+
         if image_num > 1:
             image_path = [x['value'] for x in message if x['type'] == 'image']
             num_patches_list, pixel_values_list = [], []
@@ -299,8 +303,8 @@ class RBdashMMChat3_5(BaseModel):
             self.system_prompt = None
 
         if self.system_prompt is not None:
-                self.model.system_message = self.system_prompt
-                
+            self.model.system_message = self.system_prompt
+
         response = self.model.chat(
             self.tokenizer,
             pixel_values=pixel_values,

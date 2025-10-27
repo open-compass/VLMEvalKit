@@ -20,26 +20,28 @@ class RBdashMMChat3_PromptUtil:
                                           reorganize_prompt)
         tgt_path = self.dump_image(line, dataset)
         max_num = self.get_max_num(dataset)
-        if dataset is not None and listinstr(['MMBench_V11'], dataset):  # cot0, v1: self.system_prompt = None
+        if dataset is not None and listinstr(['MMBench_V11'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
         elif dataset is not None and listinstr(['MMStar'], dataset):
-            prompt = build_multi_choice_prompt(line, dataset)  # cot0, v1: self.system_prompt = None
+            prompt = build_multi_choice_prompt(line, dataset)
         elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):
-            prompt = build_multi_choice_prompt(line, dataset)  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+            prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):
             prompt = line['question']
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['OCRBench'], dataset):  # cot0, v1: self.system_prompt = None
-            prompt = line['question'] + '\nAnswer the question using a single word or phrase. The image is guaranteed to contain the correct answer. Please provide the most likely answer — do not answer "No." Let us think step by step.'
-        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):  # cot0, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['OCRBench'], dataset):
+            prompt = line['question'] + '\nAnswer the question using a single word or phrase. \
+            The image is guaranteed to contain the correct answer. Please provide the most likely \
+            answer — do not answer "No." Let us think step by step.'
+        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):  # cot自定义, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['HallusionBench'], dataset):
             self.cot_prompt = None
             prompt = build_yesorno_cot_prompt(line, line['question'], self.cot_prompt)
-        elif dataset is not None and listinstr(['MMVet'], dataset):  # cot0 v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['MMVet'], dataset):
             prompt = line['question'] + "\nPlease first think and then answer the question."
 
         message = [dict(type='text', value=prompt)]
@@ -47,7 +49,7 @@ class RBdashMMChat3_PromptUtil:
         max_num = max(1, min(max_num, 64 // image_num))
 
         message.extend([dict(type='image', value=s, max_dynamic_patch=max_num) for s in tgt_path])
-        
+
         # reorganize_prompt
         prompt = reorganize_prompt(message, image_num, dataset=dataset)
         prompt.replace('<image>', '<IMAGE_TOKEN>')
@@ -82,11 +84,11 @@ class RBdashMMChat3_PromptUtil:
 class RBdashMMChat3_5_PromptUtil:
     def dump_image(self, line, dataset):
         return self.dump_image_func(line)
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         return True
-    
+
     def build_prompt(self, line, dataset=None):
         from ..vlm.rbdashmm.utils import (build_multi_choice_prompt,
                                           build_mcq_cot_prompt,
@@ -95,30 +97,32 @@ class RBdashMMChat3_5_PromptUtil:
                                           reorganize_prompt)
         tgt_path = self.dump_image(line, dataset)
         max_num = self.get_max_num(dataset)
-        if dataset is not None and listinstr(['MMBench_V11'], dataset):  # cot1, v1: self.system_prompt = R1_SYSTEM_PROMPT
+        if dataset is not None and listinstr(['MMBench_V11'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MMStar'], dataset):  # cot1, v1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MMStar'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MMMU_DEV_VAL'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_mcq_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):  # cot1, r1: self.system_prompt = R1_SYSTEM_PROMPT
+        elif dataset is not None and listinstr(['MathVista_MINI'], dataset):
             prompt = line['question']
             self.cot_prompt = 'Please answer the question and put the final answer within \\boxed{}.'
             prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
-        elif dataset is not None and listinstr(['OCRBench'], dataset):  # cot0, v1: self.system_prompt = None
-            prompt = line['question'] + '\nAnswer the question using a single word or phrase. The image is guaranteed to contain the correct answer. Please provide the most likely answer — do not answer "No." Let us think step by step.'
-        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):  # cot0, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['OCRBench'], dataset):
+            prompt = line['question'] + '\nAnswer the question using a single word or phrase. \
+            The image is guaranteed to contain the correct answer. Please provide the most likely \
+            answer — do not answer "No." Let us think step by step.'
+        elif dataset is not None and listinstr(['AI2D_TEST'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
-        elif dataset is not None and listinstr(['HallusionBench'], dataset):  # cot自定义, v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['HallusionBench'], dataset):
             self.cot_prompt = None
             prompt = build_yesorno_cot_prompt(line, line['question'], self.cot_prompt)
-        elif dataset is not None and listinstr(['MMVet'], dataset):  # cot0 v1: self.system_prompt = None
+        elif dataset is not None and listinstr(['MMVet'], dataset):
             prompt = line['question']
 
         message = [dict(type='text', value=prompt)]
@@ -126,7 +130,7 @@ class RBdashMMChat3_5_PromptUtil:
         max_num = max(1, min(max_num, 64 // image_num))
 
         message.extend([dict(type='image', value=s, max_dynamic_patch=max_num) for s in tgt_path])
-        
+
         # reorganize_prompt
         prompt = reorganize_prompt(message, image_num, dataset=dataset)
         prompt.replace('<image>', '<IMAGE_TOKEN>')
@@ -156,6 +160,7 @@ class RBdashMMChat3_5_PromptUtil:
             return 24
         else:
             return 6
+
 
 R1_SYSTEM_PROMPT = """
 You are an AI assistant that rigorously follows this response protocol:
@@ -215,12 +220,12 @@ class RBdashMMChat3Wrapper(BaseAPI):
         self.temperature = 0.0
         if hasattr(self, 'custom_prompt'):
             self.logger.info(f'using custom prompt {self.custom_prompt}')
-        
+
         self.temperature = temperature
         self.logger.info(f'Init temperature: {self.temperature}')
-        
+
         self.system_prompt = None
-    
+
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
             self.prompt_map[self.custom_prompt].dump_image_func = dump_image_func
@@ -229,7 +234,7 @@ class RBdashMMChat3Wrapper(BaseAPI):
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         return True
-    
+
     def build_prompt(self, line, dataset=None):
         if self.custom_prompt in self.prompt_map:
             return self.prompt_map[self.custom_prompt].build_prompt(line, dataset)
@@ -268,7 +273,7 @@ class RBdashMMChat3Wrapper(BaseAPI):
 
         if self.system_prompt is not None:
             input_msgs.append(dict(role='system', content=self.system_prompt))
-        else:       
+        else:
             input_msgs.append(dict(role='system', content="你是书生·万象，英文名是InternVL，是由上海人工智能实验室、清华大学及多家合作单位联合开发的多模态大语言模型。"))
 
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
@@ -364,12 +369,12 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
         self.temperature = 0.0
         if hasattr(self, 'custom_prompt'):
             self.logger.info(f'using custom prompt {self.custom_prompt}')
-        
+
         self.temperature = temperature
         self.logger.info(f'Init temperature: {self.temperature}')
-        
+
         self.system_prompt = None
-    
+
     def set_dump_image(self, dump_image_func):
         if self.custom_prompt in self.prompt_map:
             self.prompt_map[self.custom_prompt].dump_image_func = dump_image_func
@@ -378,7 +383,7 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         return True
-    
+
     def build_prompt(self, line, dataset=None):
         if self.custom_prompt in self.prompt_map:
             return self.prompt_map[self.custom_prompt].build_prompt(line, dataset)
@@ -417,7 +422,7 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
 
         if self.system_prompt is not None:
             input_msgs.append(dict(role='system', content=self.system_prompt))
-        else:       
+        else:
             input_msgs.append(dict(role='system', content="你是书生·万象，英文名是InternVL，是由上海人工智能实验室、清华大学及多家合作单位联合开发的多模态大语言模型。"))
 
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
