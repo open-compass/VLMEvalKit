@@ -29,5 +29,5 @@ __all__ = [
     'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API', 'JTVLChatAPI', 'JTVLChatAPI_Mini',
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
-    'RBdashMMChat3_API', 'RBdashChat3_5_API',
+    'RBdashMMChat3_API', 'RBdashChat3_5_API'
 ]

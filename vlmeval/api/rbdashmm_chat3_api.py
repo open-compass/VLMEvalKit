@@ -13,7 +13,7 @@ class RBdashMMChat3_PromptUtil:
         return True
 
     def build_prompt(self, line, dataset=None):
-        from ..vlm.rbdashmm.utils import (build_multi_choice_prompt,
+        from ..vlm.internvl.utils import (build_multi_choice_prompt,
                                           build_mcq_cot_prompt,
                                           build_qa_cot_prompt,
                                           build_yesorno_cot_prompt,
@@ -90,7 +90,7 @@ class RBdashMMChat3_5_PromptUtil:
         return True
 
     def build_prompt(self, line, dataset=None):
-        from ..vlm.rbdashmm.utils import (build_multi_choice_prompt,
+        from ..vlm.internvl.utils import (build_multi_choice_prompt,
                                           build_mcq_cot_prompt,
                                           build_qa_cot_prompt,
                                           build_yesorno_cot_prompt,
