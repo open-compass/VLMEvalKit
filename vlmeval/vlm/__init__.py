@@ -110,5 +110,6 @@ from .qtunevl import (
     QTuneVLChat,
 )
 from .keye_vlm import KeyeChat
+from .qianfan_vl import Qianfan_VL
 from .logics import Logics_Thinking
 from .cosmos import Cosmos
