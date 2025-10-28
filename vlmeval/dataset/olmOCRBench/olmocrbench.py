@@ -9,7 +9,6 @@ from tqdm import tqdm
 import torch.distributed as dist
 from ..image_base import ImageBaseDataset
 from ...smp import *
-from .evaluator import evaluator
 
 
 class olmOCRBench(ImageBaseDataset):
@@ -43,5 +42,13 @@ class olmOCRBench(ImageBaseDataset):
         return msg
 
     def evaluate(self, eval_file, **judge_kwargs):
+        try:
+            from .evaluator import evaluator
+        except ImportError as e:
+            logging.critical(
+                "Please follow the requirements (see vlmeval/dataset/olmOCRBench/eval_req.txt) \
+                             to install dependency package for chartmimic evaluation."
+            )
+            raise e
         tsv_path = self.data_path
         evaluator(tsv_path, eval_file)

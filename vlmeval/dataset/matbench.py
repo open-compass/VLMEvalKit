@@ -173,7 +173,15 @@ class MATBench(ImageBaseDataset):
         image_path = self.dump_image(line)[0]
         msg = [
             dict(type='image', value=image_path),
-            dict(type='text', value=input_question + "\nPlease provide a brief answer directly.")
+            dict(
+                type='text',
+                value=(
+                    input_question
+                    + '\n'
+                    + "Answer the question directly. "
+                    "The answer should be very brief."
+                ),
+            ),
         ]
         return msg
 
