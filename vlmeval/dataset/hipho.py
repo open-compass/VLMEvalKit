@@ -8,6 +8,8 @@ import warnings
 import time
 import threading
 import datetime
+import base64
+from io import BytesIO
 from functools import partial
 import multiprocessing as mp
 
@@ -21,6 +23,14 @@ from ..utils import track_progress_rich
 
 # 线程锁用于同步输出
 output_lock = threading.Lock()
+
+# Judge模型配置参数
+JUDGE_MODEL_CONFIG = {
+    'timeout': 600,      # API级别超时时间（秒）
+    'retry': 3,          # 重试次数
+    'max_tokens': 4096,  # 限制输出长度，减少响应时间
+    'verbose': False,    # 关闭verbose模式，避免打印完整响应
+}
 
 def safe_print(*args, **kwargs):
     """线程安全的打印函数"""
@@ -64,7 +74,7 @@ class HiPhODataset(ImageBaseDataset):
     """
     TYPE = 'VQA'  # 统一使用VQA类型
     
-    # 数据集URL映射 - 指向HuggingFace数据集
+    # 数据集URL映射 - 指向HuggingFace数据集的不同split
     DATASET_URL = {
         'IPhO_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
         'IPhO_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
@@ -124,21 +134,21 @@ class HiPhODataset(ImageBaseDataset):
         if 'index' not in data.columns:
             data['index'] = range(len(data))
         
-        # 处理图像数据 - HuggingFace数据集中image_question包含base64数据
+        # 处理图像数据 - 直接使用base64数据
         if 'image_question' in data.columns:
             safe_print(f"🖼️  发现image_question列，处理base64图像数据")
             
             # 使用长度超过64的占位符来表示无图像
             no_image_placeholder = 'NO_IMAGE_PLACEHOLDER_' + 'x' * 50
             
-            def process_hf_base64_image(base64_data):
+            def process_base64_image(base64_data):
                 if pd.isna(base64_data) or not str(base64_data).strip() or len(str(base64_data).strip()) < 100:
                     return no_image_placeholder
-                # HuggingFace中的image_question包含base64数据，直接返回用于VLMEvalKit处理
+                # 直接返回base64数据用于VLMEvalKit处理
                 return str(base64_data)
             
             # 创建image字段映射base64数据
-            data['image'] = data['image_question'].apply(process_hf_base64_image)
+            data['image'] = data['image_question'].apply(process_base64_image)
             
             # 统计图像数量
             image_count = len(data[~data['image'].str.startswith('NO_IMAGE_PLACEHOLDER_')])
@@ -310,10 +320,7 @@ class HiPhODataset(ImageBaseDataset):
                 try:
                     model_kwargs = {
                         'model': judge_model_name,
-                        'timeout': 600,  # 设置600秒API级别超时
-                        'retry': 3,      # 设置重试次数
-                        'max_tokens': 4096,  # 限制输出长度，减少响应时间
-                        'verbose': False,  # 🔥 关键修复：关闭verbose模式，避免打印完整响应
+                        **JUDGE_MODEL_CONFIG,  # 使用顶部定义的配置参数
                         **{k: v for k, v in judge_kwargs.items() if k not in ['model', 'nproc']}
                     }
                     test_model = build_judge(**model_kwargs)

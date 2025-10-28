@@ -34,6 +34,16 @@ from sympy.parsing import sympy_parser
 from math_verify import (ExprExtractionConfig, LatexExtractionConfig, parse, verify)
 import threading
 
+# 模型配置参数
+VERIFIER_MODEL_CONFIG = {
+    'use_model': False,
+    'model_name': 'gemini-2.5-flash',  # 可选: 'xVerify-8B-SFT'
+    'api_key': 'sk-wzFqSfCL1oyvvv2NJQ8NBlL5cAr6q9rlxxPy1bBFPoiPYDcV',
+    'base_url': 'http://35.220.164.252:3888/v1',  # 可选: 'https://sd1dpiav6rmou3g0ssa40.apigateway-cn-beijing.volceapi.com/v1'
+    'max_tokens': 16384,
+    'temperature': 0.1
+}
+
 
 def timeout(timeout_seconds: int = 10):
     if os.name == "posix":
@@ -957,15 +967,12 @@ def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_
     return decorator
 
 class Model_args:
-    use_model: bool = False
-    # model_name = 'xVerify-8B-SFT'  # Model name
-    model_name = 'gemini-2.5-flash'
-    # api_key = 'a269910f-c0fd-45c6-9511-9410e8404905' # API key used to access the model via API, if not available, set to None
-    api_key = 'sk-wzFqSfCL1oyvvv2NJQ8NBlL5cAr6q9rlxxPy1bBFPoiPYDcV'
-    # base_url = 'https://sd1dpiav6rmou3g0ssa40.apigateway-cn-beijing.volceapi.com/v1'  # Anonymized model path or URL
-    base_url = 'http://35.220.164.252:3888/v1'
-    max_tokens = 16384
-    temperature = 0.1
+    use_model: bool = VERIFIER_MODEL_CONFIG['use_model']
+    model_name = VERIFIER_MODEL_CONFIG['model_name']
+    api_key = VERIFIER_MODEL_CONFIG['api_key']
+    base_url = VERIFIER_MODEL_CONFIG['base_url']
+    max_tokens = VERIFIER_MODEL_CONFIG['max_tokens']
+    temperature = VERIFIER_MODEL_CONFIG['temperature']
 
 def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str, model_args: Model_args, debug: bool = True, log_callback=None) -> bool:
     def safe_debug_log(message):
