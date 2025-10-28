@@ -37,9 +37,9 @@ import threading
 # 模型配置参数
 VERIFIER_MODEL_CONFIG = {
     'use_model': False,
-    'model_name': 'gemini-2.5-flash',  # 可选: 'xVerify-8B-SFT'
-    'api_key': 'sk-wzFqSfCL1oyvvv2NJQ8NBlL5cAr6q9rlxxPy1bBFPoiPYDcV',
-    'base_url': 'http://35.220.164.252:3888/v1',  # 可选: 'https://sd1dpiav6rmou3g0ssa40.apigateway-cn-beijing.volceapi.com/v1'
+    'model_name': '',  # 可选: 'xVerify-8B-SFT'
+    'api_key': '',
+    'base_url': '',  # 可选: 'https://sd1dpiav6rmou3g0ssa40.apigateway-cn-beijing.volceapi.com/v1'
     'max_tokens': 16384,
     'temperature': 0.1
 }
