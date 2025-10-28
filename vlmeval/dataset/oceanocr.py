@@ -2,7 +2,6 @@ import json
 import os
 import copy
 import pandas as pd
-import tempfile
 import base64
 import numpy as np
 from tqdm import tqdm
@@ -14,11 +13,6 @@ import glob
 import random
 import re
 from PIL import Image
-import nltk
-from nltk.metrics import precision, recall, f_measure
-import jieba
-from nltk.translate import meteor_score
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 def contain_chinese_string(text):
@@ -222,5 +216,17 @@ class OceanOCRBench(ImageBaseDataset):
         return msg
 
     def evaluate(self, eval_file, **judge_kwargs):
+        try:
+            import nltk
+            from nltk.metrics import precision, recall, f_measure
+            import jieba
+            from nltk.translate import meteor_score
+            from concurrent.futures import ProcessPoolExecutor, as_completed
+        except ImportError as e:
+            logging.critical(
+                "Please follow the requirements (see vlmeval/dataset/utils/oceanoctbench/eval_req.txt) \
+                             to install dependency package for chartmimic evaluation."
+            )
+            raise e
         tsv_path = self.data_path
         oceanocr_evaluate(tsv_path, eval_file)

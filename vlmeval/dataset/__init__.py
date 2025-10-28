@@ -215,7 +215,8 @@ IMAGE_DATASET = [
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset,
-    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, olmOCRBench, OceanOCRBench, MATBench
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro,
+    olmOCRBench, OceanOCRBench, MATBench
 ]
 
 VIDEO_DATASET = [
