@@ -2,6 +2,34 @@ import os
 import requests
 from vlmeval.api.base import BaseAPI
 from vlmeval.smp import *
+import re
+
+
+def process_prediction_text(text):
+    if not isinstance(text, str):
+        return text
+
+    # 首先判断是否有 \boxed{} 格式
+    boxed_pattern = r'\\boxed\{([^\}]*)\}'
+    boxed_match = re.search(boxed_pattern, text)
+
+    if boxed_match and boxed_match.group(1).strip():
+        # 如果 boxed 里有内容，返回其中的内容
+        return boxed_match.group(1).strip()
+
+    # 如果没有 boxed 内容，检查是否有 <think> 标签
+    redacted_pattern = r'<think>.*?</think>'
+
+    if re.search(redacted_pattern, text, re.DOTALL):
+        # 删除 <think> 和 </think> 及其内容
+        result = re.sub(redacted_pattern, '', text, flags=re.DOTALL)
+        return result.strip()
+
+    # 如果文本长度超出最大限制，取文本后面30000个字符
+    if len(text) > 32767:
+        return text[-30000:]
+    # 如果都没有，返回原文本
+    return text
 
 
 class RBdashMMChat3_PromptUtil:
@@ -232,6 +260,7 @@ class RBdashMMChat3Wrapper(BaseAPI):
         try:
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
+            answer = process_prediction_text(answer)
         except:
             pass
         return ret_code, answer, response
