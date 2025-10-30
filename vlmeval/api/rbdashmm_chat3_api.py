@@ -6,15 +6,6 @@ import re
 
 
 def process_prediction_text(text):
-    """
-    处理预测文本的通用函数
-    
-    Args:
-        text: 输入的一段文本字符串
-        
-    Returns:
-        处理后的字符串
-    """
     if not isinstance(text, str):
         return text
 
