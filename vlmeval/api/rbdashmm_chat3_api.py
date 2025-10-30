@@ -6,29 +6,51 @@ import re
 
 
 def process_prediction_text(text):
+    """
+    处理预测文本的通用函数
+    
+    Args:
+        text: 输入的一段文本字符串
+        
+    Returns:
+        处理后的字符串
+    """
     if not isinstance(text, str):
         return text
 
-    # 首先判断是否有 \boxed{} 格式
-    boxed_pattern = r'\\boxed\{([^\}]*)\}'
-    boxed_match = re.search(boxed_pattern, text)
+    # ====== 处理 \boxed{}（支持嵌套）======
+    if "\\boxed{" in text:
+        start = text.find("\\boxed{")
+        i = start + len("\\boxed{")
+        brace_count = 1
+        content_chars = []
 
-    if boxed_match and boxed_match.group(1).strip():
-        # 如果 boxed 里有内容，返回其中的内容
-        return boxed_match.group(1).strip()
+        while i < len(text) and brace_count > 0:
+            ch = text[i]
+            if ch == "{":
+                brace_count += 1
+            elif ch == "}":
+                brace_count -= 1
+            if brace_count > 0:  # 在外层 } 之前才加入字符
+                content_chars.append(ch)
+            i += 1
 
-    # 如果没有 boxed 内容，检查是否有 <think> 标签
+        if content_chars:
+            inner = "".join(content_chars).strip()
+            if inner:
+                return inner
+
+    # ====== 删除 <think> 标签内容 ======
     redacted_pattern = r'<think>.*?</think>'
-
     if re.search(redacted_pattern, text, re.DOTALL):
-        # 删除 <think> 和 </think> 及其内容
         result = re.sub(redacted_pattern, '', text, flags=re.DOTALL)
         return result.strip()
 
-    # 如果文本长度超出最大限制，取文本后面30000个字符
+    # ====== 长文本截断 ======
     if len(text) > 32767:
         return text[-30000:]
-    # 如果都没有，返回原文本
+
+    # 默认返回
     return text
 
 
