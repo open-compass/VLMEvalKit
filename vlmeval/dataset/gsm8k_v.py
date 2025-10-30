@@ -12,7 +12,7 @@ class GSM8KVDataset(ImageBaseDataset):
         'GSM8K-V': "https://huggingface.co/datasets/Leoyfan/GSM8K-V-VLMEvalKit/resolve/main/GSM8K-V.tsv",
     }
     DATASET_MD5 = {
-        'GSM8K-V': "8749d831a34886a9a5d12069edce0edf",
+        'GSM8K-V': "f06a8a5390c1cb41d2dc69edfb1fd2e7",
     }
 
     def __init__(self, dataset='GSM8K-V', **kwargs):
