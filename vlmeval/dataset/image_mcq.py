@@ -858,7 +858,7 @@ class MMERealWorld(ImageMCQDataset):
     TYPE = 'MMERealWorld'
 
     DATASET_MD5 = {
-        'MME-RealWorld': '271c33ec814c39533c467ec6fb8a6f36',
+        'MME-RealWorld': 'fd341132362fc41e707cb37ee6e4dcda',
         'MME-RealWorld-Lite': '4c17057d7d3b6c4a0d4397c3dae0881c',
         'MME-RealWorld-CN': 'daaa763d52a760a38606d5dedb3fe444',
     }
@@ -1034,13 +1034,13 @@ class MMERealWorld(ImageMCQDataset):
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]
                 pred = data.loc[data['index'] == idx, 'prediction'].values[0]
 
-                match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
-                cot = match_cot.group(1).strip() if match_cot else pred
+                # match_cot = re.search(r"<think>(.*?)</think>", pred, re.DOTALL)
+                # cot = match_cot.group(1).strip() if match_cot else pred
 
-                target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
-                iou = self.evaluate_box_iou(cot, target_instances)
+                # target_instances = ast.literal_eval(data.loc[data['index'] == idx, 'target_instances'].values[0])
+                # iou = self.evaluate_box_iou(cot, target_instances)
 
-                data.loc[data['index'] == idx, 'iou'] = iou
+                # data.loc[data['index'] == idx, 'iou'] = iou
 
                 match_pred = re.search(r"<answer>(.*?)</answer>", pred, re.DOTALL)
                 pred = match_pred.group(1).strip().upper() if match_pred else pred
