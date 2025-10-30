@@ -67,6 +67,7 @@ from .emma import EMMADataset
 from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
+from .gsm8k_v import GSM8KVDataset
 from .creation import CreationMMBenchDataset
 from .mmalignbench import MMAlignBench
 from .utils import *
@@ -85,11 +86,6 @@ from .mmhelix import MMHELIX
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
-from .olmOCRBench.olmocrbench import olmOCRBench
-from .oceanocr import OceanOCRBench
-from .matbench import MATBench
-
-from .reasonmap_plus import ReasonMap_Plus
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -206,7 +202,7 @@ IMAGE_DATASET = [
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
-    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz,
+    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
