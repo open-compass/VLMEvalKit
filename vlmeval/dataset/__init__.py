@@ -67,7 +67,6 @@ from .emma import EMMADataset
 from .wildvision import WildVision
 from .mmmath import MMMath
 from .dynamath import Dynamath
-from .gsm8k_v import GSM8KVDataset
 from .creation import CreationMMBenchDataset
 from .mmalignbench import MMAlignBench
 from .utils import *
@@ -86,6 +85,12 @@ from .mmhelix import MMHELIX
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+from .olmOCRBench.olmocrbench import olmOCRBench
+from .oceanocr import OceanOCRBench
+from .matbench import MATBench
+
+from .reasonmap_plus import ReasonMap_Plus
+from .gsm8k_v import GSM8KVDataset
 
 
 class ConcatDataset(ImageBaseDataset):

@@ -22,10 +22,10 @@ class GSM8KVDataset(ImageBaseDataset):
             Default: visual_implicit
         """
         import os
-        
+
         # Get mode from environment variable
         mode = os.environ.get('GSM8K_V_MODE', 'visual_implicit')
-        
+
         if mode == 'all':
             self.mode = 'all'
             self.modes_to_eval = ['text_only', 'visual_explicit', 'visual_implicit']
@@ -34,9 +34,9 @@ class GSM8KVDataset(ImageBaseDataset):
                 f"Invalid GSM8K_V_MODE: {mode}. Must be one of: text_only, visual_explicit, visual_implicit, all"
             self.mode = mode
             self.modes_to_eval = [mode]
-        
+
         super().__init__(dataset=dataset, **kwargs)
-        
+
         if self.mode == 'all':
             original_data = self.data.copy()
             expanded_data = []
@@ -50,20 +50,18 @@ class GSM8KVDataset(ImageBaseDataset):
     @classmethod
     def supported_datasets(cls):
         return ['GSM8K-V']
-    
+
     def dump_image(self, line):
-        
-        from ..smp import toliststr
         if 'image_path' in line:
             image_path = line['image_path']
             if isinstance(image_path, (list, tuple)) and len(image_path) > 0:
                 return list(image_path)
             elif isinstance(image_path, str) and image_path.strip():
                 return [image_path]
-        
+
         if 'image' not in line or pd.isna(line['image']) or line['image'] == '':
             return []
-        
+
         from ..smp import decode_base64_to_image_file
         import uuid
         image_list = toliststr(line['image'])
@@ -73,11 +71,10 @@ class GSM8KVDataset(ImageBaseDataset):
                 tgt_path = f"/tmp/{uuid.uuid4()}.png"
                 decode_base64_to_image_file(img_b64, tgt_path)
                 tgt_paths.append(tgt_path)
-        
+
         return tgt_paths
 
     def build_prompt(self, line):
-  
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -98,13 +95,13 @@ class GSM8KVDataset(ImageBaseDataset):
                 'Please think step by step. After your reasoning, output your final answer on a new line '
                 'starting with "FINAL ANSWER: " followed by the number only.'
             ).format(question)
-            
+
             from PIL import Image
             import tempfile
             blank_img = Image.new('RGB', (10, 10), color='white')
             temp_path = tempfile.mktemp(suffix='.png')
             blank_img.save(temp_path)
-            
+
             return [dict(type='image', value=temp_path), dict(type='text', value=prompt)]
 
         # Visual explicit mode: question text + images
@@ -132,13 +129,14 @@ class GSM8KVDataset(ImageBaseDataset):
             tgt_path = self.dump_image(line)
             prompt = (
                 'You are an expert at solving mathematical problems from visual information. '
-                'The images contain a complete math problem. Please carefully read and understand the problem from the images, '
+                'The images contain a complete math problem. '
+                'Please carefully read and understand the problem from the images, '
                 'When providing your final answer:\n'
                 '- If the answer can be expressed as a whole number (integer), provide it as an integer\n'
                 'Please think step by step. After your reasoning, output your final answer on a new line '
                 'starting with "FINAL ANSWER: " followed by the number only.'
             )
-            
+
             content = []
             for img_path in tgt_path:
                 content.append(dict(type='image', value=img_path))
@@ -150,15 +148,15 @@ class GSM8KVDataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data, \
             'Missing required columns in eval file'
-        
+
         if self.mode == 'all':
             all_results = {}
             orig_len = len(data) // 3
             for idx, mode in enumerate(self.modes_to_eval):
-                print(f"\n{'='*60}")
+                print(f"\n{'=' * 60}")
                 print(f"Evaluating mode: {mode}")
-                print(f"{'='*60}")
-                mode_data = data.iloc[idx * orig_len : (idx + 1) * orig_len].copy()
+                print(f"{'=' * 60}")
+                mode_data = data.iloc[idx * orig_len:(idx + 1) * orig_len].copy()
                 import os
                 mode_eval_file = eval_file.replace('.xlsx', f'_{mode}.xlsx')
                 dump(mode_data, mode_eval_file)
@@ -168,12 +166,12 @@ class GSM8KVDataset(ImageBaseDataset):
                 )
                 for key, value in results.items():
                     all_results[f"{mode}_{key}"] = value
-            
+
             return all_results
         else:
             results = evaluate_gsm8k_v(
                 eval_file=eval_file,
                 dataset_mode=self.mode
             )
-            
+
             return results

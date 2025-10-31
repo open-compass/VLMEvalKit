@@ -27,12 +27,12 @@ def extract_numerical_answer(text):
     if not isinstance(text, str):
         return None
     text = str(text).strip()
-    
+
     final_answer_patterns = [
         r"(?:FINAL\s+ANSWER|Final\s+Answer)\s*[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
         r"(?:FINAL\s+ANSWER|Final\s+Answer)\s*[:\-=]?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
-        r"\\boxed\{(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)\}",
-        r"\\boxed\{(-?[0-9,]+(?:\.[0-9]+)?)\}",
+        r"\\boxed\\{(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)\\}",  # noqa: W605
+        r"\\boxed\\{(-?[0-9,]+(?:\.[0-9]+)?)\\}",  # noqa: W605
         r"####\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
         r"####\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
         r"(?:The\s+)?(?:[Aa]nswer|result)\s+is\s*[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
@@ -42,7 +42,7 @@ def extract_numerical_answer(text):
         r"(?:Therefore|Thus|Hence)[^.]*?[:\-=]?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
         r"(?:Therefore|Thus|Hence)[^.]*?[:\-=]?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
     ]
-    
+
     for pattern in final_answer_patterns:
         matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
         if matches:
@@ -56,17 +56,17 @@ def extract_numerical_answer(text):
 
     lines = text.split('\n')
     for i in range(min(5, len(lines))):
-        line = lines[-(i+1)].strip()
+        line = lines[-(i + 1)].strip()
         if not line:
             continue
-            
+
         standalone_patterns = [
             r'^(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)$',
             r'^(-?[0-9,]+(?:\.[0-9]+)?)$',
             r'^\$\s*(-?[0-9,]+(?:\.[0-9]+)?)$',
             r'^(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)\s*(?:dollars?|cents?)?$',
         ]
-        
+
         for pattern in standalone_patterns:
             match = re.match(pattern, line, re.IGNORECASE)
             if match:
@@ -76,7 +76,7 @@ def extract_numerical_answer(text):
                         return _normalize_to_float(cleaned)
                     except:
                         pass
-    
+
     last_paragraph = _get_last_paragraph(text)
     contextual_patterns = [
         r"(?:answer|result|solution)\s*(?:is|=|:)?\s*\$?\s*(-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?)",
@@ -87,7 +87,7 @@ def extract_numerical_answer(text):
         r"total\s*(?:of|is)?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
         r"costs?\s*\$?\s*(-?[0-9,]+(?:\.[0-9]+)?)",
     ]
-    
+
     for pattern in contextual_patterns:
         matches = re.findall(pattern, last_paragraph, re.IGNORECASE)
         if matches:
@@ -98,10 +98,10 @@ def extract_numerical_answer(text):
                     return _normalize_to_float(cleaned)
                 except:
                     pass
-    
+
     for i in range(min(3, len(lines))):
-        line = lines[-(i+1)].strip()
-        
+        line = lines[-(i + 1)].strip()
+
         numbers = re.findall(r'-?[0-9]+(?:\.[0-9]+)?(?:/[0-9]+)?', line)
         if numbers:
             cleaned = _clean_extracted_number(numbers[-1])
@@ -110,7 +110,7 @@ def extract_numerical_answer(text):
                     return _normalize_to_float(cleaned)
                 except:
                     pass
-        
+
         comma_numbers = re.findall(r'-?[0-9,]+(?:\.[0-9]+)?', line)
         if comma_numbers:
             cleaned = _clean_extracted_number(comma_numbers[-1])
@@ -119,7 +119,7 @@ def extract_numerical_answer(text):
                     return _normalize_to_float(cleaned)
                 except:
                     pass
-    
+
     return None
 
 
@@ -130,38 +130,38 @@ def _normalize_to_float(number_str):
             return float(frac)
         except (ValueError, ZeroDivisionError):
             pass
-    
+
     return float(number_str)
 
 
 def is_correct(prediction, ground_truth, tolerance=1e-3):
     if prediction is None or ground_truth is None:
         return False
-    
+
     try:
         pred_num = float(prediction)
         gt_num = float(ground_truth)
-        
+
         if abs(pred_num - gt_num) <= tolerance:
             return True
-        
+
         rel_diff = abs(pred_num - gt_num) / max(abs(gt_num), 1e-10)
         if rel_diff < 1e-6:
             return True
-            
+
         return False
     except:
         try:
             pred_str = str(prediction).replace(',', '')
             gt_str = str(ground_truth).replace(',', '')
-            
+
             if '/' in pred_str or '/' in gt_str:
                 pred_frac = Fraction(pred_str) if '/' in pred_str else Fraction(float(pred_str))
                 gt_frac = Fraction(gt_str) if '/' in gt_str else Fraction(float(gt_str))
                 return pred_frac == gt_frac
         except (ValueError, TypeError, ZeroDivisionError):
             pass
-        
+
         return False
 
 
@@ -174,7 +174,6 @@ def evaluate_gsm8k_v(eval_file, dataset_mode='visual_implicit'):
         lambda row: is_correct(row['extracted_answer'], row['gt_answer']),
         axis=1
     )
-    
     total_count = len(data)
     correct_count = data['is_correct'].sum()
     overall_acc = correct_count / total_count if total_count > 0 else 0
@@ -192,7 +191,6 @@ def evaluate_gsm8k_v(eval_file, dataset_mode='visual_implicit'):
                 cat_correct = cat_data['is_correct'].sum()
                 cat_acc = cat_correct / cat_total if cat_total > 0 else 0
                 results[f'Category_{cat}'] = cat_acc
-    
     if 'subcategory' in data.columns:
         subcategories = data['subcategory'].unique()
         for subcat in subcategories:
@@ -202,10 +200,9 @@ def evaluate_gsm8k_v(eval_file, dataset_mode='visual_implicit'):
                 subcat_correct = subcat_data['is_correct'].sum()
                 subcat_acc = subcat_correct / subcat_total if subcat_total > 0 else 0
                 results[f'Subcategory_{subcat}'] = subcat_acc
-    
+
     score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
     detailed_file = get_intermediate_file_path(eval_file, '_detailed', 'xlsx')
-    
     summary_data = []
     for key, value in results.items():
         if key not in ['Total', 'Correct']:
@@ -214,20 +211,18 @@ def evaluate_gsm8k_v(eval_file, dataset_mode='visual_implicit'):
                 'Accuracy': value,
                 'Mode': dataset_mode
             })
-    
     summary_df = pd.DataFrame(summary_data)
     dump(summary_df, score_file)
     dump(data, detailed_file)
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"GSM8K-V Evaluation Results ({dataset_mode} mode)")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"Overall Accuracy: {overall_acc:.4f} ({correct_count}/{total_count})")
-    
     if 'category' in data.columns:
-        print(f"\nPer-Category Results:")
+        print("\nPer-Category Results:")
         categories = sorted([cat for cat in data['category'].unique() if pd.notna(cat) and cat != ''])
         for cat in categories:
             if f'Category_{cat}' in results:
                 print(f"  {cat}: {results[f'Category_{cat}']:.4f}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")
     return results
