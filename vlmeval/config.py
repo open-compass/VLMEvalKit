@@ -1647,6 +1647,25 @@ gemma_series = {
     "paligemma-3b-mix-448": partial(
         PaliGemma, model_path="google/paligemma-3b-mix-448"
     ),
+    
+    # 3B
+    "paligemma2-3b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-224"),
+    "paligemma2-3b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-448"),
+    "paligemma2-3b-mix-224": partial(PaliGemma, model_path="google/paligemma2-3b-mix-224"),
+    "paligemma2-3b-mix-448": partial(PaliGemma, model_path="google/paligemma2-3b-mix-448"),
+
+    # 10B
+    "paligemma2-10b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-224"),
+    "paligemma2-10b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-448"),
+    "paligemma2-10b-mix-224": partial(PaliGemma, model_path="google/paligemma2-10b-mix-224"),
+    "paligemma2-10b-mix-448": partial(PaliGemma, model_path="google/paligemma2-10b-mix-448"),
+
+    # 28B
+    "paligemma2-28b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-224"),
+    "paligemma2-28b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-448"),
+    "paligemma2-28b-mix-224": partial(PaliGemma, model_path="google/paligemma2-28b-mix-224"),
+    "paligemma2-28b-mix-448": partial(PaliGemma, model_path="google/paligemma2-28b-mix-448"),
+
     'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
     'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
