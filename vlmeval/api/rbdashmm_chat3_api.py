@@ -166,7 +166,6 @@ class RBdashMMChat3_PromptUtil:
         if dataset is None:
             self.max_num = 6
             return None
-        res_1_datasets = ['MMBench-Video', 'Video-MME', 'MVBench', 'Video', 'WorldSense']  # noqa: F841
         res_8_datasets = ['MMStar']
         res_12_datasets = ['ChartQA_TEST', 'MMMU_DEV_VAL', 'MMMU_TEST', 'MME-RealWorld', 'HallusionBench',
                            'VCR_EN', 'VCR_ZH', 'OCRVQA', 'BMMR', 'MathVista_MINI']
@@ -373,7 +372,7 @@ class RBdashMMChat3Wrapper(BaseAPI):
             for msg in inputs:
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
-                    print('------------text msg:', msg['value'])
+                    print('text msg:', msg['value'])
                 elif msg['type'] == 'image':
                     from PIL import Image
                     img = Image.open(msg['value'])
@@ -512,7 +511,7 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
             for msg in inputs:
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
-                    print('------------text msg:', msg['value'])
+                    print('text msg:', msg['value'])
                 elif msg['type'] == 'image':
                     from PIL import Image
                     img = Image.open(msg['value'])

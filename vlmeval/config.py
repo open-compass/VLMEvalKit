@@ -1733,14 +1733,14 @@ rbdashmm_api_series_lmdeploy = {
         RBdashMMChat3_API,
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
-        retry=3,
+        retry=5,
         timeout=600
     ),
     "rbdashmm3_5_DPO_38B_api": partial(
         RBdashMMChat3_5_API,
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
-        retry=3,
+        retry=5,
         timeout=600
     )
 }
