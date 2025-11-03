@@ -793,6 +793,12 @@ long_vita_series = {
     ),
 }
 
+interns1_mini = {
+    "Intern-S1-mini": partial(
+        InternS1Chat, model_path="/mnt/shared-storage-user/mllm/lijinsong/models/Intern-S1-mini/"
+    ),
+}
+
 internvl = {
     "InternVL-Chat-V1-1": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-1", version="V1.1"
@@ -1800,6 +1806,13 @@ internvl_series = {}
 for group in internvl_groups:
     internvl_series.update(group)
 
+interns1_groups = [
+    interns1_mini
+]
+interns1_series = {}
+for group in interns1_groups:
+    interns1_series.update(group)
+    
 supported_VLM = {}
 
 model_groups = [
@@ -1814,8 +1827,9 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series, logics_series,
-    cosmos_series, keye_series, qianfanvl_series, lfm2vl_series, rbdashmm_api_series_lmdeploy
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
+    xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series
 ]
 
 for grp in model_groups:
