@@ -1647,6 +1647,25 @@ gemma_series = {
     "paligemma-3b-mix-448": partial(
         PaliGemma, model_path="google/paligemma-3b-mix-448"
     ),
+    
+    # 3B
+    "paligemma2-3b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-224"),
+    "paligemma2-3b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-448"),
+    "paligemma2-3b-mix-224": partial(PaliGemma, model_path="google/paligemma2-3b-mix-224"),
+    "paligemma2-3b-mix-448": partial(PaliGemma, model_path="google/paligemma2-3b-mix-448"),
+
+    # 10B
+    "paligemma2-10b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-224"),
+    "paligemma2-10b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-448"),
+    "paligemma2-10b-mix-224": partial(PaliGemma, model_path="google/paligemma2-10b-mix-224"),
+    "paligemma2-10b-mix-448": partial(PaliGemma, model_path="google/paligemma2-10b-mix-448"),
+
+    # 28B
+    "paligemma2-28b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-224"),
+    "paligemma2-28b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-448"),
+    "paligemma2-28b-mix-224": partial(PaliGemma, model_path="google/paligemma2-28b-mix-224"),
+    "paligemma2-28b-mix-448": partial(PaliGemma, model_path="google/paligemma2-28b-mix-448"),
+
     'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
     'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
@@ -1727,6 +1746,24 @@ qtunevl_series = {
     ),
 }
 
+# RbdashMM series via lmdeploy API
+rbdashmm_api_series_lmdeploy = {
+    "rbdashmm3_DPO_38B_api": partial(
+        RBdashMMChat3_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600
+    ),
+    "rbdashmm3_5_DPO_38B_api": partial(
+        RBdashChat3_5_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600
+    )
+}
+
 logics_series = {
     "Logics-Thinking-8B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-8B'),
     "Logics-Thinking-32B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-32B'),
@@ -1776,9 +1813,9 @@ model_groups = [
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
-    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series, 
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series, logics_series, 
-    cosmos_series, keye_series, qianfanvl_series, lfm2vl_series
+    long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series, logics_series,
+    cosmos_series, keye_series, qianfanvl_series, lfm2vl_series, rbdashmm_api_series_lmdeploy
 ]
 
 for grp in model_groups:
