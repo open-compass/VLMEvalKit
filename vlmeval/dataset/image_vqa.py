@@ -3626,3 +3626,103 @@ class AyaVisionBench(ImageVQADataset):
         result_file = get_intermediate_file_path(eval_file, '_acc')
         dump(ret, result_file)
         return ret
+
+
+class MathCanvas(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        "MathCanvas-Bench":
+        "https://huggingface.co/datasets/shiwk24/MathCanvas-Bench/resolve/main/MathCanvas_Bench_VLMEvalKit.tsv"
+    }
+    DATASET_MD5 = {
+        "MathCanvas-Bench": "9fd0b783ca416dbb20ecfb04d2711411"
+    }
+
+    HINT = (
+        "Your task is to answer the question above. "
+        "Give step by step reasoning, and conclude all the answers "
+        "(include sub-questions) at the end of your solution."
+    )
+
+    def __init__(self, dataset='MathCanvas-Bench', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', dataset)
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+
+        data['index'] = [str(x) for x in data['index']]
+        data['image'] = [str(x) for x in data['image']]
+        image_map = {x: y for x, y in zip(data['index'], data['image'])}
+        images = [toliststr(image_map[k]) for k in data['index']]
+        data['image'] = [x[0] if len(x) == 1 else x for x in images]
+
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+
+        self.data = data
+        self.post_build(dataset)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        tgt_path = self.dump_image(line)
+        question_text = line['question']
+
+        pattern = r'(<image>)'
+        tokens = re.split(pattern, question_text)
+
+        num_placeholders = tokens.count('<image>')
+        num_images = len(tgt_path)
+        assert num_placeholders == num_images, (
+            f"Mismatch between image placeholders ({num_placeholders}) and "
+            f"image count ({num_images}) for index {line.get('index', 'N/A')}"
+        )
+
+        msgs = []
+        img_idx = 0
+        for token in tokens:
+            if token == '<image>':
+                msgs.append({'type': 'image', 'value': tgt_path[img_idx]})
+                img_idx += 1
+            elif token.strip():
+                msgs.append({'type': 'text', 'value': token})
+
+        msgs.append({'type': 'text', 'value': self.HINT})
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mathcanvas import evaluate_with_judge, summarize_mathcanvas_results
+
+        judge_kwargs.update({
+            "max_tokens": 2048,
+            "temperature": 0.0,
+        })
+
+        config = {'hint': self.HINT, 'judge_kwargs': judge_kwargs}
+        config_file = get_intermediate_file_path(eval_file, '_config')
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+
+        detailed_results_file = get_intermediate_file_path(eval_file, '_meta')
+        if not os.path.exists(detailed_results_file):
+            print("Evaluating with judge, this may take a while...")
+            eval_results_list = evaluate_with_judge(eval_file, self.data, **judge_kwargs)
+            with open(detailed_results_file, 'w', encoding='utf-8') as f:
+                json.dump(eval_results_list, f, ensure_ascii=False, indent=4)
+        else:
+            print(f"Loading existing evaluation results from {detailed_results_file}")
+            eval_results_list = load(detailed_results_file)
+
+        summary_dict = summarize_mathcanvas_results(eval_results_list)
+
+        os.environ['EVAL_FORMAT'] = 'json'
+
+        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        with open(score_file, 'w', encoding='utf-8') as f:
+            json.dump(summary_dict, f, ensure_ascii=False, indent=4)
+
+        return summary_dict

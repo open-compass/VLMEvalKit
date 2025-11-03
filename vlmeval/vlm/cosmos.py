@@ -1,7 +1,6 @@
 # vlmeval/vlm/cosmos.py
 import os
 from .base import BaseModel
-from vllm import LLM, SamplingParams
 from qwen_vl_utils import process_vision_info
 from transformers import AutoProcessor
 
@@ -11,6 +10,7 @@ class Cosmos(BaseModel):
     INTERLEAVE = True
 
     def __init__(self, model_path="nvidia/Cosmos-Reason1-7B", **kwargs):
+        from vllm import LLM, SamplingParams
         self.processor = AutoProcessor.from_pretrained(model_path)
         self.llm = LLM(
             model=model_path,
