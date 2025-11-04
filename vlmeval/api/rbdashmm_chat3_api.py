@@ -10,7 +10,6 @@ def process_prediction_text(text):
     if not isinstance(text, str):
         return text
 
-    # ====== 处理 \boxed{}（支持嵌套）======
     if "\\boxed{" in text:
         start = text.rfind("\\boxed{")
         i = start + len("\\boxed{")
@@ -23,7 +22,7 @@ def process_prediction_text(text):
                 brace_count += 1
             elif ch == "}":
                 brace_count -= 1
-            if brace_count > 0:  # 在外层 } 之前才加入字符
+            if brace_count > 0:
                 content_chars.append(ch)
             i += 1
 
@@ -32,13 +31,11 @@ def process_prediction_text(text):
             if inner:
                 return inner
 
-    # ====== 删除 <think> 标签内容 ======
     redacted_pattern = r'<think>.*?</think>'
     if re.search(redacted_pattern, text, re.DOTALL):
         result = re.sub(redacted_pattern, '', text, flags=re.DOTALL)
         return result.strip()
 
-    # ====== 长文本截断 ======
     if len(text) > 32767:
         return text[-30000:]
 
