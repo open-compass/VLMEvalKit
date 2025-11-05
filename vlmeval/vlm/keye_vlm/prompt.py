@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 
-# Adapted from vlmeval/vlm/qwen2_vl/prompt.py
-class HawkVLPromptMixin:
+class Qwen2VLPromptMixin:
     """
-    Mixin class for HawkVL to build custom prompt for different datasets.
+    Mixin class for Qwen2VLChat to build custom prompt for different datasets.
 
     Requires the following methods to be implemented in the subclass:
         - dump_image(line, dataset: str) -> str | list[str]
@@ -33,12 +32,11 @@ class HawkVLPromptMixin:
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True
         if dataset_type == 'MCQ':
-            if dataset == 'LEGO':
-                return False
             return True
         if dataset_type == 'Y/N' and dataset in {'HallusionBench', 'POPE'}:  # MME has it's own prompt
             return True
-        if dataset_type == 'VQA' and dataset not in {'MMVet', 'ChartQAPro', 'ChartQAPro_CoT', 'ChartQAPro_PoT', 'ChartMuseum'}:  # noqa: E501
+        # MMVet VQA has it's own prompt
+        if dataset_type == 'VQA' and dataset not in {'MMVet', 'Benchmark_V21', 'IFEval'}:
             return True
         return False
 
@@ -76,7 +74,7 @@ class HawkVLPromptMixin:
         prompt += f'Question: {question}\n'
         if len(options):
             prompt += options_prompt
-            prompt += "Answer with the option's letter from the given choices directly. \n"
+            prompt += 'Please select the correct answer from the options above. \n'
         prompt = prompt.rstrip()
         msgs = []
         if isinstance(tgt_path, list):
@@ -89,7 +87,7 @@ class HawkVLPromptMixin:
     def _build_mcq_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for MCQ dataset: use chinese prompt if the question contains chinese characters."""
         MCQ_CN_PROMPT = '请直接回答选项字母。'
-        MCQ_EN_PROMPT = "Answer with the option's letter from the given choices directly."
+        MCQ_EN_PROMPT = 'Please select the correct answer from the options above.'
 
         import string
 
@@ -143,7 +141,7 @@ class HawkVLPromptMixin:
 
     def _build_vqa_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for VQA dataset:"""
-        VQA_PROMPT = "\nAnswer the question using a single word or phrase."
+        VQA_PROMPT = '\nPlease try to answer the question with short words or phrases if possible.'
 
         tgt_path = self.dump_image(line, dataset)
         question = line['question']

@@ -314,7 +314,7 @@ def main():
                 if model is None:
                     model = model_name  # which is only a name
 
-                if args.model != "eval":
+                if args.mode != "eval":
                     # Perform the Inference
                     if dataset.MODALITY == 'VIDEO':
                         model = infer_data_job_video(
@@ -400,6 +400,8 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['AyaVisionBench'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1'
+                    elif listinstr(['MathCanvas'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
 
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True
