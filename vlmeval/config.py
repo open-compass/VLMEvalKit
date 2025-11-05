@@ -1040,53 +1040,78 @@ internvl3_5 = {
     ),
 }
 
-
 qwen3vl_series = {
     "Qwen3-VL-235B-A22B-Instruct": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-235B-A22B-Instruct",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
     ),
     "Qwen3-VL-235B-A22B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-235B-A22B-Thinking",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-30B-A3B-Instruct": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-30B-A3B-Instruct",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
     ),
     "Qwen3-VL-30B-A3B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-30B-A3B-Thinking",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-8B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-8B-Thinking",
         use_custom_prompt=False,
-        temperature=0.7, 
-        max_new_tokens=16384
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-4B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-4B-Thinking",
         use_custom_prompt=False,
-        temperature=0.7, 
-        max_new_tokens=16384
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-8B-Instruct": partial(
         Qwen3VLChat,
@@ -1095,6 +1120,10 @@ qwen3vl_series = {
         use_vllm=True,
         temperature=0.7, 
         max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
     ),
     "Qwen3-VL-4B-Instruct": partial(
         Qwen3VLChat,
@@ -1102,7 +1131,90 @@ qwen3vl_series = {
         use_custom_prompt=False,
         use_vllm=True,
         temperature=0.7, 
-        max_new_tokens=16384
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-2B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-2B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-32B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-32B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+
+    ),
+    "Qwen3-VL-2B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-2B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-32B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-32B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=False,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-Omni-30B-A3B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    "Qwen3-Omni-30B-A3B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    "Qwen3-Omni-30B-A3B-Captioner": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Captioner",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
     ),
     
 }
