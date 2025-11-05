@@ -1188,7 +1188,7 @@ qwen3vl_series = {
     ),
     "Qwen3-Omni-30B-A3B-Instruct": partial(
         Qwen3VLChat,
-        model_path="Qwen/Qwen3-Omni-30B-A3B-Instruct",
+        model_path="/mnt/shared-storage-user/agent4review-share/linjunming/models/Qwen3-Omni-Instruct",
         use_custom_prompt=False,
         use_vllm=True,
         temperature=0.6,
