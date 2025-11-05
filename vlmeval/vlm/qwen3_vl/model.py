@@ -20,7 +20,7 @@ def is_moe_model(model_path: str) -> bool:
     non_moe_patterns = ['2B','4B','8B','32B']
     for part in path_parts:
         if any(pattern in part for pattern in non_moe_patterns):
-            return False    
+            return False
     return True
 
 
@@ -63,7 +63,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         system_prompt: str | None = None,
         post_process: bool = False,
         verbose: bool = False,
-        use_audio_in_video: bool = False,
+        use_audio_in_video: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(use_custom_prompt=use_custom_prompt)
@@ -101,7 +101,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             try:
                 from transformers import Qwen3OmniMoeForConditionalGeneration, Qwen3OmniMoeProcessor
             except Exception as err:
-                logging.critical("Install transformers from source for Qwen3-Omni support: pip install git+https://github.com/huggingface/transformers")
+                logging.critical("pip install git+https://github.com/huggingface/transformers")
                 raise err
             self.processor = Qwen3OmniMoeProcessor.from_pretrained(model_path)
         else:
@@ -115,7 +115,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.use_lmdeploy = kwargs.get('use_lmdeploy', False)
         self.limit_mm_per_prompt = VLLM_MAX_IMAGE_INPUT_NUM
         os.environ['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
-        assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag between `use_vllm` and `use_lmdeploy` to True"
+        assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag `use_vllm` to True"
         if self.use_vllm:
             if listinstr(['omni'], self.model_path.lower()):
                 os.environ['VLLM_USE_V1'] = '0'
@@ -147,7 +147,6 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             )
         else:
             if listinstr(['omni'], model_path.lower()):
-                from transformers import Qwen3OmniMoeForConditionalGeneration
                 self.model = Qwen3OmniMoeForConditionalGeneration.from_pretrained(
                     model_path, dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
                 )
@@ -226,13 +225,13 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             try:
                 from qwen_omni_utils import process_mm_info
             except Exception as err:
-                logging.critical("qwen_omni_utils not found, please install it via 'pip install qwen-omni-utils[decord]'")
+                logging.critical("Please install it via 'pip install qwen-omni-utils[decord]'")
                 raise err
         else:
             try:
                 from qwen_vl_utils import process_vision_info
             except Exception as err:
-                logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
+                logging.critical("Please install it via 'pip install qwen-vl-utils'")
                 raise err
 
         messages = []
@@ -345,13 +344,13 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             try:
                 from qwen_omni_utils import process_mm_info
             except Exception as err:
-                logging.critical("qwen_omni_utils not found, please install it via 'pip install qwen-omni-utils[decord]'")
+                logging.critical("qwen_omni_utils not found, 'pip install qwen-omni-utils[decord]'")
                 raise err
         else:
             try:
                 from qwen_vl_utils import process_vision_info
             except Exception as err:
-                logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
+                logging.critical("qwen_vl_utils not found, 'pip install qwen-vl-utils'")
                 raise err
 
         messages = []
@@ -423,11 +422,9 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         if self.verbose:
             print(f'\033[32m{generated_text}\033[0m')
         return generated_text
-    
 
     def generate_inner(self, message, dataset=None):
         if self.use_vllm:
             return self.generate_inner_vllm(message, dataset=dataset)
         else:
             return self.generate_inner_transformers(message, dataset=dataset)
-
