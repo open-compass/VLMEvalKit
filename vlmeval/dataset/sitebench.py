@@ -90,7 +90,7 @@ class SiteBenchBase:
         return dataset_path
 
     def evaluate(self, eval_file, **kwargs):
-        from .utils.spatial_rel_bench.cal_scores import compute_mcq_score, compute_caa_score
+        from .utils.spatial_bench.cal_scores import compute_mcq_score, compute_caa_score
 
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', '_result.pkl')
@@ -182,12 +182,9 @@ class SiteBenchImage(SiteBenchBase, ImageMCQDataset):
     TYPE = 'MCQ'
 
     LMUData_root = LMUDataRoot()
-
     DATASET_URL = {}
 
-    # TODO: change this into hugging face url
-    DATASET_URL["SiteBenchImage"] = os.path.join(LMUData_root, "SiteBenchImage.tsv")
-
+    DATASET_URL["SiteBenchImage"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MindCubeBench_tiny_raw_qa.tsv"  # noqa: E501
     DATASET_MD5 = {key: None for key in DATASET_URL}
 
     def prepare_tsv(self, url, file_md5=None):
@@ -292,13 +289,11 @@ class SiteBenchVideo(SiteBenchBase, VideoBaseDataset):
 
     TYPE = 'Video-MCQ'
     MODALITY = 'VIDEO'
-    LMUData_root = LMUDataRoot()
 
+    LMUData_root = LMUDataRoot()
     DATASET_URL = {}
 
-    # TODO: change this into hugging face url
-    DATASET_URL["SiteBenchVideo"] = os.path.join(LMUData_root, "SiteBenchVideo.tsv")
-
+    DATASET_URL["SiteBenchVideo"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SiteBenchVideo.tsv"  # noqa: E501
     DATASET_MD5 = {key: None for key in DATASET_URL}
 
     def __init__(self, dataset='SiteBenchVideo', pack=False, nframe=0, fps=-1):

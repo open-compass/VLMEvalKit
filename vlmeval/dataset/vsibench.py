@@ -16,12 +16,12 @@ from collections import OrderedDict
 
 class VsiBench(VideoBaseDataset):
 
-    #TODO
     MD5 = ''
     TYPE = 'MCQ'
     MODALITY = 'VIDEO'
 
-    STANDARD_MCQ_SYS_PROMPT = (
+    # EASI system prompt format from Holistic Evaluation of Multimodal LLMs on Spatial Intelligence. (https://arxiv.org/pdf/2508.13142)
+    EASI_MCQ_SYS_PROMPT = (
         "You are a spatial-reasoning assistant. Always ground your answer in the visual evidence; "
         "do not hallucinate unseen objects. If uncertain, pick the most plausible option—never refuse or reply "
         "“insufficient information.” Think step by step and provide the answer. "
@@ -30,8 +30,7 @@ class VsiBench(VideoBaseDataset):
         "and <answer></answer> tags, respectively, i.e., <think>reasoning process</think>, "
         "<answer>answer</answer>."
     )
-
-    STANDARD_VQA_SYS_PROMPT = (
+    EASI_VQA_SYS_PROMPT = (
         "You are a spatial-reasoning assistant. Always ground your answer in the visual evidence; "
         "do not hallucinate unseen objects. If uncertain, pick the most plausible option—never refuse or reply "
         "“insufficient information. Think step by step and provide the answer. "
@@ -274,9 +273,9 @@ class VsiBench(VideoBaseDataset):
                 prompt = "\n".join([self.ORIGIN_PRE_PROMPT, question, self.ORIGIN_VQA_POST_PROMPT])
         else:
             if task_type == 'MCQ':
-                prompt = "\n".join([self.STANDARD_MCQ_SYS_PROMPT, question, formatted_options])
+                prompt = "\n".join([self.EASI_MCQ_SYS_PROMPT, question, formatted_options])
             else:
-                prompt = "\n".join([self.STANDARD_VQA_SYS_PROMPT, question])
+                prompt = "\n".join([self.EASI_VQA_SYS_PROMPT, question])
 
         message = []
 
@@ -292,7 +291,7 @@ class VsiBench(VideoBaseDataset):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_rel_bench.cal_scores import compute_mcq_score, compute_na_score
+        from .utils.spatial_bench.cal_scores import compute_mcq_score, compute_na_score
 
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', f'_result.pkl')

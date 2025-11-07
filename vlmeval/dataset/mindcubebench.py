@@ -13,20 +13,13 @@ from huggingface_hub import snapshot_download
 class MindCubeBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
-    MINDCUBE_TASKS = [
-        'raw_qa',
-        'tiny_raw_qa',
-    ]
-
     LMUData_root = LMUDataRoot()
     DATASET_URL = {}
 
-    # #TODO:change this to hugging face path after upload
     DATASET_URL = {
-        "MindCubeBench_tiny_raw_qa": "https://huggingface.co/datasets/y-playground/EASI_Mindcube/resolve/main/MindCubeBench_tiny_raw_qa.tsv",  # noqa: E501
-        "MindCubeBench_raw_qa": f"{os.path.join(LMUData_root, 'MindCubeBench_raw_qa.tsv')}"
+        "MindCubeBench_tiny_raw_qa": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MindCubeBench_tiny_raw_qa.tsv",  # noqa: E501
+        "MindCubeBench_raw_qa": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MindCubeBench_raw_qa.tsv"  # noqa: E501
     }
-
     DATASET_MD5 = {key: None for key in DATASET_URL}
 
     def _task_category(self):
@@ -151,7 +144,7 @@ class MindCubeBench(ImageMCQDataset):
         return [s for s in segs if s['value']]
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_rel_bench.cal_scores import compute_mcq_score, eval_mcq_core
+        from .utils.spatial_bench.cal_scores import compute_mcq_score, eval_mcq_core
 
         return eval_mcq_core(
             load_fn=load,

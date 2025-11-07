@@ -11,23 +11,14 @@ class MMSIBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
     # VLMEvalKit officially provides an MMSI *circular* TSV.
-    # In this repo we only run the *non-circular* evaluation.
+    # In this repo we only run the *non-circular* evaluation, which aligns with the
+    # evaluation protocol described in the MMSI paper.
     # To avoid modifying upstream VLMEvalKit, we do NOT integrate the circular set here.
     # (Use the official pipeline if you need the circular split.)
-    MMSI_TASKS = [
-        'wo_circular',
-    ]
-
     LMUData_root = LMUDataRoot()
-
-    # TODO: change this into hugging face path
     DATASET_URL = {}
 
-    for task in MMSI_TASKS:
-        name = f"MMSIBench_{task}"
-        path = osp.join(LMUData_root, name + ".tsv")
-        DATASET_URL[name] = path
-
+    DATASET_URL["MMSIBench_wo_circular"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MMSIBench_wo_circular.tsv"  # noqa: E501
     DATASET_MD5 = {key: None for key in DATASET_URL}
 
     def _task_category(self):
@@ -92,7 +83,7 @@ class MMSIBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_rel_bench.cal_scores import compute_mcq_score, eval_mcq_core
+        from .utils.spatial_bench.cal_scores import compute_mcq_score, eval_mcq_core
 
         return eval_mcq_core(
             load_fn=load,
