@@ -42,13 +42,6 @@ videomme_dataset = {
     'Video-MME_0.5fps_subs': partial(VideoMME, dataset='Video-MME', fps=0.5, use_subtitle=True),
 }
 
-videommmu_dataset = {
-    'VideoMMMU_8frame': partial(VideoMMMU, dataset='VideoMMMU', nframe=8),
-    'VideoMMMU_64frame': partial(VideoMMMU, dataset='VideoMMMU', nframe=64),
-    'VideoMMMU_1fps': partial(VideoMMMU, dataset='VideoMMMU', fps=1.0),
-    'VideoMMMU_0.5fps': partial(VideoMMMU, dataset='VideoMMMU', fps=0.5),
-}
-
 longvideobench_dataset = {
     'LongVideoBench_8frame': partial(LongVideoBench, dataset='LongVideoBench', nframe=8),
     'LongVideoBench_8frame_subs': partial(LongVideoBench, dataset='LongVideoBench', nframe=8, use_subtitle=True),
@@ -170,12 +163,6 @@ video_mmlu_dataset = {
     'Video_MMLU_QA_64frame': partial(Video_MMLU_QA, dataset='Video_MMLU_QA', nframe=64),
 }
 
-video_tt_dataset = {
-    'Video_TT_16frame': partial(VideoTT, dataset='Video-TT', nframe=16),
-    'Video_TT_32frame': partial(VideoTT, dataset='Video-TT', nframe=32),
-    'Video_TT_64frame': partial(VideoTT, dataset='Video-TT', nframe=64),
-}
-
 video_holmes_dataset = {
     'Video_Holmes_32frame': partial(Video_Holmes, dataset='Video_Holmes', nframe=32),
     'Video_Holmes_64frame': partial(Video_Holmes, dataset='Video_Holmes', nframe=64),
@@ -192,29 +179,37 @@ egoexobench_dataset = {
 
 }
 
-vsibench_dataset = {
-    'vsibench_16frame': partial(VSIBench, dataset='VSIBench', nframe=16),
-    'vsibench_32frame': partial(VSIBench, dataset='VSIBench', nframe=32),
-    'vsibench_64frame': partial(VSIBench, dataset='VSIBench', nframe=64),
-}
+video_vsi_dataset = {}
 
-dream_1k_dataset = {
-    'DREAM-1K_8frame': partial(DREAM, dataset='DREAM-1K', nframe=8),
-    'DREAM-1K_64frame': partial(DREAM, dataset='DREAM-1K', nframe=64),
-    'DREAM-1K_2fps': partial(DREAM, dataset='DREAM-1K', fps=2.0),
-    'DREAM-1K_1fps': partial(DREAM, dataset='DREAM-1K', fps=1.0),
-    'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
+vsi_variants = VsiBench.supported_datasets()
+vsi_kwargs = [
+    {"nframe": 64, "suffix": "64frame"},
+    {"nframe": 32, "suffix": "32frame"},
+    {"fps": 1.0, "suffix": "1fps"},
+]
+
+for variant in vsi_variants:
+    for kwarg in vsi_kwargs:
+        suffix = kwarg.pop("suffix")
+        video_vsi_dataset[f"{variant}_{suffix}"] = partial(VsiBench, dataset=f'{variant}', **kwarg)
+        kwarg.update({"suffix": suffix})
+
+sitebenchvideo_dataset = {
+    'SiteBenchVideo_64frame': partial(SiteBenchVideo, dataset='SiteBenchVideo', nframe=64),
+    'SiteBenchVideo_32frame': partial(SiteBenchVideo, dataset='SiteBenchVideo', nframe=32),
+    'SiteBenchVideo_1fps': partial(SiteBenchVideo, dataset='SiteBenchVideo', fps=1),
 }
 
 supported_video_datasets = {}
 
 dataset_groups = [
-    mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommmu_dataset, longvideobench_dataset,
+    mmbench_video_dataset, mvbench_dataset, videomme_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
-    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    vsibench_dataset
+    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset
 ]
+
+dataset_groups += [video_vsi_dataset, sitebenchvideo_dataset]
 
 for grp in dataset_groups:
     supported_video_datasets.update(grp)

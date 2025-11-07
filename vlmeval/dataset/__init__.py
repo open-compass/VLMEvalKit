@@ -59,7 +59,7 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
-from .vsibench import VSIBench
+from .vsibench import VsiBench
 from .mmsi_video import MMSIVideoBench
 
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
@@ -67,6 +67,7 @@ from .videott import VideoTT
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+from .sitebench import SiteBenchVideo
 
 from .cmmmu import CMMMU
 from .emma import EMMADataset
@@ -98,6 +99,7 @@ from .mindcubebench import MindCubeBench
 from .embspatialbench import EmbSpatialBench
 from .viewspatialbench import ViewSpatialBench
 from .mmsibench import MMSIBench
+from .sitebench import SiteBenchImage
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -234,8 +236,8 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, VLRMBench,
-    RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench, UniSVG, SArena_MINI, MMSIVideoBench,
+    olmOCRBench, OceanOCRBench, MATBench, MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
+    VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench, UniSVG, SArena_MINI, MMSIVideoBench,
 ]
 
 VIDEO_DATASET = [
@@ -247,7 +249,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo
 
 ]
 
