@@ -1981,6 +1981,18 @@ lfm2vl_series = {
     "LFM2-VL-3B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
 }
 
+spatial_mllm_series = {
+    "Spatial-MLLM-subset-sft": partial(
+        SpatialMLLM,
+        model_path="Diankun/Spatial-MLLM-subset-sft",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        max_num_frames=16,
+        use_custom_prompt=False,
+        post_process=True,  # extract answer for evaluation
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
