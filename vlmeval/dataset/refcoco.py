@@ -566,4 +566,3 @@ class RefCOCODataset(ImageBaseDataset):
         if bbox is None:
             return ''
         return '[{:.6f}, {:.6f}, {:.6f}, {:.6f}]'.format(*bbox.tolist())
-
