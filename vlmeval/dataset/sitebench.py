@@ -184,7 +184,7 @@ class SiteBenchImage(SiteBenchBase, ImageMCQDataset):
     LMUData_root = LMUDataRoot()
     DATASET_URL = {}
 
-    DATASET_URL["SiteBenchImage"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MindCubeBench_tiny_raw_qa.tsv"  # noqa: E501
+    DATASET_URL["SiteBenchImage"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SiteBenchImage.tsv"  # noqa: E501
     DATASET_MD5 = {key: None for key in DATASET_URL}
 
     def prepare_tsv(self, url, file_md5=None):
