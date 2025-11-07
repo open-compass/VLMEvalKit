@@ -1981,7 +1981,38 @@ lfm2vl_series = {
     "LFM2-VL-3B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
 }
 
-spatial_mllm_series = {
+
+spatial_related_models = {
+    # 3B models
+    "MindCube-Qwen2.5VL-RawQA-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-RawQA-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MindCube-Qwen2.5VL-Aug-CGMap-FFR-Out-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-Aug-CGMap-FFR-Out-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MindCube-Qwen2.5VL-Plain-CGMap-FFR-Out-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-Plain-CGMap-FFR-Out-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SpatialLadder-3B": partial(
+        Qwen2VLChat,
+        model_path="hongxingli/SpatialLadder-3B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+        model_name="SpatialLadder-3B_qwen25"
+    ),
     "Spatial-MLLM-subset-sft": partial(
         SpatialMLLM,
         model_path="Diankun/Spatial-MLLM-subset-sft",
@@ -1990,6 +2021,24 @@ spatial_mllm_series = {
         max_num_frames=16,
         use_custom_prompt=False,
         post_process=True,  # extract answer for evaluation
+    ),
+    
+    # 7B models
+    "SpaceR-SFT-7B": partial(
+        Qwen2VLChat,
+        model_path="RUBBISHLIKE/SpaceR-SFT-7B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+        model_name='SpaceR-SFT-7B_qwen25'
+    ),
+    "ViLaSR": partial(
+        Qwen2VLChat,
+        model_path="inclusionAI/ViLaSR",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+        model_name="ViLaSR_qwen25"
     ),
 }
 
@@ -2026,6 +2075,8 @@ model_groups = [
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
     lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series
 ]
+
+model_groups.append(spatial_related_models)
 
 for grp in model_groups:
     supported_VLM.update(grp)
