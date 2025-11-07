@@ -2042,6 +2042,21 @@ spatial_related_models = {
     ),
 }
 
+sensesi_series = {
+    "SenseSI-InternVL3-2B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseSI-InternVL3-2B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseSI-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseSI-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -2077,6 +2092,7 @@ model_groups = [
 ]
 
 model_groups.append(spatial_related_models)
+model_groups.append(sensesi_series)
 
 for grp in model_groups:
     supported_VLM.update(grp)

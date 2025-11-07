@@ -110,6 +110,7 @@ class InternVLChat(BaseModel):
 
     def __init__(self,
                  model_path='OpenGVLab/InternVL-Chat-V1-5',
+                 use_custom_prompt=True,
                  load_in_8bit=False,
                  use_mpo_prompt=False,
                  version='V1.0',
@@ -133,6 +134,7 @@ class InternVLChat(BaseModel):
         self.use_mpo_prompt = use_mpo_prompt
         self.use_cot = (os.getenv('USE_COT') == '1')
         self.use_postprocess = use_postprocess
+        self._use_custom_prompt = use_custom_prompt
 
         if cot_prompt_version == 'r1':
             self.system_prompt = R1_SYSTEM_PROMPT
@@ -229,6 +231,9 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
+        if not self._use_custom_prompt:
+            return False
+
         assert dataset is not None
         if dataset in [
             'atomic_dataset', 'electro_dataset', 'mechanics_dataset',
