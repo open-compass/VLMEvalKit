@@ -14,9 +14,7 @@ class EmbSpatialBench(ImageMCQDataset):
     LMUData_root = LMUDataRoot()
     DATASET_URL = {}
 
-    # TODO: change this to hugging face url after upload
-    DATASET_URL['EmbSpatialBench'] = osp.join(LMUData_root, "EmbSpatialBench.tsv")
-
+    DATASET_URL['EmbSpatialBench'] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/EmbSpatialBench.tsv"  # noqa: E501
     DATASET_MD5 = {key: None for key in DATASET_URL}
 
     def _task_category(self):
@@ -68,7 +66,7 @@ class EmbSpatialBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_rel_bench.cal_scores import compute_mcq_score, eval_mcq_core
+        from .utils.spatial_bench.cal_scores import compute_mcq_score, eval_mcq_core
 
         return eval_mcq_core(
             load_fn=load,
