@@ -1,4 +1,4 @@
-import os, sys
+import os
 import torch
 from .base import BaseModel
 from ..smp import *
@@ -27,12 +27,6 @@ def preprocess_llama3(
         tokenizer.add_tokens(["<image>"], special_tokens=True)
     image_token_index = tokenizer.convert_tokens_to_ids("<image>")
     bos_token_id = tokenizer.convert_tokens_to_ids("<|begin_of_text|>")
-    start_header_id = tokenizer.convert_tokens_to_ids("<|start_header_id|>")
-    end_header_id = tokenizer.convert_tokens_to_ids("<|end_header_id|>")
-    eot_id = tokenizer.convert_tokens_to_ids("<|eot_id|>")
-
-    unmask_tokens = ["<|begin_of_text|>", "<|start_header_id|>", "<|end_header_id|>", "<|eot_id|>", "\n\n"]
-    unmask_tokens_idx = [tokenizer.convert_tokens_to_ids(tok) for tok in unmask_tokens]
 
     def safe_tokenizer_llama3(text):
         input_ids = tokenizer(text).input_ids
@@ -40,7 +34,6 @@ def preprocess_llama3(
             input_ids = input_ids[1:]
         return input_ids
 
-    nl_tokens = tokenizer.convert_tokens_to_ids("\n\n")
     input_ids = []
     for i, source in enumerate(sources):
         if roles[source[0]["from"]] != roles["human"]:
@@ -48,7 +41,7 @@ def preprocess_llama3(
 
         input_id = []
 
-        input_id += tokenizer.apply_chat_template([{"role" : "system", "content" : system_message}])
+        input_id += tokenizer.apply_chat_template([{"role": "system", "content": system_message}])
 
         for conv in source:
             try:
@@ -58,15 +51,15 @@ def preprocess_llama3(
                 role = conv["from"]
                 content = conv["value"]
 
-            role =  roles.get(role, role)
-            
+            role = roles.get(role, role)
+
             if role == 'assistant':
                 input_id += tokenizer.encode("<|start_header_id|>assistant<|end_header_id|>\n\n")
             else:
-                conv = [{"role" : role, "content" : content}]
+                conv = [{"role": role, "content": content}]
                 encode_id = tokenizer.apply_chat_template(conv)[1:]
                 input_id += encode_id
-                    
+
         for idx, encode_id in enumerate(input_id):
             if encode_id == image_token_index:
                 input_id[idx] = -200
@@ -74,6 +67,7 @@ def preprocess_llama3(
     input_ids = torch.tensor(input_ids, dtype=torch.long)
 
     return input_ids
+
 
 class InsightV(BaseModel):
     INSTALL_REQ = True
@@ -120,11 +114,11 @@ class InsightV(BaseModel):
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
-    
+
     def use_custom_prompt(self, dataset):
         assert dataset is not None
         return True
-    
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -148,7 +142,7 @@ class InsightV(BaseModel):
             prompt += '\nAnswer with the option letter from the given choices directly.'
         else:
             prompt += '\nAnswer the question using a single word or phrase.'
-        
+
         reasoning_prompt = prompt + "\n\nPerform step-by-step reasoning of the problem. Only provide the reasoning process."
 
         message = [dict(type='image', value=s) for s in tgt_path]
