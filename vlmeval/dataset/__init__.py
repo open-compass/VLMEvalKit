@@ -65,9 +65,14 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
+<<<<<<< HEAD
 from .vsibench import VSIBench
 from .mvu_eval import MVUEval
 from .omtgbench import OMTGBench
+=======
+from .vsibench import VsiBench
+from .mmsi_video import MMSIVideoBench
+>>>>>>> afaf8d0 ([Benchmark] Add EASI related video benchmark (#3))
 
 from .mmsi_video import MMSIVideoBench
 from .groundingme import GroundingME
@@ -76,6 +81,7 @@ from .videott import VideoTT
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+from .sitebench import SiteBenchVideo
 
 from .cmmmu import CMMMU
 from .emma import EMMADataset
@@ -110,6 +116,7 @@ from .mindcubebench import MindCubeBench
 from .embspatialbench import EmbSpatialBench
 from .viewspatialbench import ViewSpatialBench
 from .mmsibench import MMSIBench
+from .sitebench import SiteBenchImage
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -257,7 +264,7 @@ IMAGE_DATASET = [
     Design2Code, VLADBench, SSIBenchDataset,
 
     # EASI add
-    MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench,
+    MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
 ]
 
 VIDEO_DATASET = [
@@ -268,8 +275,14 @@ VIDEO_DATASET = [
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
+<<<<<<< HEAD
     Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval, OMTGBench, V2PBench
+=======
+    Video_Holmes, VCRBench, CGAVCounting,
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo
+
+>>>>>>> afaf8d0 ([Benchmark] Add EASI related video benchmark (#3))
 ]
 
 TEXT_DATASET = [

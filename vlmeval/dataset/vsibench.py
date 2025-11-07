@@ -1,227 +1,440 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
+# flake8: noqa
 import ast
-import pandas as pd
+import os.path as osp
+import decord
+import json
+import math
+import numpy as np
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+from ..smp import *
+from ..smp.file import load
+from .video_base import VideoBaseDataset
+
+from huggingface_hub import snapshot_download
+from collections import OrderedDict
 
 
-class VSIBench(VideoBaseDataset):
-    MD5 = '021f7dd80ab879b4f3329290e804ed15'
-    TYPE = 'VIDEO-MCQ-and-NA'
+class VsiBench(VideoBaseDataset):
 
-    MCA_QUESTION_TYPES = [
-        "object_rel_direction_easy",
-        "object_rel_direction_medium",
-        "object_rel_direction_hard",
-        "object_rel_distance",
-        "route_planning",
-        "obj_appearance_order",
-    ]
-    NA_QUESTION_TYPES = [
-        "object_abs_distance",
-        "object_counting",
-        "object_size_estimation",
-        "room_size_estimation",
-    ]
+    #TODO
+    MD5 = ''
+    TYPE = 'MCQ'
+    MODALITY = 'VIDEO'
 
-    def __init__(self, dataset='VSIBench', nframe=0, fps=-1):
-        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
+    STANDARD_MCQ_SYS_PROMPT = (
+        "You are a spatial-reasoning assistant. Always ground your answer in the visual evidence; "
+        "do not hallucinate unseen objects. If uncertain, pick the most plausible option—never refuse or reply "
+        "“insufficient information.” Think step by step and provide the answer. "
+        "You should first provide a reasoning process, then provide a single option (an English letter) "
+        "as the final answer. The reasoning process and the answer are enclosed within <think></think> "
+        "and <answer></answer> tags, respectively, i.e., <think>reasoning process</think>, "
+        "<answer>answer</answer>."
+    )
+
+    STANDARD_VQA_SYS_PROMPT = (
+        "You are a spatial-reasoning assistant. Always ground your answer in the visual evidence; "
+        "do not hallucinate unseen objects. If uncertain, pick the most plausible option—never refuse or reply "
+        "“insufficient information. Think step by step and provide the answer. "
+        "You should first provide a reasoning process, then provide one float number as the final answer. "
+        "The reasoning process and the answer are enclosed within <think></think> and <answer></answer> tags, "
+        "respectively, i.e., <think>reasoning process</think>, <answer>answer</answer>. "
+    )
+
+    ORIGIN_PRE_PROMPT = "These are frames of a video."
+    ORIGIN_MCQ_POST_PROMPT = "Answer with the option's letter from the given choices directly."
+    ORIGIN_VQA_POST_PROMPT = "Answer briefly and directly in one float number."
+
+    def __init__(self, dataset, pack=False, nframe=0, fps=-1, sample_strategy='uniform_tail'):
+        super().__init__(dataset='VSI-Bench', pack=pack, nframe=nframe, fps=fps)
+
+        valid_strategies = {'uniform_tail', 'uniform', 'chunk_center'}
+        if sample_strategy not in valid_strategies:
+            raise ValueError(f"[{dataset}] Unsupported sample_strategy '{sample_strategy}'")
+
+        self.sample_strategy = sample_strategy
+        self.variant = self.get_variant(dataset)
+        print(f"VsiBench using variant : {self.variant}")
+
+    def get_variant(self, name: str, default="origin"):
+        base = "VSI-Bench"
+        if not isinstance(name, str) or not name.startswith(base):
+            return None
+        suffix = name[len(base):]
+        suffix = suffix.lstrip("_").strip()
+        return suffix or default
 
     @classmethod
     def supported_datasets(cls):
-        return ['VSIBench']
+        return [
+            'VSI-Bench_origin',
+            'VSI-Bench_standard'
+        ]
 
-    def prepare_dataset(self, dataset_name='VSIBench', repo_id='nyu-visionx/VSI-Bench'):
+    def get_task_type(self, question_type):
+        MCQ_items = [
+            'obj_appearance_order',
+            'object_rel_direction_easy',
+            'object_rel_direction_hard',
+            'object_rel_direction_medium',
+            'object_rel_distance',
+            'route_planning',
+        ]
+
+        NA_items = [
+            'object_abs_distance',
+            'object_size_estimation',
+            'object_counting',
+            'room_size_estimation',
+        ]
+
+        if question_type in MCQ_items:
+            return 'MCQ'
+        elif question_type in NA_items:
+            return 'NA'
+        else:
+            raise ValueError(f"Unkwon question type: {question_type}")
+
+    def prepare_dataset(self, dataset_name='VSI-Bench', repo_id='nyu-visionx/VSI-Bench'):
+
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
 
-            if not osp.exists(data_file):
+            if not os.path.exists(data_file):
                 return False
 
             if md5(data_file) != self.MD5:
                 return False
-
             data = load(data_file)
-            for idx, item in data.iterrows():
-                if not osp.exists(osp.join(pth, item['prefix'], item['video'] + '.mp4')):
+            for video_pth in data['video_path']:
+                if not osp.exists(osp.join(pth, video_pth)):
                     return False
             return True
-        cache_path = get_cache_path(repo_id)
 
+        cache_path = get_cache_path(repo_id)
         if cache_path is not None and check_integrity(cache_path):
             dataset_path = cache_path
         else:
-            def unzip_videos(pth):
+            def unzip_hf_zip(pth):
                 import zipfile
-                if not osp.exists(osp.join(pth, 'arkitscenes')):
-                    zip_file = osp.join(pth, 'arkitscenes.zip')
-                    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                        zip_ref.extractall(pth)
+                base_dir = pth
+                target_dir = os.path.join(pth, 'video/')
+                zip_files = [
+                    os.path.join(base_dir, file) for file in os.listdir(base_dir)
+                    if file.endswith('.zip')
+                ]
+                zip_files.sort()
 
-                if not osp.exists(osp.join(pth, 'scannet')):
-                    zip_file = osp.join(pth, 'scannet.zip')
-                    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                        zip_ref.extractall(pth)
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir, exist_ok=True)
+                    for zip_file in zip_files:
+                        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                            for member in zip_ref.namelist():
+                                if member.endswith('/'):
+                                    continue
 
-                if not osp.exists(osp.join(pth, 'scannetpp')):
-                    zip_file = osp.join(pth, 'scannetpp.zip')
-                    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                        zip_ref.extractall(pth)
+                                rel = os.path.normpath(member.lstrip("/"))
+                                dst = os.path.join(target_dir, rel)
+                                os.makedirs(os.path.dirname(dst), exist_ok=True)
+
+                                with zip_ref.open(member) as source, open(dst, 'wb') as target:
+                                    target.write(source.read())
+                    print('The video file has been restored and stored from the zip file.')
+                else:
+                    print('The video file already exists.')
+
+            def to_candidates(x):
+                if x is None or (isinstance(x, float) and math.isnan(x)):
+                    return []
+                if isinstance(x, list):
+                    return x
+                if isinstance(x, (tuple, set)):
+                    return list(x)
+                if hasattr(x, "tolist"):
+                    try:
+                        return x.tolist()
+                    except Exception:
+                        pass
+                if isinstance(x, str):
+                    try:
+                        v = json.loads(x)
+                        return v if isinstance(v, list) else [v]
+                    except Exception:
+                        return [x]
+                return [x]
 
             def generate_tsv(pth):
-                data_file = osp.join(pth, f'{dataset_name}.tsv')
-                if osp.exists(data_file) and md5(data_file) == self.MD5:
-                    return
-                self.data_list = []
-                with open(osp.join(pth, 'test.jsonl'), 'r') as file:
-                    for line in file:
-                        data = json.loads(line)
-                        self.data_list.append({
-                            'id': data['id'],
-                            'prefix': data['dataset'],
-                            'video': data['scene_name'],
-                            'type': data['question_type'],
-                            'question': data['question'],
-                            'answer': data['ground_truth'],
-                            'candidates': data['options'],
-                        })
 
-                data_df = pd.DataFrame(self.data_list)
-                data_df = data_df.assign(index=range(len(data_df)))
-                data_df.to_csv(data_file, sep='\t', index=False)
+                data_file = osp.join(pth, f'{dataset_name}.tsv')
+                if os.path.exists(data_file) and md5(data_file) == self.MD5:
+                    return
+
+                data_file = pd.read_parquet(os.path.join(pth, 'test-00000-of-00001.parquet'))
+                data_file = data_file.assign(index=range(len(data_file)))
+
+                data_file['index'] = data_file['id']
+                data_file["video"] = (
+                    data_file["dataset"].astype(str).str.rstrip("/")
+                    + "/" +
+                    data_file["scene_name"].astype(str).str.removesuffix(".mp4")
+                    + ".mp4"
+                )
+                data_file['candidates'] = data_file['options'].apply(to_candidates)
+                data_file['question'] = data_file['question']
+                data_file['answer'] = data_file['ground_truth']
+                data_file['question_type'] = data_file['question_type']
+
+                out_cols = ["index", "video", "candidates",
+                            "question", "answer", "question_type"]
+
+                data_file[out_cols].to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep="\t", index=False)
 
             if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
-            unzip_videos(dataset_path)
+            unzip_hf_zip(dataset_path)
             generate_tsv(dataset_path)
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
-        return dict(root=dataset_path, data_file=data_file)
 
-    def save_video_frames(self, line):
-        vid_path = osp.join(self.data_root, line['prefix'], line['video'] + '.mp4')
-        import decord
+        return dict(data_file=data_file, root=dataset_path)
+
+    def save_video_frames(self, video_path, video_llm=False):
+        vid_path = osp.join(self.data_root, 'video', video_path)
+
         vid = decord.VideoReader(vid_path)
+        video_nframes = len(vid)
+        video_fps = vid.get_avg_fps()
         video_info = {
-            'fps': vid.get_avg_fps(),
-            'n_frames': len(vid),
+            'fps': video_fps,
+            'n_frames': video_nframes,
         }
+
+        indices = []
+
         if self.nframe > 0 and self.fps < 0:
-            step_size = len(vid) / (self.nframe + 1)
-            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
-            frame_paths = self.frame_paths(f"{line['prefix']}/{line['video']}")
+            if self.sample_strategy == 'uniform_tail':
+                indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
+                if (video_nframes - 1) != indices[-1]:
+                    indices.append(video_nframes - 1)
+
+            elif self.sample_strategy == 'uniform':
+                indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
+
+            elif self.sample_strategy == 'chunk_center':
+                seg_size = float(video_nframes) / self.nframe
+                indices = [int((seg_size / 2) + np.round(seg_size * i)) for i in range(self.nframe)]
+                indices = np.clip(indices, 0, video_nframes - 1).tolist()
+
+            else:
+                raise ValueError(f"Unsupported sample strategy: {self.sample_strategy}")
+
+            frame_paths = self.frame_paths(video_path)
+
         elif self.fps > 0:
-            # not constrained by num_frames, get frames by fps
-            total_duration = video_info['n_frames'] / video_info['fps']
+            total_duration = video_nframes / video_fps
             required_frames = int(total_duration * self.fps)
-            step_size = video_info['fps'] / self.fps
+            step_size = video_fps / self.fps
             indices = [int(i * step_size) for i in range(required_frames)]
-            frame_paths = self.frame_paths_fps(f"{line['prefix']}/{line['video']}", len(indices))
+            if self.sample_strategy == 'uniform_tail' and (video_nframes - 1) != indices[-1]:
+                indices.append(video_nframes - 1)
+
+            frame_paths = self.frame_paths_fps(video_path)
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
         if not flag:
-            lock_path = osp.splitext(vid_path)[0] + '.lock'
-            with portalocker.Lock(lock_path, 'w', timeout=30):
-                if not np.all([osp.exists(p) for p in frame_paths]):
-                    images = [vid[i].asnumpy() for i in indices]
-                    images = [Image.fromarray(arr) for arr in images]
-                    for im, pth in zip(images, frame_paths):
-                        if not osp.exists(pth):
-                            im.save(pth)
+            images = [vid[i].asnumpy() for i in indices]
+            images = [Image.fromarray(arr) for arr in images]
+            for im, pth in zip(images, frame_paths):
+                if not osp.exists(pth) and not video_llm:
+                    im.save(pth)
 
-        return frame_paths
+        return frame_paths, indices, video_info
 
     def build_prompt(self, line, video_llm):
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        message = []
-        img_frame_paths = self.save_video_frames(line)
-        for im in img_frame_paths:
-            message.append(dict(type='image', value=im))
+        question = line['question']
+        question_type = str(line['question_type'])
+        task_type = self.get_task_type(question_type)
 
-        pre_prompt = "These are frames of a video."  # pre_prompt = ""
+        if task_type == "MCQ":
+            options = ast.literal_eval(line['candidates'])
+            formatted_options = '\n'.join(options)
 
-        assert line['type'] in self.NA_QUESTION_TYPES or line['type'] in self.MCA_QUESTION_TYPES
-
-        if line['type'] in self.NA_QUESTION_TYPES:
-            post_prompt = "Please answer the question using a single word or phrase."
-            prompt = pre_prompt + "\n" + line['question'] + "\n" + post_prompt
-            message.append(dict(type='text', value=prompt))
+        # use vsi origin prompt
+        if self.variant == 'origin':
+            if task_type == 'MCQ':
+                prompt = "\n".join([self.ORIGIN_PRE_PROMPT, question, formatted_options, self.ORIGIN_MCQ_POST_PROMPT])
+            else:
+                prompt = "\n".join([self.ORIGIN_PRE_PROMPT, question, self.ORIGIN_VQA_POST_PROMPT])
         else:
-            options = "Options:\n" + "\n".join(ast.literal_eval(line["candidates"]))
-            post_prompt = "Answer with the option's letter from the given choices directly."
-            prompt = "\n".join([pre_prompt, line['question'], options, post_prompt])
-            message.append(dict(type='text', value=prompt))
+            if task_type == 'MCQ':
+                prompt = "\n".join([self.STANDARD_MCQ_SYS_PROMPT, question, formatted_options])
+            else:
+                prompt = "\n".join([self.STANDARD_VQA_SYS_PROMPT, question])
+
+        message = []
+
+        if video_llm:
+            message.append(dict(type='video', value=osp.join(self.data_root, 'video', line['video'])))
+        else:
+            frames, _, _ = self.save_video_frames(line['video'], video_llm)
+            for im in frames:
+                message.append(dict(type='image', value=im))
+
+        message.append(dict(type='text', value=prompt))
+
         return message
 
-    @classmethod
-    def critic_multichoice(self, pred, ans):  # Evaluation of MCA questions
-        if pred.lower() == ans.lower() or pred.lower().startswith(ans.lower() + "."):
-            return 1
-        else:
-            return 0
-
-    @classmethod
-    def mra(self, pred, ans):  # Evaluation of NA questions
-        try:
-            ans_num = float(ans)
-            pred_num = float(pred)
-            acc = 0
-            for i in range(20):
-                theta = 0.5 + i * 0.05
-                if abs(pred_num - ans_num) / ans_num < 1 - theta:
-                    acc += 1
-            return acc / 10
-        except Exception as e:
-            print("Error:", e)
-            return 0
-
-    @classmethod
-    def eva_one_row(self, row):
-        assert row['type'] in self.NA_QUESTION_TYPES or row['type'] in self.MCA_QUESTION_TYPES
-        if row['type'] in self.MCA_QUESTION_TYPES:
-            return self.critic_multichoice(row['prediction'], row['answer'])
-        else:
-            return self.mra(row['prediction'], row['answer'])
-
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
-        result_file = get_intermediate_file_path(eval_file, '_result', 'xlsx')
-        df = pd.read_excel(eval_file)
+        from .utils.spatial_rel_bench.cal_scores import compute_mcq_score, compute_na_score
 
-        df['score'] = df.apply(self.eva_one_row, axis=1)
+        suffix = eval_file.split('.')[-1]
+        result_file = eval_file.replace(f'.{suffix}', f'_result.pkl')
 
-        overall_stats = [{
-            "Type": "overall",
-            "Count": len(df),
-            "Score_sum": df['score'].sum(),
-            "Avg_score": df['score'].sum() / len(df)}
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        data['task_type'] = data['question_type'].apply(self.get_task_type)
+        mcq_data = data[data['task_type'] == 'MCQ'].copy()
+        na_data  = data[data['task_type'] == 'NA' ].copy()
+
+        if len(mcq_data):
+            mcq_scored = compute_mcq_score(mcq_data)
+        else:
+            mcq_scored = mcq_data
+
+        if len(na_data):
+            na_scored  = compute_na_score(na_data)
+        else:
+            na_scored = na_data
+
+        summary = self._aggregate(mcq_scored, na_scored)
+
+        try:
+            to_dump = {
+                'mcq_scored': mcq_scored,
+                'na_scored': na_scored,
+                'summary': summary
+            }
+            import pickle
+            with open(result_file, 'wb') as f:
+                pickle.dump(to_dump, f)
+            print(f"[save] result saved to {result_file}")
+        except Exception as e:
+            warnings.warn(f"[save] failed to save result to {result_file}: {e}")
+
+        base_no_suffix = eval_file[:-(len(suffix) + 1)]
+        xlsx_path = f"{base_no_suffix}_extract_matching.xlsx"
+        acc_tsv_path = f"{base_no_suffix}_acc.tsv"
+
+        try:
+            import pandas as pd
+
+            frames = []
+            if len(mcq_scored):
+                df_mcq = mcq_scored.copy()
+                df_mcq['task_type'] = 'MCQ'
+                frames.append(df_mcq)
+            if len(na_scored):
+                df_na = na_scored.copy()
+                df_na['task_type'] = 'NA'
+                frames.append(df_na)
+
+            if frames:
+                merged = pd.concat(frames, axis=0, ignore_index=True)
+            else:
+                base_mcq_cols = list(mcq_data.columns) if len(mcq_data) else []
+                base_na_cols  = list(na_data.columns)  if len(na_data)  else []
+                all_cols = list(dict.fromkeys(base_mcq_cols + base_na_cols + [
+                    'pred_extracted', 'hit', 'MRA:.5:.95:.05', 'task_type'
+                ]))
+                merged = pd.DataFrame(columns=all_cols)
+
+            prefer_front = [
+                'index', 'question_type', 'task_type',
+                'prediction', 'pred_extracted', 'answer',
+                'hit', 'MRA:.5:.95:.05'
+            ]
+            ordered = [c for c in prefer_front if c in merged.columns] + \
+                      [c for c in merged.columns if c not in prefer_front]
+            merged = merged[ordered]
+
+            with pd.ExcelWriter(xlsx_path, engine="openpyxl") as writer:
+                merged.to_excel(writer, sheet_name="ALL", index=False)
+
+            print(f"[save] extract & matching (merged) saved to {xlsx_path}")
+        except Exception as e:
+            warnings.warn(f"[save] failed to save merged extract xlsx to {xlsx_path}: {e}")
+
+        try:
+            acc_df = pd.DataFrame(
+                [(k, v) for k, v in summary.items() if k not in ('tabulated_keys', 'tabulated_results')],
+                columns=["metric", "value"]
+            )
+            acc_df.to_csv(acc_tsv_path, sep="\t", index=False)
+            print(f"[save] accuracy table saved to {acc_tsv_path}")
+        except Exception as e:
+            warnings.warn(f"[save] failed to save acc tsv to {acc_tsv_path}: {e}")
+
+        print(f"[{self.dataset_name}] summary: {summary}")
+        return summary
+
+    def _aggregate(self, mcq_df: pd.DataFrame, na_df: pd.DataFrame) -> dict:
+        output = {}
+
+        if len(mcq_df):
+            for qtype, sub in mcq_df.groupby('question_type'):
+                output[f"{qtype}_accuracy"] = float(sub['hit'].mean())
+
+        if len(na_df):
+            for qtype, sub in na_df.groupby('question_type'):
+                output[f"{qtype}_MRA:.5:.95:.05"] = float(sub['MRA:.5:.95:.05'].mean())
+
+        rel_keys = [
+            'object_rel_direction_easy_accuracy',
+            'object_rel_direction_medium_accuracy',
+            'object_rel_direction_hard_accuracy',
         ]
-        type_stats = df.groupby('type').agg(
-            count=('score', 'size'),     # Row number
-            score_sum=('score', 'sum')   # Score sum
-        ).reset_index()
+        if all(k in output for k in rel_keys):
+            output['object_rel_direction_accuracy'] = (
+                output.pop(rel_keys[0]) + output.pop(rel_keys[1]) + output.pop(rel_keys[2])
+            ) / 3.0
 
-        for id, row in type_stats.iterrows():
-            overall_stats.append({
-                "Type": row['type'],
-                "Count": row['count'],
-                "Score_sum": row['score_sum'],
-                "Avg_score": row['score_sum'] / row['count']
-            })
-        overall_stats = pd.DataFrame(overall_stats)
-        dump(overall_stats, score_file)
-        dump(df, result_file)
-        return overall_stats
+        output['overall'] = float(sum(output.values()) / len(output)) if output else 0.0
+
+        res = OrderedDict()
+        res['overall'] = output['overall'] * 100.0
+
+        ordered_qtypes = [
+            "object_counting",
+            "object_abs_distance",
+            "object_size_estimation",
+            "room_size_estimation",
+            "object_rel_distance",
+            "object_rel_direction",
+            "route_planning",
+            "obj_appearance_order",
+        ]
+        metrics_order = ["accuracy", "MRA:.5:.95:.05"]
+
+        for qtype in ordered_qtypes:
+            for metric in metrics_order:
+                key = f"{qtype}_{metric}"
+                if key in output:
+                    res[key] = output[key] * 100.0
+
+        tab_keys = ", ".join(list(res.keys()))
+        tab_vals = ", ".join([f"{v:.3f}" for v in res.values()])
+        print(f"Tabulated results: {tab_keys}")
+        print(f"Tabulated results: {tab_vals}")
+
+        res["tabulated_keys"] = tab_keys
+        res["tabulated_results"] = tab_vals
+        return res

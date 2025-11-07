@@ -146,6 +146,7 @@ class VideoBaseDataset:
         # `data_file` (the TSV dataset file)
         pass
 
+    @abstractmethod
     def prepare_tsv(self, url, file_md5=None):
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
