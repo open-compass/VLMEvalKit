@@ -191,10 +191,11 @@ class InternVLChat(BaseModel):
             torch.cuda.set_device(0)
             self.device = 'cuda'
         else:
+            # TODO: check transformers version
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
+                # load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map="auto").eval()
@@ -206,10 +207,11 @@ class InternVLChat(BaseModel):
 
             self.reward_tokenizer = AutoTokenizer.from_pretrained(
                 reward_model_path, trust_remote_code=True, use_fast=False)
+            # TODO: check transformers version
             self.reward_model = AutoModel.from_pretrained(
                 reward_model_path,
                 torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
+                # load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map="auto").eval()
