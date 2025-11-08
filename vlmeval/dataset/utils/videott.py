@@ -50,7 +50,7 @@ def get_dimension_rating(data_path):
             domain_rating[domain]['correct'] += 1
 
     for domain in DOMAINS + ['overall']:
-        domain_rating[domain]['score'] = (domain_rating[domain]["correct"] / domain_rating[domain]["number"] * 100) if domain_rating[domain]["number"] > 0 else 0.0
+        domain_rating[domain]['score'] = domain_rating[domain]["correct"] / domain_rating[domain]["number"] * 100
 
     return domain_rating
 
