@@ -18,7 +18,7 @@ def preprocess_llama3(
     tokenizer: transformers.PreTrainedTokenizer,
     has_image: bool = False,
     max_len=2048,
-    system_message: str = "You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.",
+    system_message: str = "You are a helpful language and vision assistant. You are able to understand the visual content that the user provides, and assist the user with a variety of tasks using natural language.",  # noqa E501
 ) -> Dict:
     roles = {"human": "user", "gpt": "assistant"}
 
@@ -97,8 +97,14 @@ class InsightV(BaseModel):
             logging.critical('Please install VLMEvalKit after installing Insight-V')
             raise err
         # Do not use kwargs for now
-        self._tokenizer, self.reason_model, self._image_processor, self._max_length = load_pretrained_model(pretrained_reason, None, get_model_name_from_path(pretrained_reason), device_map=device_map, use_flash_attention_2=use_flash_attention_2)
-        _, self.summary_model, _, _ = load_pretrained_model(pretrained_summary, None, get_model_name_from_path(pretrained_summary), device_map=device_map, use_flash_attention_2=use_flash_attention_2)
+        self._tokenizer, self.reason_model, self._image_processor, self._max_length = load_pretrained_model(
+            pretrained_reason, None, get_model_name_from_path(pretrained_reason),
+            device_map=device_map, use_flash_attention_2=use_flash_attention_2,
+        )
+        _, self.summary_model, _, _ = load_pretrained_model(
+            pretrained_summary, None, get_model_name_from_path(pretrained_summary),
+            device_map=device_map, use_flash_attention_2=use_flash_attention_2,
+        )
         self._config = self.reason_model.config
         self.reason_model.eval()
         self.summary_model.eval()
@@ -110,7 +116,10 @@ class InsightV(BaseModel):
 
         self.conv_mode = "llava_llama_3"
 
-        kwargs_default = dict(do_sample=True, reason_temperature=0.7, summary_temperature=0.2, reason_max_new_tokens=16384, summary_max_new_tokens=512, top_p=0.95, num_beams=1, use_cache=True) # noqa E501
+        kwargs_default = dict(
+            do_sample=True, reason_temperature=0.7, summary_temperature=0.2,
+            reason_max_new_tokens=16384, summary_max_new_tokens=512, top_p=0.95, num_beams=1, use_cache=True,
+        )
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
@@ -143,7 +152,7 @@ class InsightV(BaseModel):
         else:
             prompt += '\nAnswer the question using a single word or phrase.'
 
-        reasoning_prompt = prompt + "\n\nPerform step-by-step reasoning of the problem. Only provide the reasoning process."
+        reasoning_prompt = prompt + "\n\nPerform step-by-step reasoning of the problem. Only provide the reasoning process."  # noqa E501
 
         message = [dict(type='image', value=s) for s in tgt_path]
         message.append(dict(type='text', value=reasoning_prompt))
@@ -152,7 +161,7 @@ class InsightV(BaseModel):
     def generate_inner(self, message, dataset=None):
         try:
             from llava.mm_utils import process_images, tokenizer_image_token
-            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IGNORE_INDEX
+            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IGNORE_INDEX. # noqa E501
             from llava.conversation import conv_templates, SeparatorStyle
         except Exception as err:
             logging.critical('Please install Insight-V before using Insight-V')
@@ -186,7 +195,7 @@ class InsightV(BaseModel):
 
         prompt = prompt.replace('PLACEHOLDER', content)
 
-        input_ids = preprocess_llama3([[{'from': 'human', 'value': prompt},{'from': 'gpt','value': None}]], self._tokenizer, has_image=True).cuda()
+        input_ids = preprocess_llama3([[{'from': 'human', 'value': prompt},{'from': 'gpt','value': None}]], self._tokenizer, has_image=True).cuda()  # noqa E501
         pad_token_ids = self._tokenizer.pad_token_id if self._tokenizer.pad_token_id is not None else self._tokenizer.eos_token_id
         attention_masks = input_ids.ne(pad_token_ids).to('cuda')
 
@@ -211,9 +220,9 @@ class InsightV(BaseModel):
         reason_chain = "<thoughts>\n" + reason_chain + "</thoughts>\n"
 
         original_question = reasoning_question.replace("\n\nPerform step-by-step reasoning of the problem. Only provide the reasoning process.","").strip()
-        summary_question = "I will give you a reasoning process of the question. You should determine whether the reasoning process is correct about the question. If it is correct, please summarize the answer based on the reasoning process. If it is incorrect, answer the question and ignore the reasoning process. You shold directly give the summarization or answer as you are directly answer the QUESTION  without saying your judgement about the reasoning process.\n\nQUESTION: " + original_question + f"\n\nREASON PROCESS: {reason_chain}"
+        summary_question = "I will give you a reasoning process of the question. You should determine whether the reasoning process is correct about the question. If it is correct, please summarize the answer based on the reasoning process. If it is incorrect, answer the question and ignore the reasoning process. You shold directly give the summarization or answer as you are directly answer the QUESTION  without saying your judgement about the reasoning process.\n\nQUESTION: " + original_question + f"\n\nREASON PROCESS: {reason_chain}"  # noqa E501
 
-        input_ids_summary = preprocess_llama3([[{'from': 'human', 'value': summary_question},{'from': 'gpt','value': None}]], self._tokenizer, has_image=True).cuda()
+        input_ids_summary = preprocess_llama3([[{'from': 'human', 'value': summary_question},{'from': 'gpt','value': None}]], self._tokenizer, has_image=True).cuda()  # noqa E501
         attention_masks_summary = input_ids_summary.ne(pad_token_ids).to('cuda')
 
         # summary content
