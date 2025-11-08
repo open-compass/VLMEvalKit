@@ -161,7 +161,7 @@ class InsightV(BaseModel):
     def generate_inner(self, message, dataset=None):
         try:
             from llava.mm_utils import process_images, tokenizer_image_token
-            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IGNORE_INDEX. # noqa E501
+            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IGNORE_INDEX  # noqa E501
             from llava.conversation import conv_templates, SeparatorStyle
         except Exception as err:
             logging.critical('Please install Insight-V before using Insight-V')
@@ -196,7 +196,7 @@ class InsightV(BaseModel):
         prompt = prompt.replace('PLACEHOLDER', content)
 
         input_ids = preprocess_llama3([[{'from': 'human', 'value': prompt},{'from': 'gpt','value': None}]], self._tokenizer, has_image=True).cuda()  # noqa E501
-        pad_token_ids = self._tokenizer.pad_token_id if self._tokenizer.pad_token_id is not None else self._tokenizer.eos_token_id
+        pad_token_ids = self._tokenizer.pad_token_id if self._tokenizer.pad_token_id is not None else self._tokenizer.eos_token_id  # noqa E501
         attention_masks = input_ids.ne(pad_token_ids).to('cuda')
 
         # reasoning content
@@ -219,7 +219,7 @@ class InsightV(BaseModel):
         reason_chain = reasoning_outputs[0].split("<thoughts>")[-1].split("</thoughts>")[0]
         reason_chain = "<thoughts>\n" + reason_chain + "</thoughts>\n"
 
-        original_question = reasoning_question.replace("\n\nPerform step-by-step reasoning of the problem. Only provide the reasoning process.","").strip()
+        original_question = reasoning_question.replace("\n\nPerform step-by-step reasoning of the problem. Only provide the reasoning process.","").strip()  # noqa E501
         summary_question = "I will give you a reasoning process of the question. You should determine whether the reasoning process is correct about the question. If it is correct, please summarize the answer based on the reasoning process. If it is incorrect, answer the question and ignore the reasoning process. You shold directly give the summarization or answer as you are directly answer the QUESTION  without saying your judgement about the reasoning process.\n\nQUESTION: " + original_question + f"\n\nREASON PROCESS: {reason_chain}"  # noqa E501
 
         input_ids_summary = preprocess_llama3([[{'from': 'human', 'value': summary_question},{'from': 'gpt','value': None}]], self._tokenizer, has_image=True).cuda()  # noqa E501
