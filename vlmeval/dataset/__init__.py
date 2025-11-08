@@ -32,6 +32,7 @@ from .spatial457 import Spatial457
 from .charxiv import CharXiv
 from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
+from .refcoco import RefCOCODataset
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -220,7 +221,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset
 ]
 
 VIDEO_DATASET = [
