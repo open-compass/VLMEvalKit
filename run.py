@@ -175,7 +175,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
     # Work Dir
-    parser.add_argument('--work-dir', type=str, default='/workspace/brucessyu/VLMEvalKit/outputs', help='select the output directory')
+    parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
     # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer', 'eval'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
