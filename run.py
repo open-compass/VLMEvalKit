@@ -45,6 +45,7 @@ from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
 from vlmeval.inference_mt import infer_data_job_mt
+from vlmeval.inference_mixed import infer_data_job_mixed
 from vlmeval.smp import *
 from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
@@ -174,7 +175,7 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
     # Work Dir
-    parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
+    parser.add_argument('--work-dir', type=str, default='/workspace/brucessyu/VLMEvalKit/outputs', help='select the output directory')
     # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer', 'eval'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
@@ -336,6 +337,17 @@ def main():
                             api_nproc=args.api_nproc,
                             ignore_failed=args.ignore,
                             use_vllm=args.use_vllm)
+                    elif dataset.TYPE == 'MixedOutput':
+                        model = infer_data_job_mixed(
+                            model,
+                            work_dir=pred_root,
+                            model_name=model_name,
+                            dataset=dataset,
+                            actual_dataset_name=dataset_name,
+                            verbose=args.verbose,
+                            api_nproc=args.api_nproc,
+                            ignore_failed=args.ignore,
+                            use_vllm=args.use_vllm)
                     else:
                         model = infer_data_job(
                             model,
@@ -402,6 +414,8 @@ def main():
                         judge_kwargs['model'] = 'gpt-4.1'
                     elif listinstr(['MathCanvas'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
+                    elif dataset.TYPE == 'MixedOutput':
+                        judge_kwargs['model'] = 'qwen-72b'
 
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True
