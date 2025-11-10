@@ -281,8 +281,11 @@ VIDEO_DATASET = [
 =======
     Video_Holmes, VCRBench, CGAVCounting,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo
+<<<<<<< HEAD
 
 >>>>>>> afaf8d0 ([Benchmark] Add EASI related video benchmark (#3))
+=======
+>>>>>>> 991f08c ([Refactor] change SenseNova-SI series models hf dir and fix vsi sitevideo dataset type (#9))
 ]
 
 TEXT_DATASET = [

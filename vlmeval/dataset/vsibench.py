@@ -44,7 +44,7 @@ class VsiBench(VideoBaseDataset):
     ORIGIN_VQA_POST_PROMPT = "Answer briefly and directly in one float number."
 
     def __init__(self, dataset, pack=False, nframe=0, fps=-1, sample_strategy='uniform_tail'):
-        super().__init__(dataset='VSI-Bench', pack=pack, nframe=nframe, fps=fps)
+        super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
         valid_strategies = {'uniform_tail', 'uniform', 'chunk_center'}
         if sample_strategy not in valid_strategies:
