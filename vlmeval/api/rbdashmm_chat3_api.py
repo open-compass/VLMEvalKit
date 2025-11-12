@@ -36,9 +36,6 @@ def process_prediction_text(text):
         result = re.sub(redacted_pattern, '', text, flags=re.DOTALL)
         return result.strip()
 
-    if len(text) > 32767:
-        return text[-30000:]
-
     # 默认返回
     return text
 
