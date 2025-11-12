@@ -7,6 +7,7 @@ from vlmeval.smp import *
 FAIL_MSG = 'Failed to obtain answer via API.'
 NOT_USE_SIBENCH_PROMPT = False
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, nargs='+', required=True)
@@ -18,7 +19,16 @@ def parse_args():
 
 
 # Only API model is accepted
-def infer_data_api(model, work_dir, model_name, dataset, actual_dataset_name, index_set=None, api_nproc=4, ignore_failed=False):
+def infer_data_api(
+    model, 
+    work_dir, 
+    model_name, 
+    dataset, 
+    actual_dataset_name, 
+    index_set=None, 
+    api_nproc=4, 
+    ignore_failed=False
+):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
@@ -79,7 +89,18 @@ def infer_data_api(model, work_dir, model_name, dataset, actual_dataset_name, in
     return res
 
 
-def infer_data(model, model_name, work_dir, dataset, actual_dataset_name, data_base, out_file, verbose=False, api_nproc=4, use_vllm=False):
+def infer_data(
+    model, 
+    model_name, 
+    work_dir, 
+    dataset, 
+    actual_dataset_name, 
+    data_base, 
+    out_file, 
+    verbose=False, 
+    api_nproc=4, 
+    use_vllm=False
+):
     dataset_name = dataset.dataset_name
     prev_file = f'{work_dir}/{model_name}_{actual_dataset_name}_PREV.pkl'
     res = load(prev_file) if osp.exists(prev_file) else {}
@@ -204,7 +225,9 @@ def infer_data(model, model_name, work_dir, dataset, actual_dataset_name, data_b
                 if getattr(model, 'fps', None) is None and dataset.fps > 0:
                     print(f'using {model_name} default setting for video, dataset.fps is ommitted')
 
-            if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name) and NOT_USE_SIBENCH_PROMPT:
+            if (hasattr(model, 'use_custom_prompt')
+                    and model.use_custom_prompt(dataset_name)
+                    and NOT_USE_SIBENCH_PROMPT):
                 if dataset.nframe == 0:
                     raise ValueError(f'nframe must be set for custom prompt, fps is not suitable for {model_name}')
                 struct = model.build_prompt(
@@ -245,12 +268,20 @@ def infer_data(model, model_name, work_dir, dataset, actual_dataset_name, data_b
 
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job_mixed(
-    model, work_dir, model_name, dataset, actual_dataset_name, verbose=False, api_nproc=4, ignore_failed=False, use_vllm=False
+    model, 
+    work_dir, 
+    model_name, 
+    dataset, 
+    actual_dataset_name, 
+    verbose=False, 
+    api_nproc=4, 
+    ignore_failed=False, 
+    use_vllm=False
 ):
     lmu_path = LMUDataRoot()
     data_base = lmu_path
     rank, world_size = get_rank_and_world_size()
-    dataset_name = dataset.dataset_name
+    
     result_file = osp.join(work_dir, f'{model_name}_{actual_dataset_name}.xlsx')
 
     prev_file = f'{work_dir}/{model_name}_{actual_dataset_name}_PREV.pkl'
