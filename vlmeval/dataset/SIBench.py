@@ -8,8 +8,6 @@ import re
 import warnings
 from .utils import build_judge, DEBUG_MESSAGE
 
-
-
 class SIBench(ImageMCQDataset, ImageBaseDataset, VideoBaseDataset):
     # -------------------------------------------------
     #
@@ -25,8 +23,8 @@ class SIBench(ImageMCQDataset, ImageBaseDataset, VideoBaseDataset):
     TYPE = 'MixedOutput'
 
     NEED_EXTRA_PROMPT_SOURCE = ['vstibench', 'MMSI-Bench', '3DSRBench', 'OmniSpatial', 'Spatial-MM', 'SpatialMQA',
-                         'VSI-Bench', 'STI-Bench', 'SpatialEval', 'SITE-Bench', 'SPHERE-VLM', 'SRBench', 'BLINK'
-                         ]
+                                'VSI-Bench', 'STI-Bench', 'SpatialEval', 'SITE-Bench', 'SPHERE-VLM', 'SRBench', 'BLINK'
+                                ]
     # do not need = SpatialBench, SPAR-Bench, Super-CLEVR-3D, Omni3D-Bench
     SETTING = ['relative_distance', 'Reach_Prediction', 'Object_Shape', 'Height', 'Existence', 'Spatial_Compatibility',
                'Coordinate_Conversion', 'Counting', 'Route_Planning', 'Trajectory_Description', 'Geometric_Reasoning',
@@ -35,19 +33,23 @@ class SIBench(ImageMCQDataset, ImageBaseDataset, VideoBaseDataset):
                'Object_Localization',"Spatial_Relation", "SIBench", "SIBench-mini"
                ]
 
-# Counting Camera_Pose Coordinate_Conversion multi-view_reasoning Object_Shape Object_Size_Estimation Occlusion relative_distance Situational_QA Spatial_Grid Spatial_Relation Trajectory_Description
-# Reach_Prediction Height Existence Spatial_Compatibility Route_Planning Geometric_Reasoning Velocity_Acceleration Spatial_Imagination Temporal-Appearance_Order Object_Localization
+# Counting Camera_Pose Coordinate_Conversion multi-view_reasoning Object_Shape Object_Size_Estimation 
+# Occlusion relative_distance Situational_QA Spatial_Grid Spatial_Relation Trajectory_Description
+# Reach_Prediction Height Existence Spatial_Compatibility Route_Planning Geometric_Reasoning 
+# Velocity_Acceleration Spatial_Imagination Temporal-Appearance_Order Object_Localization
+
     VIDEO_MODALITY_INCLUDED_SETTING = ['']
 
     FRAMES_TMPL_SYS = """
-You will receive {} distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
+You will receive {} distinct frames that have been uniformly sampled from a video sequence, 
+arranged in the same temporal order as they appear in the video.
 Please analyze these frames and answer the question based on your observations.
 """
     FRAMES_TMPL_SYS_4VIDEO_LLM = """
-You will receive several distinct frames that have been uniformly sampled from a video sequence, arranged in the same temporal order as they appear in the video.
+You will receive several distinct frames that have been uniformly sampled from a video sequence, 
+arranged in the same temporal order as they appear in the video.
 Please analyze these frames and answer the question based on your observations.
 """
-    
     def __init__(self, dataset='MMBench', skip_noimg=True, nframe=30, fps=-1):
         super(SIBench, self).__init__(dataset, skip_noimg)
 
@@ -64,7 +66,7 @@ Please analyze these frames and answer the question based on your observations.
     @classmethod
     def supported_datasets(cls):
         return cls.SETTING
-    
+
     def add_extra_prompt(self, prompt, answer_type, data_source):
         if data_source in self.NEED_EXTRA_PROMPT_SOURCE:
             if answer_type == 'MCQ':
@@ -74,7 +76,7 @@ Please analyze these frames and answer the question based on your observations.
             elif answer_type.startswith('Number'):
                 prompt += "\nAnswer using a single number and nothing else."
             else:
-                raise NotImplementedError(f"Answer type '{answer_type}' is not supported. Supported types are: 'MCQ', 'YN', 'Number'.")
+                raise NotImplementedError(f"Answer type '{answer_type}' is not supported.")
         elif data_source is None:
             raise KeyError("Required key 'data_source' is missing.")
         return prompt
@@ -120,7 +122,7 @@ Please analyze these frames and answer the question based on your observations.
     def save_video_into_images(self, line, data_base):
         frame_paths = self.save_video_frames(line, data_base)
         return frame_paths
-    
+
     def build_prompt_for_video(self, line, video_llm, data_base):
         # need video_llm 
         if isinstance(line, int):
@@ -158,7 +160,7 @@ Please analyze these frames and answer the question based on your observations.
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
         else:
             msgs = [dict(type='image', value=tgt_path)]
-        
+
         question = line['question']
         prompt = question
         answer_type = line.get('type')
@@ -170,7 +172,7 @@ Please analyze these frames and answer the question based on your observations.
     def build_prompt(self, line, video_llm=None, data_base='.'):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         if line.get('input_type') in ['image', 'multi-view']:
             return self.build_prompt_for_image(line=line, data_base=data_base)
         elif line.get('input_type') == 'video':
@@ -188,12 +190,12 @@ Please analyze these frames and answer the question based on your observations.
                 result.append(float(cleaned_str))
             except ValueError:
                 continue
-                
+
         if reverse_order:
             result.reverse()
-                
+
         return result
-    
+
     def compute_mra(self, y_true, y_pred):
         C = np.arange(0.5, 1.0, 0.05)
         mra_sum = 0
@@ -237,7 +239,6 @@ Please analyze these frames and answer the question based on your observations.
 
         return predict
 
-
     def build_prompt_mcq(self, reasoning_text):
         prompt_template = """You are a multiple-choice answer extractor.
             Your sole task is to identify the final answer from a piece of reasoning text and return *only* the corresponding option letter.
@@ -254,7 +255,6 @@ Please analyze these frames and answer the question based on your observations.
             **Output:** "B"
             ---
             Now, strictly following the format above, extract the answer from the following text:
-
             """
         return prompt_template + reasoning_text
 
@@ -277,7 +277,7 @@ Please analyze these frames and answer the question based on your observations.
             retry -= 1
 
             if retry == 0:
-                return 'z' #dict(opt='z', log='Failed to predict')
+                return 'z' # dict(opt='z', log='Failed to predict')
 
     def extract_mcq(self, pred, model):
         need_llm = not self.check_string_format(pred)
@@ -285,7 +285,6 @@ Please analyze these frames and answer the question based on your observations.
             pred = self.llm_process(pred, model)
 
         return self.mcq_check(pred)
-
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import extract_characters_regex, report_acc
@@ -338,22 +337,21 @@ Please analyze these frames and answer the question based on your observations.
                     try:
                         extract_pred = eval(str(pred.strip()))
                     except Exception:
-                        extract_pred = -1.0 #pred.strip()  # self.extract_numbers_from_string(pred, True)
-
+                        extract_pred = -1.0 # pred.strip()  # self.extract_numbers_from_string(pred, True)
+                        
                     ans = eval(str(ans))
                     if output_type == 'Number': 
-                        data.loc[data['index'] == idx, 'hit'] = self.compute_mra(ans, extract_pred) #data.loc[data['index'] == idx, 'hit'] = 0 #
+                        data.loc[data['index'] == idx, 'hit'] = self.compute_mra(ans, extract_pred) # data.loc[data['index'] == idx, 'hit'] = 0 
                     elif output_type == 'Number_Int':
                         data.loc[data['index'] == idx, 'hit'] = int(extract_pred == ans)
                     else:
                         NotImplementedError(f'Unsupported output type {output_type}.')
-
             print(
                 f'Among {len(data)} questions, failed to obtain prediction for {len(data) - len(data_un)} questions, '
                 f'failed to obtain the score for another {cnt_rejected} questions. '
                 f'Those questions will be counted as 0 score in ALL rating.'
             )
-
+            
             dump(data, score_file)
         data = load(score_file)
         acc = report_acc(data)
