@@ -92,6 +92,8 @@ from .matbench import MATBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .gsm8k_v import GSM8KVDataset
+from .emoset118k import EmoSet118K
+from .mmis import MMIS
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -221,7 +223,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, EmoSet118K, MMIS
 ]
 
 VIDEO_DATASET = [

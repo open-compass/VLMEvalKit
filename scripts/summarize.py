@@ -1,9 +1,9 @@
 from vlmeval.smp import *
 from vlmeval.dataset import SUPPORTED_DATASETS
 
-def get_score(model, dataset):
+def get_score(model, dataset, path='.'):
 
-    file_name = f'{model}/{model}_{dataset}'
+    file_name = f'{path}/{model}/{model}_{dataset}'
     if listinstr([
         'CCBench', 'MMBench', 'SEEDBench_IMG', 'MMMU', 'ScienceQA', 
         'AI2D_TEST', 'MMStar', 'RealWorldQA', 'BLINK', 'VisOnlyQA-VLMEvalKit'
@@ -17,6 +17,8 @@ def get_score(model, dataset):
         file_name += '_score.json'
     elif listinstr(['Spatial457'], dataset):
             file_name += '_score.json'
+    elif listinstr(['MMIS'], dataset):
+        file_name += '_llmjudge_items.jsonl'
     else:
         raise NotImplementedError
     if not osp.exists(file_name):
@@ -68,21 +70,46 @@ def get_score(model, dataset):
         for level in ["L1_single", "L2_objects", "L3_2d_spatial", "L4_occ",
                         "L4_pose", "L5_6d_spatial", "L5_collision"]:
             ret[f"{dataset} - {level}"] = data[f"{level}_score"] * 100
+    elif 'MMIS' in dataset:
+        score_room_type = 0
+        score_key_objects = 0
+        score_spatial_relations = 0
+        score_fluency = 0
+        score_hallucination_penalty = 0
+        count = 0
+        for item in data:
+            if 'score' in item:
+                s = item['score']
+                score_room_type += s['room_type']
+                score_key_objects += s['key_objects']
+                score_spatial_relations += s['spatial_relations']
+                score_fluency += s['fluency']
+                score_hallucination_penalty += s['hallucination_penalty']
+                count += 1
+        if count > 0:
+            ret[dataset] = {
+                'room_type': (score_room_type / count),
+                'key_objects': (score_key_objects / count),
+                'spatial_relations': (score_spatial_relations / count),
+                'fluency': (score_fluency / count),
+                'hallucination_penalty': (score_hallucination_penalty / count)
+            }
     return ret
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, nargs='+', default=[])
     parser.add_argument("--model", type=str, nargs='+', required=True)
+    parser.add_argument("--path", type=str, required=True)
     args = parser.parse_args()
     return args
 
-def gen_table(models, datasets):
+def gen_table(models, datasets, path):
     res = defaultdict(dict)
     for m in models:
         for d in datasets:
             try:
-                res[m].update(get_score(m, d))
+                res[m].update(get_score(m, d, path))
             except Exception as e:
                 logging.warning(f'{type(e)}: {e}')
                 logging.warning(f'Missing Results for Model {m} x Dataset {d}')
@@ -111,4 +138,4 @@ if __name__ == '__main__':
     args = parse_args()
     if args.data == []:
         args.data = list(SUPPORTED_DATASETS)
-    gen_table(args.model, args.data)
+    gen_table(args.model, args.data, args.path)
