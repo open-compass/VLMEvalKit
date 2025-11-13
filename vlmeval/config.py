@@ -1925,7 +1925,11 @@ interns1_groups = [
 interns1_series = {}
 for group in interns1_groups:
     interns1_series.update(group)
-    
+
+andesvl_series = {
+    "AndesVL-0_6B-Instruct": partial(AndesVL, model_path="OPPOer/AndesVL-0_6B-Instruct"),
+}
+
 supported_VLM = {}
 
 model_groups = [
@@ -1942,7 +1946,7 @@ model_groups = [
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
     flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
-    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, andesvl_series
 ]
 
 for grp in model_groups:
