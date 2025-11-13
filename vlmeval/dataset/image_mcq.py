@@ -90,6 +90,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
         'MMStar': 'https://opencompass.openxlab.space/utils/VLMEval/MMStar.tsv',
         'MMStar_KO': 'https://huggingface.co/datasets/NCSOFT/K-MMStar/resolve/main/MMStar_KO.tsv',
+        'MMStar_TR': 'https://huggingface.co/datasets/kesimeg/MMStar_tr/resolve/main/MMStar_TR.tsv',
         'RealWorldQA': 'https://opencompass.openxlab.space/utils/VLMEval/RealWorldQA.tsv',
         'MLLMGuard_DS': 'https://opencompass.openxlab.space/utils/VLMEval/MLLMGuard_DS.tsv',
         'BLINK': 'https://opencompass.openxlab.space/utils/VLMEval/BLINK.tsv',
