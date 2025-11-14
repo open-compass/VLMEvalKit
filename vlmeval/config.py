@@ -1756,7 +1756,7 @@ rbdashmm_api_series_lmdeploy = {
         temperature=0,
         retry=3,
         timeout=600
-    ),
+    )
 }
 
 logics_series = {
