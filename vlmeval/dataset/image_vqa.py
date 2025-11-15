@@ -3733,19 +3733,6 @@ class MMReason(ImageBaseDataset):
         'MMReason_testmini': 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true',
     }
     DATASET_MD5 = {'MMReason_testmini': '630205345349ac51c9999d4fbfd1d630'}
-    # DATASET_MD5 = None
-
-    # def load_data(self, dataset):
-    #     data_path = osp.join(LMUDataRoot(), f'{dataset}.tsv')
-
-    #     if file_size(data_path, 'GB') > 1:
-    #         local_path = data_path.replace('.tsv', '_local.tsv')
-    #         if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
-    #             from ..tools import LOCALIZE
-
-    #             LOCALIZE(data_path, local_path)
-    #         data_path = local_path
-    #     return load(data_path)
 
     # It returns a DataFrame
     @classmethod
