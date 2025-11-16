@@ -462,6 +462,7 @@ api_models = {
     # JiuTian-VL
     "JTVL": partial(JTVLChatAPI, model="jt-vl-chat", temperature=0, retry=10),
     "JTVL-Mini": partial(JTVLChatAPI_Mini, model="jt-vl-chat-mini", temperature=0, retry=10),
+    "JTVL-2B": partial(JTVLChatAPI_2B, model="jt-vl-chat-2b", temperature=0, retry=10),
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
     # TeleMM
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
@@ -793,6 +794,12 @@ long_vita_series = {
     ),
 }
 
+interns1_mini = {
+    "Intern-S1-mini": partial(
+        InternS1Chat, model_path="/mnt/shared-storage-user/mllm/lijinsong/models/Intern-S1-mini/"
+    ),
+}
+
 internvl = {
     "InternVL-Chat-V1-1": partial(
         InternVLChat, model_path="OpenGVLab/InternVL-Chat-V1-1", version="V1.1"
@@ -1034,53 +1041,78 @@ internvl3_5 = {
     ),
 }
 
-
 qwen3vl_series = {
     "Qwen3-VL-235B-A22B-Instruct": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-235B-A22B-Instruct",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
     ),
     "Qwen3-VL-235B-A22B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-235B-A22B-Thinking",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-30B-A3B-Instruct": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-30B-A3B-Instruct",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
     ),
     "Qwen3-VL-30B-A3B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-30B-A3B-Thinking",
         use_custom_prompt=False,
         use_vllm=True,
-        temperature=0.0, 
-        max_new_tokens=32768
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-8B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-8B-Thinking",
         use_custom_prompt=False,
-        temperature=0.7, 
-        max_new_tokens=16384
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-4B-Thinking": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3-VL-4B-Thinking",
         use_custom_prompt=False,
-        temperature=0.7, 
-        max_new_tokens=16384
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
     ),
     "Qwen3-VL-8B-Instruct": partial(
         Qwen3VLChat,
@@ -1089,6 +1121,10 @@ qwen3vl_series = {
         use_vllm=True,
         temperature=0.7, 
         max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
     ),
     "Qwen3-VL-4B-Instruct": partial(
         Qwen3VLChat,
@@ -1096,7 +1132,90 @@ qwen3vl_series = {
         use_custom_prompt=False,
         use_vllm=True,
         temperature=0.7, 
-        max_new_tokens=16384
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-2B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-2B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+    ),
+    "Qwen3-VL-32B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-32B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.7, 
+        max_new_tokens=16384,
+        repetition_penalty=1.0,
+        presence_penalty=1.5,
+        top_p=0.8,
+        top_k=20
+
+    ),
+    "Qwen3-VL-2B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-2B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-VL-32B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-VL-32B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=False,
+        temperature=1.0, 
+        max_new_tokens=40960,
+        repetition_penalty=1.0,
+        presence_penalty=0.0,
+        top_p=0.95,
+        top_k=20
+    ),
+    "Qwen3-Omni-30B-A3B-Instruct": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Instruct",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    "Qwen3-Omni-30B-A3B-Thinking": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Thinking",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
+    ),
+    "Qwen3-Omni-30B-A3B-Captioner": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3-Omni-30B-A3B-Captioner",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=0.6,
+        top_p=0.95,
+        top_k=20,
+        max_new_tokens=16384,
     ),
     
 }
@@ -1647,6 +1766,25 @@ gemma_series = {
     "paligemma-3b-mix-448": partial(
         PaliGemma, model_path="google/paligemma-3b-mix-448"
     ),
+    
+    # 3B
+    "paligemma2-3b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-224"),
+    "paligemma2-3b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-3b-pt-448"),
+    "paligemma2-3b-mix-224": partial(PaliGemma, model_path="google/paligemma2-3b-mix-224"),
+    "paligemma2-3b-mix-448": partial(PaliGemma, model_path="google/paligemma2-3b-mix-448"),
+
+    # 10B
+    "paligemma2-10b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-224"),
+    "paligemma2-10b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-10b-pt-448"),
+    "paligemma2-10b-mix-224": partial(PaliGemma, model_path="google/paligemma2-10b-mix-224"),
+    "paligemma2-10b-mix-448": partial(PaliGemma, model_path="google/paligemma2-10b-mix-448"),
+
+    # 28B
+    "paligemma2-28b-pt-224":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-224"),
+    "paligemma2-28b-pt-448":  partial(PaliGemma, model_path="google/paligemma2-28b-pt-448"),
+    "paligemma2-28b-mix-224": partial(PaliGemma, model_path="google/paligemma2-28b-mix-224"),
+    "paligemma2-28b-mix-448": partial(PaliGemma, model_path="google/paligemma2-28b-mix-448"),
+
     'Gemma3-4B': partial(Gemma3, model_path='google/gemma-3-4b-it'),
     'Gemma3-12B': partial(Gemma3, model_path='google/gemma-3-12b-it'),
     'Gemma3-27B': partial(Gemma3, model_path='google/gemma-3-27b-it')
@@ -1795,6 +1933,13 @@ internvl_series = {}
 for group in internvl_groups:
     internvl_series.update(group)
 
+interns1_groups = [
+    interns1_mini
+]
+interns1_series = {}
+for group in interns1_groups:
+    interns1_series.update(group)
+    
 supported_VLM = {}
 
 model_groups = [
@@ -1809,8 +1954,9 @@ model_groups = [
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
     ross_series, emu_series, ola_series, ursa_series, gemma_series,
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
-    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, xvl_series, thyme_series, logics_series,
-    cosmos_series, keye_series, qianfanvl_series, lfm2vl_series, rbdashmm_api_series_lmdeploy
+    flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
+    xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series
 ]
 
 for grp in model_groups:

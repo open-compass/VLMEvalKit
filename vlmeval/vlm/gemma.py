@@ -23,8 +23,7 @@ class PaliGemma(BaseModel):
         model = PaliGemmaForConditionalGeneration.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
-            device_map='cpu',
-            revision='bfloat16',
+            device_map='auto',
         ).eval()
         self.model = model.cuda()
         self.processor = AutoProcessor.from_pretrained(model_path)
