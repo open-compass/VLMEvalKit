@@ -5,6 +5,7 @@ import pdb
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
+
 def get_gpt4_extract_ICE():
     example_1 = """
 1.
@@ -47,7 +48,8 @@ Extracted answer: f(x) = -x^2 - 2x + 1
 
 def get_gpt4_score_ICE():
     example_1 = r"""
-Look at the following two expressions (answers to a math problem) and judge whether they are equivalent. Only perform trivial simplifications
+Look at the following two expressions (answers to a math problem) and judge whether they are equivalent.
+Only perform trivial simplifications
 
 Examples:
 
@@ -138,7 +140,6 @@ Respond with only "Yes" or "No" (without quotes). Do not include a rationale.
     return example_1
 
 
-
 def build_MMReason_gpt4_extract_prompt(line):
     task_description = """
 I am providing you a response from a model to a math problem, termed 'Model Response'. You should extract the answer from the response as 'Extracted Answer'. Directly output the extracted answer with no explanation.\n\n
@@ -225,7 +226,6 @@ def MMReason_acc(result_file):
     accuracy = round(correct / total * 100, 2)
     scores = {'average': {'discipline': 'Overall', 'accuracy': accuracy, 'correct': correct, 'total': total}}
 
-
     discipline_total = dict()
     discipline_correct = dict()
     for _, row in df.iterrows():
@@ -241,6 +241,9 @@ def MMReason_acc(result_file):
             discipline_correct[row['discipline']] += 1
 
     for key in discipline_total.keys():
-        scores[key] = {'discipline': key, 'accuracy': discipline_correct[key] / discipline_total[key], 'correct': discipline_correct[key], 'total': discipline_total[key]}
+        scores[key] = {
+            'discipline': key, 'accuracy': discipline_correct[key] / discipline_total[key],
+            'correct': discipline_correct[key], 'total': discipline_total[key]
+        }
 
     return pd.DataFrame.from_dict(scores, orient='index')
