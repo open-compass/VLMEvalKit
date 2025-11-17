@@ -3727,10 +3727,12 @@ class MathCanvas(ImageBaseDataset):
 
         return summary_dict
 
+
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
+    mini_path='https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true
     DATASET_URL = {
-        'MMReason_testmini': 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true',
+        'MMReason_testmini': mini_path,
     }
     DATASET_MD5 = {'MMReason_testmini': '630205345349ac51c9999d4fbfd1d630'}
 
