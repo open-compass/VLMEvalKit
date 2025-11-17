@@ -21,6 +21,7 @@ from .doubao_vl_api import DoubaoVL
 from .mug_u import MUGUAPI
 from .kimivl_api import KimiVLAPIWrapper, KimiVLAPI
 from .rbdashmm_chat3_api import RBdashMMChat3_API, RBdashChat3_5_API
+from .rbdashmm_chat3_5_api import RBdashMMChat3_78B_API, RBdashMMChat3_5_38B_API
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini',
@@ -29,5 +30,5 @@ __all__ = [
     'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API', 'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B',
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
-    'RBdashMMChat3_API', 'RBdashChat3_5_API'
+    'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API'
 ]
