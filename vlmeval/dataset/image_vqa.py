@@ -3730,7 +3730,7 @@ class MathCanvas(ImageBaseDataset):
 
 class MMReason(ImageBaseDataset):
     TYPE = 'VQA'
-    mini_path='https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
+    mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
     DATASET_URL = {
         'MMReason_testmini': mini_path,
     }
