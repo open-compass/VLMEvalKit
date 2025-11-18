@@ -8,6 +8,7 @@ import re
 import warnings
 from .utils import build_judge, DEBUG_MESSAGE
 
+
 class SIBench(ImageMCQDataset, ImageBaseDataset, VideoBaseDataset):
     # -------------------------------------------------
     #
@@ -28,28 +29,29 @@ class SIBench(ImageMCQDataset, ImageBaseDataset, VideoBaseDataset):
     # do not need = SpatialBench, SPAR-Bench, Super-CLEVR-3D, Omni3D-Bench
     SETTING = ['relative_distance', 'Reach_Prediction', 'Object_Shape', 'Height', 'Existence', 'Spatial_Compatibility',
                'Coordinate_Conversion', 'Counting', 'Route_Planning', 'Trajectory_Description', 'Geometric_Reasoning',
-               'Spatial_Imagination', 'Object_Size_Estimation', 'Spatial_Grid', 'Situational_QA', 'Velocity_Acceleration',
-               'Maze_Navigation', 'Temporal-Appearance_Order', 'Camera_Pose', 'Occlusion', 'multi-view_reasoning',
-               'Object_Localization',"Spatial_Relation", "SIBench", "SIBench-mini"
+               'Spatial_Imagination', 'Object_Size_Estimation', 'Spatial_Grid', 'Situational_QA',
+               'Velocity_Acceleration','Maze_Navigation', 'Temporal-Appearance_Order', 'Camera_Pose',
+               'Occlusion', 'multi-view_reasoning','Object_Localization',"Spatial_Relation", "SIBench", "SIBench-mini"
                ]
 
-# Counting Camera_Pose Coordinate_Conversion multi-view_reasoning Object_Shape Object_Size_Estimation 
+# Counting Camera_Pose Coordinate_Conversion multi-view_reasoning Object_Shape Object_Size_Estimation
 # Occlusion relative_distance Situational_QA Spatial_Grid Spatial_Relation Trajectory_Description
-# Reach_Prediction Height Existence Spatial_Compatibility Route_Planning Geometric_Reasoning 
+# Reach_Prediction Height Existence Spatial_Compatibility Route_Planning Geometric_Reasoning
 # Velocity_Acceleration Spatial_Imagination Temporal-Appearance_Order Object_Localization
 
     VIDEO_MODALITY_INCLUDED_SETTING = ['']
 
     FRAMES_TMPL_SYS = """
-You will receive {} distinct frames that have been uniformly sampled from a video sequence, 
+You will receive {} distinct frames that have been uniformly sampled from a video sequence,
 arranged in the same temporal order as they appear in the video.
 Please analyze these frames and answer the question based on your observations.
 """
     FRAMES_TMPL_SYS_4VIDEO_LLM = """
-You will receive several distinct frames that have been uniformly sampled from a video sequence, 
+You will receive several distinct frames that have been uniformly sampled from a video sequence,
 arranged in the same temporal order as they appear in the video.
 Please analyze these frames and answer the question based on your observations.
 """
+
     def __init__(self, dataset='MMBench', skip_noimg=True, nframe=30, fps=-1):
         super(SIBench, self).__init__(dataset, skip_noimg)
 
@@ -124,7 +126,7 @@ Please analyze these frames and answer the question based on your observations.
         return frame_paths
 
     def build_prompt_for_video(self, line, video_llm, data_base):
-        # need video_llm 
+        # need video_llm
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
@@ -135,7 +137,7 @@ Please analyze these frames and answer the question based on your observations.
         data_source = line.get('data_source')
         prompt = self.add_extra_prompt(prompt, answer_type, data_source)
 
-        if video_llm: # video_llm
+        if video_llm:
             message = [dict(type='text', value=self.FRAMES_TMPL_SYS_4VIDEO_LLM)]
             message.append(dict(type='text', value=prompt))
             message.append(dict(type='video', value=video_path))
@@ -179,7 +181,7 @@ Please analyze these frames and answer the question based on your observations.
             video_data_base = data_base.replace('/data', '/data_sampled_video')
             return self.build_prompt_for_video(line=line, video_llm=video_llm, data_base=video_data_base)
         else:
-            raise NotImplementedError(f"Unrecognized input type: {line.get('input_type')}. Just support 'image', 'multi-view' and 'video'.")
+            raise NotImplementedError(f"Unrecognized input type: {line.get('input_type')}.")
 
     def extract_numbers_from_string(self, text, reverse_order):
         number_strings = re.findall(r'-?\d{1,3}(?:,\d{3})*(?:\.\d+)?', text)
@@ -241,14 +243,19 @@ Please analyze these frames and answer the question based on your observations.
 
     def build_prompt_mcq(self, reasoning_text):
         prompt_template = """You are a multiple-choice answer extractor.
-            Your sole task is to identify the final answer from a piece of reasoning text and return *only* the corresponding option letter.
-            Your response must strictly follow the format: return only the option letter, enclosed in English double quotes. Do not include any other text, explanation, or prefixes.
+            Your sole task is to identify the final answer from a piece of reasoning text
+            and return *only* the corresponding option letter.
+            Your response must strictly follow the format: return only the option letter,
+            enclosed in English double quotes.
+            Do not include any other text, explanation, or prefixes.
             ---
             **Example 1:**
-            **Input:** "Based on the analysis, options A and B are clearly wrong. Option C mentions... This is correct. Therefore, the final answer is C."
+            **Input:** "Based on the analysis, options A and B are clearly wrong. Option C mentions...
+            This is correct. Therefore, the final answer is C."
             **Output:** "C"
             **Example 2:**
-            **Input:** "Let's go through them one by one. A... B... C... D... After a comprehensive comparison, option A's description is the most complete and accurate. So, the answer is A."
+            **Input:** "Let's go through them one by one. A... B... C... D... After a comprehensive comparison,
+            option A's description is the most complete and accurate. So, the answer is A."
             **Output:** "A"
             **Example 3:**
             **Input:** "The analysis shows that B is the correct choice because..."
@@ -269,7 +276,7 @@ Please analyze these frames and answer the question based on your observations.
                 logger.warning('GPT API failed to answer. ')
             else:
                 if ans:
-                    return ans #dict(opt=ans, log=ans)
+                    return ans  # dict(opt=ans, log=ans)
                 else:
                     logger.warning(
                         f'Failed to in infer: prediction is {ans}'
@@ -277,7 +284,7 @@ Please analyze these frames and answer the question based on your observations.
             retry -= 1
 
             if retry == 0:
-                return 'z' # dict(opt='z', log='Failed to predict')
+                return 'z'  # dict(opt='z', log='Failed to predict')
 
     def extract_mcq(self, pred, model):
         need_llm = not self.check_string_format(pred)
@@ -316,14 +323,14 @@ Please analyze these frames and answer the question based on your observations.
                 output_type = data.loc[data['index'] == idx, 'type'].values[0]
 
                 if output_type == 'MCQ':
-                    extract_pred = self.extract_mcq(pred, model) # extract_characters_regex(pred)
+                    extract_pred = self.extract_mcq(pred, model)  # extract_characters_regex(pred)
                     if extract_pred == '':
                         cnt_rejected += 1
                         data.loc[data['index'] == idx, 'hit'] = 0
                     else:
                         data.loc[data['index'] == idx, 'hit'] = int(extract_pred == ans)
                 elif output_type == 'YN':
-                    extract_pred_yn = self.yn_Extraction(pred[:3]) # YOrN_Extraction(pred)
+                    extract_pred_yn = self.yn_Extraction(pred[:3])  # YOrN_Extraction(pred)
                     ans_yn = self.yn_Extraction(ans[:3])
                     if ans_yn == 'yes' or ans_yn == 'no':
                         ans = ans_yn
@@ -337,11 +344,11 @@ Please analyze these frames and answer the question based on your observations.
                     try:
                         extract_pred = eval(str(pred.strip()))
                     except Exception:
-                        extract_pred = -1.0 # pred.strip()  # self.extract_numbers_from_string(pred, True)
-                        
+                        extract_pred = -1.0  # pred.strip()  # self.extract_numbers_from_string(pred, True)
+
                     ans = eval(str(ans))
-                    if output_type == 'Number': 
-                        data.loc[data['index'] == idx, 'hit'] = self.compute_mra(ans, extract_pred) # data.loc[data['index'] == idx, 'hit'] = 0 
+                    if output_type == 'Number':
+                        data.loc[data['index'] == idx, 'hit'] = self.compute_mra(ans, extract_pred)
                     elif output_type == 'Number_Int':
                         data.loc[data['index'] == idx, 'hit'] = int(extract_pred == ans)
                     else:
@@ -351,7 +358,7 @@ Please analyze these frames and answer the question based on your observations.
                 f'failed to obtain the score for another {cnt_rejected} questions. '
                 f'Those questions will be counted as 0 score in ALL rating.'
             )
-            
+
             dump(data, score_file)
         data = load(score_file)
         acc = report_acc(data)
