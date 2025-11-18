@@ -20,13 +20,13 @@ def parse_args():
 
 # Only API model is accepted
 def infer_data_api(
-    model, 
-    work_dir, 
-    model_name, 
-    dataset, 
-    actual_dataset_name, 
-    index_set=None, 
-    api_nproc=4, 
+    model,
+    work_dir,
+    model_name,
+    dataset,
+    actual_dataset_name,
+    index_set=None,
+    api_nproc=4,
     ignore_failed=False
 ):
     rank, world_size = get_rank_and_world_size()
@@ -90,15 +90,15 @@ def infer_data_api(
 
 
 def infer_data(
-    model, 
-    model_name, 
-    work_dir, 
-    dataset, 
-    actual_dataset_name, 
-    data_base, 
-    out_file, 
-    verbose=False, 
-    api_nproc=4, 
+    model,
+    model_name,
+    work_dir,
+    dataset,
+    actual_dataset_name,
+    data_base,
+    out_file,
+    verbose=False,
+    api_nproc=4,
     use_vllm=False
 ):
     dataset_name = dataset.dataset_name
@@ -164,7 +164,7 @@ def infer_data(
         return model
     else:
         model.set_dump_image(dataset.dump_image)
-    
+
     assert not getattr(dataset, 'pack', False), 'Current model not supported pack mode!'
     if 'megabench' in dataset_name.lower() and 'llava_onevision' in model_name:
         print(
@@ -177,7 +177,7 @@ def infer_data(
         idx = data.iloc[i]['index']
         if idx in res:
             continue
-        
+
         if data.iloc[i]['input_type'] in ['image', 'multi-view']:
             if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name) and NOT_USE_SIBENCH_PROMPT:
                 struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
@@ -200,7 +200,7 @@ def infer_data(
             if getattr(model, 'nframe', None) is not None and getattr(model, 'nframe', 0) > 0:
                 if dataset.nframe > 0:
                     if getattr(model, 'nframe', 0) != dataset.nframe:
-                        print(f'{model_name} is a video-llm model, nframe is set to {dataset.nframe}, not using default')
+                        print(f'{model_name} is a video-llm model, nframe is set to {dataset.nframe}')
                         setattr(model, 'nframe', dataset.nframe)
                 elif getattr(model, 'fps', 0) == 0:
                     raise ValueError(f'fps is not suitable for {model_name}')
@@ -268,20 +268,20 @@ def infer_data(
 
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job_mixed(
-    model, 
-    work_dir, 
-    model_name, 
-    dataset, 
-    actual_dataset_name, 
-    verbose=False, 
-    api_nproc=4, 
-    ignore_failed=False, 
+    model,
+    work_dir,
+    model_name,
+    dataset,
+    actual_dataset_name,
+    verbose=False,
+    api_nproc=4,
+    ignore_failed=False,
     use_vllm=False
 ):
     lmu_path = LMUDataRoot()
     data_base = lmu_path
     rank, world_size = get_rank_and_world_size()
-    
+
     result_file = osp.join(work_dir, f'{model_name}_{actual_dataset_name}.xlsx')
 
     prev_file = f'{work_dir}/{model_name}_{actual_dataset_name}_PREV.pkl'
