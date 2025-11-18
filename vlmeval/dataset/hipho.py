@@ -8,16 +8,12 @@ import warnings
 import time
 import base64
 from io import BytesIO
-from functools import partial
-import multiprocessing as mp
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from .utils.hipho_verifier import grade, extract_boxed_answer, get_answer_str, answer_tag_reward_fn_for_r1
 from .utils.prompt_inference import SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH
 from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
 
 # Judge模型配置参数
 JUDGE_MODEL_CONFIG = {
@@ -180,83 +176,60 @@ class HiPhODataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
         
-        # 获取并行参数
-        nproc = judge_kwargs.pop('nproc', 4)
-        print(f"🔧 设置并行进程数: {nproc}")
+        # 移除nproc参数（不再需要）
+        judge_kwargs.pop('nproc', None)
         
         # 初始化judge模型（用于细粒度评测）
         judge_model = self._init_judge_model(judge_kwargs)
         
-        print(f"📊 开始并行评测，共{len(data)}题...")
+        print(f"📊 开始顺序评测，共{len(data)}题...")
         
-        # 构建任务列表
-        tasks = []
-        indices = []
-        for i in range(len(data)):
-            row = data.iloc[i]
-            task_kwargs = judge_kwargs.copy()
-            task = (judge_model, row, i, task_kwargs)
-            tasks.append(task)
-            indices.append(i)
-        
-        # 设置中间结果保存文件
-        tmp_file = eval_file.replace('.xlsx', '_parallel_tmp.pkl')
-        
-        # 并行评测所有题目
-        parallel_results = track_progress_rich(
-            self._evaluate_single_problem,
-            tasks,
-            nproc=nproc,
-            chunksize=max(1, nproc//2),
-            keys=indices,
-            save=tmp_file
-        )
-        
-        print(f"✅ 并行评测完成，开始汇总结果...")
-        
-        # 汇总并行结果
+        # 初始化结果统计
         fine_grained_total_score = 0.0
         coarse_grained_total_score = 0.0
         max_possible_score = 0.0
         detailed_results = []
         
-        for i, result in enumerate(parallel_results):
-            if result is None:
-                print(f"⚠️  题目 {i+1} 评测失败，跳过")
-                continue
-                
+        # 顺序评测每一题
+        for i in range(len(data)):
             row = data.iloc[i]
-            fine_score = result['fine_grained_score']
-            coarse_score = result['coarse_grained_score']
-            item_points = result['item_total_points']
+            print(f"📝 评测第 {i+1}/{len(data)} 题...")
             
-            # 累加得分
-            fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
-            coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
-            max_possible_score += item_points
-            
-            # 构建详细结果
-            detailed_item = self._build_result_item_from_parallel_result(row, i, result)
-            detailed_results.append(detailed_item)
-            
-            if (i + 1) % 10 == 0 or i == len(parallel_results) - 1:
-                print(f"📊 汇总进度 {i+1}/{len(parallel_results)}: 细粒度={fine_grained_total_score:.2f}, 粗粒度={coarse_grained_total_score:.2f}")
+            try:
+                # 评测单个题目
+                result = self._evaluate_single_problem(judge_model, row, i, judge_kwargs)
+                
+                if result is None:
+                    print(f"⚠️  题目 {i+1} 评测失败，跳过")
+                    continue
+                
+                fine_score = result['fine_grained_score']
+                coarse_score = result['coarse_grained_score']
+                item_points = result['item_total_points']
+                
+                # 累加得分
+                fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
+                coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
+                max_possible_score += item_points
+                
+                # 构建详细结果
+                detailed_item = self._build_result_item(row, i, result)
+                detailed_results.append(detailed_item)
+                
+                print(f"✅ 题目 {i+1} 完成: 细粒度={fine_score:.2f}, 粗粒度={coarse_score:.2f}")
+                
+            except Exception as e:
+                print(f"❌ 题目 {i+1} 评测异常: {e}")
+                continue
         
         # 计算最终结果
         max_possible_score = round(max_possible_score, 2)
-        results = self._build_final_results(fine_grained_total_score, coarse_grained_total_score, max_possible_score, len(data))
+        results = self._build_final_results(fine_grained_total_score, coarse_grained_total_score, max_possible_score, len(detailed_results))
         
         # 保存结果
         self._save_results(eval_file, results, detailed_results, data)
         
-        # 清理临时文件
-        try:
-            if osp.exists(tmp_file):
-                os.remove(tmp_file)
-        except Exception as e:
-            print(f"⚠️  清理临时文件失败: {e}")
-        
-        # 打印总结并返回DataFrame格式结果
+        # 打印总结并返回结果
         self._print_summary(results)
         return results
 
@@ -270,7 +243,7 @@ class HiPhODataset(ImageBaseDataset):
                     model_kwargs = {
                         'model': judge_model_name,
                         **JUDGE_MODEL_CONFIG,  # 使用顶部定义的配置参数
-                        **{k: v for k, v in judge_kwargs.items() if k not in ['model', 'nproc']}
+                        **{k: v for k, v in judge_kwargs.items() if k != 'model'}
                     }
                     test_model = build_judge(**model_kwargs)
                     if test_model.working():
@@ -301,14 +274,14 @@ class HiPhODataset(ImageBaseDataset):
             item_total_points = sum(points) if points else 0.0
             
             # 细粒度评测
-            fine_grained_score, marking_detailed_scores = self._evaluate_fine_grained_with_buffer(
-                prediction, marking, points, judge_model, row.get('question', ''), None
+            fine_grained_score, marking_detailed_scores = self._evaluate_fine_grained(
+                prediction, marking, points, judge_model, row.get('question', '')
             )
             
             # 粗粒度评测
-            coarse_grained_score, extracted_pred = self._evaluate_coarse_grained_with_buffer(
+            coarse_grained_score, extracted_pred = self._evaluate_coarse_grained(
                 prediction, ground_truth, answer_type, unit, points, 
-                row.get('question', ''), None
+                row.get('question', '')
             )
             
             # 最终得分取两者最大值
@@ -339,14 +312,14 @@ class HiPhODataset(ImageBaseDataset):
             print(f"📄 错误详情: {traceback.format_exc()}")
             return None
 
-    def _evaluate_fine_grained_with_buffer(self, prediction, marking, points, judge_model, question, log_buffer):
+    def _evaluate_fine_grained(self, prediction, marking, points, judge_model, question):
         """细粒度评测 - 带重测机制"""
         if not marking or not judge_model:
             return 0.0, []
         
         # 检查是否有多套marking标准
         if self._has_multiple_marking_sets(marking):
-            return self._evaluate_multiple_marking_sets_with_buffer(prediction, marking, points, judge_model, question, log_buffer)
+            return self._evaluate_multiple_marking_sets(prediction, marking, points, judge_model, question)
             
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
@@ -357,11 +330,10 @@ class HiPhODataset(ImageBaseDataset):
             detailed_scores = []
             
             for i, criterion in enumerate(scoring_criteria):
-                score, response = self._evaluate_single_criterion_with_buffer(
+                score, response = self._evaluate_single_criterion(
                     prediction, criterion, judge_model, question, 
                     max_total_score=max_possible_score, 
-                    current_attempt=attempt,
-                    log_buffer=log_buffer
+                    current_attempt=attempt
                 )
                 scores.append(score)
                 
@@ -399,7 +371,7 @@ class HiPhODataset(ImageBaseDataset):
         
         return 0.0, []
 
-    def _evaluate_coarse_grained_with_buffer(self, prediction, ground_truth, answer_type, unit, points, question, log_buffer):
+    def _evaluate_coarse_grained(self, prediction, ground_truth, answer_type, unit, points, question):
         """粗粒度评测 - 基于physics_r1验证器的答案匹配"""
         extracted_pred = ""
         
@@ -421,7 +393,7 @@ class HiPhODataset(ImageBaseDataset):
         
         return 0.0, extracted_pred
 
-    def _evaluate_single_criterion_with_buffer(self, prediction, criterion, judge_model, question, max_total_score=None, current_attempt=0, log_buffer=None):
+    def _evaluate_single_criterion(self, prediction, criterion, judge_model, question, max_total_score=None, current_attempt=0):
         """使用judge模型评测单个marking标准"""
         
         # 构建总分限制提示
@@ -573,14 +545,14 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         # 如果第一个元素是列表，则认为有多套标准
         return isinstance(marking[0], list)
     
-    def _evaluate_multiple_marking_sets_with_buffer(self, prediction, marking_sets, points, judge_model, question, log_buffer):
+    def _evaluate_multiple_marking_sets(self, prediction, marking_sets, points, judge_model, question):
         """评测多套marking标准，取最高分"""
         best_score = 0.0
         best_detailed_scores = []
         
         for set_idx, marking_set in enumerate(marking_sets):
-            score, detailed_scores = self._evaluate_single_marking_set_with_buffer(
-                prediction, marking_set, points, judge_model, question, log_buffer
+            score, detailed_scores = self._evaluate_single_marking_set(
+                prediction, marking_set, points, judge_model, question
             )
             
             # 更新最佳分数
@@ -593,7 +565,7 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         
         return round(best_score, 2), best_detailed_scores
     
-    def _evaluate_single_marking_set_with_buffer(self, prediction, marking, points, judge_model, question, log_buffer):
+    def _evaluate_single_marking_set(self, prediction, marking, points, judge_model, question):
         """评测单套marking标准"""
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
@@ -602,11 +574,10 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         detailed_scores = []
         
         for criterion in scoring_criteria:
-            score, response = self._evaluate_single_criterion_with_buffer(
+            score, response = self._evaluate_single_criterion(
                 prediction, criterion, judge_model, question, 
                 max_total_score=max_possible_score, 
-                current_attempt=0,
-                log_buffer=log_buffer
+                current_attempt=0
             )
             scores.append(score)
             
@@ -729,29 +700,29 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
                 pass
             return ""
 
-    def _build_result_item_from_parallel_result(self, row, index, parallel_result):
-        """从并行结果构建详细结果项"""
-        has_marking = parallel_result['marking'] and len(parallel_result['marking']) > 0 and self._has_valid_marking(parallel_result['marking'])
-        earned_points = max(parallel_result['fine_grained_score'], parallel_result['coarse_grained_score'])
+    def _build_result_item(self, row, index, result):
+        """构建详细结果项"""
+        has_marking = result['marking'] and len(result['marking']) > 0 and self._has_valid_marking(result['marking'])
+        earned_points = max(result['fine_grained_score'], result['coarse_grained_score'])
         
         return {
             "id": str(row.get('id', f"{self.dataset_name}_{index+1}")),
             "context": str(row.get('context', '')).strip(),
             "question": str(row.get('question', '')).strip(),
             "solution": str(row.get('solution', '')).strip(),
-            "marking": parallel_result['marking'] if parallel_result['marking'] else [],
-            "marking_detailed_scores": parallel_result['marking_detailed_scores'],
-            "answer": [f"\\boxed{{{ans}}}" for ans in parallel_result['ground_truth']] if parallel_result['ground_truth'] else [''],
-            "answer_type": parallel_result['answer_type'] if parallel_result['answer_type'] else ['Open-End'],
-            "unit": parallel_result['unit'] if parallel_result['unit'] else [''],
-            "points": parallel_result['points'] if parallel_result['points'] else [0.0],
+            "marking": result['marking'] if result['marking'] else [],
+            "marking_detailed_scores": result['marking_detailed_scores'],
+            "answer": [f"\\boxed{{{ans}}}" for ans in result['ground_truth']] if result['ground_truth'] else [''],
+            "answer_type": result['answer_type'] if result['answer_type'] else ['Open-End'],
+            "unit": result['unit'] if result['unit'] else [''],
+            "points": result['points'] if result['points'] else [0.0],
             "modality": str(row.get('modality', 'text')).strip(),
             "field": str(row.get('field', '')).strip(),
             "source": self.dataset_name,
-            "test_result": str(parallel_result['prediction']),
-            "test_answer": [f"\\boxed{{{ans.strip()}}}" for ans in parallel_result['extracted_pred'].split(", ") if ans.strip()] if parallel_result['extracted_pred'] else [''],
-            "fine_grained_score": parallel_result['fine_grained_score'],
-            "coarse_grained_score": parallel_result['coarse_grained_score'],
+            "test_result": str(result['prediction']),
+            "test_answer": [f"\\boxed{{{ans.strip()}}}" for ans in result['extracted_pred'].split(", ") if ans.strip()] if result['extracted_pred'] else [''],
+            "fine_grained_score": result['fine_grained_score'],
+            "coarse_grained_score": result['coarse_grained_score'],
             "earned_points": earned_points
         }
 
