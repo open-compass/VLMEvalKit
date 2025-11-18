@@ -91,7 +91,8 @@ from .matbench import MATBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .gsm8k_v import GSM8KVDataset
-
+from .gue import GUE
+from .llm4mat import LLM4Mat
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -110,6 +111,16 @@ class ConcatDataset(ImageBaseDataset):
         'ScreenSpot': ['ScreenSpot_Mobile', 'ScreenSpot_Desktop', 'ScreenSpot_Web'],
         'ScreenSpot_v2': ['ScreenSpot_v2_Mobile', 'ScreenSpot_v2_Desktop', 'ScreenSpot_v2_Web'],
         'M4Bench': ['State_Invariance', 'State_Comparison', 'Spatial_Perception', 'Instance_Comparison', 'Detailed_Difference'],  # noqa: E501
+        'GUE': ['cpd-prom_core_all', 'cpd-prom_core_notata', 'cpd-prom_core_tata', 'pd-prom_300_all', 'pd-prom_300_notata', 'pd-prom_300_tata', 'tf-h-0', 'tf-h-1', 'tf-h-2', 'tf-h-3', 'tf-h-4'], 
+        'LLM4Mat': ['MP_FEPA', 'MP_Bandgap', 'MP_EPA', 'MP_Ehull', 'MP_Efermi', 'MP_Density', 'MP_DensityAtomic', 'MP_Volume', 'MP_IsStable', 'MP_IsGapDirect', 
+                    'JARVISDFT_FEPA', 'JARVISDFT_Bandgap_OPT', 'JARVISDFT_TotEn', 'JARVISDFT_Ehull', 'JARVISDFT_Bandgap_MBJ', 'JARVISDFT_Kv', 'JARVISDFT_Gv', 
+                    'JARVISDFT_SLME', 'JARVISDFT_Spillage', 'JARVISDFT_Epsx_OPT', 'JARVISDFT_Dielectric_DFPT', 'JARVISDFT_Max_Piezo_dij', 'JARVISDFT_Max_Piezo_eij', 
+                    'JARVISDFT_MaxEFG', 'JARVISDFT_ExfEn', 'JARVISDFT_AvgMe', 'JARVISDFT_nSeebeck', 'JARVISDFT_nPF', 'JARVISDFT_pSeebeck', 'JARVISDFT_pPF', 
+                    'SNUMAT_Bandgap_GGA', 'SNUMAT_Bandgap_HSE', 'SNUMAT_Bandgap_GGA_Optical', 'SNUMAT_Bandgap_HSE_Optical', 'SNUMAT_IsDirect', 'SNUMAT_IsDirect_HSE', 
+                    'SNUMAT_SOC', 'GNoME_FEPA', 'GNoME_DEPA', 'GNoME_Bandgap', 'GNoME_TotEn', 'GNoME_Volume', 'GNoME_Density', 'hMOF_MaxCO2', 'hMOF_MinCO2', 
+                    'hMOF_LCD', 'hMOF_PLD', 'hMOF_VoidFraction', 'hMOF_SA_m2g', 'hMOF_SA_m2cm3', 'Cantor_HEA_FEPA', 'Cantor_HEA_EPA', 'Cantor_HEA_Ehull', 
+                    'Cantor_HEA_VPA', 'QMOF_TotEn', 'QMOF_Bandgap', 'QMOF_LCD', 'QMOF_PLD', 'JARVISQETB_EPA', 'JARVISQETB_IndirBandgap', 'JARVISQETB_FEPA', 
+                    'JARVISQETB_TotEn', 'OQMD_Bandgap', 'OQMD_FEPA', 'OMDB_Bandgap']
     }
 
     def __init__(self, dataset):
@@ -236,7 +247,7 @@ VIDEO_DATASET = [
 ]
 
 TEXT_DATASET = [
-    TextMCQDataset
+    TextMCQDataset, GUE, LLM4Mat
 ]
 
 CUSTOM_DATASET = [
