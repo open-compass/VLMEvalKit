@@ -12,16 +12,9 @@ from io import BytesIO
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from .utils.hipho_verifier import grade, extract_boxed_answer, get_answer_str, answer_tag_reward_fn_for_r1
-from .utils.prompt_inference import SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH
+from .utils.prompt_inference import SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH, JUDGE_GRADING_PROMPT_TEMPLATE, TOTAL_SCORE_WARNING_TEMPLATE, RETRY_WARNING_TEMPLATE
 from ..smp import *
 
-# Judge模型配置参数
-JUDGE_MODEL_CONFIG = {
-    'timeout': 600,      # API级别超时时间（秒）
-    'retry': 3,          # 重试次数
-    'max_tokens': 4096,  # 限制输出长度，减少响应时间
-    'verbose': False,    # 关闭verbose模式，避免打印完整响应
-}
 
 
 class HiPhODataset(ImageBaseDataset):
@@ -85,52 +78,29 @@ class HiPhODataset(ImageBaseDataset):
         return list(cls.DATASET_URL.keys())
 
     def load_data(self, dataset):
-        """从HuggingFace加载多split数据集"""
+        """从HuggingFace加载数据集"""
         from datasets import load_dataset
         
-        print(f"从HuggingFace加载数据集: HY-Wan/HiPhO, split: {dataset}")
-        
-        # 从HuggingFace加载指定split的数据集
         hf_dataset = load_dataset('HY-Wan/HiPhO', split=dataset)
-        print(f"✅ 成功加载数据集，共 {len(hf_dataset)} 行数据")
-        
-        # 转换为DataFrame
         data = hf_dataset.to_pandas()
         
-        # 确保index列存在
-        if 'index' not in data.columns:
-            data['index'] = range(len(data))
-        
-        # 处理图像数据 - 直接使用base64数据
         if 'image_question' in data.columns:
-            print(f"🖼️  发现image_question列，处理base64图像数据")
-            
-            # 使用长度超过64的占位符来表示无图像
             no_image_placeholder = 'NO_IMAGE_PLACEHOLDER_' + 'x' * 50
             
             def process_base64_image(base64_data):
                 if pd.isna(base64_data) or not str(base64_data).strip() or len(str(base64_data).strip()) < 100:
                     return no_image_placeholder
-                # 直接返回base64数据用于VLMEvalKit处理
                 return str(base64_data)
             
-            # 创建image字段映射base64数据
             data['image'] = data['image_question'].apply(process_base64_image)
-            
-            # 统计图像数量
-            image_count = len(data[~data['image'].str.startswith('NO_IMAGE_PLACEHOLDER_')])
-            print(f"📈 图像数据统计: {image_count}/{len(data)} 条记录包含图像")
         
-        print(f"📊 数据列名: {list(data.columns)}")
-        print(f"✅ 数据加载完成")
         return data
 
     def build_prompt(self, line):
-        """构建输入prompt，处理有图和无图两种情况，使用物理竞赛专业prompt"""
+        """构建物理竞赛prompt"""
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        # 从数据中获取各个字段，安全处理可能为NaN的字段
         def safe_str(val):
             return "" if pd.isna(val) or val == '' else str(val)
         
@@ -138,179 +108,129 @@ class HiPhODataset(ImageBaseDataset):
         question = safe_str(line['question'])
         information = safe_str(line.get('information', ''))
         
-        # 选择语言对应的prompt模板
         system_prompt = SYSTEM_PROMPTS_EN if self.language == 'en' else SYSTEM_PROMPTS_ZH
-        # 使用字符串替换而不是format，避免花括号冲突
         formatted_prompt = system_prompt.replace('{context}', context).replace('{problem}', question).replace('{information}', information)
         
         msgs = []
         
-        # 检查是否有图像数据（base64或路径）
+        # 检查是否有真实的图像数据（排除占位符）
         image_val = str(line.get('image', '')).strip()
         
         if image_val and not image_val.startswith('NO_IMAGE_PLACEHOLDER_'):
-            # 检查是否是base64数据
-            if len(image_val) > 1000 and not image_val.startswith('/'):  # base64数据通常很长且不以/开头
-                # 直接使用base64数据，VLMEvalKit框架会处理
-                msgs.append(dict(type='image', value=image_val))
+            # 使用标准的VLMEvalKit图像处理流程
+            if self.meta_only:
+                tgt_path = toliststr(line['image_path']) if 'image_path' in line else []
             else:
-                # 有图像路径的情况 - 使用框架的标准图像处理
-                if self.meta_only:
-                    tgt_path = toliststr(line['image_path']) if 'image_path' in line else []
+                tgt_path = self.dump_image(line)
+            
+            if tgt_path and tgt_path != ['']:
+                if isinstance(tgt_path, list):
+                    msgs.extend([dict(type='image', value=p) for p in tgt_path])
                 else:
-                    tgt_path = self.dump_image(line)
-                
-                if tgt_path and tgt_path != ['']:
-                    if isinstance(tgt_path, list):
-                        msgs.extend([dict(type='image', value=p) for p in tgt_path])
-                    else:
-                        msgs.append(dict(type='image', value=tgt_path))
+                    msgs.append(dict(type='image', value=tgt_path))
         
-        # 添加格式化的物理竞赛prompt
         msgs.append(dict(type='text', value=formatted_prompt))
         
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        """评测函数 - 统一的粗细粒度评测"""
+        """评测函数"""
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
         
-        # 移除nproc参数（不再需要）
-        judge_kwargs.pop('nproc', None)
+        # 使用VLMEvalKit标准方式初始化judge模型
+        judge_model = None
+        if judge_kwargs.get('model') and judge_kwargs.get('model') != 'exact_matching':
+            # 为物理题目设置合适的默认参数
+            judge_kwargs.setdefault('timeout', 600)      # API级别超时时间（秒）
+            judge_kwargs.setdefault('retry', 3)          # 重试次数
+            judge_kwargs.setdefault('max_tokens', 4096)  # 限制输出长度，减少响应时间
+            # judge_kwargs.setdefault('temperature', 0.0)  # 确保结果一致性
+            judge_model = build_judge(**judge_kwargs)
+            if judge_model and not judge_model.working():
+                warnings.warn('Judge API不工作，跳过细粒度评测')
+                judge_model = None
         
-        # 初始化judge模型（用于细粒度评测）
-        judge_model = self._init_judge_model(judge_kwargs)
-        
-        print(f"📊 开始顺序评测，共{len(data)}题...")
-        
-        # 初始化结果统计
         fine_grained_total_score = 0.0
         coarse_grained_total_score = 0.0
         max_possible_score = 0.0
         detailed_results = []
         
-        # 顺序评测每一题
+        failed_count = 0
         for i in range(len(data)):
             row = data.iloc[i]
-            print(f"📝 评测第 {i+1}/{len(data)} 题...")
             
-            try:
-                # 评测单个题目
-                result = self._evaluate_single_problem(judge_model, row, i, judge_kwargs)
-                
-                if result is None:
-                    print(f"⚠️  题目 {i+1} 评测失败，跳过")
-                    continue
-                
-                fine_score = result['fine_grained_score']
-                coarse_score = result['coarse_grained_score']
-                item_points = result['item_total_points']
-                
-                # 累加得分
-                fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
-                coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
-                max_possible_score += item_points
-                
-                # 构建详细结果
-                detailed_item = self._build_result_item(row, i, result)
-                detailed_results.append(detailed_item)
-                
-                print(f"✅ 题目 {i+1} 完成: 细粒度={fine_score:.2f}, 粗粒度={coarse_score:.2f}")
-                
-            except Exception as e:
-                print(f"❌ 题目 {i+1} 评测异常: {e}")
+            result = self._evaluate_single_problem(judge_model, row, i, judge_kwargs)
+            
+            if result is None:
+                failed_count += 1
+                print(f"⚠️  题目 {i+1} 评测失败")
                 continue
+            
+            fine_score = result['fine_grained_score']
+            coarse_score = result['coarse_grained_score']
+            item_points = result['item_total_points']
+            
+            fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
+            coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
+            max_possible_score += item_points
+            
+            detailed_item = self._build_result_item(row, i, result)
+            detailed_results.append(detailed_item)
         
-        # 计算最终结果
+        if failed_count > 0:
+            print(f"⚠️  总计 {failed_count}/{len(data)} 题评测失败")
+        
         max_possible_score = round(max_possible_score, 2)
-        results = self._build_final_results(fine_grained_total_score, coarse_grained_total_score, max_possible_score, len(detailed_results))
+        results = self._build_final_results(fine_grained_total_score, coarse_grained_total_score, max_possible_score)
         
-        # 保存结果
         self._save_results(eval_file, results, detailed_results, data)
-        
-        # 打印总结并返回结果
         self._print_summary(results)
         return results
 
-    def _init_judge_model(self, judge_kwargs):
-        """初始化judge模型"""
-        judge_model_name = judge_kwargs.get('model', None)
-        
-        if judge_model_name and judge_model_name != 'exact_matching':
-            if gpt_key_set():
-                try:
-                    model_kwargs = {
-                        'model': judge_model_name,
-                        **JUDGE_MODEL_CONFIG,  # 使用顶部定义的配置参数
-                        **{k: v for k, v in judge_kwargs.items() if k != 'model'}
-                    }
-                    test_model = build_judge(**model_kwargs)
-                    if test_model.working():
-                        print(f"🤖 使用Judge模型: {judge_model_name} (timeout=600s, retry=3)")
-                        return test_model
-                    else:
-                        warnings.warn('Judge API不工作，跳过细粒度评测')
-                except Exception as e:
-                    warnings.warn(f'模型初始化失败: {e}，跳过细粒度评测')
-            else:
-                warnings.warn('API_KEY无效，跳过细粒度评测')
-        
-        return None
 
     def _evaluate_single_problem(self, judge_model, row, index, judge_kwargs):
-        """评测单个题目的函数（用于并行调用）"""
-        task_id = f"题目{index + 1}"
+        """评测单个题目的函数"""
+        # 提取字段
+        prediction = str(row['prediction']).strip()
+        ground_truth = self._safe_parse_json_field(row.get('answer', ''))
+        answer_type = self._safe_parse_json_field(row.get('answer_type', 'Open-End'))
+        unit = self._safe_parse_json_field(row.get('unit', ''))
+        points = self._safe_parse_points_field(row.get('points', 0))
+        marking = self._safe_parse_json_field(row.get('marking', ''))
         
-        try:
-            # 提取字段
-            prediction = str(row['prediction']).strip()
-            ground_truth = self._safe_parse_json_field(row.get('answer', ''))
-            answer_type = self._safe_parse_json_field(row.get('answer_type', 'Open-End'))
-            unit = self._safe_parse_json_field(row.get('unit', ''))
-            points = self._safe_parse_points_field(row.get('points', 0))
-            marking = self._safe_parse_json_field(row.get('marking', ''))
-            
-            item_total_points = sum(points) if points else 0.0
-            
-            # 细粒度评测
-            fine_grained_score, marking_detailed_scores = self._evaluate_fine_grained(
-                prediction, marking, points, judge_model, row.get('question', '')
-            )
-            
-            # 粗粒度评测
-            coarse_grained_score, extracted_pred = self._evaluate_coarse_grained(
-                prediction, ground_truth, answer_type, unit, points, 
-                row.get('question', '')
-            )
-            
-            # 最终得分取两者最大值
-            final_score = max(fine_grained_score, coarse_grained_score)
-            
-            # 返回单题结果
-            result = {
-                'index': index,
-                'fine_grained_score': fine_grained_score,
-                'coarse_grained_score': coarse_grained_score,
-                'final_score': final_score,
-                'extracted_pred': extracted_pred,
-                'marking_detailed_scores': marking_detailed_scores,
-                'item_total_points': item_total_points,
-                'ground_truth': ground_truth,
-                'answer_type': answer_type,
-                'unit': unit,
-                'points': points,
-                'marking': marking,
-                'prediction': prediction
-            }
-            
-            return result
-            
-        except Exception as e:
-            print(f"❌ 题目{index + 1}评测失败: {e}")
-            import traceback
-            print(f"📄 错误详情: {traceback.format_exc()}")
-            return None
+        item_total_points = sum(points) if points else 0.0
+        
+        # 细粒度评测
+        fine_grained_score, marking_detailed_scores = self._evaluate_fine_grained(
+            prediction, marking, points, judge_model, row.get('question', '')
+        )
+        
+        # 粗粒度评测
+        coarse_grained_score, extracted_pred = self._evaluate_coarse_grained(
+            prediction, ground_truth, answer_type, unit, points, 
+            row.get('question', '')
+        )
+        
+        # 最终得分取两者最大值
+        final_score = max(fine_grained_score, coarse_grained_score)
+        
+        # 返回单题结果
+        return {
+            'index': index,
+            'fine_grained_score': fine_grained_score,
+            'coarse_grained_score': coarse_grained_score,
+            'final_score': final_score,
+            'extracted_pred': extracted_pred,
+            'marking_detailed_scores': marking_detailed_scores,
+            'item_total_points': item_total_points,
+            'ground_truth': ground_truth,
+            'answer_type': answer_type,
+            'unit': unit,
+            'points': points,
+            'marking': marking,
+            'prediction': prediction
+        }
 
     def _evaluate_fine_grained(self, prediction, marking, points, judge_model, question):
         """细粒度评测 - 带重测机制"""
@@ -376,20 +296,13 @@ class HiPhODataset(ImageBaseDataset):
         extracted_pred = ""
         
         if ground_truth:
-            try:
-                # 使用physics_r1验证器
-                total_score, total_point, extracted_preds, extracted_gts, scored_by_list = answer_tag_reward_fn_for_r1(
-                    prediction, ground_truth, problem=question, points=points, use_xverify=True, debug=False
-                )
-                
-                extracted_pred = ", ".join([str(p) for p in extracted_preds if p])
-                return round(total_point, 2), extracted_pred
-                
-            except Exception as e:
-                # 回退到简单匹配
-                simple_score = self._simple_answer_matching(prediction, ground_truth, points)
-                extracted_pred = self._extract_prediction_for_display(prediction)
-                return round(simple_score, 2), extracted_pred
+            # 使用physics_r1验证器
+            total_score, total_point, extracted_preds, extracted_gts, scored_by_list = answer_tag_reward_fn_for_r1(
+                prediction, ground_truth, problem=question, points=points, use_xverify=True, debug=False
+            )
+            
+            extracted_pred = ", ".join([str(p) for p in extracted_preds if p])
+            return round(total_point, 2), extracted_pred
         
         return 0.0, extracted_pred
 
@@ -399,75 +312,30 @@ class HiPhODataset(ImageBaseDataset):
         # 构建总分限制提示
         total_score_warning = ""
         if max_total_score is not None and max_total_score > 0:
-            total_score_warning = f"""
-⚠️  IMPORTANT TOTAL SCORE CONSTRAINT:
-- This question has a maximum total score of {max_total_score} points
-- ALL marking criteria scores combined MUST NOT exceed {max_total_score} points
-- You are evaluating ONE criterion among multiple criteria for this question
-- Be conservative in your scoring to ensure the total doesn't exceed the limit
-- This is attempt #{current_attempt + 1} of evaluation"""
+            total_score_warning = TOTAL_SCORE_WARNING_TEMPLATE.format(
+                max_total_score=max_total_score, 
+                current_attempt=current_attempt + 1
+            )
 
         retry_warning = ""
         if current_attempt > 0:
-            retry_warning = f"""
-🔄 RETRY NOTICE:
-- Previous attempt(s) resulted in total score exceeding the maximum
-- Please be more conservative in your scoring
-- Focus on strict adherence to the criterion requirements"""
+            retry_warning = RETRY_WARNING_TEMPLATE
 
-        prompt = f"""You are an expert physics competition grader. Evaluate the student's solution against the specific grading criterion.
-
-PHYSICS PROBLEM:
-{question}
-
-STUDENT'S SOLUTION:
-{prediction}
-
-GRADING CRITERION:
-{criterion['description']}{total_score_warning}{retry_warning}
-
-INSTRUCTIONS:
-1. Carefully analyze the student's solution for physics concepts, mathematical derivations, and calculations.
-2. Compare the solution against the specific grading criterion provided.
-3. Award points strictly according to the criterion, including partial credit when specified.
-4. Consider both conceptual understanding and technical accuracy.
-5. BE CONSERVATIVE - remember this is one of multiple criteria being evaluated simultaneously.
-
-SCORING FORMAT:
-- Read the grading criterion carefully to understand the maximum points and conditions for partial credit
-- Evaluate whether the student's solution meets the full criteria, partial criteria, or no criteria
-- Output your score using the exact format: \\boxed{{score}}
-- The score should be a number (e.g., 0.4, 0.2, 0.1, 0.0)
-
-CRITICAL REQUIREMENTS:
-- You MUST output your final score in the format: \\boxed{{score}}
-- The score must be a single number only (no text inside the boxed)
-- Do not include explanations after the boxed score
-- Ensure your score follows the point allocation in the grading criterion
-- BE CONSERVATIVE to avoid exceeding the total score limit
-
-Example outputs:
-- \\boxed{{0.4}} (for full credit)
-- \\boxed{{0.1}} (for partial credit)  
-- \\boxed{{0.0}} (for no credit)
-
-⚠️ CRITICAL INSTRUCTION: 
-- Output ONLY: \\boxed{{score}}
-- NO explanations, NO analysis, NO reasoning
-- Just the number in the exact format \\boxed{{score}}
-- Any other text will result in AUTOMATIC REJECTION
-
-RESPOND WITH ONLY THE BOXED SCORE:"""
+        # 使用统一的prompt模板
+        prompt = JUDGE_GRADING_PROMPT_TEMPLATE.format(
+            question=question,
+            prediction=prediction,
+            criterion_description=criterion['description'],
+            total_score_warning=total_score_warning,
+            retry_warning=retry_warning
+        )
         
-        try:
-            start_time = time.time()
-            response = judge_model.generate(prompt).strip()
-            elapsed_time = time.time() - start_time
-            
-            score = self._extract_score_from_response(response)
-            return score, response
-        except Exception as e:
-            return 0.0, f"Judge模型调用失败: {str(e)}"
+        start_time = time.time()
+        response = judge_model.generate(prompt).strip()
+        elapsed_time = time.time() - start_time
+        
+        score = self._extract_score_from_response(response)
+        return score, response
 
     def _safe_parse_json_field(self, field_value):
         """安全解析JSON字段"""
@@ -666,39 +534,6 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         
         return 0.0
 
-    def _simple_answer_matching(self, prediction, answer_list, points_list):
-        """简单的答案匹配（回退方案）"""
-        total_score = 0.0
-        
-        for gt, points in zip(answer_list, points_list):
-            if gt and gt.strip():
-                if str(gt).strip().lower() in prediction.lower():
-                    total_score += points
-        
-        return total_score
-    
-    def _extract_prediction_for_display(self, prediction, num_answers=10):
-        """提取预测答案用于显示"""
-        try:
-            extracted_answers = get_answer_str(prediction, return_origin=False, num_answers=num_answers)
-            valid_answers = []
-            
-            for ans in extracted_answers:
-                if ans and ans.strip():
-                    cleaned_ans = ' '.join(ans.strip().replace('\n', ' ').replace('\r', ' ').split())
-                    if cleaned_ans:
-                        valid_answers.append(cleaned_ans)
-            
-            return ", ".join(valid_answers) if valid_answers else ""
-        except Exception:
-            try:
-                extracted = extract_boxed_answer(prediction)
-                if extracted and extracted.strip():
-                    cleaned = ' '.join(extracted.strip().replace('\n', ' ').replace('\r', ' ').split())
-                    return cleaned if cleaned else ""
-            except Exception:
-                pass
-            return ""
 
     def _build_result_item(self, row, index, result):
         """构建详细结果项"""
@@ -726,7 +561,7 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
             "earned_points": earned_points
         }
 
-    def _build_final_results(self, fine_total, coarse_total, max_score, total_count):
+    def _build_final_results(self, fine_total, coarse_total, max_score):
         """构建最终结果"""
         fine_rate = round((fine_total / max_score * 100), 2) if max_score > 0 else 0.0
         coarse_rate = round((coarse_total / max_score * 100), 2) if max_score > 0 else 0.0
@@ -734,12 +569,9 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         return {
             'fine_grained_total_score': fine_total,
             'fine_grained_score_rate': fine_rate,
-            'fine_grained_count': total_count,  # 添加缺少的字段
             'coarse_grained_total_score': coarse_total,
             'coarse_grained_score_rate': coarse_rate,
-            'coarse_grained_count': total_count,  # 添加缺少的字段
             'max_possible_score': max_score,
-            'total_count': total_count,
             'total_score': fine_total,
             'score_rate': fine_rate,
         }
@@ -753,23 +585,20 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         dump(results, score_file)
         dump(detailed_results, detailed_file)
         
-        try:
-            eval_data_with_results = data.copy()
-            eval_data_with_results['fine_grained_score'] = [r['fine_grained_score'] for r in detailed_results]
-            eval_data_with_results['coarse_grained_score'] = [r['coarse_grained_score'] for r in detailed_results]
-            eval_data_with_results['earned_points'] = [r['earned_points'] for r in detailed_results]
-            eval_data_with_results['marking_detailed_scores'] = [
-                json.dumps(r['marking_detailed_scores'], ensure_ascii=False) if r['marking_detailed_scores'] else '[]' 
-                for r in detailed_results
-            ]
-            dump(eval_data_with_results, detailed_xlsx_file)
-        except Exception as e:
-            print(f"⚠️  保存详细Excel文件失败: {e}")
+        eval_data_with_results = data.copy()
+        eval_data_with_results['fine_grained_score'] = [r['fine_grained_score'] for r in detailed_results]
+        eval_data_with_results['coarse_grained_score'] = [r['coarse_grained_score'] for r in detailed_results]
+        eval_data_with_results['earned_points'] = [r['earned_points'] for r in detailed_results]
+        eval_data_with_results['marking_detailed_scores'] = [
+            json.dumps(r['marking_detailed_scores'], ensure_ascii=False) if r['marking_detailed_scores'] else '[]' 
+            for r in detailed_results
+        ]
+        dump(eval_data_with_results, detailed_xlsx_file)
 
     def _print_summary(self, results):
         """打印评测总结"""
-        print(f"✅ HiPhO数据集评估完成！")
+        print(f"✅ {self.dataset_name} 评估完成！")
         print(f"🏆 总体得分: {results['total_score']:.2f} / {results['max_possible_score']:.2f} ({results['score_rate']:.2f}%)")
-        print(f"📊 细粒度评测: {results['fine_grained_count']}题，得分 {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
-        print(f"🎯 粗粒度评测: {results['coarse_grained_count']}题，得分 {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
+        print(f"📊 细粒度评测得分: {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
+        print(f"🎯 粗粒度评测得分: {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
         print(f"💾 详细结果已保存")

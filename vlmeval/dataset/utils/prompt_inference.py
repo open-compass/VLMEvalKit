@@ -55,3 +55,67 @@ SYSTEM_PROMPTS_ZH = \
 [\\boxed{{A}}, \\boxed{3.2}]
 </answer>
 """
+
+# Judge评分prompt模板
+JUDGE_GRADING_PROMPT_TEMPLATE = \
+"""You are an expert physics competition grader. Evaluate the student's solution against the specific grading criterion.
+
+PHYSICS PROBLEM:
+{question}
+
+STUDENT'S SOLUTION:
+{prediction}
+
+GRADING CRITERION:
+{criterion_description}{total_score_warning}{retry_warning}
+
+INSTRUCTIONS:
+1. Carefully analyze the student's solution for physics concepts, mathematical derivations, and calculations.
+2. Compare the solution against the specific grading criterion provided.
+3. Award points strictly according to the criterion, including partial credit when specified.
+4. Consider both conceptual understanding and technical accuracy.
+5. BE CONSERVATIVE - remember this is one of multiple criteria being evaluated simultaneously.
+
+SCORING FORMAT:
+- Read the grading criterion carefully to understand the maximum points and conditions for partial credit
+- Evaluate whether the student's solution meets the full criteria, partial criteria, or no criteria
+- Output your score using the exact format: \\boxed{{score}}
+- The score should be a number (e.g., 0.4, 0.2, 0.1, 0.0)
+
+CRITICAL REQUIREMENTS:
+- You MUST output your final score in the format: \\boxed{{score}}
+- The score must be a single number only (no text inside the boxed)
+- Do not include explanations after the boxed score
+- Ensure your score follows the point allocation in the grading criterion
+- BE CONSERVATIVE to avoid exceeding the total score limit
+
+Example outputs:
+- \\boxed{{0.4}} (for full credit)
+- \\boxed{{0.1}} (for partial credit)  
+- \\boxed{{0.0}} (for no credit)
+
+⚠️ CRITICAL INSTRUCTION: 
+- Output ONLY: \\boxed{{score}}
+- NO explanations, NO analysis, NO reasoning
+- Just the number in the exact format \\boxed{{score}}
+- Any other text will result in AUTOMATIC REJECTION
+
+RESPOND WITH ONLY THE BOXED SCORE:"""
+
+# 总分限制警告模板
+TOTAL_SCORE_WARNING_TEMPLATE = \
+"""
+⚠️  IMPORTANT TOTAL SCORE CONSTRAINT:
+- This question has a maximum total score of {max_total_score} points
+- ALL marking criteria scores combined MUST NOT exceed {max_total_score} points
+- You are evaluating ONE criterion among multiple criteria for this question
+- Be conservative in your scoring to ensure the total doesn't exceed the limit
+- This is attempt #{current_attempt} of evaluation"""
+
+# 重试警告模板
+RETRY_WARNING_TEMPLATE = \
+"""
+🔄 RETRY NOTICE:
+- Previous attempt(s) resulted in total score exceeding the maximum
+- Please be more conservative in your scoring
+- Focus on strict adherence to the criterion requirements"""
