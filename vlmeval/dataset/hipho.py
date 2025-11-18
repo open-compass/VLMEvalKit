@@ -6,8 +6,6 @@ import pandas as pd
 import numpy as np
 import warnings
 import time
-import threading
-import datetime
 import base64
 from io import BytesIO
 from functools import partial
@@ -21,9 +19,6 @@ from ..smp import *
 from ..smp.file import get_intermediate_file_path
 from ..utils import track_progress_rich
 
-# 线程锁用于同步输出
-output_lock = threading.Lock()
-
 # Judge模型配置参数
 JUDGE_MODEL_CONFIG = {
     'timeout': 600,      # API级别超时时间（秒）
@@ -31,30 +26,6 @@ JUDGE_MODEL_CONFIG = {
     'max_tokens': 4096,  # 限制输出长度，减少响应时间
     'verbose': False,    # 关闭verbose模式，避免打印完整响应
 }
-
-def safe_print(*args, **kwargs):
-    """线程安全的打印函数"""
-    with output_lock:
-        print(*args, **kwargs)
-
-class LogBuffer:
-    """日志缓存类，用于收集单个任务的所有日志"""
-    def __init__(self, task_id):
-        self.task_id = task_id
-        self.logs = []
-        self.start_time = datetime.datetime.now()
-    
-    def log(self, message):
-        """添加日志消息"""
-        timestamp = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
-        self.logs.append(f"[{timestamp}] [{self.task_id}] {message}")
-    
-    def flush(self):
-        """一次性输出所有缓存的日志"""
-        with output_lock:
-            for log in self.logs:
-                print(log)
-            print()
 
 
 class HiPhODataset(ImageBaseDataset):
@@ -76,19 +47,19 @@ class HiPhODataset(ImageBaseDataset):
     
     # 数据集URL映射 - 指向HuggingFace数据集的不同split
     DATASET_URL = {
-        'IPhO_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'IPhO_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'EuPhO_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'EuPhO_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'APhO_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'PanPhO_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'PanPhO_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'NBPhO_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'NBPhO_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'F_MA_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'F_MA_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'PanMechanics_2024': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
-        'PanMechanics_2025': 'https://huggingface.co/datasets/haiyuanwan/HiPhO',
+        'IPhO_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'IPhO_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'EuPhO_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'EuPhO_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'APhO_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'PanPhO_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'PanPhO_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'NBPhO_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'NBPhO_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'F_MA_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'F_MA_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'PanMechanics_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'PanMechanics_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
     }
     
     # MD5值暂时设为空，因为HuggingFace数据集是动态加载的
@@ -121,11 +92,11 @@ class HiPhODataset(ImageBaseDataset):
         """从HuggingFace加载多split数据集"""
         from datasets import load_dataset
         
-        safe_print(f"从HuggingFace加载数据集: haiyuanwan/HiPhO, split: {dataset}")
+        print(f"从HuggingFace加载数据集: HY-Wan/HiPhO, split: {dataset}")
         
         # 从HuggingFace加载指定split的数据集
-        hf_dataset = load_dataset('haiyuanwan/HiPhO', split=dataset)
-        safe_print(f"✅ 成功加载数据集，共 {len(hf_dataset)} 行数据")
+        hf_dataset = load_dataset('HY-Wan/HiPhO', split=dataset)
+        print(f"✅ 成功加载数据集，共 {len(hf_dataset)} 行数据")
         
         # 转换为DataFrame
         data = hf_dataset.to_pandas()
@@ -136,7 +107,7 @@ class HiPhODataset(ImageBaseDataset):
         
         # 处理图像数据 - 直接使用base64数据
         if 'image_question' in data.columns:
-            safe_print(f"🖼️  发现image_question列，处理base64图像数据")
+            print(f"🖼️  发现image_question列，处理base64图像数据")
             
             # 使用长度超过64的占位符来表示无图像
             no_image_placeholder = 'NO_IMAGE_PLACEHOLDER_' + 'x' * 50
@@ -152,20 +123,16 @@ class HiPhODataset(ImageBaseDataset):
             
             # 统计图像数量
             image_count = len(data[~data['image'].str.startswith('NO_IMAGE_PLACEHOLDER_')])
-            safe_print(f"📈 图像数据统计: {image_count}/{len(data)} 条记录包含图像")
+            print(f"📈 图像数据统计: {image_count}/{len(data)} 条记录包含图像")
         
-        safe_print(f"📊 数据列名: {list(data.columns)}")
-        safe_print(f"✅ 数据加载完成")
+        print(f"📊 数据列名: {list(data.columns)}")
+        print(f"✅ 数据加载完成")
         return data
 
     def build_prompt(self, line):
         """构建输入prompt，处理有图和无图两种情况，使用物理竞赛专业prompt"""
         if isinstance(line, int):
-            line_idx = line
             line = self.data.iloc[line]
-            safe_print(f"📝 构建第 {line_idx+1} 题的prompt")
-        else:
-            safe_print(f"📝 构建prompt (使用传入的line对象)")
 
         # 从数据中获取各个字段，安全处理可能为NaN的字段
         def safe_str(val):
@@ -175,55 +142,37 @@ class HiPhODataset(ImageBaseDataset):
         question = safe_str(line['question'])
         information = safe_str(line.get('information', ''))
         
-        safe_print(f"   📋 题目信息:")
-        safe_print(f"      - context长度: {len(context)} 字符")
-        safe_print(f"      - question长度: {len(question)} 字符")
-        safe_print(f"      - information长度: {len(information)} 字符")
-        safe_print(f"      - 使用语言: {self.language}")
-        
         # 选择语言对应的prompt模板
         system_prompt = SYSTEM_PROMPTS_EN if self.language == 'en' else SYSTEM_PROMPTS_ZH
         # 使用字符串替换而不是format，避免花括号冲突
         formatted_prompt = system_prompt.replace('{context}', context).replace('{problem}', question).replace('{information}', information)
         
-        safe_print(f"   🔧 构建的prompt长度: {len(formatted_prompt)} 字符")
-        
         msgs = []
         
         # 检查是否有图像数据（base64或路径）
         image_val = str(line.get('image', '')).strip()
-        safe_print(f"   🖼️  图像检查: {'有图像' if image_val and not image_val.startswith('NO_IMAGE_PLACEHOLDER_') else '无图像'}")
         
         if image_val and not image_val.startswith('NO_IMAGE_PLACEHOLDER_'):
             # 检查是否是base64数据
             if len(image_val) > 1000 and not image_val.startswith('/'):  # base64数据通常很长且不以/开头
-                safe_print(f"      - 检测到base64图像数据 (长度: {len(image_val)})")
                 # 直接使用base64数据，VLMEvalKit框架会处理
                 msgs.append(dict(type='image', value=image_val))
-                safe_print(f"      - 添加了base64图像到消息列表")
             else:
-                safe_print(f"      - 图像路径: {str(image_val)[:50]}{'...' if len(str(image_val)) > 50 else ''}")
                 # 有图像路径的情况 - 使用框架的标准图像处理
                 if self.meta_only:
                     tgt_path = toliststr(line['image_path']) if 'image_path' in line else []
-                    safe_print(f"      - meta_only模式，图像路径: {tgt_path}")
                 else:
-                    safe_print(f"      - 开始dump图像...")
                     tgt_path = self.dump_image(line)
-                    safe_print(f"      - dump结果: {tgt_path}")
                 
                 if tgt_path and tgt_path != ['']:
                     if isinstance(tgt_path, list):
                         msgs.extend([dict(type='image', value=p) for p in tgt_path])
-                        safe_print(f"      - 添加了 {len(tgt_path)} 个图像到消息列表")
                     else:
                         msgs.append(dict(type='image', value=tgt_path))
-                        safe_print(f"      - 添加了 1 个图像到消息列表")
         
         # 添加格式化的物理竞赛prompt
         msgs.append(dict(type='text', value=formatted_prompt))
         
-        safe_print(f"   ✅ prompt构建完成，总消息数: {len(msgs)} (图像: {len([m for m in msgs if m['type'] == 'image'])}, 文本: {len([m for m in msgs if m['type'] == 'text'])})")
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
@@ -233,12 +182,12 @@ class HiPhODataset(ImageBaseDataset):
         
         # 获取并行参数
         nproc = judge_kwargs.pop('nproc', 4)
-        safe_print(f"🔧 设置并行进程数: {nproc}")
+        print(f"🔧 设置并行进程数: {nproc}")
         
         # 初始化judge模型（用于细粒度评测）
         judge_model = self._init_judge_model(judge_kwargs)
         
-        safe_print(f"📊 开始并行评测，共{len(data)}题...")
+        print(f"📊 开始并行评测，共{len(data)}题...")
         
         # 构建任务列表
         tasks = []
@@ -263,7 +212,7 @@ class HiPhODataset(ImageBaseDataset):
             save=tmp_file
         )
         
-        safe_print(f"✅ 并行评测完成，开始汇总结果...")
+        print(f"✅ 并行评测完成，开始汇总结果...")
         
         # 汇总并行结果
         fine_grained_total_score = 0.0
@@ -273,7 +222,7 @@ class HiPhODataset(ImageBaseDataset):
         
         for i, result in enumerate(parallel_results):
             if result is None:
-                safe_print(f"⚠️  题目 {i+1} 评测失败，跳过")
+                print(f"⚠️  题目 {i+1} 评测失败，跳过")
                 continue
                 
             row = data.iloc[i]
@@ -291,7 +240,7 @@ class HiPhODataset(ImageBaseDataset):
             detailed_results.append(detailed_item)
             
             if (i + 1) % 10 == 0 or i == len(parallel_results) - 1:
-                safe_print(f"📊 汇总进度 {i+1}/{len(parallel_results)}: 细粒度={fine_grained_total_score:.2f}, 粗粒度={coarse_grained_total_score:.2f}")
+                print(f"📊 汇总进度 {i+1}/{len(parallel_results)}: 细粒度={fine_grained_total_score:.2f}, 粗粒度={coarse_grained_total_score:.2f}")
         
         # 计算最终结果
         max_possible_score = round(max_possible_score, 2)
@@ -305,7 +254,7 @@ class HiPhODataset(ImageBaseDataset):
             if osp.exists(tmp_file):
                 os.remove(tmp_file)
         except Exception as e:
-            safe_print(f"⚠️  清理临时文件失败: {e}")
+            print(f"⚠️  清理临时文件失败: {e}")
         
         # 打印总结并返回DataFrame格式结果
         self._print_summary(results)
@@ -325,7 +274,7 @@ class HiPhODataset(ImageBaseDataset):
                     }
                     test_model = build_judge(**model_kwargs)
                     if test_model.working():
-                        safe_print(f"🤖 使用Judge模型: {judge_model_name} (timeout=600s, retry=3)")
+                        print(f"🤖 使用Judge模型: {judge_model_name} (timeout=600s, retry=3)")
                         return test_model
                     else:
                         warnings.warn('Judge API不工作，跳过细粒度评测')
@@ -339,11 +288,8 @@ class HiPhODataset(ImageBaseDataset):
     def _evaluate_single_problem(self, judge_model, row, index, judge_kwargs):
         """评测单个题目的函数（用于并行调用）"""
         task_id = f"题目{index + 1}"
-        log_buffer = LogBuffer(task_id)
         
         try:
-            log_buffer.log(f"📖 开始评测 - ID: {row.get('id', 'N/A')}")
-            
             # 提取字段
             prediction = str(row['prediction']).strip()
             ground_truth = self._safe_parse_json_field(row.get('answer', ''))
@@ -353,27 +299,20 @@ class HiPhODataset(ImageBaseDataset):
             marking = self._safe_parse_json_field(row.get('marking', ''))
             
             item_total_points = sum(points) if points else 0.0
-            log_buffer.log(f"   - 本题总分: {item_total_points}")
             
             # 细粒度评测
-            log_buffer.log(f"🔍 开始细粒度评测...")
             fine_grained_score, marking_detailed_scores = self._evaluate_fine_grained_with_buffer(
-                prediction, marking, points, judge_model, row.get('question', ''), log_buffer
+                prediction, marking, points, judge_model, row.get('question', ''), None
             )
-            log_buffer.log(f"✅ 细粒度得分: {fine_grained_score}")
             
             # 粗粒度评测
-            log_buffer.log(f"🎯 开始粗粒度评测...")
             coarse_grained_score, extracted_pred = self._evaluate_coarse_grained_with_buffer(
                 prediction, ground_truth, answer_type, unit, points, 
-                row.get('question', ''), log_buffer
+                row.get('question', ''), None
             )
-            log_buffer.log(f"✅ 粗粒度得分: {coarse_grained_score}")
-            log_buffer.log(f"📤 提取的预测答案: {extracted_pred}")
             
             # 最终得分取两者最大值
             final_score = max(fine_grained_score, coarse_grained_score)
-            log_buffer.log(f"🏆 最终得分（取最大值）: {final_score} = max({fine_grained_score}, {coarse_grained_score})")
             
             # 返回单题结果
             result = {
@@ -392,40 +331,28 @@ class HiPhODataset(ImageBaseDataset):
                 'prediction': prediction
             }
             
-            log_buffer.log(f"✅ 评测完成，最终得分: {final_score}")
-            log_buffer.flush()
             return result
             
         except Exception as e:
-            log_buffer.log(f"❌ 评测失败: {e}")
+            print(f"❌ 题目{index + 1}评测失败: {e}")
             import traceback
-            log_buffer.log(f"📄 错误详情: {traceback.format_exc()}")
-            log_buffer.flush()
+            print(f"📄 错误详情: {traceback.format_exc()}")
             return None
 
     def _evaluate_fine_grained_with_buffer(self, prediction, marking, points, judge_model, question, log_buffer):
-        """细粒度评测 - 带重测机制（带日志缓存版本）"""
-        log_buffer.log(f"   🔍 细粒度评测开始")
-        log_buffer.log(f"      - marking数量: {len(marking) if marking else 0}")
-        log_buffer.log(f"      - judge_model: {'有' if judge_model else '无'}")
-        
+        """细粒度评测 - 带重测机制"""
         if not marking or not judge_model:
-            log_buffer.log(f"   ⚠️  跳过细粒度评测：{'无marking标准' if not marking else '无judge模型'}")
             return 0.0, []
         
         # 检查是否有多套marking标准
         if self._has_multiple_marking_sets(marking):
-            log_buffer.log(f"   📋 发现多套marking标准，使用最佳得分策略")
             return self._evaluate_multiple_marking_sets_with_buffer(prediction, marking, points, judge_model, question, log_buffer)
             
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
         max_retries = 3  # 最大重测次数
         
-        log_buffer.log(f"   📊 评测配置: {len(scoring_criteria)}个标准，最大总分: {max_possible_score}")
-        
         for attempt in range(max_retries + 1):
-            log_buffer.log(f"   🔄 开始第 {attempt + 1} 次评测")
             scores = []
             detailed_scores = []
             
@@ -447,18 +374,16 @@ class HiPhODataset(ImageBaseDataset):
                 })
             
             total_score = sum(scores)
-            log_buffer.log(f"   📊 第 {attempt + 1} 次评测总分: {total_score}")
             
             if total_score <= max_possible_score or max_possible_score == 0:
                 for detailed_score in detailed_scores:
                     detailed_score['retry_info'] = f"第{attempt + 1}次评测成功" if attempt > 0 else "首次评测成功"
                     detailed_score['final_success'] = True
                 
-                log_buffer.log(f"✅ 评测成功，总分 {total_score:.2f}")
                 return round(total_score, 2), detailed_scores
             else:
                 if attempt < max_retries:
-                    log_buffer.log(f"⚠️  评测超分: {total_score:.2f} > {max_possible_score:.2f}，重测...")
+                    continue  # 重试
                 else:
                     # 强制调整
                     scale_factor = max_possible_score / total_score
@@ -470,19 +395,15 @@ class HiPhODataset(ImageBaseDataset):
                         detailed_scores[i]['forced_adjustment'] = True
                         detailed_scores[i]['scale_factor'] = round(scale_factor, 3)
                     
-                    log_buffer.log(f"📊 强制调整分数，系数: {scale_factor:.3f}")
                     return round(sum(adjusted_scores), 2), detailed_scores
         
         return 0.0, []
 
     def _evaluate_coarse_grained_with_buffer(self, prediction, ground_truth, answer_type, unit, points, question, log_buffer):
         """粗粒度评测 - 基于physics_r1验证器的答案匹配"""
-        log_buffer.log(f"   🎯 粗粒度评测开始")
-        
         extracted_pred = ""
         
         if ground_truth:
-            log_buffer.log(f"      ✅ 有标准答案，开始physics_r1验证")
             try:
                 # 使用physics_r1验证器
                 total_score, total_point, extracted_preds, extracted_gts, scored_by_list = answer_tag_reward_fn_for_r1(
@@ -490,24 +411,18 @@ class HiPhODataset(ImageBaseDataset):
                 )
                 
                 extracted_pred = ", ".join([str(p) for p in extracted_preds if p])
-                log_buffer.log(f"      📊 physics_r1验证得分: {total_point}")
-                log_buffer.log(f"      📝 提取的答案: {extracted_pred}")
-                
                 return round(total_point, 2), extracted_pred
                 
             except Exception as e:
-                log_buffer.log(f"      ⚠️  physics_r1验证失败: {e}，使用简单匹配")
                 # 回退到简单匹配
                 simple_score = self._simple_answer_matching(prediction, ground_truth, points)
                 extracted_pred = self._extract_prediction_for_display(prediction)
                 return round(simple_score, 2), extracted_pred
         
-        log_buffer.log(f"      ⚠️  无标准答案，返回0分")
         return 0.0, extracted_pred
 
     def _evaluate_single_criterion_with_buffer(self, prediction, criterion, judge_model, question, max_total_score=None, current_attempt=0, log_buffer=None):
         """使用judge模型评测单个marking标准"""
-        log_buffer.log(f"         🤖 调用Judge模型评测标准")
         
         # 构建总分限制提示
         total_score_warning = ""
@@ -577,13 +492,9 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
             response = judge_model.generate(prompt).strip()
             elapsed_time = time.time() - start_time
             
-            log_buffer.log(f"         ⏱️  响应耗时: {elapsed_time:.2f}秒")
-            
             score = self._extract_score_from_response(response)
-            log_buffer.log(f"         🔍 提取的分数: {score}")
             return score, response
         except Exception as e:
-            log_buffer.log(f"         ❌ Judge模型调用失败: {e}")
             return 0.0, f"Judge模型调用失败: {str(e)}"
 
     def _safe_parse_json_field(self, field_value):
@@ -663,18 +574,14 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
         return isinstance(marking[0], list)
     
     def _evaluate_multiple_marking_sets_with_buffer(self, prediction, marking_sets, points, judge_model, question, log_buffer):
-        """评测多套marking标准，取最高分（带日志缓存版本）"""
-        log_buffer.log(f"   📋 开始评测多套marking标准，共{len(marking_sets)}套")
-        
+        """评测多套marking标准，取最高分"""
         best_score = 0.0
         best_detailed_scores = []
         
         for set_idx, marking_set in enumerate(marking_sets):
-            log_buffer.log(f"   🔄 评测第{set_idx + 1}套marking标准")
             score, detailed_scores = self._evaluate_single_marking_set_with_buffer(
                 prediction, marking_set, points, judge_model, question, log_buffer
             )
-            log_buffer.log(f"      📊 第{set_idx + 1}套得分: {score}")
             
             # 更新最佳分数
             if score > best_score:
@@ -683,13 +590,11 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
                 # 在最佳详细得分中添加标记
                 for detailed_score in best_detailed_scores:
                     detailed_score['best_marking_set'] = set_idx + 1
-                log_buffer.log(f"      ✅ 更新最佳得分: {best_score} (来自第{set_idx + 1}套)")
         
-        log_buffer.log(f"   🏆 多套marking评测完成，最佳得分: {best_score}")
         return round(best_score, 2), best_detailed_scores
     
     def _evaluate_single_marking_set_with_buffer(self, prediction, marking, points, judge_model, question, log_buffer):
-        """评测单套marking标准（带日志缓存版本）"""
+        """评测单套marking标准"""
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
         
@@ -888,12 +793,12 @@ RESPOND WITH ONLY THE BOXED SCORE:"""
             ]
             dump(eval_data_with_results, detailed_xlsx_file)
         except Exception as e:
-            safe_print(f"⚠️  保存详细Excel文件失败: {e}")
+            print(f"⚠️  保存详细Excel文件失败: {e}")
 
     def _print_summary(self, results):
         """打印评测总结"""
-        safe_print(f"✅ HiPhO数据集评估完成！")
-        safe_print(f"🏆 总体得分: {results['total_score']:.2f} / {results['max_possible_score']:.2f} ({results['score_rate']:.2f}%)")
-        safe_print(f"📊 细粒度评测: {results['fine_grained_count']}题，得分 {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
-        safe_print(f"🎯 粗粒度评测: {results['coarse_grained_count']}题，得分 {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
-        safe_print(f"💾 详细结果已保存")
+        print(f"✅ HiPhO数据集评估完成！")
+        print(f"🏆 总体得分: {results['total_score']:.2f} / {results['max_possible_score']:.2f} ({results['score_rate']:.2f}%)")
+        print(f"📊 细粒度评测: {results['fine_grained_count']}题，得分 {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
+        print(f"🎯 粗粒度评测: {results['coarse_grained_count']}题，得分 {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
+        print(f"💾 详细结果已保存")
