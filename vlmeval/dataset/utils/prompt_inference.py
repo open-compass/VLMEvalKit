@@ -56,7 +56,7 @@ SYSTEM_PROMPTS_ZH = \
 </answer>
 """
 
-# Judge评分prompt模板
+# Judge grading prompt template
 JUDGE_GRADING_PROMPT_TEMPLATE = \
 """You are an expert physics competition grader. Evaluate the student's solution against the specific grading criterion.
 
@@ -102,7 +102,7 @@ Example outputs:
 
 RESPOND WITH ONLY THE BOXED SCORE:"""
 
-# 总分限制警告模板
+# Total score limit warning template
 TOTAL_SCORE_WARNING_TEMPLATE = \
 """
 ⚠️  IMPORTANT TOTAL SCORE CONSTRAINT:
@@ -112,7 +112,7 @@ TOTAL_SCORE_WARNING_TEMPLATE = \
 - Be conservative in your scoring to ensure the total doesn't exceed the limit
 - This is attempt #{current_attempt} of evaluation"""
 
-# 重试警告模板
+# Retry warning template
 RETRY_WARNING_TEMPLATE = \
 """
 🔄 RETRY NOTICE:

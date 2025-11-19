@@ -21,20 +21,20 @@ class HiPhODataset(ImageBaseDataset):
     """
     HiPhO (High School Physics Olympiad) Benchmark Dataset
     
-    支持13个物理奥林匹克竞赛数据集：
-    - IPhO 2024/2025: 国际物理奥林匹克
-    - EuPhO 2024/2025: 欧洲物理奥林匹克  
-    - APhO 2025: 亚洲物理奥林匹克
-    - PanPhO 2024/2025: 泛亚物理奥林匹克
-    - NBPhO 2024/2025: 北欧-波罗的海物理奥林匹克
-    - F_MA 2024/2025: 美国物理竞赛
-    - PanMechanics 2024/2025: 泛亚力学竞赛
+    Supports 13 physics olympiad competition datasets:
+    - IPhO 2024/2025: International Physics Olympiad
+    - EuPhO 2024/2025: European Physics Olympiad  
+    - APhO 2025: Asian Physics Olympiad
+    - PanPhO 2024/2025: Pan-Asian Physics Olympiad
+    - NBPhO 2024/2025: Nordic-Baltic Physics Olympiad
+    - F_MA 2024/2025: US Physics Competition
+    - PanMechanics 2024/2025: Pan-Asian Mechanics Competition
     
-    集成了hipho_verifier验证器，支持粗细粒度评测
+    Integrated with hipho_verifier for fine and coarse-grained evaluation
     """
-    TYPE = 'VQA'  # 统一使用VQA类型
+    TYPE = 'VQA'  # Use VQA type uniformly
     
-    # 数据集URL映射 - 指向HuggingFace数据集的不同split
+    # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
         'IPhO_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
         'IPhO_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
@@ -51,7 +51,7 @@ class HiPhODataset(ImageBaseDataset):
         'PanMechanics_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
     }
     
-    # MD5值暂时设为空，因为HuggingFace数据集是动态加载的
+    # MD5 values are empty as HuggingFace datasets are dynamically loaded
     DATASET_MD5 = {
         'IPhO_2024': '',
         'IPhO_2025': '',
@@ -69,7 +69,7 @@ class HiPhODataset(ImageBaseDataset):
     }
 
     def __init__(self, dataset='IPhO_2025', skip_noimg=False, language='en'):
-        """初始化数据集"""
+        """Initialize dataset"""
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
         self.language = language
 
@@ -78,7 +78,7 @@ class HiPhODataset(ImageBaseDataset):
         return list(cls.DATASET_URL.keys())
 
     def load_data(self, dataset):
-        """从HuggingFace加载数据集"""
+        """Load dataset from HuggingFace"""
         from datasets import load_dataset
         
         hf_dataset = load_dataset('HY-Wan/HiPhO', split=dataset)
@@ -97,7 +97,7 @@ class HiPhODataset(ImageBaseDataset):
         return data
 
     def build_prompt(self, line):
-        """构建物理竞赛prompt"""
+        """Build physics competition prompt"""
         if isinstance(line, int):
             line = self.data.iloc[line]
 
@@ -113,11 +113,11 @@ class HiPhODataset(ImageBaseDataset):
         
         msgs = []
         
-        # 检查是否有真实的图像数据（排除占位符）
+        # Check for real image data (excluding placeholders)
         image_val = str(line.get('image', '')).strip()
         
         if image_val and not image_val.startswith('NO_IMAGE_PLACEHOLDER_'):
-            # 使用标准的VLMEvalKit图像处理流程
+            # Use standard VLMEvalKit image processing pipeline
             if self.meta_only:
                 tgt_path = toliststr(line['image_path']) if 'image_path' in line else []
             else:
@@ -134,21 +134,21 @@ class HiPhODataset(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        """评测函数"""
+        """Evaluation function"""
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
         
-        # 使用VLMEvalKit标准方式初始化judge模型
+        # Initialize judge model using VLMEvalKit standard approach
         judge_model = None
         if judge_kwargs.get('model') and judge_kwargs.get('model') != 'exact_matching':
-            # 为物理题目设置合适的默认参数
-            judge_kwargs.setdefault('timeout', 600)      # API级别超时时间（秒）
-            judge_kwargs.setdefault('retry', 3)          # 重试次数
-            judge_kwargs.setdefault('max_tokens', 4096)  # 限制输出长度，减少响应时间
-            # judge_kwargs.setdefault('temperature', 0.0)  # 确保结果一致性
+            # Set appropriate default parameters for physics problems
+            judge_kwargs.setdefault('timeout', 600)      # API timeout (seconds)
+            judge_kwargs.setdefault('retry', 3)          # Retry count
+            judge_kwargs.setdefault('max_tokens', 4096)  # Limit output length
+            # judge_kwargs.setdefault('temperature', 0.0)  # Ensure consistency
             judge_model = build_judge(**judge_kwargs)
             if judge_model and not judge_model.working():
-                warnings.warn('Judge API不工作，跳过细粒度评测')
+                warnings.warn('Judge API not working, skipping fine-grained evaluation')
                 judge_model = None
         
         fine_grained_total_score = 0.0
@@ -164,7 +164,7 @@ class HiPhODataset(ImageBaseDataset):
             
             if result is None:
                 failed_count += 1
-                print(f"⚠️  题目 {i+1} 评测失败")
+                print(f"⚠️  Problem {i+1} evaluation failed")
                 continue
             
             fine_score = result['fine_grained_score']
@@ -179,7 +179,7 @@ class HiPhODataset(ImageBaseDataset):
             detailed_results.append(detailed_item)
         
         if failed_count > 0:
-            print(f"⚠️  总计 {failed_count}/{len(data)} 题评测失败")
+            print(f"⚠️  Total {failed_count}/{len(data)} problems failed evaluation")
         
         max_possible_score = round(max_possible_score, 2)
         results = self._build_final_results(fine_grained_total_score, coarse_grained_total_score, max_possible_score)
@@ -190,8 +190,8 @@ class HiPhODataset(ImageBaseDataset):
 
 
     def _evaluate_single_problem(self, judge_model, row, index, judge_kwargs):
-        """评测单个题目的函数"""
-        # 提取字段
+        """Evaluate single problem"""
+        # Extract fields
         prediction = str(row['prediction']).strip()
         ground_truth = self._safe_parse_json_field(row.get('answer', ''))
         answer_type = self._safe_parse_json_field(row.get('answer_type', 'Open-End'))
@@ -201,21 +201,21 @@ class HiPhODataset(ImageBaseDataset):
         
         item_total_points = sum(points) if points else 0.0
         
-        # 细粒度评测
+        # Fine-grained evaluation
         fine_grained_score, marking_detailed_scores = self._evaluate_fine_grained(
             prediction, marking, points, judge_model, row.get('question', '')
         )
         
-        # 粗粒度评测
+        # Coarse-grained evaluation
         coarse_grained_score, extracted_pred = self._evaluate_coarse_grained(
             prediction, ground_truth, answer_type, unit, points, 
             row.get('question', '')
         )
         
-        # 最终得分取两者最大值
+        # Final score is the maximum of both
         final_score = max(fine_grained_score, coarse_grained_score)
         
-        # 返回单题结果
+        # Return single problem result
         return {
             'index': index,
             'fine_grained_score': fine_grained_score,
@@ -233,17 +233,17 @@ class HiPhODataset(ImageBaseDataset):
         }
 
     def _evaluate_fine_grained(self, prediction, marking, points, judge_model, question):
-        """细粒度评测 - 带重测机制"""
+        """Fine-grained evaluation with retry mechanism"""
         if not marking or not judge_model:
             return 0.0, []
         
-        # 检查是否有多套marking标准
+        # Check for multiple marking criteria sets
         if self._has_multiple_marking_sets(marking):
             return self._evaluate_multiple_marking_sets(prediction, marking, points, judge_model, question)
             
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
-        max_retries = 3  # 最大重测次数
+        max_retries = 3  # Maximum retry attempts
         
         for attempt in range(max_retries + 1):
             scores = []
@@ -269,15 +269,15 @@ class HiPhODataset(ImageBaseDataset):
             
             if total_score <= max_possible_score or max_possible_score == 0:
                 for detailed_score in detailed_scores:
-                    detailed_score['retry_info'] = f"第{attempt + 1}次评测成功" if attempt > 0 else "首次评测成功"
+                    detailed_score['retry_info'] = f"Attempt {attempt + 1} successful" if attempt > 0 else "First attempt successful"
                     detailed_score['final_success'] = True
                 
                 return round(total_score, 2), detailed_scores
             else:
                 if attempt < max_retries:
-                    continue  # 重试
+                    continue  # Retry
                 else:
-                    # 强制调整
+                    # Force adjustment
                     scale_factor = max_possible_score / total_score
                     adjusted_scores = [score * scale_factor for score in scores]
                     
@@ -292,11 +292,11 @@ class HiPhODataset(ImageBaseDataset):
         return 0.0, []
 
     def _evaluate_coarse_grained(self, prediction, ground_truth, answer_type, unit, points, question):
-        """粗粒度评测 - 基于physics_r1验证器的答案匹配"""
+        """Coarse-grained evaluation based on hipho_verifier answer matching"""
         extracted_pred = ""
         
         if ground_truth:
-            # 使用physics_r1验证器
+            # Use hipho_verifier
             total_score, total_point, extracted_preds, extracted_gts, scored_by_list = answer_tag_reward_fn_for_r1(
                 prediction, ground_truth, problem=question, points=points, use_xverify=True, debug=False
             )
@@ -307,9 +307,9 @@ class HiPhODataset(ImageBaseDataset):
         return 0.0, extracted_pred
 
     def _evaluate_single_criterion(self, prediction, criterion, judge_model, question, max_total_score=None, current_attempt=0):
-        """使用judge模型评测单个marking标准"""
+        """Evaluate single marking criterion using judge model"""
         
-        # 构建总分限制提示
+        # Build total score limit warning
         total_score_warning = ""
         if max_total_score is not None and max_total_score > 0:
             total_score_warning = TOTAL_SCORE_WARNING_TEMPLATE.format(
@@ -321,7 +321,7 @@ class HiPhODataset(ImageBaseDataset):
         if current_attempt > 0:
             retry_warning = RETRY_WARNING_TEMPLATE
 
-        # 使用统一的prompt模板
+        # Use unified prompt template
         prompt = JUDGE_GRADING_PROMPT_TEMPLATE.format(
             question=question,
             prediction=prediction,
@@ -338,7 +338,7 @@ class HiPhODataset(ImageBaseDataset):
         return score, response
 
     def _safe_parse_json_field(self, field_value):
-        """安全解析JSON字段"""
+        """Safely parse JSON field"""
         if pd.isna(field_value) or field_value == '':
             return []
         
@@ -355,7 +355,7 @@ class HiPhODataset(ImageBaseDataset):
             return [field_str] if field_str != 'nan' else []
     
     def _safe_parse_points_field(self, points_value):
-        """安全解析points字段"""
+        """Safely parse points field"""
         if pd.isna(points_value):
             return [0.0]
         
@@ -379,7 +379,7 @@ class HiPhODataset(ImageBaseDataset):
             return [0.0]
 
     def _has_valid_marking(self, marking):
-        """检查marking是否包含有效的评分标准"""
+        """Check if marking contains valid scoring criteria"""
         if not marking:
             return False
         
@@ -406,15 +406,15 @@ class HiPhODataset(ImageBaseDataset):
         return False
 
     def _has_multiple_marking_sets(self, marking):
-        """检查是否有多套marking标准"""
+        """Check for multiple marking criteria sets"""
         if not marking or len(marking) == 0:
             return False
         
-        # 如果第一个元素是列表，则认为有多套标准
+        # If first element is a list, consider multiple criteria sets
         return isinstance(marking[0], list)
     
     def _evaluate_multiple_marking_sets(self, prediction, marking_sets, points, judge_model, question):
-        """评测多套marking标准，取最高分"""
+        """Evaluate multiple marking criteria sets, take highest score"""
         best_score = 0.0
         best_detailed_scores = []
         
@@ -423,18 +423,18 @@ class HiPhODataset(ImageBaseDataset):
                 prediction, marking_set, points, judge_model, question
             )
             
-            # 更新最佳分数
+            # Update best score
             if score > best_score:
                 best_score = score
                 best_detailed_scores = detailed_scores
-                # 在最佳详细得分中添加标记
+                # Add marker to best detailed scores
                 for detailed_score in best_detailed_scores:
                     detailed_score['best_marking_set'] = set_idx + 1
         
         return round(best_score, 2), best_detailed_scores
     
     def _evaluate_single_marking_set(self, prediction, marking, points, judge_model, question):
-        """评测单套marking标准"""
+        """Evaluate single marking criteria set"""
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
         
@@ -449,7 +449,7 @@ class HiPhODataset(ImageBaseDataset):
             )
             scores.append(score)
             
-            # 保存每个marking的详细得分
+            # Save detailed scores for each marking
             detailed_scores.append({
                 'marking_criterion': criterion['description'],
                 'score': round(score, 2),
@@ -459,7 +459,7 @@ class HiPhODataset(ImageBaseDataset):
         
         total_score = sum(scores)
         
-        # 如果超过最大分数，按比例调整
+        # Scale down if exceeds maximum score
         if total_score > max_possible_score and max_possible_score > 0:
             scale_factor = max_possible_score / total_score
             total_score = max_possible_score
@@ -471,12 +471,12 @@ class HiPhODataset(ImageBaseDataset):
         return round(total_score, 2), detailed_scores
 
     def _parse_marking_criteria(self, marking_list):
-        """解析marking评分标准"""
+        """Parse marking scoring criteria"""
         criteria = []
         if not marking_list:
             return criteria
         
-        # 处理嵌套列表的情况
+        # Handle nested list cases
         flattened_marking = []
         for item in marking_list:
             if isinstance(item, list):
@@ -494,13 +494,13 @@ class HiPhODataset(ImageBaseDataset):
         return criteria
 
     def _extract_score_from_response(self, response):
-        """从模型响应中提取分数"""
+        """Extract score from model response"""
         if not response:
             return 0.0
             
         response = response.strip()
         
-        # 使用boxed格式提取分数
+        # Extract score using boxed format
         boxed_patterns = [
             r'\\boxed\{([^}]+)\}',
             r'boxed\{([^}]+)\}',
@@ -523,7 +523,7 @@ class HiPhODataset(ImageBaseDataset):
                             except ValueError:
                                 continue
         
-        # 查找数字
+        # Find numbers
         all_numbers = re.findall(r'[0-9]*\.?[0-9]+', response)
         if all_numbers:
             try:
@@ -536,7 +536,7 @@ class HiPhODataset(ImageBaseDataset):
 
 
     def _build_result_item(self, row, index, result):
-        """构建详细结果项"""
+        """Build detailed result item"""
         has_marking = result['marking'] and len(result['marking']) > 0 and self._has_valid_marking(result['marking'])
         earned_points = max(result['fine_grained_score'], result['coarse_grained_score'])
         
@@ -562,7 +562,7 @@ class HiPhODataset(ImageBaseDataset):
         }
 
     def _build_final_results(self, fine_total, coarse_total, max_score):
-        """构建最终结果"""
+        """Build final results"""
         fine_rate = round((fine_total / max_score * 100), 2) if max_score > 0 else 0.0
         coarse_rate = round((coarse_total / max_score * 100), 2) if max_score > 0 else 0.0
         
@@ -577,7 +577,7 @@ class HiPhODataset(ImageBaseDataset):
         }
 
     def _save_results(self, eval_file, results, detailed_results, data):
-        """保存评测结果"""
+        """Save evaluation results"""
         score_file = eval_file.replace('.xlsx', '_score.json')
         detailed_file = eval_file.replace('.xlsx', '_detailed_results.json')
         detailed_xlsx_file = eval_file.replace('.xlsx', '_detailed.xlsx')
@@ -596,9 +596,9 @@ class HiPhODataset(ImageBaseDataset):
         dump(eval_data_with_results, detailed_xlsx_file)
 
     def _print_summary(self, results):
-        """打印评测总结"""
-        print(f"✅ {self.dataset_name} 评估完成！")
-        print(f"🏆 总体得分: {results['total_score']:.2f} / {results['max_possible_score']:.2f} ({results['score_rate']:.2f}%)")
-        print(f"📊 细粒度评测得分: {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
-        print(f"🎯 粗粒度评测得分: {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
-        print(f"💾 详细结果已保存")
+        """Print evaluation summary"""
+        print(f"✅ {self.dataset_name} evaluation completed!")
+        print(f"🏆 Overall score: {results['total_score']:.2f} / {results['max_possible_score']:.2f} ({results['score_rate']:.2f}%)")
+        print(f"📊 Fine-grained score: {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
+        print(f"🎯 Coarse-grained score: {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
+        print(f"💾 Detailed results saved")

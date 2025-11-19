@@ -34,14 +34,14 @@ from sympy.parsing import sympy_parser
 from math_verify import (ExprExtractionConfig, LatexExtractionConfig, parse, verify)
 import threading
 
-# 模型配置参数
+# Model configuration parameters - using environment variables for better flexibility
 VERIFIER_MODEL_CONFIG = {
-    'use_model': False,
-    'model_name': '',  # 可选: 'xVerify-8B-SFT'
-    'api_key': '',
-    'base_url': '',  # 可选: 'https://sd1dpiav6rmou3g0ssa40.apigateway-cn-beijing.volceapi.com/v1'
-    'max_tokens': 16384,
-    'temperature': 0.1
+    'use_model': os.environ.get('HIPHO_VERIFIER_USE_MODEL', 'False').lower() == 'true',
+    'model_name': os.environ.get('HIPHO_VERIFIER_MODEL_NAME', ''),  # Optional: 'xVerify-8B-SFT'
+    'api_key': os.environ.get('HIPHO_VERIFIER_API_KEY', ''),
+    'base_url': os.environ.get('HIPHO_VERIFIER_BASE_URL', ''),  # Optional: API endpoint
+    'max_tokens': int(os.environ.get('HIPHO_VERIFIER_MAX_TOKENS', '16384')),
+    'temperature': float(os.environ.get('HIPHO_VERIFIER_TEMPERATURE', '0.1'))
 }
 
 
@@ -52,9 +52,9 @@ def timeout(timeout_seconds: int = 10):
             def handler(signum, frame):
                 raise TimeoutError("verify timed out!")
             def wrapper(*args, **kwargs):
-                # 检查是否在主线程中
+                # Check if in main thread
                 if threading.current_thread() != threading.main_thread():
-                    # 在子线程/子进程中，直接执行函数不使用signal
+                    # In subprocess/thread, execute function directly without signal
                     return func(*args, **kwargs)
                 
                 old_handler = signal.getsignal(signal.SIGALRM)
@@ -678,16 +678,16 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
 
     def count_decimal_places(x, tol=1e-6):
         """
-        返回浮点数 x 的有效小数位数，只保留重要前几位，忽略接近 0 的浮点尾巴。
+        Return the number of significant decimal places for float x, keeping only important digits and ignoring near-zero floating point tails.
         """
         with localcontext() as ctx:
-            ctx.prec = 20  # 高精度防止误差
+            ctx.prec = 20  # High precision to prevent errors
             d = Decimal(str(x)).normalize()
-            s = format(d, "f")  # 固定点格式
+            s = format(d, "f")  # Fixed point format
             if "." not in s:
                 return 0
             integer_part, decimal_part = s.split(".")
-            # 去掉右侧全是0或接近0的部分（人为容差）
+            # Remove trailing zeros or near-zero parts (tolerance)
             clean_decimal = ""
             for i, ch in enumerate(decimal_part):
                 clean_decimal += ch
@@ -700,7 +700,7 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
         if pred == gold:
             return True
 
-        # 尝试转为 float 后做相对误差比较
+        # Try converting to float for relative error comparison
         pred_value = float(pred)
         gold_value = float(gold)
         min_decimal_places = min(count_decimal_places(gold_value), count_decimal_places(pred_value))
@@ -710,7 +710,7 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
         if abs((pred_value - gold_value) / gold_value) <= precision * 1.01:
             return True
 
-        # 转为科学记数法后转 sympy 表达式
+        # Convert to scientific notation then to sympy expression
         spred = _sympy_parse(to_scientific_notation_sympy(float(pred)))
         sgold = _sympy_parse(to_scientific_notation_sympy(float(gold)))
         if is_scientific_notation(spred) and is_scientific_notation(sgold):
@@ -724,7 +724,7 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
     except Exception:
         pass
 
-    # 如果上面都失败，退回原始符号化处理（但注意保留结构）
+    # If all above fail, fall back to original symbolic processing (preserving structure)
     try:
         if should_allow_eval(gold) and should_allow_eval(pred):
             exp_gold = _sympy_parse(gold)
@@ -930,7 +930,7 @@ def attach_wrapper(obj, func=None):
     return func
 
 def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_info=False):
-    assert isinstance(max_attempts, int) and isinstance(delay, int), '参数必须是整数'
+    assert isinstance(max_attempts, int) and isinstance(delay, int), 'Parameters must be integers'
 
     def decorator(func):
         @wraps(func)
@@ -942,7 +942,7 @@ def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_
                 except Exception:
                     if print_trace_back:
                         e = traceback.format_exc()
-                        error_info = f">>>函数{func.__name__}第{attempts + 1}次尝试失败，报错信息为: {e}"
+                        error_info = f">>>Function {func.__name__} attempt {attempts + 1} failed, error: {e}"
                         print(error_info)
                     time.sleep(delay)
                     attempts += 1
