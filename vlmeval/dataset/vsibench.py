@@ -43,31 +43,52 @@ class VsiBench(VideoBaseDataset):
     ORIGIN_MCQ_POST_PROMPT = "Answer with the option's letter from the given choices directly."
     ORIGIN_VQA_POST_PROMPT = "Answer briefly and directly in one float number."
 
+    LMUData_root = LMUDataRoot()
+    DATASET_URL = {}
+
+    DATASET_URL = {
+        "VSI-Bench": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/VSI-Bench.tsv",  # noqa: E501
+        "VSI-Bench-Debiased": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/VSI-Bench-Debiased.tsv",  # noqa: E501
+    }
+    DATASET_MD5 = {key: None for key in DATASET_URL}
+
     def __init__(self, dataset, pack=False, nframe=0, fps=-1, sample_strategy='uniform_tail'):
-        super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
+        self.sample_strategy = sample_strategy
+        self.base_name, self.is_debiased, self.variant = self.parse_dataset_name(dataset)
+        print(f"VsiBench variant={self.variant}, debiased={self.is_debiased}")
 
         valid_strategies = {'uniform_tail', 'uniform', 'chunk_center'}
         if sample_strategy not in valid_strategies:
             raise ValueError(f"[{dataset}] Unsupported sample_strategy '{sample_strategy}'")
 
-        self.sample_strategy = sample_strategy
-        self.variant = self.get_variant(dataset)
-        print(f"VsiBench using variant : {self.variant}")
+        super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)
 
-    def get_variant(self, name: str, default="origin"):
-        base = "VSI-Bench"
-        if not isinstance(name, str) or not name.startswith(base):
-            return None
-        suffix = name[len(base):]
-        suffix = suffix.lstrip("_").strip()
-        return suffix or default
+    @staticmethod
+    def parse_dataset_name(name: str,
+                           default_variant: str = "origin",
+                           default_base: str = "VSI-Bench"):
+        if not isinstance(name, str):
+            return default_variant, default_base, False
+
+        lower = name.lower()
+
+        is_debiased = "debiased" in lower
+        base_name = "VSI-Bench-Debiased" if is_debiased else "VSI-Bench"
+
+        if lower.endswith("_standard"):
+            variant = "standard"
+        elif lower.endswith("_origin"):
+            variant = "origin"
+        else:
+            variant = default_variant
+
+        return base_name, is_debiased, variant
 
     @classmethod
     def supported_datasets(cls):
-        return [
-            'VSI-Bench_origin',
-            'VSI-Bench_standard'
-        ]
+        bases = ["VSI-Bench", "VSI-Bench-Debiased"]
+        variants = ["origin", "standard"]
+        return [f"{b}_{v}" for b in bases for v in variants]
 
     def get_task_type(self, question_type):
         MCQ_items = [
@@ -93,111 +114,74 @@ class VsiBench(VideoBaseDataset):
         else:
             raise ValueError(f"Unkwon question type: {question_type}")
 
-    def prepare_dataset(self, dataset_name='VSI-Bench', repo_id='nyu-visionx/VSI-Bench'):
-
-        def check_integrity(pth):
-            data_file = osp.join(pth, f'{dataset_name}.tsv')
-
-            if not os.path.exists(data_file):
-                return False
-
-            if md5(data_file) != self.MD5:
-                return False
-            data = load(data_file)
-            for video_pth in data['video_path']:
-                if not osp.exists(osp.join(pth, video_pth)):
-                    return False
-            return True
-
+    def download_vsibench(self, repo_id='nyu-visionx/VSI-Bench'):
         cache_path = get_cache_path(repo_id)
-        if cache_path is not None and check_integrity(cache_path):
+        SENTINEL_NAME = ".vsibench_extracted"
+
+        if (cache_path and os.path.isdir(cache_path)
+                and os.path.isfile(os.path.join(cache_path, SENTINEL_NAME))):
             dataset_path = cache_path
         else:
+            def _write_sentinel(sentinel_path, text="ok"):
+                tmp = sentinel_path + ".tmp"
+                with open(tmp, "w", encoding="utf-8") as f:
+                    f.write(text)
+                os.replace(tmp, sentinel_path)
+
             def unzip_hf_zip(pth):
                 import zipfile
+
                 base_dir = pth
-                target_dir = os.path.join(pth, 'video/')
                 zip_files = [
-                    os.path.join(base_dir, file) for file in os.listdir(base_dir)
-                    if file.endswith('.zip')
+                    os.path.join(base_dir, f) for f in os.listdir(base_dir)
+                    if f.endswith('.zip')
                 ]
                 zip_files.sort()
 
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir, exist_ok=True)
-                    for zip_file in zip_files:
-                        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-                            for member in zip_ref.namelist():
-                                if member.endswith('/'):
-                                    continue
+                for zip_file in tqdm(zip_files, desc='Unpacking Origin Data...'):
+                    with zipfile.ZipFile(zip_file, 'r') as zf:
+                        for info in zf.infolist():
+                            if info.is_dir():
+                                continue
 
-                                rel = os.path.normpath(member.lstrip("/"))
-                                dst = os.path.join(target_dir, rel)
-                                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                            rel = os.path.normpath(info.filename).lstrip('/\\')
+                            dst = os.path.join(pth, rel)
 
-                                with zip_ref.open(member) as source, open(dst, 'wb') as target:
-                                    target.write(source.read())
-                    print('The video file has been restored and stored from the zip file.')
-                else:
-                    print('The video file already exists.')
+                            absp = os.path.abspath(pth)
+                            absd = os.path.abspath(dst)
+                            if not absd.startswith(absp + os.sep):
+                                raise RuntimeError(f'Unsafe path in zip: {info.filename}')
 
-            def to_candidates(x):
-                if x is None or (isinstance(x, float) and math.isnan(x)):
-                    return []
-                if isinstance(x, list):
-                    return x
-                if isinstance(x, (tuple, set)):
-                    return list(x)
-                if hasattr(x, "tolist"):
-                    try:
-                        return x.tolist()
-                    except Exception:
-                        pass
-                if isinstance(x, str):
-                    try:
-                        v = json.loads(x)
-                        return v if isinstance(v, list) else [v]
-                    except Exception:
-                        return [x]
-                return [x]
+                            os.makedirs(os.path.dirname(dst), exist_ok=True)
+                            with zf.open(info, 'r') as src, open(dst, 'wb') as out:
+                                out.write(src.read())
 
-            def generate_tsv(pth):
-
-                data_file = osp.join(pth, f'{dataset_name}.tsv')
-                if os.path.exists(data_file) and md5(data_file) == self.MD5:
-                    return
-
-                data_file = pd.read_parquet(os.path.join(pth, 'test-00000-of-00001.parquet'))
-                data_file = data_file.assign(index=range(len(data_file)))
-
-                data_file['index'] = data_file['id']
-                data_file["video"] = (
-                    data_file["dataset"].astype(str).str.rstrip("/")
-                    + "/" +
-                    data_file["scene_name"].astype(str).str.removesuffix(".mp4")
-                    + ".mp4"
-                )
-                data_file['candidates'] = data_file['options'].apply(to_candidates)
-                data_file['question'] = data_file['question']
-                data_file['answer'] = data_file['ground_truth']
-                data_file['question_type'] = data_file['question_type']
-
-                out_cols = ["index", "video", "candidates",
-                            "question", "answer", "question_type"]
-
-                data_file[out_cols].to_csv(osp.join(pth, f'{dataset_name}.tsv'), sep="\t", index=False)
+                sentinel_path = os.path.join(pth, SENTINEL_NAME)
+                _write_sentinel(sentinel_path, text="done")
+                print('VsiBench data extracted to current directory with original layout.')
 
             if modelscope_flag_set():
                 from modelscope import dataset_snapshot_download
                 dataset_path = dataset_snapshot_download(dataset_id=repo_id)
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+
             unzip_hf_zip(dataset_path)
-            generate_tsv(dataset_path)
 
-        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+        return dataset_path
 
-        return dict(data_file=data_file, root=dataset_path)
+    def prepare_dataset(self, dataset_name):
+        url = self.DATASET_URL[self.base_name]
+        md5 = self.DATASET_MD5[self.base_name]
+
+        _ = super().prepare_tsv(url, md5)
+
+        dataset_path = self.download_vsibench()
+        self.dataset_path = dataset_path
+
+        variant_data_file = os.path.join(self.LMUData_root, f"{dataset_name}.tsv")
+
+        return dict(data_file=variant_data_file, root=dataset_path)
 
     def save_video_frames(self, video_path, video_llm=False):
         vid_path = osp.join(self.data_root, 'video', video_path)
@@ -239,7 +223,7 @@ class VsiBench(VideoBaseDataset):
             if self.sample_strategy == 'uniform_tail' and (video_nframes - 1) != indices[-1]:
                 indices.append(video_nframes - 1)
 
-            frame_paths = self.frame_paths_fps(video_path)
+            frame_paths = self.frame_paths_fps(video_path, len(indices))
 
         flag = np.all([osp.exists(p) for p in frame_paths])
 
