@@ -1902,6 +1902,10 @@ logics_series = {
     "Logics-Thinking-32B": partial(Logics_Thinking,model_path='Logics-MLLM/Logics-Thinking-32B'),
 }
 
+insight_v_series = {
+    "insightv": partial(InsightV, pretrained_reason="THUdyh/Insight-V-Reason-LLaMA3", pretrained_summary="THUdyh/Insight-V-Summary-LLaMA3"),
+}
+
 cosmos_series = {
     'Cosmos-Reason1-7B': partial(Cosmos, model_path='nvidia/Cosmos-Reason1-7B', use_vllm=True),
 }
@@ -1956,7 +1960,7 @@ model_groups = [
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
     flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
-    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series
 ]
 
 for grp in model_groups:
