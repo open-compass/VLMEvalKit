@@ -2270,6 +2270,19 @@ sensesi_series = {
         use_custom_prompt=False,
         version="V2.0"
     ),
+    "SenseNova-SI-1.1-InternVL3-2B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-InternVL3-2B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-1.1-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    
 }
 
 internvl_groups = [
