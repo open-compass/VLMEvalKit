@@ -1395,6 +1395,11 @@ cambrian_series = {
     "cambrian_8b": partial(Cambrian, model_path="nyu-visionx/cambrian-8b"),
     "cambrian_13b": partial(Cambrian, model_path="nyu-visionx/cambrian-13b"),
     "cambrian_34b": partial(Cambrian, model_path="nyu-visionx/cambrian-34b"),
+    
+    "cambrian-s-0.5b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-0.5B"),
+    "cambrian-s-1.5b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-1.5B"),
+    "cambrian-s-3b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-3B"),
+    "cambrian-s-7b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-7B"),
 }
 
 chameleon_series = {
