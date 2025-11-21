@@ -2,10 +2,42 @@ import torch
 import warnings
 import logging
 
+from PIL import ImageOps
+
 from .base import BaseModel
 from .qwen2_vl.prompt import Qwen2VLPromptMixin
 from .qwen2_vl.model import ensure_image_url, ensure_video_url
 from ..dataset import DATASET_TYPE
+
+
+def pad_images_to_max(image_inputs, fill=(0, 0, 0)):
+    if not image_inputs:
+        return image_inputs
+
+    sizes = []
+    for img in image_inputs:
+        sizes.append(img.size)  # (W, H)
+
+    if len(set(sizes)) == 1:
+        return image_inputs
+
+    max_w = max(w for w, h in sizes)
+    max_h = max(h for w, h in sizes)
+
+    padded = []
+    for img, (w, h) in zip(image_inputs, sizes):
+        pad_w = max_w - w
+        pad_h = max_h - h
+        padding = (
+            pad_w // 2,
+            pad_h // 2,
+            pad_w - pad_w // 2,
+            pad_h - pad_h // 2,
+        )
+        img_padded = ImageOps.expand(img, border=padding, fill=fill)
+        padded.append(img_padded)
+
+    return padded
 
 
 class SpatialMLLM(Qwen2VLPromptMixin, BaseModel):
@@ -141,8 +173,8 @@ class SpatialMLLM(Qwen2VLPromptMixin, BaseModel):
         warnings.warn(f"Following kwargs received: {self.kwargs}, will use as generation config.")
 
     def use_custom_prompt(self, dataset):
-        if self.use_custom_prompt_flag:
-            return True
+        if not self.use_custom_prompt_flag:
+            return False
         # Use custom prompt for MCQ datasets
         if dataset is not None and DATASET_TYPE(dataset) == "MCQ":
             return True
@@ -290,6 +322,9 @@ class SpatialMLLM(Qwen2VLPromptMixin, BaseModel):
 
         # Process vision information
         image_inputs, video_inputs = process_vision_info(messages)
+        if image_inputs:
+            # pad the image to the largest size, when multiple images have different sizes
+            image_inputs = pad_images_to_max(image_inputs)
 
         # Prepare inputs for the model
         inputs = self.processor(
