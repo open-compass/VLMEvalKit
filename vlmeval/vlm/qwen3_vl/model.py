@@ -8,7 +8,7 @@ import torch
 
 from ..base import BaseModel
 from .prompt import Qwen3VLPromptMixin
-from ...smp import get_gpu_memory
+from ...smp import get_gpu_memory, listinstr
 
 
 VLLM_MAX_IMAGE_INPUT_NUM = 24
@@ -17,7 +17,7 @@ VLLM_MAX_IMAGE_INPUT_NUM = 24
 def is_moe_model(model_path: str) -> bool:
     """Check if the model is a Mixture of Experts model."""
     path_parts = model_path.split('/')
-    non_moe_patterns = ['4B', '8B']
+    non_moe_patterns = ['2B','4B','8B','32B']
     for part in path_parts:
         if any(pattern in part for pattern in non_moe_patterns):
             return False
@@ -58,10 +58,12 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         top_k: int = 20,
         temperature: float = 0.01,
         repetition_penalty: float = 1.0,
+        presence_penalty: float = 1.5,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
         post_process: bool = False,
         verbose: bool = False,
+        use_audio_in_video: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(use_custom_prompt=use_custom_prompt)
@@ -72,7 +74,7 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.top_k = top_k
         self.top_p = top_p
         self.repetition_penalty = repetition_penalty
-        self.presence_penalty = 1.5
+        self.presence_penalty = presence_penalty
         self.temperature = temperature
         if self.total_pixels and self.total_pixels > 24576 * 32 * 32:
             print('The total number of video tokens might too large, resulting in an overly long input sequence.')
@@ -89,20 +91,34 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         self.fps = kwargs.pop('fps', 2)
         self.nframe = kwargs.pop('nframe', 128)
         self.FRAME_FACTOR = 2
+        self.use_audio_in_video = use_audio_in_video
 
         assert model_path is not None
         self.model_path = model_path
         from transformers import AutoProcessor, AutoModelForImageTextToText
-        self.processor = AutoProcessor.from_pretrained(model_path)
+        # Use official Qwen3-Omni classes when model_path indicates omni
+        if listinstr(['omni'], model_path.lower()):
+            try:
+                from transformers import Qwen3OmniMoeForConditionalGeneration, Qwen3OmniMoeProcessor
+            except Exception as err:
+                logging.critical("pip install git+https://github.com/huggingface/transformers")
+                raise err
+            self.processor = Qwen3OmniMoeProcessor.from_pretrained(model_path)
+        else:
+            self.processor = AutoProcessor.from_pretrained(model_path)
 
         gpu_mems = get_gpu_memory()
         max_gpu_mem = max(gpu_mems) if gpu_mems != [] else -1
         assert max_gpu_mem > 0
 
         self.use_vllm = kwargs.get('use_vllm', False)
+        self.use_lmdeploy = kwargs.get('use_lmdeploy', False)
         self.limit_mm_per_prompt = VLLM_MAX_IMAGE_INPUT_NUM
         os.environ['VLLM_WORKER_MULTIPROC_METHOD'] = 'spawn'
+        assert self.use_vllm + self.use_lmdeploy <= 1, "You can only set one flag `use_vllm` to True"
         if self.use_vllm:
+            if listinstr(['omni'], self.model_path.lower()):
+                os.environ['VLLM_USE_V1'] = '0'
             from vllm import LLM
             gpu_count = torch.cuda.device_count()
             tp_size = gpu_count if gpu_count > 0 else 1
@@ -114,21 +130,30 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                     "VLLM_WORKER_MULTIPROC_METHOD is not set to spawn. Use 'export VLLM_WORKER_MULTIPROC_METHOD=spawn'"
                 )
             enable_expert_parallel = is_moe_model(self.model_path)
+            # For Qwen3-Omni, vLLM engine v1 is not supported yet
+            if listinstr(['omni'], self.model_path.lower()):
+                limit_mm = {"image": 3, "video": 3, "audio": 3}
+            else:
+                limit_mm = {"image": self.limit_mm_per_prompt}
             self.llm = LLM(
                 model=self.model_path,
-                max_num_seqs=5,
-                max_model_len=self.max_new_tokens,
-                limit_mm_per_prompt={"image": self.limit_mm_per_prompt},
+                max_num_seqs=8,
+                limit_mm_per_prompt=limit_mm,
                 tensor_parallel_size=tp_size,
-                mm_encoder_tp_mode="data",
                 enable_expert_parallel=enable_expert_parallel,
                 seed=0,
-                gpu_memory_utilization=kwargs.get("gpu_utils", 0.7),
+                gpu_memory_utilization=kwargs.get("gpu_utils", 0.9),
+                trust_remote_code=True,
             )
         else:
-            self.model = AutoModelForImageTextToText.from_pretrained(
-                model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
-            )
+            if listinstr(['omni'], model_path.lower()):
+                self.model = Qwen3OmniMoeForConditionalGeneration.from_pretrained(
+                    model_path, dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+                )
+            else:
+                self.model = AutoModelForImageTextToText.from_pretrained(
+                    model_path, torch_dtype='auto', device_map='auto', attn_implementation='flash_attention_2'
+                )
             self.model.eval()
 
         torch.cuda.empty_cache()
@@ -185,6 +210,8 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
                             item['nframes'] = new_frame_count
                         else:
                             item['nframes'] = self.nframe
+            elif s['type'] == 'audio':
+                item = {'type': 'audio', 'audio': s['value']}
             elif s['type'] == 'text':
                 item = {'type': 'text', 'text': s['value']}
             else:
@@ -193,11 +220,19 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         return content
 
     def generate_inner_transformers(self, message, dataset=None):
-        try:
-            from qwen_vl_utils import process_vision_info
-        except Exception as err:
-            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            raise err
+        is_omni = listinstr(['omni'], self.model_path.lower())
+        if is_omni:
+            try:
+                from qwen_omni_utils import process_mm_info
+            except Exception as err:
+                logging.critical("Please install it via 'pip install qwen-omni-utils[decord]'")
+                raise err
+        else:
+            try:
+                from qwen_vl_utils import process_vision_info
+            except Exception as err:
+                logging.critical("Please install it via 'pip install qwen-vl-utils'")
+                raise err
 
         messages = []
         if self.system_prompt is not None:
@@ -206,41 +241,80 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
 
-        text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        images, videos, video_kwargs = process_vision_info(
-            messages,
-            image_patch_size=16,
-            return_video_kwargs=True,
-            return_video_metadata=True,
-        )
+        if is_omni:
+            # For Qwen3-Omni, messages is a list of dicts
+            text = self.processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
+            audios, images, videos = process_mm_info(messages, use_audio_in_video=self.use_audio_in_video)
+            inputs = self.processor(
+                text=text,
+                audio=audios,
+                images=images,
+                videos=videos,
+                return_tensors='pt',
+                padding=True,
+                use_audio_in_video=self.use_audio_in_video,
+            )
+        else:
+            text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            images, videos, video_kwargs = process_vision_info(
+                messages,
+                image_patch_size=16,
+                return_video_kwargs=True,
+                return_video_metadata=True,
+            )
 
-        video_metadatas = None
-        if videos is not None:
-            videos, video_metadatas = zip(*videos)
-            videos, video_metadatas = list(videos), list(video_metadatas)
+            video_metadatas = None
+            if videos is not None:
+                videos, video_metadatas = zip(*videos)
+                videos, video_metadatas = list(videos), list(video_metadatas)
 
-        inputs = self.processor(
-            text=text,
-            images=images,
-            videos=videos,
-            video_metadata=video_metadatas,
-            do_resize=False,
-            return_tensors='pt',
-            **(video_kwargs or {}),
-        )
-        inputs = inputs.to('cuda')
+            inputs = self.processor(
+                text=text,
+                images=images,
+                videos=videos,
+                video_metadata=video_metadatas,
+                do_resize=False,
+                return_tensors='pt',
+                **(video_kwargs or {}),
+            )
+        try:
+            inputs = inputs.to(self.model.device)
+            if hasattr(self.model, 'dtype'):
+                inputs = inputs.to(self.model.dtype)
+        except Exception:
+            inputs = inputs.to('cuda')
 
-        generated_ids = self.model.generate(
-            **inputs,
-            **self.generate_kwargs,
-        )
-        generated_ids = [
-            output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
-        ]
-        out = self.processor.tokenizer.batch_decode(
-            generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
-        )
-        response = out[0]
+        if is_omni:
+            try:
+                text_ids, _ = self.model.generate(
+                    **inputs,
+                    return_audio=False,
+                    thinker_return_dict_in_generate=True,
+                    use_audio_in_video=self.use_audio_in_video,
+                )
+            except TypeError:
+                text_ids, _ = self.model.generate(
+                    **inputs,
+                    return_audio=False,
+                    use_audio_in_video=self.use_audio_in_video,
+                )
+            response = self.processor.batch_decode(
+                text_ids.sequences[:, inputs["input_ids"].shape[1]:],
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0]
+        else:
+            generated_ids = self.model.generate(
+                **inputs,
+                **self.generate_kwargs,
+            )
+            generated_ids = [
+                output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+            ]
+            out = self.processor.tokenizer.batch_decode(
+                generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
+            )
+            response = out[0]
         if self.post_process:
             resp = response.split('\\boxed{')[-1]
             lt = len(resp)
@@ -265,11 +339,19 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
 
     def generate_inner_vllm(self, message, dataset=None):
         from vllm import SamplingParams
-        try:
-            from qwen_vl_utils import process_vision_info
-        except Exception as err:
-            logging.critical("qwen_vl_utils not found, please install it via 'pip install qwen-vl-utils'")
-            raise err
+        is_omni = listinstr(['omni'], self.model_path.lower())
+        if is_omni:
+            try:
+                from qwen_omni_utils import process_mm_info
+            except Exception as err:
+                logging.critical("qwen_omni_utils not found, 'pip install qwen-omni-utils[decord]'")
+                raise err
+        else:
+            try:
+                from qwen_vl_utils import process_vision_info
+            except Exception as err:
+                logging.critical("qwen_vl_utils not found, 'pip install qwen-vl-utils'")
+                raise err
 
         messages = []
         if self.system_prompt is not None:
@@ -279,12 +361,15 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             print(f'\033[31m{messages}\033[0m')
 
         text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        image_inputs, video_inputs, video_kwargs = process_vision_info(
-            messages,
-            image_patch_size=16,
-            return_video_kwargs=True,
-            return_video_metadata=True,
-        )
+        if is_omni:
+            audios, image_inputs, video_inputs = process_mm_info(messages, use_audio_in_video=self.use_audio_in_video)
+        else:
+            image_inputs, video_inputs, video_kwargs = process_vision_info(
+                messages,
+                image_patch_size=16,
+                return_video_kwargs=True,
+                return_video_metadata=True,
+            )
 
         sampling_params = SamplingParams(
             temperature=self.temperature,
@@ -300,11 +385,15 @@ class Qwen3VLChat(Qwen3VLPromptMixin, BaseModel):
             mm_data['image'] = image_inputs
         if video_inputs is not None:
             mm_data['video'] = video_inputs
+        if is_omni and 'audios' in locals() and audios is not None:
+            mm_data['audio'] = audios
 
         req = {'prompt': text}
         if mm_data:
             req['multi_modal_data'] = mm_data
-        if video_kwargs is not None:
+        if is_omni:
+            req['mm_processor_kwargs'] = {"use_audio_in_video": self.use_audio_in_video}
+        elif video_kwargs is not None:
             req['mm_processor_kwargs'] = video_kwargs
 
         outputs = self.llm.generate([req], sampling_params=sampling_params)

@@ -32,6 +32,8 @@ from .spatial457 import Spatial457
 from .charxiv import CharXiv
 from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
+from .refcoco import RefCOCODataset
+from .simplevqa import SimpleVQA
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -58,6 +60,7 @@ from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
+from .videott import VideoTT
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
@@ -221,7 +224,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, HiPhODataset
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset
 ]
 
 VIDEO_DATASET = [
@@ -233,7 +236,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ,
+    EgoExoBench_MCQ, VideoTT,
 ]
 
 TEXT_DATASET = [
