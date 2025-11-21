@@ -12,7 +12,7 @@ from io import BytesIO
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from .utils.hipho_verifier import grade, extract_boxed_answer, get_answer_str, answer_tag_reward_fn_for_r1
-from .utils.prompt_inference import SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH, JUDGE_GRADING_PROMPT_TEMPLATE, TOTAL_SCORE_WARNING_TEMPLATE, RETRY_WARNING_TEMPLATE
+from .utils.hipho_prompt_inference import SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH, JUDGE_GRADING_PROMPT_TEMPLATE, TOTAL_SCORE_WARNING_TEMPLATE, RETRY_WARNING_TEMPLATE
 from ..smp import *
 
 
