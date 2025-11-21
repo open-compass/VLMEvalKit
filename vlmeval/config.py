@@ -2027,6 +2027,14 @@ spatial_related_models = {
         use_custom_prompt=False,
         post_process=True,  # extract answer for evaluation
     ),
+    "VST-3B-SFT": partial(
+        Qwen2VLChat,
+        model_path="rayruiyang/VST-3B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+        model_name="VST-3B-SFT_qwen25"
+    ),
     
     # 7B models
     "SpaceR-SFT-7B": partial(
@@ -2044,6 +2052,14 @@ spatial_related_models = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
         model_name="ViLaSR_qwen25"
+    ),
+    "VST-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="rayruiyang/VST-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+        model_name="VST-7B-SFT_qwen25"
     ),
 }
 
