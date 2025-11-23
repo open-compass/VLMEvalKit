@@ -85,7 +85,10 @@ class ImageMCQDataset(ImageBaseDataset):
         'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-dis.tsv',
         'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-ref.tsv',
         # Other Benchmarks
-        'VP_BENCH_STAGE1': 'https://modelscope.cn/datasets/VP-Bench/VP-Bench_stage_1_VLMEvalKit/resolve/master/vp_bench_stage_1.tsv',
+        'VP_BENCH_STAGE1': (
+            'https://modelscope.cn/datasets/VP-Bench/VPBench_stage_1_VLMEvalKit/resolve/master/'
+            'vp_bench_stage_1.tsv'
+        ),
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
