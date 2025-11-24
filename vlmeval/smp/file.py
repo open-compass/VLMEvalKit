@@ -466,12 +466,18 @@ def get_file_extension(file_path):
 def get_intermediate_file_path(eval_file, suffix, target_format=None):
     original_ext = get_file_extension(eval_file)
 
+    def ends_with_list(s, lst):
+        for item in lst:
+            if s.endswith(item):
+                return True
+        return False
+
     if target_format is None:
-        if suffix in ['_tmp', '_response', '_processed']:
+        if ends_with_list(suffix, ['_tmp', '_response', '_processed']):
             target_format = 'pkl'
-        elif suffix in ['_rating', '_config', '_meta']:
+        elif ends_with_list(suffix, ['_rating', '_config', '_meta']):
             target_format = 'json'
-        elif suffix in ['_acc', '_fine', '_metrics']:
+        elif ends_with_list(suffix, ['_acc', '_fine', '_metrics']):
             target_format = get_eval_file_format()
         else:
             target_format = get_pred_file_format()
