@@ -1,45 +1,78 @@
 from collections import defaultdict
-from pathlib import Path
 import pandas as pd
 import os.path as osp
 import os
 import string
 from .image_base import ImageBaseDataset
 from vlmeval.utils import track_progress_rich
-from vlmeval.smp.file import get_intermediate_file_path, get_file_extension, load, dump
+from vlmeval.smp.file import get_intermediate_file_path, load, dump
 from .utils import build_judge, DEBUG_MESSAGE
 
 PROMPT_MCQ_MULTIMODAL = {
     "instruct": [
         {
+            "type":
+            "instruction",
+            "value":
+            "The following is a question about chemistry. Please answer by responding with the letter(s) of the correct answer(s). Separate multiple answers with a comma.",  # noqa: E501
+        },
+        {
             "type": "instruction",
-            "value": "The following is a question about chemistry. Please answer by responding with the letter(s) of the correct answer(s). Separate multiple answers with a comma.",
-        },
-        {"type": "instruction", "value": "Question:"},
-        {"type": "question", "value": None},
-        {"type": "answer", "value": None},
-        {
-            "type": "text",
-            "value": "You MUST include the final answer within the following tags: [ANSWER] and [/ANSWER].For example, '[ANSWER]<answer>[/ANSWER].",
+            "value": "Question:"
         },
         {
-            "type": "text",
-            "value": "For example, '[ANSWER]<answer>[/ANSWER]', where <answer> is comma- or space-separated list of the correct letters. Always answer in exactly this format of comma-separated letters between the two tags, even if you are unsure. We require this because we use automatic parsing.",
+            "type": "question",
+            "value": None
         },
-        {"type": "constraint", "value": "Answer: "},
+        {
+            "type": "answer",
+            "value": None
+        },
+        {
+            "type":
+            "text",
+            "value":
+            "You MUST include the final answer within the following tags: [ANSWER] and [/ANSWER].For example, '[ANSWER]<answer>[/ANSWER].",  # noqa: E501
+        },
+        {
+            "type":
+            "text",
+            "value":
+            "For example, '[ANSWER]<answer>[/ANSWER]', where <answer> is comma- or space-separated list of the correct letters. Always answer in exactly this format of comma-separated letters between the two tags, even if you are unsure. We require this because we use automatic parsing.",  # noqa: E501
+        },
+        {
+            "type": "constraint",
+            "value": "Answer: "
+        },
     ],
 }
 
 PROMPT_FLOATQ_MULTIMODAL = {
     "instruct": [
-        {"type": "instruction", "value": "The following is a question about chemistry or material science. Please return the answer as a number."},
-        {"type": "instruction", "value": "Question:"},
-        {"type": "question", "value": None},
+        {
+            "type":
+            "instruction",
+            "value":
+            "The following is a question about chemistry or material science. Please return the answer as a number."
+        },
+        {
+            "type": "instruction",
+            "value": "Question:"
+        },
+        {
+            "type": "question",
+            "value": None
+        },
+        {
+            "type":
+            "constraint",
+            "value":
+            "You MUST include the final answer within the following tags: [ANSWER] and [/ANSWER]. For example, '[ANSWER]<answer>[/ANSWER]', where <answer> is only one number. Always answer in exactly this format, with ONE NUMBER between the two tags, even if you are unsure. We require this because we use automatic parsing.",  # noqa: E501
+        },
         {
             "type": "constraint",
-            "value": "You MUST include the final answer within the following tags: [ANSWER] and [/ANSWER]. For example, '[ANSWER]<answer>[/ANSWER]', where <answer> is only one number. Always answer in exactly this format, with ONE NUMBER between the two tags, even if you are unsure. We require this because we use automatic parsing.",
+            "value": "Answer: "
         },
-        {"type": "constraint", "value": "Answer: "},
     ],
 }
 
@@ -49,7 +82,7 @@ Only return the letters of the correct answer. If there is no correct answer, re
 
 You need to extract the answer from the next text:
 
-{completion}"""
+{completion}"""  # noqa: E501
 
 EXTRACTOR_EXACT_MATCH_PROMPT = """From the following answer, please extract the answer in the format of [ANSWER]<answer>[/ANSWER]. For example, if the answer is 2, the completion should be [ANSWER]2[/ANSWER].
 The answer is one number. Do not use roman numbers or any special symbols. Return then as integer or float. You must return the answer in the format of [ANSWER]<answer>[/ANSWER].
@@ -57,14 +90,15 @@ Only return the number of the correct answer. If there is no correct answer, ret
 
 You need to extract the answer from the next text:
 
-{completion}"""
+{completion}"""  # noqa: E501
 
 
 def join_append(messages: list[dict], new: dict, join_text=''):
     if len(messages) == 0:
         messages.append(new)
     elif messages[-1]['type'] == 'text' and new['type'] == 'text':
-        messages[-1]['value'] = ''.join([messages[-1]['value'], join_text, new['value']])
+        messages[-1]['value'] = ''.join(
+            [messages[-1]['value'], join_text, new['value']])
     else:
         messages.append(new)
     return messages
@@ -79,10 +113,13 @@ def macbench_auxeval(model, line):
 
     if options:
         # mcq
-        option_text = '\nThe options are:\n' + ', '.join(f'{letter}: {option}' for letter, option in options.items())
-        prompt = EXTRACTOR_MCQ_PROMPT.format(completion=line['prediction'], options=option_text)
+        option_text = '\nThe options are:\n' + ', '.join(
+            f'{letter}: {option}' for letter, option in options.items())
+        prompt = EXTRACTOR_MCQ_PROMPT.format(completion=line['prediction'],
+                                             options=option_text)
     else:
-        prompt = EXTRACTOR_EXACT_MATCH_PROMPT.format(completion=line['prediction'])
+        prompt = EXTRACTOR_EXACT_MATCH_PROMPT.format(
+            completion=line['prediction'])
     log = ''
     retry = 5
     for i in range(retry):
@@ -132,10 +169,14 @@ class MaCBench(ImageBaseDataset):
                         join_append(msgs, dict(type='image', value=img_path))
                     join_append(msgs, dict(type='text', value=suffix))
                 elif item['type'] == 'answer':
-                    option_text = '\n'.join(f'{cand}: {option}' for cand, option in options.items())
-                    join_append(msgs, dict(type='text', value=option_text), '\n')
+                    option_text = '\n'.join(
+                        f'{cand}: {option}'
+                        for cand, option in options.items())
+                    join_append(msgs, dict(type='text', value=option_text),
+                                '\n')
                 else:
-                    join_append(msgs, dict(type='text', value=item['value']), '\n')
+                    join_append(msgs, dict(type='text', value=item['value']),
+                                '\n')
         else:
             # single target quesiton
             for item in PROMPT_FLOATQ_MULTIMODAL['instruct']:
@@ -145,20 +186,22 @@ class MaCBench(ImageBaseDataset):
                         join_append(msgs, dict(type='image', value=img_path))
                     join_append(msgs, dict(type='text', value=suffix))
                 else:
-                    join_append(msgs, dict(type='text', value=item['value']), '\n')
+                    join_append(msgs, dict(type='text', value=item['value']),
+                                '\n')
 
         if not self.interleave:
             new_msgs = []
             for msg in msgs:
                 if msg['type'] == 'text':
-                    join_append(new_msgs, dict(type='text', value=msg['value']), ' ')
+                    join_append(new_msgs, dict(type='text',
+                                               value=msg['value']), ' ')
                 elif msg['type'] == 'image':
-                    join_append(new_msgs, dict(type='text', value='<IMAGE>'), ' ')
+                    join_append(new_msgs, dict(type='text', value='<IMAGE>'),
+                                ' ')
             for img_path in tgt_path:
                 join_append(new_msgs, dict(type='image', value=img_path))
             msgs = new_msgs
         return msgs
-
 
     def evaluate(self, eval_file, **judge_kwargs):
         if 'model' in judge_kwargs:
@@ -172,7 +215,8 @@ class MaCBench(ImageBaseDataset):
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=128, **judge_kwargs)
-            assert model.working(), 'MaCBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            assert model.working(
+            ), 'MaCBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -196,7 +240,8 @@ class MaCBench(ImageBaseDataset):
                 ans = load(tmp_file)
                 for k, v in zip(indices, new_results):
                     assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
+                        'res']
 
             data['res'] = [ans[idx]['res'] for idx in data['index']]
             data['log'] = [ans[idx]['log'] for idx in data['index']]
@@ -214,7 +259,8 @@ class MaCBench(ImageBaseDataset):
 
         for _, line in data.iterrows():
             group_total[line['category']] += 1
-            pred = line['res'].strip() if isinstance(line['res'], str) else line['res']
+            pred = line['res'].strip() if isinstance(line['res'],
+                                                     str) else line['res']
             if not pred:
                 continue
 
@@ -238,7 +284,9 @@ class MaCBench(ImageBaseDataset):
                     group_hit[line['category']] += 1
 
         result = defaultdict(list)
-        result['Overall'].append(sum(group_hit.values()) / sum(group_total.values()))
+        result['Overall'].append(
+            sum(group_hit.values()) / sum(group_total.values()))
         for group in group_total.keys():
-            result[group].append(float(group_hit.get(group, 0) / group_total[group]))
+            result[group].append(
+                float(group_hit.get(group, 0) / group_total[group]))
         return pd.DataFrame(result)
