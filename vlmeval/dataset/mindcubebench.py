@@ -91,7 +91,7 @@ class MindCubeBench(ImageMCQDataset):
 
                 if not dataset_path:
                     return os.path.normpath(s)
-                return os.path.normpath(os.path.join(dataset_path, 'data', s.lstrip(r'\/')))
+                return os.path.normpath(os.path.join(dataset_path, s.lstrip(r'\/')))
 
             def to_abs(p):
                 if isinstance(p, list):
