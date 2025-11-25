@@ -104,7 +104,7 @@ COMPARE_ANSWER_PROMPT = """
 class SimpleVQA(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
-        "SimpleVQA": "SimpleVQA.tsv",
+        "SimpleVQA": "https://opencompass.openxlab.space/utils/VLMEval/SimpleVQA.tsv",
     }
     DATASET_MD5 = {
         "SimpleVQA": "e3ce3c11df59a2a15d37489a8b245a87",
