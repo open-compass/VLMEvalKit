@@ -93,6 +93,7 @@ from .oceanocr import OceanOCRBench
 from .matbench import MATBench
 
 from .reasonmap_plus import ReasonMap_Plus
+from .hipho import HiPhODataset
 from .gsm8k_v import GSM8KVDataset
 
 
@@ -223,7 +224,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, MMReason
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MMReason
 ]
 
 VIDEO_DATASET = [
