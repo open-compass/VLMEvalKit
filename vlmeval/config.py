@@ -279,6 +279,15 @@ api_models = {
         max_tokens=2**14,
         timeout=300,
     ),
+    "gpt-5.1-2025-11-13": partial(
+        GPT4V,
+        model="gpt-5.1-2025-11-13",
+        img_detail="high",
+        retry=3,
+        verbose=False,
+        max_tokens=2**14,
+        timeout=300,
+    ),
     # Gemini
     "GeminiPro1-0": partial(
         Gemini, model="gemini-1.0-pro", temperature=0, retry=10

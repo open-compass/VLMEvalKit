@@ -1,14 +1,15 @@
+# flake8: noqa
 SYSTEM_PROMPTS_EN = \
 """You are participating in a high school physics competition.
 Please read the following question carefully and provide a clear, step-by-step solution with full reasoning.
 
-Context (if applicable):  
+Context (if applicable):
 {context}
 
-Problem:  
+Problem:
 {problem}
 
-Useful information (formulas, constants, units, if applicable):  
+Useful information (formulas, constants, units, if applicable):
 {information}
 
 Instructions:
@@ -37,11 +38,11 @@ SYSTEM_PROMPTS_ZH = \
 题目内容：
 {problem}
 
-可用信息（如物理公式、常数、单位等）：  
+可用信息（如物理公式、常数、单位等）：
 {information}
 
-作答要求：  
-1. 所有物理量、公式和计算过程须使用 LaTeX 格式书写。 
+作答要求：
+1. 所有物理量、公式和计算过程须使用 LaTeX 格式书写。
 2. 将完整的推理过程用 <think> 和 </think> 标签括起来。
 3. 将最终答案置于 <answer> 和 </answer> 标签中，答案格式为 [\\boxed{{答案}}]，方框内不包含单位。
 4. 对于包含多个小问的题目，按顺序列出所有答案，格式为：[\\boxed{{答案1}}, \\boxed{{答案2}}, ...]。
@@ -91,10 +92,10 @@ CRITICAL REQUIREMENTS:
 
 Example outputs:
 - \\boxed{{0.4}} (for full credit)
-- \\boxed{{0.1}} (for partial credit)  
+- \\boxed{{0.1}} (for partial credit)
 - \\boxed{{0.0}} (for no credit)
 
-⚠️ CRITICAL INSTRUCTION: 
+⚠️ CRITICAL INSTRUCTION:
 - Output ONLY: \\boxed{{score}}
 - NO explanations, NO analysis, NO reasoning
 - Just the number in the exact format \\boxed{{score}}
