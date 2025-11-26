@@ -58,6 +58,7 @@ from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
+from .videommmu import VideoMMMU
 
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
@@ -237,7 +238,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, VideoTT,
+    EgoExoBench_MCQ, VideoTT, VideoMMMU,
 ]
 
 TEXT_DATASET = [
