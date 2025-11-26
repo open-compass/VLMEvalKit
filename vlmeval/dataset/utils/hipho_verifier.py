@@ -1,3 +1,4 @@
+# flake8: noqa
 # Copyright 2025 Garena Online Private Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,7 +57,7 @@ def timeout(timeout_seconds: int = 10):
                 if threading.current_thread() != threading.main_thread():
                     # In subprocess/thread, execute function directly without signal
                     return func(*args, **kwargs)
-                
+
                 old_handler = signal.getsignal(signal.SIGALRM)
                 signal.signal(signal.SIGALRM, handler)
                 signal.alarm(timeout_seconds)
@@ -533,7 +534,7 @@ def judge_MC(pred, gold):
             return True
         else:
             return False
-        
+
 def judge_TF(pred, gold):
     def contains_chinese(d):
         def is_chinese_char(ch):
@@ -549,7 +550,7 @@ def judge_TF(pred, gold):
             return False
 
         return check(d)
-    
+
     if contains_chinese(pred):
         if pred in ["是", "对", "正确", "能"]:
             pred = "TRUE"
@@ -566,9 +567,9 @@ def judge_TF(pred, gold):
     if gold in ["FALSE", "NO", "F", "N"]:
         gold = "FALSE"
     if pred in ["TRUE", "YES", "T", "Y"]:
-        pred = "TRUE" 
+        pred = "TRUE"
     if pred in ["FALSE", "NO", "F", "N"]:
-        pred = "FALSE" 
+        pred = "FALSE"
     return pred == gold
 
 
@@ -741,14 +742,14 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
                 else:
                     pred = to_scientific_notation_sympy(float(pred))
                     exp_pred = _sympy_parse(pred)
-                
+
             if is_scientific_notation(exp_pred) and is_scientific_notation(exp_gold):
                 base_pred, exponent_pred = N(exp_pred.args[0]), N(exp_pred.args[1].args[1])
                 base_gold, exponent_gold = N(exp_gold.args[0]), N(exp_gold.args[1].args[1])
                 min_decimal_places = min(count_decimal_places(base_gold), count_decimal_places(base_pred))
                 base_pred = round(base_pred, min_decimal_places)
                 base_gold = round(base_gold, min_decimal_places)
-                
+
                 if exponent_pred == exponent_gold and abs(base_pred - base_gold) <= precision * 1.01:
                     return True
             else:
@@ -882,7 +883,7 @@ def grade_answer_math_verify(given_answer: str, ground_truth: str) -> bool:
                     len(ground_truth) > 128 and repeatness(ground_truth)
                 ):
                     return False, given_answer, ground_truth
-                
+
                 # Next call math verify.
                 given_answer.replace("\n", "")
                 ground_truth.replace("\n", "")
@@ -950,7 +951,7 @@ def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_
                 return error_info
             else:
                 return None
-        
+
         @attach_wrapper(wrapper)
         def set_max_attempts(new_max_attempts):
             nonlocal max_attempts
@@ -981,7 +982,7 @@ def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str, mod
                 log_callback(f"[DEBUG] {message}")
             else:
                 print(f"[DEBUG] {message}")
-    
+
     safe_debug_log(f"[DEBUG] grade_answer_xverify called with:")
     safe_debug_log(f"[DEBUG]   given_answer: {given_answer}")
     safe_debug_log(f"[DEBUG]   ground_truth: {ground_truth}")
@@ -989,22 +990,22 @@ def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str, mod
     safe_debug_log(f"[DEBUG]   model_name: {model_args.model_name}")
     safe_debug_log(f"[DEBUG]   base_url: {model_args.base_url}")
     safe_debug_log(f"[DEBUG]   api_key: {model_args.api_key[:10]}..." if model_args.api_key else "[DEBUG]   api_key: None")
-    
+
     @retry(max_attempts=2, delay=1, print_trace_back=True, return_error_info=True)
-    def call_api(prompt:str, 
+    def call_api(prompt:str,
                 system_prompt:Optional[str]=None,
                 client=None,
                 base_url:Optional[str]=None,
-                model:str="gpt-3.5-turbo", 
-                api_key:Union[None,str]=None, 
-                max_tokens:int=None, 
+                model:str="gpt-3.5-turbo",
+                api_key:Union[None,str]=None,
+                max_tokens:int=None,
                 temperature:float=0.7,
                 logprobs:bool=False,
                 top_logprobs:int=1,
                 **kwargs) -> str:
         if debug:
             print(f"[DEBUG] call_api called with model: {model}, base_url: {base_url}")
-        
+
         if not client:
             assert api_key is not None,'Please input your api key'
             try:
@@ -1018,17 +1019,17 @@ def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str, mod
                 if debug:
                     print(f"[DEBUG] Failed to create OpenAI client: {e}")
                 raise e
-                
+
         if not logprobs:
             top_logprobs = None
 
         messages = [{"role": "system", "content": system_prompt}] if system_prompt is not None else []
         if prompt:
-            messages.append({"role": "user", "content": prompt}) 
+            messages.append({"role": "user", "content": prompt})
 
         if debug:
             print(f"[DEBUG] Sending request to API with {len(messages)} messages")
-            
+
         try:
             response = client.chat.completions.create(
                 model=model,
@@ -1046,14 +1047,14 @@ def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str, mod
             if debug:
                 print(f"[DEBUG] API request failed: {type(e).__name__}: {e}")
             raise e
-    
+
     try:
         client = OpenAI(api_key=model_args.api_key, base_url=model_args.base_url)
         safe_debug_log("Created OpenAI client for xverify")
     except Exception as e:
         safe_debug_log(f"Failed to create OpenAI client: {e}")
         return False
-        
+
     prompt = f'''
 You are a diligent and precise assistant tasked with evaluating the correctness of responses. You will
 receive a question, an output sentence, and the correct answer. Your task is to determine if the output
@@ -1077,42 +1078,42 @@ Output sentence: """{given_answer}"""
 Correct answer: {ground_truth}
 
 ⚠️ Final Instruction:
-You must respond with exactly one of the following: [Correct] or [Incorrect].  
-❌ Do NOT include any explanation, reasoning, or additional text.  
+You must respond with exactly one of the following: [Correct] or [Incorrect].
+❌ Do NOT include any explanation, reasoning, or additional text.
 🚫 Any deviation from this format (even a single word) will be considered INVALID.
 
 Judgement:
 '''
-    
+
     safe_debug_log("Constructed prompt for xverify:")
     safe_debug_log(f"{prompt[:200]}...")
     safe_debug_log(f"Calling API with model: {model_args.model_name}")
-    
+
     try:
         correct = call_api(prompt=prompt,
-                           client=client, 
+                           client=client,
                            max_tokens=model_args.max_tokens,
                            model=model_args.model_name,
                            temperature=model_args.temperature)
-        
+
         safe_debug_log(f"API response: '{correct}'")
         safe_debug_log(f"Stripped response: '{correct.strip()}'")
-        
+
         # Check for different possible correct responses
         correct_stripped = correct.strip()
         is_correct = correct_stripped in ["Correct", "[Correct]"]
-        
+
         safe_debug_log(f"Final xverify result: {is_correct}")
-        
+
         return is_correct
-        
+
     except Exception as e:
         safe_debug_log(f"xverify API call failed with error: {type(e).__name__}: {e}")
         import traceback
         safe_debug_log(f"Full traceback: {traceback.format_exc()}")
         return False
 
-    
+
 def last_boxed_only_string(string):
     idx = string.rfind("\\boxed")
     if idx < 0:
@@ -1162,12 +1163,12 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
                 log_callback(f"[DEBUG] {message}")
             else:
                 print(f"[DEBUG] {message}")
-    
+
     safe_debug_log("grade function called:")
     safe_debug_log(f"  model_answer: {model_answer}")
     safe_debug_log(f"  gt_answer: {gt_answer}")
     safe_debug_log(f"  use_xverify: {use_xverify}")
-    
+
     if "\\boxed" in gt_answer:
         gt_answer = extract_boxed_answer(gt_answer)
     score_by = "not_scored"
@@ -1175,7 +1176,7 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
     extracted_pred = pred
     extracted_gt = gold
     safe_debug_log(f"grade_answer_mathd result: {correct}")
-    
+
     split_answer = model_answer.split("=")[-1]
     split_gt = gt_answer.split("=")[-1]
     enable_split = (split_answer != extracted_pred) or (split_gt != gt_answer)
@@ -1191,7 +1192,7 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
     else:
         score_by = "mathd"
         safe_debug_log("Using mathd result, skipping other methods")
-        
+
     if not correct:
         correct, pred, gold = grade_answer_math_verify(model_answer, gt_answer)
         extracted_pred = pred
@@ -1209,7 +1210,7 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
     elif score_by == "not_scored":
         score_by = "sympy_verify"
         safe_debug_log("Using sympy result, skipping math_verify")
-        
+
     if not correct:
         if use_xverify:
             safe_debug_log("Calling grade_answer_xverify...")
@@ -1290,10 +1291,10 @@ def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None, 
     is_matched = False
 
     num_questions_to_answer = len(ground_truths)
-    
+
     extracted_answers = solution2answer(str(model_output), num_answers=num_questions_to_answer)
     ground_truths = [solution2answer(str(gt), return_origin=True)[0] for gt in ground_truths]
-    
+
     if not any(extracted_answers):
         return 0.0, 0.0, extracted_answers, ground_truths, ["not_scored"] * num_questions_to_answer
     is_matched = True
@@ -1307,7 +1308,7 @@ def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None, 
         scored_by_list.append(score_by)
         extracted_preds.append(extracted_pred)
         extracted_gts.append(extracted_gt)
-    
+
     total_score = sum(score_list) / num_questions_to_answer
 
     if points is None or len(points) == 0:
@@ -1318,8 +1319,8 @@ def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None, 
         except:
             point = 0
     else:
-        point = score 
-    
+        point = score
+
     return total_score, point, extracted_preds, extracted_gts, scored_by_list
 
 
@@ -1342,6 +1343,6 @@ if __name__ == "__main__":
     model_output = r"The answer is <answer>$\boxed{\dfrac{5}{3}}$</answer>"
     ground_truth = ["[1.64,1.70]"]
     question = "What is the answer to the ultimate question of life, the universe, and everything?"
-    
+
     result = compute_score(model_output, ground_truth, question, points=[1.0], use_xverify=True)
     print(result)  # Should print a dictionary with score and correctness information.

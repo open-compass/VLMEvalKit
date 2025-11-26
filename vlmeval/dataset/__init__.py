@@ -58,6 +58,7 @@ from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
+from .videommmu import VideoMMMU
 
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
@@ -95,6 +96,7 @@ from .matbench import MATBench
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
 from .gsm8k_v import GSM8KVDataset
+from .macbench import MaCBench
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -222,9 +224,9 @@ IMAGE_DATASET = [
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
-    AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas,
+    AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MMReason
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
 ]
 
 VIDEO_DATASET = [
@@ -236,7 +238,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, VideoTT,
+    EgoExoBench_MCQ, VideoTT, VideoMMMU,
 ]
 
 TEXT_DATASET = [
