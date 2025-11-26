@@ -161,17 +161,13 @@ def dump(data, f, **kwargs):
 
     handlers = dict(pkl=dump_pkl, json=dump_json, jsonl=dump_jsonl, xlsx=dump_xlsx, csv=dump_csv, tsv=dump_tsv)
     suffix = f.split('.')[-1]
-    fallback_formats = ['csv', 'tsv', 'xlsx', 'json', 'jsonl']
-    if suffix in fallback_formats:
-        try:
-            return handlers[suffix](data, f, **kwargs)
-        except Exception:
-            # if dump failed, fallback to pkl format
-            pkl_file = f.rsplit('.', 1)[0] + '.pkl'
-            warnings.warn(f'Failed to dump to {suffix} format, falling back to pkl: {pkl_file}')
-            return dump_pkl(data, pkl_file, **kwargs)
-    else:
+    try:
         return handlers[suffix](data, f, **kwargs)
+    except Exception:
+        # if dump failed, fallback to pkl format
+        pkl_file = f.rsplit('.', 1)[0] + '.pkl'
+        warnings.warn(f'Failed to dump to {suffix} format, falling back to pkl: {pkl_file}')
+        return dump_pkl(data, pkl_file, **kwargs)
 
 
 def get_pred_file_format():
