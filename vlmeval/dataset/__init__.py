@@ -88,6 +88,7 @@ from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 from .olmOCRBench.olmocrbench import olmOCRBench
 from .oceanocr import OceanOCRBench
+from .omnibench import OmniBench
 from .matbench import MATBench
 
 from .reasonmap_plus import ReasonMap_Plus
@@ -240,13 +241,17 @@ TEXT_DATASET = [
     TextMCQDataset
 ]
 
+OMNI_DATASET = [
+    OmniBench,
+]
+
 CUSTOM_DATASET = [
     CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
 ]
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + OMNI_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
