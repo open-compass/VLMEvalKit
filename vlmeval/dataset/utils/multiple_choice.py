@@ -402,25 +402,6 @@ def prefetch_answer(item):
     return can_infer(item['prediction'], choices)
 
 
-def process_judgment(judgment_str: str) -> str:
-    # First try to find the exact \boxed{letter} pattern
-    boxed_matches = re.findall(r'boxed{([A-Z][a-z]*)}', judgment_str)
-    if boxed_matches:
-        return boxed_matches[-1]
-
-    # Directly return the judgment if it is A, B, or C
-    if judgment_str in list(string.ascii_uppercase + string.ascii_lowercase):
-        return judgment_str
-    else:
-        final_judgment_str = judgment_str.split("Final Judgment:")[-1]
-        matches = re.findall(r'\(([A-Z][a-z]*)\)*', final_judgment_str)
-        if matches:
-            return matches[-1]
-        matches = re.findall(r'([A-Z][a-z]*)', final_judgment_str)
-        if matches:
-            return matches[-1]
-        return ""
-
 def extract_answer_from_item(model, item, dataset_name=None):
     logger = get_logger('Evaluation')
     # It will return: (pred, raw, llm_time)
