@@ -231,6 +231,10 @@ class OpenAIWrapper(BaseAPI):
                 self.api_base = APIBASES[api_base]
             elif api_base.startswith('http'):
                 self.api_base = api_base
+            elif isinstance(api_base, list):
+                for api in api_base:
+                    assert api.startswith('http')
+                self.api_base = api_base
             else:
                 self.logger.error('Unknown API Base. ')
                 raise NotImplementedError
@@ -491,6 +495,7 @@ class VLLMAPIWrapper(BaseAPI):
                  api_base: str = None,
                  max_tokens: int = 2048,
                  img_size: int = -1,
+                 reasoning_effort: str = None,
                  **kwargs):
         
         if model is None:
@@ -514,6 +519,7 @@ class VLLMAPIWrapper(BaseAPI):
         self.timeout = timeout
         self.cur_idx = 0
         self.cur_idx_lock = threading.Lock()
+        self.reasoning_effort = reasoning_effort
 
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
@@ -627,6 +633,10 @@ class VLLMAPIWrapper(BaseAPI):
             payload.pop('max_tokens')
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
+        
+        if self.model == 'openai/gpt-oss-120b':
+            payload['reasoning_effort'] = self.reasoning_effort
+
         try_times = 0
         while try_times < 3:
             response = requests.post(
