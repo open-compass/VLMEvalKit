@@ -357,18 +357,6 @@ def main():
                     dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
                     dataset_name = dataset.dataset_name
                     if dataset is None:
-                        raise ValueError( str((dataset_name, dataset_kwargs)) )
-                    dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
-                    dataset_name = dataset.dataset_name
-                    if dataset is None:
-                        raise ValueError( str((dataset_name, dataset_kwargs)) )
-                    dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
-                    dataset_name = dataset.dataset_name
-                    if dataset is None:
-                        raise ValueError( str((dataset_name, dataset_kwargs)) )
-                    dataset.dataset_name = encode_dataset_name(dataset.dataset_name, test_range=test_range)
-                    dataset_name = dataset.dataset_name
-                    if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
                 
@@ -462,6 +450,10 @@ def main():
                         if use_api_judger:
                             judge_kwargs['model'] = 'gpt-4o-mini'
                     elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
+                        judge_kwargs['model'] = 'xhs-deepseek'   
+                    elif listinstr(['MMLongBench', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
+                        judge_kwargs['model'] = 'gpt-4o-mini'
+                    elif listinstr(['MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['ChartMimic'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4o'

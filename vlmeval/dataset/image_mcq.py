@@ -1211,7 +1211,6 @@ class CVBench(ImageMCQDataset):
             )
             model = None
         name_str = model_name if model is not None else ""
-
         result_file = get_intermediate_file_path(eval_file, f"_{model_name}_result", "pkl")
 
         data = load(eval_file)

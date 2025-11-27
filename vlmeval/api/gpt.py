@@ -320,18 +320,7 @@ class OpenAIWrapper(BaseAPI):
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
-<<<<<<< HEAD
-        if self.is_max_completion_tokens:
-=======
-        # payload = dict(
-            # model=self.model,
-            # messages=input_msgs,
-            # n=1,
-            # temperature=temperature,
-            # **kwargs)
-
         if self.o1_model:
->>>>>>> 7872d02 (update long context)
             payload['max_completion_tokens'] = max_tokens
             payload.pop('temperature')
         else:
@@ -663,20 +652,6 @@ class VLLMAPIWrapper(BaseAPI):
                 answer = resp_struct['choices'][0]['message']['content'].strip()
                 if answer == '':
                     answer = resp_struct['choices'][0]['message']['reasoning_content'].strip()
-<<<<<<< HEAD
-=======
-                if os.environ.get('ADD_THINK_NOTE', '0') == '1' and (
-                    "</think>" in answer or "<｜place▁holder▁no▁12｜>" in answer):
-                    answer = "<think>" + answer
-                # if os.environ.get('ADD_THINK_NOTE', '0') == '1':
-                #     if '</think>' not in answer and len(answer) < 1000:
-                #         if try_times == 2:
-                #             return ret_code, answer, response
-                #         try_times += 1
-                #         continue
-                #     else:
-                #         answer = "<think>" + answer
->>>>>>> 7872d02 (update long context)
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'{type(err)}: {err}')

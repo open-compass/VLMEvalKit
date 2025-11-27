@@ -2562,9 +2562,6 @@ treevgr_series = {
     ),
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 # QTuneVL series
 qtunevl_series = {
     "QTuneVL1_5-2B": partial(
@@ -2581,7 +2578,6 @@ qtunevl_series = {
     ),
 }
 
-<<<<<<< HEAD
 # RbdashMM series via lmdeploy API
 rbdashmm_api_series_lmdeploy = {
     "rbdashmm3_DPO_38B_api": partial(

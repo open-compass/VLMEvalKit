@@ -175,9 +175,8 @@ class JTVLChatWrapper(BaseAPI):
             "image_base64": image,
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "do_sample": False,
-            "understanding_plus":understanding_plus,
-            "stream": stream
+            "do_sample":False,
+            "understanding_plus":False
         }
         return send_data
 
