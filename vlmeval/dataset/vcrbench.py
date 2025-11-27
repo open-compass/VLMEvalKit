@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
@@ -141,14 +142,14 @@ Please analyze these images and provide the answer to the question about the vid
         from .utils.vcrbench.eval import precision, recall
         from .utils.vcrbench.cau_total import calu_pre_recall
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs.pop('model','gpt-4o-0806')
         nproc = judge_kwargs.pop('nproc', 4)
 
         # step1: extract answer
         print("running step 1: extracting answer")
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_extracted_answer_tmp.pkl')
-        extracted_answer_file = eval_file.replace('.xlsx', f'_{judge}_extracted_answer.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_extracted_answer_tmp', 'pkl')
+        extracted_answer_file = get_intermediate_file_path(eval_file, f'_{judge}_extracted_answer')
         model = build_judge(system_prompt=Answer_Extraction_Prompt_part1, model=judge, **judge_kwargs)
 
         if not osp.exists(extracted_answer_file):
@@ -179,8 +180,8 @@ Please analyze these images and provide the answer to the question about the vid
 
         # step2: scoring
         print("running step 2: acc scoring")
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_answer_score_tmp.pkl')
-        answer_score_file = eval_file.replace('.xlsx', f'_{judge}_answer_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_answer_score_tmp', 'pkl')
+        answer_score_file = get_intermediate_file_path(eval_file, f'_{judge}_answer_score')
         model = build_judge(system_prompt=Answer_Scoring_Prompt_part1, model=judge, **judge_kwargs)
 
         if not osp.exists(answer_score_file):
@@ -206,15 +207,15 @@ Please analyze these images and provide the answer to the question about the vid
             data['answer_scoring'] = [answer_score_map[idx] if idx in answer_score_map else -1 for idx in data['index']]
             dump(data, answer_score_file)
 
-        txt_file = eval_file.replace('.xlsx', f'_{judge}_answer_score.txt')
-        answer_score_json = eval_file.replace('.xlsx', f'_{judge}_answer_score.json')
+        txt_file = get_intermediate_file_path(eval_file, f'_{judge}_answer_score', 'txt')
+        answer_score_json = get_intermediate_file_path(eval_file, f'_{judge}_answer_score', 'json')
         xlsx2json(answer_score_file, answer_score_json)
         calu_acc_main(answer_score_json, txt_file)
 
         # step3: calulate precision_score
         print("running step 3: calulate precision_score")
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_pre_score_tmp.pkl')
-        pre_score_file = eval_file.replace('.xlsx', f'_{judge}_pre_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_pre_score_tmp', 'pkl')
+        pre_score_file = get_intermediate_file_path(eval_file, f'_{judge}_pre_score')
 
         model = build_judge(system_prompt=Precision_Evaluation_Prompt, model=judge, **judge_kwargs)
 
@@ -253,13 +254,13 @@ Please analyze these images and provide the answer to the question about the vid
             data = data.loc[valid_indices]
             dump(data, pre_score_file)
 
-        pre_score_json = eval_file.replace('.xlsx', f'_{judge}_pre_score.json')
+        pre_score_json = get_intermediate_file_path(eval_file, f'_{judge}_pre_score', 'json')
         xlsx2json(pre_score_file, pre_score_json)
 
         # step4: calulate recall_score
         print("running step 4: calulate recall_score")
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_recall_score_tmp.pkl')
-        recall_score_file = eval_file.replace('.xlsx', f'_{judge}_recall_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_recall_score_tmp', 'pkl')
+        recall_score_file = get_intermediate_file_path(eval_file, f'_{judge}_recall_score')
 
         model = build_judge(system_prompt=Recall_Evaluation_Prompt, model=judge, **judge_kwargs)
 
@@ -295,7 +296,7 @@ Please analyze these images and provide the answer to the question about the vid
             data = data.loc[valid_indices]
             dump(data, recall_score_file)
 
-        txt_file = eval_file.replace('.xlsx', f'_{judge}_precision_recall_score.txt')
-        recall_score_json = eval_file.replace('.xlsx', f'_{judge}_recall_score.json')
+        txt_file = get_intermediate_file_path(eval_file, f'_{judge}_precision_recall_score', 'txt')
+        recall_score_json = get_intermediate_file_path(eval_file, f'_{judge}_recall_score', 'json')
         xlsx2json(recall_score_file, recall_score_json)
         calu_pre_recall(pre_score_json, recall_score_json, txt_file)

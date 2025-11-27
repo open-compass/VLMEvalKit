@@ -720,3 +720,262 @@ class OvisU1(BaseModel):
         ], dim=0)
 
         return prompt, input_ids, attention_mask, pixel_values, grid_thws
+
+
+class Ovis2_5(BaseModel):
+    INSTALL_REQ = False
+    INTERLEAVE = True
+    SIZE_DICT = {
+        (28, 2048): '2B',  # (num_hidden_layers, hidden_size)
+        (36, 4096): '9B'
+    }
+
+    def __init__(self, model_path='AIDC-AI/Ovis2.5-9B', **kwargs):
+        assert model_path is not None
+        # Recommend to install dependencies as follows:
+        # `pip install vllm==0.10.2 --extra-index-url https://wheels.vllm.ai/0.10.2/`
+
+        os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
+        from vllm import LLM
+        self.model_path = model_path
+        self.dtype = torch.bfloat16
+        dist_kwargs = dict()
+        prev_local_rank = os.getenv("LOCAL_RANK")
+        if prev_local_rank is not None:
+            os.environ["LOCAL_RANK"] = "0"
+            torch.cuda.set_device(0)
+            dist_kwargs["distributed_executor_backend"] = "external_launcher"
+        self.model = LLM(
+            model=self.model_path,
+            dtype=self.dtype,
+            trust_remote_code=True,
+            tensor_parallel_size=1,
+            gpu_memory_utilization=0.7,
+            **dist_kwargs
+        )
+        size_key = (
+            self.model.llm_engine.model_config.hf_config.llm_config.num_hidden_layers,
+            self.model.llm_engine.model_config.hf_config.llm_config.hidden_size
+        )
+        self.size = self.SIZE_DICT[size_key]
+        if prev_local_rank is not None:
+            os.environ["LOCAL_RANK"] = prev_local_rank
+        self.tokenizer = self.model.get_tokenizer()
+        self.image_placeholder = '<image>'
+        self.video_placeholder = '<video>'
+        self.benchmark_with_thinking_map = {
+            '2B': ('HallusionBench', 'MMStar', 'MMMU', 'MathVista', 'MathVerse', 'MathVision', 'LogicVista', 'WeMath', 'DynaMath'),
+            '9B': ('MMBench', 'HallusionBench', 'MMStar', 'MMMU', 'MathVista', 'MathVerse', 'MathVision', 'LogicVista', 'WeMath', 'DynaMath')
+        }
+        self.objective_prompt_suffix = "End your response with 'Final answer: '."
+
+    def use_custom_prompt(self, dataset):
+        if any(dataset.startswith(prefix) for prefix in
+               ['MathVista', 'MathVerse', 'MathVision', 'LogicVista']):
+            return True
+        if DATASET_TYPE(dataset) == 'Y/N' or DATASET_TYPE(dataset) == 'MCQ':
+            return True
+        return False
+
+    def build_yorn_prompt(self, line, dataset=None):
+        prompt = line['question']
+        if listinstr(['HallusionBench'], dataset):
+            prompt += ' Please answer yes or no.'
+        prompt += f'\n{self.objective_prompt_suffix}'
+        return prompt
+
+    def build_multi_choice_prompt(self, line, dataset=None):
+        prompt = line['question']
+        hint = line['hint'] if ('hint' in line and not pd.isna(line['hint'])) else None
+        if hint is not None:
+            prompt = hint + '\n' + prompt
+
+        options = {
+            cand: line[cand]
+            for cand in string.ascii_uppercase
+            if cand in line and not pd.isna(line[cand])
+        }
+        for key, item in options.items():
+            prompt += f'\n{key}. {item}'
+
+        if any(dataset.startswith(prefix) for prefix in ['AI2D']):
+            prompt += "\nAnswer with the option's letter from the given choices directly."
+        else:
+            prompt += f'\n{self.objective_prompt_suffix}'
+
+        return prompt
+
+    def build_math_prompt(self, line, dataset=None):
+        prompt = line['question']
+        prompt += f'\n{self.objective_prompt_suffix}'
+        return prompt
+
+    def build_prompt(self, line, dataset=None):
+        assert self.use_custom_prompt(dataset)
+        assert isinstance(dataset, str)
+        tgt_path = self.dump_image(line, dataset)
+
+        if any(dataset.startswith(prefix) for prefix in ['MathVista', 'MathVerse', 'MathVision', 'LogicVista']):
+            prompt = self.build_math_prompt(line, dataset)
+        elif DATASET_TYPE(dataset) == 'Y/N':
+            prompt = self.build_yorn_prompt(line, dataset)
+        elif DATASET_TYPE(dataset) == 'MCQ':
+            prompt = self.build_multi_choice_prompt(line, dataset)
+        else:
+            raise RuntimeError(f'Invalid dataset type: {DATASET_TYPE(dataset)}')
+
+        message = [dict(type='image', value=s) for s in tgt_path] + [dict(type='text', value=prompt)]
+
+        # interleave dataset
+        if dataset.startswith('MMMU_'):
+            from ... import MMMUDataset
+            message = MMMUDataset.split_MMMU(message)
+
+        return message
+
+    def vllm_infer(self, messages, min_pixels=1024 * 1024, max_pixels=1792 * 1792, enable_thinking=False, max_new_tokens=8192, thinking_budget=6144):
+        from vllm import SamplingParams
+        if enable_thinking:
+            sampling_params = SamplingParams(
+                max_tokens=max_new_tokens,
+                repetition_penalty=1.05,
+                temperature=0.6,
+                top_p=0.95,
+                top_k=20
+            )
+        else:
+            sampling_params = SamplingParams(
+                max_tokens=max_new_tokens,
+                temperature=0.0
+            )
+
+        prompt = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False, add_generation_prompt=True, enable_thinking=enable_thinking
+        )
+        vllm_input = {"prompt": prompt}
+        images = []
+        for message in messages:
+            images.extend([x["image"] for x in message["content"] if x["type"] == "image"])
+        if images:
+            vllm_input["multi_modal_data"] = {"image": images}
+            vllm_input["mm_processor_kwargs"] = {"images_kwargs": {"min_pixels": min_pixels, "max_pixels": max_pixels}}
+        vllm_inputs = [vllm_input]
+        use_thinking_budget = enable_thinking and thinking_budget is not None and thinking_budget > 0
+        if not use_thinking_budget:
+            vllm_outputs = self.model.generate(vllm_inputs, sampling_params, use_tqdm=False)
+        else:
+            phase1_params = sampling_params.clone()
+            phase1_params.max_tokens = thinking_budget
+            phase1_outputs = self.model.generate(vllm_inputs, phase1_params, use_tqdm=False)
+
+            phase2_inputs = []
+            vllm_outputs = [None] * len(vllm_inputs)  # 用于存放最终结果的列表
+
+            for i, p1_output in enumerate(phase1_outputs):
+                p1_text = p1_output.outputs[0].text
+                p1_finish_reason = p1_output.outputs[0].finish_reason
+
+                # 分支 1: 模型在预算内自然停止 (生成了EOS)
+                if p1_finish_reason == 'stop':
+                    # 生成已完成，直接使用这个结果，无需进入Phase 2
+                    vllm_outputs[i] = p1_output
+                    continue
+
+                # 分支 2 & 3: 模型因达到长度限制而停止
+                elif p1_finish_reason == 'length':
+                    p2_input = vllm_inputs[i].copy()
+
+                    # 分支 2: 输出中包含 </think>
+                    if '</think>' in p1_text:
+                        p2_input["prompt"] = vllm_inputs[i]["prompt"] + p1_text
+
+                    # 分支 3: 输出中不包含 </think>
+                    else:
+                        forced_stop_text = (
+                            "\n\nConsidering the limited time by the user, I have to give the solution "
+                            "based on the thinking directly now.\n</think>\n\n"
+                        )
+                        p1_text += forced_stop_text
+                        p2_input["prompt"] = vllm_inputs[i]["prompt"] + p1_text
+
+                    # 记录中间文本，并准备第二阶段的输入
+                    p2_input["intermediate_text"] = p1_text  # 暂存第一阶段文本
+                    p2_input["original_index"] = i  # 记录原始索引，以便回填结果
+                    phase2_inputs.append(p2_input)
+
+            # 执行阶段 2 (如果需要)
+            if phase2_inputs:
+                phase2_params = sampling_params.clone()
+                phase2_params.max_tokens = max_new_tokens - thinking_budget
+
+                phase2_outputs = self.model.generate(phase2_inputs, phase2_params, use_tqdm=False)
+
+                # 组合两阶段的结果
+                for i, p2_output in enumerate(phase2_outputs):
+                    original_index = phase2_inputs[i]["original_index"]
+                    intermediate_text = phase2_inputs[i]["intermediate_text"]
+
+                    # 创建一个模拟的 RequestOutput 对象来存储合并后的结果
+                    # 这样做是为了与后处理流程保持一致
+                    final_text = intermediate_text + p2_output.outputs[0].text
+
+                    # 从p1复制一个输出对象来修改
+                    final_output = phase1_outputs[original_index]
+                    final_output.outputs[0].text = final_text
+                    vllm_outputs[original_index] = final_output
+        outputs = []
+        for i, vllm_output in enumerate(vllm_outputs):
+            raw_output_text = vllm_output.outputs[0].text
+            if '</think>' in raw_output_text:
+                thinking, response = raw_output_text.split('</think>', 1)
+                thinking = thinking.split('<think>', 1)[-1].strip()
+            else:
+                thinking, response = "", raw_output_text
+            response = response.strip()
+            outputs.append({"response": response, "thinking": thinking})
+        return outputs[0], vllm_inputs[0]["prompt"]
+
+    def generate_inner(self, message, dataset=None):
+        def _extract_final_answer(response):
+            import re
+            """
+            从字符串中抽取"the final answer is" 或 "final answer" 后面的内容。
+
+            Args:
+              response: 输入的字符串。
+
+            Returns:
+              抽取并清理后的内容字符串，如果找不到则返回response。
+            """
+            match = re.search(r'.*(?:the\s+final\s+answer\s+is|final\s+answer\s*:)\s*[:\s]*(.*)',
+                              response,
+                              re.IGNORECASE | re.DOTALL)
+
+            if match:
+                return match.group(1)
+            else:
+                return response
+
+        messages = self.prepare_inputs(message, dataset)
+        enable_thinking = any(dataset.startswith(prefix) for prefix in self.benchmark_with_thinking_map[self.size])
+        min_pixels = 448 * 448 if any(dataset.startswith(prefix) for prefix in ['OCRBench']) else 1024 * 1024
+        max_pixels = 1792 * 1792
+        vllm_output, prompt = self.vllm_infer(messages, min_pixels, max_pixels, enable_thinking)
+        response = vllm_output["response"]
+
+        if self.objective_prompt_suffix in prompt:
+            response = _extract_final_answer(response)
+
+        return response
+
+    def prepare_inputs(self, message, dataset=None):
+        content = []
+        for item in message:
+            if item['type'] == 'image':
+                image = Image.open(item['value'])
+                content.append(dict(type='image', image=image))
+            elif item['type'] == 'text':
+                text = item['value']
+                content.append(dict(type='text', text=text))
+        return [dict(role="user", content=content)]

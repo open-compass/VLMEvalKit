@@ -22,8 +22,8 @@ class InternVL2_PromptUtil:
             'optics_dataset', 'quantum_dataset', 'statistics_dataset'
         ]:
             return False
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
-            # For Multi-Turn we don't have custom prompt
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum'], dataset):  # noqa: E501
+            # For Multi-Turn and some special datasets we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
@@ -192,8 +192,9 @@ class LMDeployWrapper(BaseAPI):
         self.api_base = api_base
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
-        model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
-        resp = requests.get(model_url)
+        model_url = "".join([api_base.split("v1")[0], "v1/models"])
+        headers = {"Authorization": f"Bearer {self.key}"}
+        resp = requests.get(model_url, headers=headers)
         model_id_list = [str(data['id']) for data in resp.json()['data']]
         self.model = model if model in model_id_list else model_id_list[0]
         self.logger.info(f'lmdeploy evaluate model: {self.model}')

@@ -73,7 +73,7 @@ cat = ["diagram", "ocr", "patterns", "graphs", "tables", "3d shapes", "puzzles",
 
 
 def evaluate_logicvista(file_path):
-    df = pd.read_excel(file_path)
+    df = load(file_path)
 
     tot = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)

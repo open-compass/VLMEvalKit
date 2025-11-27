@@ -34,7 +34,21 @@ def build_transform(input_size):
     return transform
 
 
-def process_response(response, dataset_name):
+def get_cot_answer(response):
+    pattern1 = r"<think>(?P<think>.*?)</think>.*?\\boxed\{(?P<answer>[^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
+    match = re.search(pattern1, response, re.DOTALL)
+    if match:
+        return match.group("answer")
+    pattern2 = r"\\boxed\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}"
+    matches = re.findall(pattern2, response, re.DOTALL)
+    if matches:
+        return matches[-1]
+    return response
+
+
+def process_response(response, dataset_name, use_cot=False):
+    if use_cot:
+        response = get_cot_answer(response)
     if dataset_name is None:
         return response
     if listinstr(["ChartQA", "OCRVQA"], dataset_name):
@@ -249,7 +263,14 @@ def dynamic_preprocess_msac1(image, min_num=1, max_num=6, image_size=448, use_th
     return processed_images, target_aspect_ratio
 
 
-def dynamic_preprocess_msac2(image, min_num=1, max_num=6, image_size=448, use_thumbnail=False, prior_aspect_ratio=None):
+def dynamic_preprocess_msac2(
+    image,
+    min_num=1,
+    max_num=6,
+    image_size=448,
+    use_thumbnail=False,
+    prior_aspect_ratio=None,
+):
     orig_width, orig_height = image.size
     aspect_ratio = orig_width / orig_height
 
@@ -312,7 +333,11 @@ def load_image_msac(image_file, input_size=448, max_num=10, upscale=False):
     images = (
         images[:-1]
         + dynamic_preprocess_msac2(
-            image, max_num=max_num, image_size=input_size, use_thumbnail=False, prior_aspect_ratio=target_aspect_ratio
+            image,
+            max_num=max_num,
+            image_size=input_size,
+            use_thumbnail=False,
+            prior_aspect_ratio=target_aspect_ratio,
         )
         + images[-1:]
     )
@@ -326,8 +351,15 @@ class SailVL(BaseModel):
     INSTALL_REQ = False
     INTERLEAVE = True
 
-    def __init__(self, model_path="BytedanceDouyinContent/SAIL-VL-2B", load_in_8bit=False, use_msac=True, **kwargs):
-
+    def __init__(
+        self,
+        model_path="BytedanceDouyinContent/SAIL-VL-2B",
+        load_in_8bit=False,
+        use_msac=True,
+        use_cot=False,
+        max_new_tokens=1024,
+        **kwargs,
+    ):
         assert model_path is not None
         assert version_cmp(transformers.__version__, "4.36.2", "ge")
         self.model_path = model_path
@@ -337,7 +369,12 @@ class SailVL(BaseModel):
         self.pattern = r"Image(\d+)"
         # Replacement pattern to insert a hyphen between 'Image' and the number, e.g. Image-1
         self.replacement = r"Image-\1"
-
+        self.use_cot = use_cot
+        self.cot_prompt = (
+            "You FIRST think about the reasoning process as an internal monologue "
+            "and then provide the final answer. The reasoning process MUST BE "
+            "enclosed within <think> </think> tags. The final answer MUST BE put in \\boxed{}."
+        )
         # Convert InternVL2 response to dataset format
         # e.g. Image1 -> Image-1
 
@@ -360,7 +397,7 @@ class SailVL(BaseModel):
         self.device = "cuda"
 
         self.image_size = self.model.config.vision_config.image_size
-        kwargs_default = dict(do_sample=False, max_new_tokens=4096, top_p=None)
+        kwargs_default = dict(do_sample=False, max_new_tokens=max_new_tokens, top_p=None)
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
 
@@ -368,8 +405,8 @@ class SailVL(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(["MMDU", "MME-RealWorld", "MME-RealWorld-CN"], dataset):
-            # For Multi-Turn we don't have custom prompt
+        if listinstr(["MMDU", "MME-RealWorld", "MME-RealWorld-CN", "ChartQAPro", "ChartMuseum"], dataset):  # noqa: E501
+            # For Multi-Turn and some special datasets we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == "VIDEO":
             # For Video benchmarks we don't have custom prompt at here
@@ -417,8 +454,8 @@ class SailVL(BaseModel):
                     "MathVista",
                     "MathVision",
                     "VCR",
-                    "MTVQA",
                     "MMVet",
+                    "MTVQA",
                     "MathVerse",
                     "MMDU",
                     "CRPE",
@@ -445,9 +482,29 @@ class SailVL(BaseModel):
         if dataset is None:
             self.max_num = 10
             return None
-        res_12_datasets = ["ChartQA_TEST", "MMMU_DEV_VAL", "MMMU_TEST", "MME-RealWorld", "VCR_EN", "VCR_ZH", "OCRVQA"]
-        res_18_datasets = ["DocVQA_VAL", "DocVQA_TEST", "DUDE", "MMLongBench_DOC", "SLIDEVQA"]
-        res_24_datasets = ["InfoVQA_VAL", "InfoVQA_TEST", "OCRBench", "HRBench4K", "HRBench8K"]
+        res_12_datasets = [
+            "ChartQA_TEST",
+            "MMMU_DEV_VAL",
+            "MMMU_TEST",
+            "MME-RealWorld",
+            "VCR_EN",
+            "VCR_ZH",
+            "OCRVQA",
+        ]
+        res_18_datasets = [
+            "DocVQA_VAL",
+            "DocVQA_TEST",
+            "DUDE",
+            "MMLongBench_DOC",
+            "SLIDEVQA",
+        ]
+        res_24_datasets = [
+            "InfoVQA_VAL",
+            "InfoVQA_TEST",
+            "OCRBench",
+            "HRBench4K",
+            "HRBench8K",
+        ]
         if DATASET_MODALITY(dataset) == "VIDEO":
             self.max_num = 1
         elif listinstr(res_12_datasets, dataset):
@@ -484,7 +541,12 @@ class SailVL(BaseModel):
             upscale_flag = dataset is not None and listinstr(["MMMU"], dataset)
             if self.use_msac:
                 pixel_values = (
-                    load_image_msac(image_path, max_num=self.max_num, upscale=upscale_flag, input_size=self.image_size)
+                    load_image_msac(
+                        image_path,
+                        max_num=self.max_num,
+                        upscale=upscale_flag,
+                        input_size=self.image_size,
+                    )
                     .cuda()
                     .to(torch.bfloat16)
                 )
@@ -496,7 +558,8 @@ class SailVL(BaseModel):
         else:
             pixel_values = None
             num_patches_list = []
-
+        if self.use_cot:
+            prompt += f"\n{self.cot_prompt}"
         with torch.no_grad():
             response = self.model.chat(
                 self.tokenizer,
@@ -506,7 +569,7 @@ class SailVL(BaseModel):
                 generation_config=self.kwargs,
                 verbose=True,
             )
-        response = process_response(response, dataset_name=dataset)
+        response = process_response(response, dataset_name=dataset, use_cot=self.use_cot)
         return response
 
     def build_history(self, message):

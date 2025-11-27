@@ -1,6 +1,7 @@
 import re
 from vlmeval import *
 from .image_base import ImageBaseDataset
+from ..smp.file import get_intermediate_file_path
 
 
 class VisFactor(ImageBaseDataset):
@@ -11,8 +12,8 @@ class VisFactor(ImageBaseDataset):
         'VisFactor_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor.tsv',
         'VisFactor_GE': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GE.tsv',
         'VisFactor_GE_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GE.tsv',
-        'VisFactor_GN': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_G.tsv',
-        'VisFactor_GN_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_G.tsv',
+        'VisFactor_GN': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GN.tsv',
+        'VisFactor_GN_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GN.tsv',
         'VisFactor_GH': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GH.tsv',
         'VisFactor_GH_CoT': 'https://opencompass.openxlab.space/utils/VLMEval/VisFactor_GH.tsv',
     }
@@ -141,9 +142,11 @@ class VisFactor(ImageBaseDataset):
 
         accuracy['ALL'] = sum([accuracy[s] for s in accuracy]) / len([accuracy[s] for s in accuracy])
 
-        data.to_csv(eval_file.replace('.xlsx', '.csv'), index=False)
-        with open(eval_file.replace('.xlsx', '_acc.csv'), 'w') as f:
-            for key in accuracy:
-                f.write(f'{key},{accuracy[key]}\n')
+        verbose_file = get_intermediate_file_path(eval_file, '_verbose')
+        dump(data, verbose_file)
+
+        score_df = d2df(accuracy)
+        score_file = get_intermediate_file_path(eval_file, '_acc')
+        dump(score_df, score_file)
 
         return accuracy

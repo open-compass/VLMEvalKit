@@ -6,6 +6,7 @@ from ..smp import *
 from .base import BaseAPI
 from io import BytesIO
 import threading
+import random
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -195,7 +196,8 @@ class OpenAIWrapper(BaseAPI):
         assert img_detail in ['high', 'low']
         self.img_detail = img_detail
         self.timeout = timeout
-        self.o1_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
+        self.is_max_completion_tokens = ('o1' in model) or ('o3' in model) or ('o4' in model) or ('gpt-5' in model)
+        self.is_o_model = ('o1' in model) or ('o3' in model) or ('o4' in model)
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
         if use_azure:
@@ -650,17 +652,6 @@ class VLLMAPIWrapper(BaseAPI):
                 answer = resp_struct['choices'][0]['message']['content'].strip()
                 if answer == '':
                     answer = resp_struct['choices'][0]['message']['reasoning_content'].strip()
-                if os.environ.get('ADD_THINK_NOTE', '0') == '1' and (
-                    "</think>" in answer or "<｜place▁holder▁no▁12｜>" in answer):
-                    answer = "<think>" + answer
-                # if os.environ.get('ADD_THINK_NOTE', '0') == '1':
-                #     if '</think>' not in answer and len(answer) < 1000:
-                #         if try_times == 2:
-                #             return ret_code, answer, response
-                #         try_times += 1
-                #         continue
-                #     else:
-                #         answer = "<think>" + answer
             except Exception as err:
                 if self.verbose:
                     self.logger.error(f'{type(err)}: {err}')
@@ -694,3 +685,4 @@ class XHSSEEDVL(VLLMAPIWrapper):
         self.think_mode = think_mode
 
         super(XHSSEEDVL,self).__init__(model=model, key=key, api_base=api_base, **kwargs)
+        

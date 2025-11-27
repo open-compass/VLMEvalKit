@@ -8,6 +8,7 @@ from time import sleep
 
 from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.smp import misc, file
+from vlmeval.smp.file import get_intermediate_file_path
 from vlmeval import utils
 from vlmeval.dataset.utils import build_judge
 
@@ -48,7 +49,6 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 response = response[7:]
             if response.endswith("```"):
                 response = response[:-3]
-            
             try:
                 content = json.loads(response.strip())
             except json.JSONDecodeError as e:         
@@ -223,10 +223,9 @@ class CharXiv(ImageBaseDataset):
         judge_model_name = judge_model.model
 
         # Define file paths
-        suffix = eval_file.split(".")[-1]
-        result_file = eval_file.replace(f".{suffix}", f"_{judge_model_name}.xlsx")
-        temp_result_file = eval_file.replace(f".{suffix}", f"_{judge_model_name}.pkl")
-        score_file = result_file.replace(".xlsx", "_acc.csv")
+        result_file = get_intermediate_file_path(eval_file, f"_{judge_model_name}")
+        temp_result_file = get_intermediate_file_path(eval_file, f"_{judge_model_name}", "pkl")
+        score_file = get_intermediate_file_path(result_file, "_acc", "csv")
 
         # Return existing results if available
         if os.path.exists(result_file):

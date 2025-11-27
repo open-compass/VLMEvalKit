@@ -57,7 +57,7 @@ def OCRBench_eval(eval_file):
         + final_score_dict['Handwritten Mathematical Expression Recognition']
     )
     final_score_dict['Final Score Norm'] = float(final_score_dict['Final Score']) / 10
-    score_pth = eval_file.replace('.xlsx', '_score.json')
+    score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
     dump(final_score_dict, score_pth)
     logger.info(f'OCRBench_eval successfully finished evaluating {eval_file}, results saved in {score_pth}')
     logger.info('Score: ')

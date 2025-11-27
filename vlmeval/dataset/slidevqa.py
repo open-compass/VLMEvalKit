@@ -6,6 +6,7 @@ from vlmeval.dataset.utils.judge_util import build_judge
 from vlmeval.smp import *
 from .image_base import ImageBaseDataset
 from .mmlongbench import concat_images, MMLongBench_auxeval, anls_compute
+from ..smp.file import get_intermediate_file_path
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -143,9 +144,8 @@ class SlideVQA(ImageBaseDataset):
         logger = get_logger('Evaluation')
         model = judge_kwargs['model']
 
-        suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
 
         if osp.exists(storage):
             logger.warning(f'GPT scoring file {storage} already exists, will reuse it in SlideVQA_eval. ')
@@ -181,7 +181,7 @@ class SlideVQA(ImageBaseDataset):
             dump(data, storage)
 
         score = SlideVQA_acc(storage)
-        score_pth = storage.replace('.xlsx', '_score.csv')
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
 
         dump(score, score_pth)
         logger.info(f'SlideVQA successfully finished evaluating {eval_file}, results saved in {score_pth}')

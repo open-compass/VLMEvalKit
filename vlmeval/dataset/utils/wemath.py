@@ -6,6 +6,8 @@ import numpy as np
 import os
 import argparse
 
+from ...smp import load
+
 # four_dimensional_metrics.py
 
 
@@ -23,7 +25,7 @@ def evaluate_evaluate_steps(json, steps):  # noqa
 
 # Function to load and process JSON data
 def load_and_process_data(filepath):
-    df = pd.read_excel(filepath)
+    df = load(filepath)
     if 'hit' not in df.columns:
         df['processed_answer'] = (
             df['prediction']

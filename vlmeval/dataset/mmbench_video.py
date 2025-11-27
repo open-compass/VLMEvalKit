@@ -1,5 +1,6 @@
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..utils import track_progress_rich
@@ -208,13 +209,13 @@ Please directly reply with your response to the only question.
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmbench_video import get_dimension_rating, system_prompt, build_prompt
 
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs['model']
         nproc = judge_kwargs.pop('nproc', 4)
 
-        tmp_file = eval_file.replace('.xlsx', f'_{judge}_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', f'_{judge}_rating.json')
-        score_file = eval_file.replace('.xlsx', f'_{judge}_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge}_tmp', 'pkl')
+        tgt_file = get_intermediate_file_path(eval_file, f'_{judge}_rating', 'json')
+        score_file = get_intermediate_file_path(eval_file, f'_{judge}_score')
 
         model = build_judge(system_prompt=system_prompt, **judge_kwargs)
         assert model.working(), 'MMBench-Video evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE

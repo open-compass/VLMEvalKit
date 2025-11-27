@@ -7,14 +7,14 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-    TreeBench
+    TreeBench, CVQA, TopViewRS
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
     ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet, MTVQADataset,
     TableVQABench, CustomVQADataset, CRPE, MathVerse, OlympiadBench, SeePhys, QSpatial, VizWiz, MMNIAH, LogicVista,
     MME_CoT, MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
-    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2
+    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench, MathCanvas
 )
 
 from .image_ccocr import CCOCRDataset
@@ -27,8 +27,13 @@ from .dude import DUDE
 from .slidevqa import SlideVQA
 from .vl_rewardbench import VLRewardBench
 from .vlm2bench import VLM2Bench
+from .vlmbias import VLMBias
 from .spatial457 import Spatial457
 from .charxiv import CharXiv
+from .chartmuseum import ChartMuseum
+from .chartqapro import ChartQAPro
+from .refcoco import RefCOCODataset
+from .simplevqa import SimpleVQA
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -53,6 +58,10 @@ from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
+from .videommmu import VideoMMMU
+
+from .EgoExoBench.egoexobench import EgoExoBench_MCQ
+from .videott import VideoTT
 
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 
@@ -76,6 +85,20 @@ from .GUI.screenspot_v2 import ScreenSpotV2
 from .GUI.screenspot_pro import ScreenSpot_Pro
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
+from .m4bench import M4Bench
+from .vlrmbench import VLRMBench
+from .mmhelix import MMHELIX
+from .medqbench_mcq import MedqbenchMCQDataset
+from .medqbench_caption import MedqbenchCaptionDataset
+from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+from .olmOCRBench.olmocrbench import olmOCRBench
+from .oceanocr import OceanOCRBench
+from .matbench import MATBench
+
+from .reasonmap_plus import ReasonMap_Plus
+from .hipho import HiPhODataset
+from .gsm8k_v import GSM8KVDataset
+from .macbench import MaCBench
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -94,6 +117,7 @@ class ConcatDataset(ImageBaseDataset):
         ],
         'ScreenSpot': ['ScreenSpot_Mobile', 'ScreenSpot_Desktop', 'ScreenSpot_Web'],
         'ScreenSpot_v2': ['ScreenSpot_v2_Mobile', 'ScreenSpot_v2_Desktop', 'ScreenSpot_v2_Web'],
+        'M4Bench': ['State_Invariance', 'State_Comparison', 'Spatial_Perception', 'Instance_Comparison', 'Detailed_Difference'],  # noqa: E501
     }
 
     def __init__(self, dataset):
@@ -148,7 +172,6 @@ class ConcatDataset(ImageBaseDataset):
         return list(cls.DATASET_SETS)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        suffix = eval_file.split('.')[-1]
         # First, split the eval_file by dataset
         data_all = load(eval_file)
         for dname in self.datasets:
@@ -176,11 +199,11 @@ class ConcatDataset(ImageBaseDataset):
 
         if len(df_all):
             result = pd.concat(df_all)
-            score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+            score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
             dump(result, score_file)
             return result
         else:
-            score_file = eval_file.replace(f'.{suffix}', '_score.json')
+            score_file = get_intermediate_file_path(eval_file, '_score', 'json')
             dump(dict_all, score_file)
             return dict_all
 
@@ -192,7 +215,7 @@ IMAGE_DATASET = [
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
-    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz,
+    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
@@ -202,9 +225,11 @@ IMAGE_DATASET = [
     WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
     ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
     MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench
+    OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
+    AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas,
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench
 ]
-
 
 VIDEO_DATASET = [
     MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench,
@@ -215,7 +240,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ,
+    EgoExoBench_MCQ, VideoTT, VideoMMMU,
 ]
 
 TEXT_DATASET = [

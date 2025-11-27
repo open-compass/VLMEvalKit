@@ -1,6 +1,7 @@
 import huggingface_hub
 from huggingface_hub import snapshot_download
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
 from .video_concat_dataset import ConcatVideoDataset
 from .video_base import VideoBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
@@ -23,7 +24,7 @@ class MLVU(ConcatVideoDataset):
     def __init__(self, dataset='MLVU', nframe=0, fps=-1):
         self.DATASET_SETS[dataset] = ['MLVU_MCQ', 'MLVU_OpenEnded']
         self.type_data_dict = {
-            'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning'],
+            'M-Avg':['plotQA', 'needle', 'ego', 'count', 'anomaly_reco', 'topic_reasoning', 'order'],
             'G-Avg':['sub_scene', 'summary']
         }
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -34,8 +35,7 @@ class MLVU(ConcatVideoDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         result = super().evaluate(eval_file=eval_file, **judge_kwargs)
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', '_acc.csv')
+        score_file = get_intermediate_file_path(eval_file, '_acc')
         for key in self.type_data_dict:
             result.loc[key] = 0.0
             for name, item in result.iterrows():
@@ -211,10 +211,10 @@ class MLVU_MCQ(VideoBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 
-        tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        score_file = eval_file.replace('.xlsx', '_score.xlsx')
+        tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
+        score_file = get_intermediate_file_path(eval_file, '_score')
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
@@ -423,9 +423,8 @@ class MLVU_OpenEnded(VideoBaseDataset):
             print('MLVU Open Ended default using gpt-4-0125! So judge model is changed to gpt-4-0125')
             judge_kwargs['model'] = 'gpt-4-0125'
 
-        suffix = eval_file.split('.')[-1]
-        score_file = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
-        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(score_file):
