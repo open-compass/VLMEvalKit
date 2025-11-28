@@ -61,7 +61,7 @@ class RBdashMMChat3_PromptUtil:
                                           reorganize_prompt)
         tgt_path = self.dump_image(line, dataset)
         max_num = self.get_max_num(dataset)
-        if dataset is not None and listinstr(['MMBench_V11'], dataset):
+        if dataset is not None and listinstr(['MMBench_V11', 'MMBench_CN_V11'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
         elif dataset is not None and listinstr(['MMStar'], dataset):
             prompt = build_multi_choice_prompt(line, dataset)
