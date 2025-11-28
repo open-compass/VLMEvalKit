@@ -321,7 +321,7 @@ class OpenAIWrapper(BaseAPI):
             headers['appid'] = self.baidu_appid
 
         if self.o1_model:
-            payload['max_completion_tokens'] = max_tokens
+            payload['max_tokens'] = max_tokens
             payload.pop('temperature')
         else:
             payload['max_tokens'] = max_tokens

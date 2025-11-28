@@ -539,7 +539,7 @@ def main():
                     elif judge_kwargs.get('model', None) == 'gpt-4o':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
                     elif judge_kwargs.get('model', None) == 'chatgpt-0125':
-                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 16)
+                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 96)
                     elif judge_kwargs.get('model', None) == 'gpt-4o-mini':
                         judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 32)
 
