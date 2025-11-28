@@ -1888,6 +1888,14 @@ rbdashmm_api_series_lmdeploy = {
         retry=3,
         timeout=600
     ),
+    "rbdashmm3_5_38B_self_leaderboard_api": partial(
+        RBdashMMChat3_5_38B_API,
+        api_base="http://0.0.0.0:23333/v1/chat/completions",
+        temperature=0,
+        retry=3,
+        timeout=600,
+        test_self_leaderboard=True
+    ),
     "rbdashmm3_78B_api": partial(
         RBdashMMChat3_78B_API,
         api_base="http://0.0.0.0:23333/v1/chat/completions",
