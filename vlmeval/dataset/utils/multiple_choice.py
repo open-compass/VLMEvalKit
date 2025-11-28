@@ -450,14 +450,14 @@ def extract_answer_from_item(model, item, dataset_name=None):
     elif dataset_name == 'WeMath':
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
-        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "chatgpt35") != "chatgpt35":
+        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "selfgptoss") != "chatgpt35":
             prompt = build_prompt_cn_plus(item['question'], option_str, item['prediction'])
         else:
             prompt = build_prompt_cn(item['question'], option_str, item['prediction'])
     elif dataset_name is not None and 'LEGO' in dataset_name:
         prompt = build_prompt_LEGO(item['question'], option_str, item['prediction'],item['question_type'])
     else:
-        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "chatgpt35") != "chatgpt35":
+        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "selfgptoss") != "chatgpt35":
             prompt = build_prompt_plus(item['question'], option_str, item['prediction'])
         else:
             prompt = build_prompt(item['question'], option_str, item['prediction'])
@@ -474,7 +474,10 @@ def extract_answer_from_item(model, item, dataset_name=None):
         return dict(opt='Z', log='Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.')
 
     while retry:
-        ans = model.generate(prompt)
+        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "selfgptoss") != "chatgpt35":
+            ans = model.generate(prompt)
+        else:
+            ans = model.generate(prompt, max_tokens=8192)
         if 'Failed to obtain answer via API' in ans:
             logger.warning('GPT API failed to answer. ')
         else:

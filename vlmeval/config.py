@@ -776,6 +776,7 @@ api_models = {
         verbose=False,
         max_tokens=2**14,
         timeout=300,
+    ),
     "xdg": partial(
         GPT4V,
         model="xdg_ds_v3_vlm",
