@@ -117,6 +117,14 @@ from .embspatialbench import EmbSpatialBench
 from .viewspatialbench import ViewSpatialBench
 from .mmsibench import MMSIBench
 from .sitebench import SiteBenchImage
+from .sparbench import SparBench
+from .spatialvizbench import SpatialVizBench
+from .starebench import StareBench
+from .omnispatialbench import OmniSpatialBench
+from .sparbench import SparBench
+from .spatialvizbench import SpatialVizBench
+from .starebench import StareBench
+from .omnispatialbench import OmniSpatialBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -265,6 +273,7 @@ IMAGE_DATASET = [
 
     # EASI add
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
+    SparBench, SpatialVizBench, StareBench, OmniSpatialBench,
 ]
 
 VIDEO_DATASET = [
