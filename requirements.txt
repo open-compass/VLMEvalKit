@@ -12,7 +12,7 @@ json_repair
 math-verify
 matplotlib
 nltk
-numpy<2.0.0
+numpy==1.26.4
 omegaconf
 openai
 opencv-python-headless<4.3
@@ -38,7 +38,8 @@ timm
 torch
 torchvision
 tqdm
-transformers
+transformers>=4.55.3
+soxr
 typing_extensions
 validators
 xlsxwriter
