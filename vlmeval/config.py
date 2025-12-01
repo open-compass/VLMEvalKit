@@ -1115,7 +1115,7 @@ qwen3vl_series = {
     ),
     "Qwen3-VL-8B-Instruct": partial(
         Qwen3VLChat,
-        model_path="Qwen/Qwen3-VL-8B-Instruct",
+        model_path="/mnt/shared-storage-user/large-model-center-share-weights/hf_hub/models--Qwen--Qwen3-VL-8B-Instruct/snapshots/cadac78306af287f801b75a5565ede58f323f472/",
         use_custom_prompt=False,
         use_vllm=True,
         temperature=0.7, 

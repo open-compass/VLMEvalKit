@@ -8,7 +8,14 @@ import hashlib
 import os.path as osp
 import time
 import numpy as np
-import validators
+try:
+    import validators
+except ImportError:
+    class validators:
+        @staticmethod
+        def url(s):
+            if not isinstance(s, str): return False
+            return s.strip().startswith('http://') or s.strip().startswith('https://')
 import mimetypes
 import multiprocessing as mp
 from .misc import toliststr
@@ -251,7 +258,7 @@ def load(f, fmt=None):
     def load_tsv(f):
         return pd.read_csv(f, sep='\t')
 
-    import validators
+    # import validators
     if validators.url(f):
         tgt = osp.join(LMUDataRoot(), 'files', osp.basename(f))
         if not osp.exists(tgt):

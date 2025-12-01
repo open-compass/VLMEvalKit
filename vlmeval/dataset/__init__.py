@@ -46,7 +46,7 @@ from .video_concat_dataset import ConcatVideoDataset
 from .mmgenbench import MMGenBench
 from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
 from .CGAVCounting.cg_av_counting import CGAVCounting
-
+from .dream import DREAM
 from .megabench import MEGABench
 from .moviechat1k import MovieChat1k
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
@@ -232,7 +232,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ,
+    EgoExoBench_MCQ,DREAM
 ]
 
 TEXT_DATASET = [
