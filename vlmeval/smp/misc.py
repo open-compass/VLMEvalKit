@@ -213,12 +213,15 @@ def load_env():
     pth = osp.realpath(pth)
     if not osp.exists(pth):
         logging.error(f'Did not detect the .env file at {pth}, failed to load. ')
-        return
+        if os.path.exists('/cpfs/user/qiaoyu/envs/vlmevalkit.env'):
+            pth = '/cpfs/user/qiaoyu/envs/vlmevalkit.env'
+        else:
+            return
 
     from dotenv import dotenv_values
     values = dotenv_values(pth)
     for k, v in values.items():
-        if v is not None and len(v):
+        if v is not None and len(v) and k not in os.environ:
             os.environ[k] = v
     logging.info(f'API Keys successfully loaded from {pth}')
 

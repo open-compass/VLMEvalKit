@@ -1193,9 +1193,9 @@ class CVBench(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import mcq_vanilla_eval, report_acc
+        suffix = eval_file.split('.')[-1]
 
         nproc = judge_kwargs.pop("nproc", 4)
-
         model_name = judge_kwargs.get("model", "extract_matching")
 
         if model_name == "exact_matching":
