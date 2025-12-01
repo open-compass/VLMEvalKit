@@ -166,7 +166,6 @@ class DREAM(VideoBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         """
         Evaluate DREAM-1K predictions using GPT-based event extraction and relationship evaluation.
-        Follows VLMEvalKit patterns for saving intermediate files and final results.
         """
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
