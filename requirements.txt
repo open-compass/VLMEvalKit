@@ -1,4 +1,5 @@
 accelerate
+datasets
 dotenv
 einops
 # for gemini api
@@ -8,6 +9,7 @@ huggingface_hub
 imageio
 ipdb
 json_repair
+math-verify
 matplotlib
 nltk
 numpy
@@ -19,10 +21,12 @@ pandas
 pillow
 portalocker
 protobuf
+pylatexenc==2.10
 python-dotenv
 qwen_vl_utils
 requests
 rich
+scikit-learn
 sentencepiece
 setuptools
 sty
