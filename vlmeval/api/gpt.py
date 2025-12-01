@@ -320,11 +320,6 @@ class OpenAIWrapper(BaseAPI):
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
-        if self.o1_model:
-            payload['max_tokens'] = max_tokens
-            payload.pop('temperature')
-        else:
-            payload['max_tokens'] = max_tokens
 
         if 'gemini' in self.model:
             payload.pop('max_tokens')
