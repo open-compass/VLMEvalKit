@@ -17,17 +17,21 @@ EXTRACTION_PROMPT = (
     "Video Description: {caption}\n\n"
     "Extract at most 10 key events from the above video description paragraph. Requirements\n:"
     "- An event must include an action, motion or movement (NOT STATIC INFORMATION). DON'T repeat same events.\n"
-    "- Every event is represented by a brief sentence within 10 words, with a subject, a predicate and optionally an object, avoid unnecessary appearance descriptions.\n"
+    "- Every event is represented by a brief sentence within 10 words, with a subject, "
+    " a predicate and optionally an object, avoid unnecessary appearance descriptions.\n"
     "- Every event must be atomic, meaning that it cannot be further split into multiple events.\n"
     "- Scene cuts and camera motions are NOT events.\n"
     "- Substitute pronouns by the nouns they refer to.\n\n"
-    "Please generate the response in the form of a Python dictionary string with keys \"events\". The value of \"events\" is a List(str), of which each item is an event. "
+    "Please generate the response in the form of a Python dictionary string with keys \"events\"."
+    "The value of \"events\" is a List(str), of which each item is an event. "
     "DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only provide the Python dictionary string. "
     "For example, your response should look like this: {{\"events\": [event1, event2, ...]}}"
 )
 
 RELATIONSHIP_PROMPT = (
-    "Given a video description and a list of events. For each event, classify the relationship between the video description and the event into three classes: entailment, neutral, contradiction.\n"
+    "Given a video description and a list of events. For each event, "
+    "classify the relationship between the video description and the event into three classes:"
+    " entailment, neutral, contradiction.\n"
     "- \"entailment\" means that the video description entails the event.\n"
     "- \"contradiction\" means that some detail in the video description contradicts with the event.\n"
     "- \"neutral\" means that the relationship is neither \"entailment\" or \"contradiction\".\n\n"
@@ -36,15 +40,17 @@ RELATIONSHIP_PROMPT = (
     "Output a JSON formed as:\n"
     "{{\n"
     "  \"events\": [\n"
-    "    {{\"event\": \"copy an event here\", \"relationship\": \"put class name here\",  \"reason\": \"give your reason here\"}},\n"
+    "{{\"event\":\"copy an event here\",\"relationship\":\"put class name here\","
+    "\"reason\":\"give your reason here\"}},\n"
     "    ...\n"
     "  ]\n"
     "}}\n\n"
     "DO NOT PROVIDE ANY OTHER OUTPUT TEXT OR EXPLANATION. Only output the JSON. Output:"
 )
 
+
 class DREAM(VideoBaseDataset):
-    
+
     TYPE = 'DREAM-1K'
     MD5 = 'e8f0a486429bb6c27806bc0669e0d8b2'
 
@@ -57,14 +63,14 @@ class DREAM(VideoBaseDataset):
         lmu_root = LMUDataRoot()
         root = os.path.join(lmu_root, 'datasets', 'DREAM')
         os.makedirs(root, exist_ok=True)
-        
+
         data_file = os.path.join(lmu_root, 'DREAM-1K.tsv')
-        
+
         if not os.path.exists(data_file) or md5(data_file) != self.MD5:
             url = 'https://huggingface.co/datasets/mjuicem/DREAM-1k-VLMEvalKit/resolve/main/DREAM-1K.tsv'
             print(f'Downloading {url} to {data_file}')
             os.system(f'wget {url} -O {data_file}')
-        
+
         videos = [f for f in os.listdir(root) if f.endswith('.mp4')]
         if len(videos) == 0:
             zip_path = os.path.join(lmu_root, 'video.zip')
@@ -72,22 +78,21 @@ class DREAM(VideoBaseDataset):
                 url = 'https://huggingface.co/datasets/omni-research/DREAM-1K/resolve/main/video/video.zip'
                 print(f'Downloading {url} to {zip_path}')
                 os.system(f'wget {url} -O {zip_path}')
-            
+
             print(f'Extracting {zip_path} to {root}')
-            import zipfile
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                 for member in zip_ref.namelist():
+                for member in zip_ref.namelist():
                     if not member.endswith('/') and '__MACOSX' not in member:
                         filename = os.path.basename(member)
                         if filename:
                             target_path = os.path.join(root, filename)
                             with zip_ref.open(member) as source, open(target_path, 'wb') as target:
-                                target.write(source.read())                                
+                                target.write(source.read())
         return dict(root=root, data_file=data_file)
 
     def save_video_frames(self, video):
         video_id = video.replace('video/', '')
-        
+
         if self.fps > 0:
             vid_path = osp.join(self.data_root, video_id + '.mp4')
             vid = decord.VideoReader(vid_path)
@@ -138,11 +143,11 @@ class DREAM(VideoBaseDataset):
     def build_prompt(self, line, video_llm=False, dataset=None, **kwargs):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         video_id = line['video'].replace('video/', '')
-        
+
         message = []
-        
+
         if video_llm:
             video_path = osp.join(self.data_root, video_id + '.mp4')
             message.append(dict(type='video', value=video_path))
@@ -150,7 +155,7 @@ class DREAM(VideoBaseDataset):
             frames = self.save_video_frames(line['video'])
             for frame_path in frames:
                 message.append(dict(type='image', value=frame_path))
-        
+
         message.append(dict(type='text', value=line['question']))
         return message
 
@@ -163,30 +168,28 @@ class DREAM(VideoBaseDataset):
         Evaluate DREAM-1K predictions using GPT-based event extraction and relationship evaluation.
         Follows VLMEvalKit patterns for saving intermediate files and final results.
         """
-        from ..api import OpenAIWrapper
-        
+
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
             'eval_file should be an xlsx, json, or tsv file'
-        
+
         model_name = judge_kwargs.get('model', 'gpt-3.5-turbo-0125')
-        nproc = judge_kwargs.pop('nproc', 4)
-        
+        nproc = judge_kwargs.get('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_tmp', 'pkl')
         score_file = get_intermediate_file_path(eval_file, f'_{model_name}_score')
         rating_file = get_intermediate_file_path(eval_file, f'_{model_name}_rating', 'json')
-        
+
         if not osp.exists(score_file):
             gpt = OpenAIWrapper(model=model_name)
-            
+
             data = load(eval_file)
-            
+
             if 'index' not in data:
                 data['index'] = np.arange(len(data))
-            
+
             gt_map = {int(row['index']): row for _, row in self.data.iterrows()}
-            
+
             res = {} if not osp.exists(tmp_file) else load(tmp_file)
-            
+
             def extract_events(caption, model):
                 """Extract key events from video description."""
                 prompt = EXTRACTION_PROMPT.format(caption=caption)
@@ -209,9 +212,9 @@ class DREAM(VideoBaseDataset):
                     text = text.replace("```json", "").replace("```", "").strip()
                 elif text.startswith("```python"):
                     text = text.replace("```python", "").replace("```", "").strip()
-                
+
                 text = text.replace("True", "true").replace("False", "false")
-                
+
                 try:
                     if not text.startswith('{'):
                         start = text.find('{')
@@ -220,8 +223,7 @@ class DREAM(VideoBaseDataset):
                     if not text.endswith('}'):
                         end = text.rfind('}')
                         if end != -1:
-                            text = text[:end+1]
-                    
+                            text = text[:end + 1]
                     return json.loads(text)
                 except:
                     import ast
@@ -234,7 +236,7 @@ class DREAM(VideoBaseDataset):
                 """Process a single sample to compute recall, precision, and F1."""
                 idx = int(row['index'])
                 prediction = row.get('prediction', '')
-                
+
                 if pd.isna(prediction) or prediction == '':
                     return {
                         'index': idx,
@@ -243,7 +245,7 @@ class DREAM(VideoBaseDataset):
                         'f1': -1,
                         'error': 'No prediction'
                     }
-                
+
                 if idx not in gt_map:
                     return {
                         'index': idx,
@@ -252,10 +254,10 @@ class DREAM(VideoBaseDataset):
                         'f1': -1,
                         'error': 'No ground truth'
                     }
-                
+
                 gt_row = gt_map[idx]
                 gt_response = gt_row['answer']
-                
+
                 try:
                     if 'events' in gt_row and pd.notna(gt_row['events']):
                         try:
@@ -272,33 +274,33 @@ class DREAM(VideoBaseDataset):
                     res_pred = extract_events(prediction, gpt_model)
                     parsed_pred = parse_json(res_pred)
                     pred_events = parsed_pred.get('events', []) if parsed_pred else []
-                    
+
                     res_r = evaluate_relationship(gt_events, prediction, gpt_model)
                     parsed_r = parse_json(res_r)
-                    
+
                     match_r = 0
                     if parsed_r and 'events' in parsed_r:
                         for e in parsed_r['events']:
                             rel = e.get('relationship', '').lower()
                             if rel == 'entailment':
                                 match_r += 1
-                    
+
                     score_r = match_r / len(gt_events) if gt_events else 1.0
-                    
+
                     res_p = evaluate_relationship(pred_events, gt_response, gpt_model)
                     parsed_p = parse_json(res_p)
-                    
+
                     match_p = 0
                     if parsed_p and 'events' in parsed_p:
                         for e in parsed_p['events']:
                             rel = e.get('relationship', '').lower()
                             if rel == 'entailment':
                                 match_p += 1
-                            
+
                     score_p = match_p / len(pred_events) if pred_events else 1.0
-                    
+
                     f1 = 2 * score_r * score_p / (score_r + score_p) if (score_r + score_p) > 0 else 0
-                    
+
                     return {
                         'index': idx,
                         'score_r': score_r,
@@ -316,34 +318,33 @@ class DREAM(VideoBaseDataset):
 
             data_un = data[~data['index'].isin(res)]
             data_un = data_un[~pd.isna(data_un['prediction'])]
-            
+
             print(f"Processing {len(data_un)} samples (already processed: {len(res)})")
-            
+
             if len(data_un) > 0:
                 samples = [row for _, row in data_un.iterrows()]
-                
-                for sample in tqdm(samples, desc="Evaluating DREAM-1K"):
-                    try:
-                        idx = int(sample['index'])
-                        if idx not in res:
-                            result = process_sample(sample, gpt, gt_map)
-                            res[idx] = result
-                            if len(res) % 10 == 0:
-                                dump(res, tmp_file)
-                    except Exception as e:
-                        print(f"Error processing sample {sample.get('index')}: {e}")
-                dump(res, tmp_file)
-            
+                tasks = [(row, gpt, gt_map) for row in samples]
+                keys = [int(row['index']) for row in samples]
+
+                track_progress_rich(
+                    process_sample,
+                    tasks,
+                    nproc=nproc,
+                    save=tmp_file,
+                    keys=keys
+                )
+                res = load(tmp_file)
+
             data['score_r'] = [res.get(int(idx), {}).get('score_r', -1) for idx in data['index']]
             data['score_p'] = [res.get(int(idx), {}).get('score_p', -1) for idx in data['index']]
             data['f1'] = [res.get(int(idx), {}).get('f1', -1) for idx in data['index']]
-            
+
             dump(data, score_file)
             print(f"Saved detailed scores to {score_file}")
-        
+
         data = load(score_file)
         valid_data = data[data['score_r'] >= 0]
-        
+
         if len(valid_data) == 0:
             print("Warning: No valid evaluation results found!")
             rating = {
@@ -359,7 +360,7 @@ class DREAM(VideoBaseDataset):
             avg_r = valid_data['score_r'].mean()
             avg_p = valid_data['score_p'].mean()
             final_f1 = 2 * avg_r * avg_p / (avg_r + avg_p) if (avg_r + avg_p) > 0 else 0
-            
+
             rating = {
                 'Overall': {
                     'Recall': f'{avg_r:.4f}',
@@ -369,14 +370,13 @@ class DREAM(VideoBaseDataset):
                 'num_valid': len(valid_data),
                 'num_total': len(data)
             }
-            
-            print(f"\nDREAM-1K Evaluation Results:")
+            print("\nDREAM-1K Evaluation Results:")
             print(f"Valid samples: {len(valid_data)}/{len(data)}")
             print(f"Average Recall: {avg_r:.4f}")
             print(f"Average Precision: {avg_p:.4f}")
             print(f"F1 Score: {final_f1:.4f}")
-        
+
         dump(rating, rating_file)
         print(f"Saved rating to {rating_file}")
-        
+
         return rating
