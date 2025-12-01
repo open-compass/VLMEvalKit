@@ -16,6 +16,7 @@ from .jt_vl_chat import JTVLChatAPI
 from .jt_vl_chat_mini import JTVLChatAPI_Mini, JTVLChatAPI_2B
 from .taiyi import TaiyiAPI
 from .lmdeploy import LMDeployAPI
+from .arm_thinker import ARM_thinker
 from .taichu import TaichuVLAPI, TaichuVLRAPI
 from .doubao_vl_api import DoubaoVL
 from .mug_u import MUGUAPI
@@ -28,7 +29,7 @@ __all__ = [
     'QwenVLWrapper', 'QwenVLAPI', 'QwenAPI', 'Claude3V', 'Claude_Wrapper',
     'Reka', 'GLMVisionAPI', 'CWWrapper', 'SenseChatVisionAPI', 'HunyuanVision',
     'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API', 'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B',
-    'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
+    'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API'
 ]
