@@ -181,11 +181,13 @@ class SiteBenchBase:
 class SiteBenchImage(SiteBenchBase, ImageMCQDataset):
     TYPE = 'MCQ'
 
-    LMUData_root = LMUDataRoot()
-    DATASET_URL = {}
+    DATASET_URL = {
+        "SiteBenchImage": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SiteBenchImage.tsv"  # noqa: E501
+    }
 
-    DATASET_URL["SiteBenchImage"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SiteBenchImage.tsv"  # noqa: E501
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_MD5 = {
+        "SiteBenchImage": "59a2ada248b743c1d7b2f89dd5afcdc3"
+    }
 
     def prepare_tsv(self, url, file_md5=None):
         data = super().prepare_tsv(url, file_md5)
@@ -291,10 +293,12 @@ class SiteBenchVideo(SiteBenchBase, VideoBaseDataset):
     MODALITY = 'VIDEO'
 
     LMUData_root = LMUDataRoot()
-    DATASET_URL = {}
-
-    DATASET_URL["SiteBenchVideo"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SiteBenchVideo.tsv"  # noqa: E501
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_URL = {
+        'SiteBenchVideo': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SiteBenchVideo.tsv'  # noqa: E501
+    }
+    DATASET_MD5 = {
+        'SiteBenchVideo': 'bb2ac531fa83cf8280b23c25d738922d'
+    }
 
     def __init__(self, dataset='SiteBenchVideo', pack=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, pack=pack, nframe=nframe, fps=fps)

@@ -4,18 +4,20 @@ import json
 import string
 
 from .image_mcq import ImageMCQDataset
-from ..smp.file import LMUDataRoot, load
+from ..smp.file import load
 from ..smp.misc import toliststr
 
 
 class EmbSpatialBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
-    LMUData_root = LMUDataRoot()
-    DATASET_URL = {}
+    DATASET_URL = {
+        'EmbSpatialBench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/EmbSpatialBench.tsv'  # noqa: E501
+    }
 
-    DATASET_URL['EmbSpatialBench'] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/EmbSpatialBench.tsv"  # noqa: E501
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_MD5 = {
+        'EmbSpatialBench': 'a836cfd8fbe84bb42928ecef1e62ad32'
+    }
 
     def _task_category(self):
         return [

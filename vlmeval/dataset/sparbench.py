@@ -21,7 +21,10 @@ class SparBench(ImageBaseDataset):
         'SparBench_tiny': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SparBench_tiny.tsv'  # noqa: E501
     }
 
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_MD5 = {
+        'SparBench': 'cb1e5f5855c454241e0a70c3b8152976',
+        'SparBench_tiny': 'c435e186064b795e0a9759aa60465a00'
+    }
 
     TASK_TYPES = {
         'MCQ': [

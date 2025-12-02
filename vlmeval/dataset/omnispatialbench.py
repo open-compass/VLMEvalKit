@@ -80,6 +80,7 @@ class OmniSpatialBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
     OMNI_TSV_URL = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/OmniSpatialBench.tsv'
+    OMNI_TSV_URL = '5d0896fc57c452055b020cc309ed799b'
 
     VARIANTS = [
         'OmniSpatialBench',
@@ -93,7 +94,7 @@ class OmniSpatialBench(ImageMCQDataset):
 
     for name in VARIANTS:
         DATASET_URL[name] = OMNI_TSV_URL
-        DATASET_MD5[name] = None
+        DATASET_MD5[name] = OMNI_TSV_URL
 
     SYS_PROMPTS = {
         "default": DEFAULT_SYSTEM_PROMPT,

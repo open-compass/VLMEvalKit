@@ -3,7 +3,7 @@ import string
 import pandas as pd
 
 from .image_mcq import ImageMCQDataset
-from ..smp.file import LMUDataRoot, load
+from ..smp.file import load
 from ..smp.misc import toliststr
 
 
@@ -15,11 +15,13 @@ class MMSIBench(ImageMCQDataset):
     # evaluation protocol described in the MMSI paper.
     # To avoid modifying upstream VLMEvalKit, we do NOT integrate the circular set here.
     # (Use the official pipeline if you need the circular split.)
-    LMUData_root = LMUDataRoot()
-    DATASET_URL = {}
+    DATASET_URL = {
+        'MMSIBench_wo_circular': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MMSIBench_wo_circular.tsv'  # noqa: E501
+    }
 
-    DATASET_URL["MMSIBench_wo_circular"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/MMSIBench_wo_circular.tsv"  # noqa: E501
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_MD5 = {
+        'MMSIBench_wo_circular': '548c5f33f1a12948d5355d5f600749e4'
+    }
 
     def _task_category(self):
         return [
