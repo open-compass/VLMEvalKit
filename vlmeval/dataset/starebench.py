@@ -20,9 +20,9 @@ class StareBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
     STARE_TSV_URL = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/StareBench.tsv'
-    STARE_TSV_MD5 = None
+    STARE_TSV_MD5 = '2d2b1cf9a0fcdf4e5beec3377bc586f8'
 
-    VARIANTS = ['StareBench','StareBench_CoT']
+    VARIANTS = ['StareBench', 'StareBench_CoT']
 
     DATASET_URL = {}
     DATASET_MD5 = {}

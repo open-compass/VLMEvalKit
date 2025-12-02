@@ -12,7 +12,7 @@ class SpatialVizBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
     SPATIALVIZ_TSV_URL = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SpatialVizBench.tsv'  # noqa: E501
-    SPATIALVIZ_TSV_MD5 = None
+    SPATIALVIZ_TSV_MD5 = '5ed4cb6463bfed0a92e52ffc4e8b6257'
 
     VARIANTS = ['SpatialVizBench', 'SpatialVizBench_CoT']
 

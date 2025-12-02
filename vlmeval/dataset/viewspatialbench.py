@@ -1,22 +1,23 @@
+import os
 import ast
-import os.path as osp
 
-from ..smp import *
-from ..smp.file import LMUDataRoot
+from tqdm import tqdm
+from huggingface_hub import snapshot_download
+
+from ..smp.file import load
 from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
 from .image_mcq import ImageMCQDataset
-
-from huggingface_hub import snapshot_download
 
 
 class ViewSpatialBench(ImageMCQDataset):
     TYPE = 'MCQ'
 
-    LMUData_root = LMUDataRoot()
-    DATASET_URL = {}
-
-    DATASET_URL["ViewSpatialBench"] = "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/ViewSpatialBench.tsv"  # noqa: E501
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_URL = {
+        'ViewSpatialBench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/ViewSpatialBench.tsv'  # noqa: E501
+    }
+    DATASET_MD5 = {
+        'ViewSpatialBench': 'c1c0c1522c5b8f5d72b3abad6af105cd'
+    }
 
     def _task_category(self):
         return [

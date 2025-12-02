@@ -44,13 +44,15 @@ class VsiBench(VideoBaseDataset):
     ORIGIN_VQA_POST_PROMPT = "Answer briefly and directly in one float number."
 
     LMUData_root = LMUDataRoot()
-    DATASET_URL = {}
 
     DATASET_URL = {
-        "VSI-Bench": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/VSI-Bench.tsv",  # noqa: E501
-        "VSI-Bench-Debiased": "https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/VSI-Bench-Debiased.tsv",  # noqa: E501
+        'VSI-Bench': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/VSI-Bench.tsv',  # noqa: E501
+        'VSI-Bench-Debiased': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/VSI-Bench-Debiased.tsv'  # noqa: E501
     }
-    DATASET_MD5 = {key: None for key in DATASET_URL}
+    DATASET_MD5 = {
+        'VSI-Bench': '34544fd83241391d83eff087a1be7d83',
+        'VSI-Bench-Debiased': '2a075fbc69a7725fe7f0718eafb7fca5'
+    }
 
     def __init__(self, dataset, pack=False, nframe=0, fps=-1, sample_strategy='uniform_tail'):
         self.sample_strategy = sample_strategy
