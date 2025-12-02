@@ -267,6 +267,47 @@ def build_prompt_cn_plus(question, options, prediction):
     return tmpl.format(question, options, prediction)
 
 
+def build_prompt_blink_plus(question, options, prediction):
+    tmpl = (
+        "You are an intelligent evaluation assistant. Your task is to match a model's predicted answer with the correct option from a multiple-choice list.\n\n"
+        "### Instructions:\n"
+        "1. Read the Question, Options, and the Predicted Answer.\n"
+        "2. Compare the semantic meaning of the Predicted Answer against each Option.\n"
+        "3. If the Predicted Answer clearly matches one option, output the corresponding letter (e.g., (A), (B)).\n"
+        "4. Output '(Z)' if:\n"
+        "   - The answer refuses to reply (e.g., \"I cannot help\", \"I don't know\").\n"
+        "   - The answer's meaning is significantly different from all provided options.\n"
+        "   - The answer concludes that none of the options are correct.\n"
+        "5. Output ONLY the option letter in parentheses. Do not explain.\n\n"
+        "### Examples:\n\n"
+        "Example 1:\n"
+        "Question: Which point is closer to the camera?\n"
+        "Options: (A) Point A\n(B) Point B\n"
+        "Predicted Answer: Point B, where the child is sitting, is closer to the camera.\n"
+        "Output: (B)\n\n"
+        "Example 2:\n"
+        "Question: Identify the object in the red box.\n"
+        "Options: (A) Dog\n(B) Cat\n(C) Bird\n"
+        "Predicted Answer: I'm sorry, but I cannot assist with identifying real people or specific locations.\n"
+        "Output: (Z)\n\n"
+        "Example 3:\n"
+        "Question: What color is the car?\n"
+        "Options: (A) Red\n(B) Blue\n"
+        "Predicted Answer: The car is definitely green, which is not listed here.\n"
+        "Output: (Z)\n\n"
+        "Example 4:\n"
+        "Question: Which object corresponds to the reference?\n"
+        "Options: (A) Point A\n(B) Point B\n(C) Point C\n"
+        "Predicted Answer: After analyzing the image, Point A is the handle, Point B is the bottom. Neither matches the reference point on the pot. Thus, no option is correct.\n"
+        "Output: (Z)\n\n"
+        "### Test Case:\n"
+        "Question: {}\n"
+        "Options: {}\n"
+        "Predicted Answer: {}\n"
+        "Output: "
+    )
+    return tmpl.format(question, options, prediction)
+
 def report_topviewrs_acc(df):
     # assert group in [None, 'category', 'l2-category']
     res = defaultdict(list)
@@ -446,7 +487,10 @@ def extract_answer_from_item(model, item, dataset_name=None):
     option_str = build_option_str(choices)
 
     if dataset_name == 'BLINK':
-        prompt = build_prompt_blink(item['question'], option_str, item['prediction'])
+        if os.environ.get('MCQ_MATCH_MODEL_TYPE', "selfgptoss") != "chatgpt35":
+            prompt = build_prompt_blink_plus(item['question'], option_str, item['prediction'])
+        else:
+            prompt = build_prompt_blink(item['question'], option_str, item['prediction'])
     elif dataset_name == 'WeMath':
         prompt = build_prompt_wemath(item['question'], option_str, item['prediction'])
     elif cn_string(item['question']):
@@ -461,12 +505,14 @@ def extract_answer_from_item(model, item, dataset_name=None):
             prompt = build_prompt_plus(item['question'], option_str, item['prediction'])
         else:
             prompt = build_prompt(item['question'], option_str, item['prediction'])
-    retry = 3
+    retry = 5
 
     if dataset_name is not None and 'LEGO' in dataset_name:
         ret = can_infer_lego(item['prediction'], item['question_type'], choices)
     else:
         ret = can_infer(item['prediction'], choices)
+        if not ret and re.match(r".*\\boxed{(.*)}$", item['prediction'], flags=re.S):
+            ret = can_infer(re.match(r".*\\boxed{(.*)}$", item['prediction'], flags=re.S).group(1), choices) 
 
     if ret:
         return dict(opt=ret, log=item['prediction'])
@@ -475,9 +521,9 @@ def extract_answer_from_item(model, item, dataset_name=None):
 
     while retry:
         if os.environ.get('MCQ_MATCH_MODEL_TYPE', "selfgptoss") != "chatgpt35":
-            ans = model.generate(prompt)
-        else:
             ans = model.generate(prompt, max_tokens=8192)
+        else:
+            ans = model.generate(prompt)
         if 'Failed to obtain answer via API' in ans:
             logger.warning('GPT API failed to answer. ')
         else:

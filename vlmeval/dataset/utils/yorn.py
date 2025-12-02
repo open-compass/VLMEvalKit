@@ -245,6 +245,35 @@ def YOrN_match_prompt(line):
     )
     return tmpl.format(line['question'], line['prediction'])
 
+def YOrN_match_prompt_gptoss(line):
+    tmpl = (
+        "You are an expert evaluation assistant. Your task is to determine if a model's predicted answer corresponds to 'Yes', 'No', or 'Unknown' for a given Yes/No question.\n\n"
+        "### Instructions:\n"
+        "1. Read the Question and the Predicted Answer.\n"
+        "2. Classify the answer into one of the following three categories:\n"
+        "   - 'Yes': The answer affirms the question, starts with Yes, or confirms the fact.\n"
+        "   - 'No': The answer denies the question, starts with No, OR describes something contradictory (e.g., Q: 'Is it day?', A: 'It is night' implies No).\n"
+        "   - 'Unknown': The answer is a refusal (e.g., 'I cannot answer'), states the image is unclear, or is completely irrelevant.\n"
+        "3. Output ONLY the single word: Yes, No, or Unknown.\n\n"
+        "### Examples:\n"
+        "Example 1:\n"
+        "Question: Is the dog running?\n"
+        "Predicted Answer: Yes, the dog is running across the field.\n"
+        "Output: Yes\n\n"
+        "Example 2 (Implicit No):\n"
+        "Question: Is the umbrella open?\n"
+        "Predicted Answer: The umbrella is closed and leaning against the wall.\n"
+        "Output: No\n\n"
+        "Example 3 (Refusal):\n"
+        "Question: Is this person famous?\n"
+        "Predicted Answer: I cannot identify real people in images for privacy reasons.\n"
+        "Output: Unknown\n\n"
+        "### Test Case:\n"
+        "Question: {}\n"
+        "Predicted Answer: {}\n"
+        "Output: "
+    )
+    return tmpl.format(line['question'], line['prediction'])
 
 def YOrN_Extraction(output):
     s = output.lower()
@@ -257,10 +286,13 @@ def YOrN_Extraction(output):
 
 
 def YOrN_auxeval(model, line):
-    prompt = YOrN_match_prompt(line)
+    if os.environ.get('MCQ_MATCH_MODEL_TYPE', "selfgptoss") != "chatgpt35":
+        prompt = YOrN_match_prompt_gptoss(line)
+    else:
+        prompt = YOrN_match_prompt(line)
     retry = 5
     for i in range(retry):
-        output = model.generate(prompt, temperature=0.5 * i)
+        output = model.generate(prompt, temperature=1 - 0.5 ** i)
         ans = YOrN_Extraction(output)
         if ans != 'Unknown':
             return ans
