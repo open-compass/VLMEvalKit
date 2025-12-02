@@ -1,5 +1,6 @@
 import json
 import os
+from huggingface_hub import snapshot_download
 import numpy as np
 import re
 import time
@@ -8,6 +9,7 @@ import zipfile
 from ..smp import *
 from ..smp.file import get_intermediate_file_path, get_file_extension
 from .video_base import VideoBaseDataset
+from .utils import build_judge
 from ..api import OpenAIWrapper
 from ..utils import track_progress_rich
 import decord
@@ -67,17 +69,35 @@ class DREAM(VideoBaseDataset):
         data_file = os.path.join(lmu_root, 'DREAM-1K.tsv')
 
         if not os.path.exists(data_file) or md5(data_file) != self.MD5:
-            url = 'https://huggingface.co/datasets/mjuicem/DREAM-1k-VLMEvalKit/resolve/main/DREAM-1K.tsv'
-            print(f'Downloading {url} to {data_file}')
-            os.system(f'wget {url} -O {data_file}')
+            print(f'Downloading DREAM-1K.tsv to {data_file}')
+            snapshot_download(
+                repo_id='mjuicem/DREAM-1k-VLMEvalKit',
+                repo_type='dataset',
+                local_dir=lmu_root,
+                allow_patterns='DREAM-1K.tsv'
+            )
 
         videos = [f for f in os.listdir(root) if f.endswith('.mp4')]
         if len(videos) == 0:
-            zip_path = os.path.join(lmu_root, 'video.zip')
+            zip_path = os.path.join(root, 'video.zip')
             if not os.path.exists(zip_path):
-                url = 'https://huggingface.co/datasets/omni-research/DREAM-1K/resolve/main/video/video.zip'
-                print(f'Downloading {url} to {zip_path}')
-                os.system(f'wget {url} -O {zip_path}')
+                print(f'Downloading video.zip to {zip_path}')
+                temp_download_dir = os.path.join(lmu_root, 'temp_dream_download')
+                os.makedirs(temp_download_dir, exist_ok=True)
+                snapshot_download(
+                    repo_id='omni-research/DREAM-1K',
+                    repo_type='dataset',
+                    local_dir=temp_download_dir,
+                    allow_patterns='video/video.zip'
+                )
+
+                downloaded_zip = os.path.join(temp_download_dir, 'video', 'video.zip')
+                if os.path.exists(downloaded_zip):
+                    import shutil
+                    shutil.move(downloaded_zip, zip_path)
+                    shutil.rmtree(temp_download_dir, ignore_errors=True)
+                else:
+                    raise FileNotFoundError(f"Downloaded file not found at {downloaded_zip}")
 
             print(f'Extracting {zip_path} to {root}')
             with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -171,14 +191,15 @@ class DREAM(VideoBaseDataset):
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
             'eval_file should be an xlsx, json, or tsv file'
 
-        model_name = judge_kwargs.get('model', 'gpt-3.5-turbo-0125')
+        model_name = judge_kwargs.get('model', 'gpt-4o')
+        judge_kwargs['model'] = model_name
         nproc = judge_kwargs.get('nproc', 4)
         tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}_tmp', 'pkl')
         score_file = get_intermediate_file_path(eval_file, f'_{model_name}_score')
         rating_file = get_intermediate_file_path(eval_file, f'_{model_name}_rating', 'json')
 
         if not osp.exists(score_file):
-            gpt = OpenAIWrapper(model=model_name)
+            gpt = build_judge(**judge_kwargs)
 
             data = load(eval_file)
 
