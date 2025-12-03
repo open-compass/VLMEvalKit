@@ -71,6 +71,7 @@ tempcompass_dataset = {
     'TempCompass_0.5fps': partial(TempCompass, dataset='TempCompass', fps=0.5)
 }
 
+
 # In order to reproduce the experimental results in CGbench paper,
 # use_subtitle, use_subtitle_time and use_frame_time need to be set to True.
 # When measuring clue-related results, if the number of frames used is greater
@@ -192,13 +193,19 @@ egoexobench_dataset = {
 
 }
 
+vsibench_dataset = {
+    'vsibench_16frame': partial(VSIBench, dataset='VSIBench', nframe=16),
+    'vsibench_32frame': partial(VSIBench, dataset='VSIBench', nframe=32),
+    'vsibench_64frame': partial(VSIBench, dataset='VSIBench', nframe=64),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommmu_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
-    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, video_tt_dataset
+    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, video_tt_dataset, vsibench_dataset
 ]
 
 for grp in dataset_groups:

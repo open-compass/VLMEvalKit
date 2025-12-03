@@ -59,7 +59,7 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
-
+from .vsibench import VSIBench
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
 
@@ -238,7 +238,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, VideoTT, VideoMMMU,
+    EgoExoBench_MCQ, VideoTT, VideoMMMU, VSIBench,
 ]
 
 TEXT_DATASET = [
@@ -310,7 +310,6 @@ def build_dataset(dataset_name, **kwargs):
     if not osp.exists(data_file):
         warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
         return None
-
     data = load(data_file)
     if 'question' not in [x.lower() for x in data.columns]:
         warnings.warn(f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
