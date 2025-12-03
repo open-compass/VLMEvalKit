@@ -15,26 +15,27 @@ class VSIBench(VideoBaseDataset):
     TYPE = 'VIDEO-MCQ-and-NA'
 
     MCA_QUESTION_TYPES = [
-                "object_rel_direction_easy",
-                "object_rel_direction_medium",
-                "object_rel_direction_hard",
-                "object_rel_distance",
-                "route_planning",
-                "obj_appearance_order",
-            ]
+        "object_rel_direction_easy",
+        "object_rel_direction_medium",
+        "object_rel_direction_hard",
+        "object_rel_distance",
+        "route_planning",
+        "obj_appearance_order",
+    ]
     NA_QUESTION_TYPES = [
-            "object_abs_distance",
-            "object_counting",
-            "object_size_estimation",
-            "room_size_estimation",
-        ]
+        "object_abs_distance",
+        "object_counting",
+        "object_size_estimation",
+        "room_size_estimation",
+    ]
+
     def __init__(self, dataset='VSIBench', nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
 
     @classmethod
     def supported_datasets(cls):
         return ['VSIBench']
-    
+
     def prepare_dataset(self, dataset_name='VSIBench', repo_id='nyu-visionx/VSI-Bench'):
         def check_integrity(pth):
             data_file = osp.join(pth, f'{dataset_name}.tsv')
@@ -61,7 +62,7 @@ class VSIBench(VideoBaseDataset):
                     zip_file = osp.join(pth, 'arkitscenes.zip')
                     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
                         zip_ref.extractall(pth)
-                
+
                 if not osp.exists(osp.join(pth, 'scannet')):
                     zip_file = osp.join(pth, 'scannet.zip')
                     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
@@ -71,7 +72,6 @@ class VSIBench(VideoBaseDataset):
                     zip_file = osp.join(pth, 'scannetpp.zip')
                     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
                         zip_ref.extractall(pth)
-
 
             def generate_tsv(pth):
                 data_file = osp.join(pth, f'{dataset_name}.tsv')
@@ -149,10 +149,9 @@ class VSIBench(VideoBaseDataset):
         img_frame_paths = self.save_video_frames(line)
         for im in img_frame_paths:
             message.append(dict(type='image', value=im))
-        
-        #pre_prompt = ""
-        pre_prompt = "These are frames of a video."
-        
+
+        pre_prompt = "These are frames of a video."  # pre_prompt = ""
+
         assert line['type'] in self.NA_QUESTION_TYPES or line['type'] in self.MCA_QUESTION_TYPES
 
         if line['type'] in self.NA_QUESTION_TYPES:
@@ -167,31 +166,32 @@ class VSIBench(VideoBaseDataset):
         return message
 
     @classmethod
-    def critic_multichoice(self, pred, ans): #Evaluation of MCA questions
-        if pred.lower()==ans.lower() or pred.lower().startswith(ans.lower() + "."):
+    def critic_multichoice(self, pred, ans):  # Evaluation of MCA questions
+        if pred.lower() == ans.lower() or pred.lower().startswith(ans.lower() + "."):
             return 1
         else:
             return 0
 
     @classmethod
-    def mra(self, pred, ans): #Evaluation of NA questions
+    def mra(self, pred, ans):  # Evaluation of NA questions
         try:
             ans_num = float(ans)
             pred_num = float(pred)
             acc = 0
             for i in range(20):
                 theta = 0.5 + i * 0.05
-                if abs(pred_num-ans_num)/ans_num<1-theta:
+                if abs(pred_num - ans_num) / ans_num < 1 - theta:
                     acc += 1
             return acc / 10
         except Exception as e:
+            print("Error:", e)
             return 0
-    
+
     @classmethod
     def eva_one_row(self, row):
         assert row['type'] in self.NA_QUESTION_TYPES or row['type'] in self.MCA_QUESTION_TYPES
         if row['type'] in self.MCA_QUESTION_TYPES:
-            return self.critic_multichoice(row['prediction'], row['answer']) 
+            return self.critic_multichoice(row['prediction'], row['answer'])
         else:
             return self.mra(row['prediction'], row['answer'])
 
@@ -202,15 +202,25 @@ class VSIBench(VideoBaseDataset):
         df = pd.read_excel(eval_file)
 
         df['score'] = df.apply(self.eva_one_row, axis=1)
-        
-        overall_stats = [{"Type": "overall", "Count": len(df), "Score_sum": df['score'].sum(), "Avg_score": df['score'].sum()/len(df)}]
+
+        overall_stats = [{
+            "Type": "overall",
+            "Count": len(df),
+            "Score_sum": df['score'].sum(),
+            "Avg_score": df['score'].sum() / len(df)}
+        ]
         type_stats = df.groupby('type').agg(
             count=('score', 'size'),     # Row number
             score_sum=('score', 'sum')   # Score sum
         ).reset_index()
 
         for id, row in type_stats.iterrows():
-            overall_stats.append({"Type": row['type'], "Count": row['count'], "Score_sum": row['score_sum'], "Avg_score": row['score_sum']/row['count']})
+            overall_stats.append({
+                "Type": row['type'],
+                "Count": row['count'],
+                "Score_sum": row['score_sum'],
+                "Avg_score": row['score_sum'] / row['count']
+            })
         overall_stats = pd.DataFrame(overall_stats)
         dump(overall_stats, score_file)
         dump(df, result_file)
