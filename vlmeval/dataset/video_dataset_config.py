@@ -71,7 +71,6 @@ tempcompass_dataset = {
     'TempCompass_0.5fps': partial(TempCompass, dataset='TempCompass', fps=0.5)
 }
 
-
 # In order to reproduce the experimental results in CGbench paper,
 # use_subtitle, use_subtitle_time and use_frame_time need to be set to True.
 # When measuring clue-related results, if the number of frames used is greater
