@@ -310,7 +310,7 @@ def build_dataset(dataset_name, **kwargs):
     if not osp.exists(data_file):
         warnings.warn(f'Data file {data_file} does not exist. Dataset building failed. ')
         return None
-    
+
     data = load(data_file)
     if 'question' not in [x.lower() for x in data.columns]:
         warnings.warn(f'Data file {data_file} does not have a `question` column. Dataset building failed. ')

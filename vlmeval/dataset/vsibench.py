@@ -80,7 +80,6 @@ class VSIBench(VideoBaseDataset):
                 self.data_list = []
                 with open(osp.join(pth, 'test.jsonl'), 'r') as file:
                     for line in file:
-                        # 将每行的字符串转换为 JSON 对象
                         data = json.loads(line)
                         self.data_list.append({
                             'id': data['id'],
@@ -206,8 +205,8 @@ class VSIBench(VideoBaseDataset):
         
         overall_stats = [{"Type": "overall", "Count": len(df), "Score_sum": df['score'].sum(), "Avg_score": df['score'].sum()/len(df)}]
         type_stats = df.groupby('type').agg(
-            count=('score', 'size'),     # 行数
-            score_sum=('score', 'sum')   # score总和
+            count=('score', 'size'),     # Row number
+            score_sum=('score', 'sum')   # Score sum
         ).reset_index()
 
         for id, row in type_stats.iterrows():
