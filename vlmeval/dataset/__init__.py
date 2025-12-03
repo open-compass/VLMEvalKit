@@ -60,6 +60,7 @@ from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
 from .vsibench import VSIBench
+
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
 
