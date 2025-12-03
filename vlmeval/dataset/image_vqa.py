@@ -220,8 +220,9 @@ class VizWiz(ImageBaseDataset):
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL={
-        'VTCBench': '/hdddata/zhaohongbo/VLMEvalKit/LMUData/debug_combined_samples.tsv',
+        'VTCBench': '/hdddata/zhaohongbo/VLMEvalKit/LMUData/VTCBench.tsv',
     }
+    DATASET_MD5 = {'VTCBench': '4ed6fa785fc0e1b1b9257d52160951e9'}
     
     def build_prompt(self, line):
         if isinstance(line, int):
