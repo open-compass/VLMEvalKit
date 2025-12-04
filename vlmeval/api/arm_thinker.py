@@ -11,7 +11,7 @@ import traceback
 import numpy as np
 import sys
 import os.path as osp
-# from arm_agent.agent_verl import VerlAgent
+
 
 class LMDeployWrapper(BaseAPI):
 
@@ -28,6 +28,7 @@ class LMDeployWrapper(BaseAPI):
         verbose: bool = True,
         timeout: int = 60,
         agent_repo_root: str = None,
+        use_role_tool: bool = True,
         **kwargs,
     ):
         # get key and api_base from environment variables
@@ -48,12 +49,12 @@ class LMDeployWrapper(BaseAPI):
         self.fail_msg = "Failed to obtain answer via API. "
         self.timeout = timeout
         self.extra_pt = kwargs.pop("extra_pt", None)
-
+        self.use_role_tool = use_role_tool
         # Set up logging for agent mode if needed
         self.debug_mode = kwargs.pop("debug_mode", False)
         if self.debug_mode:
             logging.basicConfig(level=logging.DEBUG, force=True)
-        
+
         super().__init__(
             retry=retry, verbose=verbose, **kwargs
         )
@@ -61,12 +62,13 @@ class LMDeployWrapper(BaseAPI):
         if agent_repo_root is None:
             raise ValueError('Please set `agent_repo_root` to ARM-Thinker directory, \
                           which is cloned from here: https://github.com/InternLM/ARM-Thinker')
-        
+
+        print(f"agent_repo_root: {agent_repo_root}")
         sys.path.append(agent_repo_root)
         try:
             from arm_agent.agent_verl import VerlAgent
-        except Exception as err:
-            raise ValueError('Please install ARM-Thinker, which is cloned from here: https://github.com/InternLM/ARM-Thinker')
+        except Exception:
+            raise ValueError('Please install ARM-Thinker from https://github.com/InternLM/ARM-Thinker')
 
     def prepare_itlist(self, inputs):
         assert np.all([isinstance(x, dict) for x in inputs])
@@ -123,7 +125,7 @@ class LMDeployWrapper(BaseAPI):
                 input_msgs[-1]["content"][-1]["text"] = (
                     input_msgs[-1]["content"][-1]["text"] + self.extra_pt
                 )
-            
+
             payload = {
                 "model": self.model,
                 "messages": input_msgs,
@@ -133,7 +135,7 @@ class LMDeployWrapper(BaseAPI):
             if kwargs.get("repetition_penalty", None):
                 payload["extra_body"]["repetition_penalty"] = kwargs.get("repetition_penalty")
                 kwargs.pop("repetition_penalty")
-            
+
             if kwargs.get("top_k", None):
                 payload["extra_body"]["top_k"] = kwargs.get("top_k")
                 kwargs.pop("top_k")
@@ -164,12 +166,13 @@ class LMDeployWrapper(BaseAPI):
             temp_dir = f"/tmp/agent_images_{timestamp}"
             os.environ["TOOL_CALL_IMG_TEMP"] = temp_dir
             os.makedirs(temp_dir, exist_ok=True)
-            
+
             from arm_agent.agent_verl import VerlAgent
             agent = VerlAgent(
                 model_name=self.model,
                 api_base=self.api_base.split("chat/completions")[0],
                 api_key=self.key,
+                use_role_tool=self.use_role_tool,
                 **kwargs
             )
 
@@ -183,8 +186,11 @@ class LMDeployWrapper(BaseAPI):
             result, tool_call_count = agent.run(user_messages=input_msgs)
             rtn = result[-1]["content"]
 
-            # Option1: Not process the result, then the image in result is base64 encoded, the result.json will be large.
-            option_for_process_image_in_result = "save_to_path" # "base64" or "save_to_path" or "hidden", default is "base64"
+            # "base64" or "save_to_path" or "hidden", default is "base64"
+            # Option "base64": Direct save the image base64 to result file, which will be large.
+            # Option "save_to_path": Save the image to path, which will be large.
+            # Option "hidden": Hidden the image, which will be small.
+            option_for_process_image_in_result = "save_to_path"
             if option_for_process_image_in_result == "hidden":
                 for msg in result:
                     role = msg.get("role", "")
@@ -197,7 +203,7 @@ class LMDeployWrapper(BaseAPI):
                     print(f"{role.upper()}:\n{content}\n")
             elif option_for_process_image_in_result == "base64":
                 pass
-            elif option_for_process_image_in_result == "save_to_path": 
+            elif option_for_process_image_in_result == "save_to_path":
                 # vlmevalkit_root is path like xxx/VLMEvalKit
                 vlmevalkit_root = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
                 save_img_root = osp.join(vlmevalkit_root, "temp", dataset, self.model)

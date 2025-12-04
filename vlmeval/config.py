@@ -477,43 +477,44 @@ api_models = {
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
     "Qwen2.5-VL-32B-Instruct-SiliconFlow": partial(
         SiliconFlowAPI, model="Qwen/Qwen2.5-VL-32B-Instruct", temperature=0, retry=10),
-    "Qwen3-VL-8B--crop--arm_thinker_prompt": partial(
+    "Qwen3-VL-8B--crop--arm_thinker_prompt--sglang": partial(
         ARM_thinker,
         mode="agent",
-        agent_repo_root="/mnt/shared-storage-user/dingshengyuan/fork/ARM-Thinker",
+        agent_repo_root="/path/to/your/ARM-Thinker",
         model="Qwen/Qwen3-VL-8B-Instruct",
         retry=10,
         timeout=300,
-        api_base="http://100.97.203.103:34002/v1/chat/completions",
+        api_base="http://100.97.158.184:38888/v1/chat/completions",
         key="EMPTY",
         temperature=0.0,
+        repetition_penalty=1.1,
         max_tokens=4096,
-        repetition_penalty=1.05,
         extra_pt="\n\n**Important Requirement:**\nThe given image is `original_image`. You must output your reasoning inside `<think>...</think>`. After reasoning, either output the final answer within `<answer>...</answer>` or call a tool within `<tool_call>...</tool_call>`. You may call tools multiple times across turns to assist with judgment or verification, **but only one tool per turn**. If a tool call fails, you can retry or stop and give your final answer. Once no more tool calls are needed, provide your final answer or judgment within `<answer>...</answer>`.",
         # agent params
         max_round=16,
         max_tool_response_length=4096,
         system_template_type="CommonSystemTemplate",
-        tool_config_path="/mnt/shared-storage-user/dingshengyuan/fork/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_config.yaml"
+        tool_config_path="/path/to/your/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_config.yaml",
+        use_role_tool=False,
     ),
-    "Qwen3-VL-8B--crop--official_prompt": partial(
+    "Qwen3-VL-8B--crop--official_prompt--vllm": partial(
         ARM_thinker,
         mode="agent",
-        agent_repo_root="/mnt/shared-storage-user/dingshengyuan/fork/ARM-Thinker",
+        agent_repo_root="/path/to/your/ARM-Thinker",
         model="Qwen/Qwen3-VL-8B-Instruct",
         retry=10,
         timeout=300,
-        api_base="http://100.97.203.103:34002/v1/chat/completions",
+        api_base="http://100.97.203.103:40001/v1/chat/completions",
         key="EMPTY",
         temperature=0.0,
-        repetition_penalty=1.05,
         max_tokens=4096,
         extra_pt="",
         # agent params
         max_round=16,
         max_tool_response_length=4096,
         system_template_type="Qwen3VLSystemTemplateWithTools",
-        tool_config_path="/mnt/shared-storage-user/dingshengyuan/fork/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_config_qwen3vl_config.yaml"
+        tool_config_path="/path/to/your/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_qwen3vl_config.yaml",
+        use_role_tool=True,
     ),
     # lmdeploy api
     "lmdeploy": partial(
