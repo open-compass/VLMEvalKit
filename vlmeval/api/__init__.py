@@ -14,6 +14,7 @@ from .bailingmm import bailingMMAPI
 from .bluelm_api import BlueLMWrapper, BlueLM_API
 from .jt_vl_chat import JTVLChatAPI
 from .jt_vl_chat_mini import JTVLChatAPI_Mini, JTVLChatAPI_2B
+from .video_chat_online_v2 import VideoChatOnlineV2API
 from .taiyi import TaiyiAPI
 from .lmdeploy import LMDeployAPI
 from .taichu import TaichuVLAPI, TaichuVLRAPI
@@ -30,5 +31,6 @@ __all__ = [
     'Qwen2VLAPI', 'BlueLMWrapper', 'BlueLM_API', 'JTVLChatAPI', 'JTVLChatAPI_Mini', 'JTVLChatAPI_2B',
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
-    'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API'
+    'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
+    'VideoChatOnlineV2API'
 ]
