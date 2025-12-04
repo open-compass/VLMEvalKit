@@ -178,6 +178,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     dump(res, out_file)
     return model
 
+
 # Add for agent evaluation
 def _is_structured_record(v):
     return isinstance(v, dict) and 'prediction' in v and 'extra_records' in v
