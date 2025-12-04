@@ -310,6 +310,15 @@ Respond with only the letter (A, B, C, or D) of the correct option.
         suffix = eval_file.split('.')[-1]
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
         data = load(eval_file)
+        if os.path.exists(storage):
+            score_pth = storage.replace('.xlsx', '_score.json')
+            if os.path.exists(score_pth):
+                return load(score_pth)
+            else:
+                data = load(storage)
+                acc = get_dimension_rating(storage)
+                dump(acc, score_pth)
+                return acc
 
         predictions = data['prediction'].tolist()
         predictions = [x.split("</think>")[1].strip() if "</think>" in x else x for x in predictions]

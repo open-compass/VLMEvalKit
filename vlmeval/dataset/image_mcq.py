@@ -85,6 +85,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'R-Bench-Dis': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-dis.tsv',
         'R-Bench-Ref': 'https://huggingface.co/datasets/lcysyzxdxc/R-Bench/resolve/main/R-bench-ref.tsv',
         # Other Benchmarks
+        'VP_BENCH_STAGE1': 'https://modelscope.cn/datasets/VP-Bench/VP-Bench_stage_1_VLMEvalKit/resolve/master/vp_bench_stage_1.tsv',
         'CCBench': 'https://opencompass.openxlab.space/utils/VLMEval/CCBench.tsv',
         'AI2D_TEST': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST.tsv',
         'AI2D_TEST_NO_MASK': 'https://opencompass.openxlab.space/utils/VLMEval/AI2D_TEST_NO_MASK.tsv',
@@ -169,6 +170,7 @@ class ImageMCQDataset(ImageBaseDataset):
         'CCBench': 'f5dde47f24dc5a6fb6e595b409b466ac',
         'AI2D_TEST': '0f593e0d1c7df9a3d69bf1f947e71975',
         'AI2D_TEST_NO_MASK': 'fd8f463634d4fe9fbd23b876e8eea5be',
+        'VP_BENCH_STAGE1': '9fddde8dbc02e338086aaf674287028e',
         'MMStar': 'e1ecd2140806c1b1bbf54b43372efb9e',
         'MMStar_KO': 'cc6049c7314bb54b9ac5e247a2bfb357',
         'RealWorldQA': '4de008f55dc4fd008ca9e15321dc44b7',

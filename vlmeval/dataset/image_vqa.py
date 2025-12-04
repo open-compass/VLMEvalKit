@@ -3171,9 +3171,17 @@ class OCR_Reasoning(ImageBaseDataset):
 
 
         model = judge_kwargs['model']
-        suffix = eval_file.split('.')[-1]
         storage = get_intermediate_file_path(eval_file, f'_{model}')
-        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+        if os.path.exists(storage):
+            score_pth = storage.replace('.xlsx', '_score.json')
+            if os.path.exists(score_pth):
+                return load(score_pth)
+            else:
+                data = load(storage)
+                acc = OcrR_acc(data)
+                dump(acc, score_pth)
+                return acc
+
         data = load(eval_file)
 
         predictions = data['prediction'].tolist()
