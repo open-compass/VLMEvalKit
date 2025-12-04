@@ -487,15 +487,16 @@ api_models = {
         api_base="http://100.97.158.184:38888/v1/chat/completions",
         key="EMPTY",
         temperature=0.0,
-        repetition_penalty=1.1,
         max_tokens=4096,
-        extra_pt="\n\n**Important Requirement:**\nThe given image is `original_image`. You must output your reasoning inside `<think>...</think>`. After reasoning, either output the final answer within `<answer>...</answer>` or call a tool within `<tool_call>...</tool_call>`. You may call tools multiple times across turns to assist with judgment or verification, **but only one tool per turn**. If a tool call fails, you can retry or stop and give your final answer. Once no more tool calls are needed, provide your final answer or judgment within `<answer>...</answer>`.",
         # agent params
         max_round=16,
         max_tool_response_length=4096,
-        system_template_type="CommonSystemTemplate",
         tool_config_path="/path/to/your/ARM-Thinker/examples/self/multiturn/config/tool_config/image_zoom_in_tool_config.yaml",
+        # special for sglang server
         use_role_tool=False,
+        system_template_type="CommonSystemTemplate",
+        # extra prompt to adapt to the ARM-Thinker prompt template [CommonSystemTemplate]
+        extra_pt="\n\n**Important Requirement:**\nThe given image is `original_image`. You must output your reasoning inside `<think>...</think>`. After reasoning, either output the final answer within `<answer>...</answer>` or call a tool within `<tool_call>...</tool_call>`. You may call tools multiple times across turns to assist with judgment or verification, **but only one tool per turn**. If a tool call fails, you can retry or stop and give your final answer. Once no more tool calls are needed, provide your final answer or judgment within `<answer>...</answer>`.",
     ),
     "Qwen3-VL-8B--crop--official_prompt--vllm": partial(
         ARM_thinker,
