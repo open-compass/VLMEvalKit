@@ -120,9 +120,12 @@ class RBdashMMChat3_78B_PromptUtil:
                 prompt = question + '\nAnswer this question in detail.'
             elif listinstr(['OCRVQA', 'TextVQA', 'ChartQA', 'DocVQA', 'InfoVQA', 'OCRBench',
                             'DUDE', 'SLIDEVQA', 'GQA', 'MMLongBench_DOC'], dataset):
-                prompt = question + '\nAnswer the question using a single word or phrase. \
-                    The image is guaranteed to contain the correct answer. Please provide the most likely \
-                    answer — do not answer "No." Let us think step by step.'
+                ocr_prompt = (
+                    "\nAnswer the question using a single word or phrase. "
+                    "The image is guaranteed to contain the correct answer. Please provide the most likely "
+                    "answer — do not answer 'No.' Let us think step by step."
+                )
+                prompt = question + ocr_prompt
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet', 'MathVerse',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath',
                             'QSpatial', 'WeMath', 'LogicVista'], dataset):
