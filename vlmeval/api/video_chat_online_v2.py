@@ -1,3 +1,4 @@
+# flake8: noqa
 import pandas as pd
 import requests
 import json
@@ -34,7 +35,7 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
         self.url = url
         self.key = key
 
-        
+
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
@@ -90,7 +91,7 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
             for cand in string.ascii_uppercase
             if cand in line and not pd.isna(line[cand])
         }
-        
+
         for key, item in options.items():
             question += f'\n{key}. {item}'
         prompt = question
@@ -103,7 +104,7 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
 
         return prompt
 
-        
+
     def build_prompt(self, line, dataset=None):
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
@@ -196,7 +197,7 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
         inputs = [inputs] if isinstance(inputs, str) else inputs
         dataset = kwargs.get('dataset', None)
         prompt, image_path = self.message_to_promptimg(message=inputs, dataset=dataset)
-       
+
         if image_path:
             send_data = self.get_send_data(
                 prompt=prompt,
@@ -212,9 +213,9 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
                 stream = True)
 
         json_data = json.dumps(send_data)
-        
+
         header_dict = {'Content-Type': 'application/json','Authorization':self.key}
-        
+
         r = requests.post(self.url, headers=header_dict, data=json_data, timeout=3000,stream=True)
         try:
             if send_data.get('stream', False):
@@ -222,7 +223,7 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
                 chunks = []
                 full_content = ""
                 last_valid_usage = None  # 用于记录最后一个有效的usage
-                
+
                 try:
                     for line in r.iter_lines():
                         if line:
@@ -234,11 +235,11 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
                                 try:
                                     chunk = json.loads(event_data)
                                     chunks.append(chunk)
-                                    
+
                                     # 记录最后一个有效的usage（不累加）
                                     if 'usage' in chunk:
                                         last_valid_usage = chunk['usage']
-                                    
+
                                     # 实时输出内容
                                     if 'choices' in chunk:
                                         for choice in chunk['choices']:
@@ -248,11 +249,11 @@ class VideoChatOnlineV2Wrapper(BaseAPI):
                                                 full_content += content
                                 except json.JSONDecodeError:
                                     continue
-                    
+
                     # print('流式输出内容：', full_content)
-                    
+
                     return 0,full_content,'Succeeded! '
-                    
+
                 except Exception as e:
                     return -1,f'Error: {str(e)}',''
             else:

@@ -145,10 +145,10 @@ class SimpleVQA(ImageBaseDataset):
         gpt4_key = os.environ.get('OPENAI_API_KEY', None)
         base_url = os.environ.get('OPENAI_API_BASE', None)
         nproc = judge_kwargs.get('nproc', 16)
-        
+
         client = OpenAI(
-            api_key = gpt4_key,
-            base_url = base_url
+            api_key=gpt4_key,
+            base_url=base_url
         )
 
         def process_one(idx):
