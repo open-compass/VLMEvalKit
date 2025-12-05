@@ -31,9 +31,9 @@ def process_prediction_text(text):
             if inner:
                 return inner
 
-    redacted_pattern = r'<think>.*?</think>'
-    if re.search(redacted_pattern, text, re.DOTALL):
-        result = re.sub(redacted_pattern, '', text, flags=re.DOTALL)
+    last_end = text.rfind("</think>")
+    if last_end != -1:
+        result = text[last_end + len("</think>"):]
         return result.strip()
 
     # 默认返回
