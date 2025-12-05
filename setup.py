@@ -86,39 +86,41 @@ with open('README.md', encoding="utf-8") as f:
 
 def do_setup():
     setup(
-        name='vlmeval',
-        version='0.1.0',
-        description='OpenCompass VLM Evaluation Kit',
-        author='Haodong Duan',
-        author_email='dhd.efz@gmail.com',
-        maintainer='Haodong Duan',
-        maintainer_email='dhd.efz@gmail.com',
+        name="vlmeval",
+        version="0.1.0",
+        description="OpenCompass VLM Evaluation Kit",
+        author="Haodong Duan",
+        author_email="dhd.efz@gmail.com",
+        maintainer="Haodong Duan",
+        maintainer_email="dhd.efz@gmail.com",
         long_description=readme,
-        long_description_content_type='text/markdown',
+        long_description_content_type="text/markdown",
         cmdclass={},
-        install_requires=parse_requirements('requirements.txt'),
+        install_requires=parse_requirements("requirements.txt"),
         setup_requires=[],
-        python_requires='>=3.7.0',
-        packages=find_namespace_packages(exclude=[
-            'test*',
-            'paper_test*',
-        ]),
+        python_requires=">=3.7.0",
+        packages=find_namespace_packages(
+            include=["vlmeval*"],
+            exclude=[
+                "test*",
+                "paper_test*",
+            ]
+        ),
         package_data={
-            "": ["*.yaml"],   # include all .yaml files in all packages
+            "": ["*.yaml"],  # include all .yaml files in all packages
         },
-        keywords=['AI', 'NLP', 'in-context learning'],
-        entry_points={
-            'console_scripts': ['vlmutil = vlmeval:cli']
-        },
+        keywords=["AI", "NLP", "in-context learning"],
+        entry_points={"console_scripts": ["vlmutil = vlmeval:cli"]},
         classifiers=[
-            'Programming Language :: Python :: 3.7',
-            'Programming Language :: Python :: 3.8',
-            'Programming Language :: Python :: 3.9',
-            'Programming Language :: Python :: 3.10',
-            'Intended Audience :: Developers',
-            'Intended Audience :: Education',
-            'Intended Audience :: Science/Research',
-        ])
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Intended Audience :: Developers",
+            "Intended Audience :: Education",
+            "Intended Audience :: Science/Research",
+        ],
+    )
 
 
 if __name__ == '__main__':
