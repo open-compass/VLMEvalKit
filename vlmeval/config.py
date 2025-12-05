@@ -1922,28 +1922,37 @@ rbdashmm_api_series_lmdeploy = {
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=3,
-        timeout=600
+        timeout=1000
     ),
     "rbdashmm3_5_DPO_38B_api": partial(
         RBdashChat3_5_API,
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=3,
-        timeout=600
+        timeout=1000
     ),
     "rbdashmm3_5_38B_api": partial(
         RBdashMMChat3_5_38B_API,
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=3,
-        timeout=600
+        timeout=1000
+    ),
+    "rbdashmm3_5_38B_self_leaderboard_api": partial(
+        RBdashMMChat3_5_38B_API,
+        api_base="http://42.81.81.239:8012/v1/chat/completions",
+        model="rbdashmm3_5_leaderboard",
+        temperature=0,
+        retry=3,
+        timeout=1000,
+        test_self_leaderboard=True
     ),
     "rbdashmm3_78B_api": partial(
         RBdashMMChat3_78B_API,
         api_base="http://0.0.0.0:23333/v1/chat/completions",
         temperature=0,
         retry=3,
-        timeout=600
+        timeout=1000
     )
 }
 

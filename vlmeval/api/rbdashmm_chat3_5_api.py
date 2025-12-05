@@ -31,9 +31,9 @@ def process_prediction_text(text):
             if inner:
                 return inner
 
-    redacted_pattern = r'<think>.*?</think>'
-    if re.search(redacted_pattern, text, re.DOTALL):
-        result = re.sub(redacted_pattern, '', text, flags=re.DOTALL)
+    last_end = text.rfind("</think>")
+    if last_end != -1:
+        result = text[last_end + len("</think>"):]
         return result.strip()
 
     # 默认返回
@@ -455,10 +455,12 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
                  api_base: str = None,
                  system_prompt: str = None,
                  max_tokens: int = 20480,
+                 test_self_leaderboard: bool = False,
                  **kwargs):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.max_tokens = max_tokens
         self.timeout = timeout
+        self.test_self_leaderboard = test_self_leaderboard
 
         key = os.environ.get('LMDEPLOY_API_KEY', key)
         api_base = os.environ.get('LMDEPLOY_API_BASE', api_base)
@@ -548,6 +550,9 @@ class RBdashMMChat3_5_38B_Wrapper(BaseAPI):
             self.system_prompt = R1_SYSTEM_PROMPT
         else:
             self.system_prompt = None
+
+        if self.test_self_leaderboard:
+            self.system_prompt = R1_SYSTEM_PROMPT
 
         input_msgs = self.prepare_inputs(inputs)
 
