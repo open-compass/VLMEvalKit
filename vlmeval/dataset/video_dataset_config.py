@@ -211,6 +211,7 @@ mvu_eval_dataset = {
     'MVU-Eval_16frame': partial(MVUEval, dataset='MVU-Eval', nframe=16),
 }
 
+
 supported_video_datasets = {}
 
 dataset_groups = [
