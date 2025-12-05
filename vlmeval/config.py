@@ -1944,7 +1944,16 @@ rbdashmm_api_series_lmdeploy = {
         temperature=0,
         retry=3,
         timeout=600
-    )
+    ),
+    "rbdashmm3_5_38B_self_leaderboard_api": partial(
+        RBdashMMChat3_5_38B_API,
+        api_base="",
+        model="rbdashmm3_5_leaderboard",
+        temperature=0,
+        retry=3,
+        timeout=1000,
+        test_self_leaderboard=True
+    ),
 }
 
 logics_series = {
