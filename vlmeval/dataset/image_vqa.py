@@ -3726,3 +3726,97 @@ class MathCanvas(ImageBaseDataset):
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
         return summary_dict
+
+
+class MMReason(ImageBaseDataset):
+    TYPE = 'VQA'
+    mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
+    DATASET_URL = {
+        'MMReason_testmini': mini_path,
+    }
+    DATASET_MD5 = {'MMReason_testmini': '630205345349ac51c9999d4fbfd1d630'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmreason import MMReason_auxeval_extract, MMReason_auxeval_score, MMReason_acc
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        # stage1: extract the answer
+        if not osp.exists(storage_extract):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MMReason evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_extract):
+                ans = load(tmp_file_extract)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMReason_auxeval_extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_extract,
+                )
+                ans = load(tmp_file_extract)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_extract'] == v['log_extract'] and ans[k]['extract'] == v['extract']
+
+            data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+            data['log_extract'] = [ans[idx]['log_extract'] for idx in data['index']]
+            dump(data, storage_extract)
+
+        # stage2: score the answer
+        if not osp.exists(storage_score):
+            data = load(storage_extract)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MMReason evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_score):
+                ans = load(tmp_file_score)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMReason_auxeval_score,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_score,
+                )
+                ans = load(tmp_file_score)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            dump(data, storage_score)
+
+        score = MMReason_acc(storage_score)
+        score_pth = storage_score.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score

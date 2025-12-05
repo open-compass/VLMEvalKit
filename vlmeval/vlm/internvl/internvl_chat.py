@@ -283,7 +283,7 @@ class InternVLChat(BaseModel):
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
-                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
+                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic', 'MMReason'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
