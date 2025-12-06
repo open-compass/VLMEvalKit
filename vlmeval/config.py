@@ -80,6 +80,7 @@ ungrouped = {
     "Pixtral-12B": partial(Pixtral, model_path="mistralai/Pixtral-12B-2409"),
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
     "KVL": partial(InternVLChat, model_path="amoeba04/KVL", version="V2.0"),
+    "VLM-3R": partial(VLM3R, model_path="Journey9ni/vlm-3r-llava-qwen2-lora"),
 }
 
 o1_key = os.environ.get('O1_API_KEY', None)
@@ -2195,6 +2196,8 @@ covt_series = {
         max_pixels=16384 * 28 * 28,
         use_custom_prompt=False,
     ),
+}
+
 bagel_series = {
     "BAGEL-7B-MoT": partial(Bagel, model_path='ByteDance-Seed/BAGEL-7B-MoT'),
 }
@@ -2338,7 +2341,7 @@ model_groups = [
 ]
 
 # add by EASI team
-model_groups.extend([bagel_series, spatial_related_models, sensesi_series, sensenova_si_series])
+model_groups.extend([bagel_series, spatial_related_models, sensenova_si_series])
 
 for grp in model_groups:
     supported_VLM.update(grp)

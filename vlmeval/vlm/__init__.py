@@ -122,3 +122,4 @@ from .insight_v import InsightV
 from .covt import CoVTChat
 from .granite_docling import DOCLING
 from .bagel_umm import Bagel
+from .vlm3r import VLM3R
