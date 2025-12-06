@@ -270,7 +270,7 @@ class VTCBench(ImageBaseDataset):
                 }
             
             hf_dataset = load_dataset(
-                self._DATASET_PATH, split=dataset, columns=COLUMNS_ORGINIAL
+                self._DATASET_PATH, split=task, columns=COLUMNS_ORGINIAL,
             )
             # apply transformation to VLMEval format
             hf_dataset = hf_dataset.map(
@@ -295,10 +295,6 @@ class VTCBench(ImageBaseDataset):
 
         return merged_data
 
-
-        # category <class 'str'> Retrieval
-
-        return data
     
     def build_prompt(self, line):
         if isinstance(line, int):
