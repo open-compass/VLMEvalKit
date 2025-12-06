@@ -12,7 +12,6 @@ from .video_base import VideoBaseDataset
 from .utils import build_judge
 from ..api import OpenAIWrapper
 from ..utils import track_progress_rich
-import decord
 
 EXTRACTION_PROMPT = (
     "Bellow is a description of a video clip:\n"
@@ -111,6 +110,7 @@ class DREAM(VideoBaseDataset):
         return dict(root=root, data_file=data_file)
 
     def save_video_frames(self, video):
+        import decord
         video_id = video.replace('video/', '')
 
         if self.fps > 0:
