@@ -219,10 +219,86 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
-    DATASET_URL={
-        'VTCBench': '/hdddata/zhaohongbo/VLMEvalKit/LMUData/VTCBench.tsv',
+    _DATASET_PATH = "MLLM-CL/VTCBench"
+    # Dataset URL mapping - points to different splits of HuggingFace dataset
+    DATASET_URL = {
+        "Retrieval": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+        "Reasoning": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+        "Memory": f"https://huggingface.co/datasets/{_DATASET_PATH}",
     }
-    DATASET_MD5 = {'VTCBench': '4ed6fa785fc0e1b1b9257d52160951e9'}
+
+    # MD5 values are empty as HuggingFace datasets are dynamically loaded
+    DATASET_MD5 = {
+        "Retrieval": "",
+        "Reasoning": "",
+        "Memory": "",
+    }
+    
+    @classmethod
+    def supported_datasets(cls):
+        return 'VTCBench' # TODO:check
+    
+    def load_data(self, dataset: str):
+        """Load dataset from HuggingFace"""
+
+        from datasets import load_dataset
+
+        COLUMNS_ORGINIAL = ["problem", "answers", "images"]
+        all_dataframes = []
+        current_index = 0
+        
+        for task in ["Retrieval", "Reasoning", "Memory"]:
+            
+            def _gen_fields(example: dict, idx: int) -> dict:
+                # example schema:
+                # problem: str
+                # answers: list[str]
+                # images: list[dict[str, bytes]] # bytes obj <=> jpeg image
+                def encode_image_bytes_to_base64(image_bytes) -> str:
+                    """Encode image bytes to base64 string."""
+                    return base64.b64encode(image_bytes).decode()
+
+                b64_imgs: list[str] = [
+                    encode_image_bytes_to_base64(img["bytes"]) for img in example["images"]
+                ]
+                return {
+                    "index": int(idx) + current_index,
+                    "question": example["problem"],
+                    "answer": json.dumps(example["answers"], ensure_ascii=False),
+                    "image": json.dumps(b64_imgs),
+                    "category": task, 
+                }
+            
+            hf_dataset = load_dataset(
+                self._DATASET_PATH, split=dataset, columns=COLUMNS_ORGINIAL
+            )
+            # apply transformation to VLMEval format
+            hf_dataset = hf_dataset.map(
+                _gen_fields,
+                remove_columns=COLUMNS_ORGINIAL,
+                with_indices=True,
+                num_proc=16,
+            )
+            data = hf_dataset.to_pandas()
+            all_dataframes.append(data)
+            current_index += len(data)
+            
+        # Concatenate all dataframes
+        merged_data = pd.concat(all_dataframes, ignore_index=False)
+
+        # now data has schema:
+        # index <class 'int'> 0
+        # question <class 'str'> What are all the special magic numbers for 019cc30e-2da8-4162-b145-df514e17 and demonic-heaven mentioned in the provided text?
+        # answer <class 'str'> ["9199619", "1202641"]
+        # image <class 'list'> [/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAx...XMBiHGRwbbBzgefJ8knJJ9ydXdTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQf/2Q==, ...]
+        # category <class 'str'> Retrieval
+
+        return merged_data
+
+
+        # category <class 'str'> Retrieval
+
+        return data
     
     def build_prompt(self, line):
         if isinstance(line, int):
