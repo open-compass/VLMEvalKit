@@ -164,6 +164,10 @@ scripts/*ttf
 .history
 cache_dir/*
 
+# Ignore data and ckpts
+*.pth
+data
+
 # Evaluation Outputs
 outputs/*
 demo.ipynb
