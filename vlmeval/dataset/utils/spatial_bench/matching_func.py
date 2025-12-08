@@ -1,22 +1,42 @@
 import re
 import ast
 
+from num2words import num2words
 
-ZW_RE = re.compile(r'[\u200b\u200c\u200d\ufeff]')
-_NUM_RE = re.compile(r'[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?')
 
-# Strongest signal: explicit <answer>...</answer> block with a leading letter (A–J allowed)
+# Zero-width characters (BOM, ZWSP, ZWNJ, ZWJ)
+ZW_RE = re.compile(
+    r'[\u200b\u200c\u200d\ufeff]'
+)
+
+# Generic numeric pattern: integer / float / scientific notation
+NUMERIC_PATTERN = r'[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?'
+
+_NUM_RE = re.compile(NUMERIC_PATTERN)
+
+# <answer>...</answer> block with a leading option letter (A–J)
 TAGGED_ANSWER_BLOCK = re.compile(
-    r'<\s*answer\b[^>]*>\s*([A-Ja-j])(?:\s*[\.．:：\)\]】、])?.*?<\s*/\s*answer\s*>',
-    flags=re.IGNORECASE | re.DOTALL
+    r'<\s*answer\b[^>]*>'  # <answer ...>
+    r'\s*'
+    r'([A-Ja-j])'
+    r'(?:\s*[\.．:：\)\]】、])?'  # Optional trailing punctuation, e.g. A. / A: / A) etc.
+    r'.*?'
+    r'<\s*/\s*answer\s*>',
+    flags=re.IGNORECASE | re.DOTALL,
 )
 
+# Numeric answer inside <answer>...</answer>
 TAGGED_NUMERIC_ANSWER = re.compile(
-    r'<\s*answer\b[^>]*>\s*([-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?)(?:[^\d<][^<]*)?<\s*/\s*answer\s*>',
-    flags=re.IGNORECASE | re.DOTALL
+    rf'<\s*answer\b[^>]*>'
+    rf'\s*'
+    rf'({NUMERIC_PATTERN})'
+    rf'(?:[^\d<][^<]*)?'
+    rf'<\s*/\s*answer\s*>',
+    flags=re.IGNORECASE | re.DOTALL,
 )
 
 
+# Matching func for mcq
 def can_match_option(
     answer_text: str,
     choices=None,
@@ -63,26 +83,50 @@ def can_match_option(
     # 3) Tail anchors: before </answer> / </think>
     tail_block = text[-tail_window:]
     PAT_ANS = re.compile(
-        r'(?<![A-Za-z])[\(\[\{（【]?\s*([%s])\s*[\)\]\}）】]?\s*</\s*answer\s*>' % letters,
-        re.IGNORECASE
+        rf'(?<![A-Za-z])'          # Not preceded by a letter
+        rf'[\(\[\{{（【]?\s*'       # Optional left bracket + whitespace
+        rf'([{letters}])\s*'       # One option letter from `letters`
+        rf'[\)\]\}}）】]?\s*'       # Optional right bracket + whitespace
+        rf'</\s*answer\s*>',       # Closing </answer> tag
+        re.IGNORECASE,
     )
     PAT_THINK = re.compile(
-        r'(?<![A-Za-z])[\(\[\{（【]?\s*([%s])\s*[\)\]\}）】]?\s*</\s*think\s*>' % letters,
-        re.IGNORECASE
+        rf'(?<![A-Za-z])'
+        rf'[\(\[\{{（【]?\s*'
+        rf'([{letters}])\s*'
+        rf'[\)\]\}}）】]?\s*'
+        rf'</\s*think\s*>',
+        re.IGNORECASE,
     )
     for pat in (PAT_ANS, PAT_THINK):
         m = pat.search(tail_block)
         if m:
             return m.group(1).upper()
 
-    # Helpers shared by steps 4 & 5
+    # Helpers for steps 4 & 5
+    # Punctuation treated as tight boundary after a token (EN + CN)
     _PUNC_TIGHT = r"\.,:;!?\)\]】》」』，。；、：）】》」』"
-    OPTION_LINE_PREFIX = re.compile(r'^(?:[*_>\-\s]*)(?:option|选项)\s+[A-J]\s*[:：]', re.IGNORECASE)
-    MD_SINGLE = re.compile(r'^\s*[*_`>（）\[\]【】\(\)]*\s*([A-Fa-f])\s*[*_`（）\[\]【】\(\)]*\s*$')
-    LINE_START_LABELED = re.compile(r'^\s*([A-F])\s*[\.．:：\)\]】、-]\s+', re.IGNORECASE)
-    # Uppercase-only inline token (not part of words)
+    # Lines that start with "option A:" / "选项 A:" style prefixes
+    OPTION_LINE_PREFIX = re.compile(
+        r'^(?:[*_>\-\s]*)(?:option|选项)\s+[A-J]\s*[:：]',
+        re.IGNORECASE,
+    )
+    # Lines whose content is a single option letter (with optional markdown/brackets)
+    MD_SINGLE = re.compile(
+        r'^\s*[*_`>（）\[\]【】\(\)]*\s*([A-Fa-f])\s*[*_`（）\[\]【】\(\)]*\s*$'
+    )
+    # Lines starting with "A. ...", "B) ...", etc.
+    LINE_START_LABELED = re.compile(
+        r'^\s*([A-F])\s*[\.．:：\)\]】、-]\s+',
+        re.IGNORECASE,
+    )
+    # Inline standalone uppercase token (not part of a word), e.g. the A in "answer A."
     TOKEN_INLINE = re.compile(
-        r'(?<![A-Za-z])[*_`（\[\{\(]*\s*([A-F])\s*[*_`）\]\}\)]*(?=$|[\s%s])' % _PUNC_TIGHT
+        rf'(?<![A-Za-z])'          # Not preceded by a letter
+        rf'[*_`（\[\{{\(]*\s*'     # optional prefix symbols + whitespace
+        rf'([A-F])\s*'             # Capture a single uppercase letter A–F
+        rf'[*_`）\]\}})]*'         # Optional suffix symbols
+        rf'(?=$|[\s{_PUNC_TIGHT}])'  # Followed by end, whitespace, or tight punctuation
     )
 
     def _pick_from_lines(lines):
@@ -119,12 +163,18 @@ def can_match_option(
     if pick:
         return pick
 
-    # 6) Phrase-style conclusion (tail window; last match; upper && lower CASE)
+    # 6) Phrase-style conclusion in tail window (last match)
     PHRASE_AFTER = re.compile(
-        r'(?i)(?:final\s*answer|the\s*answer\s*is|answer(?:\s*is)?|correct\s*answer|'
-        r'答案|最终答案|结论|所以|因此|我选(?:择)?|选择|选)\s*[:：>＝=]?\s*'
-        r'[\(\[\{（【]?\s*([%s])\s*[\)\]\}）】]?(?:\b|[.)、。])' % letters
+        # Prefix phrases like "final answer", "the answer is", "答案", "我选", etc.
+        rf'(?i)(?:final\s*answer|the\s*answer\s*is|answer(?:\s*is)?|correct\s*answer|'
+        rf'答案|最终答案|结论|所以|因此|我选(?:择)?|选择|选)'
+        rf'\s*[:：>＝=]?\s*'         # optional separator (:, ：, >, ＝, =)
+        rf'[\(\[\{{（【]?\s*'        # optional left bracket
+        rf'([{letters}])'           # option letter from `letters`
+        rf'\s*[\)\]\}}）】]?'        # optional right bracket
+        rf'(?:\b|[.)、。])'          # followed by boundary / end punctuation
     )
+
     m = PHRASE_AFTER.search(text)
     if m:
         return m.group(1).upper()
@@ -138,9 +188,15 @@ def can_match_option(
     cleaned = "\n".join(cleaned_lines)
 
     TOKEN_UPPER_GLOBAL = re.compile(
-        r'(?<![A-Za-z])[\(\[\{（【]?\s*([%s])\s*[\)\]\}）】]?(?![A-Za-z])' % letters
+        # Standalone option letter (not part of a word)
+        rf'(?<![A-Za-z])'          # left side not a letter
+        rf'[\(\[\{{（【]?\s*'       # optional left bracket + spaces
+        rf'([{letters}])\s*'       # one letter from `letters`
+        rf'[\)\]\}}）】]?'          # optional right bracket
+        rf'(?![A-Za-z])'           # right side not a letter
     )
-    tokens = TOKEN_UPPER_GLOBAL.findall(cleaned)  # uppercase-only by pattern
+    tokens = TOKEN_UPPER_GLOBAL.findall(cleaned)
+
     uniq = sorted(set(tokens))
     if len(uniq) == 1:
         return uniq[0]
@@ -158,11 +214,43 @@ def _after_think(text: str) -> str:
     return text
 
 
-def _first_number(s: str):
-    m = _NUM_RE.search(s)
-    return float(m.group()) if m else None
+def _last_number(s: str):
+    nums = re.findall(_NUM_RE, s)
+    if nums:
+        return float(nums[-1])
+    return None
 
 
+def build_word2num(max_n: int = 99, lang: str = "en"):
+    mapping = {}
+    for i in range(0, max_n + 1):
+        word = num2words(i, lang=lang)
+        mapping[word] = i
+    return mapping
+
+
+WORD2NUM = build_word2num(20)
+WORD_NUMBER_PATTERN = re.compile(
+    r"\b(" + "|".join(re.escape(w) for w in WORD2NUM.keys()) + r")\b",
+    flags=re.IGNORECASE,
+)
+
+
+def normalize_number_words(text: str) -> str:
+    """
+    Replace all recognizable English number phrases in `text`
+    with their Arabic numeral strings.
+    """
+    def _repl(m: re.Match) -> str:
+        key = m.group(1).lower()
+        val = WORD2NUM.get(key)
+        # Fallback: if not found in WORD2NUM, keep original text
+        return str(val) if val is not None else m.group(0)
+
+    return WORD_NUMBER_PATTERN.sub(_repl, text)
+
+
+# Matching func for NA
 def can_match_na(pred):
     try:
         if isinstance(pred, list):
@@ -175,8 +263,9 @@ def can_match_na(pred):
 
         for raw in candidates:
             text = ZW_RE.sub('', raw.strip())
+            text = normalize_number_words(text)
 
-            # <answer>
+            # 1) <answer> ... </answer> numeric
             m = TAGGED_NUMERIC_ANSWER.search(text)
             if m:
                 try:
@@ -184,16 +273,21 @@ def can_match_na(pred):
                 except Exception:
                     pass
 
-            # after </think>
+            # 2) after </think>: use *last* number in the tail
             tail = _after_think(text)
-            v = _first_number(tail)
+            v = _last_number(tail)
             if v is not None:
                 return v
 
-            # first number
-            v = _first_number(text)
-            if v is not None:
-                return v
+            # 3) global fallback:
+            #    - if only one unique number -> that one
+            #    - else last number in full text
+            nums = re.findall(_NUM_RE, text)
+            if nums:
+                uniq = sorted(set(nums))
+                if len(uniq) == 1:
+                    return float(uniq[0])
+                return float(nums[-1])
 
         return None
     except Exception:

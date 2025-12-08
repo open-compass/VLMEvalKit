@@ -9,7 +9,7 @@ from ..smp.misc import toliststr
 from ..smp.file import load
 from .image_base import ImageBaseDataset
 from .utils.spatial_bench.cal_scores import (
-    compute_mcq_score, compute_na_score, mean_relative_accuracy
+    build_mcq_score_fn, build_na_score_fn, mean_relative_accuracy
 )
 
 
@@ -154,6 +154,16 @@ class SparBench(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', '_result.pkl')
+        base_no_suffix = eval_file[:-(len(suffix) + 1)]
+
+        model_name = judge_kwargs.get('model', None)
+        if model_name in (None, 'exact_matching', 'extract_matching'):
+            judge_tag = '_extract_matching'
+        else:
+            judge_tag = f'_llm_{model_name}'
+
+        xlsx_path = f"{base_no_suffix}_{judge_tag}.xlsx"
+        acc_tsv_path = f"{base_no_suffix}_acc.tsv"
 
         data = load(eval_file)
         data = data.sort_values(by='index')
@@ -167,13 +177,16 @@ class SparBench(ImageBaseDataset):
 
         print(f"[split] MCQ={len(mcq_data)}, NA={len(na_data)}, SPECIAL={len(special_data)}")
 
+        # Scoring func selection from judge_kwargs['model']
         if len(mcq_data):
-            mcq_scored = compute_mcq_score(mcq_data)
+            mcq_score_fn = build_mcq_score_fn(**judge_kwargs)
+            mcq_scored = mcq_score_fn(mcq_data)
         else:
             mcq_scored = mcq_data
 
         if len(na_data):
-            na_scored = compute_na_score(na_data)
+            na_score_fn = build_na_score_fn(**judge_kwargs)
+            na_scored = na_score_fn(na_data)
         else:
             na_scored = na_data
 
@@ -199,11 +212,6 @@ class SparBench(ImageBaseDataset):
             print(f"[save] result saved to {result_file}")
         except Exception as e:
             warnings.warn(f"[save] failed to save result to {result_file}: {e}")
-
-        # ---- prepare paths for xlsx / tsv ----
-        base_no_suffix = eval_file[:-(len(suffix) + 1)]
-        xlsx_path = f"{base_no_suffix}_extract_matching.xlsx"
-        acc_tsv_path = f"{base_no_suffix}_acc.tsv"
 
         # ---- save extract_matching.xlsx ----
         try:

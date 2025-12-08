@@ -68,12 +68,15 @@ class EmbSpatialBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import compute_mcq_score, eval_mcq_core
+        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
 
-        return eval_mcq_core(
+        # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
+        score_fn = build_mcq_score_fn(**judge_kwargs)
+
+        return eval_mcq_score(
             load_fn=load,
             eval_file=eval_file,
-            score_fn=compute_mcq_score,
+            score_fn=score_fn,
             group_col='data_source',
             order=self._task_category(),
             dataset_name=getattr(self, 'dataset_name', 'EmbSpatialBench')

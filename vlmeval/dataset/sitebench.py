@@ -90,13 +90,23 @@ class SiteBenchBase:
         return dataset_path
 
     def evaluate(self, eval_file, **kwargs):
-        from .utils.spatial_bench.cal_scores import compute_mcq_score, compute_caa_score
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, compute_caa_score
 
         suffix = eval_file.split('.')[-1]
         result_file = eval_file.replace(f'.{suffix}', '_result.pkl')
-
         base_no_suffix = eval_file[:-(len(suffix) + 1)]
-        xlsx_path = f"{base_no_suffix}_extract_matching.xlsx"
+
+        score_fn = build_mcq_score_fn(**kwargs)  # Select MCQ scoring func according to judge_kwargs['model'].
+
+        # Read judge mode / model from the scorer's metadata.
+        judge_mode = getattr(score_fn, 'judge_mode', 'rule')              # 'rule' or 'llm'
+        judge_model = getattr(score_fn, 'judge_model', kwargs.get('model', None))
+
+        judge_tag = 'extract_matching'
+        if judge_mode == 'llm':
+            judge_tag = f'llm_{judge_model}' if judge_model else 'llm_matching'
+
+        xlsx_path = f"{base_no_suffix}_{judge_tag}.xlsx"
         acc_tsv_path = f"{base_no_suffix}_acc.tsv"
 
         data = load(eval_file)
@@ -104,7 +114,8 @@ class SiteBenchBase:
             data = data.sort_values(by='index')
         data['prediction'] = [str(x) for x in data['prediction']]
 
-        mcq_scored = compute_mcq_score(data.copy())
+        # compute per-sample hit (MCQ)
+        mcq_scored = score_fn(data.copy())
 
         cat_order = self._task_category()
 
