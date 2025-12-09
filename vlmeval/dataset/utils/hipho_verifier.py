@@ -42,15 +42,18 @@ import threading
 def timeout(timeout_seconds: int = 10):
     if os.name == "posix":
         import signal
+
         def decorator(func):
+
             def handler(signum, frame):
                 raise TimeoutError("verify timed out!")
+
             def wrapper(*args, **kwargs):
                 # Check if in main thread
                 if threading.current_thread() != threading.main_thread():
                     # In subprocess/thread, execute function directly without signal
                     return func(*args, **kwargs)
-                
+
                 old_handler = signal.getsignal(signal.SIGALRM)
                 signal.signal(signal.SIGALRM, handler)
                 signal.alarm(timeout_seconds)
@@ -203,6 +206,7 @@ unit_texts = [
 ]
 unit_texts.extend([t + "s" for t in unit_texts])
 
+
 def _strip_string(string):
     def _fix_fracs(string):
         substrs = string.split("\\frac")
@@ -331,7 +335,7 @@ def _strip_string(string):
 
     # remove percentage
     string = string.replace("\\%", "")
-    string = string.replace("\%", "")
+    string = string.replace(r"\%", "")
 
     # " 0." equivalent to " ." and "{0." equivalent to "{." Alternatively, add "0" if "." is the start of the string
     string = string.replace(" .", " 0.")
@@ -357,7 +361,9 @@ def _strip_string(string):
     # remove spaces
     string = string.replace(" ", "")
 
-    # \frac1b or \frac12 --> \frac{1}{b} and \frac{1}{2}, etc. Even works with \frac1{72} (but not \frac{72}1). Also does a/b --> \\frac{a}{b}
+    # \frac1b or \frac12 --> \frac{1}{b} and \frac{1}{2}, etc.
+    # Even works with \frac1{72} (but not \frac{72}1).
+    # Also does a/b --> \\frac{a}{b}
     string = _fix_fracs(string)
 
     # manually change 0.5 --> \frac{1}{2}
@@ -372,13 +378,14 @@ def _strip_string(string):
 
 def _strip_properly_formatted_commas(expr: str):
     # We want to be careful because we don't want to strip tuple commas
-    p1 = re.compile("(\d)(,)(\d\d\d)($|\D)")
+    p1 = re.compile(r"(\d)(,)(\d\d\d)($|\D)")
     while True:
-        next_expr = p1.sub("\\1\\3\\4", expr)
+        next_expr = p1.sub(r"\1\3\4", expr)
         if next_expr == expr:
             break
         expr = next_expr
     return next_expr
+
 
 def _is_float(num: str) -> bool:
     try:
@@ -387,14 +394,17 @@ def _is_float(num: str) -> bool:
     except ValueError:
         return False
 
+
 def _is_int(x: float) -> bool:
     try:
         return abs(x - int(round(x))) <= 1e-7
     except:
         return False
 
+
 def _is_frac(expr: str) -> bool:
     return bool(re.search(r"^-?[0-9]+.?/0*[1-9][0-9]*.?$", expr))
+
 
 def _str_is_int(x: str) -> bool:
     try:
@@ -404,10 +414,12 @@ def _str_is_int(x: str) -> bool:
     except:
         return False
 
+
 def _str_to_int(x: str) -> bool:
     x = x.replace(",", "")
     x = float(x)
     return int(x)
+
 
 def _inject_implicit_mixed_number(step: str):
     """
@@ -415,8 +427,9 @@ def _inject_implicit_mixed_number(step: str):
     e.g. 7 3/4 => 7+3/4
     """
     p1 = re.compile("([0-9]) +([0-9])")
-    step = p1.sub("\\1+\\2", step)  ## implicit mults
+    step = p1.sub("\\1+\\2", step)  # implicit mults
     return step
+
 
 def _parse_latex(expr: str) -> str:
     """Attempts to parse latex to an expression sympy can read."""
@@ -443,12 +456,13 @@ def mathd_normalize_answer(answer: Optional[str]) -> Optional[str]:
     answer = answer.strip()
     try:
         # Remove enclosing `\text{}`.
-        m = re.search("^\\\\text\{(?P<text>.+?)\}$", answer)
+        m = re.search(r"^\\text\{(?P<text>.+?)\}$", answer)
         if m is not None:
             answer = m.group("text").strip()
         return _strip_string(answer)
     except:
         return answer
+
 
 def sympy_normalize_answer(expr: str) -> str:
     """Normalize answer expressions."""
@@ -456,7 +470,7 @@ def sympy_normalize_answer(expr: str) -> str:
         return None
 
     # Remove enclosing `\text{}`.
-    m = re.search("^\\\\text\{(?P<text>.+?)\}$", expr)
+    m = re.search(r"^\\text\{(?P<text>.+?)\}$", expr)
     if m is not None:
         expr = m.group("text")
 
@@ -479,7 +493,7 @@ def sympy_normalize_answer(expr: str) -> str:
             if _expr != "":
                 expr = _expr
 
-    expr = re.sub(f"\^ *\\\\circ", "", expr)
+    expr = re.sub(r"\^ *\\circ", "", expr)
 
     if len(expr) > 0 and expr[0] == "{" and expr[-1] == "}":
         expr = expr[1:-1]
@@ -513,7 +527,7 @@ def sympy_normalize_answer(expr: str) -> str:
 
 
 def judge_MC(pred, gold):
-    common_answer = [chr(i) for i in range(65, 91)] # 'A'~'Z'
+    common_answer = [chr(i) for i in range(65, 91)]  # 'A'~'Z'
     if pred == gold:
         return True
     else:
@@ -527,7 +541,8 @@ def judge_MC(pred, gold):
             return True
         else:
             return False
-        
+
+
 def judge_TF(pred, gold):
     def contains_chinese(d):
         def is_chinese_char(ch):
@@ -543,7 +558,7 @@ def judge_TF(pred, gold):
             return False
 
         return check(d)
-    
+
     if contains_chinese(pred):
         if pred in ["是", "对", "正确", "能"]:
             pred = "TRUE"
@@ -560,9 +575,9 @@ def judge_TF(pred, gold):
     if gold in ["FALSE", "NO", "F", "N"]:
         gold = "FALSE"
     if pred in ["TRUE", "YES", "T", "Y"]:
-        pred = "TRUE" 
+        pred = "TRUE"
     if pred in ["FALSE", "NO", "F", "N"]:
-        pred = "FALSE" 
+        pred = "FALSE"
     return pred == gold
 
 
@@ -577,8 +592,10 @@ def grade_answer_mathd(given_answer: str, ground_truth: str) -> bool:
 
 # sympy might hang -- we don't care about trying to be lenient in these cases
 BAD_SUBSTRINGS = ["^{", "^("]
-BAD_REGEXES = ["\^[0-9]+\^", "\^[0-9][0-9]+"]
+BAD_REGEXES = [r"\^[0-9]+\^", r"\^[0-9][0-9]+"]
 TUPLE_CHARS = "()[]"
+
+
 def split_tuple(expr: str):
     """
     Split the elements in a tuple/interval, while handling well-formatted commas in large numbers
@@ -610,6 +627,7 @@ def _sympy_parse(expr: str):
         evaluate=False,
     )
 
+
 def should_allow_eval(expr: str):
     def count_unknown_letters_in_expr(expr: str):
         expr = expr.replace("sqrt", "")
@@ -629,6 +647,7 @@ def should_allow_eval(expr: str):
             return False
 
     return True
+
 
 def handle_pi(string, pi):
     if isinstance(string, str) and "pi" in string:
@@ -656,6 +675,7 @@ def handle_pi(string, pi):
 
     return string
 
+
 @timeout(timeout_seconds=30)
 def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
     def is_scientific_notation(expr):
@@ -672,7 +692,9 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
 
     def count_decimal_places(x, tol=1e-6):
         """
-        Return the number of significant decimal places for float x, keeping only important digits and ignoring near-zero floating point tails.
+        Return the number of significant decimal places for float x,
+        keeping only important digits and ignoring near-zero floating
+        point tails.
         """
         with localcontext() as ctx:
             ctx.prec = 20  # High precision to prevent errors
@@ -685,7 +707,7 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
             clean_decimal = ""
             for i, ch in enumerate(decimal_part):
                 clean_decimal += ch
-                if abs(x - round(x, i+1)) <= tol:
+                if abs(x - round(x, i + 1)) <= tol:
                     break
 
             return len(clean_decimal)
@@ -735,14 +757,14 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
                 else:
                     pred = to_scientific_notation_sympy(float(pred))
                     exp_pred = _sympy_parse(pred)
-                
+
             if is_scientific_notation(exp_pred) and is_scientific_notation(exp_gold):
                 base_pred, exponent_pred = N(exp_pred.args[0]), N(exp_pred.args[1].args[1])
                 base_gold, exponent_gold = N(exp_gold.args[0]), N(exp_gold.args[1].args[1])
                 min_decimal_places = min(count_decimal_places(base_gold), count_decimal_places(base_pred))
                 base_pred = round(base_pred, min_decimal_places)
                 base_gold = round(base_gold, min_decimal_places)
-                
+
                 if exponent_pred == exponent_gold and abs(base_pred - base_gold) <= precision * 1.01:
                     return True
             else:
@@ -752,6 +774,7 @@ def are_equal_under_sympy(gold: str, pred: str, precision: float = 2e-3):
         pass
 
     return False
+
 
 def grade_answer_sympy(given_answer: str, ground_truth: str) -> bool:
     ground_truth_normalized = sympy_normalize_answer(ground_truth)
@@ -776,13 +799,16 @@ def grade_answer_sympy(given_answer: str, ground_truth: str) -> bool:
     elif len(ground_truth_elems) != len(given_elems):
         is_correct = False
     else:
-        for ground_truth_elem, given_elem in zip(ground_truth_elems, given_elems):
+        for ground_truth_elem, given_elem in zip(ground_truth_elems,
+                                                 given_elems):
             if _is_frac(ground_truth_elem) and _is_frac(given_elem):
-                # if fractions aren't reduced, then shouldn't be marked as correct
-                # so, we don't want to allow sympy.simplify in this case
+                # if fractions aren't reduced, then shouldn't be marked as
+                # correct, so we don't want to allow sympy.simplify in this
+                # case
                 is_correct = ground_truth_elem == given_elem
             # elif _str_is_int(ground_truth_elem) != _str_is_int(given_elem):
-            #     # if the ground truth answer is an integer, we require the given answer to be a strict match (no sympy.simplify)
+            #     # if the ground truth answer is an integer, we require the
+            #     # given answer to be a strict match (no sympy.simplify)
             #     is_correct = False
             else:
                 is_correct = judge_MC(given_elem, ground_truth_elem) or judge_TF(given_elem, ground_truth_elem)
@@ -850,6 +876,7 @@ def repeatness(s: str):
 
     return (cnt * 2 / (n * (n + 1))) > 0.2
 
+
 class timeout:
     def __init__(self, seconds=1, error_message="Timeout"):
         self.seconds = seconds
@@ -868,6 +895,7 @@ class timeout:
         if self.is_main_thread:
             signal.alarm(0)
 
+
 def grade_answer_math_verify(given_answer: str, ground_truth: str) -> bool:
     try:
         with timeout(5):
@@ -876,13 +904,13 @@ def grade_answer_math_verify(given_answer: str, ground_truth: str) -> bool:
                     len(ground_truth) > 128 and repeatness(ground_truth)
                 ):
                     return False, given_answer, ground_truth
-                
+
                 # Next call math verify.
                 given_answer.replace("\n", "")
                 ground_truth.replace("\n", "")
-                if not "$" in given_answer:
+                if "$" not in given_answer:
                     given_answer = f"${given_answer}$"
-                if not "$" in ground_truth:
+                if "$" not in ground_truth:
                     ground_truth = f"${ground_truth}$"
                 given_answer = parse(
                     given_answer,
@@ -923,7 +951,8 @@ def attach_wrapper(obj, func=None):
     setattr(obj, func.__name__, func)
     return func
 
-def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_info=False):
+
+def retry(max_attempts: int = 3, delay: int = 1, print_trace_back=False, return_error_info=False):
     assert isinstance(max_attempts, int) and isinstance(delay, int), 'Parameters must be integers'
 
     def decorator(func):
@@ -944,7 +973,7 @@ def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_
                 return error_info
             else:
                 return None
-        
+
         @attach_wrapper(wrapper)
         def set_max_attempts(new_max_attempts):
             nonlocal max_attempts
@@ -960,6 +989,7 @@ def retry(max_attempts:int=3, delay:int=1, print_trace_back=False, return_error_
         return wrapper
     return decorator
 
+
 class Model_args:
     def __init__(self, judge_model=None):
         if judge_model:
@@ -970,26 +1000,33 @@ class Model_args:
             self.use_model = False
             self.judge_model = None
 
-def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str, model_args: Model_args, debug: bool = True, log_callback=None) -> bool:
+
+def grade_answer_xverify(given_answer: str, ground_truth: str, problem: str,
+                         model_args: Model_args, debug: bool = True,
+                         log_callback=None) -> bool:
     def safe_debug_log(message):
         if debug:
             if log_callback:
                 log_callback(f"[DEBUG] {message}")
             else:
                 print(f"[DEBUG] {message}")
-    
-    safe_debug_log(f"[DEBUG] grade_answer_xverify called with:")
+
+    safe_debug_log("[DEBUG] grade_answer_xverify called with:")
     safe_debug_log(f"[DEBUG]   given_answer: {given_answer}")
     safe_debug_log(f"[DEBUG]   ground_truth: {ground_truth}")
-    safe_debug_log(f"[DEBUG]   problem: {problem[:100]}..." if len(problem) > 100 else f"[DEBUG]   problem: {problem}")
-    safe_debug_log(f"[DEBUG]   judge_model: {model_args.judge_model.__class__.__name__ if model_args.judge_model else 'None'}")
-    
-    
+    safe_debug_log(
+        f"[DEBUG]   problem: {problem[:100]}..."
+        if len(problem) > 100
+        else f"[DEBUG]   problem: {problem}")
+    safe_debug_log(
+        f"[DEBUG]   judge_model: "
+        f"{model_args.judge_model.__class__.__name__ if model_args.judge_model else 'None'}")
+
     # Check if judge model is available
     if not model_args.use_model or not model_args.judge_model:
         safe_debug_log("No judge model available for xverify")
         return False
-        
+
     prompt = f'''
 You are a diligent and precise assistant tasked with evaluating the correctness of responses. You will
 receive a question, an output sentence, and the correct answer. Your task is to determine if the output
@@ -1002,7 +1039,7 @@ modify or correct earlier ones. In such cases, compare the final answer with the
 final answer is unclear or incorrect, respond with [Incorrect].
 2. **Mathematical Problems**: If the formats differ but the answers are mathematically equivalent such as 256/55=4.65,
 respond with [Correct].
-3. **Phycis Problems**: If the values match such as 3=3 \, \\text{{GHz}} return [Correct].
+3. **Phycis Problems**: If the values match such as 3=3 \\, \\text{{GHz}} return [Correct].
 4. **Explicit Options**: If the question provides explicit candidate answers, the output will be
 considered correct if it clearly indicates the correct option's code or the correct option's content.
 5. **No Explicit Options**: If the question does not provide explicit options, the output must align
@@ -1013,40 +1050,40 @@ Output sentence: """{given_answer}"""
 Correct answer: {ground_truth}
 
 ⚠️ Final Instruction:
-You must respond with exactly one of the following: [Correct] or [Incorrect].  
-❌ Do NOT include any explanation, reasoning, or additional text.  
+You must respond with exactly one of the following: [Correct] or [Incorrect].
+❌ Do NOT include any explanation, reasoning, or additional text.
 🚫 Any deviation from this format (even a single word) will be considered INVALID.
 
 Judgement:
 '''
-    
+
     safe_debug_log("Constructed prompt for xverify:")
     safe_debug_log(f"{prompt[:200]}...")
-    safe_debug_log(f"Calling judge model for xverify")
-    
+    safe_debug_log("Calling judge model for xverify")
+
     try:
         # Use judge model directly instead of creating OpenAI client
         response = model_args.judge_model.generate(prompt)
-        
+
         if response == FAIL_MSG or not response:
             safe_debug_log("Judge model failed to generate response")
             return False
-        
+
         correct_stripped = response.strip()
         is_correct = correct_stripped in ["Correct", "[Correct]"]
-        
+
         safe_debug_log(f"Judge model response: {correct_stripped}")
         safe_debug_log(f"Final xverify result: {is_correct}")
-        
+
         return is_correct
-        
+
     except Exception as e:
         safe_debug_log(f"xverify judge model call failed with error: {type(e).__name__}: {e}")
         import traceback
         safe_debug_log(f"Full traceback: {traceback.format_exc()}")
         return False
 
-    
+
 def last_boxed_only_string(string):
     idx = string.rfind("\\boxed")
     if idx < 0:
@@ -1067,21 +1104,23 @@ def last_boxed_only_string(string):
                 break
         i += 1
 
-    if right_brace_idx == None:
+    if right_brace_idx is None:
         retval = None
     else:
-        retval = string[idx : right_brace_idx + 1]
+        retval = string[idx:right_brace_idx + 1]
 
     return retval
+
 
 def remove_boxed(s):
     left = "\\boxed{"
     try:
         assert s[: len(left)] == left
         assert s[-1] == "}"
-        return s[len(left) : -1]
+        return s[len(left):-1]
     except:
         return None
+
 
 def extract_boxed_answer(solution: str) -> str:
     """Extract the answer from inside a LaTeX \\boxed{} command"""
@@ -1089,19 +1128,21 @@ def extract_boxed_answer(solution: str) -> str:
     solution = remove_boxed(solution)
     return solution
 
-def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use_xverify=False, debug=True, log_callback=None, judge_model=None):
+
+def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None,
+          use_xverify=False, debug=True, log_callback=None, judge_model=None):
     def safe_debug_log(message):
         if debug:
             if log_callback:
                 log_callback(f"[DEBUG] {message}")
             else:
                 print(f"[DEBUG] {message}")
-    
+
     safe_debug_log("grade function called:")
     safe_debug_log(f"  model_answer: {model_answer}")
     safe_debug_log(f"  gt_answer: {gt_answer}")
     safe_debug_log(f"  use_xverify: {use_xverify}")
-    
+
     if "\\boxed" in gt_answer:
         gt_answer = extract_boxed_answer(gt_answer)
     score_by = "not_scored"
@@ -1109,7 +1150,7 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
     extracted_pred = pred
     extracted_gt = gold
     safe_debug_log(f"grade_answer_mathd result: {correct}")
-    
+
     split_answer = model_answer.split("=")[-1]
     split_gt = gt_answer.split("=")[-1]
     enable_split = (split_answer != extracted_pred) or (split_gt != gt_answer)
@@ -1125,36 +1166,44 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
     else:
         score_by = "mathd"
         safe_debug_log("Using mathd result, skipping other methods")
-        
+
     if not correct:
         correct, pred, gold = grade_answer_math_verify(model_answer, gt_answer)
         extracted_pred = pred
         extracted_gt = gold
         safe_debug_log(f"grade_answer_math_verify result: {correct}")
         try:
-            if (isinstance(extracted_pred[0], sympy.core.numbers.Integer) or isinstance(extracted_pred[0], sympy.core.numbers.Float) or (isinstance(extracted_pred[0], sympy.core.numbers.Rational))) and isinstance(extracted_gt[0], sympy.sets.sets.Interval):
-                correct = 1.0 if extracted_gt[0].contains(extracted_pred[0]) == True else 0.0
+            if ((isinstance(extracted_pred[0], sympy.core.numbers.Integer)
+                 or isinstance(extracted_pred[0], sympy.core.numbers.Float)
+                 or isinstance(extracted_pred[0], sympy.core.numbers.Rational))
+                    and isinstance(extracted_gt[0], sympy.sets.sets.Interval)):
+                correct = 1.0 if extracted_gt[0].contains(extracted_pred[0]) else 0.0
                 safe_debug_log(f"interval check result: {correct}")
         except:
             pass
         if (not correct) and enable_split:
-            correct, extracted_pred, extracted_gt = grade_answer_math_verify(split_answer, split_gt)
+            correct, extracted_pred, extracted_gt = grade_answer_math_verify(
+                split_answer, split_gt)
             safe_debug_log(f"grade_answer_math_verify (split) result: {correct}")
     elif score_by == "not_scored":
         score_by = "sympy_verify"
         safe_debug_log("Using sympy result, skipping math_verify")
-        
+
     if not correct:
         if use_xverify:
             safe_debug_log("Calling grade_answer_xverify...")
             model_args = Model_args(judge_model)
-            correct = grade_answer_xverify(model_answer, gt_answer, problem, model_args, debug=debug, log_callback=log_callback)
+            correct = grade_answer_xverify(model_answer, gt_answer, problem,
+                                           model_args, debug=debug,
+                                           log_callback=log_callback)
             extracted_pred = model_answer
             extracted_gt = gt_answer
             safe_debug_log(f"grade_answer_xverify result: {correct}")
             if (not correct) and enable_split:
                 safe_debug_log("Calling grade_answer_xverify (split)...")
-                correct = grade_answer_xverify(split_answer, split_gt, problem, model_args, debug=debug, log_callback=log_callback)
+                correct = grade_answer_xverify(split_answer, split_gt, problem,
+                                               model_args, debug=debug,
+                                               log_callback=log_callback)
                 safe_debug_log(f"grade_answer_xverify (split) result: {correct}")
             if correct:
                 score_by = "xverify"
@@ -1166,6 +1215,7 @@ def grade(model_answer: str, gt_answer: str, is_matched: bool, problem=None, use
 
     safe_debug_log(f"Final grade result: correct={correct}, score_by={score_by}")
     return correct, score_by, extracted_pred, extracted_gt
+
 
 def last_n_boxed_strings(string, n):
     boxed_list = []
@@ -1193,7 +1243,7 @@ def last_n_boxed_strings(string, n):
             i += 1
 
         if right_brace_idx is not None:
-            boxed_expr = work_str[idx: right_brace_idx + 1]
+            boxed_expr = work_str[idx:right_brace_idx + 1]
             boxed_list.append(boxed_expr)
             work_str = work_str[:idx]
         else:
@@ -1201,6 +1251,7 @@ def last_n_boxed_strings(string, n):
 
     boxed_list.reverse()
     return boxed_list
+
 
 def get_answer_str(s: str, return_origin=False, num_answers=1):
     boxed_list = last_n_boxed_strings(s, num_answers)
@@ -1212,7 +1263,10 @@ def get_answer_str(s: str, return_origin=False, num_answers=1):
 
     return answer_list
 
-def solution2answer(solution: str, math_mode="eval_peeking", return_origin=False, num_answers=1) -> tuple[bool, list | str]:
+
+def solution2answer(solution: str, math_mode="eval_peeking",
+                    return_origin=False,
+                    num_answers=1) -> tuple[bool, list | str]:
     answer = solution
     if math_mode == "eval_peeking":
         answer = get_answer_str(solution, return_origin, num_answers)
@@ -1220,29 +1274,37 @@ def solution2answer(solution: str, math_mode="eval_peeking", return_origin=False
         raise ValueError(f"Invalid math_mode: {math_mode}")
     return answer
 
-def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None, points=None, use_xverify=False, debug=True, log_callback=None, judge_model=None):
+
+def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None,
+                                points=None, use_xverify=False, debug=True,
+                                log_callback=None, judge_model=None):
     extracted_pred = model_output
     is_matched = False
 
     num_questions_to_answer = len(ground_truths)
-    
+
     extracted_answers = solution2answer(str(model_output), num_answers=num_questions_to_answer)
-    ground_truths = [solution2answer(str(gt), return_origin=True)[0] for gt in ground_truths]
-    
+    ground_truths = [solution2answer(str(gt), return_origin=True)[0]
+                     for gt in ground_truths]
+
     if not any(extracted_answers):
-        return 0.0, 0.0, extracted_answers, ground_truths, ["not_scored"] * num_questions_to_answer
+        return (0.0, 0.0, extracted_answers, ground_truths,
+                ["not_scored"] * num_questions_to_answer)
     is_matched = True
 
     total_score = 0.0
     extracted_preds, extracted_gts, scored_by_list = [], [], []
     score_list = []
     for extracted_pred, ground_truth in zip(extracted_answers, ground_truths):
-        score, score_by, extracted_pred, extracted_gt = grade(extracted_pred, ground_truth, is_matched, problem, use_xverify=use_xverify, debug=debug, log_callback=log_callback, judge_model=judge_model)
+        score, score_by, extracted_pred, extracted_gt = grade(
+            extracted_pred, ground_truth, is_matched, problem,
+            use_xverify=use_xverify, debug=debug, log_callback=log_callback,
+            judge_model=judge_model)
         score_list.append(score)
         scored_by_list.append(score_by)
         extracted_preds.append(extracted_pred)
         extracted_gts.append(extracted_gt)
-    
+
     total_score = sum(score_list) / num_questions_to_answer
 
     if points is None or len(points) == 0:
@@ -1253,14 +1315,17 @@ def answer_tag_reward_fn_for_r1(model_output: str, ground_truths, problem=None, 
         except:
             point = 0
     else:
-        point = score 
-    
+        point = score
+
     return total_score, point, extracted_preds, extracted_gts, scored_by_list
 
 
-
-def compute_score(model_output: str, ground_truths: str, question: str, points, use_xverify, judge_model=None):
-    score, point, extracted_pred, extracted_gt, scored_by = answer_tag_reward_fn_for_r1(model_output, ground_truths, question, points, use_xverify, judge_model=judge_model)
+def compute_score(model_output: str, ground_truths: str, question: str,
+                  points, use_xverify, judge_model=None):
+    score, point, extracted_pred, extracted_gt, scored_by = (
+        answer_tag_reward_fn_for_r1(model_output, ground_truths, question,
+                                    points, use_xverify,
+                                    judge_model=judge_model))
 
     return {
         "score": score,
@@ -1277,6 +1342,6 @@ if __name__ == "__main__":
     model_output = r"The answer is <answer>$\boxed{\dfrac{5}{3}}$</answer>"
     ground_truth = ["[1.64,1.70]"]
     question = "What is the answer to the ultimate question of life, the universe, and everything?"
-    
+
     result = compute_score(model_output, ground_truth, question, points=[1.0], use_xverify=True)
     print(result)  # Should print a dictionary with score and correctness information.
