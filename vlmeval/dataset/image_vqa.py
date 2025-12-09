@@ -2269,7 +2269,37 @@ class CustomVQADataset(ImageBaseDataset):
         return load(data_path)
 
     def evaluate(self, eval_file, **judge_kwargs):
-        raise NotImplementedError
+        from .utils.xverify import VQAxVerifyEvaluator
+
+        model = judge_kwargs.get('model', 'xverify')
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{self.dataset_name}.xlsx')
+        data = load(eval_file)
+        
+        if os.path.exists(storage):
+            score_pth = storage.replace('.xlsx', '_score.json')
+            if os.path.exists(score_pth):
+                return load(score_pth)
+            else:
+                data = load(storage)
+                acc = {'accuracy': np.mean(data['score'])}
+                dump(acc, score_pth)
+                return acc
+
+        predictions = data['prediction'].tolist()
+        predictions = [x.split("</think>")[1].strip() if "</think>" in x else x for x in predictions]
+        answers = data['answer'].tolist()
+        questions = data['question'].tolist()
+       
+        xverify = VQAxVerifyEvaluator(dataset_name=self.dataset_name)
+        results = xverify.score(predictions, answers, questions)
+        data['score'] = results
+        
+        dump(data, storage)
+        score_pth = storage.replace('.xlsx', '_score.json')
+        acc = {'accuracy': np.mean(data['score'])}
+        dump(acc, score_pth)
+        return acc       
 
 
 class CRPE(ImageBaseDataset):
@@ -3119,9 +3149,14 @@ class CountBenchQA(ImageVQADataset):
     TYPE = "VQA"
     DATASET_URL = {
         "CountBenchQA":
-        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv"
+        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv",
+        "CountQA":
+        "https://opencompass.openxlab.space/utils/VLMEval/CounQA.tsv"
     }
-    DATASET_MD5 = {"CountBenchQA": "fc73c8d4ffa665431448753f094d56ff"}
+    DATASET_MD5 = {
+        "CountBenchQA": "fc73c8d4ffa665431448753f094d56ff",
+        "CountQA": "fc6f3aed7bf2234797e98e963b4ce8a2"
+    }
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -3135,6 +3170,41 @@ class CountBenchQA(ImageVQADataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        if self.dataset_name == "CountBenchQA":
+            return self.evaluate_CountBenchQA(eval_file, **judge_kwargs)
+        elif self.dataset_name == "CountQA":
+            return self.evaluate_CountQA(eval_file, **judge_kwargs)
+        else:
+            raise ValueError(f"Dataset {self.dataset_name} not supported")
+    
+    def evaluate_CountQA(self, eval_file, **judge_kwargs):
+        from .utils.xverify import VQAxVerifyEvaluator
+
+        model = "verifier_9b"
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        if os.path.exists(storage):
+            score_pth = storage.replace('.xlsx', '_score.json')
+            if os.path.exists(score_pth):
+                return load(score_pth)
+            else:
+                data = load(storage)
+                results = data['score'].tolist()
+                acc = {'accuracy': sum(results) / len(results)}
+                dump(acc, score_pth)
+                return acc
+        
+        data = load(eval_file)
+        xverify = VQAxVerifyEvaluator(dataset_name="CountQA")
+        results = xverify.score(data['prediction'], data['answer'], data['question'])
+        data['score'] = results
+        dump(data, storage)
+        
+        acc = {'accuracy': sum(results) / len(results)}
+        score_pth = storage.replace('.xlsx', '_score.json')
+        dump(acc, score_pth)
+        return acc
+    
+    def evaluate_CountBenchQA(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
         predictions = [str(x) for x in data['prediction']]
         answers = [str(x) for x in data['answer']]

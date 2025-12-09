@@ -26,6 +26,7 @@ def build_judge(**kwargs):
             'qwen-72b': 'Qwen/Qwen2.5-72B-Instruct',
             'deepseek': 'deepseek-ai/DeepSeek-V3',
             'xhs-deepseek': 'DeepSeek-V3',
+            "gptoss-120b" : "gptoss-120b",
             'llama31-8b': 'meta-llama/Llama-3.1-8B-Instruct',
         }
         model_version = model_map[model] if model in model_map else model
@@ -68,6 +69,24 @@ def build_judge(**kwargs):
             'deepseek-v3', 
             api_base=api_base, 
             key=key,
+            **kwargs)
+    elif model == 'gptoss-120b':
+        print("Using self-hosted GPT-OSS-120B from local platform......")
+        api_base = os.environ.get('XHS_GPT_OSS_120B_API_BASE', None)
+        key = os.environ.get('XHS_GPT_OSS_120B_KEY', None)
+        assert api_base is not None, (
+            "Please set `XHS_GPT_OSS_120B_API_BASE` in '$VLMEVALKIT/.env'")
+        if "," in api_base:
+            api_base = api_base.split(",")
+            for api in api_base:
+                assert api.startswith('http'), (
+                    "Please set `XHS_GPT_OSS_120B_API_BASE` in '$VLMEVALKIT/.env'")
+        model = XHSVLMAPIWrapper(
+            'openai/gpt-oss-120b', 
+            api_base=api_base, 
+            key=key,
+            reasoning_effort = "high",
+            timeout = 300,
             **kwargs)
     elif model == 'chatgpt-0125':
         if os.environ.get('MCQ_MATCH_MODEL_TYPE', "self-gptoss") == "chatgpt35":

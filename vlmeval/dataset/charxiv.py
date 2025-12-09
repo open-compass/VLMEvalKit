@@ -26,11 +26,20 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
         Dict containing evaluation results with extract_answer and score
     """
     failure_result = {"extract_answer": "Failed to parse response", "score": 0.0, "response": None}
+    if "<think>" in line["prediction"] and "</think>" not in line["prediction"]:
+        return {"extract_answer" : "'<think>....' pattern, treat not finished inference result.", "score": 0.0, "response": None}
     prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
 
-    retry = kwargs.get("retry", 50)
-    max_tokens = kwargs.get("max_tokens", 256)
-    temperature = kwargs.get("temperature", 0)
+    retry = kwargs.get("retry", 3)
+    if "oss" in judge_model.model:
+        max_tokens = kwargs.get("max_tokens", 8192)
+        temperature = kwargs.get("temperature", 0.1)
+        judge_model.timeout = kwargs.get("timeout", 1200)
+        extra_kwargs = {"reasoning_effort": "high"}
+    else:
+        max_tokens = kwargs.get("max_tokens", 256)
+        temperature = kwargs.get("temperature", 0)
+        extra_kwargs = {}
     seed = kwargs.get("seed", 42)
     top_p = kwargs.get("top_p", 1)
 
@@ -44,6 +53,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 max_tokens=max_tokens,
                 seed=seed,
                 top_p=top_p,
+                **extra_kwargs,
             )
             if response.startswith("```json"):
                 response = response[7:]
@@ -221,6 +231,8 @@ class CharXiv(ImageBaseDataset):
         judge_kwargs["model"] = judge_model
         judge_model = build_judge(**judge_kwargs)
         judge_model_name = judge_model.model
+        if "/" in judge_model_name:
+            judge_model_name = judge_model_name.replace("/", "_")
 
         # Define file paths
         result_file = get_intermediate_file_path(eval_file, f"_{judge_model_name}")
