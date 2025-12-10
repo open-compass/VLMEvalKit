@@ -1287,7 +1287,7 @@ class LogicVista(ImageBaseDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn(
@@ -1295,11 +1295,6 @@ class LogicVista(ImageBaseDataset):
                 )
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn(
-                'OPENAI_API_KEY is not set properly, will use exact matching for evaluation'
-            )
-            model = None
 
         storage = get_intermediate_file_path(eval_file, f'_{name_str}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{name_str}', 'pkl')
