@@ -41,15 +41,15 @@ class StareBench(ImageMCQDataset):
             return False
 
         lower = name.lower()
-        return lower.endswith("_cot")
+        return lower.endswith('_cot')
 
     def download_starebench(self, repo_id='kuvvi/STARE'):
         cache_path = get_cache_path(repo_id)
-        SENTINEL_NAME = ".starebench_parquet_processed"
+        SENTINEL_NAME = '.starebench_parquet_processed'
 
         if (cache_path and os.path.isdir(cache_path)
                 and os.path.isfile(os.path.join(cache_path, SENTINEL_NAME))):
-            print("[INFO] StareBench already processed:", cache_path)
+            print('[INFO] StareBench already processed:', cache_path)
             dataset_path = cache_path
 
         else:
@@ -65,11 +65,11 @@ class StareBench(ImageMCQDataset):
 
                 base_folder = os.path.join(image_output_root, rel_folder)
 
-                print(f"[INFO] processing {parquet_path}")
+                print(f'[INFO] processing {parquet_path}')
                 try:
                     df = pd.read_parquet(parquet_path)
                 except Exception as e:
-                    print(f"[ERROR] failed to read {parquet_path}: {e}")
+                    print(f'[ERROR] failed to read {parquet_path}: {e}')
                     return
 
                 if image_col not in df.columns:
@@ -85,7 +85,7 @@ class StareBench(ImageMCQDataset):
 
                     try:
                         for i, img_obj in enumerate(images):
-                            raw = img_obj.get("bytes") if isinstance(img_obj, dict) else img_obj
+                            raw = img_obj.get('bytes') if isinstance(img_obj, dict) else img_obj
                             if raw is None:
                                 continue
 
@@ -94,22 +94,22 @@ class StareBench(ImageMCQDataset):
                             else:
                                 img_bytes = bytes(raw)
 
-                            image = Image.open(BytesIO(img_bytes)).convert("RGB")
-                            out_path = os.path.join(qid_folder, f"{i}.png")
+                            image = Image.open(BytesIO(img_bytes)).convert('RGB')
+                            out_path = os.path.join(qid_folder, f'{i}.png')
                             image.save(out_path)
                     except Exception as e:
                         print(
-                            f"[ERROR] Image save failed: file={parquet_path}, "
-                            f"row={row_idx}, qid={qid}, err={e}"
+                            f'[ERROR] Image save failed: file={parquet_path}, '
+                            f'row={row_idx}, qid={qid}, err={e}'
                         )
 
-                print(f"[OK] Done {parquet_path}")
+                print(f'[OK] Done {parquet_path}')
 
             def dump_stare_images(
                 input_root: str,
                 image_output_root: str,
-                image_col: str = "images",
-                qid_col: str = "qid",
+                image_col: str = 'images',
+                qid_col: str = 'qid',
                 num_workers: int = 8,
             ):
                 os.makedirs(image_output_root, exist_ok=True)
@@ -117,10 +117,10 @@ class StareBench(ImageMCQDataset):
                 parquet_paths = []
                 for root, _, files in os.walk(input_root):
                     for file in files:
-                        if file.endswith(".parquet"):
+                        if file.endswith('.parquet'):
                             parquet_paths.append(os.path.join(root, file))
 
-                print(f"[INFO] found {len(parquet_paths)} parquet files")
+                print(f'[INFO] found {len(parquet_paths)} parquet files')
 
                 with ThreadPoolExecutor(max_workers=num_workers) as executor:
                     futures = []
@@ -144,24 +144,24 @@ class StareBench(ImageMCQDataset):
             else:
                 dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
 
-            print("[INFO] STAREBench dataset downloaded to:", dataset_path)
+            print('[INFO] STAREBench dataset downloaded to:', dataset_path)
 
-            image_output_root = os.path.join(dataset_path, "images")
-            print("[INFO] Extracting parquet images to:", image_output_root)
+            image_output_root = os.path.join(dataset_path, 'images')
+            print('[INFO] Extracting parquet images to:', image_output_root)
 
             dump_stare_images(
                 input_root=dataset_path,
                 image_output_root=image_output_root,
-                image_col="images",
-                qid_col="qid",
+                image_col='images',
+                qid_col='qid',
                 num_workers=4,
             )
 
             sentinel_path = os.path.join(dataset_path, SENTINEL_NAME)
-            with open(sentinel_path, "w", encoding="utf-8") as f:
-                f.write("done")
+            with open(sentinel_path, 'w', encoding='utf-8') as f:
+                f.write('done')
 
-        print("[INFO] STAREBench parquet processing completed.")
+        print('[INFO] STAREBench parquet processing completed.')
         return dataset_path
 
     def prepare_tsv(self, url, file_md5=None):
@@ -173,9 +173,9 @@ class StareBench(ImageMCQDataset):
 
         def unescape_text(s: str) -> str:
             if not isinstance(s, str):
-                return ""
-            s = s.replace("\\n", "\n")
-            s = s.replace("\\\\", "\\")
+                return ''
+            s = s.replace('\\n', '\n')
+            s = s.replace('\\\\', '\\')
             return s
 
         # === Transfer rel path to abs path ===
@@ -221,37 +221,36 @@ class StareBench(ImageMCQDataset):
 
         question = line['question']
 
-        if "<image>" not in question and tgt_path:
-            question += "\n<image>"
+        if '<image>' not in question and tgt_path:
+            question += '\n<image>'
 
         # Multi_choice format from STARE codebase
         # Original STARE code requires return in "\\boxed{{}}".
         # We change to <answer></answer>.
         mcq_format = (
-            f"{question}\n\n"
+            f'{question}\n\n'
             "Answer with the option's letter from the given choices and put the letter in one <answer> answer </answer>"
         )
 
         if not self.use_cot:
             # Directly (present in code, but not in paper)
             post_prompt = (
-                "Please ensure that your output only contains the final answer (a single option letter) "
-                "without any additional content (such as intermediate reasoning steps)."
+                'Please ensure that your output only contains the final answer (a single option letter) '
+                'without any additional content (such as intermediate reasoning steps).'
             )
         else:
             # Zero-Shot CoT (STARE codebase default setting)
-            post_prompt = "Please solve the problem step by step."
+            post_prompt = 'Please solve the problem step by step.'
 
-        prompt = "\n".join([mcq_format, post_prompt])
+        prompt = '\n'.join([mcq_format, post_prompt])
 
         msgs = self.build_msgs(tgt_path, prompt)
-
         return msgs
 
     @staticmethod
     def build_msgs(tgt_path, prompt):
         """
-        Interlaced text and pictures
+        Interlaced text and pictures.
         """
         images = tgt_path if isinstance(tgt_path, list) else [tgt_path]
 
@@ -269,7 +268,7 @@ class StareBench(ImageMCQDataset):
 
     # -------- STARE category config --------
     @classmethod
-    def task_category(cls, kind: str = "ordered"):
+    def task_category(cls, kind: str = 'ordered'):
         """
         Central place to define / query STARE task categories.
 
@@ -292,29 +291,29 @@ class StareBench(ImageMCQDataset):
         ]
         ordered = mcq + binary
 
-        if kind == "mcq":
+        if kind == 'mcq':
             return mcq
-        elif kind == "binary":
+        elif kind == 'binary':
             return binary
-        elif kind == "ordered":
+        elif kind == 'ordered':
             return ordered
-        elif kind == "binary_set":
+        elif kind == 'binary_set':
             return set(binary)
-        elif kind == "all":
+        elif kind == 'all':
             return ordered
         else:
-            raise ValueError(f"Unknown kind for task_category: {kind}")
+            raise ValueError(f'Unknown kind for task_category: {kind}')
 
     def _task_category(self):
         """Backwards-compat: return ordered categories."""
-        return self.task_category("ordered")
+        return self.task_category('ordered')
 
     # -------- F1 / macro helpers --------
     @classmethod
     def _parse_option_mapping(cls, question_text: str):
         """
         Parse mapping from option letter to yes/no in the question text.
-        e.g. "A. yes  B. no" -> {'a': 'yes', 'b': 'no'}
+        e.g. 'A. yes  B. no' -> {'a': 'yes', 'b': 'no'}
         """
         _ZW_RE = re.compile(r'[\u200b\u200c\u200d\ufeff]')
         if not isinstance(question_text, str):
@@ -426,24 +425,12 @@ class StareBench(ImageMCQDataset):
           where MCQ uses accuracy, binary uses F1.
         """
         from .utils.spatial_bench.cal_scores import build_mcq_score_fn
+        from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
-        suffix = eval_file.split('.')[-1]
-        result_file = eval_file.replace(f'.{suffix}', '_result.pkl')
-        base_no_suffix = eval_file[:-(len(suffix) + 1)]
+        score_fn = build_mcq_score_fn(**kwargs)
+        judge_tag = get_judge_tag_from_score_fn(score_fn)
 
-        score_fn = build_mcq_score_fn(**kwargs)  # Select MCQ scoring func according to judge_kwargs['model'].
-
-        # Read judge mode / model from the scorer's metadata.
-        judge_mode = getattr(score_fn, 'judge_mode', 'rule')              # 'rule' or 'llm'
-        judge_model = getattr(score_fn, 'judge_model', kwargs.get('model', None))
-
-        if judge_mode == 'llm':
-            judge_tag = f"llm_{judge_model}" if judge_model else "llm_matching"
-        else:
-            judge_tag = "extract_matching"
-
-        xlsx_path = f"{base_no_suffix}_{judge_tag}.xlsx"
-        acc_tsv_path = f"{base_no_suffix}_acc.tsv"
+        result_file, xlsx_path, acc_tsv_path = build_eval_paths(eval_file, judge_tag)
 
         # 1. load raw results
         data = load(eval_file)
@@ -484,7 +471,7 @@ class StareBench(ImageMCQDataset):
         scores_for_macro = {}
         rows = []
         cat_order = self._task_category()
-        binary_set = self.task_category("binary_set")
+        binary_set = self.task_category('binary_set')
 
         for cat in cat_order:
             sub = mcq_scored[mcq_scored['bench_category'] == cat]
@@ -520,9 +507,9 @@ class StareBench(ImageMCQDataset):
             summary['macro'] = float(macro_avg) * 100.0
 
         # 7. tabulate
-        tab_keys = ", ".join(list(summary.keys()))
-        tab_vals = ", ".join(
-            [f"{v:.3f}" for v in summary.values() if isinstance(v, (int, float))]
+        tab_keys = ', '.join(list(summary.keys()))
+        tab_vals = ', '.join(
+            [f'{v:.3f}' for v in summary.values() if isinstance(v, (int, float))]
         )
         summary['tabulated_keys'] = tab_keys
         summary['tabulated_results'] = tab_vals
@@ -535,28 +522,29 @@ class StareBench(ImageMCQDataset):
                     {'mcq_scored': mcq_scored, 'per_category': per_category_df, 'summary': summary},
                     f
                 )
-            print(f"[save] result saved to {result_file}")
+            print(f'[save] result saved to {result_file}')
         except Exception as e:
-            warnings.warn(f"[save] failed to save result to {result_file}: {e}")
+            warnings.warn(f'[save] failed to save result to {result_file}: {e}')
 
         # 9. save extract_matching xlsx
         try:
             prefer_front = [
                 'index', 'bench_category', 'category', 'category_agg',
                 'question', 'prediction', 'pred_extracted',
-                'answer', 'hit'
+                'answer', 'hit',
             ]
             merged = mcq_scored.copy()
             ordered_cols = (
-                [c for c in prefer_front if c in merged.columns] + [c for c in merged.columns if c not in prefer_front]
+                [c for c in prefer_front if c in merged.columns]
+                + [c for c in merged.columns if c not in prefer_front]
             )
             merged = merged[ordered_cols]
 
-            with pd.ExcelWriter(xlsx_path, engine="openpyxl") as writer:
-                merged.to_excel(writer, sheet_name="ALL", index=False)
-            print(f"[save] extract & matching saved to {xlsx_path}")
+            with pd.ExcelWriter(xlsx_path, engine='openpyxl') as writer:
+                merged.to_excel(writer, sheet_name='ALL', index=False)
+            print(f'[save] extract & matching saved to {xlsx_path}')
         except Exception as e:
-            warnings.warn(f"[save] failed to save extract xlsx to {xlsx_path}: {e}")
+            warnings.warn(f'[save] failed to save extract xlsx to {xlsx_path}: {e}')
 
         # 10. save metrics tsv
         try:
@@ -580,9 +568,9 @@ class StareBench(ImageMCQDataset):
             wide = acc_df.T
             wide.to_csv(acc_tsv_path, sep='\t', index=False, float_format='%.4f')
 
-            print(f"[save] accuracy/F1/macro table saved to {acc_tsv_path}")
+            print(f'[save] accuracy/F1/macro table saved to {acc_tsv_path}')
         except Exception as e:
-            warnings.warn(f"[save] failed to save acc tsv to {acc_tsv_path}: {e}")
+            warnings.warn(f'[save] failed to save acc tsv to {acc_tsv_path}: {e}')
 
-        print(f"[StareBench] summary: {summary}")
+        print(f'[StareBench] summary: {summary}')
         return summary

@@ -25,17 +25,17 @@ class MMSIBench(ImageMCQDataset):
 
     def _task_category(self):
         return [
-            "Pos-Cam-Cam",
-            "Pos-Obj-Obj",
-            "Pos-Reg-Reg",
-            "Pos-Cam-Obj",
-            "Pos-Obj-Reg",
-            "Pos-Cam-Reg",
-            "Attr-Meas",
-            "Attr-Appr",
-            "Motion-Cam",
-            "Motion-Obj",
-            "MSR"
+            'Pos-Cam-Cam',
+            'Pos-Obj-Obj',
+            'Pos-Reg-Reg',
+            'Pos-Cam-Obj',
+            'Pos-Obj-Reg',
+            'Pos-Cam-Reg',
+            'Attr-Meas',
+            'Attr-Appr',
+            'Motion-Cam',
+            'Motion-Obj',
+            'MSR'
         ]
 
     def build_prompt(self, line):
@@ -54,7 +54,7 @@ class MMSIBench(ImageMCQDataset):
             if cand in line and not pd.isna(line[cand])
         }
 
-        # Prompt format aligned with mmsi code base
+        # Prompt format aligned with MMSI code base
         options_prompt = 'Options: '
         for key, item in options.items():
             options_prompt += f'{key}: {item}, '

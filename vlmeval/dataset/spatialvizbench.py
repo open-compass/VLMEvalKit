@@ -30,7 +30,7 @@ class SpatialVizBench(ImageMCQDataset):
 
         self._CATEGORY_TASK_ORDER = None
         self.use_cot = self.parse_dataset_name(dataset)
-        print(f"Evaluate {dataset} with CoT = {self.use_cot}")
+        print(f'Evaluate {dataset} with CoT = {self.use_cot}')
 
     @staticmethod
     def parse_dataset_name(name: str) -> bool:
@@ -38,16 +38,16 @@ class SpatialVizBench(ImageMCQDataset):
             return False
 
         lower = name.lower()
-        return lower.endswith("_cot")
+        return lower.endswith('_cot')
 
     @classmethod
     def category_task_order(cls) -> OrderedDict:
         if cls._CATEGORY_TASK_ORDER is None:
             cls._CATEGORY_TASK_ORDER = OrderedDict([
-                ("MentalRotation", ["2DRotation", "3DRotation", "3ViewProjection"]),
-                ("MentalFolding", ["PaperFolding", "CubeUnfolding", "CubeReconstruction"]),
-                ("VisualPenetration", ["CrossSection", "CubeCounting", "CubeAssembly"]),
-                ("MentalAnimation", ["ArrowMoving", "BlockMoving", "MechanicalSystem"]),
+                ('MentalRotation', ['2DRotation', '3DRotation', '3ViewProjection']),
+                ('MentalFolding', ['PaperFolding', 'CubeUnfolding', 'CubeReconstruction']),
+                ('VisualPenetration', ['CrossSection', 'CubeCounting', 'CubeAssembly']),
+                ('MentalAnimation', ['ArrowMoving', 'BlockMoving', 'MechanicalSystem']),
             ])
         return cls._CATEGORY_TASK_ORDER
 
@@ -71,23 +71,23 @@ class SpatialVizBench(ImageMCQDataset):
         for key, item in options.items():
             options_text += f'{key}. {item}\n'
 
-        # prompt format follow spatialviz paper
+        # prompt format follow SpatialViz paper
         if not self.use_cot:
             pre_prompt = (
-                "Answer with a single option letter (A, B, C, or D), enclosed within the <answer></answer> tag."
-                "For example: <answer>A</answer>. Ensure that your output contains only the final answer, "
-                "without any intermediate reasoning or additional content."
+                'Answer with a single option letter (A, B, C, or D), enclosed within the <answer></answer> tag. '
+                'For example: <answer>A</answer>. Ensure that your output contains only the final answer, '
+                'without any intermediate reasoning or additional content.'
             )
         else:
             pre_prompt = (
-                "You should first provide a reasoning process, "
-                "then provide a single option (A, B, C or D) as the final answer. "
-                "The reasoning process and the answer are enclosed within "
-                "<think></think> and <answer></answer> tags, respectively, "
-                "i.e., <think>reasoning process</think>, <answer>answer</answer>."
+                'You should first provide a reasoning process, '
+                'then provide a single option (A, B, C or D) as the final answer. '
+                'The reasoning process and the answer are enclosed within '
+                '<think></think> and <answer></answer> tags, respectively, '
+                'i.e., <think>reasoning process</think>, <answer>answer</answer>.'
             )
 
-        prompt = pre_prompt + "\n" + "Question:" + question + '\n' + options_text
+        prompt = pre_prompt + '\n' + 'Question:' + question + '\n' + options_text
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -122,16 +122,16 @@ class SpatialVizBench(ImageMCQDataset):
 
         for cat, tasks in category_task_order.items():
             for t in tasks:
-                raw_key = f"task.{t}_accuracy"
+                raw_key = f'task.{t}_accuracy'
                 if raw_key in raw:
-                    pretty[f"{t}_accuracy"] = raw[raw_key]
+                    pretty[f'{t}_accuracy'] = raw[raw_key]
 
-            cat_raw_key = f"category.{cat}_accuracy"
+            cat_raw_key = f'category.{cat}_accuracy'
             if cat_raw_key in raw:
-                pretty[f"{cat}_accuracy"] = raw[cat_raw_key]
+                pretty[f'{cat}_accuracy'] = raw[cat_raw_key]
 
-        keys_str = ", ".join(pretty.keys())
-        vals_str = ", ".join(f"{v:.3f}" for v in pretty.values())
+        keys_str = ', '.join(pretty.keys())
+        vals_str = ', '.join(f'{v:.3f}' for v in pretty.values())
         pretty['tabulated_keys'] = keys_str
         pretty['tabulated_results'] = vals_str
 

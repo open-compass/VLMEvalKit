@@ -90,7 +90,7 @@ def call_llm_extract(
     question: str,
     prediction: str,
     gold_answer: str,
-    options_block: str = ""
+    options_block: str = ''
 ):
     """
     Generic LLM call + parsing helper.
@@ -134,7 +134,7 @@ def call_llm_extract(
             rest = re.sub(r'^[\s\|,:]+', '', rest)  # strip leading whitespace + common separators
             rest = re.sub(r'^(?:\\[tnr])+', '', rest)  # turn "\t", "\n", "\r" to spaces
 
-            extracted = rest.strip() or "N/A"
+            extracted = rest.strip() or 'N/A'
             return grade, extracted
 
         # Case 2. Grade only
@@ -143,12 +143,12 @@ def call_llm_extract(
             grade = str(m2.group(1)).strip().upper()
             if grade not in ('A', 'B', 'C'):
                 grade = 'C'
-            return grade, "N/A"
+            return grade, 'N/A'
 
-        logger.warning(f"Unparsable LLM output: {ans}")
+        logger.warning(f'Unparsable LLM output: {ans}')
 
-    logger.warning("LLM extract failed after max_retry, fallback to INVALID.")
-    return "C", "N/A"
+    logger.warning('LLM extract failed after max_retry, fallback to INVALID.')
+    return 'C', 'N/A'
 
 
 def extract_ans_by_llm(
@@ -166,7 +166,7 @@ def extract_ans_by_llm(
         - extracted_answer: the final answer string extracted by the LLM
     """
     valid_mode = ['mcq', 'vqa']
-    assert mode in valid_mode, f"Extract llm func mode must be in {valid_mode}, but got {mode}!"
+    assert mode in valid_mode, f'Extract llm func mode must be in {valid_mode}, but got {mode}!'
 
     question = str(row.get('question', ''))
     prediction = str(row.get('prediction', ''))
@@ -176,26 +176,26 @@ def extract_ans_by_llm(
     if mode == 'mcq':
         # Build choices
         choices = build_choices(row)
-        option_str = build_option_str(choices) if choices else ""
+        option_str = build_option_str(choices) if choices else ''
 
         # Build options block for llm to know if there are options
-        options_block = ""
+        options_block = ''
         if option_str:
-            options_block = "Options:\n" + option_str + "\n"
+            options_block = 'Options:\n' + option_str + '\n'
         else:
-            options_block = ""
+            options_block = ''
 
         # Standard answer: prefer "letter + text" form if possible
         answer_letter = str(gold_raw).strip().upper()
         if choices and answer_letter in choices:
-            gold_answer = f"{answer_letter}. {choices[answer_letter]}"
+            gold_answer = f'{answer_letter}. {choices[answer_letter]}'
         else:
             # Fallback: use raw answer field
             gold_answer = str(gold_raw)
 
     # Mode vqa
     else:
-        options_block = ""
+        options_block = ''
         gold_answer = str(gold_raw)
 
     grade, extracted = call_llm_extract(

@@ -28,16 +28,16 @@ class MindCubeBench(ImageMCQDataset):
     def prepare_tsv(self, url, file_md5=None, repo_id='MLL-Lab/MindCube'):
         data = super().prepare_tsv(url, file_md5)
 
-        SENTINEL_NAME = ".mindcubebench_extracted"
+        SENTINEL_NAME = '.mindcubebench_extracted'
         cache_path = get_cache_path(repo_id)
 
         if (cache_path and os.path.isdir(cache_path)
                 and os.path.isfile(os.path.join(cache_path, SENTINEL_NAME))):
             dataset_path = cache_path
         else:
-            def _write_sentinel(sentinel_path, text="ok"):
-                tmp = sentinel_path + ".tmp"
-                with open(tmp, "w", encoding="utf-8") as f:
+            def _write_sentinel(sentinel_path, text='ok'):
+                tmp = sentinel_path + '.tmp'
+                with open(tmp, 'w', encoding='utf-8') as f:
                     f.write(text)
                 os.replace(tmp, sentinel_path)
 
@@ -70,7 +70,7 @@ class MindCubeBench(ImageMCQDataset):
                                 out.write(src.read())
 
                 sentinel_path = os.path.join(pth, SENTINEL_NAME)
-                _write_sentinel(sentinel_path, text="done")
+                _write_sentinel(sentinel_path, text='done')
                 print('MindCube data extracted to current directory with original layout.')
 
             if modelscope_flag_set():
