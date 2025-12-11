@@ -60,6 +60,7 @@ from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
 from .vsibench import VSIBench
+from .mvu_eval import MVUEval
 
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
@@ -216,7 +217,7 @@ IMAGE_DATASET = [
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
-    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,
+    OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
@@ -242,7 +243,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval
 
 ]
 
