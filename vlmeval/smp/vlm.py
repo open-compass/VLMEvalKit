@@ -162,6 +162,22 @@ def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
     image.save(image_path)
 
 
+def encode_audio_file_to_base64(audio_path, target_bitrate=-1, fmt=None):
+    with open(audio_path, 'rb') as f:
+        audio_bytes = f.read()
+    ret = base64.b64encode(audio_bytes).decode('utf-8')
+    return ret
+
+
+def decode_base64_to_audio_file(base64_string, audio_path, target_bitrate=-1):
+    audio_bytes = base64.b64decode(base64_string)
+    base_dir = osp.dirname(audio_path)
+    if base_dir and not osp.exists(base_dir):
+        os.makedirs(base_dir, exist_ok=True)
+    with open(audio_path, 'wb') as f:
+        f.write(audio_bytes)
+
+
 def build_option_str(option_dict):
     s = 'There are several options: \n'
     for c, content in option_dict.items():
