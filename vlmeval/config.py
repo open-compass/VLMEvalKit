@@ -79,6 +79,7 @@ ungrouped = {
     ),
     "Pixtral-12B": partial(Pixtral, model_path="mistralai/Pixtral-12B-2409"),
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
+    "KVL": partial(InternVLChat, model_path="amoeba04/KVL", version="V2.0"),
 }
 
 o1_key = os.environ.get('O1_API_KEY', None)
