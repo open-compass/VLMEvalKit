@@ -229,7 +229,9 @@ class VsiBench(VideoBaseDataset):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, build_na_score_fn
+        from .utils.spatial_bench.cal_scores import (
+            build_mcq_score_fn, build_na_score_fn, attach_score_cache
+        )
         from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
         data = load(eval_file)
@@ -240,30 +242,37 @@ class VsiBench(VideoBaseDataset):
         mcq_data = data[data['task_type'] == 'MCQ'].copy()
         na_data = data[data['task_type'] == 'NA'].copy()
 
-        # Scoring func selection from judge_kwargs['model']
-        if len(mcq_data):
-            mcq_score_fn = build_mcq_score_fn(**judge_kwargs)
-            mcq_scored = mcq_score_fn(mcq_data)
-        else:
-            mcq_score_fn = None
-            mcq_scored = mcq_data
+        splits = {'mcq': mcq_data, 'na': na_data}
+        builders = {'mcq': build_mcq_score_fn, 'na': build_na_score_fn}
 
-        if len(na_data):
-            na_score_fn = build_na_score_fn(**judge_kwargs)
-            na_scored = na_score_fn(na_data)
-        else:
-            na_score_fn = None
-            na_scored = na_data
+        # 1. build score_fns
+        score_fns = {
+            k: (builders[k](**judge_kwargs) if len(splits[k]) else None)
+            for k in ('mcq', 'na')
+        }
 
-        # extract judge_tag
-        score_fn_for_tag = mcq_score_fn or na_score_fn
-        if score_fn_for_tag is not None:
-            judge_tag = get_judge_tag_from_score_fn(score_fn_for_tag)
-        else:
-            # fallback: use extract_matching
-            judge_tag = 'extract_matching'
-
+        # 2. pick a non-None score_fn to infer judge_tag
+        score_fn_for_tag = score_fns.get('mcq') or score_fns.get('na')
+        judge_tag = (
+            get_judge_tag_from_score_fn(score_fn_for_tag)
+            if score_fn_for_tag is not None
+            else 'extract_matching'
+        )
         result_file, xlsx_path, acc_tsv_path = build_eval_paths(eval_file, judge_tag)
+
+        # 3. attach cache files for each sub-scorer
+        for sub_tag, fn in score_fns.items():
+            attach_score_cache(
+                score_fn=fn,
+                eval_file=eval_file,
+                judge_tag=judge_tag,
+                key_col='index',
+                sub_tag=sub_tag,
+            )
+
+        # 4. run scoring
+        mcq_scored = score_fns['mcq'](mcq_data) if score_fns['mcq'] else mcq_data
+        na_scored = score_fns['na'](na_data)  if score_fns['na']  else na_data
 
         summary = self._aggregate(mcq_scored, na_scored)
 
