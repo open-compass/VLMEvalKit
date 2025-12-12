@@ -90,7 +90,7 @@ class SiteBenchBase:
         return dataset_path
 
     def evaluate(self, eval_file, **kwargs):
-        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, compute_caa_score
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, compute_caa_score, attach_score_cache
         from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
         score_fn = build_mcq_score_fn(**kwargs)  # Select MCQ scoring func according to judge_kwargs['model'].
@@ -104,6 +104,13 @@ class SiteBenchBase:
         data['prediction'] = [str(x) for x in data['prediction']]
 
         # compute per-sample hit (MCQ)
+        attach_score_cache(
+            score_fn=score_fn,
+            eval_file=eval_file,
+            judge_tag=judge_tag,
+            key_col='index',
+            sub_tag='mcq',
+        )
         mcq_scored = score_fn(data.copy())
 
         cat_order = self._task_category()
@@ -174,7 +181,7 @@ class SiteBenchBase:
         except Exception as e:
             warnings.warn(f'[save] failed to save acc tsv to {acc_tsv_path}: {e}')
 
-        print(f"[{getattr(self, 'dataset_name', 'MCQ')}] summary: {summary}")
+        print(f'[{getattr(self, "dataset_name", "MCQ")}] summary: {summary}')
         return summary
 
 
