@@ -219,7 +219,7 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
-    _DATASET_PATH = "MLLM-CL/VTCBench"
+    _DATASET_PATH = "/hdddata/zhaohongbo/VLMEvalKit/LMUData/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
         "Retrieval": f"https://huggingface.co/datasets/{_DATASET_PATH}",
@@ -236,7 +236,7 @@ class VTCBench(ImageBaseDataset):
     
     @classmethod
     def supported_datasets(cls):
-        return 'VTCBench' # TODO:check
+        return 'VTCBench'
     
     def load_data(self, dataset: str):
         """Load dataset from HuggingFace"""
@@ -300,10 +300,7 @@ class VTCBench(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
         
-        if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
-        else:
-            tgt_path = self.dump_image(line)
+        base64_list = line['image']
         
         quesiton = line['question']
         category = line['category']
@@ -318,10 +315,10 @@ class VTCBench(ImageBaseDataset):
             raise ValueError(f"Unknown category: {category}")
         
         msgs = []
-        if isinstance(tgt_path, list):
-            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        if isinstance(base64_list, list):
+            msgs.extend([dict(type='image', value='data:image/jpeg;base64,'+p) for p in base64_list])
         else:
-            msgs = [dict(type='image', value=tgt_path)]
+            msgs = [dict(type='image', value='data:image/jpeg;base64,' + base64_list)]
         msgs.append(dict(type='text', value=prompt))
         return msgs
     
