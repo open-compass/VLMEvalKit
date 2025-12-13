@@ -65,15 +65,9 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
-<<<<<<< HEAD
-from .vsibench import VSIBench
+from .vsibench import VsiBench
 from .mvu_eval import MVUEval
 from .omtgbench import OMTGBench
-=======
-from .vsibench import VsiBench
-from .mmsi_video import MMSIVideoBench
->>>>>>> afaf8d0 ([Benchmark] Add EASI related video benchmark (#3))
-
 from .mmsi_video import MMSIVideoBench
 from .groundingme import GroundingME
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
@@ -121,10 +115,9 @@ from .sparbench import SparBench
 from .spatialvizbench import SpatialVizBench
 from .starebench import StareBench
 from .omnispatialbench import OmniSpatialBench
-from .sparbench import SparBench
-from .spatialvizbench import SpatialVizBench
-from .starebench import StareBench
-from .omnispatialbench import OmniSpatialBench
+from .erqabench import ERQABench
+from .robospatialbench import RoboSpatialBench
+from .refspatialbench import RefSpatialBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -274,6 +267,7 @@ IMAGE_DATASET = [
     # EASI add
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, StareBench, OmniSpatialBench,
+    ERQABench, RoboSpatialBench, RefSpatialBench,
 ]
 
 VIDEO_DATASET = [
@@ -284,17 +278,8 @@ VIDEO_DATASET = [
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
-<<<<<<< HEAD
     Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval, OMTGBench, V2PBench
-=======
-    Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo
-<<<<<<< HEAD
-
->>>>>>> afaf8d0 ([Benchmark] Add EASI related video benchmark (#3))
-=======
->>>>>>> 991f08c ([Refactor] change SenseNova-SI series models hf dir and fix vsi sitevideo dataset type (#9))
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo, MVUEval, OMTGBench, V2PBench
 ]
 
 TEXT_DATASET = [
