@@ -1,13 +1,16 @@
 import re
 import ast
+import json
 import string
 import pandas as pd
+import numpy as np
+
+from .....smp.log import get_logger
 
 
 # ---------------------------------------------------------------------
-# Basic text utilities
+# From mcq items to build choices texts
 # ---------------------------------------------------------------------
-
 def _clean_text(x) -> str:
     """Cast to str, collapse whitespace, strip."""
     s = str(x)
@@ -103,10 +106,7 @@ def _letters_upto(max_letter: str = 'F', n: int | None = None):
     return all_letters[:end_idx]
 
 
-# ---------------------------------------------------------------------
 # Extract choices from explicit columns (A/B/C/...)
-# ---------------------------------------------------------------------
-
 def _extract_from_columns(item, letter_set=('A', 'B', 'C', 'D', 'E', 'F')):
     """
     Read choices from columns A–F (or extended):
@@ -122,10 +122,7 @@ def _extract_from_columns(item, letter_set=('A', 'B', 'C', 'D', 'E', 'F')):
     }
 
 
-# ---------------------------------------------------------------------
 # Extract choices from question text
-# ---------------------------------------------------------------------
-
 def _slice_by_markers(text: str, markers):
     """
     Given label markers (letter, end_idx, start_idx), slice text into segments:
@@ -233,10 +230,7 @@ def extract_choices_from_question(q: str, max_letter: str = 'F') -> dict:
     return chosen
 
 
-# ---------------------------------------------------------------------
 # Top-level: build_choices
-# ---------------------------------------------------------------------
-
 def build_choices(item: dict, max_letter: str = 'F') -> dict:
     """
     Build a choice dict for one item (row-like mapping).
@@ -275,3 +269,233 @@ def build_choices(item: dict, max_letter: str = 'F') -> dict:
 
     # 4) Nothing found
     return {}
+
+
+# ---------------------------------------------------------------------
+# From spatial items to parse 2d points
+# ---------------------------------------------------------------------
+class Point2DParser:
+    """
+    Generic 2D point parser.
+
+    - Parse model outputs into a set of (x, y) coordinates.
+    - Support JSON / Python literals and text patterns.
+    - First use _json2pts, then fall back to _text2pts.
+    """
+
+    _has_logged_hint = False
+    logger = get_logger('Point2DParser')
+
+    @classmethod
+    def log_hint(cls, task_name: str | None = None):
+        if cls._has_logged_hint:
+            return
+
+        prefix = f'[{task_name}]' if task_name else '[Point2DParser]'
+        msg = (
+            f'{prefix} Using default Point2DParser:\n'
+            '  - expects JSON / Python literal with "point_2d",\n'
+            '    where coordinates may be:\n'
+            '      * pixels (0 ~ W/H),\n'
+            '      * [0, 1] normalized,\n'
+            '      * [0, 1000] normalized (e.g., Qwen3-VL style);\n'
+            '  - falls back to "(x, y)" or "(x0, y0, x1, y1)" patterns in free text.\n'
+            'Use parse(..., output="pixel") for pixel coords (default), or\n'
+            'parse(..., output="norm") for [0, 1] normalized coords.\n'
+        )
+        cls.logger.info(msg)
+        cls._has_logged_hint = True
+
+    @classmethod
+    def parse(cls, text: str, width: int, height: int, output: str = 'pixel') -> np.ndarray:
+        """
+        Main entry.
+
+        Args:
+            text: raw model output.
+            width, height: image size.
+            output: 'pixel' for pixel coords, 'norm' for [0, 1] normalized coords.
+
+        Returns:
+            np.ndarray[N, 2]
+        """
+        if output not in ('pixel', 'norm'):
+            raise ValueError(f'Point2DParser.parse: unsupported output={output}')
+
+        pts = cls._json2pts(text, width, height, output=output)
+        if pts is not None:
+            return pts
+        return cls._text2pts(text, width, height, output=output)
+
+    @classmethod
+    def _json2pts(
+        cls,
+        text: str,
+        width: int = 640,
+        height: int = 480,
+        output: str = 'pixel'
+    ) -> np.ndarray | None:
+        """
+        Parse JSON/Python literals like:
+        [
+            {"point_2d": [x, y], "label": "..."},
+            ...
+        ]
+
+        point_2d / point can be:
+          - [0, 1] normalized
+          - [0, 1000] normalized
+          - pixels
+        """
+        s = cls._strip_md_fence(text).strip()
+
+        obj = None
+        try:
+            obj = json.loads(s)
+        except Exception:
+            pass
+
+        if obj is None:
+            try:
+                obj = ast.literal_eval(s)
+            except Exception:
+                return None
+
+        if isinstance(obj, dict):
+            obj = [obj]
+        if not isinstance(obj, list):
+            return None
+
+        pts_norm = []  # Store uniformly as 0~1 coordinates
+        w = float(width) if width else 1.0
+        h = float(height) if height else 1.0
+
+        for item in obj:
+            if not isinstance(item, dict):
+                continue
+            pt = item.get('point_2d') or item.get('point')
+            if not (isinstance(pt, (list, tuple)) and len(pt) == 2):
+                continue
+
+            x, y = pt
+            try:
+                x = float(x)
+                y = float(y)
+            except Exception:
+                continue
+
+            max_abs = max(abs(x), abs(y))
+
+            # map to [0,1]
+            if 0.0 <= max_abs <= 1.5:
+                x_norm, y_norm = x, y
+            elif 0.0 <= max_abs <= 1000.0:
+                x_norm = x / 1000.0
+                y_norm = y / 1000.0
+            else:
+                # assume pixels
+                x_norm = x / w
+                y_norm = y / h
+
+            pts_norm.append((x_norm, y_norm))
+
+        if not pts_norm:
+            return None
+
+        pts_norm = np.array(pts_norm, dtype=float)
+
+        if output == 'norm':
+            return pts_norm
+
+        # output == 'pixel'
+        x_pix = np.clip(pts_norm[:, 0] * w, 0, w - 1)
+        y_pix = np.clip(pts_norm[:, 1] * h, 0, h - 1)
+        pts_pix = np.stack([x_pix, y_pix], axis=1).round().astype(int)
+        return pts_pix
+
+    @staticmethod
+    def _text2pts(
+        text: str,
+        width: int = 640,
+        height: int = 480,
+        output: str = 'pixel'
+    ) -> np.ndarray:
+        """
+        Parse free-text patterns:
+            (x, y) or (x0, y0, x1, y1)
+        """
+        pattern = r'\(([-+]?\d+\.?\d*(?:,\s*[-+]?\d+\.?\d*)*?)\)'
+        matches = re.findall(pattern, text)
+        pts_norm = []
+        w = float(width) if width else 1.0
+        h = float(height) if height else 1.0
+
+        for match in matches:
+            nums = [float(num) for num in match.split(',')]
+            max_abs = max(abs(v) for v in nums)
+            is_norm = (0.0 <= max_abs <= 1.5)
+
+            if len(nums) == 2:
+                x, y = nums
+                if is_norm:
+                    x_norm, y_norm = x, y
+                else:
+                    x_norm = x / w
+                    y_norm = y / h
+                pts_norm.append((x_norm, y_norm))
+
+            elif len(nums) == 4:
+                x0, y0, x1, y1 = nums
+                if is_norm:
+                    x0 *= w
+                    y0 *= h
+                    x1 *= w
+                    y1 *= h
+
+                x0, y0, x1, y1 = map(float, (x0, y0, x1, y1))
+                if x1 < x0:
+                    x0, x1 = x1, x0
+                if y1 < y0:
+                    y0, y1 = y1, y0
+
+                x0_i, y0_i, x1_i, y1_i = map(int, map(round, (x0, y0, x1, y1)))
+                h_box = max(0, y1_i - y0_i)
+                w_box = max(0, x1_i - x0_i)
+                if h_box > 0 and w_box > 0:
+                    yy, xx = np.where(np.ones((h_box, w_box), dtype=np.uint8))
+                    x_pix = xx + x0_i
+                    y_pix = yy + y0_i
+                    x_norm = x_pix / w
+                    y_norm = y_pix / h
+                    pts_norm.extend(zip(x_norm, y_norm))
+
+        if not pts_norm:
+            return np.empty((0, 2), dtype=float if output == 'norm' else int)
+
+        pts_norm = np.array(pts_norm, dtype=float)
+
+        if output == 'norm':
+            return pts_norm
+
+        # output == 'pixel'
+        x_pix = np.clip(pts_norm[:, 0] * w, 0, w - 1)
+        y_pix = np.clip(pts_norm[:, 1] * h, 0, h - 1)
+        pts_pix = np.stack([x_pix, y_pix], axis=1).round().astype(int)
+        return pts_pix
+
+    @staticmethod
+    def _strip_md_fence(text: str) -> str:
+        s = text.strip()
+        if not s.startswith('```'):
+            return s
+
+        first_nl = s.find('\n')
+        if first_nl != -1:
+            inner = s[first_nl + 1:]
+        else:
+            inner = s.lstrip('`')
+
+        inner = inner.strip()
+        if inner.endswith('```'):
+            inner = inner[:-3]
+        return inner.strip()
