@@ -110,7 +110,6 @@ class MVUEval(VideoBaseDataset):
             )
 
             # 2) Find the main JSON annotation file:
-            #    Current strategy: take the first .json file under root; if you have a fixed filename, you can hardcode it
             json_files = [f for f in os.listdir(root) if f.endswith('.json')]
             if not json_files:
                 raise FileNotFoundError(f'[MVUEval] No json annotation found in {root}')
