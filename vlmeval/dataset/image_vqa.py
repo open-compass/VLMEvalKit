@@ -219,7 +219,7 @@ class VizWiz(ImageBaseDataset):
 
 class VTCBench(ImageBaseDataset):
     TYPE = 'VQA'
-    _DATASET_PATH = "/hdddata/zhaohongbo/VLMEvalKit/LMUData/VTCBench"
+    _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
     # Dataset URL mapping - points to different splits of HuggingFace dataset
     DATASET_URL = {
         "Retrieval": f"https://huggingface.co/datasets/{_DATASET_PATH}",

@@ -25,7 +25,7 @@ def calc_vtc_metrics(
     # make sure gold answers are stripped strings, not int/float/etc.,
     # otherwise the 'contains' metric may fail
     gold_answers = [str(ans).strip() for ans in gold_answers]
-
+    response = str(response).strip()
     if metric is None:
         metric = [
             "EM",
