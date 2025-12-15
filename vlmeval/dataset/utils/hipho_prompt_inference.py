@@ -1,6 +1,4 @@
-# flake8: noqa
-SYSTEM_PROMPTS_EN = \
-"""You are participating in a high school physics competition.
+SYSTEM_PROMPTS_EN = """You are participating in a high school physics competition.
 Please read the following question carefully and provide a clear, step-by-step solution with full reasoning.
 
 Context (if applicable):
@@ -15,9 +13,12 @@ Useful information (formulas, constants, units, if applicable):
 Instructions:
 1. Use LaTeX to format all variables, equations, and calculations.
 2. Enclose your full reasoning process within <think> </think> tags.
-3. Provide the final answer within <answer> </answer> tags, using the format of [\\boxed{{answer}}]. Do not include units inside the box.
-4. For multiple sub-questions, list the answers in order using the format: [\\boxed{{answer1}}, \\boxed{{answer2}}, ...].
-5. For multiple-choice questions, provide the final selected option(s) in the boxed answer instead of the calculation result (e.g., [\\boxed{{A}}]).
+3. Provide the final answer within <answer> </answer> tags, using the format
+   of [\\boxed{{answer}}]. Do not include units inside the box.
+4. For multiple sub-questions, list the answers in order using the format:
+   [\\boxed{{answer1}}, \\boxed{{answer2}}, ...].
+5. For multiple-choice questions, provide the final selected option(s) in the
+   boxed answer instead of the calculation result (e.g., [\\boxed{{A}}]).
 
 Example of Output:
 <think>
@@ -28,8 +29,7 @@ Step 1: Analyze the problem... Step 2: Apply the relevant equations...
 </answer>
 """
 
-SYSTEM_PROMPTS_ZH = \
-"""你正在参加高中物理竞赛。
+SYSTEM_PROMPTS_ZH = """你正在参加高中物理竞赛。
 请仔细阅读下列题目，结合上下文信息，详细推导并给出清晰、有条理的解题步骤与完整的逻辑推理过程。
 
 背景信息（如有）：
@@ -58,8 +58,8 @@ SYSTEM_PROMPTS_ZH = \
 """
 
 # Judge grading prompt template
-JUDGE_GRADING_PROMPT_TEMPLATE = \
-"""You are an expert physics competition grader. Evaluate the student's solution against the specific grading criterion.
+JUDGE_GRADING_PROMPT_TEMPLATE = """You are an expert physics competition grader.
+Evaluate the student's solution against the specific grading criterion.
 
 PHYSICS PROBLEM:
 {question}
@@ -104,8 +104,7 @@ Example outputs:
 RESPOND WITH ONLY THE BOXED SCORE:"""
 
 # Total score limit warning template
-TOTAL_SCORE_WARNING_TEMPLATE = \
-"""
+TOTAL_SCORE_WARNING_TEMPLATE = """
 ⚠️  IMPORTANT TOTAL SCORE CONSTRAINT:
 - This question has a maximum total score of {max_total_score} points
 - ALL marking criteria scores combined MUST NOT exceed {max_total_score} points
@@ -114,8 +113,7 @@ TOTAL_SCORE_WARNING_TEMPLATE = \
 - This is attempt #{current_attempt} of evaluation"""
 
 # Retry warning template
-RETRY_WARNING_TEMPLATE = \
-"""
+RETRY_WARNING_TEMPLATE = """
 🔄 RETRY NOTICE:
 - Previous attempt(s) resulted in total score exceeding the maximum
 - Please be more conservative in your scoring
