@@ -9,7 +9,7 @@ class SArena_MINI(ImageBaseDataset):
     TYPE = "VQA"
 
     DATASET_URL = {
-        "SArena_MINI": "https://huggingface.co/datasets/JoeLeelyf/UniSVG-VLMEvalKit/resolve/main/UniSVG.tsv"
+        "SArena_MINI": "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/blob/main/SArena_MINI.zip"
     }
 
     DATASET_MD5 = {
