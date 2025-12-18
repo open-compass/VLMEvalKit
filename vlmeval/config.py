@@ -476,6 +476,7 @@ api_models = {
     "Taiyi": partial(TaiyiAPI, model="taiyi", temperature=0, retry=10),
     # TeleMM
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
+    "TeleMM2.0": partial(TeleMM2_API, model="TeleAI/TeleMM", retry=3, timeout=600),
     "Qwen2.5-VL-32B-Instruct-SiliconFlow": partial(
         SiliconFlowAPI, model="Qwen/Qwen2.5-VL-32B-Instruct", temperature=0, retry=10),
     "Qwen3-VL-8B--crop--arm_thinker_prompt--sglang": partial(

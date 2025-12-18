@@ -9,6 +9,7 @@ from .glm_vision import GLMVisionAPI
 from .cloudwalk import CWWrapper
 from .sensechat_vision import SenseChatVisionAPI
 from .siliconflow import SiliconFlowAPI, TeleMMAPI
+from .telemm import TeleMM2_API
 from .hunyuan import HunyuanVision
 from .bailingmm import bailingMMAPI
 from .bluelm_api import BlueLMWrapper, BlueLM_API
@@ -33,5 +34,5 @@ __all__ = [
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
-    'VideoChatOnlineV2API'
+    'VideoChatOnlineV2API', 'TeleMM2_API'
 ]
