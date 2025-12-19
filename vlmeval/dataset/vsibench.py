@@ -333,6 +333,7 @@ class VsiBench(VideoBaseDataset):
                 [(k, v) for k, v in summary.items() if k not in ('tabulated_keys', 'tabulated_results')],
                 columns=['metric', 'value'],
             )
+            acc_df = acc_df.set_index('metric').T
             acc_df.to_csv(acc_tsv_path, sep='\t', index=False)
             print(f'[save] accuracy table saved to {acc_tsv_path}')
         except Exception as e:
