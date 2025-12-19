@@ -118,6 +118,8 @@ from .omnispatialbench import OmniSpatialBench
 from .erqabench import ERQABench
 from .robospatialbench import RoboSpatialBench
 from .refspatialbench import RefSpatialBench
+from .spbench import SPBench
+from .spbench import SPBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -259,6 +261,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
+<<<<<<< HEAD
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
@@ -268,6 +271,7 @@ IMAGE_DATASET = [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, StareBench, OmniSpatialBench,
     ERQABench, RoboSpatialBench, RefSpatialBench,
+    SPBench,
 ]
 
 VIDEO_DATASET = [
