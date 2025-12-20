@@ -240,7 +240,7 @@ class ImageMCQDataset(ImageBaseDataset):
 
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import (
-            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval
+            report_acc, report_acc_MMT, report_acc_MMSci, mcq_circular_eval, mcq_vanilla_eval, report_acc_MMVP
         )
         # assert dataset is not None
         dataset_map = {
@@ -308,6 +308,8 @@ class ImageMCQDataset(ImageBaseDataset):
             acc = report_acc_MMT(data)
         elif 'MMSci' in dataset:
             acc = report_acc_MMSci(data)
+        elif dataset == 'MMVP':
+            acc = report_acc_MMVP(data)
         else:
             acc = report_acc(data)
 
