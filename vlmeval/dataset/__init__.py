@@ -285,7 +285,6 @@ VIDEO_DATASET = [
     Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
     EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo, MVUEval, OMTGBench, V2PBench
 ]
-
 TEXT_DATASET = [
     TextMCQDataset
 ]
