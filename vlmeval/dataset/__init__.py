@@ -258,9 +258,8 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo, MMSIVideoBench
 ]
-
 TEXT_DATASET = [
     TextMCQDataset
 ]
