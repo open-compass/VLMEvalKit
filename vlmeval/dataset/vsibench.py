@@ -146,7 +146,7 @@ class VsiBench(VideoBaseDataset):
         return dict(data_file=variant_data_file, root=dataset_path)
 
     def save_video_frames(self, video_path, video_llm=False):
-        vid_path = os.path.join(self.data_root, 'video', video_path)
+        vid_path = os.path.join(self.data_root, video_path)
 
         vid = decord.VideoReader(vid_path)
         video_nframes = len(vid)
