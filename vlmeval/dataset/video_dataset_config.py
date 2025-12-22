@@ -207,10 +207,10 @@ dream_1k_dataset = {
 }
 
 av_speakerbench_dataset = {
-    'av_speakerbench_16frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=16),
-    'av_speakerbench_32frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=32),
-    'av_speakerbench_64frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=64),
-    'av_speakerbench_1fps': partial(VSIBench, dataset='AV-SpeakerBench', fps=1.0),
+    'AV-SpeakerBench_16frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=16),
+    'AV-SpeakerBench_32frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=32),
+    'AV-SpeakerBench_64frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=64),
+    'AV-SpeakerBench_1fps': partial(VSIBench, dataset='AV-SpeakerBench', fps=1.0),
 }
 
 supported_video_datasets = {}
