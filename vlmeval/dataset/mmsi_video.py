@@ -188,15 +188,12 @@ class MMSIVideoBench(ImageBaseDataset):
                 '')
 
         def is_nan_or_none(value):
-            """检查值是否为None或各种形式的NaN"""
             if value is None:
                 return True
             try:
-                # 处理字符串'nan'
                 if isinstance(value, str) and value.lower() in [
                         'nan', 'null', 'none', '']:
                     return True
-                # 处理浮点数nan
                 if isinstance(value, float) and value != value:  # nan != nan
                     return True
             except BaseException:
@@ -232,7 +229,7 @@ class MMSIVideoBench(ImageBaseDataset):
                 return clear_words(response.split('.')[0])
             else:
                 return 'O'
-        df = pd.read_excel(eval_file)
+        df = load(eval_file)
         data = df.to_dict(orient="list")
         score_dict = {'Overall': []}
         SUB_BENCHS = [
