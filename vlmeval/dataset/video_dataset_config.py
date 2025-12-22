@@ -206,6 +206,13 @@ dream_1k_dataset = {
     'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
 }
 
+av_speakerbench_dataset = {
+    'av_speakerbench_16frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=16),
+    'av_speakerbench_32frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=32),
+    'av_speakerbench_64frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=64),
+    'av_speakerbench_1fps': partial(VSIBench, dataset='AV-SpeakerBench', fps=1.0),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
@@ -213,7 +220,7 @@ dataset_groups = [
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    vsibench_dataset
+    vsibench_dataset, av_speakerbench_dataset
 ]
 
 for grp in dataset_groups:

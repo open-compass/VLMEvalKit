@@ -168,7 +168,7 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
             video_path = line.get('visual_path')
         audio_path = line.get('audio_path')
 
-        if not self.audio_only and video_llm:
+        if not self.audio_only and not video_llm:
             frames, indices, video_info = self.save_video_frames(video_path, line['video'])
         else:
             frames, indices, video_info = [], [], {}
