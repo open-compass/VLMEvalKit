@@ -65,7 +65,7 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
-from .vsibench import VsiBench
+from .vsibench import VsiBench, VsiSuperRecall, VsiSuperCount
 from .mvu_eval import MVUEval
 from .omtgbench import OMTGBench
 from .mmsi_video import MMSIVideoBench
@@ -283,7 +283,8 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, SiteBenchVideo, MVUEval, OMTGBench, V2PBench
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, VsiSuperRecall, VsiSuperCount, SiteBenchVideo,
+    MVUEval, OMTGBench, V2PBench
 ]
 TEXT_DATASET = [
     TextMCQDataset
