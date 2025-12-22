@@ -8,11 +8,6 @@ from .video_base import VideoBaseDataset
 import json
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
-
-
-
-
 def _parse_multi_choice_response(response, all_choices):
     response = response or ""
     answer_prefixes = [
@@ -111,12 +106,44 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
                             return False
             return True
 
-        cache_path = get_cache_path(repo_id, branch = "vlm_eval_version")
-        if cache_path is not None and check_integrity(cache_path):
-            dataset_path = cache_path
-        else:
-            # currently available on hf
+        def unzip_hf_zip(pth):
+            import zipfile
+            base_dir = pth
+            zip_files = [
+                os.path.join(base_dir, file) for file in os.listdir(base_dir)
+                if file.endswith('.zip')
+            ]
+            if not zip_files:
+                return
+
+            for zip_file in sorted(zip_files):
+                with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                    for member in zip_ref.namelist():
+                        if member.endswith('/'):
+                            continue
+                        parts = member.split('/')
+                        fname = parts[-1]
+                        first_dir = parts[0] if len(parts) > 1 else ''
+                        target_dir = os.path.join(base_dir, first_dir) if first_dir else base_dir
+                        os.makedirs(target_dir, exist_ok=True)
+                        target_path = os.path.join(target_dir, fname)
+                        if osp.exists(target_path):
+                            continue
+                        with zip_ref.open(member) as source, open(target_path, 'wb') as target:
+                            target.write(source.read())
+
+        cache_path = get_cache_path(repo_id, branch="vlm_eval_version")
+        dataset_path = None
+        if cache_path is not None:
+            unzip_hf_zip(cache_path)
+            if check_integrity(cache_path):
+                dataset_path = cache_path
+
+        if dataset_path is None:
             dataset_path = snapshot_download(repo_id=repo_id, repo_type='dataset')
+            unzip_hf_zip(dataset_path)
+            if not check_integrity(dataset_path):
+                warnings.warn('Dataset integrity check failed after download; media files may be missing.')
 
         data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
 
