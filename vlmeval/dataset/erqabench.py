@@ -7,6 +7,13 @@ from .image_vqa import ImageVQADataset
 
 
 class ERQABench(ImageVQADataset):
+    """
+    ERQA.
+
+    Reference:
+      Gemini Robotics: Bringing AI into the Physical World
+      https://arxiv.org/html/2503.20020v1
+    """
 
     DATASET_URL = {
         'ERQA': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/ERQA.tsv',

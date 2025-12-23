@@ -16,6 +16,14 @@ from ..smp.file import LMUDataRoot, dump, load
 
 
 class MMSIBench(ImageMCQDataset):
+    """
+    MMSI-Bench.
+
+    Reference:
+      MMSI-Bench: A Benchmark for Multi-Image Spatial Intelligence
+      https://arxiv.org/abs/2505.23764
+    """
+
     TYPE = 'MCQ'
 
     # VLMEvalKit officially provides an MMSI *circular* TSV.
@@ -109,6 +117,14 @@ class MMSIBench(ImageMCQDataset):
 
 
 class MMSIVideoBench(VideoBaseDataset):
+    """
+    MMSI-Video-Bench.
+
+    Reference:
+      MMSI-Video-Bench: A Holistic Benchmark for Video-Based Spatial Intelligence
+      https://arxiv.org/abs/2512.10863
+    """
+
     TYPE = 'MCQ'
 
     DATASET_URL = {

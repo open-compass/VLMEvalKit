@@ -17,6 +17,14 @@ from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
 
 
 class StareBench(ImageMCQDataset):
+    """
+    STARE.
+
+    Reference:
+      Unfolding Spatial Cognition: Evaluating Multimodal Models on Visual Simulations
+      https://arxiv.org/abs/2506.04633
+    """
+
     TYPE = 'MCQ'
 
     STARE_TSV_URL = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/StareBench.tsv'

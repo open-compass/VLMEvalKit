@@ -14,6 +14,13 @@ from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
 
 
 class RefSpatialBench(ImageVQADataset):
+    """
+    RefSpatial-Bench.
+
+    Reference:
+      RefSpatial-Bench: A Benchmark for Multi-step Spatial Referring
+      https://arxiv.org/abs/2506.04308
+    """
 
     DATASET_URL = {
         'RefSpatial': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/RefSpatial.tsv',

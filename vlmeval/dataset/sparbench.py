@@ -18,6 +18,14 @@ from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_fro
 
 
 class SparBench(ImageBaseDataset):
+    """
+    SPAR-Bench.
+
+    Reference:
+      From Flatland to Space: Teaching Vision-Language Models to Perceive and Reason in 3D
+      https://arxiv.org/abs/2503.22976
+    """
+
     TYPE = 'VQA'
 
     DATASET_URL = {

@@ -9,6 +9,14 @@ from ..smp.misc import toliststr
 
 
 class EmbSpatialBench(ImageMCQDataset):
+    """
+    EmbSpatial-Bench.
+
+    Reference:
+      EmbSpatial-Bench: Benchmarking Spatial Understanding for Embodied Tasks with Large Vision-Language Models
+      https://arxiv.org/abs/2406.05756
+    """
+
     TYPE = 'MCQ'
 
     DATASET_URL = {

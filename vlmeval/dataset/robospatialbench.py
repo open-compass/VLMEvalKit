@@ -12,6 +12,13 @@ from ..smp.misc import toliststr
 
 
 class RoboSpatialBench(ImageVQADataset):
+    """
+    RoboSpatial-Home.
+
+    Reference:
+      RoboSpatial: Teaching Spatial Understanding to 2D and 3D Vision-Language Models for Robotics
+      https://arxiv.org/abs/2411.16537
+    """
 
     DATASET_URL = {
         'RoboSpatialHome': 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/RoboSpatialHome.tsv',  # noqa: E501

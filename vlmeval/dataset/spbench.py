@@ -9,6 +9,14 @@ from .image_base import ImageBaseDataset
 
 
 class SPBench(ImageBaseDataset):
+    """
+    SPBench.
+
+    Reference:
+      SpatialLadder: Progressive Training for Spatial Reasoning in Vision-Language Models
+      https://arxiv.org/abs/2510.08531
+    """
+
     TYPE = 'MCQ'
 
     # Prompt template directly from SPBench codebase:
