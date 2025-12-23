@@ -77,6 +77,14 @@ If uncertain, pick the most plausible option—never refuse or reply “insuffic
 
 
 class OmniSpatialBench(ImageMCQDataset):
+    """
+    OmniSpatial.
+
+    Reference:
+      OmniSpatial: Towards Comprehensive Spatial Reasoning Benchmark for Vision Language Models
+      https://arxiv.org/abs/2506.03135
+    """
+
     TYPE = 'MCQ'
 
     OMNI_TSV_URL = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/OmniSpatialBench.tsv'

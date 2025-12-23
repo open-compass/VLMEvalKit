@@ -9,6 +9,14 @@ from ..smp.misc import toliststr
 
 
 class SpatialVizBench(ImageMCQDataset):
+    """
+    SpatialViz-Bench.
+
+    Reference:
+      SpatialViz-Bench: An MLLM Benchmark for Spatial Visualization
+      https://arxiv.org/abs/2507.07610
+    """
+
     TYPE = 'MCQ'
 
     SPATIALVIZ_TSV_URL = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main/SpatialVizBench.tsv'  # noqa: E501

@@ -11,6 +11,14 @@ from huggingface_hub import snapshot_download
 
 
 class MindCubeBench(ImageMCQDataset):
+    """
+    MindCube.
+
+    Reference:
+      Spatial Mental Modeling from Limited Views
+      https://arxiv.org/abs/2506.21458
+    """
+
     TYPE = 'MCQ'
 
     DATASET_URL = {

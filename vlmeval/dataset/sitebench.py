@@ -19,6 +19,14 @@ from .image_mcq import ImageMCQDataset
 
 
 class SiteBenchBase:
+    """
+    SITE-Bench.
+
+    Reference:
+      SITE: towards Spatial Intelligence Thorough Evaluation
+      https://arxiv.org/abs/2505.05456
+    """
+
     def __init__(self, *args, **kwargs) -> None:
         self.repo_id = 'franky-veteran/SITE-Bench'
         super().__init__(*args, **kwargs)

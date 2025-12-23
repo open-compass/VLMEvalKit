@@ -10,6 +10,14 @@ from .image_mcq import ImageMCQDataset
 
 
 class ViewSpatialBench(ImageMCQDataset):
+    """
+    ViewSpatial-Bench.
+
+    Reference:
+      ViewSpatial-Bench: Evaluating Multi-perspective Spatial Localization in Vision-Language Models
+      https://arxiv.org/abs/2505.21500
+    """
+
     TYPE = 'MCQ'
 
     DATASET_URL = {

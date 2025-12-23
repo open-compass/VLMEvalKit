@@ -19,6 +19,13 @@ from .video_base import VideoBaseDataset
 
 
 class VsiBench(VideoBaseDataset):
+    """
+    VSI-Bench.
+
+    Reference:
+      Thinking in Space: How Multimodal Large Language Models See, Remember, and Recall Spaces
+      https://arxiv.org/abs/2412.14171
+    """
 
     MD5 = ''
     TYPE = 'MCQ'
@@ -533,6 +540,14 @@ class VsiSuperBase(VideoBaseDataset):
 
 
 class VsiSuperRecall(VsiSuperBase):
+    """
+    VSI-SUPER-Recall.
+
+    Reference:
+      Cambrian-S: Towards Spatial Supersensing in Video
+      https://arxiv.org/abs/2511.04670
+    """
+
     TYPE = 'MCQ'
 
     HF_ROOT_PATH = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main'
@@ -626,6 +641,14 @@ class VsiSuperRecall(VsiSuperBase):
 
 
 class VsiSuperCount(VsiSuperBase):
+    """
+    VSI-SUPER-Count.
+
+    Reference:
+      Cambrian-S: Towards Spatial Supersensing in Video
+      https://arxiv.org/abs/2511.04670
+    """
+
     TYPE = 'VQA'
 
     HF_ROOT_PATH = 'https://huggingface.co/datasets/lmms-lab-si/EASI-Leaderboard-Data/resolve/main'
