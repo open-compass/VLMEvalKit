@@ -29,6 +29,7 @@ LMUDATA/
 
 
 class MMSIVideoBench(ImageBaseDataset):
+    TYPE = 'MCQ'
     Settings = ['_U50', '_SC']
     DATASET_URL = {}
     DATASET_MD5 = {}
@@ -37,7 +38,6 @@ class MMSIVideoBench(ImageBaseDataset):
         DATASET_URL[
             DATASET_NAME] = f'https://opencompass.openxlab.space/utils/VLMEval/{DATASET_NAME}.tsv'
         DATASET_MD5[DATASET_NAME] = 'cd0f9174a5517a191d7656df84fdd6f7'
-    TYPE = 'IL'
     main_categories = [
         '(Cross-Video) Memoery Update',
         '(Cross-Video) Multi-View Integration',
