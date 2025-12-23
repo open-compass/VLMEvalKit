@@ -1,0 +1,5 @@
+cairosvg
+lpips
+openai-clip
+scikit-image
+torchmetrics
