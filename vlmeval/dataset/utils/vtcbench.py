@@ -96,12 +96,12 @@ def process_vtc_line(line):
         metric = ['contains']
     else:
         raise AssertionError
-    
+
     result = calc_vtc_metrics(response, answers, metric)
     ret['score'] = result[metric[0]]
     ret['category'] = category
     ret['calc_metric'] = metric[0]
-       
+
     return ret
 
 
@@ -110,7 +110,7 @@ def gpt_eval_vtcbemch(model, line):
     retry = 5
     log = ''
     ret = {}
-    
+
     if istype(line['answer'], list):
         answers = eval(line['answer'])
     else:
@@ -128,19 +128,19 @@ def gpt_eval_vtcbemch(model, line):
     elif category == "Retrieval":
         metric = ['contains']
         result = calc_vtc_metrics(response, answers, metric)
-        ret['score'] = result[metric[0]] 
+        ret['score'] = result[metric[0]]
         ret['category'] = category
         ret['calc_metric'] = metric[0]
         return ret
     elif category == 'Memory': # use gpt to judge the quality of the response in memory category
         prompt = QUESTION_QUALITY_PROMPT_EN_NO_COT.format(question=line['question'], gold_answer=answers, llm_response=response)
-        
+
         retry = 5
         ret['calc_metric'] = 'gpt_judge'
         for i in range(retry):
             try:
                 judge_response = model.generate(prompt, temperature=1).strip()
-       
+
                 if judge_response == 'A':
                     ret['score'] = 1
                     ret['category'] = category
@@ -149,17 +149,16 @@ def gpt_eval_vtcbemch(model, line):
                     ret['category'] = category
                 elif judge_response == 'C':
                     ret['score'] = 0
-                    ret['category'] = category    
+                    ret['category'] = category
                 else:
                     raise RuntimeError(f'Invalid judge response: {judge_response}')
                 break
             except:
                 time.sleep(1)
-        
+
         if i == retry - 1:
             ret['score'] = ""
             ret['category'] = category
             raise RuntimeError('GPT evsal failed after retries')
-        
+
         return ret
-        

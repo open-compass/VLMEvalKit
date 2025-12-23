@@ -233,11 +233,11 @@ class VTCBench(ImageBaseDataset):
         "Reasoning": "",
         "Memory": "",
     }
-    
+
     @classmethod
     def supported_datasets(cls):
         return 'VTCBench'
-    
+
     def load_data(self, dataset: str):
         """Load dataset from HuggingFace"""
 
@@ -246,9 +246,9 @@ class VTCBench(ImageBaseDataset):
         COLUMNS_ORGINIAL = ["problem", "answers", "images"]
         all_dataframes = []
         current_index = 0
-        
+
         for task in ["Retrieval", "Reasoning", "Memory"]:
-            
+
             def _gen_fields(example: dict, idx: int) -> dict:
                 # example schema:
                 # problem: str
@@ -266,9 +266,9 @@ class VTCBench(ImageBaseDataset):
                     "question": example["problem"],
                     "answer": json.dumps(example["answers"], ensure_ascii=False),
                     "image": json.dumps(b64_imgs),
-                    "category": task, 
+                    "category": task,
                 }
-            
+
             hf_dataset = load_dataset(
                 self._DATASET_PATH, split=task, columns=COLUMNS_ORGINIAL,
             )
@@ -282,7 +282,7 @@ class VTCBench(ImageBaseDataset):
             data = hf_dataset.to_pandas()
             all_dataframes.append(data)
             current_index += len(data)
-            
+
         # Concatenate all dataframes
         merged_data = pd.concat(all_dataframes, ignore_index=False)
 
@@ -295,13 +295,13 @@ class VTCBench(ImageBaseDataset):
 
         return merged_data
 
-    
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         base64_list = line['image']
-        
+
         quesiton = line['question']
         category = line['category']
 
@@ -313,7 +313,7 @@ class VTCBench(ImageBaseDataset):
             prompt = 'Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible. Question: '+ quesiton
         else:
             raise ValueError(f"Unknown category: {category}")
-        
+
         msgs = []
         if isinstance(base64_list, list):
             msgs.extend([dict(type='image', value='data:image/jpeg;base64,'+p) for p in base64_list])
@@ -321,8 +321,8 @@ class VTCBench(ImageBaseDataset):
             msgs = [dict(type='image', value='data:image/jpeg;base64,' + base64_list)]
         msgs.append(dict(type='text', value=prompt))
         return msgs
-    
-    
+
+
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         try:
@@ -332,21 +332,21 @@ class VTCBench(ImageBaseDataset):
         except:
             print('No GPT model specified, using heuristic evaluation.')
             return self.get_scores(eval_file, **judge_kwargs)
-    
+
     @classmethod
-    def get_scores_gpt(self, eval_file, **judge_kwargs):  
+    def get_scores_gpt(self, eval_file, **judge_kwargs):
         from .utils.vtcbench import gpt_eval_vtcbemch
         model = build_judge(max_tokens=128, **judge_kwargs)
         score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
         tmp_file_score = get_intermediate_file_path(eval_file, f'_{model}_score', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
-        
+
         if not osp.exists(score_file):
             data = load(eval_file)
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            
+
             tups = [(model, line) for line in lines]
             indices = [line['index'] for line in lines]
 
@@ -355,7 +355,7 @@ class VTCBench(ImageBaseDataset):
                 scores = load(tmp_file_score)
             tups = [x for x, i in zip(tups, indices) if i not in scores]
             indices = [i for i in indices if i not in scores]
-            
+
             if len(indices):
                 new_result = track_progress_rich(
                     gpt_eval_vtcbemch,
@@ -369,38 +369,38 @@ class VTCBench(ImageBaseDataset):
                 for k, v in zip(indices, new_result):
                     assert k in scores
                     assert scores[k]['score'] == v['score'] and scores[k]['category'] == v['category'] and scores[k]['calc_metric'] == v['calc_metric']
-                    
+
             data['score'] = [scores[idx]['score'] for idx in data['index']]
             data['category'] = [scores[idx]['category'] for idx in data['index']]
             data['calc_metric'] = [scores[idx]['calc_metric'] for idx in data['index']]
 
             dump(data, score_file)
-            
+
         # 加载评分后的数据并按calc_metric聚合
         data = load(score_file)
-        
+
         # 按照calc_metric聚合结果
         category_scores = {}
         category_counts = {}
-        
+
         # 遍历data中的每个结果
         for _, row in data.iterrows():
             category = row['calc_metric']
             score = row['score']
-            
+
             # 累加分数和计数
             if category not in category_scores:
                 category_scores[category] = 0
                 category_counts[category] = 0
-                
+
             category_scores[category] += score
             category_counts[category] += 1
-        
+
         # 计算每个category的平均分数
         ret = dict()
         for category in category_scores:
             ret[category] = category_scores[category] / category_counts[category]
-            
+
         # 添加Overall平均分
         if category_scores:  # 确保有数据才计算
             total_score = sum(category_scores.values())
@@ -408,16 +408,16 @@ class VTCBench(ImageBaseDataset):
             ret['Overall'] = total_score / total_count
         else:
             ret['Overall'] = 0.0
-            
+
         result_file = get_intermediate_file_path(eval_file, '_result', 'json')
         dump(ret, result_file)
         return ret
-    
-    
-    @classmethod                                 
+
+
+    @classmethod
     def get_scores(self, eval_file, **judge_kwargs):
         from .utils.vtcbench import process_vtc_line
-        
+
         result_file = get_intermediate_file_path(eval_file, '_tmp')
 
         if not osp.exists(result_file):
@@ -427,37 +427,37 @@ class VTCBench(ImageBaseDataset):
             data['prediction'] = [str(x) for x in data['prediction']]
             data['answer'] = [str(x) for x in data['answer']]
             data['category'] = [str(x) for x in data['category']]
-            
+
             lt = len(data)
             pool = mp.Pool(1)
             lines = [data.iloc[i] for i in range(lt)]
-            
+
             res = pool.map(process_vtc_line, lines)
-            
+
             # 按照category聚合结果
             category_scores = {}
             category_counts = {}
-            
+
             # 遍历res中的每个结果
             for item in res:
                 category = item['category']
                 score = item['score']
-                
+
                 # 累加分数和计数
                 if category not in category_scores:
                     category_scores[category] = 0
                     category_counts[category] = 0
-                    
+
                 category_scores[category] += score
                 category_counts[category] += 1
-            
-           
+
+
             ret = dict()
 
             # 计算每个category的平均分数
             for category in category_scores:
                 ret[category] = category_scores[category] / category_counts[category]
-                
+
             # 添加Overall平均分
             if category_scores:  # 确保有数据才计算
                 total_score = sum(category_scores.values())
