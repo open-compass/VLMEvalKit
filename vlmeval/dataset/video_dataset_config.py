@@ -193,13 +193,28 @@ egoexobench_dataset = {
 
 }
 
+vsibench_dataset = {
+    'vsibench_16frame': partial(VSIBench, dataset='VSIBench', nframe=16),
+    'vsibench_32frame': partial(VSIBench, dataset='VSIBench', nframe=32),
+    'vsibench_64frame': partial(VSIBench, dataset='VSIBench', nframe=64),
+}
+
+dream_1k_dataset = {
+    'DREAM-1K_8frame': partial(DREAM, dataset='DREAM-1K', nframe=8),
+    'DREAM-1K_64frame': partial(DREAM, dataset='DREAM-1K', nframe=64),
+    'DREAM-1K_2fps': partial(DREAM, dataset='DREAM-1K', fps=2.0),
+    'DREAM-1K_1fps': partial(DREAM, dataset='DREAM-1K', fps=1.0),
+    'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
+}
+
 supported_video_datasets = {}
 
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommmu_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
-    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, video_tt_dataset
+    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
+    vsibench_dataset
 ]
 
 for grp in dataset_groups:

@@ -111,7 +111,10 @@ class MIABench(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        judge_name = judge_kwargs.pop('model', 'gpt-4o')
+        if "model" in judge_kwargs:
+            judge_name = judge_kwargs.pop('model', 'gpt-4o')
+        else:
+            judge_name = judge_kwargs.pop('judge_name', 'gpt-4o')
 
         model = build_judge(model=judge_name, **judge_kwargs)
 
@@ -120,6 +123,7 @@ class MIABench(ImageBaseDataset):
         nproc = judge_kwargs.pop('nproc', 4)  # noqa: F841
 
         if not osp.exists(storage):
+            
             data = load(eval_file)
             num_samples = len(data)
             lines = [data.loc[i] for i in range(num_samples)]
@@ -151,6 +155,7 @@ class MIABench(ImageBaseDataset):
                 chunksize=nproc,
                 keys=job_keys,
                 save=tmp_file,
+                max_tokens=2000
             )
             for k, resp in zip(job_keys, resps):
                 res[k] = resp

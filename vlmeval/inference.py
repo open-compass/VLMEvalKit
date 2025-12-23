@@ -179,6 +179,11 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     return model
 
 
+# Add for agent evaluation
+def _is_structured_record(v):
+    return isinstance(v, dict) and 'prediction' in v and 'extra_records' in v
+
+
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job(
     model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False, use_vllm=False
@@ -223,20 +228,10 @@ def infer_data_job(
         think_flag = 0
         for ori_pred in ori_predictions:
             pred = ori_pred
-            if "<think>" in ori_pred and "</think>" in ori_pred:
+            if "</think>" in ori_pred:
                 think_flag = 1
                 pred = ori_pred.split("</think>")[1]
                 pred = pred.lstrip()
-            if "<｜place▁holder▁no▁12｜>" in ori_pred and "<｜place▁holder▁no▁12｜>" in ori_pred:
-                think_flag = 1
-                pred = ori_pred.split("<｜place▁holder▁no▁12｜>")[1]
-                pred = pred.lstrip()
-            if pred.startswith("\n"):
-                pred = pred.lstrip("\n")
-                pred = pred.lstrip("\n\n")
-            if pred.startswith("\\n"):
-                pred = pred.lstrip("\\n")
-                pred = pred.lstrip("\\n\\n")
             predictions.append(pred)
         data['prediction'] = predictions
         if think_flag:

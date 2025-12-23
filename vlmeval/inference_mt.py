@@ -28,6 +28,9 @@ def chat_mt(model, messages, dataset_name):
         utter_stack.append(utter)
         try:
             resp = model.chat(utter_stack, dataset=dataset_name)
+            # think 模型去掉思考部分
+            if "</think>" in resp:
+                resp = resp.split("</think>")[1]
             utter_stack.append(dict(role='assistant', content=resp))
         except Exception as e:
             resp = FAIL_MSG + str(e)
@@ -170,6 +173,8 @@ def infer_data_job_mt(
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
     result_file = get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True)
+    if osp.exists(result_file):
+        return model
 
     tmpl = osp.join(work_dir, '{}' + f'{world_size}_{dataset_name}.pkl')
     out_file = tmpl.format(rank)

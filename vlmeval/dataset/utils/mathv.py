@@ -7,6 +7,7 @@ try:
 except Exception as e:
     logging.critical(f'{type(e)}: {e}')
     logging.critical('Please install latex2sympy2 by running "pip install latex2sympy2"')
+    raise e
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'

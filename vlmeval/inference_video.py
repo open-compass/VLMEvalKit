@@ -254,20 +254,10 @@ def infer_data_job_video(
             think_flag = 0
             for ori_pred in ori_predictions:
                 pred = ori_pred
-                if "<think>" in ori_pred and "</think>" in ori_pred:
+                if "</think>" in ori_pred:
                     think_flag = 1
                     pred = ori_pred.split("</think>")[1]
                     pred = pred.lstrip()
-                if "<｜place▁holder▁no▁12｜>" in ori_pred and "<｜place▁holder▁no▁12｜>" in ori_pred:
-                    think_flag = 1
-                    pred = ori_pred.split("<｜place▁holder▁no▁12｜>")[1]
-                    pred = pred.lstrip()
-                if pred.startswith("\n"):
-                    pred = pred.lstrip("\n")
-                    pred = pred.lstrip("\n\n")
-                if pred.startswith("\\n"):
-                    pred = pred.lstrip("\\n")
-                    pred = pred.lstrip("\\n\\n")
                 predictions.append(pred)
             meta['prediction'] = predictions
             if think_flag:

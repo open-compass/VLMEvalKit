@@ -4,6 +4,7 @@ import tempfile
 from functools import partial
 
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
 
 from .image_base import ImageBaseDataset
@@ -12,6 +13,77 @@ from ..smp import *
 from ..smp.file import get_intermediate_file_path, get_file_extension
 from ..utils import track_progress_rich
 
+def extract_coords(pred_str):
+    # 如果输入是 None 或空，直接返回空列表
+    if not pred_str:
+        return []
+    
+    # 正则表达式解释：
+    # \[       : 匹配字面量的左中括号
+    # \s*      : 匹配0个或多个空格（容错）
+    # (\d+)    : 捕获组1，匹配数字 (x坐标)
+    # ,        : 匹配逗号
+    # \s*      : 匹配0个或多个空格
+    # (\d+)    : 捕获组2，匹配数字 (y坐标)
+    # \]       : 匹配字面量的右中括号
+    pattern = r"\[\s*(\d+)\s*,\s*(\d+)\s*\]"
+    
+    # findall 会找到字符串中所有符合格式的 [x, y]
+    matches = re.findall(pattern, pred_str)
+    
+    # 将提取出的字符串数字转换为整数
+    return [[int(x), int(y)] for x, y in matches]
+
+def text2pts(text: str, width=640, height=480, is_absolute=False) -> np.ndarray:
+    if "[" in text and "]" in text:
+        left_bracket = text.index("[")
+        right_bracket = text.index("]")
+        text = text[left_bracket + 1:right_bracket].strip()
+    pattern = r"\(([-+]?\d+\.?\d*(?:,\s*[-+]?\d+\.?\d*)*?)\)"
+    matches = re.findall(pattern, text)
+    points = []
+
+    for match in matches:
+        vector = [float(num) if '.' in num else int(num) for num in match.split(',')]
+        if len(vector) == 2:
+            x, y = vector
+            if not is_absolute and (isinstance(x, float) or isinstance(y, float)):
+                x = int(x * width)
+                y = int(y * height)
+            points.append((x, y))
+        elif len(vector) == 4:
+            x0, y0, x1, y1 = vector
+            if not is_absolute:
+                x0 = int(x0 * width)
+                y0 = int(y0 * height)
+                x1 = int(x1 * width)
+                y1 = int(y1 * height)
+            y, x = np.where(np.ones((y1 - y0, x1 - x0)))
+            points.extend(list(np.stack([x + x0, y + y0], axis=1)))
+
+    return np.array(points)
+
+def rle_decode_mask(rle_string):
+    """
+    解码 RLE 编码的 mask（用于验证）
+    """
+    rle_data = json.loads(rle_string)
+    shape = rle_data["shape"]
+    start = rle_data["start"]
+    counts = rle_data["counts"]
+    
+    if not counts:
+        return np.zeros(shape, dtype=np.uint8)
+    
+    # 重建一维数组
+    flat = []
+    current_value = start
+    for count in counts:
+        flat.extend([current_value] * count)
+        current_value = 1 - current_value  # 交替 0 和 1
+    
+    # 重塑为原始形状
+    return np.array(flat, dtype=np.uint8).reshape(shape)
 
 class ImageVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
@@ -2251,6 +2323,43 @@ class TableVQABench(ImageBaseDataset):
                         {'question': item['value']})
         return msgs
 
+def rle_decode(rle_string):
+    """
+    解码 RLE 压缩的 mask
+    支持新格式（counts_compressed, zlib+base64压缩）和旧格式（counts）
+    """
+    import zlib
+    import base64
+    
+    rle_data = json.loads(rle_string)
+    shape = rle_data["shape"]
+    start = rle_data["start"]
+    
+    # 支持新格式（压缩）和旧格式
+    if "counts_compressed" in rle_data:
+        counts_compressed = rle_data["counts_compressed"]
+        if not counts_compressed:
+            return np.zeros(shape, dtype=np.uint8)
+        # base64解码 -> zlib解压 -> json解析
+        counts_bytes = base64.b64decode(counts_compressed)
+        counts_json = zlib.decompress(counts_bytes).decode('utf-8')
+        counts = json.loads(counts_json)
+    else:
+        # 旧格式兼容
+        counts = rle_data["counts"]
+    
+    if not counts:
+        return np.zeros(shape, dtype=np.uint8)
+    
+    # 重建一维数组
+    flat = []
+    current_value = start
+    for count in counts:
+        flat.extend([current_value] * count)
+        current_value = 1 - current_value  # 交替 0 和 1
+    
+    # 重塑为原始形状
+    return np.array(flat, dtype=np.uint8).reshape(shape)
 
 class CustomVQADataset(ImageBaseDataset):
     TYPE = 'VQA'
@@ -2268,12 +2377,12 @@ class CustomVQADataset(ImageBaseDataset):
             data_path = local_path
         return load(data_path)
 
-    def evaluate(self, eval_file, **judge_kwargs):
+    def evaluate_xverify(self, eval_file, **judge_kwargs):
         from .utils.xverify import VQAxVerifyEvaluator
 
         model = judge_kwargs.get('model', 'xverify')
         suffix = eval_file.split('.')[-1]
-        storage = eval_file.replace(f'.{suffix}', f'_{self.dataset_name}.xlsx')
+        storage = eval_file.replace(f'.{suffix}', f'_xverify.xlsx')
         data = load(eval_file)
         
         if os.path.exists(storage):
@@ -2301,6 +2410,290 @@ class CustomVQADataset(ImageBaseDataset):
         dump(acc, score_pth)
         return acc       
 
+    def evaluate_in_mask(self, eval_file, **judge_kwargs):
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_mask.xlsx')
+        data = load(eval_file)
+        data.pop('mask')
+        dump(data, storage)
+        
+        acc = 0
+        for pred, item in tqdm(zip(data['prediction'].tolist(), self.data.to_dict(orient='records'))):
+            if "</think>" in pred:
+                pred = pred.split("</think>")[1].strip()
+            else:
+                pred = pred.strip()
+            if item['category'] == "counting":
+                _count = item['count']
+            else:
+                _count = 1
+            
+            points = extract_coords(pred)
+            mask = rle_decode(item['mask'])
+            if len(points) != _count:
+                acc += 0
+            if _count == 1 and len(points) == 1:
+                point = points[0]
+                if point[0] < 0 or point[0] >= mask.shape[1] or point[1] < 0 or point[1] >= mask.shape[0]:
+                    acc += 0
+                else:
+                    if mask[point[1], point[0]] == 1:
+                        acc += 1
+                    else:
+                        acc += 0
+            else:
+                for point in points:
+                    if point[0] < 0 or point[0] >= mask.shape[1] or point[1] < 0 or point[1] >= mask.shape[0]:
+                        acc += 0
+                    else:
+                        if mask[point[1], point[0]] == 1:
+                            acc += 1
+                        else:
+                            acc += 0
+        acc = acc / len(data)
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
+        acc = {'accuracy': acc}
+        dump(acc, score_pth)
+        return acc  
+
+    def evaluate_in_mask_RefSpatial(self, eval_file, **judge_kwargs):
+        data = load(eval_file)
+        data.pop('mask')
+        dump(data, eval_file)
+        
+        acc_list = []
+        for i, (pred, item) in tqdm(enumerate(zip(data['prediction'].tolist(), self.data.to_dict(orient='records')))):
+            if "</think>" in pred:
+                pred = pred.split("</think>")[1].strip()
+            else:
+                pred = pred.strip()
+            
+            mask = rle_decode_mask(item['mask'])
+            width, height = mask.shape[1], mask.shape[0]
+            points = text2pts(pred, width, height)
+
+            acc = 0.0
+            if len(points) > 0:
+                in_range = (points[:, 0] >= 0) & (points[:, 0] < mask.shape[1]) & \
+                        (points[:, 1] >= 0) & (points[:, 1] < mask.shape[0])
+                acc = np.concatenate([
+                    mask[points[in_range, 1], points[in_range, 0]],
+                    np.zeros(points.shape[0] - in_range.sum())
+                ]).mean()
+            acc_list.append(acc)
+
+        acc = sum(acc_list) / len(acc_list)
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
+        acc = {'accuracy': acc}
+        dump(acc, score_pth)
+        return acc 
+
+    
+    def evaluate_GeoBench(self, eval_file, **judge_kwargs):
+        # 参考 https://github.com/ccmdi/geobench/blob/main/geobench.py
+        import math
+        try:
+            import haversine
+        except ImportError:
+            raise ImportError("Please install haversine: pip install haversine")
+        
+        from .utils.xverify import VQAxVerifyEvaluator
+        
+        def parse_geobench_response(response):
+            """解析模型输出，提取 country, lat, lng"""
+            if not response:
+                return None, None, None
+            
+            response = str(response)
+            # 如果有 </think> 标签，取后面的内容
+            if "</think>" in response:
+                response = response.split("</think>")[1].strip()
+            
+            country = None
+            lat = None
+            lng = None
+            
+            # 解析 country
+            country_patterns = [
+                r'country:\s*(.+?)(?:\n|$)',
+                r'Country:\s*(.+?)(?:\n|$)',
+                r'COUNTRY:\s*(.+?)(?:\n|$)',
+            ]
+            for pattern in country_patterns:
+                match = re.search(pattern, response, re.IGNORECASE)
+                if match:
+                    country = match.group(1).strip()
+                    break
+            
+            # 解析 lat
+            lat_patterns = [
+                r'lat(?:itude)?:\s*([-+]?\d+\.?\d*)',
+                r'Lat(?:itude)?:\s*([-+]?\d+\.?\d*)',
+                r'LAT(?:ITUDE)?:\s*([-+]?\d+\.?\d*)',
+            ]
+            for pattern in lat_patterns:
+                match = re.search(pattern, response, re.IGNORECASE)
+                if match and match.group(1):
+                    try:
+                        lat = float(match.group(1))
+                    except ValueError:
+                        pass
+                    break
+            
+            # 解析 lng
+            lng_patterns = [
+                r'(?:lng|long(?:itude)?):\s*([-+]?\d+\.?\d*)',
+                r'(?:Lng|Long(?:itude)?):\s*([-+]?\d+\.?\d*)',
+                r'(?:LNG|LONG(?:ITUDE)?):\s*([-+]?\d+\.?\d*)',
+            ]
+            for pattern in lng_patterns:
+                match = re.search(pattern, response, re.IGNORECASE)
+                if match and match.group(1):
+                    try:
+                        lng = float(match.group(1))
+                    except ValueError:
+                        pass
+                    break
+            
+            return country, lat, lng
+        
+        def calculate_geobench_score(distance_km, scale=2612.27):
+            """计算 GeoGuessr 风格的得分"""
+            # distance 单位是 km，scale 是比例因子
+            distance_m = distance_km * 1000  # 转换为米
+            if distance_m <= 25:
+                return 5000
+            return round(5000 * math.pow(0.99866017, distance_m / scale))
+        
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_xverify.xlsx')
+        data = load(eval_file)
+        
+        if os.path.exists(storage):
+            score_pth = storage.replace('.xlsx', '_score.json')
+            if os.path.exists(score_pth):
+                return load(score_pth)
+            else:
+                data = load(storage)
+                results = {
+                    'country_accuracy': np.mean(data['country_correct'].tolist()),
+                    'average_distance_km': np.mean([d for d in data['distance_km'].tolist() if d is not None]),
+                    'average_score': np.mean([s for s in data['geobench_score'].tolist() if s is not None]),
+                }
+                dump(results, score_pth)
+                return results
+        
+        predictions = data['prediction'].tolist()
+        
+        # 解析每个预测结果
+        parsed_countries = []
+        parsed_lats = []
+        parsed_lngs = []
+        
+        for pred in predictions:
+            country, lat, lng = parse_geobench_response(pred)
+            parsed_countries.append(country if country else "Unknown")
+            parsed_lats.append(lat)
+            parsed_lngs.append(lng)
+        
+        data['pred_country'] = parsed_countries
+        data['pred_lat'] = parsed_lats
+        data['pred_lng'] = parsed_lngs
+        
+        # 解析 ground truth 的 country, lat, lng
+        # 优先使用数据集中的单独列，否则从 answer 字段解析
+        gt_countries = []
+        gt_lats = []
+        gt_lngs = []
+        
+        # 检查是否有单独的 gt 列
+        has_gt_columns = all(col in data.columns for col in ['country', 'lat', 'lng'])
+        
+        if has_gt_columns:
+            # 直接使用数据集中的列
+            gt_countries = data['country'].tolist()
+            gt_lats = data['lat'].tolist()
+            gt_lngs = data['lng'].tolist()
+            # 转换类型
+            gt_lats = [float(x) if x is not None and str(x) != 'nan' else None for x in gt_lats]
+            gt_lngs = [float(x) if x is not None and str(x) != 'nan' else None for x in gt_lngs]
+            gt_countries = [str(x) if x is not None and str(x) != 'nan' else "Unknown" for x in gt_countries]
+        else:
+            # 从 answer 字段解析
+            answers = data['answer'].tolist()
+            for ans in answers:
+                country, lat, lng = parse_geobench_response(str(ans))
+                gt_countries.append(country if country else "Unknown")
+                gt_lats.append(lat)
+                gt_lngs.append(lng)
+        
+        # 打印 ground truth 信息用于调试
+        print(f"GT sample: country={gt_countries[0]}, lat={gt_lats[0]}, lng={gt_lngs[0]}")
+        
+        data['gt_country'] = gt_countries
+        data['gt_lat'] = gt_lats
+        data['gt_lng'] = gt_lngs
+        
+        # 使用 xverify 评估 country 正确性
+        xverify = VQAxVerifyEvaluator(dataset_name="GeoBench")
+        country_questions = [f"Is '{pred}' the same country as '{gt}'?" 
+                           for pred, gt in zip(parsed_countries, gt_countries)]
+        country_correct = xverify.score(parsed_countries, gt_countries, country_questions)
+        data['country_correct'] = country_correct
+        
+        # 计算距离和得分
+        distances = []
+        scores = []
+        
+        for i in range(len(data)):
+            pred_lat = parsed_lats[i]
+            pred_lng = parsed_lngs[i]
+            gt_lat = gt_lats[i]
+            gt_lng = gt_lngs[i]
+            
+            if pred_lat is not None and pred_lng is not None and gt_lat is not None and gt_lng is not None:
+                # 使用 haversine 计算距离（单位：km）
+                distance_km = haversine.haversine((gt_lat, gt_lng), (pred_lat, pred_lng))
+                distances.append(distance_km)
+                score = calculate_geobench_score(distance_km)
+                scores.append(score)
+            else:
+                distances.append(None)
+                scores.append(0)
+        
+        data['distance_km'] = distances
+        data['geobench_score'] = scores
+        
+        dump(data, storage)
+        
+        # 计算汇总结果
+        valid_distances = [d for d in distances if d is not None]
+        valid_scores = [s for s in scores if s is not None and s > 0]
+        
+        results = {
+            'country_accuracy': np.mean(country_correct) if country_correct else 0,
+            'average_distance_km': np.mean(valid_distances) if valid_distances else None,
+            'median_distance_km': np.median(valid_distances) if valid_distances else None,
+            'average_score': np.mean(valid_scores) if valid_scores else 0,
+            'median_score': np.median(valid_scores) if valid_scores else 0,
+            'total_samples': len(data),
+            'valid_samples': len(valid_distances),
+        }
+        results['score'] = round((results['average_score'] / 100 * 2 + results['country_accuracy'] * 100) / 2, 5)
+        
+        score_pth = storage.replace('.xlsx', '_score.json')
+        dump(results, score_pth)
+        return results
+    
+    def evaluate(self, eval_file, **judge_kwargs):
+        if self.dataset_name in ["PointBench"]:
+            return self.evaluate_in_mask(eval_file, **judge_kwargs)
+        elif self.dataset_name in ["RefSpatial"]:
+            return self.evaluate_in_mask_RefSpatial(eval_file, **judge_kwargs)
+        elif self.dataset_name in ["GeoBench"]:
+            return self.evaluate_GeoBench(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_xverify(eval_file, **judge_kwargs)
 
 class CRPE(ImageBaseDataset):
     TYPE = 'VQA'
@@ -4058,3 +4451,97 @@ class MathCanvas(ImageBaseDataset):
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
         return summary_dict
+
+
+class MMReason(ImageBaseDataset):
+    TYPE = 'VQA'
+    mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
+    DATASET_URL = {
+        'MMReason_testmini': mini_path,
+    }
+    DATASET_MD5 = {'MMReason_testmini': '630205345349ac51c9999d4fbfd1d630'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmreason import MMReason_auxeval_extract, MMReason_auxeval_score, MMReason_acc
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        # stage1: extract the answer
+        if not osp.exists(storage_extract):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MMReason evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_extract):
+                ans = load(tmp_file_extract)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMReason_auxeval_extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_extract,
+                )
+                ans = load(tmp_file_extract)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_extract'] == v['log_extract'] and ans[k]['extract'] == v['extract']
+
+            data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+            data['log_extract'] = [ans[idx]['log_extract'] for idx in data['index']]
+            dump(data, storage_extract)
+
+        # stage2: score the answer
+        if not osp.exists(storage_score):
+            data = load(storage_extract)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MMReason evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_score):
+                ans = load(tmp_file_score)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMReason_auxeval_score,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_score,
+                )
+                ans = load(tmp_file_score)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            dump(data, storage_score)
+
+        score = MMReason_acc(storage_score)
+        score_pth = storage_score.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
