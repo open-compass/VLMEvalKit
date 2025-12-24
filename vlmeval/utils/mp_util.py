@@ -19,6 +19,7 @@ def custom_tqdm_init(self, *args, **kwargs):
 # 用自定义的方法替换 tqdm 的 __init__ 方法
 tqdm.__init__ = custom_tqdm_init
 
+FAIL_MSG = 'Failed to obtain answer via API.'
 
 def track_progress_rich(
     func: Callable,
@@ -69,6 +70,9 @@ def track_progress_rich(
         if osp.exists(save) and resume:
             try:
                 saved_results = load(save)
+                print(f"Loaded {len(saved_results)} results from {save}")
+                saved_results = {k: v for k, v in saved_results.items() if FAIL_MSG.strip() not in v.strip()}
+                print(f"Filtered {len(saved_results)} results from {save}")
             except Exception as e:
                 print(f"Warning: Could not load saved results: {e}")
                 saved_results = {}

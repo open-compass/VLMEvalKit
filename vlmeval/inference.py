@@ -61,7 +61,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
-        if ignore_failed:
+        if not ignore_failed:
             res = {k: v for k, v in res.items() if FAIL_MSG.strip() not in v.strip()}
 
     structs = [s for i, s in zip(indices, structs) if i not in res]
@@ -71,7 +71,17 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
 
     if len(structs):
-        track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
+        if api_nproc == 1:
+            # 单进程时不使用进度条，直接循环调用
+            res_map = load(out_file) if osp.exists(out_file) else {}
+            res_map = {k: v for k, v in res_map.items() if FAIL_MSG.strip() not in v.strip()}
+            for idx, struct in zip(indices, structs):
+                if idx not in res_map:
+                    result = gen_func(**struct)
+                    res_map[idx] = result
+                    dump(res_map, out_file)
+        else:
+            track_progress_rich(gen_func, structs, nproc=api_nproc, chunksize=api_nproc, save=out_file, keys=indices)
 
     res = load(out_file)
     if index_set is not None:

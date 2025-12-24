@@ -320,10 +320,6 @@ class OpenAIWrapper(BaseAPI):
         if hasattr(self, 'baidu_appid'):
             headers['appid'] = self.baidu_appid
 
-
-        if 'gemini' in self.model:
-            payload.pop('max_tokens')
-
         response = requests.post(
             self.api_base,
             headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
@@ -334,6 +330,7 @@ class OpenAIWrapper(BaseAPI):
             resp_struct = json.loads(response.text)
             if 'gemini' in self.model:
                 answer = resp_struct["candidates"][0]["content"]["parts"][-1]["text"].strip()
+                print(answer)
             else:
                 answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:

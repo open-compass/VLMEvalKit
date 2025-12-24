@@ -583,6 +583,15 @@ api_models = {
         timeout = 3000,
         system_prompt=None,
     ),
+    "xhs-seedvl-1.8" : partial(
+        XHSSEEDVL,
+        temperature=0.7,
+        retry=10,
+        verbose=True,
+        max_tokens=16384,
+        timeout = 3000,
+        system_prompt=None,
+    ),
     "xhs-seedvl-1.5-nothink" : partial(
         XHSSEEDVL,
         temperature=0,
@@ -1021,7 +1030,9 @@ api_models = {
     "GeminiPro2-5-32k": partial(
         GPT4V, model="gemini-2.5-pro", temperature=0, retry=5, timeout=180, max_tokens=32768
     ),
-    
+    "Gemini3-32k": partial(
+        GPT4V, model="gemini-3", temperature=0, retry=5, timeout=180, max_tokens=32768
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
