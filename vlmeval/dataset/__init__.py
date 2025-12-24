@@ -231,7 +231,7 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench, SArena_MINI, UniSVG, VTCBench,
-    SArena_MINI, MMSIVideoBench,
+    MMSIVideoBench,
 ]
 
 VIDEO_DATASET = [
