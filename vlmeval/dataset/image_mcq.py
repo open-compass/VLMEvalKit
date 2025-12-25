@@ -266,15 +266,12 @@ class ImageMCQDataset(ImageBaseDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
@@ -813,15 +810,12 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
 
@@ -1197,16 +1191,11 @@ class CVBench(ImageMCQDataset):
 
         if model_name == "exact_matching":
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn(
-                "OPENAI_API_KEY is not set properly, will use exact matching for evaluation"
-            )
-            model = None
 
         result_file = get_intermediate_file_path(eval_file, f"_{model_name}_result", "pkl")
 
@@ -1295,15 +1284,12 @@ class HRBenchDataset(ImageMCQDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
@@ -1479,15 +1465,12 @@ class WeMath(ImageBaseDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         storage = get_intermediate_file_path(eval_file, f'_{name_str}')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -1714,15 +1697,12 @@ class VisuLogic(ImageMCQDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         storage = get_intermediate_file_path(eval_file, f'_{name_str}')
 
@@ -1790,15 +1770,12 @@ class TDBench(ImageMCQDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
 
@@ -2535,15 +2512,12 @@ class AffordanceDataset(ImageMCQDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         try:
             df = pd.read_excel(eval_file)
@@ -2827,7 +2801,7 @@ class TopViewRS(ImageMCQDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import eval_vanilla, report_topviewrs_acc
         from ..utils import track_progress_rich
-        from ..smp import load, dump, gpt_key_set
+        from ..smp import load, dump
         from collections import defaultdict
         import numpy as np
         import pandas as pd
@@ -2912,14 +2886,11 @@ class TopViewRS(ImageMCQDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
 
         result_file = eval_file.replace(f'.{suffix}', f'_{name_str}_result.pkl')
 
