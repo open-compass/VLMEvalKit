@@ -36,7 +36,7 @@ class BaseAPI:
         self.system_prompt = system_prompt
         self.verbose = verbose
         self.fail_msg = fail_msg
-        self.logger = get_logger('ChatAPI')
+        self.logger = get_logger(__name__)
 
         if len(kwargs):
             self.logger.info(f'BaseAPI received the following kwargs: {kwargs}')

@@ -289,13 +289,13 @@ class LMDeployWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
 
         temperature = kwargs.pop('temperature', self.temperature)
-        self.logger.info(f'Generate temperature: {temperature}')
+        # self.logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
         if dataset is not None and listinstr(['BMMR'], dataset):
             # BMMR dataset has a very long prompt, so we need to increase max_tokens
             max_tokens = 8196
-            self.logger.info('BMMR dataset detected, set max_tokens to 8196')
+            # self.logger.info('BMMR dataset detected, set max_tokens to 8196')
 
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {self.key}'}
         payload = dict(
