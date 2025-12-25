@@ -194,6 +194,7 @@ class ImageMCQDataset(ImageBaseDataset):
     DATASET_URL.update(MTL_MMBench_URLS)
     DATASET_MD5.update(MMMB_MD5)
     DATASET_MD5.update(MTL_MMBench_MD5)
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def build_prompt(self, line):
 
@@ -260,7 +261,6 @@ class ImageMCQDataset(ImageBaseDataset):
             circular = True
 
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -736,6 +736,7 @@ class GMAIMMBenchDataset(ImageMCQDataset):
         'GMAI_mm_bench_TEST_part_10': '3dae94627b9ac0fe00180d4780fbf6dc',
         'GMAI_mm_bench_TEST_part_11': 'd08dc813f0eb6bbab63cae2a9d113c4b',
     }
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     @classmethod
     def supported_datasets(cls):
@@ -807,7 +808,6 @@ class GMAIMMBenchDataset(ImageMCQDataset):
 
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -1271,6 +1271,7 @@ class CVBench(ImageMCQDataset):
 
 
 class HRBenchDataset(ImageMCQDataset):
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     DATASET_URL = {
         'HRBench4K': 'https://huggingface.co/datasets/DreamMr/HR-Bench/resolve/main/hr_bench_4k.tsv',
@@ -1289,7 +1290,6 @@ class HRBenchDataset(ImageMCQDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         model = judge_kwargs.get('model', 'extract_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -1426,6 +1426,7 @@ class WeMath(ImageBaseDataset):
     }
     DATASET_MD5 = {'WeMath': 'b5e969a075f01290a542411fb7766388',
                    'WeMath_COT': 'b5e969a075f01290a542411fb7766388'}
+    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -1473,7 +1474,6 @@ class WeMath(ImageBaseDataset):
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
         name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -1676,6 +1676,7 @@ class VisuLogic(ImageMCQDataset):
     DATASET_MD5 = {
         'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
     }
+    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -1708,7 +1709,6 @@ class VisuLogic(ImageMCQDataset):
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'], model
         name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -1759,6 +1759,7 @@ class TDBench(ImageMCQDataset):
         'tdbench_cs_integrity': '05b2045cae2016f6edc400da48e2df4b',
         'tdbench_cs_depth': '449dbe4b24a43a06a9f680811deae517',
     }
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125', 'gpt-4o-mini']
 
     def evaluate(self, eval_file, **judge_kwargs):
         acc, result_file = self.do_evaluate(eval_file, **judge_kwargs)
@@ -1784,7 +1785,6 @@ class TDBench(ImageMCQDataset):
         nproc = judge_kwargs.pop('nproc', 4)
 
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125', 'gpt-4o-mini']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -2434,6 +2434,7 @@ class _3DSRBench(ImageMCQDataset):
 class AffordanceDataset(ImageMCQDataset):
     DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
     DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -2529,7 +2530,6 @@ class AffordanceDataset(ImageMCQDataset):
 
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
@@ -2822,6 +2822,7 @@ class TopViewRS(ImageMCQDataset):
     DATASET_MD5 = {
         'TopViewRS': '5669bc122457979dd2ac3b69b5dc1622'
     }
+    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.multiple_choice import eval_vanilla, report_topviewrs_acc
@@ -2906,7 +2907,6 @@ class TopViewRS(ImageMCQDataset):
         nproc = judge_kwargs.pop('nproc', 4)
         suffix = eval_file.split('.')[-1]
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
