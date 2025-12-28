@@ -90,7 +90,7 @@ class ImageBaseDataset:
         file_name = f"{self.dataset_name}.tsv"
         data_path_legacy = osp.join(data_root, file_name_legacy)
         data_path = osp.join(data_root, file_name)
-
+        #data_path="/scqian/github_pull/VLMEvalKit/TextHalu-Bench/TextHaluBench.tsv"
         self.data_path = data_path
         if osp.exists(data_path):
             if file_md5 is None or md5(data_path) == file_md5:
