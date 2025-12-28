@@ -218,6 +218,10 @@ av_speakerbench_dataset = {
     'AV-SpeakerBench_audiovisual_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True),
     'AV-SpeakerBench_visual_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=False),
     'AV-SpeakerBench_audio_only_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True, audio_only=True),
+    # shorthand aliases mapping to audiovisual
+    'AV-SpeakerBench_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True),
+    'AV-SpeakerBench_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True),
+    'AV-SpeakerBench_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True),
 }
 
 supported_video_datasets = {}
