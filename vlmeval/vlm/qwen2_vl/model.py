@@ -204,6 +204,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.generate_kwargs = dict(
             max_new_tokens=self.max_new_tokens,
             top_p=top_p,
+            top_k=top_k,
             temperature=temperature,
             repetition_penalty=repetition_penalty,
         )
@@ -454,6 +455,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         messages.append({'role': 'user', 'content': self._prepare_content(message, dataset=dataset)})
         if self.verbose:
             print(f'\033[31m{messages}\033[0m')
+
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         if listinstr(['omni'], self.model_path.lower()):
             audios, images, videos = process_mm_info([messages], use_audio_in_video=self.use_audio_in_video)
@@ -469,7 +471,6 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         generated_ids = self.model.generate(
             **inputs,
             **self.generate_kwargs,
-            do_sample=False,
         )
         generated_ids = [
             output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
@@ -478,7 +479,6 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
         response = out[0]
-
         if self.post_process:
             resp = response.split('\\boxed{')[-1]
             lt = len(resp)
