@@ -65,6 +65,7 @@ from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
 
 from .worldsense import WorldSense
+from .av_speakerbench import AVSpeakerBench
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
 from .cmmmu import CMMMU
@@ -242,7 +243,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, AVSpeakerBench
 
 ]
 

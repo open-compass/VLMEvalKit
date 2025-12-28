@@ -207,10 +207,17 @@ dream_1k_dataset = {
 }
 
 av_speakerbench_dataset = {
-    'AV-SpeakerBench_16frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=16),
-    'AV-SpeakerBench_32frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=32),
-    'AV-SpeakerBench_64frame': partial(VSIBench, dataset='AV-SpeakerBench', nframe=64),
-    'AV-SpeakerBench_1fps': partial(VSIBench, dataset='AV-SpeakerBench', fps=1.0),
+    # frame-sampled variants
+    'AV-SpeakerBench_audiovisual_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True),
+    'AV-SpeakerBench_audiovisual_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True),
+    'AV-SpeakerBench_visual_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=False),
+    'AV-SpeakerBench_visual_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=False),
+    'AV-SpeakerBench_audio_only_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True, audio_only=True),
+    'AV-SpeakerBench_audio_only_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True, audio_only=True),
+    # fps-based variants
+    'AV-SpeakerBench_audiovisual_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True),
+    'AV-SpeakerBench_visual_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=False),
+    'AV-SpeakerBench_audio_only_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True, audio_only=True),
 }
 
 supported_video_datasets = {}
