@@ -54,8 +54,8 @@ jobs:
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
           pip uninstall vlmeval -y
-          pip install . -i https://pkg.pjlab.org.cn/repository/pypi-proxy/simple/ --trusted-host pkg.pjlab.org.cn --no-cache-dir
-          pip install numpy==1.23.0 transformers==4.57.1 -i https://pkg.pjlab.org.cn/repository/pypi-proxy/simple/ --trusted-host pkg.pjlab.org.cn --no-cache-dir
+          pip install . 
+          pip install numpy==1.23.0 transformers==4.57.1
       - name: evaluation_model
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
