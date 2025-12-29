@@ -13,7 +13,7 @@ except Exception as e:
 FAIL_MSG = 'Failed to obtain answer via API.'
 
 
-@timeout_decorator.timeout(30)
+@timeout_decorator.timeout(30, use_signals=False)
 def is_equal(asw: str, gt_asw: str) -> bool:
     if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
         print('Warning: input is not string')

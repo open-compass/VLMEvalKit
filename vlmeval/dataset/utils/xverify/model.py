@@ -6,7 +6,7 @@ from typing import Literal, Tuple
 
 from loguru import logger
 from openai import OpenAI
-from openai._exceptions import APITimeoutError
+from openai._exceptions import APITimeoutError, BadRequestError
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
@@ -222,6 +222,10 @@ class Model:
             return response_obj.choices[0].message.content
         except APITimeoutError as e:
             logger.warning(f"Request timed out: {repr(e)}")
+            return ''
+        except BadRequestError as e:
+            # 捕获 token 超限等 BadRequestError，直接返回空字符串表示判定失败
+            logger.warning(f"BadRequestError (token limit exceeded or invalid request): {repr(e)}")
             return ''
         except Exception as e:
             logger.warning(repr(e))

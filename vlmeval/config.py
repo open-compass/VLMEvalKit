@@ -291,7 +291,7 @@ api_models = {
         temperature=0.7,
         retry=10,
         verbose=True,
-        max_tokens= 60000,
+        max_tokens= 58000,
         timeout = 4096,
         system_prompt=None,
     ),
@@ -1031,7 +1031,7 @@ api_models = {
         GPT4V, model="gemini-2.5-pro", temperature=0, retry=5, timeout=180, max_tokens=32768
     ),
     "Gemini3-32k": partial(
-        GPT4V, model="gemini-3", temperature=0, retry=5, timeout=180, max_tokens=32768
+        GPT4V, model="gemini-3", temperature=0, retry=500, timeout=1800, max_tokens=32768
     ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
