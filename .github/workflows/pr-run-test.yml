@@ -55,7 +55,7 @@ jobs:
           conda activate ${{env.CONDA_ENV}}
           pip uninstall vlmeval -y
           pip install .
-          pip install --user numpy==1.23.0 transformers==4.57.1
+          pip install numpy==1.23.0 transformers==4.57.1
       - name: evaluation_model
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
