@@ -53,7 +53,7 @@ def _parse_multi_choice_response(response, all_choices):
 class AVSpeakerBench(VideoBaseDataset):
 
     # MD5 of the generated TSV (set to None to skip checking when unknown)
-    MD5 = None
+    MD5 = "803f732fbff54c0d1891532ffb0c3979"
 
     BASE_SYS = 'Carefully watch and listen to the clip. '
     SYS = BASE_SYS + 'Based on your observations, select the best option that accurately addresses the question.'
@@ -132,8 +132,14 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
                         with zip_ref.open(member) as source, open(target_path, 'wb') as target:
                             target.write(source.read())
 
+        branch = "vlm_eval_version"  # or commit hash / tag
+        dataset_path = snapshot_download(
+            repo_id=repo_id,
+            repo_type="dataset",
+            revision=branch,
+        )
         cache_path = get_cache_path(repo_id, branch="vlm_eval_version")
-        dataset_path = None
+
         if cache_path is not None:
             unzip_hf_zip(cache_path)
             if check_integrity(cache_path):
