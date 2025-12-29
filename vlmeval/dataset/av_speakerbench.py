@@ -75,7 +75,7 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
 
     TYPE = 'Video-MCQ'
 
-    def __init__(self, dataset='AV-SpeakerBench', use_audio=True, audio_only=False, nframe=8, fps=-1):
+    def __init__(self, dataset='AV-SpeakerBench', use_audio=True, audio_only=False, nframe=0, fps=-1):
         self.use_audio = use_audio
         self.audio_only = audio_only
         self.dataset_name = dataset
