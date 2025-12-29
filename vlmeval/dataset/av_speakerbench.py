@@ -151,7 +151,7 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
             if not check_integrity(dataset_path):
                 warnings.warn('Dataset integrity check failed after download; media files may be missing.')
 
-        data_file = osp.join(dataset_path, f'{dataset_name}.tsv')
+        data_file = osp.join(dataset_path, f'test.tsv')
 
         return dict(data_file=data_file, root=dataset_path)
 
