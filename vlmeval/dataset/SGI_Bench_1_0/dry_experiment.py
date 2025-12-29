@@ -1,99 +1,42 @@
 from typing import Any, Dict, List
 from datasets import load_dataset
 from ..text_base import TextBaseDataset
-from ..utils.judge_util import *
-import concurrent.futures
+import os
 import requests
 import shutil
 import ast
-from ...smp.file import dump, load ,get_intermediate_file_path
-from openai import OpenAI
+from ..utils.judge_util import build_judge
+from ...utils.mp_util import track_progress_rich
+from ...smp.file import dump, load, get_intermediate_file_path, LMUDataRoot
 from json_repair import repair_json
 import pandas as pd
 import time
 import subprocess
-import tqdm
 from pathlib import Path
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-
 save_dir = "./outputs/sgi_code_logs"
 tmp_data_dir = "./outputs/sgi_tmp_data"
 
-
-class LLM:
-    def __init__(self, model='gpt-4.1', **kwargs):
-        self.api_key = kwargs.get('api_key', os.environ.get('OPENAI_API_KEY')) # export OPENAI_API_KEY="xxxxx"
-        self.base_url = kwargs.get('base_url', os.environ.get('OPENAI_API_BASE'))
-        self.base_url = self.base_url[:-17] # export OPENAI_BASE_URL="xxxxx"
-        self.model = model
-        if not self.api_key:
-            raise ValueError("API key is required.")
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-
-    def __call__(self, query=None, **kwargs):
-        system_prompt = kwargs.get('system_prompt', 'You are a helpful assistant.')
-        max_tokens = kwargs.get('max_tokens', None)
-        temperature = kwargs.get('temperature', 0)
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query},
-        ]
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-        assistant_response = response.choices[0].message.content
-        return assistant_response
-
-
-def multi_process(inp_list, function, max_workers=40):
-    results = [None] * len(inp_list)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future_to_index = {
-            executor.submit(function, **item): index
-            for index, item in enumerate(inp_list)
-        }
-
-        for future in tqdm(concurrent.futures.as_completed(future_to_index), total=len(future_to_index)):
-            index = future_to_index[future]
-            try:
-                result = future.result()
-                results[index] = result
-            except Exception as e:
-                print(f"Error processing item {inp_list[index]}: {str(e)}")
-    
-    return results
-
 env = os.environ.copy()
 env["PYTHONIOENCODING"] = "utf-8"
-
 
 def run_script_in_folder(folder_path):
     """
     Run data.py (if exists) and main.py in the given folder,
     print immediate status, and return execution results.
     """
-    original_dir = os.getcwd()
     script_name = 'data_en.py'
     script_path_full = folder_path / script_name
-    # Changed this line to print the full path
-    # print(f"    Running {script_path_full}...", end=" ") # Print on the same line
     try:
-        # Change to the target folder
-        os.chdir(folder_path)
-        # Run the script and capture output
         result = subprocess.run(
             ["conda", "run", "-n", "dryexp", "python", script_name],
             capture_output=True,
             text=True,
-            timeout=10*60,  # 10-minute timeout
+            timeout=10 * 60,  # 10-minute timeout
             encoding="utf-8",
+            cwd=str(folder_path),
             env=env
         )
         if result.returncode == 0:
@@ -112,29 +55,24 @@ def run_script_in_folder(folder_path):
         print(f"❌")
         print(f"      Error: {e}")
         result = (str(script_path_full), False, str(e))
-    
-    # Return to original directory
-    os.chdir(original_dir)
     return result
 
 def run_script(ques_dict):
     ques_dict['unit_test'] = []
     for unit_test_idx in range(5):
-        original_dir = os.getcwd()
         folder_path = os.path.join(save_dir, ques_dict['idx'], f"unit_test_{unit_test_idx}")
         unit_test_dict = {}
-        
+
         try:
-            # Change to the target folder
-            os.chdir(folder_path)
             # Run the script and capture output
             start_time = time.time()
             result = subprocess.run(
-                ["conda", "run", "-n", "dryexp", "python", 'main_model.py'],
+            ["conda", "run", "-n", "dryexp", "python", 'main_model.py'],
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minutes timeout
                 encoding="utf-8",
+                cwd=str(folder_path),
                 env=env
             )
             end_time = time.time()
@@ -159,24 +97,20 @@ def run_script(ques_dict):
             # print(f"      Error: Execution timed out after 5 minutes")
             unit_test_dict["model_error"] = "[WRONG]Execution timed out after 5 minutes"
             unit_test_dict["model_runtime"] = 300.0
-            unit_test_dict["model_returncode"] = -1 # Terminated
+            unit_test_dict["model_returncode"] = -1  # Terminated
             unit_test_dict["model_code_output"] = unit_test_dict["model_error"]
         except Exception as e:
             # print(f"❌")
             # print(f"      Error: {e}")
-            unit_test_dict["model_error"] = "[WRONG]"+str(e)
+            unit_test_dict["model_error"] = "[WRONG]" + str(e)
             unit_test_dict["model_runtime"] = -1
-            unit_test_dict["model_returncode"] = 1 # Error
+            unit_test_dict["model_returncode"] = 1  # Error
             unit_test_dict["model_code_output"] = unit_test_dict["model_error"]
-
-        # Return to original directory
-        os.chdir(original_dir)
         ques_dict['unit_test'].append(unit_test_dict)
     return ques_dict
 
-judge = LLM('o4-mini')
 
-def eval_model_output(ques_dict):
+def eval_model_output(ques_dict, judge_kwargs):
     for unit_test_idx in range(5):
         unit_test_dict = ques_dict['unit_test'][unit_test_idx]
         correct_output = ques_dict[f"unit_test_{unit_test_idx}_output"]
@@ -187,9 +121,10 @@ def eval_model_output(ques_dict):
             unit_test_dict['pass'] = 1
             ques_dict['unit_test'][unit_test_idx] = unit_test_dict
             continue
-        
+
         if unit_test_dict["model_error"].startswith("[WRONG]") or unit_test_dict["model_returncode"] != 0:
-            unit_test_dict["llm_judge"] = {"judgment": "incorrect", "reason": "There are problems running the completed code."}
+            unit_test_dict["llm_judge"] = {"judgment": "incorrect",
+                                           "reason": "There are problems running the completed code."}
             unit_test_dict['pass'] = 0
             ques_dict['unit_test'][unit_test_idx] = unit_test_dict
             continue
@@ -212,25 +147,33 @@ example = {{
 ## Model Output
 {unit_test_dict["model_code_output"]}
 """
-        
+
         try:
-            llm_judge = judge(prompt)
+            messages = [
+                {"role": "system", "value": "You are a helpful assistant.", "type": "text"},
+                {"role": "user", "value": prompt, "type": "text"},
+            ]
+            judge = build_judge(**judge_kwargs)
+            llm_judge = judge.generate(messages)
             start_index = llm_judge.find('{')
             end_index = llm_judge.rfind('}') + 1
             llm_judge = eval(repair_json(llm_judge[start_index:end_index]))
-        except:
+        except Exception as e:
+            print(e)
             llm_judge = None
 
         unit_test_dict['llm_judge'] = llm_judge
         unit_test_dict['pass'] = 1 if unit_test_dict['llm_judge']['judgment'] == 'correct' else 0
         ques_dict['unit_test'][unit_test_idx] = unit_test_dict
-    
-    ques_dict['pass_nums'] = sum([unit_test_dict['pass'] for unit_test_dict in ques_dict['unit_test']])
-    ques_dict['model_average_runtime'] = [unit_test_dict['model_runtime'] for unit_test_dict in ques_dict['unit_test'] if unit_test_dict['model_runtime'] > 0]
-    ques_dict['model_average_runtime'] = sum(ques_dict['model_average_runtime'])/len(ques_dict['model_average_runtime']) if len(ques_dict['model_average_runtime']) > 0 else -1
-    ques_dict['se'] = sum([1 if unit_test_dict['model_returncode']==0 else 0 for unit_test_dict in ques_dict['unit_test']]) / 5
-    return ques_dict
 
+    ques_dict['pass_nums'] = sum([unit_test_dict['pass'] for unit_test_dict in ques_dict['unit_test']])
+    ques_dict['model_average_runtime'] = [unit_test_dict['model_runtime'] for unit_test_dict in ques_dict['unit_test']
+                                          if unit_test_dict['model_runtime'] > 0]
+    ques_dict['model_average_runtime'] = sum(ques_dict['model_average_runtime']) / len(
+        ques_dict['model_average_runtime']) if len(ques_dict['model_average_runtime']) > 0 else -1
+    ques_dict['se'] = sum(
+        [1 if unit_test_dict['model_returncode'] == 0 else 0 for unit_test_dict in ques_dict['unit_test']]) / 5
+    return ques_dict
 
 
 def download_file(url: str, dir_path: str):
@@ -272,8 +215,6 @@ def extract_final_answer(answer_with_thinking: str, start_tag='<answer>', end_ta
     return None
 
 
-
-
 def check_syntax(code_string):
     try:
         # Try to compile the code string
@@ -281,12 +222,13 @@ def check_syntax(code_string):
         return True
     except SyntaxError as e:
         return False
-    
+
+
 def get_function_lines(file_content):
     node = ast.parse(file_content)
 
     function_lines = {}
-    
+
     for item in node.body:
         if isinstance(item, ast.FunctionDef):
             func_name = item.name
@@ -295,6 +237,7 @@ def get_function_lines(file_content):
             function_lines[func_name] = (start_line, end_line)
 
     return function_lines
+
 
 def replace_code(content_1, start_line_1, end_line_1, content_2, start_line_2, end_line_2):
     lines_1 = content_1.splitlines(keepends=True)
@@ -327,7 +270,7 @@ class SGI_Bench_Dry_Experiment(TextBaseDataset):
         return ["SGI-DryExperiment"]
 
     def load_data(self, dataset):
-        hf = load_dataset("InternScience/SGI-DryExperiment",split="test")
+        hf = load_dataset("InternScience/SGI-DryExperiment", split="test")
 
         rows: List[Dict[str, Any]] = []
         idx = 0
@@ -360,7 +303,6 @@ class SGI_Bench_Dry_Experiment(TextBaseDataset):
             idx += 1
         return pd.DataFrame(rows)
 
-    
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -390,33 +332,46 @@ def minus(a, b):
     def evaluate(self, eval_file, **judge_kwargs):
         save_dir_last = 'sgi_code_logs'
         global save_dir
-        work_dir = judge_kwargs.get('work_dir','./outputs')
-        save_dir = os.path.join(work_dir,save_dir_last)
+        work_dir = str(Path(eval_file).parents[0])
+        save_dir = os.path.join(work_dir, save_dir_last)
         tmp_data_dir_last = 'sgi_tmp_data'
-        global tmp_data_dir 
-        tmp_data_dir = os.path.join(work_dir,tmp_data_dir_last)
+        global tmp_data_dir
+        tmp_data_dir = os.path.join(LMUDataRoot(), tmp_data_dir_last)
         data = load(eval_file)
         data = pd.DataFrame(data)
-        
+
         ################################################################## 输入数据准备 ##################################################################
         if not os.path.exists(os.path.join(save_dir, 'data_construction.json')):
             os.makedirs(os.path.join(save_dir), exist_ok=True)
             os.makedirs(os.path.join(tmp_data_dir), exist_ok=True)
-            os.makedirs(os.path.join(tmp_data_dir,"0206"), exist_ok=True)
+            os.makedirs(os.path.join(tmp_data_dir, "0206"), exist_ok=True)
             os.makedirs(os.path.join(tmp_data_dir, "0200"), exist_ok=True)
             os.makedirs(os.path.join(tmp_data_dir, "0236"), exist_ok=True)
-            
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/t10k-images-idx3-ubyte.gz", tmp_data_dir+"/0206")
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/t10k-labels-idx1-ubyte.gz", tmp_data_dir+"/0206")
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/train-images-idx3-ubyte.gz", tmp_data_dir+"/0206")
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/train-labels-idx1-ubyte.gz", tmp_data_dir+"/0206")
-            
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0200/adult.data", tmp_data_dir+"/0200")
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0200/adult.test", tmp_data_dir+"/0200")
-            
-            download_file("https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0236/3d-user-study-data.zip", tmp_data_dir+"/0236")
-            
-            
+
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/t10k-images-idx3-ubyte.gz",
+                tmp_data_dir + "/0206")
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/t10k-labels-idx1-ubyte.gz",
+                tmp_data_dir + "/0206")
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/train-images-idx3-ubyte.gz",
+                tmp_data_dir + "/0206")
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0206/train-labels-idx1-ubyte.gz",
+                tmp_data_dir + "/0206")
+
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0200/adult.data",
+                tmp_data_dir + "/0200")
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0200/adult.test",
+                tmp_data_dir + "/0200")
+
+            download_file(
+                "https://raw.githubusercontent.com/InternScience/SGI-Bench/main/evaluation/task_3_dry_experiment/data/SGI_DryExperiment_0236/3d-user-study-data.zip",
+                tmp_data_dir + "/0236")
+
             code_dir_list = []
             for index, item in data.iterrows():
                 for unit_test_idx in range(5):
@@ -431,28 +386,52 @@ def minus(a, b):
                     with open(os.path.join(code_dir, "main_en.py"), "w", encoding="utf-8") as f:
                         f.write(item["main_code"])
 
-            shutil.copytree(tmp_data_dir+"/0206", os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_0/data/mnist_raw"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0206", os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_1/data/mnist_raw"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0206", os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_2/data/mnist_raw"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0206", os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_3/data/mnist_raw"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0206", os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_4/data/mnist_raw"), dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0206",
+                            os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_0/data/mnist_raw"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0206",
+                            os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_1/data/mnist_raw"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0206",
+                            os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_2/data/mnist_raw"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0206",
+                            os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_3/data/mnist_raw"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0206",
+                            os.path.join(save_dir, "SGI_DryExperiment_0206/unit_test_4/data/mnist_raw"),
+                            dirs_exist_ok=True)
 
-            shutil.copytree(tmp_data_dir+"/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_0/data"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_1/data"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_2/data"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_3/data"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_4/data"), dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_0/data"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_1/data"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_2/data"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_3/data"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0200", os.path.join(save_dir, "SGI_DryExperiment_0200/unit_test_4/data"),
+                            dirs_exist_ok=True)
 
-            shutil.copytree(tmp_data_dir+"/0236", os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_0/data/em_3d_user_study"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0236", os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_1/data/em_3d_user_study"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0236", os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_2/data/em_3d_user_study"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0236", os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_3/data/em_3d_user_study"), dirs_exist_ok=True)
-            shutil.copytree(tmp_data_dir+"/0236", os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_4/data/em_3d_user_study"), dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0236",
+                            os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_0/data/em_3d_user_study"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0236",
+                            os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_1/data/em_3d_user_study"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0236",
+                            os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_2/data/em_3d_user_study"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0236",
+                            os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_3/data/em_3d_user_study"),
+                            dirs_exist_ok=True)
+            shutil.copytree(tmp_data_dir + "/0236",
+                            os.path.join(save_dir, "SGI_DryExperiment_0236/unit_test_4/data/em_3d_user_study"),
+                            dirs_exist_ok=True)
 
-            all_results = multi_process(code_dir_list, run_script_in_folder, 4)
+            all_results = track_progress_rich(tasks = code_dir_list, func = run_script_in_folder, nproc=judge_kwargs.get("nproc",4))
             dump(all_results, os.path.join(save_dir, 'data_construction.json'))
         ################################################################## 输入数据准备 ##################################################################
-
 
         ################################################################## 代码保存 ##################################################################
         for index, item in data.iterrows():
@@ -472,19 +451,23 @@ def minus(a, b):
 
         ################################################################## 代码运行 ##################################################################
         inp_list = [{"ques_dict": item} for item in data.to_dict(orient="records")]
-        out_list = multi_process(inp_list, run_script, 100)
+        out_list = track_progress_rich(tasks=inp_list, func=run_script, nproc=100)
         ################################################################## 代码运行 ##################################################################
-
+        if judge_kwargs.get('model') is None:
+            judge_kwargs['model'] = 'o4-mini'
+        if judge_kwargs.get('max_tokens') is None:
+            judge_kwargs['max_tokens'] = None
         ################################################################## 代码评测 ##################################################################
-        out_list = [{"ques_dict": item} for item in out_list]
-        out_list = multi_process(out_list, eval_model_output, 100)
+        in_list = [{"ques_dict": item, "judge_kwargs": judge_kwargs} for item in out_list]
+        out_list = track_progress_rich(tasks=in_list, func=eval_model_output, nproc=100)
         ################################################################## 代码评测 ##################################################################
 
-        PassAll_5 = sum([1 if (item['pass_nums']==5) else 0 for item in out_list])/len(out_list)
-        PassAll_3 = sum([1 if (item['pass_nums']>=3) else 0 for item in out_list])/len(out_list)
-        PassAll_1 = sum([1 if (item['pass_nums']>=1) else 0 for item in out_list])/len(out_list)
-        AET = sum([item['model_average_runtime'] for item in out_list if item['model_average_runtime'] > 0])/len([item['model_average_runtime'] for item in out_list if item['model_average_runtime'] > 0])
-        SER = sum([item['se'] for item in out_list])/len(out_list)
+        PassAll_5 = sum([1 if (item['pass_nums'] == 5) else 0 for item in out_list]) / len(out_list)
+        PassAll_3 = sum([1 if (item['pass_nums'] >= 3) else 0 for item in out_list]) / len(out_list)
+        PassAll_1 = sum([1 if (item['pass_nums'] >= 1) else 0 for item in out_list]) / len(out_list)
+        AET = sum([item['model_average_runtime'] for item in out_list if item['model_average_runtime'] > 0]) / len(
+            [item['model_average_runtime'] for item in out_list if item['model_average_runtime'] > 0])
+        SER = sum([item['se'] for item in out_list]) / len(out_list)
 
         result = {
             'PassAll@5': PassAll_5,

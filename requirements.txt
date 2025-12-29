@@ -42,3 +42,4 @@ transformers
 typing_extensions
 validators
 xlsxwriter
+sentence_transformers

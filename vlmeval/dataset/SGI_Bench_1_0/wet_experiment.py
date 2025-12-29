@@ -1,10 +1,9 @@
 from typing import Any, Dict, List
 from datasets import load_dataset
-from vlmeval import *
-from ...smp import *
 from ..text_base import TextBaseDataset
-from ..utils.judge_util import *
 import re
+import pandas as pd
+from ...smp.file import load ,dump , get_intermediate_file_path
 from itertools import combinations
 
 def parse_experiment_steps(text):

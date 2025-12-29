@@ -1,14 +1,11 @@
 from typing import Any, Dict, List
 from datasets import load_dataset
-from ...smp import *
+import pandas as pd
+from ..utils.judge_util import build_judge
+from ...utils.mp_util import track_progress_rich
 from ..text_base import TextBaseDataset
-from ..utils.judge_util import *
 from ...smp.file import dump, load, get_intermediate_file_path
-from openai import OpenAI
-import concurrent.futures
-from tqdm import tqdm
 from json_repair import repair_json
-import os
 
 
 def extract_final_answer(answer_with_thinking: str, start_tag='<answer>', end_tag='</answer>'):
@@ -20,60 +17,7 @@ def extract_final_answer(answer_with_thinking: str, start_tag='<answer>', end_ta
             return answer_with_thinking[start_index + len(start_tag):end_index].strip()
     return None
 
-
-class LLM:
-    def __init__(self, model='gpt-4.1', **kwargs):
-        self.api_key = kwargs.get('api_key', os.environ.get('OPENAI_API_KEY'))  # export OPENAI_API_KEY="xxxxx"
-        self.base_url = kwargs.get('base_url', os.environ.get('OPENAI_API_BASE'))
-        self.base_url = self.base_url[:-17]  # export OPENAI_BASE_URL="xxxxx"
-        self.model = model
-        if not self.api_key:
-            raise ValueError("API key is required.")
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-
-    def __call__(self, query=None, **kwargs):
-        system_prompt = kwargs.get('system_prompt', 'You are a helpful assistant.')
-        max_tokens = kwargs.get('max_tokens', None)
-        temperature = kwargs.get('temperature', 0)
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query},
-        ]
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-        assistant_response = response.choices[0].message.content
-        return assistant_response
-
-
-def multi_process(inp_list, function, max_workers=40):
-    results = [None] * len(inp_list)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-        future_to_index = {
-            executor.submit(function, **item): index
-            for index, item in enumerate(inp_list)
-        }
-
-        for future in tqdm(concurrent.futures.as_completed(future_to_index), total=len(future_to_index)):
-            index = future_to_index[future]
-            try:
-                result = future.result()
-                results[index] = result
-            except Exception as e:
-                print(f"Error processing item {inp_list[index]}: {str(e)}")
-
-    return results
-
-
-judge = LLM('o4-mini')
-
-
-def eval_model_output(ques_dict):
+def eval_model_output(ques_dict, judge_kwargs):
     newline = '\n'
     prompt = f"""
 You are an expert in systematically validating and evaluating LLM-generated solutions. Your task is to rigorously analyze the correctness of a provided solution by comparing it step-by-step against the reference solution, and output **only** a structured verification list—with no additional text.
@@ -112,7 +56,12 @@ You are an expert in systematically validating and evaluating LLM-generated solu
 """
 
     try:
-        llm_judge = judge(prompt)
+        messages = [
+            {"role": "system", "value": "You are a helpful assistant.", "type": "text"},
+            {"role": "user", "value": prompt, "type": "text"},
+        ]
+        judge = build_judge(**judge_kwargs)
+        llm_judge = judge.generate(messages)
         start_index = llm_judge.find('[')
         end_index = llm_judge.rfind(']') + 1
         llm_judge = eval(repair_json(llm_judge[start_index:end_index]))
@@ -121,7 +70,8 @@ You are an expert in systematically validating and evaluating LLM-generated solu
             if step["judge"] == "correct":
                 correct_step_count += 1
         step_level_acc = correct_step_count / len(llm_judge)
-    except:
+    except Exception as e:
+        print(e)
         llm_judge = None
 
     ques_dict['exact_match'] = 1 if (
@@ -181,8 +131,22 @@ Step 2. ...
         data = load(eval_file)
         data = pd.DataFrame(data)
 
-        inp_list = [{"ques_dict": item} for item in data.to_dict(orient="records")]
-        out_list = multi_process(inp_list, eval_model_output, 48)
+        if judge_kwargs.get('model') is None:
+            judge_kwargs['model'] = 'o4-mini'
+        if judge_kwargs.get('max_tokens') is None:
+            judge_kwargs['max_tokens'] = None
+
+        inp_list = []
+        for item in data.to_dict(orient="records"):
+            inp_list.append({
+                "ques_dict": item,
+                "judge_kwargs": judge_kwargs
+            })
+        out_list = track_progress_rich(
+            func=eval_model_output,
+            tasks=inp_list,
+            nproc=judge_kwargs.get('nproc',48)
+        )
 
         exact_match = sum([item['exact_match'] for item in out_list]) / len(out_list)
         step_level_acc = sum([item['step_level_acc'] for item in out_list]) / len(out_list)

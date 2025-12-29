@@ -95,7 +95,7 @@ from .oceanocr import OceanOCRBench
 from .matbench import MATBench
 
 from .reasonmap_plus import ReasonMap_Plus
-from .hipho import HiPhODataset
+
 from .gsm8k_v import GSM8KVDataset
 from .macbench import MaCBench
 from .sarena_mini import SArena_MINI
@@ -105,6 +105,7 @@ from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoni
 from .SGI_Bench_1_0.deep_research import SGI_Bench_Deep_Research
 from .SGI_Bench_1_0.dry_experiment import SGI_Bench_Dry_Experiment
 from .SGI_Bench_1_0.wet_experiment import SGI_Bench_Wet_Experiment
+from .SGI_Bench_1_0.idea_generation import SGI_Bench_Idea_Generation
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -234,7 +235,7 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, MaCBench,
     UniSVG, SArena_MINI, SGI_Bench_Experimental_Reasoning
 ]
 
@@ -252,7 +253,7 @@ VIDEO_DATASET = [
 ]
 
 TEXT_DATASET = [
-    TextMCQDataset,SGI_Bench_Wet_Experiment,SGI_Bench_Dry_Experiment,SGI_Bench_Deep_Research
+    TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment, SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation
 ]
 
 CUSTOM_DATASET = [

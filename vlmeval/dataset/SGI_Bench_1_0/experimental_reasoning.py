@@ -1,11 +1,16 @@
+import ast
 import re
 from typing import Any, Dict, List
 from datasets import load_dataset
-from vlmeval import *
-
-from openai import OpenAI
-
-from ...smp import *
+import pandas as pd
+from ..utils.judge_util import build_judge
+from ...smp.vlm import encode_image_to_base64 ,read_ok,decode_base64_to_image_file
+from ...smp.misc import toliststr
+from ...smp.file import load ,dump , get_intermediate_file_path
+import os
+import io
+import base64
+import os.path as osp
 from ..image_base import ImageBaseDataset
 
 def extract_answer_from_response(response):
@@ -29,49 +34,6 @@ def b64_encode_image(img) -> str:
     img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-
-class VLM:
-    def __init__(self, model='gpt-4.1', **kwargs):
-        self.api_key = kwargs.get('api_key', os.environ.get('OPENAI_API_KEY')) # export OPENAI_API_KEY="xxxxx"
-        self.base_url = kwargs.get('base_url', os.environ.get('OPENAI_API_BASE')) # export OPENAI_BASE_URL="xxxxx"
-        self.base_url = self.base_url[:-17]
-        self.model = model
-        if not self.api_key:
-            raise ValueError("API key is required.")
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
-
-    def __call__(self, images=None, query=None, **kwargs):
-        system_prompt = kwargs.get('system_prompt', 'You are a helpful assistant.')
-        max_tokens = kwargs.get('max_tokens', None)
-        temperature = kwargs.get('temperature', 0)
-
-        image_msgs = []
-        if images is not None:
-            for img in images:
-                b64 = b64_encode_image(img)
-                image_msgs.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/png;base64,{b64}"}
-                })
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": image_msgs + [{"type": "text", "text": query}]},
-        ]
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-        assistant_response = response.choices[0].message.content
-        return assistant_response
-
-
-judge = VLM('o4-mini')
-
-
 class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
     TYPE = 'MCQ'
 
@@ -79,36 +41,85 @@ class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
     def supported_datasets(cls):
         return ["SGI-Experimental-Reasoning"]
 
+    def dump_images(self, line):
+        step_dir = osp.join(self.img_root, 'step_images')
+        os.makedirs(self.img_root, exist_ok=True)
+        os.makedirs(step_dir, exist_ok=True)
+
+        results = {}
+        def _process_field(key_name, path_key_name, save_root):
+            tgt_paths = []
+            if key_name in line:
+                content = line[key_name]
+                if path_key_name in line and isinstance(line[path_key_name], list):
+                    fnames = line[path_key_name]
+                else:
+                    count = len(content) if isinstance(content, list) else 1
+                    fnames = [f"{line['index']}_{i}.png" for i in range(count)]
+                imgs = content if isinstance(content, list) else [content]
+                for img, fname in zip(imgs, fnames):
+                    full_path = osp.join(save_root, fname)
+                    if not read_ok(full_path):
+                        decode_base64_to_image_file(img, full_path)
+                    tgt_paths.append(full_path)
+
+            elif path_key_name in line:
+                paths = toliststr(line[path_key_name])
+                read_ok_flag = [read_ok(x) for x in paths]
+
+                if not all(read_ok_flag):
+                    paths_abs = [osp.join(save_root, x) for x in paths]
+                    read_ok_flag = [read_ok(x) for x in paths_abs]
+                    assert read_ok_flag, f"Field `{key_name}` missing and files not found: {paths}"
+                    tgt_paths = paths_abs
+                else:
+                    tgt_paths = paths
+
+            return tgt_paths
+
+        if 'image' in line or 'image_path' in line:
+            results['image'] = _process_field('image', 'image_path', self.img_root)
+        if 'step_images' in line or 'step_image_path' in line:
+            results['step_images'] = _process_field('step_images', 'step_image_path', step_dir)
+
+        return results
+
     def load_data(self, dataset):
         hf = load_dataset("InternScience/SGI-Reasoning", split="test")
 
         rows: List[Dict[str, Any]] = []
         idx = 0
+
         for prob in hf:
-            rows.append(
-                {
-                    "index": idx,
-                    "id": prob["idx"],
-                    "question": prob["question"],
-                    "image": [encode_image_to_base64(img) for img in prob["images"]],
-                    "options": prob["options"],
-                    "steps": prob["steps"],
-                    "step_images": [encode_image_to_base64(img) for img in prob["step_images"]],
-                    "answer": prob["answer"],
-                    "image_type": prob["image_type"],
-                    "discipline": prob["discipline"],
-                    "direction": prob["direction"],
-                    "type": prob["type"]
-                }
-            )
+            current_row = {
+                "index": idx,  #
+                "id": prob["idx"],
+                "question": prob["question"],
+                "image": [encode_image_to_base64(img) for img in prob["images"]],
+                "options": prob["options"],
+                "steps": prob["steps"],
+                "step_images": [encode_image_to_base64(img) for img in prob["step_images"]],
+                "answer": prob["answer"],
+                "image_type": prob["image_type"],
+                "discipline": prob["discipline"],
+                "direction": prob["direction"],
+                "type": prob["type"]
+            }
+            saved_paths = self.dump_images(current_row)
+            if 'image' in saved_paths:
+                current_row['image'] = saved_paths['image']
+
+            if 'step_images' in saved_paths:
+                current_row['step_images'] = saved_paths['step_images']
+            rows.append(current_row)
             idx += 1
+
         return pd.DataFrame(rows)
 
     
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        tgt_path = self.dump_image(line)
         question = """
 Please solve the following multiple-choice question step-by-step. Each question is provided with several options labeled A, B, C, D, E, etc. Carefully analyze the question and each option, reason step-by-step, then select the single most correct option.
 
@@ -121,9 +132,11 @@ Your final output **must** include both **the reasoning** and **the final answer
             question += f"{option_label}. {option}\n"
 
         msgs = []
-        for p in tgt_path:
-            msgs.append({'type': 'image', 'value': p})
-        msgs.append({'type': 'text', 'value': question})
+        if isinstance(line['image'], list):
+            for p in line['image']:
+                msgs.append({'type': 'image', 'value': p})
+        elif isinstance(line['image'], str):
+            msgs.append({'type': 'image', 'value': line['image']})
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
@@ -170,14 +183,23 @@ Model Prediction:
 - **0**: Reasoning is completely invalid, contradictory (self-conflicting logic), or irrelevant (no connection to the question or key conditions).
 # Strict Output format example
 6"""
-
+            if judge_kwargs.get('model') is None:
+                judge_kwargs['model'] = 'o4-mini'
+            if judge_kwargs.get('max_tokens') is None:
+                judge_kwargs['max_tokens'] = None
+            judge = build_judge(**judge_kwargs)
             try:
-                images = [decode_base64_to_image(b64) for b64 in row['step_images'] ]
-                llm_judge = judge(images, judge_prompt).strip()
+                msgs = []
+                msgs.append({'role': 'system', 'value': 'You are a helpful assistant.'})
+
+                images = ast.literal_eval(row['step_images'])
+                for image in images:
+                    msgs.append({'role': 'role', 'value': image, 'type': 'image'})
+                llm_judge = judge.generate(msgs).strip()
                 pattern = r"(\d+)"
                 match = re.search(pattern, llm_judge)
                 rv_score = float(match.group(1)) if match else 0.0
-            except:
+            except Exception as e:
                 rv_score = 0.0
 
             mcc_score = mm_reasoning_is_correct(row['prediction'], chr(ord('A') + int(row['answer'])))
@@ -185,6 +207,7 @@ Model Prediction:
             all_mcc.append(mcc_score)
             data.at[index, 'mcc'] = 1 if mcc_score else 0
             all_rv.append(rv_score)
+            data['rv'] = data['rv'].astype(float)
             data.at[index, 'rv'] = rv_score / 10.0
 
         
