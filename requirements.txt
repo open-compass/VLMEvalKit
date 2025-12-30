@@ -43,3 +43,5 @@ soxr
 typing_extensions
 validators
 xlsxwriter
+pymupdf
+haversine

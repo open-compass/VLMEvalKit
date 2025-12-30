@@ -2419,6 +2419,8 @@ class CustomVQADataset(ImageBaseDataset):
         
         acc = 0
         for pred, item in tqdm(zip(data['prediction'].tolist(), self.data.to_dict(orient='records'))):
+            if isinstance(pred, float) and np.isnan(pred):
+                pred = ""
             if "</think>" in pred:
                 pred = pred.split("</think>")[1].strip()
             else:
