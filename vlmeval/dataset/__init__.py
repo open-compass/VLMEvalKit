@@ -101,6 +101,7 @@ from .gsm8k_v import GSM8KVDataset
 from .macbench import MaCBench
 from .sarena_mini import SArena_MINI
 from .uni_svg import UniSVG
+from .asclepius import AsclepiusDataset
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -231,7 +232,7 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
-    UniSVG, SArena_MINI, MMSIVideoBench,
+    UniSVG, SArena_MINI, MMSIVideoBench, AsclepiusDataset,
 ]
 
 VIDEO_DATASET = [
