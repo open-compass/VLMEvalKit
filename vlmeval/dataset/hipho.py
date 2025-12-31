@@ -1,4 +1,3 @@
-# flake8: noqa
 import os
 import re
 import json
@@ -12,9 +11,37 @@ from io import BytesIO
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from .utils.hipho_verifier import grade, extract_boxed_answer, get_answer_str, answer_tag_reward_fn_for_r1
-from .utils.hipho_prompt_inference import SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH, JUDGE_GRADING_PROMPT_TEMPLATE, TOTAL_SCORE_WARNING_TEMPLATE, RETRY_WARNING_TEMPLATE
+from .utils.hipho_prompt_inference import (
+    SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH,
+    JUDGE_GRADING_PROMPT_TEMPLATE,
+    TOTAL_SCORE_WARNING_TEMPLATE,
+    RETRY_WARNING_TEMPLATE)
 from ..smp import *
+from ..smp.file import get_intermediate_file_path
+from ..utils import track_progress_rich
 
+
+FAIL_MSG = 'Failed to obtain answer via API.'
+
+
+def evaluate_hipho_single_problem(judge_model, row, index, judge_kwargs, dataset_instance):
+    """Evaluate single HiPhO problem for parallel processing"""
+
+    try:
+        result = dataset_instance._evaluate_single_problem(judge_model, row, index, judge_kwargs)
+        if result is None:
+            return FAIL_MSG
+
+        return {
+            'success': True,
+            'fine_grained_score': result['fine_grained_score'],
+            'coarse_grained_score': result['coarse_grained_score'],
+            'final_score': result['final_score'],
+            'item_total_points': result['item_total_points'],
+            'result': result
+        }
+    except Exception:
+        return FAIL_MSG
 
 
 class HiPhODataset(ImageBaseDataset):
@@ -49,6 +76,7 @@ class HiPhODataset(ImageBaseDataset):
         'F_MA_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
         'PanMechanics_2024': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
         'PanMechanics_2025': 'https://huggingface.co/datasets/HY-Wan/HiPhO',
+        'HiPhO_ALL': 'https://huggingface.co/datasets/HY-Wan/HiPhO',  # All subsets combined
     }
 
     # MD5 values are empty as HuggingFace datasets are dynamically loaded
@@ -66,12 +94,34 @@ class HiPhODataset(ImageBaseDataset):
         'F_MA_2025': '',
         'PanMechanics_2024': '',
         'PanMechanics_2025': '',
+        'HiPhO_ALL': '',
     }
 
-    def __init__(self, dataset='IPhO_2025', skip_noimg=False, language='en'):
+    # All individual subsets for HiPhO_ALL
+    ALL_SUBSETS = [
+        'IPhO_2024', 'IPhO_2025', 'EuPhO_2024', 'EuPhO_2025', 'APhO_2025',
+        'PanPhO_2024', 'PanPhO_2025', 'NBPhO_2024', 'NBPhO_2025',
+        'F_MA_2024', 'F_MA_2025', 'PanMechanics_2024', 'PanMechanics_2025'
+    ]
+
+    # Dataset language mapping
+    DATASET_LANGUAGES = {
+        'PanMechanics_2024': 'zh',
+        'PanMechanics_2025': 'zh',
+        # All other datasets default to English
+    }
+
+    def __init__(self, dataset='IPhO_2025', skip_noimg=False, language=None):
         """Initialize dataset"""
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
-        self.language = language
+
+        # Auto-detect language if not specified
+        if language is None:
+            self.language = self.DATASET_LANGUAGES.get(dataset, 'en')
+        else:
+            self.language = language
+
+        self.is_all_mode = (dataset == 'HiPhO_ALL')
 
     @classmethod
     def supported_datasets(cls):
@@ -81,8 +131,20 @@ class HiPhODataset(ImageBaseDataset):
         """Load dataset from HuggingFace"""
         from datasets import load_dataset
 
-        hf_dataset = load_dataset('HY-Wan/HiPhO', split=dataset)
-        data = hf_dataset.to_pandas()
+        if dataset == 'HiPhO_ALL':
+            # Load all subsets and combine them
+            all_data = []
+            for subset in self.ALL_SUBSETS:
+                hf_dataset = load_dataset('HY-Wan/HiPhO', split=subset)
+                subset_data = hf_dataset.to_pandas()
+                subset_data['SUB_DATASET'] = subset  # Add source identifier
+                all_data.append(subset_data)
+
+            data = pd.concat(all_data, ignore_index=True)
+        else:
+            # Load single subset
+            hf_dataset = load_dataset('HY-Wan/HiPhO', split=dataset)
+            data = hf_dataset.to_pandas()
 
         if 'image_question' in data.columns:
             no_image_placeholder = 'NO_IMAGE_PLACEHOLDER_' + 'x' * 50
@@ -108,8 +170,11 @@ class HiPhODataset(ImageBaseDataset):
         question = safe_str(line['question'])
         information = safe_str(line.get('information', ''))
 
-        system_prompt = SYSTEM_PROMPTS_EN if self.language == 'en' else SYSTEM_PROMPTS_ZH
-        formatted_prompt = system_prompt.replace('{context}', context).replace('{problem}', question).replace('{information}', information)
+        system_prompt = (SYSTEM_PROMPTS_EN if self.language == 'en'
+                         else SYSTEM_PROMPTS_ZH)
+        formatted_prompt = (system_prompt.replace('{context}', context)
+                            .replace('{problem}', question)
+                            .replace('{information}', information))
 
         msgs = []
 
@@ -138,56 +203,243 @@ class HiPhODataset(ImageBaseDataset):
         data = load(eval_file)
         assert 'answer' in data and 'prediction' in data
 
-        # Initialize judge model using VLMEvalKit standard approach
-        judge_model = None
-        if judge_kwargs.get('model') and judge_kwargs.get('model') != 'exact_matching':
-            # Set appropriate default parameters for physics problems
-            judge_kwargs.setdefault('timeout', 600)      # API timeout (seconds)
-            judge_kwargs.setdefault('retry', 3)          # Retry count
-            judge_kwargs.setdefault('max_tokens', 4096)  # Limit output length
-            # judge_kwargs.setdefault('temperature', 0.0)  # Ensure consistency
-            judge_model = build_judge(**judge_kwargs)
-            if judge_model and not judge_model.working():
-                warnings.warn('Judge API not working, skipping fine-grained evaluation')
-                judge_model = None
+        # Check if this is HiPhO_ALL mode
+        if self.is_all_mode and 'SUB_DATASET' in data.columns:
+            judge_name = judge_kwargs.get('model', 'exact_matching')
+            all_tmp_file = get_intermediate_file_path(eval_file, f'_ALL_{judge_name}', 'pkl')
+            all_score_file = get_intermediate_file_path(eval_file, f'_ALL_{judge_name}_score', 'json')
+            nproc = judge_kwargs.pop('nproc', 4)
 
-        fine_grained_total_score = 0.0
-        coarse_grained_total_score = 0.0
-        max_possible_score = 0.0
-        detailed_results = []
+            if not osp.exists(all_score_file):
 
-        failed_count = 0
-        for i in range(len(data)):
-            row = data.iloc[i]
+                # Load existing subset results if any
+                subset_results = {}
+                if osp.exists(all_tmp_file):
+                    subset_results = load(all_tmp_file)
 
-            result = self._evaluate_single_problem(judge_model, row, i, judge_kwargs)
+                all_detailed_results = []
 
-            if result is None:
-                failed_count += 1
-                print(f"⚠️  Problem {i+1} evaluation failed")
-                continue
+                for subset in self.ALL_SUBSETS:
+                    if subset not in data['SUB_DATASET'].values:
+                        continue
 
-            fine_score = result['fine_grained_score']
-            coarse_score = result['coarse_grained_score']
-            item_points = result['item_total_points']
+                    # Check if this subset is already completed
+                    if subset in subset_results:
+                        continue
 
-            fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
-            coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
-            max_possible_score += item_points
+                    subset_data = data[data['SUB_DATASET'] == subset].copy()
+                    subset_data = subset_data.reset_index(drop=True)
 
-            detailed_item = self._build_result_item(row, i, result)
-            detailed_results.append(detailed_item)
+                    # Create subset-specific tmp file
+                    subset_tmp_file = get_intermediate_file_path(eval_file, f'_{subset}_{judge_name}', 'pkl')
 
-        if failed_count > 0:
-            print(f"⚠️  Total {failed_count}/{len(data)} problems failed evaluation")
+                    # Initialize judge model for this subset
+                    judge_model = None
+                    if judge_kwargs.get('model') and judge_kwargs.get('model') != 'exact_matching':
+                        judge_kwargs.setdefault('timeout', 600)
+                        judge_kwargs.setdefault('retry', 3)
+                        judge_kwargs.setdefault('max_tokens', 4096)
+                        judge_model = build_judge(**judge_kwargs)
+                        if judge_model and not judge_model.working():
+                            warnings.warn(f'Judge API not working for {subset}, skipping fine-grained evaluation')
+                            judge_model = None
 
-        max_possible_score = round(max_possible_score, 2)
-        results = self._build_final_results(fine_grained_total_score, coarse_grained_total_score, max_possible_score)
+                    # Prepare evaluation tasks for this subset
+                    lt = len(subset_data)
+                    lines = [subset_data.iloc[i] for i in range(lt)]
+                    tups = [(judge_model, line, i, judge_kwargs, self) for i, line in enumerate(lines)]
+                    indices = [i for i in range(lt)]
 
-        self._save_results(eval_file, results, detailed_results, data)
-        self._print_summary(results)
+                    # Load existing results for this subset if any
+                    ans = {}
+                    if osp.exists(subset_tmp_file):
+                        ans = load(subset_tmp_file)
+                        # Filter out failed results to allow retry
+                        ans = {k: v for k, v in ans.items()
+                               if (v != FAIL_MSG and isinstance(v, dict)
+                                   and v.get('success', False))}
+
+                    # Filter out completed tasks
+                    tups = [x for x, i in zip(tups, indices) if i not in ans]
+                    indices = [i for i in indices if i not in ans]
+
+                    if len(indices):
+                        _ = track_progress_rich(
+                            evaluate_hipho_single_problem,
+                            tups,
+                            nproc=nproc,
+                            chunksize=nproc,
+                            keys=indices,
+                            save=subset_tmp_file,
+                        )
+
+                    # Load final results for this subset
+                    ans = load(subset_tmp_file)
+
+                    # Aggregate results for this subset
+                    fine_grained_total_score = 0.0
+                    coarse_grained_total_score = 0.0
+                    final_total_score = 0.0
+                    max_possible_score = 0.0
+                    detailed_results = []
+                    failed_count = 0
+
+                    for i in range(len(subset_data)):
+                        if i not in ans:
+                            failed_count += 1
+                            continue
+
+                        if ans[i] == FAIL_MSG or not isinstance(ans[i], dict) or not ans[i].get('success', False):
+                            failed_count += 1
+                            continue
+
+                        row = subset_data.iloc[i]
+                        result_data = ans[i]
+
+                        fine_score = result_data['fine_grained_score']
+                        coarse_score = result_data['coarse_grained_score']
+                        final_score = result_data['final_score']
+                        item_points = result_data['item_total_points']
+
+                        fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
+                        coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
+                        final_total_score = round(final_total_score + final_score, 2)
+                        max_possible_score += item_points
+
+                        detailed_item = self._build_result_item(row, i, result_data['result'])
+                        detailed_item['subset'] = subset
+                        detailed_results.append(detailed_item)
+                        all_detailed_results.append(detailed_item)
+
+                    # Note: failed_count tracking for debugging purposes
+
+                    max_possible_score = round(max_possible_score, 2)
+                    subset_result = self._build_final_results(
+                        fine_grained_total_score, coarse_grained_total_score,
+                        final_total_score, max_possible_score)
+                    subset_result['subset_name'] = subset
+                    subset_result['problem_count'] = len(subset_data)
+                    subset_results[subset] = subset_result
+
+                    # Save progress after each subset
+                    dump(subset_results, all_tmp_file)
+
+                # Final results
+                final_results = {
+                    'evaluation_type': 'HiPhO_ALL',
+                    'total_subsets': len(subset_results),
+                    'subset_results': subset_results
+                }
+
+                # Save final results
+                dump(final_results, all_score_file)
+                self._save_results(eval_file, final_results, all_detailed_results, data)
+
+                # Results summary available in final_results
+            else:
+                final_results = load(all_score_file)
+
+            return final_results
+
+        # Single subset evaluation with resume support
+        judge_name = judge_kwargs.get('model', 'exact_matching')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
+        score_file = get_intermediate_file_path(eval_file, f'_{judge_name}_score', 'json')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(score_file):
+            # Initialize judge model
+            judge_model = None
+            if judge_kwargs.get('model') and judge_kwargs.get('model') != 'exact_matching':
+                judge_kwargs.setdefault('timeout', 1800)
+                judge_kwargs.setdefault('retry', 3)
+                judge_kwargs.setdefault('max_tokens', 4096)
+                judge_model = build_judge(**judge_kwargs)
+                if judge_model and not judge_model.working():
+                    warnings.warn('Judge API not working, skipping fine-grained evaluation')
+                    judge_model = None
+
+            # Prepare evaluation tasks
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(judge_model, line, i, judge_kwargs, self) for i, line in enumerate(lines)]
+            indices = [i for i in range(lt)]
+
+            # Load existing results if any
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+                # Filter out failed results to allow retry
+                ans = {k: v for k, v in ans.items()
+                       if (v != FAIL_MSG and isinstance(v, dict)
+                           and v.get('success', False))}
+
+            # Filter out completed tasks
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                _ = track_progress_rich(
+                    evaluate_hipho_single_problem,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+            # All problems already evaluated
+
+            # Load final results
+            ans = load(tmp_file)
+
+            # Aggregate results
+            fine_grained_total_score = 0.0
+            coarse_grained_total_score = 0.0
+            final_total_score = 0.0
+            max_possible_score = 0.0
+            detailed_results = []
+            failed_count = 0
+
+            for i in range(len(data)):
+                if i not in ans:
+                    failed_count += 1
+                    continue
+
+                if ans[i] == FAIL_MSG or not isinstance(ans[i], dict) or not ans[i].get('success', False):
+                    failed_count += 1
+                    continue
+
+                row = data.iloc[i]
+                result_data = ans[i]
+
+                fine_score = result_data['fine_grained_score']
+                coarse_score = result_data['coarse_grained_score']
+                final_score = result_data['final_score']
+                item_points = result_data['item_total_points']
+
+                fine_grained_total_score = round(fine_grained_total_score + fine_score, 2)
+                coarse_grained_total_score = round(coarse_grained_total_score + coarse_score, 2)
+                final_total_score = round(final_total_score + final_score, 2)
+                max_possible_score += item_points
+
+                detailed_item = self._build_result_item(row, i, result_data['result'])
+                detailed_results.append(detailed_item)
+
+            # Note: failed_count tracking for debugging purposes
+
+            max_possible_score = round(max_possible_score, 2)
+            results = self._build_final_results(
+                fine_grained_total_score, coarse_grained_total_score,
+                final_total_score, max_possible_score)
+
+            # Save final results
+            dump(results, score_file)
+            self._save_results(eval_file, results, detailed_results, data)
+            self._print_summary(results)
+        else:
+            results = load(score_file)
+
         return results
-
 
     def _evaluate_single_problem(self, judge_model, row, index, judge_kwargs):
         """Evaluate single problem"""
@@ -209,7 +461,7 @@ class HiPhODataset(ImageBaseDataset):
         # Coarse-grained evaluation
         coarse_grained_score, extracted_pred = self._evaluate_coarse_grained(
             prediction, ground_truth, answer_type, unit, points,
-            row.get('question', '')
+            row.get('question', ''), judge_model
         )
 
         # Final score is the maximum of both
@@ -234,12 +486,17 @@ class HiPhODataset(ImageBaseDataset):
 
     def _evaluate_fine_grained(self, prediction, marking, points, judge_model, question):
         """Fine-grained evaluation with retry mechanism"""
-        if not marking or not judge_model:
+
+        if not marking:
             return 0.0, []
 
         # Check for multiple marking criteria sets
         if self._has_multiple_marking_sets(marking):
             return self._evaluate_multiple_marking_sets(prediction, marking, points, judge_model, question)
+
+        # Handle single criterion set wrapped in a list
+        if len(marking) == 1 and isinstance(marking[0], list):
+            marking = marking[0]  # Unwrap single criterion set
 
         scoring_criteria = self._parse_marking_criteria(marking)
         max_possible_score = sum(points) if points else 0.0
@@ -249,27 +506,61 @@ class HiPhODataset(ImageBaseDataset):
             scores = []
             detailed_scores = []
 
+            api_failed_count = 0
             for i, criterion in enumerate(scoring_criteria):
                 score, response = self._evaluate_single_criterion(
                     prediction, criterion, judge_model, question,
                     max_total_score=max_possible_score,
                     current_attempt=attempt
                 )
-                scores.append(score)
 
+                # Check if API failed
+                if score is None or "API_FAILED" in str(response) or "EMPTY_RESPONSE" in str(response):
+                    api_failed_count += 1
+                    # For failed criteria, don't add to total score calculation
+                    scores.append(0)  # Temporary placeholder, will retry later
+                    detailed_scores.append({
+                        'marking_criterion': criterion['description'],
+                        'score': None,
+                        'index': criterion['index'],
+                        'attempt': attempt + 1,
+                        'judge_response': response,
+                        'evaluation_status': 'API_FAILED'
+                    })
+                else:
+                    scores.append(score)
                 detailed_scores.append({
                     'marking_criterion': criterion['description'],
                     'score': round(score, 2),
                     'index': criterion['index'],
                     'attempt': attempt + 1,
-                    'judge_response': response
+                    'judge_response': response,
+                    'evaluation_status': 'SUCCESS'
                 })
 
-            total_score = sum(scores)
+            # If API failed and not the last attempt, retry entire scoring process
+            if api_failed_count > 0 and attempt < max_retries:
+                continue
+
+            # Calculate total score (only count successful evaluations)
+            valid_scores = [s for s, ds in zip(scores, detailed_scores) if ds.get('evaluation_status') == 'SUCCESS']
+            total_score = sum(valid_scores)
+
+            # If all evaluations failed, return clear failure information
+            if api_failed_count == len(scoring_criteria):
+                return 0.0, [{
+                    'marking_criterion': 'ALL_CRITERIA_FAILED',
+                    'score': None,
+                    'index': -1,
+                    'judge_response': f'All {len(scoring_criteria)} evaluation criteria failed due to API issues',
+                    'evaluation_status': 'TOTAL_FAILURE'
+                }]
 
             if total_score <= max_possible_score or max_possible_score == 0:
                 for detailed_score in detailed_scores:
-                    detailed_score['retry_info'] = f"Attempt {attempt + 1} successful" if attempt > 0 else "First attempt successful"
+                    detailed_score['retry_info'] = (
+                        f"Attempt {attempt + 1} successful" if attempt > 0
+                        else "First attempt successful")
                     detailed_score['final_success'] = True
 
                 return round(total_score, 2), detailed_scores
@@ -291,22 +582,25 @@ class HiPhODataset(ImageBaseDataset):
 
         return 0.0, []
 
-    def _evaluate_coarse_grained(self, prediction, ground_truth, answer_type, unit, points, question):
+    def _evaluate_coarse_grained(self, prediction, ground_truth, answer_type, unit, points, question, judge_model=None):
         """Coarse-grained evaluation based on hipho_verifier answer matching"""
         extracted_pred = ""
 
         if ground_truth:
             # Use hipho_verifier
-            total_score, total_point, extracted_preds, extracted_gts, scored_by_list = answer_tag_reward_fn_for_r1(
-                prediction, ground_truth, problem=question, points=points, use_xverify=True, debug=False
-            )
+            total_score, total_point, extracted_preds, extracted_gts, scored_by_list = (
+                answer_tag_reward_fn_for_r1(
+                    prediction, ground_truth, problem=question, points=points,
+                    use_xverify=True, debug=False, judge_model=judge_model))
 
             extracted_pred = ", ".join([str(p) for p in extracted_preds if p])
             return round(total_point, 2), extracted_pred
 
         return 0.0, extracted_pred
 
-    def _evaluate_single_criterion(self, prediction, criterion, judge_model, question, max_total_score=None, current_attempt=0):
+    def _evaluate_single_criterion(self, prediction, criterion, judge_model,
+                                   question, max_total_score=None,
+                                   current_attempt=0):
         """Evaluate single marking criterion using judge model"""
 
         # Build total score limit warning
@@ -330,9 +624,15 @@ class HiPhODataset(ImageBaseDataset):
             retry_warning=retry_warning
         )
 
-        start_time = time.time()
         response = judge_model.generate(prompt).strip()
-        elapsed_time = time.time() - start_time
+
+        # Check if it's an API failure message
+        if 'Failed to obtain answer via API' in response:
+            return None, f"API_FAILED: {response}"
+
+        # Check if response is empty or invalid
+        if not response or len(response.strip()) == 0:
+            return None, "EMPTY_RESPONSE"
 
         score = self._extract_score_from_response(response)
         return score, response
@@ -407,14 +707,21 @@ class HiPhODataset(ImageBaseDataset):
 
     def _has_multiple_marking_sets(self, marking):
         """Check for multiple marking criteria sets"""
+
         if not marking or len(marking) == 0:
             return False
 
-        # If first element is a list, consider multiple criteria sets
-        return isinstance(marking[0], list)
+        # Fixed logic: if length is 1 and first element is a list, this is a single criterion set (wrapped in list)
+        if len(marking) == 1 and isinstance(marking[0], list):
+            return False
+
+        # Only when length > 1 and all elements are lists, it's truly multiple criterion sets
+        result = len(marking) > 1 and all(isinstance(item, list) for item in marking)
+        return result
 
     def _evaluate_multiple_marking_sets(self, prediction, marking_sets, points, judge_model, question):
         """Evaluate multiple marking criteria sets, take highest score"""
+
         best_score = 0.0
         best_detailed_scores = []
 
@@ -534,10 +841,10 @@ class HiPhODataset(ImageBaseDataset):
 
         return 0.0
 
-
     def _build_result_item(self, row, index, result):
         """Build detailed result item"""
-        has_marking = result['marking'] and len(result['marking']) > 0 and self._has_valid_marking(result['marking'])
+        # has_marking = (result['marking'] and len(result['marking']) > 0
+        #                and self._has_valid_marking(result['marking']))
         earned_points = max(result['fine_grained_score'], result['coarse_grained_score'])
 
         return {
@@ -555,16 +862,20 @@ class HiPhODataset(ImageBaseDataset):
             "field": str(row.get('field', '')).strip(),
             "source": self.dataset_name,
             "test_result": str(result['prediction']),
-            "test_answer": [f"\\boxed{{{ans.strip()}}}" for ans in result['extracted_pred'].split(", ") if ans.strip()] if result['extracted_pred'] else [''],
+            "test_answer": ([f"\\boxed{{{ans.strip()}}}"
+                             for ans in result['extracted_pred'].split(", ")
+                             if ans.strip()]
+                            if result['extracted_pred'] else ['']),
             "fine_grained_score": result['fine_grained_score'],
             "coarse_grained_score": result['coarse_grained_score'],
             "earned_points": earned_points
         }
 
-    def _build_final_results(self, fine_total, coarse_total, max_score):
+    def _build_final_results(self, fine_total, coarse_total, final_total, max_score):
         """Build final results"""
         fine_rate = round((fine_total / max_score * 100), 2) if max_score > 0 else 0.0
         coarse_rate = round((coarse_total / max_score * 100), 2) if max_score > 0 else 0.0
+        final_rate = round((final_total / max_score * 100), 2) if max_score > 0 else 0.0
 
         return {
             'fine_grained_total_score': fine_total,
@@ -572,8 +883,8 @@ class HiPhODataset(ImageBaseDataset):
             'coarse_grained_total_score': coarse_total,
             'coarse_grained_score_rate': coarse_rate,
             'max_possible_score': max_score,
-            'total_score': fine_total,
-            'score_rate': fine_rate,
+            'total_score': final_total,  # Now uses the correct final score (max of fine and coarse)
+            'score_rate': final_rate,
         }
 
     def _save_results(self, eval_file, results, detailed_results, data):
@@ -598,7 +909,12 @@ class HiPhODataset(ImageBaseDataset):
     def _print_summary(self, results):
         """Print evaluation summary"""
         print(f"✅ {self.dataset_name} evaluation completed!")
-        print(f"🏆 Overall score: {results['total_score']:.2f} / {results['max_possible_score']:.2f} ({results['score_rate']:.2f}%)")
-        print(f"📊 Fine-grained score: {results['fine_grained_total_score']:.2f} ({results['fine_grained_score_rate']:.2f}%)")
-        print(f"🎯 Coarse-grained score: {results['coarse_grained_total_score']:.2f} ({results['coarse_grained_score_rate']:.2f}%)")
-        print(f"💾 Detailed results saved")
+        print(f"🏆 Overall score: {results['total_score']:.2f} / "
+              f"{results['max_possible_score']:.2f} "
+              f"({results['score_rate']:.2f}%)")
+        print(f"📊 Fine-grained score: "
+              f"{results['fine_grained_total_score']:.2f} "
+              f"({results['fine_grained_score_rate']:.2f}%)")
+        print(f"🎯 Coarse-grained score: "
+              f"{results['coarse_grained_total_score']:.2f} "
+              f"({results['coarse_grained_score_rate']:.2f}%)")
