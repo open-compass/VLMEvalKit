@@ -117,6 +117,7 @@ models = {
         'idefics2_8b', 'Bunny-llama3-8B', 'MiniCPM-Llama3-V-2_5', '360VL-70B', 'Phi-3-Vision',
     ] + list(wemm_series),
     '4.44.0': ['Moondream2'],
+    '4.48.0': ['Moondream3'],
     '4.45.0': ['Aria'],
     'latest': ['paligemma-3b-mix-448', 'MiniCPM-V-2_6', 'glm-4v-9b'] + [x for x in llava_series if 'next' in x]
     + list(chameleon_series) + list(ovis_series) + list(mantis_series),

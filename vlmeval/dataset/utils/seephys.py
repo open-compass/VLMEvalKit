@@ -230,7 +230,10 @@ def score_func(model, response, query, gt):
     if not response:
         return 0
     try:
-        full_prompt = prompt_scoring.strip() + f"\n[Question]: \{query}\\n[Standard Answer]: {gt}\\n[Model Answer]: {response}\\nJudgement: "  # noqa
+        full_prompt = (
+            prompt_scoring.strip()
+            + f"\n[Question]: {query}\n[Standard Answer]: {gt}\n[Model Answer]: {response}\nJudgement: "
+        )
         try_n = 0
         while try_n < 5:
             score = model.generate(full_prompt, temperature=try_n * 0.3)

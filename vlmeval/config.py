@@ -1729,6 +1729,7 @@ eagle_series = {
 moondream_series = {
     "Moondream1": partial(Moondream1, model_path="vikhyatk/moondream1"),
     "Moondream2": partial(Moondream2, model_path="vikhyatk/moondream2"),
+    "Moondream3": partial(Moondream3, model_path="moondream/moondream3-preview"),
 }
 
 llama_series = {

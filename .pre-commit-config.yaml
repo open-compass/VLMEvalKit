@@ -15,13 +15,13 @@ exclude: |
   )
 repos:
   - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+    rev: 7.3.0
     hooks:
       - id: flake8
         args:
           [
             "--max-line-length=120",
-            "--ignore=F401,F403,F405,E402,E722,E741,W503,E231,E702",
+            "--ignore=F401,F403,F405,E402,E722,E741,W503,E231,E702,E226,F824",
           ]
         exclude: ^configs/
   - repo: https://github.com/pre-commit/mirrors-yapf
