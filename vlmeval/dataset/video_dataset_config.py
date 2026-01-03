@@ -208,20 +208,44 @@ dream_1k_dataset = {
 
 av_speakerbench_dataset = {
     # frame-sampled variants
-    'AV-SpeakerBench_audiovisual_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True),
-    'AV-SpeakerBench_audiovisual_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True),
-    'AV-SpeakerBench_visual_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=False),
-    'AV-SpeakerBench_visual_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=False),
-    'AV-SpeakerBench_audio_only_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True, audio_only=True),
-    'AV-SpeakerBench_audio_only_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True, audio_only=True),
+    'AV-SpeakerBench_audiovisual_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True
+    ),
+    'AV-SpeakerBench_audiovisual_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True
+    ),
+    'AV-SpeakerBench_visual_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=False
+    ),
+    'AV-SpeakerBench_visual_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=False
+    ),
+    'AV-SpeakerBench_audio_only_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True, audio_only=True
+    ),
+    'AV-SpeakerBench_audio_only_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True, audio_only=True
+    ),
     # fps-based variants
-    'AV-SpeakerBench_audiovisual_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True),
-    'AV-SpeakerBench_visual_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=False),
-    'AV-SpeakerBench_audio_only_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True, audio_only=True),
+    'AV-SpeakerBench_audiovisual_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True
+    ),
+    'AV-SpeakerBench_visual_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=False
+    ),
+    'AV-SpeakerBench_audio_only_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True, audio_only=True
+    ),
     # shorthand aliases mapping to audiovisual
-    'AV-SpeakerBench_8frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True),
-    'AV-SpeakerBench_16frame': partial(AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True),
-    'AV-SpeakerBench_1fps': partial(AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True),
+    'AV-SpeakerBench_8frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=8, use_audio=True
+    ),
+    'AV-SpeakerBench_16frame': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', nframe=16, use_audio=True
+    ),
+    'AV-SpeakerBench_1fps': partial(
+        AVSpeakerBench, dataset='AV-SpeakerBench', fps=1.0, use_audio=True
+    ),
 }
 
 supported_video_datasets = {}
@@ -229,9 +253,9 @@ supported_video_datasets = {}
 dataset_groups = [
     mmbench_video_dataset, mvbench_dataset, videomme_dataset, videommmu_dataset, longvideobench_dataset,
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
-    megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
-    cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    vsibench_dataset, av_speakerbench_dataset
+    megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset,
+    vcrbench_dataset, cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset,
+    video_tt_dataset, vsibench_dataset, av_speakerbench_dataset
 ]
 
 for grp in dataset_groups:

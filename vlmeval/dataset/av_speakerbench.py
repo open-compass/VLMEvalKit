@@ -151,7 +151,7 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
             if not check_integrity(dataset_path):
                 warnings.warn('Dataset integrity check failed after download; media files may be missing.')
 
-        data_file = osp.join(dataset_path, f'test.tsv')
+        data_file = osp.join(dataset_path, 'test.tsv')
 
         return dict(data_file=data_file, root=dataset_path)
 
@@ -202,18 +202,28 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
         audio_path = line.get('audio_path')
 
         if not self.audio_only and not video_llm:
-            frames, indices, video_info = self.save_video_frames(video_path, line['video'])
+            frames, _, _ = self.save_video_frames(video_path, line['video'])
         else:
-            frames, indices, video_info = [], [], {}
+            frames = []
 
         message = [dict(type='text', value=self.SYS)]
 
         if not self.audio_only:
             if video_llm:
-                message.append(dict(type='video', value=osp.join(self.data_root, video_path)))
+                message.append(
+                    dict(
+                        type='video',
+                        value=osp.join(self.data_root, video_path)
+                    )
+                )
             else:
                 for im in frames:
-                    message.append(dict(type='image', value=im))
+                    message.append(
+                        dict(
+                            type='image',
+                            value=im
+                        )
+                    )
 
         else:
             message.append(dict(type='audio', value=osp.join(self.data_root, audio_path)))
@@ -243,7 +253,8 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
+        assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], \
+            'data file should be an supported format (xlsx/json/tsv) file'
 
         score_file = get_intermediate_file_path(eval_file, '_score')
         tgt_file = get_intermediate_file_path(eval_file, '_rating', 'json')
@@ -254,7 +265,6 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
             cnt_missing_pred = 0
             cnt_rejected = 0
 
-            scores = []
             task_scores = {}
 
             for _, row in data.iterrows():
@@ -265,7 +275,6 @@ Focus on the audio and respond with only the letter (A, B, C, or D).
 
                 ans = str(row.get('answer', '')).strip().upper()
                 raw_pred = str(row.get('prediction', ''))
-                choices_raw = row.get('choices', None) if 'choices' in row else row.get('candidates', None)
 
                 pred_label = _parse_multi_choice_response(raw_pred, ['A', 'B', 'C', 'D'])
                 if pred_label == '':
