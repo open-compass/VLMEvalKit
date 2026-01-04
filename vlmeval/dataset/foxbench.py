@@ -19,27 +19,6 @@ def _contain_chinese(text: str) -> bool:
     return bool(re.search(r"[\u4e00-\u9fa5]", text))
 
 
-def _levenshtein(a: str, b: str) -> int:
-    if a == b:
-        return 0
-    la, lb = len(a), len(b)
-    if la == 0:
-        return lb
-    if lb == 0:
-        return la
-    if la < lb:
-        a, b = b, a
-        la, lb = lb, la
-    prev = list(range(lb + 1))
-    for i, ca in enumerate(a, start=1):
-        curr = [i]
-        for j, cb in enumerate(b, start=1):
-            cost = 0 if ca == cb else 1
-            curr.append(min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost))
-        prev = curr
-    return prev[-1]
-
-
 def _cal_ocr_metrics(pred: str, gt: str) -> Dict[str, float]:
     if _contain_chinese(gt) or _contain_chinese(pred):
         reference = jieba.lcut(gt)
@@ -58,13 +37,19 @@ def _cal_ocr_metrics(pred: str, gt: str) -> Dict[str, float]:
     metrics["f_measure"] = f_measure(reference_set, hypothesis_set)
     metrics["precision"] = precision(reference_set, hypothesis_set)
     metrics["recall"] = recall(reference_set, hypothesis_set)
+    # Calculate edit distance normalized by max length, matching official implementation
     metrics["edit_dist"] = nltk.edit_distance(pred, gt) / max(len(pred), len(gt), 1)
     return metrics
 
 
 def _cal_summary_metrics(pred: str, gt: str) -> Dict[str, float]:
+    """Calculate ROUGE-L metrics, matching official implementation."""
     rouge = Rouge()
-    res = rouge.get_scores(hyps=" ".join(pred.split()), refs=" ".join(gt.split()))
+    # Official code: rouge.get_scores(hyps=hypothesis, refs=reference)
+    # where hypothesis and reference are space-joined
+    reference = ' '.join(gt.split())
+    hypothesis = ' '.join(pred.split())
+    res = rouge.get_scores(hyps=hypothesis, refs=reference)
     rl = res[0]["rouge-l"]
     return {"rouge_l_r": rl["r"], "rouge_l_p": rl["p"], "rouge_l_f": rl["f"]}
 
@@ -74,16 +59,30 @@ def _cal_qa_metric(pred: str, gt: str) -> Dict[str, float]:
 
 
 def _classify(question: str) -> str:
+    """Classify task type based on question text.
+    Following official implementation:
+    - QA: questions about comparing or identifying content
+    - Summary: summarization tasks
+    - Translation: translation tasks (evaluated with OCR metrics)
+    - OCR: all other tasks (default)
+    """
     q = _normalize_question(question)
     q_lower = q.lower()
-    if q_lower.startswith("which page's box contains more characters?"):
+    # QA tasks: questions that expect specific answers
+    if "which page's box contains more characters" in q_lower:
         return "qa"
-    if q_lower.startswith("what is this in the box"):
+    if "what is this in the box" in q_lower:
         return "qa"
-    if q_lower.startswith("summarize the text in the region"):
+
+    # Summary tasks
+    if "summarize" in q_lower:
         return "summary"
-    if q_lower.startswith("translate the content for the area"):
+
+    # Translation tasks (evaluated with OCR metrics per official code)
+    if "translate" in q_lower:
         return "translation"
+
+    # Default: OCR tasks (including box OCR, line OCR, page OCR, etc.)
     return "ocr"
 
 
@@ -124,7 +123,19 @@ class FoxBench(ImageBaseDataset):
             self.load_data(self.dataset_name)
         refs = load(self.data_path)
 
-        ref_map = {str(idx): (q, ans) for idx, q, ans in zip(refs["index"], refs["question"], refs["answer"])}
+        # Include sub_task if available in the data
+        if "sub_task" in refs:
+            ref_map = {
+                str(idx): (q, ans, st)
+                for idx, q, ans, st in zip(
+                    refs["index"], refs["question"], refs["answer"], refs["sub_task"]
+                )
+            }
+        else:
+            ref_map = {
+                str(idx): (q, ans, None)
+                for idx, q, ans in zip(refs["index"], refs["question"], refs["answer"])
+            }
 
         ocr_metrics: List[Dict[str, float]] = []
         translation_metrics: List[Dict[str, float]] = []
@@ -132,31 +143,51 @@ class FoxBench(ImageBaseDataset):
         qa_metrics: List[Dict[str, float]] = []
         details: List[Dict[str, object]] = []
 
+        # Sub-task specific metrics
+        sub_task_metrics: Dict[str, List[Dict[str, float]]] = {}
+
+        # Evaluate each prediction against ground truth
         for idx, pred in zip(preds["index"], preds["prediction"]):
             idx_str = str(idx)
             if idx_str not in ref_map:
                 continue
-            question, gt = ref_map[idx_str]
+
+            ref_data = ref_map[idx_str]
+            question, gt = ref_data[0], ref_data[1]
+            sub_task = ref_data[2] if len(ref_data) > 2 else None
+
             normalized_question = _normalize_question(question)
             pred_text = "" if pred is None else str(pred)
             task = _classify(normalized_question)
 
+            # Calculate metrics based on task type (matching official eval scripts)
             if task == "qa":
+                # eval_qa_test.py: simple accuracy check
                 m = _cal_qa_metric(pred_text, gt)
                 qa_metrics.append(m)
             elif task == "summary":
+                # eval_summary_test.py: ROUGE-L metrics
                 m = _cal_summary_metrics(pred_text, gt)
                 summary_metrics.append(m)
             elif task == "translation":
+                # Translation evaluated with OCR metrics per official code
                 m = _cal_ocr_metrics(pred_text, gt)
                 translation_metrics.append(m)
-            else:
+            else:  # task == "ocr"
+                # eval_ocr_test.py: BLEU, METEOR, F1, Precision, Recall, Edit Distance
                 m = _cal_ocr_metrics(pred_text, gt)
                 ocr_metrics.append(m)
+
+            # Accumulate sub-task metrics if available
+            if sub_task:
+                if sub_task not in sub_task_metrics:
+                    sub_task_metrics[sub_task] = []
+                sub_task_metrics[sub_task].append(m)
 
             details.append({
                 "index": idx_str,
                 "task": task,
+                "sub_task": sub_task,
                 "question": normalized_question,
                 "gt": gt,
                 "pred": pred_text,
@@ -168,6 +199,10 @@ class FoxBench(ImageBaseDataset):
                 return {}
             keys = dicts[0].keys()
             return {k: float(np.mean([d[k] for d in dicts])) for k in keys}
+
+        # Calculate sub-task averages
+        sub_task_scores = {st: _avg(metrics) for st, metrics in sub_task_metrics.items()}
+        sub_task_counts = {st: len(metrics) for st, metrics in sub_task_metrics.items()}
 
         scores = {
             "ocr": _avg(ocr_metrics),
@@ -181,6 +216,8 @@ class FoxBench(ImageBaseDataset):
                 "qa": len(qa_metrics),
                 "total": len(details),
             },
+            "sub_tasks": sub_task_scores,
+            "sub_task_counts": sub_task_counts,
         }
 
         score_file = get_intermediate_file_path(eval_file, "_foxbench_score", "json")
@@ -188,8 +225,10 @@ class FoxBench(ImageBaseDataset):
         detail_file = get_intermediate_file_path(eval_file, "_foxbench_detail", "json")
         dump(details, detail_file)
 
-        print("FoxBench metrics (avg):", json.dumps(scores, ensure_ascii=False, indent=2))
-        print(f"FoxBench score file: {score_file}")
-        print(f"FoxBench detail file: {detail_file}")
+        logger = get_logger('Evaluation')
+        logger.info(f'FoxBench successfully finished evaluating {eval_file}')
+        logger.info(f'Results saved in {score_file}')
+        logger.info('Score Summary:')
+        logger.info(json.dumps(scores, ensure_ascii=False, indent=2))
 
         return scores
