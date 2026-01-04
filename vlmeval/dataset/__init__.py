@@ -79,6 +79,7 @@ from .utils import *
 from .video_dataset_config import *
 from ..smp import *
 from .OmniDocBench.omnidocbench import OmniDocBench
+from .foxbench import FoxBench
 from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_v2 import ScreenSpotV2
@@ -232,6 +233,7 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, MMSIVideoBench,
+    FoxBench,
 ]
 
 VIDEO_DATASET = [

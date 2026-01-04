@@ -50,6 +50,7 @@ from .internvl import InternVLChat
 from .interns1 import InternS1Chat
 from .deepseek_vl import DeepSeekVL
 from .deepseek_vl2 import DeepSeekVL2
+from .deepseek_ocr import DeepSeekOCR
 from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
