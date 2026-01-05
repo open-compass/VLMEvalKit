@@ -30,7 +30,7 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
         return {"extract_answer" : "'<think>....' pattern, treat not finished inference result.", "score": 0.0, "response": None}
     prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
 
-    retry = kwargs.get("retry", 3)
+    retry = kwargs.get("retry", 10)
     if "oss" in judge_model.model:
         max_tokens = kwargs.get("max_tokens", 8192)
         temperature = kwargs.get("temperature", 0.1)
