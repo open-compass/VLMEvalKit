@@ -94,6 +94,8 @@ from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
 from .olmOCRBench.olmocrbench import olmOCRBench
 from .oceanocr import OceanOCRBench
 from .matbench import MATBench
+from .uniqa3d import UniQA3DClevrVQA, UniQA3DRelPose, UniQA3DRelDepth, UniQA3DRelPoseFlipped, UniQA3DRelDepthFlipped
+
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -231,7 +233,8 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
-    UniSVG, SArena_MINI, MMSIVideoBench,
+    UniSVG, SArena_MINI, MMSIVideoBench, 
+    UniQA3DRelPose, UniQA3DRelDepth, UniQA3DClevrVQA, UniQA3DRelPoseFlipped, UniQA3DRelDepthFlipped
 ]
 
 VIDEO_DATASET = [
