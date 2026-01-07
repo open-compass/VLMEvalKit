@@ -159,7 +159,8 @@ def eval_mcq_score(
     score_fn,
     group_col: str | list[str] = 'category',
     order: list[str] | dict[str, list[str]] | None = None,
-    dataset_name: str = 'MCQ'
+    dataset_name: str = 'MCQ',
+    return_scored: bool = False,
 ):
     judge_tag = get_judge_tag_from_score_fn(score_fn)
     result_file, xlsx_path, acc_tsv_path = build_eval_paths(eval_file, judge_tag)
@@ -272,6 +273,8 @@ def eval_mcq_score(
         warnings.warn(f'[save] failed to save acc tsv to {acc_tsv_path}: {e}')
 
     print(f'[{dataset_name}] summary: {summary}')
+    if return_scored:
+        return summary, mcq_scored
     return summary
 
 
