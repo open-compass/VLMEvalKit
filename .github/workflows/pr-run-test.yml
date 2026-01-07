@@ -20,30 +20,14 @@ env:
   HF_HUB_CACHE: /mnt/shared-storage-user/large-model-center-share-weights/hf_hub
   HF_HUB_OFFLINE: 1
   CONDA_PATH: /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/miniconda3
-  WORK_PATH: /mnt/shared-storage-user/mllm/qa-llm-cicd/pr_wkdir/VLMEvalKit/VLMEvalKit
   CONDA_ENV: vlm_pr_test
   KUBEBRAIN_CLUSTER_ENTRY: https://h.pjlab.org.cn
   KUBEBRAIN_NAMESPACE: ailab-opencompass
 
 jobs:
-  prepare_env:
-    if: ${{!cancelled()}}
-    runs-on: [yidian_cu12_mllm]
-    steps:
-      - name: clone_repo
-        uses: actions/checkout@v3
-      - name: reinstall vlmeval
-        run: |
-          . ${{env.CONDA_PATH}}/bin/activate
-          conda activate ${{env.CONDA_ENV}}
-          pip uninstall vlmeval -y
-          pip install . -i https://pkg.pjlab.org.cn/repository/pypi-proxy/simple/ --trusted-host pkg.pjlab.org.cn --no-cache-dir
-          pip install numpy==1.23.0 transformers==4.57.1 -i https://pkg.pjlab.org.cn/repository/pypi-proxy/simple/ --trusted-host pkg.pjlab.org.cn --no-cache-dir
-
   vlm_test:
     if: ${{!cancelled()}}
     runs-on: [yidian_cu12_mllm]
-    needs: [prepare_env]
     strategy:
       fail-fast: false
       matrix:
@@ -61,43 +45,47 @@ jobs:
           - dataset: OCRBench_MINI
             dataset_name: ocrbench
     steps:
+      - name: Clean workdir
+        run: sudo git clean -ffdx
       - name: clone_repo
         uses: actions/checkout@v3
+      - name: reinstall vlmeval
+        run: |
+          . ${{env.CONDA_PATH}}/bin/activate
+          conda activate ${{env.CONDA_ENV}}
+          pip uninstall vlmeval -y
+          pip install .
+          pip install numpy==1.23.0 transformers==4.57.1
       - name: evaluation_model
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
           pip list
 
-          rjob submit --name=vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} --charged-group=opencompass_gpu --private-machine=group --group=opencompass_gpu --gpu=1 --cpu=16 --memory=32568 --private-machine=group --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 --env=HF_HUB_CACHE=/mnt/shared-storage-user/large-model-center-share-weights/hf_hub --env=HF_HUB_OFFLINE=1 --env=LMUData=/mnt/shared-storage-user/auto-eval-pipeline/vlmeval/LMUData --mount=gpfs://gpfs1/opencompass-shared:/mnt/shared-storage-user/opencompass-shared --mount=gpfs://gpfs1/auto-eval-pipeline:/mnt/shared-storage-user/auto-eval-pipeline --mount=gpfs://gpfs1/large-model-center-share-weights:/mnt/shared-storage-user/large-model-center-share-weights --mount=gpfs://gpfs1/mllm:/mnt/shared-storage-user/mllm --host-network=True -- bash -exc 'cd ${{env.WORK_PATH}}; source /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/miniconda3/bin/activate; conda activate ${{env.CONDA_ENV}}; python run.py --data ${{matrix.dataset}} --model ${{matrix.model}} --work-dir /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} --reuse 2>&1'
+          rjob submit --metadata-name=vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} --charged-group=opencompass_gpu --private-machine=group --group=opencompass_gpu --gpu=1 --cpu=16 --memory=32568 --private-machine=group --image=registry.h.pjlab.org.cn/ailab-puyu-puyu_wsp_cpu/vlmevalkit:auto-v0.0.10 --env=HF_HUB_CACHE=/mnt/shared-storage-user/large-model-center-share-weights/hf_hub --env=HF_HUB_OFFLINE=1 --env=LMUData=/mnt/shared-storage-user/auto-eval-pipeline/vlmeval/LMUData --mount=gpfs://gpfs1/qa-llm-cicd:/mnt/shared-storage-user/qa-llm-cicd --mount=gpfs://gpfs1/opencompass-shared:/mnt/shared-storage-user/opencompass-shared --mount=gpfs://gpfs1/auto-eval-pipeline:/mnt/shared-storage-user/auto-eval-pipeline --mount=gpfs://gpfs1/large-model-center-share-weights:/mnt/shared-storage-user/large-model-center-share-weights --mount=gpfs://gpfs1/mllm:/mnt/shared-storage-user/mllm --host-network=True -- bash -exc 'cd ${{github.workspace}}; source /mnt/shared-storage-user/opencompass-shared/qa-llm-cicd/miniconda3/bin/activate; conda activate ${{env.CONDA_ENV}}; python run.py --data ${{matrix.dataset}} --model ${{matrix.model}} --work-dir /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} --reuse --judge exact_matching 2>&1'
 
-          for i in {1..300}; do
+          for i in {1..1200}; do
             current_status=$(rjob get vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
             echo "Current status: $current_status, stop checking"
             if [[ $current_status == "Succeeded" ]]; then
-              echo "任务成功完成"
-              break
+              echo "Task succeeded"
+              exit 0
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
-              echo "任务失败"
+              echo "Task failed or stopped, fetching logs"
               rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
               exit 1
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
-              echo "任务被停止"
+              echo "Task failed or stopped"
               exit 1
             fi
             sleep 6
           done
+          rjob stop vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+          echo "Task timeout"
+          exit 1
       - name: assert_result
         run: |
           . ${{env.CONDA_PATH}}/bin/activate
           conda activate ${{env.CONDA_ENV}}
           cp -r /mnt/shared-storage-user/mllm/qa-llm-cicd/eval_report/${{ github.run_id }}/${{matrix.model}} outputs
           python .github/scripts/assert_score.py --dataset "${{matrix.dataset}}" --base_score $BASE_SCORE --model-name ${{matrix.model}}
-      - name: Change code permission
-        if: always()
-        run: |
-          sudo chmod -R 777 .
-      - name: Stop job
-        if: cancelled()
-        run: |
-          rjob stop vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
