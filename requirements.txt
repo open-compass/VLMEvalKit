@@ -42,7 +42,6 @@ transformers
 typing_extensions
 validators
 xlsxwriter
-sentence_transformers
 scikit-learn
 datasets
 apted>=1.0.3
