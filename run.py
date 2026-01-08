@@ -542,8 +542,6 @@ def main():
                         judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 32), 32)
                     elif judge_kwargs.get('model', None) == 'gptoss-120b':
                         judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 128), 128)
-                    else:
-                        raise ValueError(f'Model {judge_kwargs.get("model", None)} is not supported')
 
                     # Perform the Evaluation
                     eval_results = dataset.evaluate(result_file, **judge_kwargs)
