@@ -108,6 +108,7 @@ from .erqabench import ERQABench
 from .robospatialbench import RoboSpatialBench
 from .refspatialbench import RefSpatialBench
 from .spbench import SPBench
+from .stibench import STIBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -258,7 +259,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, VsiSuperRecall, VsiSuperCount, SiteBenchVideo,
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, VsiSuperRecall, VsiSuperCount, STIBench, SiteBenchVideo,
     MMSIVideoBench
 ]
 TEXT_DATASET = [
