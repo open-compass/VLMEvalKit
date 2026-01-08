@@ -349,7 +349,7 @@ def MMLongBench_auxeval(model, line):
 
     for i in range(retry):
         prediction = line['prediction']
-        res = model.generate(prompt, temperature=i * 0.5)
+        res = model.generate(prompt, temperature=i * 0.5, max_tokens=8192)
 
         if FAIL_MSG in res:
             log += f'Try {i}: output is {prediction}, failed to parse.\n'

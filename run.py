@@ -413,7 +413,7 @@ def main():
                 # Set the judge kwargs first before evaluation or dumping
 
                 judge_kwargs = {
-                    'nproc': args.api_nproc,
+                    # 'nproc': args.api_nproc,
                     'verbose': args.verbose,
                     'retry': args.retry if args.retry is not None else 3,
                     **(json.loads(args.judge_args) if args.judge_args else {}),
@@ -443,7 +443,7 @@ def main():
                         judge_kwargs['model'] = 'gpt-4o'
                     elif listinstr(['CharXiv_reasoning_val'], dataset_name):
                         judge_kwargs['model'] = 'xhs-deepseek' 
-                    elif listinstr(['ChartMuseum'], dataset_name):
+                    elif listinstr(['ChartMuseum', 'MMLongBench'], dataset_name):
                         judge_kwargs['model'] = 'gptoss-120b'
                     elif listinstr(['MMLongBench', 'MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning', 'CharXiv_descriptive_val'], dataset_name):  # noqa: E501
                         judge_kwargs['model'] = 'gpt-4o-mini'
@@ -533,13 +533,17 @@ def main():
 
                     # 当为 xhs-deepseek 和 gpt4o 时, 并发需要降低
                     if judge_kwargs.get('model', None) == 'xhs-deepseek':
-                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 8)
+                        judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 8), 8)
                     elif judge_kwargs.get('model', None) == 'gpt-4o':
-                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 4)
+                        judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 4), 4)
                     elif judge_kwargs.get('model', None) == 'chatgpt-0125':
-                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 48)
+                        judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 48), 48)
                     elif judge_kwargs.get('model', None) == 'gpt-4o-mini':
-                        judge_kwargs['nproc'] = min(judge_kwargs['nproc'], 32)
+                        judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 32), 32)
+                    elif judge_kwargs.get('model', None) == 'gptoss-120b':
+                        judge_kwargs['nproc'] = min(judge_kwargs.get('nproc', 128), 128)
+                    else:
+                        raise ValueError(f'Model {judge_kwargs.get("model", None)} is not supported')
 
                     # Perform the Evaluation
                     eval_results = dataset.evaluate(result_file, **judge_kwargs)

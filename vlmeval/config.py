@@ -586,10 +586,32 @@ api_models = {
     "xhs-seedvl-1.8" : partial(
         XHSSEEDVL,
         temperature=0.7,
-        retry=10,
+        retry=5,
+        think_mode=True,
         verbose=True,
-        max_tokens=16384,
-        timeout = 3000,
+        max_tokens=32768,
+        timeout = 600,
+        system_prompt=None,
+    ),
+    "xhs-seedvl-1.8-high" : partial(
+        XHSSEEDVL,
+        temperature=0.7,
+        retry=5,
+        think_mode=True,
+        verbose=True,
+        max_tokens=32768,
+        timeout = 600,
+        system_prompt=None,
+        reasoning_effort="high"
+    ),
+    "xhs-seedvl-1.8-nothink" : partial(
+        XHSSEEDVL,
+        temperature=0.7,
+        retry=5,
+        think_mode=False,
+        verbose=True,
+        max_tokens=32768,
+        timeout = 1000,
         system_prompt=None,
     ),
     "xhs-seedvl-1.5-nothink" : partial(
@@ -1033,6 +1055,18 @@ api_models = {
     "Gemini3-32k": partial(
         GPT4V, model="gemini-3", temperature=0.7, retry=500, timeout=600, max_tokens=32768
     ),
+    "minimal": partial(
+        GPT4V, model="gemini-3", temperature=0.7, retry=50, timeout=600, max_tokens=32768, thinking_level="minimal"
+    ),
+    "low": partial(
+        GPT4V, model="gemini-3", temperature=0.7, retry=50, timeout=600, max_tokens=32768, thinking_level="low"
+    ),
+    "middle": partial(
+        GPT4V, model="gemini-3", temperature=0.7, retry=50, timeout=600, max_tokens=32768, thinking_level="middle"
+    ),
+    "high": partial(
+        GPT4V, model="gemini-3", temperature=0.7, retry=50, timeout=600, max_tokens=32768, thinking_level="high"
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -1296,6 +1330,22 @@ api_models = {
     "Seed1.6-Thinking": partial(
         DoubaoVL, 
         model="doubao-seed-1.6-thinking-250615", 
+        temperature=0,
+        retry=3, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.8-Thinking": partial(
+        DoubaoVL, 
+        model="doubao-seed-1-8-251228", 
+        temperature=0,
+        retry=3, 
+        verbose=False, 
+        max_tokens=16384,
+    ),
+    "Seed1.8-think": partial(
+        DoubaoVL, 
+        model="doubao-seed-1-8-251228", 
         temperature=0,
         retry=3, 
         verbose=False, 
@@ -2709,7 +2759,12 @@ interns1_groups = [
 interns1_series = {}
 for group in interns1_groups:
     interns1_series.update(group)
-    
+
+for temp in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
+    for seq_str, seq_len in [("8k", 8192), ("16k", 16384), ("32k", 28214), ("64k", 58000)]:
+        timeout = 1024 if seq_len == 8192 else 256 if seq_len == 16384 else 512 if seq_len == 28214 else 1024
+        api_models[f"xhs_api-temperature{temp}-{seq_str}"] = partial(XHSVLMAPI, temperature=temp, retry=10, verbose=True, max_tokens=seq_len, timeout=timeout)
+
 supported_VLM = {}
 
 model_groups = [

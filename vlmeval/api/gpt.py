@@ -310,6 +310,10 @@ class OpenAIWrapper(BaseAPI):
                 "system_instruction": {"parts": [{"text": system_instruction}]},
                 "contents": input_msgs
             }
+            if kwargs.get('thinking_level', None) in ["minimal", "low", "middle", "high"]:
+                payload["generationConfig"]["thinkingConfig"]["thinking_level"] = kwargs.get('thinking_level', None)
+            elif kwargs.get('thinking_level', None) is not None:
+                raise ValueError(f"Unknown thinking_level value: {kwargs.get('thinking_level', None)}, must be in [minimal, low, middle, high]")
         else:   
             payload = dict(
                 model=self.model,
@@ -334,6 +338,8 @@ class OpenAIWrapper(BaseAPI):
             else:
                 answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
+            if 'gemini' in self.model:
+                print(response.text)
             if self.verbose:
                 self.logger.error(f'{type(err)}: {err}')
                 self.logger.error(response.text if hasattr(response, 'text') else response)
@@ -619,9 +625,11 @@ class VLLMAPIWrapper(BaseAPI):
             payload['top_k'] = 1
         if self.model == os.environ.get("DOUBAO_MODEL_NAME") and self.think_mode is False:
             payload['thinking'] = {"type" : "disabled"}
-
+        else:
+            payload['thinking'] = {"type" : "enabled"}
+            if  self.reasoning_effort is not None:
+                payload['reasoning_effort'] = self.reasoning_effort
         payload['max_tokens'] = max_tokens
-
 
         if 'gemini' in self.model:
             payload.pop('max_tokens')
@@ -666,7 +674,7 @@ class XHSVLMAPI(XHSVLMAPIWrapper):
 class XHSSEEDVL(VLLMAPIWrapper):
     """内部API"""
 
-    def __init__(self, model: str = None, key: str = None, api_base: str = None, think_mode = True,**kwargs):
+    def __init__(self, model: str = None, key: str = None, api_base: str = None, think_mode = True, **kwargs):
         assert model is None and key is None and api_base is None, "使用环境变量设置"
         model=os.environ.get("DOUBAO_MODEL_NAME", None)
         key=os.environ.get("DOUBAO_VL_KEY", None)

@@ -68,19 +68,25 @@ def get_question(QUESTION):
 
     Please first generate your reasoning process and then provide the user with the answer. Use the following format:
 
-    <think>
+    #### Reasoning Process 
     ... your thinking process here ...
-    </think>
-    <answer>
-    ... your final answer (entity(s) or number) ...
-    </answer>"""
+
+    #### Final Answer
+    ... your final answer (entity(s) or number) ..."""
 
     return QA_PROMPT
 
-
 def extract_answer(text: str) -> str:
-    m = re.search(r"<answer>(.*?)</answer>", text + "</answer>", re.DOTALL)
-    return m.group(1).strip() if m else ""
+    if "</think>" in text:
+        text = text.split("</think>")[1].strip()
+    if "#### Final Answer" in text:
+        return text.split("#### Final Answer")[1].strip()
+    else:
+        return text
+
+# def extract_answer(text: str) -> str:
+#     m = re.search(r"<answer>(.*?)</answer>", text + "</answer>", re.DOTALL)
+#     return m.group(1).strip() if m else ""
 
 
 def gpt_compare(category, question, answer1, answer2, idx, judge_model):
