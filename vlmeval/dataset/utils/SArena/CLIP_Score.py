@@ -1,3 +1,4 @@
+import torch
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torchmetrics.multimodal.clip_score import CLIPScore
@@ -11,11 +12,14 @@ class CLIPScoreCalculator(BaseMetric):
     def __init__(self, task_type: Literal['T2I', 'I2I']):
         super().__init__()
         self.class_name = self.__class__.__name__
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.clip_score = CLIPScore(model_name_or_path="openai/clip-vit-large-patch14")
-        self.clip_score.to('cuda')
+        self.clip_score.to(self.device)
         self.task_type = task_type
 
     def CLIP_Score(self, images, captions):
+        if isinstance(captions, tuple):
+            captions = list(captions)
         all_scores = _clip_score_update(images, captions, self.clip_score.model, self.clip_score.processor)
         return all_scores
 
@@ -48,13 +52,13 @@ class CLIPScoreCalculator(BaseMetric):
         for batch_eval in tqdm(data_loader):
             if self.task_type == 'T2I':
                 images, captions = batch_eval
-                images = [img.to('cuda', non_blocking=True) * 255 for img in images]
+                images = [img.to(self.device, non_blocking=True) * 255 for img in images]
                 list_scores = self.CLIP_Score(images, captions)[0].detach().cpu().tolist()
                 all_scores.extend(list_scores)
             else:
                 pred_images, gt_images = batch_eval
-                pred_images = [img.to('cuda', non_blocking=True) * 255 for img in pred_images]
-                gt_images = [img.to('cuda', non_blocking=True) * 255 for img in gt_images]
+                pred_images = [img.to(self.device, non_blocking=True) * 255 for img in pred_images]
+                gt_images = [img.to(self.device, non_blocking=True) * 255 for img in gt_images]
                 list_scores = self.CLIP_Score(pred_images, gt_images)[0].detach().cpu().tolist()
                 all_scores.extend(list_scores)
 

@@ -1,21 +1,29 @@
+from collections import defaultdict
 import re
 import os
 import json
 import torch
 import numpy as np
 import pandas as pd
-import signal
 import tempfile
 import shutil
 from PIL import Image
-from ...smp import load, dump, get_intermediate_file_path
+from ...smp import load, dump, get_intermediate_file_path, LMUDataRoot, get_logger
+from timeout_decorator import timeout
+from vlmeval.utils.mp_util import track_progress_rich
 
+logger = get_logger(__name__)
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
 # Model Paths
 CLIP_MODEL_PATH = "openai/clip-vit-large-patch14-336"
 SBERT_MODEL_PATH = "all-MiniLM-L6-v2"
+lpips_model = None
+clip_model = None
+clip_processor = None
+sbert_model = None
+bert_scorer = None
 # ============================================================================
 
 
@@ -28,7 +36,8 @@ def _init_models():
 
     print("Loading LPIPS...")
     import lpips
-    lpips_model = lpips.LPIPS(net='alex').to(device)
+    model_path = os.path.join(LMUDataRoot(), 'aux_models', 'alex.pth')
+    lpips_model = lpips.LPIPS(net='alex', model_path=model_path).to(device)
 
     print("Loading CLIP...")
     from transformers import CLIPProcessor, CLIPModel
@@ -232,8 +241,180 @@ def extract_transformations(text):
     return transform_counts
 
 
-def handler(signum, frame):
-    raise TimeoutError("Processing timed out")
+def evaluate_row(idx, model_answer, gt_answer, q_type, metadata, tmpdir, device):
+    try:
+        return _evaluate_row(idx, model_answer, gt_answer, q_type, metadata, tmpdir, device)
+    except Exception as e:
+        logger.warning(f'Error sample {idx}: {repr(e)}')
+        return idx, None
+
+
+@timeout(10., use_signals=False)
+def _evaluate_row(idx, model_answer, gt_answer, q_type, metadata, tmpdir, device):
+    from sentence_transformers import util as sbert_util
+
+    metrics = {
+        'ssim': 0,
+        'psnr': 0,
+        'lpips': 0,
+        'clip_score': 0,
+        'bertscore': 0,
+        'sbert_score': 0,
+        'accuracy': 0
+    }
+
+    model_answer = str(model_answer)
+    gt_answer = str(gt_answer)
+
+    if q_type in ["CSVGUN_color", "ISVGUN_color"]:
+        kw = metadata.get('keywords', {})
+        colors_gt = kw.get('colors', {}).get('colors', [])
+        if not colors_gt and 'colors' in metadata:
+            colors_gt = metadata['colors'].get('colors', [])
+        correct_colors = set(
+            c.lower() for c in colors_gt if c.lower() != 'white'
+        )
+        model_colors = set(
+            re.findall(r'\b\w+\b', model_answer.lower())
+        )
+        matched_colors = sum(
+            1 for c in model_colors if c in correct_colors
+        )
+        if len(correct_colors) > 0:
+            acc = matched_colors / len(correct_colors)
+        else:
+            acc = 0
+        metrics['accuracy'] += acc
+
+    # --- CATEGORY ---
+    elif q_type in ["CSVGUN_category", "ISVGUN_category"]:
+        cats_gt = metadata.get('keywords', {}).get('category', [])
+        if not cats_gt and 'category' in metadata:
+            cats_gt = metadata['category']
+        correct_lower = set(c.lower() for c in cats_gt)
+        correct_cap = set(c.capitalize() for c in cats_gt)
+        matched = (
+            any(c in model_answer for c in correct_lower)
+            or any(c in model_answer for c in correct_cap)
+        )
+        metrics['accuracy'] += 1 if matched else 0
+
+    # --- GENERATION (ISVGEN, TSVGEN) ---
+    elif q_type in ["ISVGEN", "TSVGEN"]:
+        created_files = []
+        try:
+            # 1. Render Model Prediction
+            model_svg = extract_svg_from_text(model_answer)
+            if not model_svg:
+                model_svg = (
+                    '<svg xmlns="http://www.w3.org/2000/svg" '
+                    'width="336" height="336"></svg>'
+                )
+
+            gen_base_path = os.path.join(tmpdir, f"gen_{idx}")
+            gen_img_path = save_svg_and_convert_to_png(
+                model_svg, gen_base_path
+            )
+
+            if gen_img_path:
+                created_files.append(gen_img_path)
+                created_files.append(gen_base_path + '.svg')
+
+            # 2. Render Ground Truth
+            gt_svg = extract_svg_from_text(gt_answer)
+            gt_img_path = None
+            if gt_svg:
+                gt_base_path = os.path.join(tmpdir, f"gt_{idx}")
+                gt_img_path = save_svg_and_convert_to_png(
+                    gt_svg, gt_base_path
+                )
+                if gt_img_path:
+                    created_files.append(gt_img_path)
+                    created_files.append(gt_base_path + '.svg')
+
+            # 3. Evaluate
+            valid_gen = gen_img_path and os.path.exists(gen_img_path)
+            valid_gt = gt_img_path and os.path.exists(gt_img_path)
+
+            if valid_gen and valid_gt:
+                try:
+                    ssim_v, psnr_v, lpips_v, clip_v = evaluate_images(
+                        gt_img_path, gen_img_path, device
+                    )
+                except Exception as e:
+                    print(f"Error evaluating images {idx}: {e}")
+                    ssim_v, psnr_v, lpips_v, clip_v = 0, 0, 1.0, 0
+
+                metrics['ssim'] += ssim_v
+                val = psnr_v if psnr_v != float('inf') else 100
+                metrics['psnr'] += val
+                metrics['lpips'] += lpips_v
+                metrics['clip_score'] += clip_v
+            else:
+                metrics['lpips'] += 1.0
+
+        finally:
+            for fpath in created_files:
+                if os.path.exists(fpath):
+                    try:
+                        os.remove(fpath)
+                    except OSError:
+                        pass
+
+    # --- TEXT ---
+    elif q_type in [
+        "CSVGUN_usage", "ISVGUN_usage", "CSVGUN_rect",
+        "CSVGUN_circle", "CSVGUN_description", "ISVGUN_description"
+    ]:
+        if model_answer and gt_answer:
+            P, R, F1 = bert_scorer.score(
+                [model_answer], [gt_answer]
+            )
+            b_score = F1.mean().item()
+            mod_emb = sbert_model.encode(
+                model_answer, convert_to_tensor=True
+            )
+            gt_emb = sbert_model.encode(
+                gt_answer, convert_to_tensor=True
+            )
+            s_score = sbert_util.pytorch_cos_sim(
+                mod_emb, gt_emb
+            ).item()
+            metrics['bertscore'] += b_score
+            metrics['sbert_score'] += s_score
+
+    # --- SHAPE ---
+    elif q_type == "CSVGUN_shape":
+        acc = calculate_shape_accuracy(gt_answer, model_answer)
+        metrics['accuracy'] += acc
+
+    # --- SIZE ---
+    elif q_type == "CSVGUN_size":
+        mw, mh = extract_dimensions(model_answer)
+        gw, gh = extract_dimensions(gt_answer)
+        acc = 0
+        if mw == gw and mh == gh:
+            acc = 1
+        elif mw == gw or mh == gh:
+            acc = 0.5
+        metrics['accuracy'] += acc
+
+    # --- TRANSFORM ---
+    elif q_type == "CSVGUN_transform":
+        mt = extract_transformations(model_answer)
+        gt = extract_transformations(gt_answer)
+        correct_c = 0
+        total_c = sum(gt.values())
+        for k in gt:
+            if k in mt:
+                correct_c += min(mt[k], gt[k])
+        if total_c > 0:
+            acc = correct_c / total_c
+        else:
+            acc = 1.0 if correct_c == 0 else 0.0
+        metrics['accuracy'] += acc
+
+    return q_type, metrics
 
 
 # ============================================================================
@@ -242,8 +423,6 @@ def handler(signum, frame):
 
 def evaluate_uni_svg(eval_file, **kwargs):
     device = _init_models()
-    from sentence_transformers import util as sbert_util
-
     data = load(eval_file)
 
     # Create a base temporary directory for this evaluation run
@@ -251,27 +430,20 @@ def evaluate_uni_svg(eval_file, **kwargs):
     print(f"Temporary workspace created at: {run_temp_dir}")
 
     type_metrics = {}
-    type_samples = {}
+    type_samples = defaultdict(int)
     missing_samples = []
 
-    signal.signal(signal.SIGALRM, handler)
+    tmp_file = get_intermediate_file_path(eval_file, '_EVAL', 'pkl')
     total_count = len(data)
 
     try:
+        tups = []
+        indices = []
         for idx, row in data.iterrows():
-            # q_text = row['question']  # Unused variable
             model_answer = row['prediction']
             gt_answer = row['answer']
             q_type = row['category']
-
             metadata = parse_json_safe(row.get('l2-category', '{}'))
-
-            if q_type not in type_metrics:
-                type_metrics[q_type] = {
-                    'ssim': 0, 'psnr': 0, 'lpips': 0, 'clip_score': 0,
-                    'bertscore': 0, 'sbert_score': 0, 'accuracy': 0
-                }
-                type_samples[q_type] = 0
 
             if pd.isna(model_answer):
                 missing_samples.append(idx)
@@ -280,176 +452,38 @@ def evaluate_uni_svg(eval_file, **kwargs):
                 type_samples[q_type] += 1
                 continue
 
-            model_answer = str(model_answer)
-            gt_answer = str(gt_answer)
+            tups.append((idx, model_answer, gt_answer, q_type, metadata, run_temp_dir, device))
+            indices.append(row['index'])
 
-            try:
-                signal.alarm(60)
+        ans = {}
+        if os.path.exists(tmp_file):
+            ans = load(tmp_file)
+        tups = [x for x, i in zip(tups, indices) if i not in ans]
+        indices = [i for i in indices if i not in ans]
+        results = track_progress_rich(evaluate_row,
+                                      tups,
+                                      nproc=None,
+                                      save=tmp_file,
+                                      keys=indices,
+                                      use_process=False)
 
-                # --- COLOR ---
-                if q_type in ["CSVGUN_color", "ISVGUN_color"]:
-                    kw = metadata.get('keywords', {})
-                    colors_gt = kw.get('colors', {}).get('colors', [])
-                    if not colors_gt and 'colors' in metadata:
-                        colors_gt = metadata['colors'].get('colors', [])
-                    correct_colors = set(
-                        c.lower() for c in colors_gt if c.lower() != 'white'
-                    )
-                    model_colors = set(
-                        re.findall(r'\b\w+\b', model_answer.lower())
-                    )
-                    matched_colors = sum(
-                        1 for c in model_colors if c in correct_colors
-                    )
-                    if len(correct_colors) > 0:
-                        acc = matched_colors / len(correct_colors)
-                    else:
-                        acc = 0
-                    type_metrics[q_type]['accuracy'] += acc
-
-                # --- CATEGORY ---
-                elif q_type in ["CSVGUN_category", "ISVGUN_category"]:
-                    cats_gt = metadata.get('keywords', {}).get('category', [])
-                    if not cats_gt and 'category' in metadata:
-                        cats_gt = metadata['category']
-                    correct_lower = set(c.lower() for c in cats_gt)
-                    correct_cap = set(c.capitalize() for c in cats_gt)
-                    matched = (
-                        any(c in model_answer for c in correct_lower)
-                        or any(c in model_answer for c in correct_cap)
-                    )
-                    type_metrics[q_type]['accuracy'] += 1 if matched else 0
-
-                # --- GENERATION (ISVGEN, TSVGEN) ---
-                elif q_type in ["ISVGEN", "TSVGEN"]:
-                    created_files = []
-                    try:
-                        # 1. Render Model Prediction
-                        model_svg = extract_svg_from_text(model_answer)
-                        if not model_svg:
-                            model_svg = (
-                                '<svg xmlns="http://www.w3.org/2000/svg" '
-                                'width="336" height="336"></svg>'
-                            )
-
-                        gen_base_path = os.path.join(
-                            run_temp_dir, f"gen_{idx}"
-                        )
-                        gen_img_path = save_svg_and_convert_to_png(
-                            model_svg, gen_base_path
-                        )
-
-                        if gen_img_path:
-                            created_files.append(gen_img_path)
-                            created_files.append(gen_base_path + '.svg')
-
-                        # 2. Render Ground Truth
-                        gt_svg = extract_svg_from_text(gt_answer)
-                        gt_img_path = None
-                        if gt_svg:
-                            gt_base_path = os.path.join(
-                                run_temp_dir, f"gt_{idx}"
-                            )
-                            gt_img_path = save_svg_and_convert_to_png(
-                                gt_svg, gt_base_path
-                            )
-                            if gt_img_path:
-                                created_files.append(gt_img_path)
-                                created_files.append(gt_base_path + '.svg')
-
-                        # 3. Evaluate
-                        valid_gen = gen_img_path and os.path.exists(gen_img_path)
-                        valid_gt = gt_img_path and os.path.exists(gt_img_path)
-
-                        if valid_gen and valid_gt:
-                            try:
-                                ssim_v, psnr_v, lpips_v, clip_v = evaluate_images(
-                                    gt_img_path, gen_img_path, device
-                                )
-                            except Exception as e:
-                                print(f"Error evaluating images {idx}: {e}")
-                                ssim_v, psnr_v, lpips_v, clip_v = 0, 0, 1.0, 0
-
-                            type_metrics[q_type]['ssim'] += ssim_v
-                            val = psnr_v if psnr_v != float('inf') else 100
-                            type_metrics[q_type]['psnr'] += val
-                            type_metrics[q_type]['lpips'] += lpips_v
-                            type_metrics[q_type]['clip_score'] += clip_v
-                        else:
-                            type_metrics[q_type]['lpips'] += 1.0
-
-                    finally:
-                        for fpath in created_files:
-                            if os.path.exists(fpath):
-                                try:
-                                    os.remove(fpath)
-                                except OSError:
-                                    pass
-
-                # --- TEXT ---
-                elif q_type in [
-                    "CSVGUN_usage", "ISVGUN_usage", "CSVGUN_rect",
-                    "CSVGUN_circle", "CSVGUN_description", "ISVGUN_description"
-                ]:
-                    if model_answer and gt_answer:
-                        P, R, F1 = bert_scorer.score(
-                            [model_answer], [gt_answer]
-                        )
-                        b_score = F1.mean().item()
-                        mod_emb = sbert_model.encode(
-                            model_answer, convert_to_tensor=True
-                        )
-                        gt_emb = sbert_model.encode(
-                            gt_answer, convert_to_tensor=True
-                        )
-                        s_score = sbert_util.pytorch_cos_sim(
-                            mod_emb, gt_emb
-                        ).item()
-                        type_metrics[q_type]['bertscore'] += b_score
-                        type_metrics[q_type]['sbert_score'] += s_score
-
-                # --- SHAPE ---
-                elif q_type == "CSVGUN_shape":
-                    acc = calculate_shape_accuracy(gt_answer, model_answer)
-                    type_metrics[q_type]['accuracy'] += acc
-
-                # --- SIZE ---
-                elif q_type == "CSVGUN_size":
-                    mw, mh = extract_dimensions(model_answer)
-                    gw, gh = extract_dimensions(gt_answer)
-                    acc = 0
-                    if mw == gw and mh == gh:
-                        acc = 1
-                    elif mw == gw or mh == gh:
-                        acc = 0.5
-                    type_metrics[q_type]['accuracy'] += acc
-
-                # --- TRANSFORM ---
-                elif q_type == "CSVGUN_transform":
-                    mt = extract_transformations(model_answer)
-                    gt = extract_transformations(gt_answer)
-                    correct_c = 0
-                    total_c = sum(gt.values())
-                    for k in gt:
-                        if k in mt:
-                            correct_c += min(mt[k], gt[k])
-                    if total_c > 0:
-                        acc = correct_c / total_c
-                    else:
-                        acc = 1.0 if correct_c == 0 else 0.0
-                    type_metrics[q_type]['accuracy'] += acc
-
-                type_samples[q_type] += 1
-
-            except TimeoutError:
-                print(f"Timeout sample {idx}")
-                missing_samples.append(idx)
-            except Exception as e:
-                print(f"Error sample {idx}: {e}")
-                missing_samples.append(idx)
-            finally:
-                signal.alarm(0)
-
+        for result in results:
+            if result[1] is None:
+                missing_samples.append(result[0])
+            q_type, metrics = result
+            type_metrics.setdefault(
+                q_type, {
+                    'ssim': 0,
+                    'psnr': 0,
+                    'lpips': 0,
+                    'clip_score': 0,
+                    'bertscore': 0,
+                    'sbert_score': 0,
+                    'accuracy': 0
+                })
+            type_samples[q_type] += 1
+            for k, v in metrics.items():
+                type_metrics[q_type][k] += v
     finally:
         # Final cleanup
         if os.path.exists(run_temp_dir):
