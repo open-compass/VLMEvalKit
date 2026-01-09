@@ -585,13 +585,9 @@ class VLLMAPIWrapper(BaseAPI):
                 input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
         else:
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
-        if os.environ.get('ADD_THINK_NOTE', '0') == '1':
+        if os.environ.get('ADDITIONAL_MESSAGE_CONTENT', None) is not None:
             input_msgs.append(
-                {"role": "assistant", "content":[{"type":"text", "text":"<think>\n"}]}
-            )
-        if os.environ.get('ADD_NONTHINK_NOTE', '0') == '1':
-            input_msgs.append(
-                {"role": "user", "content":[{"type":"text", "text":"/no_think"}]}
+                {"role": "assistant", "content":[{"type":"text", "text":os.environ.get('ADDITIONAL_MESSAGE_CONTENT')}]}
             )
         return input_msgs
 

@@ -19,16 +19,15 @@ def extract_coords(pred_str):
         return []
     
     # 正则表达式解释：
-    # (?:\[)?  : 非捕获组，可选匹配左中括号
-    # \s*      : 匹配0个或多个空格（容错）
-    # (\d+)    : 捕获组1，匹配数字 (x坐标)
-    # ,        : 匹配逗号
-    # \s*      : 匹配0个或多个空格
-    # (\d+)    : 捕获组2，匹配数字 (y坐标)
-    # \s*      : 匹配0个或多个空格
-    # (?:\])?  : 非捕获组，可选匹配右中括号
-    # 这样可以同时匹配 [x, y] 和 x, y 两种格式
-    pattern = r"(?:\[)?\s*(\d+)\s*,\s*(\d+)\s*(?:\])?"
+    # (?:\[)?       : 非捕获组，可选匹配左中括号
+    # \s*           : 匹配0个或多个空格（容错）
+    # (\d+)         : 捕获组1，匹配数字 (x坐标)
+    # (?:\s*,\s*|\s+) : 非捕获组，匹配逗号分隔（可带空格）或纯空格分隔
+    # (\d+)         : 捕获组2，匹配数字 (y坐标)
+    # \s*           : 匹配0个或多个空格
+    # (?:\])?       : 非捕获组，可选匹配右中括号
+    # 这样可以同时匹配 [x, y]、x, y、x y 三种格式
+    pattern = r"(?:\[)?\s*(\d+)(?:\s*,\s*|\s+)(\d+)\s*(?:\])?"
     
     # findall 会找到字符串中所有符合格式的坐标对
     matches = re.findall(pattern, pred_str)
@@ -2398,7 +2397,7 @@ class CustomVQADataset(ImageBaseDataset):
                 return acc
 
         predictions = data['prediction'].tolist()
-        predictions = [x.split("</think>")[1].strip() if "</think>" in x else x for x in predictions]
+        predictions = [x.split("</think>")[1].strip() if not isinstance(x, float) and "</think>" in x else x for x in predictions]
         answers = data['answer'].tolist()
         questions = data['question'].tolist()
        
@@ -2427,6 +2426,10 @@ class CustomVQADataset(ImageBaseDataset):
                 pred = pred.split("</think>")[1].strip()
             else:
                 pred = pred.strip()
+            if "<point>" in pred:
+                pred = pred.replace("<point>", "")
+            if "</point>" in pred:
+                pred = pred.replace("</point>", "")
             if item['category'] == "counting":
                 _count = item['count']
             else:
@@ -2434,6 +2437,11 @@ class CustomVQADataset(ImageBaseDataset):
             
             points = extract_coords(pred)
             mask = rle_decode(item['mask'])
+            height, width = mask.shape[0], mask.shape[1]
+            if os.environ.get('NORMALIZE', "0") == "0":
+                points = points
+            else:
+                points = [(int(point[0] / 1000 * width), int(point[1] / 1000 * height)) for point in points]
             if len(points) != _count:
                 acc += 0
             if _count == 1 and len(points) == 1:
@@ -2446,14 +2454,18 @@ class CustomVQADataset(ImageBaseDataset):
                     else:
                         acc += 0
             else:
+                _acc = 1
                 for point in points:
                     if point[0] < 0 or point[0] >= mask.shape[1] or point[1] < 0 or point[1] >= mask.shape[0]:
-                        acc += 0
+                        _acc = 0
+                        break
                     else:
                         if mask[point[1], point[0]] == 1:
-                            acc += 1
+                            _acc = 1
                         else:
-                            acc += 0
+                            _acc = 0
+                            break
+                acc += _acc
         acc = acc / len(data)
         score_pth = get_intermediate_file_path(eval_file, '_score', 'json')
         acc = {'accuracy': acc}
