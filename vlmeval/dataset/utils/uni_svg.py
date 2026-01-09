@@ -1,15 +1,17 @@
-from collections import defaultdict
-import re
-import os
 import json
-import torch
+import os
+import re
+import shutil
+import tempfile
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
-import tempfile
-import shutil
+import torch
 from PIL import Image
-from ...smp import load, dump, get_intermediate_file_path, LMUDataRoot, get_logger
 from timeout_decorator import timeout
+
+from vlmeval.smp import LMUDataRoot, dump, get_intermediate_file_path, get_logger, load
 from vlmeval.utils.mp_util import track_progress_rich
 
 logger = get_logger(__name__)
@@ -40,7 +42,7 @@ def _init_models():
     lpips_model = lpips.LPIPS(net='alex', model_path=model_path).to(device)
 
     print("Loading CLIP...")
-    from transformers import CLIPProcessor, CLIPModel
+    from transformers import CLIPModel, CLIPProcessor
     clip_model = CLIPModel.from_pretrained(CLIP_MODEL_PATH).to(device)
     clip_processor = CLIPProcessor.from_pretrained(CLIP_MODEL_PATH)
 
@@ -143,8 +145,8 @@ def save_svg_and_convert_to_png(svg_content, output_base_path):
 
 
 def evaluate_images(original_image_path, generated_image_path, device):
-    from skimage.metrics import structural_similarity as ssim
     import lpips
+    from skimage.metrics import structural_similarity as ssim
 
     original_image = Image.open(original_image_path).convert('RGB')
     generated_image = Image.open(generated_image_path).convert('RGB')
@@ -249,7 +251,7 @@ def evaluate_row(idx, model_answer, gt_answer, q_type, metadata, tmpdir, device)
         return idx, None
 
 
-@timeout(10., use_signals=False)
+@timeout(60., use_signals=False)
 def _evaluate_row(idx, model_answer, gt_answer, q_type, metadata, tmpdir, device):
     from sentence_transformers import util as sbert_util
 

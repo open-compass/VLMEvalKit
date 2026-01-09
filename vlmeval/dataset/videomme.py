@@ -223,8 +223,8 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         text_prompt = self.FRAMES_TMPL_NOSUB if not self.use_subtitle else self.FRAMES_TMPL_SUB.format(subtitles)
         message.append(dict(type='text', value=text_prompt))
-        line['question'] += '\n' + '\n'.join(eval(line['candidates']))
-        prompt = 'Question: {}\nAnswer: '.format(line['question'])
+        question = line['question'] + '\n' + '\n'.join(eval(line['candidates']))
+        prompt = 'Question: {}\nAnswer: '.format(question)
         message.append(dict(type='text', value=prompt))
         return message
 
