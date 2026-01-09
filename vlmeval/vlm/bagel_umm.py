@@ -172,7 +172,19 @@ class Bagel(BaseModel):
             cache_path = get_cache_path(model_path, repo_type='models')
 
         self.model_path = cache_path
-        self.checkpoint_path = os.path.join(self.model_path, "ema.safetensors")
+
+        ema_ckpt = os.path.join(self.model_path, "ema.safetensors")
+        # This is for sensenova-si-bagel model
+        model_ckpt = os.path.join(self.model_path, "model.safetensors")
+
+        if os.path.exists(ema_ckpt):
+            self.checkpoint_path = ema_ckpt
+        elif os.path.exists(model_ckpt):
+            self.checkpoint_path = model_ckpt
+        else:
+            raise FileNotFoundError(
+                f"No ema.safetensors or model.safetensors found in {self.model_path}"
+            )
 
         # Bagel mode
         env_mode = os.getenv("BAGEL_MODE")
