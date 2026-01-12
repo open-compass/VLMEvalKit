@@ -7,7 +7,7 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-    TreeBench, CVQA, TopViewRS
+    TreeBench, CVQA, TopViewRS, CoreCognition
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -231,7 +231,7 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
-    UniSVG, SArena_MINI, MMSIVideoBench,
+    UniSVG, SArena_MINI, MMSIVideoBench, CoreCognition
 ]
 
 VIDEO_DATASET = [
