@@ -586,9 +586,15 @@ class VLLMAPIWrapper(BaseAPI):
         else:
             input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
         if os.environ.get('ADDITIONAL_MESSAGE_CONTENT', None) is not None:
-            input_msgs.append(
-                {"role": "assistant", "content":[{"type":"text", "text":os.environ.get('ADDITIONAL_MESSAGE_CONTENT')}]}
-            )
+            if input_msgs[-1]['role'] == 'user'
+                if isinstance(input_msgs[-1]['content'], list):
+                    input_msgs[-1]['content'].append(
+                        {"type":"text", "text":os.environ.get('ADDITIONAL_MESSAGE_CONTENT')}
+                    )
+                elif isinstance(input_msgs[-1]['content'], str):
+                    input_msgs[-1]['content'] += os.environ.get('ADDITIONAL_MESSAGE_CONTENT')
+            else:
+                raise ValueError(f"input_msgs[-1]['role'] is not `user`, but got `{input_msgs[-1]['role']}`")
         return input_msgs
 
     def _next_api_base(self):
