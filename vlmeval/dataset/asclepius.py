@@ -1,13 +1,12 @@
-import os
-import glob
 import pandas as pd
-from functools import partial
+import numpy as np
 
 from .image_vqa import ImageVQADataset
 from ..smp import *
+from ..utils import track_progress_rich
 
 
-class AsclepiusDataset(ImageVQADataset):
+class Asclepius(ImageVQADataset):
     """
     Asclepius Medical Benchmark Dataset
     
@@ -21,77 +20,13 @@ class AsclepiusDataset(ImageVQADataset):
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
     
-    # Optional: If hosted remotely
     DATASET_URL = {
-        'Asclepius': 'https://your-server-path/Asclepius.tsv'
+        'Asclepius': 'https://github.com/StevenSU4/Asclepius/releases/download/v1.0.0/Asclepius.tsv'
     }
     
     DATASET_MD5 = {
-        'Asclepius': 'to_be_filled'
+        'Asclepius': '93ecc52dea07d0296f83af713dbf8a5c'
     }
-    
-    @classmethod
-    def supported_datasets(cls):
-        return ['Asclepius']
-    
-    def load_data(self, dataset):
-        """
-        Load Asclepius data from Excel file and convert to standard format
-        """
-        # Path to the source Excel file
-        excel_path = osp.join(LMUDataRoot(), 'Asclepius.xlsx')
-        
-        # If Excel exists, use it; otherwise try TSV
-        if osp.exists(excel_path):
-            data = pd.read_excel(excel_path)
-        else:
-            # Try TSV format
-            tsv_path = osp.join(LMUDataRoot(), 'Asclepius.tsv')
-            if osp.exists(tsv_path):
-                data = pd.read_csv(tsv_path, sep='\t')
-            else:
-                raise FileNotFoundError(
-                    f"Asclepius dataset not found. "
-                    f"Expected either {excel_path} or {tsv_path}"
-                )
-        
-        # Rename columns to standard format if needed
-        column_mapping = {
-            'question_id': 'index',
-            'image_id': 'image_id',
-            'image_id2': 'image_id2',
-        }
-        
-        for old_col, new_col in column_mapping.items():
-            if old_col in data.columns and old_col != new_col:
-                data = data.rename(columns={old_col: new_col})
-        
-        # Ensure index column exists
-        if 'index' not in data.columns:
-            data['index'] = range(len(data))
-        
-        return data
-    
-    def find_image_file(self, image_id, images_folder=None):
-        """
-        Find image file with any extension for a given image_id
-        """
-        if images_folder is None:
-            images_folder = osp.join(LMUDataRoot(), 'images', 'Asclepius')
-        
-        # Handle case where image_id is already a full path
-        if isinstance(image_id, str) and osp.exists(image_id):
-            return image_id
-        
-        # Search for files matching the image_id with any extension
-        pattern = osp.join(images_folder, f"{image_id}.*")
-        files = glob.glob(pattern)
-        
-        if files:
-            return files[0]
-        
-        # If not found, return None
-        return None
     
     def build_prompt(self, line):
         """
@@ -130,128 +65,166 @@ class AsclepiusDataset(ImageVQADataset):
         msgs = []
         
         # Add first image
-        image_id = line.get('image_id')
-        if pd.notna(image_id):
-            images_folder = osp.join(LMUDataRoot(), 'images', 'Asclepius')
-            image_path = self.find_image_file(image_id, images_folder)
-            if image_path:
+        image_base64 = line.get('image')
+        if pd.notna(image_base64):
+            image_path = osp.join(LMUDataRoot(), 'images', 'Asclepius', f'{question_id}_1.jpg')
+            try:
+                decode_base64_to_image_file(image_base64, image_path)
                 msgs.append(dict(type='image', value=image_path))
-        
+            except Exception as e:
+                print(f"Warning: Failed to decode image for question {question_id}: {e}")
+
         # Add second image if exists (for medical reports or multi-image VQA)
-        image_id2 = line.get('image_id2')
-        if pd.notna(image_id2) and image_id2 != '':
-            images_folder = osp.join(LMUDataRoot(), 'images', 'Asclepius')
-            image_path2 = self.find_image_file(image_id2, images_folder)
-            if image_path2:
+        image_2_base64 = line.get('image_2')
+        if pd.notna(image_2_base64) and image_2_base64 != '':
+            image_path2 = osp.join(LMUDataRoot(), 'images', 'Asclepius', f'{question_id}_2.jpg')
+            try:
+                decode_base64_to_image_file(image_2_base64, image_path2)
                 msgs.append(dict(type='image', value=image_path2))
+            except Exception as e:
+                print(f"Warning: Failed to decode second image for question {question_id}: {e}")
         
         # Add text prompt
         msgs.append(dict(type='text', value=prompt_text))
         
         return msgs
     
-    def evaluate(self, eval_file, **judge_kwargs):
-        """
-        Evaluate predictions using LLM-based scoring.
+    @classmethod
+    def evaluate(cls, eval_file, **judge_kwargs):
+        from .utils import build_judge, DEBUG_MESSAGE
         
-        For Asclepius, we use GPT to compare predictions against ground truth answers.
-        Scoring: 1 = correct/aligned, 0 = incorrect/misaligned
-        """
-        from .utils import build_judge
-        
-        # Load predictions
+        # Load prediction data
         data = load(eval_file)
         
-        # Ensure columns exist
-        if 'answer' not in data.columns:
-            data['answer'] = ''
-        if 'prediction' not in data.columns:
-            data['prediction'] = ''
+        # Validate required columns
+        assert 'answer' in data.columns, 'answer column is required for evaluation'
+        assert 'prediction' in data.columns, 'prediction column is required for evaluation'
         
-        # Filter out rows with empty ground truth
-        data_to_eval = data[data['answer'].notna() & (data['answer'] != '')]
+        # Convert to strings and filter valid data
+        data['answer'] = [str(x) if pd.notna(x) else '' for x in data['answer']]
+        data['prediction'] = [str(x) if pd.notna(x) else '' for x in data['prediction']]
         
-        if len(data_to_eval) == 0:
-            # No ground truth to evaluate
-            detailed_result_file = get_intermediate_file_path(eval_file, '_results')
-            dump(data, detailed_result_file)
-            return {'Accuracy': 0.0, 'Total': 0}
+        # Filter out rows without ground truth answers
+        data_to_eval = data[(data['answer'] != '') & (data['answer'].notna())].copy()
         
-        # Build evaluation prompts
-        eval_prompts = []
-        for _, row in data_to_eval.iterrows():
-            question = row.get('question', '')
-            gt_answer = str(row['answer'])
-            prediction = str(row['prediction'])
+        # Setup judge model
+        if 'model' in judge_kwargs:
+            model = judge_kwargs['model']
+        else:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        suffix = eval_file.split('.')[-1]
+        storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
+        tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        
+        # Check if evaluation results already exist
+        if not osp.exists(storage):
+            # Build judge model
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            if not model.working():
+                logger = get_logger('Asclepius')
+                logger.error('Judge model is not working properly. ' + DEBUG_MESSAGE)
+                return {'Overall': 0.0}
             
-            # Evaluation prompt
-            eval_prompt = (
-                "You are an AI assistant who will help me evaluate responses given the questions "
-                "and the correct answers. To assess a response, you should provide a single integer "
-                "score like 0 or 1.\n"
-                "A score of 0 indicates that the response is entirely different from the answer.\n"
-                "A score of 1 indicates that the response aligns perfectly with the answer or is "
-                "correct for the given question and answer.\n\n"
-                f"Question: {question}\n"
-                f"Answer: {gt_answer}\n"
-                f"Response: {prediction}\n"
-                "Your mark: \n"
-            )
-            eval_prompts.append(eval_prompt)
-        
-        # Get judge model
-        judge_model = judge_kwargs.get('judge_model', 'gpt-4o-mini')
-        
-        try:
-            # Use build_judge to get LLM responses
-            judge = build_judge(**judge_kwargs)
-            responses = judge(eval_prompts)
+            # Prepare evaluation tasks
+            lt = len(data_to_eval)
+            lines = [data_to_eval.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
             
-            # Parse scores
-            scores = []
-            for response in responses:
-                try:
-                    # Extract integer score from response
-                    score_str = str(response).strip()
-                    # Try to find first integer in response
-                    import re
-                    match = re.search(r'\b[01]\b', score_str)
-                    score = int(match.group()) if match else 0
-                    scores.append(score)
-                except:
-                    scores.append(0)
+            # Load cached results if available
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
             
-            data_to_eval['eval_score'] = scores
+            # Filter out already evaluated items
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
             
-        except Exception as e:
-            # If LLM evaluation fails, use exact match as fallback
-            print(f"Warning: LLM evaluation failed ({e}). Using exact match as fallback.")
-            data_to_eval['eval_score'] = (
-                data_to_eval['prediction'].astype(str) == 
-                data_to_eval['answer'].astype(str)
-            ).astype(int)
-        
-        # Merge results back to full dataset
-        data.loc[data_to_eval.index, 'eval_score'] = data_to_eval['eval_score']
-        data['eval_score'] = data['eval_score'].fillna(0).astype(int)
-        
-        # Save detailed results
-        detailed_result_file = get_intermediate_file_path(eval_file, '_results')
-        dump(data, detailed_result_file)
+            # Run evaluation if there are new items
+            if len(indices):
+                new_results = track_progress_rich(
+                    cls._evaluate_single,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['score'] == v['score'] and ans[k]['log'] == v['log']
+            
+            # Add evaluation results to data
+            data_to_eval['eval_score'] = [ans[idx]['score'] for idx in data_to_eval['index']]
+            data_to_eval['eval_log'] = [ans[idx]['log'] for idx in data_to_eval['index']]
+            
+            # Merge back to full dataset
+            data['eval_score'] = 0
+            data['eval_log'] = ''
+            for idx in data_to_eval.index:
+                data.loc[idx, 'eval_score'] = data_to_eval.loc[idx, 'eval_score']
+                data.loc[idx, 'eval_log'] = data_to_eval.loc[idx, 'eval_log']
+            
+            dump(data, storage)
+        else:
+            # Load existing results
+            data = load(storage)
+            data_to_eval = data[(data['answer'] != '') & (data['answer'].notna())].copy()
         
         # Calculate metrics
-        total_evaluated = len(data_to_eval)
-        total_all = len(data)
-        if total_evaluated > 0:
-            accuracy = data_to_eval['eval_score'].sum() / total_evaluated
-        else:
-            accuracy = 0.0
+        ret = {}
         
-        result = {
-            'Accuracy': accuracy,
-            'Total': total_all,
-            'Evaluated': total_evaluated,
-            'Correct': int(data_to_eval['eval_score'].sum()) if total_evaluated > 0 else 0
-        }
+        # Overall accuracy
+        overall_scores = data_to_eval['eval_score'].values
+        ret['Overall'] = np.mean(overall_scores) * 100
         
-        return result
+        # Convert to DataFrame and save
+        ret = d2df(ret)
+        ret = ret.round(2)
+        
+        result_file = storage.replace('.xlsx', '_score.csv')
+        dump(ret, result_file)
+        
+        return ret
+    
+    @staticmethod
+    def _evaluate_single(inputs):
+        import re
+        
+        model, line = inputs
+        question = line.get('question', '')
+        answer = str(line.get('answer', ''))
+        prediction = str(line.get('prediction', ''))
+        question_id = line.get('index', line.get('question_id'))
+        
+        # Build evaluation prompt
+        eval_prompt = (
+            "You are an AI assistant who will help me evaluate responses given the questions "
+            "and the correct answers. To assess a response, you should provide a single integer "
+            "score like 0 or 1.\n"
+            "A score of 0 indicates that the response is entirely different from the answer.\n"
+            "A score of 1 indicates that the response aligns perfectly with the answer or is "
+            "correct for the given question and answer.\n\n"
+            f"Question: {question}\n"
+            f"Answer: {answer}\n"
+            f"Response: {prediction}\n"
+            "Your mark: \n"
+        )
+        
+        try:
+            # Call judge model
+            response = model.generate(eval_prompt, temperature=0.0, max_tokens=10)
+            log = response.strip()
+            
+            # Parse score from response
+            match = re.search(r'\b[01]\b', log)
+            score = int(match.group()) if match else 0
+            
+            return {'score': score, 'log': log}
+        
+        except Exception as e:
+            logger = get_logger('Asclepius')
+            logger.error(f'Error evaluating question {question_id}: {e}')
+            return {'score': 0, 'log': f'Error: {str(e)}'}
