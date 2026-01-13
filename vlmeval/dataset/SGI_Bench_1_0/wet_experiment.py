@@ -298,8 +298,11 @@ metrics = <Calculate metrics>(
         for index, row in data.iterrows():
             target_steps = row['answer']
             target_steps = parse_experiment_steps(target_steps)
-            prediction_steps = extract_final_answer(row['prediction'])
-            prediction_steps = parse_experiment_steps(prediction_steps)
+            extracted_text = extract_final_answer(row['prediction'])
+            if extracted_text:
+                prediction_steps = parse_experiment_steps(extracted_text)
+            else:
+                prediction_steps = []
 
             steps_result = compare_exp_steps(target_steps, prediction_steps)
 

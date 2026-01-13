@@ -14,7 +14,7 @@ import os.path as osp
 from ..image_base import ImageBaseDataset
 
 def extract_answer_from_response(response):
-    match = re.search(r"\\boxed\{([A-Z])\}", response)
+    match = re.search(r"\\boxed\{([A-Za-z])\}", response)
     if match:
         return match.group(1)
     else:
@@ -35,7 +35,7 @@ def b64_encode_image(img) -> str:
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
-    TYPE = 'MCQ'
+    TYPE = 'MCQ '
 
     @classmethod
     def supported_datasets(cls):
@@ -137,6 +137,7 @@ Your final output **must** include both **the reasoning** and **the final answer
                 msgs.append({'type': 'image', 'value': p})
         elif isinstance(line['image'], str):
             msgs.append({'type': 'image', 'value': line['image']})
+        msgs.append({'type': 'text', 'value': question})
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
@@ -191,10 +192,11 @@ Model Prediction:
             try:
                 msgs = []
                 msgs.append({'role': 'system', 'value': 'You are a helpful assistant.'})
+                msgs.append({'role': 'user', 'type':'text' ,'value': judge_prompt})
 
                 images = ast.literal_eval(row['step_images'])
                 for image in images:
-                    msgs.append({'role': 'role', 'value': image, 'type': 'image'})
+                    msgs.append({'role': 'user', 'value': image, 'type': 'image'})
                 llm_judge = judge.generate(msgs).strip()
                 pattern = r"(\d+)"
                 match = re.search(pattern, llm_judge)

@@ -24,19 +24,10 @@ env = os.environ.copy()
 env["PYTHONIOENCODING"] = "utf-8"
 
 
-def get_python_executable(env_name):
-    """自动获取指定 Conda 环境的 Python 路径，找不到则回退到系统 python"""
-    # 1. 尝试从 CONDA_EXE 环境变量推断 base 路径
-    conda_exe = os.environ.get('CONDA_EXE')
-    if conda_exe:
-        base_dir = os.path.dirname(os.path.dirname(conda_exe))
-        suffix = "python.exe" if platform.system() == "Windows" else "bin/python"
-        env_python = os.path.join(base_dir, "envs", env_name, suffix)
-        if os.path.exists(env_python):
-            return env_python
+import os
+import subprocess
+import platform
 
-    # 2. 如果推断失败，回退到普通命令（依赖 PATH）
-    return "python"
 
 def run_script_in_folder(folder_path):
     """
@@ -46,15 +37,15 @@ def run_script_in_folder(folder_path):
     script_name = 'data_en.py'
     script_path_full = folder_path / script_name
     try:
-        python_path = get_python_executable("dryexp")
         result = subprocess.run(
-            [python_path, script_name],
+            ["conda", "run", "-n", "dryexp", "python", script_name],
             capture_output=True,
             text=True,
             timeout=10 * 60,  # 10-minute timeout
             encoding="utf-8",
             cwd=str(folder_path),
-            env=env
+            env=env,
+            shell=platform.system() == "Windows"
         )
         if result.returncode == 0:
             # print(f"✅")
@@ -83,15 +74,15 @@ def run_script(ques_dict):
         try:
             # Run the script and capture output
             start_time = time.time()
-            python_path = get_python_executable("dryexp")
             result = subprocess.run(
-            [python_path, 'main_model.py'],
+                ["conda", "run", "-n", "dryexp", "python", 'main_model.py'],
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minutes timeout
                 encoding="utf-8",
                 cwd=str(folder_path),
-                env=env
+                env=env,
+                shell=platform.system() == "Windows"
             )
             end_time = time.time()
             elapsed = end_time - start_time
@@ -181,7 +172,10 @@ example = {{
             llm_judge = None
 
         unit_test_dict['llm_judge'] = llm_judge
-        unit_test_dict['pass'] = 1 if unit_test_dict['llm_judge']['judgment'] == 'correct' else 0
+        if llm_judge and isinstance(llm_judge, dict):
+            unit_test_dict['pass'] = 1 if llm_judge.get('judgment') == 'correct' else 0
+        else:
+            unit_test_dict['pass'] = 0
         ques_dict['unit_test'][unit_test_idx] = unit_test_dict
 
     ques_dict['pass_nums'] = sum([unit_test_dict['pass'] for unit_test_dict in ques_dict['unit_test']])
@@ -453,10 +447,10 @@ def minus(a, b):
 
         ################################################################## 代码保存 ##################################################################
         for index, item in data.iterrows():
-            main_code = item['main_code']
+            main_code = item['incomplete_main_code']
             incomplete_functions = item['incomplete_functions']
             answer = extract_final_answer(item['prediction'])
-            for incomplete_function in incomplete_functions:
+            for incomplete_function in eval(incomplete_functions):
                 try:
                     main_code = replace_function(main_code, answer, incomplete_function)
                 except:
