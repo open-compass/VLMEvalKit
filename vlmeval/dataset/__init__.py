@@ -67,6 +67,7 @@ from .videott import VideoTT
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+from .specter_alert import SpecterAlertDataset
 
 from .cmmmu import CMMMU
 from .emma import EMMADataset
@@ -243,8 +244,8 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
-
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench,
+    SpecterAlertDataset
 ]
 
 TEXT_DATASET = [
