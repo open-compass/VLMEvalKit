@@ -248,14 +248,14 @@ def CoreCognition_acc(data):
         for cat in data['category'].unique():
             if pd.notna(cat):
                 cat_data = data[data['category'] == cat]
-                results[f'category_{cat}'] = cat_data['correct'].mean() * 100
+                results[cat.replace(' ', '_')] = cat_data['correct'].mean() * 100
 
     # Accuracy by l2-category (concept)
     if 'l2-category' in data.columns:
         for l2cat in data['l2-category'].unique():
             if pd.notna(l2cat):
                 l2cat_data = data[data['l2-category'] == l2cat]
-                results[f'concept_{l2cat}'] = l2cat_data['correct'].mean() * 100
+                results[f'Concept_{l2cat}'] = l2cat_data['correct'].mean() * 100
 
     # Create DataFrame with rounded values
     acc_df = pd.DataFrame([{k: round(v, 2) for k, v in results.items()}])
