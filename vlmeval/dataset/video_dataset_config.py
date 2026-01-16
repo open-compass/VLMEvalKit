@@ -242,6 +242,17 @@ sti_variants = [
 ]
 sti_dataset = _build_video_variants(sti_subsets, STIBench, sti_variants)
 
+dsr_subsets = DSRBench.supported_datasets()
+dsr_variants = [
+    ("64frame", dict(nframe=64)),
+    ("32frame", dict(nframe=32)),
+    ("30frame", dict(nframe=30)),
+    # The 1fps setting is aligned with offical seting DSR-Bench paper
+    ("1fps", dict(fps=1.0)),
+]
+dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
+
+
 supported_video_datasets = {}
 
 dataset_groups = [
@@ -254,7 +265,7 @@ dataset_groups = [
 # add by EASI team
 dataset_groups += [
     video_vsi_dataset, sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
-    sti_dataset
+    sti_dataset, dsr_dataset
 ]
 
 for grp in dataset_groups:
