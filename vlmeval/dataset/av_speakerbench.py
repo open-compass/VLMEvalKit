@@ -31,8 +31,11 @@ def _parse_multi_choice_response(response, all_choices):
     for prefix in answer_prefixes:
         response = response.replace(prefix, "")
 
-    # Strip simple <answer>...</answer> wrappers if present.
+    # Strip optional <think>...</think> and <answer>...</answer> wrappers if present.
     import re
+    think_match = re.search(r"<think>(.*?)</think>", response, re.DOTALL)
+    if think_match:
+        response = response.replace(think_match.group(0), "")
 
     match_pred = re.search(r"<answer>(.*?)</answer>", response, re.DOTALL)
     if match_pred:
