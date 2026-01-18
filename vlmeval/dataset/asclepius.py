@@ -9,38 +9,38 @@ from ..utils import track_progress_rich
 class Asclepius(ImageVQADataset):
     """
     Asclepius Medical Benchmark Dataset
-    
+
     A medical image analysis benchmark with two types of tasks:
     1. Medical VQA (Visual Question Answering) - questions 1-2709, 2860-3232
     2. Medical Image Report Generation - questions 2710-2859
-    
+
     Source: Asclepius benchmark
     """
-    
+
     TYPE = 'VQA'
     MODALITY = 'IMAGE'
-    
+
     DATASET_URL = {
         'Asclepius': 'https://github.com/StevenSU4/Asclepius/releases/download/v1.0.0/Asclepius.tsv'
     }
-    
+
     DATASET_MD5 = {
         'Asclepius': '93ecc52dea07d0296f83af713dbf8a5c'
     }
-    
+
     def build_prompt(self, line):
         """
         Build prompts specific to Asclepius benchmark.
-        
+
         Two prompt formats:
         1. Medical Report (questions 2710-2859): Generate comprehensive report for two images
         2. Medical VQA (other questions): Answer medical questions about images
         """
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         question_id = line.get('index', line.get('question_id'))
-        
+
         # Determine prompt type based on question ID
         if 2710 <= int(question_id) <= 2859:
             # Medical Report Generation Task
@@ -60,10 +60,10 @@ class Asclepius(ImageVQADataset):
             )
             prompt_text += line.get('question', '')
             prompt_text += "\nAnswer:\n"
-        
+
         # Build messages list with images and prompt
         msgs = []
-        
+
         # Add first image
         image_base64 = line.get('image')
         if pd.notna(image_base64):
@@ -83,30 +83,30 @@ class Asclepius(ImageVQADataset):
                 msgs.append(dict(type='image', value=image_path2))
             except Exception as e:
                 print(f"Warning: Failed to decode second image for question {question_id}: {e}")
-        
+
         # Add text prompt
         msgs.append(dict(type='text', value=prompt_text))
-        
+
         return msgs
-    
+
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
         from .utils import build_judge, DEBUG_MESSAGE
-        
+
         # Load prediction data
         data = load(eval_file)
-        
+
         # Validate required columns
         assert 'answer' in data.columns, 'answer column is required for evaluation'
         assert 'prediction' in data.columns, 'prediction column is required for evaluation'
-        
+
         # Convert to strings and filter valid data
         data['answer'] = [str(x) if pd.notna(x) else '' for x in data['answer']]
         data['prediction'] = [str(x) if pd.notna(x) else '' for x in data['prediction']]
-        
+
         # Filter out rows without ground truth answers
         data_to_eval = data[(data['answer'] != '') & (data['answer'].notna())].copy()
-        
+
         # Setup judge model
         if 'model' in judge_kwargs:
             model = judge_kwargs['model']
@@ -116,7 +116,7 @@ class Asclepius(ImageVQADataset):
         storage = eval_file.replace(f'.{suffix}', f'_{model}.xlsx')
         tmp_file = eval_file.replace(f'.{suffix}', f'_{model}.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        
+
         # Check if evaluation results already exist
         if not osp.exists(storage):
             # Build judge model
@@ -125,22 +125,22 @@ class Asclepius(ImageVQADataset):
                 logger = get_logger('Asclepius')
                 logger.error('Judge model is not working properly. ' + DEBUG_MESSAGE)
                 return {'Overall': 0.0}
-            
+
             # Prepare evaluation tasks
             lt = len(data_to_eval)
             lines = [data_to_eval.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
             indices = [line['index'] for line in lines]
-            
+
             # Load cached results if available
             ans = {}
             if osp.exists(tmp_file):
                 ans = load(tmp_file)
-            
+
             # Filter out already evaluated items
             tups = [x for x, i in zip(tups, indices) if i not in ans]
             indices = [i for i in indices if i not in ans]
-            
+
             # Run evaluation if there are new items
             if len(indices):
                 new_results = track_progress_rich(
@@ -155,50 +155,50 @@ class Asclepius(ImageVQADataset):
                 for k, v in zip(indices, new_results):
                     assert k in ans
                     assert ans[k]['score'] == v['score'] and ans[k]['log'] == v['log']
-            
+
             # Add evaluation results to data
             data_to_eval['eval_score'] = [ans[idx]['score'] for idx in data_to_eval['index']]
             data_to_eval['eval_log'] = [ans[idx]['log'] for idx in data_to_eval['index']]
-            
+
             # Merge back to full dataset
             data['eval_score'] = 0
             data['eval_log'] = ''
             for idx in data_to_eval.index:
                 data.loc[idx, 'eval_score'] = data_to_eval.loc[idx, 'eval_score']
                 data.loc[idx, 'eval_log'] = data_to_eval.loc[idx, 'eval_log']
-            
+
             dump(data, storage)
         else:
             # Load existing results
             data = load(storage)
             data_to_eval = data[(data['answer'] != '') & (data['answer'].notna())].copy()
-        
+
         # Calculate metrics
         ret = {}
-        
+
         # Overall accuracy
         overall_scores = data_to_eval['eval_score'].values
         ret['Overall'] = np.mean(overall_scores) * 100
-        
+
         # Convert to DataFrame and save
         ret = d2df(ret)
         ret = ret.round(2)
-        
+
         result_file = storage.replace('.xlsx', '_score.csv')
         dump(ret, result_file)
-        
+
         return ret
-    
+
     @staticmethod
     def _evaluate_single(inputs):
         import re
-        
+
         model, line = inputs
         question = line.get('question', '')
         answer = str(line.get('answer', ''))
         prediction = str(line.get('prediction', ''))
         question_id = line.get('index', line.get('question_id'))
-        
+
         # Build evaluation prompt
         eval_prompt = (
             "You are an AI assistant who will help me evaluate responses given the questions "
@@ -212,18 +212,18 @@ class Asclepius(ImageVQADataset):
             f"Response: {prediction}\n"
             "Your mark: \n"
         )
-        
+
         try:
             # Call judge model
             response = model.generate(eval_prompt, temperature=0.0, max_tokens=10)
             log = response.strip()
-            
+
             # Parse score from response
             match = re.search(r'\b[01]\b', log)
             score = int(match.group()) if match else 0
-            
+
             return {'score': score, 'log': log}
-        
+
         except Exception as e:
             logger = get_logger('Asclepius')
             logger.error(f'Error evaluating question {question_id}: {e}')
