@@ -3813,3 +3813,303 @@ class MMReason(ImageBaseDataset):
         score_pth = storage_score.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
+    
+class ScienceOlympiad(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'ScienceOlympiad': 'LMUData/ScienceOlympiad.tsv',
+    }
+    DATASET_MD5 = {
+        'ScienceOlympiad': '54b8d3086958cc294a8122b178a7ae5e',
+     }
+    def __init__(self, dataset='ScienceOlympiad', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', 'ScienceOlympiad')
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+        data['index'] = [str(x) for x in data['index']]
+        self.meta_only = False
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+        self.data = data
+        self.post_build(dataset)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if pd.isna(line['image']):
+            tgt_path = None
+        else:
+            if self.meta_only:
+                tgt_path = toliststr(line['image'])
+            else:
+                tgt_path = self.dump_image(line)
+        instruction = (
+            f"{line['question']}\n"
+            "请一步步推理，并把你的最终答案放入\\boxed{}。")
+        msgs = []
+        if tgt_path is not None:
+            if isinstance(tgt_path, list):
+                msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+            else:
+                msgs.append({"type": "image", "value": tgt_path})
+
+        msgs.append({"type": "text", "value": instruction})
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.scienceolympiad import ScienceOlympiad_acc, ScienceOlympiad_auxeval
+
+        if 'LOCAL_LLM' in os.environ:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+            print(f'Using local model as judge model for ScienceOlympiad: {model}')
+        else:
+            model = judge_kwargs.setdefault('model', 'gpt-4o')
+        storage = get_intermediate_file_path(eval_file, f'_{model}_evaluation')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}_evaluation', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        
+        meta = self.data
+        prediction_data = load(eval_file)
+        if eval_file.endswith('.json'):
+            prediction_data = pd.DataFrame(prediction_data)
+
+        if not osp.exists(storage):
+            data = prediction_data.copy()
+            data = data.sort_values(by='index')
+            judge_kwargs['max_tokens'] = 4096
+            model = build_judge(**judge_kwargs)
+            assert model.working(), 'ScienceOlympiad evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    ScienceOlympiad_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['result'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = ScienceOlympiad_acc(storage)
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        dump(score, score_pth)
+        
+        return score
+
+class Galaxy10DECaLS(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'Galaxy10DECaLS': 'LMUData/Galaxy10DECaLS.tsv',
+    }
+    DATASET_MD5 = {
+        'Galaxy10DECaLS': 'a3379754c74bc5502de82d11bc837ed3', 
+     }
+    def __init__(self, dataset='Galaxy10DECaLS', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', 'Galaxy10DECaLS')
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+        data['index'] = [str(x) for x in data['index']]
+        self.meta_only = False
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+        self.data = data
+        self.post_build(dataset)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if pd.isna(line['image']):
+            tgt_path = None
+        else:
+            if self.meta_only:
+                tgt_path = toliststr(line['image'])
+            else:
+                tgt_path = self.dump_image(line)
+                
+        instruction = f"{line['question']}"
+        msgs = []
+        if tgt_path is not None:
+            if isinstance(tgt_path, list):
+                msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+            else:
+                msgs.append({"type": "image", "value": tgt_path})
+        msgs.append({"type": "text", "value": instruction})
+        return msgs
+
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.galaxy10_decals import Galaxy10DECaLS_acc, Galaxy10DECaLS_auxeval
+
+        storage = get_intermediate_file_path(eval_file, '_evaluation')
+        tmp_file = get_intermediate_file_path(eval_file, '_evaluation', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        
+        meta = self.data
+        prediction_data = load(eval_file)
+        if eval_file.endswith('.json'):
+            prediction_data = pd.DataFrame(prediction_data)
+
+        if not osp.exists(storage):
+            data = prediction_data.copy()
+            data = data.sort_values(by='index')
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [( line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    Galaxy10DECaLS_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['result'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+                
+        score = Galaxy10DECaLS_acc(storage)
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        dump(score, score_pth)
+        
+        return score
+
+class VRSBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'VRSBench': 'LMUData/VRSBench.tsv',
+        'VRSBench_MINI': 'LMUData/VRSBench_MINI.tsv',
+    }
+    DATASET_MD5 = {
+        'VRSBench': 'b6ba8c741e36b4d4b56793361a01c486',
+        'VRSBench_MINI': '7ddb6e0647db9b8623e83957b6457b1e',
+     }
+    def __init__(self, dataset='VRSBench_MINI', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', dataset)
+        self.meta_only = False
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+        data['index'] = [str(x) for x in data['index']]
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+        self.data = data
+        self.post_build(dataset)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+        
+        if self.meta_only:
+            tgt_path = toliststr(osp.join(self.img_root,line['image_path']))
+        else:
+            tgt_path = self.dump_image(line)
+                    
+        instruction = f"{line['question']}"
+        msgs = []
+        if tgt_path is not None:
+            if isinstance(tgt_path, list):
+                msgs.extend([{"type": "image", "value": p} for p in tgt_path])
+            else:
+                msgs.append({"type": "image", "value": tgt_path})
+        msgs.append({"type": "text", "value": instruction})
+        
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vrsbench import VRSBench_acc, VRSBench_auxeval
+        
+        model = judge_kwargs['model']
+        storage = get_intermediate_file_path(eval_file, f'_{model}_evaluation')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}_evaluation', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        
+        meta = self.data
+        prediction_data = load(eval_file)
+        if eval_file.endswith('.json'):
+            prediction_data = pd.DataFrame(prediction_data)
+
+        if not osp.exists(storage):
+            data = prediction_data.copy()
+            data = data.sort_values(by='index')
+            lt = len(data)
+            model = build_judge(**judge_kwargs)
+            assert model.working(), 'VRSBench evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model,line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    VRSBench_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['result'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+            
+        score = VRSBench_acc(storage)
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        dump(score, score_pth)
+        
+        return score
