@@ -229,7 +229,7 @@ class VsiBench(VideoBaseDataset):
         message = []
 
         if video_llm:
-            message.append(dict(type='video', value=os.path.join(self.data_root, 'video', line['video'])))
+            message.append(dict(type='video', value=os.path.join(self.data_root, line['video'])))
         else:
             frames, _, _ = self.save_video_frames(line['video'], video_llm)
             for im in frames:
