@@ -4023,17 +4023,16 @@ class VRSBench(ImageBaseDataset):
         'VRSBench': 'LMUData/VRSBench.tsv',
         'VRSBench_MINI': 'LMUData/VRSBench_MINI.tsv',
     }
-    # 路径md5值
     DATASET_MD5 = {
-        'VRSBench': '6876d49ab179f529617dfddbcaa1aafe',
-        'VRSBench_MINI': '0482d686d13a30fa75f918a874df9691',
+        'VRSBench': 'b6ba8c741e36b4d4b56793361a01c486',
+        'VRSBench_MINI': '7ddb6e0647db9b8623e83957b6457b1e',
      }
     def __init__(self, dataset='VRSBench_MINI', skip_noimg=False):
         ROOT = LMUDataRoot()
         # You can override this variable to save image files to a different directory
         self.dataset_name = dataset
         self.img_root = osp.join(ROOT, 'images', dataset)
-        self.meta_only = True
+        self.meta_only = False
         data = self.load_data(dataset)
         self.skip_noimg = skip_noimg
         data['index'] = [str(x) for x in data['index']]
