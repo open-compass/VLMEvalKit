@@ -2897,7 +2897,6 @@ class OCR_Reasoning(ImageBaseDataset):
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        nproc = 1
         if not osp.exists(storage):
             data = load(eval_file)
             model = build_judge(max_tokens=1024, **judge_kwargs)
