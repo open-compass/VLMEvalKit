@@ -163,12 +163,12 @@ class VLADBench(ImageBaseDataset):
         # form messages
         msgs = []
         if isinstance(tgt_path, list):
-            for p in tgt_path:
-                print(os.path.join(self.IMAGE_DIR, p))
+            # for p in tgt_path:
+                # print(os.path.join(self.IMAGE_DIR, p))
             msgs.extend([dict(type='image', value=os.path.join(self.IMAGE_DIR, p)) for p in tgt_path])
 
         else:
-            print(os.path.join(self.IMAGE_DIR, tgt_path))
+            # print(os.path.join(self.IMAGE_DIR, tgt_path))
             msgs = [dict(type='image', value=os.path.join(self.IMAGE_DIR, tgt_path))]
         msgs.append(dict(type='text', value=question))
 
