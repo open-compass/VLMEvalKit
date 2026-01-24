@@ -63,6 +63,8 @@ class SpecterAlertDataset(VideoBaseDataset):
 
         Note: prompt_kwargs (context/question) are NOT set here - they come from
         the TSV and are applied by SpecterProcessorWrapper at inference time.
+
+        TODO: Replace if-else tree with Hydra config-based processor instantiation.
         """
         from specter_prompts.event_processor import (
             EventProcessor, FallbackEventProcessor, BoxCropEventProcessor
