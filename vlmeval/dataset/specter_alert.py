@@ -2,6 +2,7 @@
 from ..smp import *
 from .video_base import VideoBaseDataset
 import re
+from typing import Optional, Dict, Any
 
 
 class SpecterAlertDataset(VideoBaseDataset):
@@ -9,17 +10,103 @@ class SpecterAlertDataset(VideoBaseDataset):
     Specter Alert VQA Dataset for evaluating PPE compliance detection.
 
     Expected data format:
-    - TSV with columns: index, video, question, answer
+    - TSV with columns: index, video, context, question, answer, rule_id, rule_name
     - Videos in {root}/video/{video}.mp4
 
     The dataset evaluates VLM predictions by extracting answers from <answer> tags
     and comparing to ground truth (yes/no).
+
+    Optionally loads a processor_config YAML that maps rule_id -> EventProcessor config
+    for per-rule preprocessing.
     """
 
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1):
+    def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1, processor_config: Optional[str] = None):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
+
+        # Load processor config if provided
+        self.processor_config_path = processor_config
+        self.processor_config = None
+        self.rule_processors: Dict[str, Any] = {}
+        self.default_processor = None
+
+        if processor_config:
+            self._load_processor_config(processor_config)
+
+    def _load_processor_config(self, config_path: str):
+        """Load rule -> processor mapping from YAML."""
+        import yaml
+
+        if not osp.exists(config_path):
+            print(f"Warning: processor config not found: {config_path}")
+            return
+
+        with open(config_path) as f:
+            self.processor_config = yaml.safe_load(f)
+
+        default_cfg = self.processor_config.get('default', {})
+        rules_cfg = self.processor_config.get('rules', {})
+
+        # Build default processor
+        if default_cfg:
+            self.default_processor = self._build_processor(default_cfg)
+
+        # Build rule-specific processors
+        for rule_id, rule_cfg in rules_cfg.items():
+            self.rule_processors[str(rule_id)] = self._build_processor(rule_cfg)
+
+        print(f"Loaded processor config: default + {len(self.rule_processors)} rule-specific processors")
+
+    def _build_processor(self, config: dict):
+        """Build EventProcessor from config dict.
+
+        Note: prompt_kwargs (context/question) are NOT set here - they come from
+        the TSV and are applied by SpecterProcessorWrapper at inference time.
+
+        TODO: Replace if-else tree with Hydra config-based processor instantiation.
+        """
+        from specter_prompts.event_processor import (
+            EventProcessor, FallbackEventProcessor, BoxCropEventProcessor
+        )
+
+        processor_type = config.get('type', 'EventProcessor')
+        common_kwargs = {
+            'system_prompt': config.get('system_prompt'),
+            'short_side': config.get('short_side', 672),
+            'jpeg_quality': config.get('jpeg_quality', 80),
+            'max_frames': config.get('max_frames', 14),
+        }
+
+        if processor_type == 'FallbackEventProcessor':
+            return FallbackEventProcessor(
+                prompt=config['prompt'],
+                **common_kwargs
+            )
+        elif processor_type == 'EventProcessor':
+            return EventProcessor(
+                prompt_template=config['prompt_template'],
+                prompt_kwargs={},  # Will be set by SpecterProcessorWrapper from TSV
+                prompt_post_processor_kwargs=config.get('prompt_post_processor_kwargs', {}),
+                **common_kwargs
+            )
+        elif processor_type == 'BoxCropEventProcessor':
+            frame_processor = EventProcessor(
+                prompt_template=config['prompt_template'],
+                prompt_kwargs={},  # Will be set by SpecterProcessorWrapper from TSV
+                prompt_post_processor_kwargs=config.get('prompt_post_processor_kwargs', {}),
+                **common_kwargs
+            )
+            return BoxCropEventProcessor(
+                frame_event_processor=frame_processor,
+                **config.get('box_crop_kwargs', {})
+            )
+        else:
+            raise ValueError(f"Unknown processor type: {processor_type}")
+
+    def get_processor_for_rule(self, rule_id: str):
+        """Get the EventProcessor for a given rule_id."""
+        return self.rule_processors.get(str(rule_id), self.default_processor)
 
     @classmethod
     def supported_datasets(cls):
@@ -82,11 +169,16 @@ class SpecterAlertDataset(VideoBaseDataset):
 
         video = line['video']
         question = line['question']
+        context = line.get('context', '')
+        rule_id = str(line.get('rule_id', 'default')) if 'rule_id' in line else 'default'
+
+        # Get processor for this rule (if processor config was loaded)
+        processor = self.get_processor_for_rule(rule_id)
 
         if video_llm:
             # Direct video input for video-native models
             video_path = osp.join(self.data_root, 'video', str(video) + '.mp4')
-            return [
+            message = [
                 dict(type='video', value=video_path),
                 dict(type='text', value=question)
             ]
@@ -97,7 +189,15 @@ class SpecterAlertDataset(VideoBaseDataset):
             for frame in frame_paths:
                 message.append(dict(type='image', value=frame))
             message.append(dict(type='text', value=question))
-            return message
+
+        # Include processor, rule_id, context, question for SpecterProcessorWrapper
+        if processor is not None:
+            message.append(dict(type='processor', value=processor))
+        message.append(dict(type='rule_id', value=rule_id))
+        message.append(dict(type='context', value=context))
+        message.append(dict(type='question', value=question))
+
+        return message
 
     @staticmethod
     def extract_answer(text):
