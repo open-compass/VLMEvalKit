@@ -13,7 +13,6 @@ from transformers import AutoModelForVision2Seq, AutoProcessor
 flash_attn_flag = False
 try:
     import flash_attn
-
     flash_attn_flag = True
 except ImportError:
     pass
@@ -59,7 +58,7 @@ class GraniteVision3(BaseModel):
         if "<|end_of_text|>" in answer:
             answer = answer.split("<|end_of_text|>")[0].strip("\n ")
         if "answer" in answer.lower():
-                answer = answer.lower().split("answer")[-1].strip(" :.-\n")
+            answer = answer.lower().split("answer")[-1].strip(" :.-\n")
         if dataset in [
             "ChartQA_TEST",
             "DocVQA_VAL",
@@ -79,7 +78,7 @@ class GraniteVision3(BaseModel):
         assert dataset is not None
         if DATASET_TYPE(dataset) == "MCQ":
             return True
-        if dataset in ["OCRBench", "COCO_VAL", "ChartQA_TEST", "CharXiv_descriptive_val", "ChartMimic_v1_direct", 
+        if dataset in ["OCRBench", "COCO_VAL", "ChartQA_TEST", "CharXiv_descriptive_val", "ChartMimic_v1_direct",
                        "ChartMimic_v2_direct", "ChartMimic_v2_customized",]:
             return True
         return False
