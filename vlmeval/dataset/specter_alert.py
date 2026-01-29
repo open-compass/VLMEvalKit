@@ -19,9 +19,9 @@ class SpecterAlertDataset:
 
     Expected data format:
     - TSV with columns: index, video, config_name, original_question, answer, rule_id
-    - Frames in {root}/frames/{video}/frame_NNNN.jpg
-    - Metadata in {root}/clips/{video}/metadata.json
-    - Detections in {root}/clips/{video}/detections/frame_NNNN.json
+    - Frames in {root}/clips/{sample_id}/frames/frame_{timestamp}.jpg
+    - Metadata in {root}/clips/{sample_id}/metadata.json
+    - Detections in {root}/clips/{sample_id}/detections/frame_{timestamp}.json
 
     The dataset evaluates VLM predictions by extracting answers from <answer> tags
     and comparing to ground truth (yes/no).
@@ -61,8 +61,10 @@ class SpecterAlertDataset:
         Load dataset from local path.
         Expects:
         - TSV file at {LMUDataRoot()}/{dataset_name}.tsv
-        - Frames at {LMUDataRoot()}/{dataset_name}/frames/{sample_id}/
-        - Metadata at {LMUDataRoot()}/{dataset_name}/clips/{sample_id}/metadata.json
+        - Clips at {LMUDataRoot()}/{dataset_name}/clips/{sample_id}/
+          - frames/frame_{timestamp}.jpg
+          - detections/frame_{timestamp}.json
+          - metadata.json
         """
         lmu_root = LMUDataRoot()
         data_file = osp.join(lmu_root, f'{dataset_name}.tsv')
@@ -76,8 +78,12 @@ class SpecterAlertDataset:
         return dict(root=dataset_root, data_file=data_file)
 
     def _load_frame_paths(self, sample_id: str) -> List[str]:
-        """Load pre-extracted frame paths for a sample."""
-        frame_dir = osp.join(self.data_root, 'frames', str(sample_id))
+        """Load pre-extracted frame paths for a sample.
+
+        Frames are stored as frame_{timestamp}.jpg where timestamp enables
+        tracing back to source video time and correlating across sensors.
+        """
+        frame_dir = osp.join(self.data_root, 'clips', str(sample_id), 'frames')
         if not osp.exists(frame_dir):
             raise FileNotFoundError(f"Frames directory not found: {frame_dir}")
 
@@ -88,7 +94,11 @@ class SpecterAlertDataset:
         return frame_paths
 
     def _load_detection_paths(self, sample_id: str) -> List[str]:
-        """Load local detection file paths for a sample."""
+        """Load local detection file paths for a sample.
+
+        Detections are stored as frame_{timestamp}.json, matching the
+        corresponding frame file (frame_{timestamp}.jpg).
+        """
         detections_dir = osp.join(self.data_root, 'clips', str(sample_id), 'detections')
         if not osp.exists(detections_dir):
             return []
