@@ -18,10 +18,12 @@ class SpecterAlertDataset:
     3. Calling processor.process_event() with frames to generate the VLM prompt
 
     Expected data format:
-    - TSV with columns: index, video, config_name, original_question, answer, rule_id
-    - Frames in {root}/clips/{sample_id}/frames/frame_{timestamp}.jpg
-    - Metadata in {root}/clips/{sample_id}/metadata.json
-    - Detections in {root}/clips/{sample_id}/detections/frame_{timestamp}.json
+    - TSV with columns: index, video_path, metadata_path, rule_definition_path, answer
+    - video_path points to either:
+      - a frames directory with frame_{timestamp}.jpg files, or
+      - a video file (e.g. video.mp4)
+    - metadata_path points to metadata.json with detection paths
+    - rule_definition_path points to rule_definition.json with prompt metadata
 
     The dataset evaluates VLM predictions by extracting answers from <answer> tags
     and comparing to ground truth (yes/no).
@@ -77,13 +79,19 @@ class SpecterAlertDataset:
 
         return dict(root=dataset_root, data_file=data_file)
 
-    def _load_frame_paths(self, sample_id: str) -> List[str]:
-        """Load pre-extracted frame paths for a sample.
+    def _resolve_path(self, path_value: str) -> str:
+        if not path_value:
+            return ""
+        if osp.isabs(path_value):
+            return path_value
+        dataset_prefix = f"{self.dataset_name}{osp.sep}"
+        if path_value.startswith(dataset_prefix):
+            lmu_root = osp.dirname(self.data_root)
+            return osp.join(lmu_root, path_value)
+        return osp.join(self.data_root, path_value)
 
-        Frames are stored as frame_{timestamp}.jpg where timestamp enables
-        tracing back to source video time and correlating across sensors.
-        """
-        frame_dir = osp.join(self.data_root, 'clips', str(sample_id), 'frames')
+    def _load_frame_paths_from_dir(self, frame_dir: str) -> List[str]:
+        """Load pre-extracted frame paths from a directory."""
         if not osp.exists(frame_dir):
             raise FileNotFoundError(f"Frames directory not found: {frame_dir}")
 
@@ -93,23 +101,36 @@ class SpecterAlertDataset:
 
         return frame_paths
 
-    def _load_detection_paths(self, sample_id: str) -> List[str]:
-        """Load local detection file paths for a sample.
-
-        Detections are stored as frame_{timestamp}.json, matching the
-        corresponding frame file (frame_{timestamp}.jpg).
-        """
-        detections_dir = osp.join(self.data_root, 'clips', str(sample_id), 'detections')
-        if not osp.exists(detections_dir):
+    def _load_detection_paths_from_metadata(self, metadata_path: str) -> List[str]:
+        """Load local detection file paths from metadata.json."""
+        if not metadata_path or not osp.exists(metadata_path):
             return []
 
-        detection_paths = sorted(glob.glob(osp.join(detections_dir, 'frame_*.json')))
-        return detection_paths
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+
+        detection_paths = metadata.get('detection_metadata_paths', []) or []
+        resolved = []
+        metadata_dir = osp.dirname(metadata_path)
+        for path_value in detection_paths:
+            if not path_value:
+                resolved.append("")
+                continue
+            if osp.isabs(path_value):
+                if osp.exists(path_value):
+                    resolved.append(path_value)
+                else:
+                    fallback = osp.join(metadata_dir, 'detections', osp.basename(path_value))
+                    resolved.append(fallback)
+            else:
+                resolved.append(osp.join(metadata_dir, path_value))
+
+        return resolved
 
     def build_prompt(self, line, video_llm=False):
         """Build prompt for processor-wrapped inference.
 
-        This method builds a message containing pre-extracted frames and metadata
+        This method builds a message containing frames or video plus metadata
         for ProcessorCloudVLM wrapper. The wrapper is responsible for:
         1. Instantiating EventProcessor from config_name using Hydra
         2. Loading detections from local files
@@ -121,30 +142,44 @@ class SpecterAlertDataset:
 
         Returns:
             List of message dicts with types:
-            - 'image': Frame file paths
+            - 'image' or 'video': Frame file paths or a video file
             - 'config_name': EventProcessor config name for Hydra instantiation
             - 'original_question': Fallback prompt text if config_name is empty
             - 'detection_paths': Local paths to detection metadata JSONs
+            - 'rule_definition_path': Path to rule_definition.json (optional)
         """
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        sample_id = line['video']
-        config_name = line.get('config_name', '')
-        original_question = line.get('original_question', '')
+        video_path = self._resolve_path(line.get('video_path', ''))
+        metadata_path = self._resolve_path(line.get('metadata_path', ''))
+        rule_definition_path = self._resolve_path(line.get('rule_definition_path', ''))
 
-        # Load pre-extracted frames
-        frame_paths = self._load_frame_paths(sample_id)
+        rule_definition = {}
+        if rule_definition_path and osp.exists(rule_definition_path):
+            with open(rule_definition_path, 'r') as f:
+                rule_definition = json.load(f)
 
-        # Load local detection paths
-        detection_paths = self._load_detection_paths(sample_id)
+        config_name = rule_definition.get('prompt_config', '')
+        original_question = rule_definition.get('prompt_text', '')
+
+        # Load detection paths from metadata.json
+        detection_paths = self._load_detection_paths_from_metadata(metadata_path)
 
         # Build message for ProcessorCloudVLM wrapper
-        message = [dict(type='image', value=frame) for frame in frame_paths]
+        message = []
+        if video_path and osp.isdir(video_path):
+            frame_paths = self._load_frame_paths_from_dir(video_path)
+            message.extend([dict(type='image', value=frame) for frame in frame_paths])
+        elif video_path:
+            message.append(dict(type='video', value=video_path))
+
         message.append(dict(type='config_name', value=config_name))
         message.append(dict(type='original_question', value=original_question))
         message.append(dict(type='detection_paths', value=detection_paths))
+        if rule_definition_path:
+            message.append(dict(type='rule_definition_path', value=rule_definition_path))
 
         return message
 
