@@ -113,6 +113,7 @@ class SpecterAlertDataset:
             List of message dicts with types:
             - 'image': Frame file paths
             - 'config_name': EventProcessor config name for Hydra instantiation
+            - 'original_question': Fallback prompt text if config_name is empty
             - 'detection_paths': Local paths to detection metadata JSONs
         """
         if isinstance(line, int):
@@ -121,6 +122,7 @@ class SpecterAlertDataset:
 
         sample_id = line['video']
         config_name = line.get('config_name', '')
+        original_question = line.get('original_question', '')
 
         # Load pre-extracted frames
         frame_paths = self._load_frame_paths(sample_id)
@@ -131,6 +133,7 @@ class SpecterAlertDataset:
         # Build message for ProcessorCloudVLM wrapper
         message = [dict(type='image', value=frame) for frame in frame_paths]
         message.append(dict(type='config_name', value=config_name))
+        message.append(dict(type='original_question', value=original_question))
         message.append(dict(type='detection_paths', value=detection_paths))
 
         return message
