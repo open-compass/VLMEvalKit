@@ -1,44 +1,56 @@
-"""Specter Alert VQA Dataset for evaluating safety/compliance detection."""
+"""Specter Alert Dataset for evaluating safety/compliance detection."""
 from ..smp import *
-from .video_base import VideoBaseDataset
 import re
 import glob
 import json
 from typing import Optional, Dict, Any, List
 
 
-class SpecterAlertDataset(VideoBaseDataset):
+class SpecterAlertDataset:
     """
-    Specter Alert VQA Dataset for evaluating safety/compliance detection.
+    Specter Alert Dataset for evaluating safety/compliance detection.
 
     This dataset REQUIRES processor-wrapped VLMs. The dataset provides pre-extracted
-    frames along with config_name and metadata. The VLM wrapper (SpecterProcessorVLM)
+    frames along with config_name and metadata. The VLM wrapper (ProcessorCloudVLM)
     is responsible for:
     1. Instantiating the EventProcessor from config_name using Hydra
-    2. Fetching detection metadata from S3 if needed (for BoxCropEventProcessor)
+    2. Loading detection metadata from local files
     3. Calling processor.process_event() with frames to generate the VLM prompt
 
     Expected data format:
-    - TSV with columns: index, video, context, config_name, original_question, answer, rule_id
+    - TSV with columns: index, video, config_name, original_question, answer, rule_id
     - Frames in {root}/frames/{video}/frame_NNNN.jpg
-    - Metadata in {root}/clips/{video}/metadata.json (includes detection_metadata_paths)
-
-    Columns:
-    - video: Sample ID (e.g., "galaxy_1043_1769618268000")
-    - context: Rule-specific context string
-    - config_name: EventProcessor config name (e.g., "man_down_event_processor")
-    - original_question: The rendered prompt template_text from VLM inference
-    - answer: Ground truth (yes/no)
-    - rule_id: Rule UUID
+    - Metadata in {root}/clips/{video}/metadata.json
+    - Detections in {root}/clips/{video}/detections/frame_NNNN.json
 
     The dataset evaluates VLM predictions by extracting answers from <answer> tags
     and comparing to ground truth (yes/no).
     """
 
+    MODALITY = 'VIDEO'
     TYPE = 'Video-VQA'
 
     def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1):
-        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
+        self.dataset_name = dataset
+        self.nframe = nframe
+        self.fps = fps
+
+        ret = self.prepare_dataset(dataset)
+        assert ret is not None
+
+        self.data_root = ret['root']
+        self.data_file = ret['data_file']
+        self.data = load(self.data_file)
+
+        if 'index' not in self.data:
+            self.data['index'] = np.arange(len(self.data))
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        assert idx < len(self.data)
+        return dict(self.data.iloc[idx])
 
     @classmethod
     def supported_datasets(cls):
@@ -76,29 +88,22 @@ class SpecterAlertDataset(VideoBaseDataset):
         return frame_paths
 
     def _load_detection_paths(self, sample_id: str) -> List[str]:
-        """Load detection metadata paths from sample metadata."""
-        metadata_path = osp.join(self.data_root, 'clips', str(sample_id), 'metadata.json')
-        if not osp.exists(metadata_path):
+        """Load local detection file paths for a sample."""
+        detections_dir = osp.join(self.data_root, 'clips', str(sample_id), 'detections')
+        if not osp.exists(detections_dir):
             return []
 
-        try:
-            with open(metadata_path) as f:
-                metadata = json.load(f)
-            return metadata.get('detection_metadata_paths', [])
-        except (json.JSONDecodeError, IOError):
-            return []
+        detection_paths = sorted(glob.glob(osp.join(detections_dir, 'frame_*.json')))
+        return detection_paths
 
     def build_prompt(self, line, video_llm=False):
         """Build prompt for processor-wrapped inference.
 
         This method builds a message containing pre-extracted frames and metadata
-        for SpecterProcessorVLM wrapper. The wrapper is responsible for:
+        for ProcessorCloudVLM wrapper. The wrapper is responsible for:
         1. Instantiating EventProcessor from config_name using Hydra
-        2. Fetching detections from S3 if BoxCropEventProcessor
+        2. Loading detections from local files
         3. Calling processor.process_event() with frames to generate VLM prompt
-
-        The message does NOT include a direct text prompt - prompt formatting is
-        handled by the EventProcessor at inference time.
 
         Args:
             line: Row from TSV or index
@@ -108,33 +113,24 @@ class SpecterAlertDataset(VideoBaseDataset):
             List of message dicts with types:
             - 'image': Frame file paths
             - 'config_name': EventProcessor config name for Hydra instantiation
-            - 'context': Context string for prompt_kwargs
-            - 'original_question': Rendered prompt (for debugging/fallback)
-            - 'rule_id': Rule UUID
-            - 'detection_paths': S3 paths to detection metadata JSONs
+            - 'detection_paths': Local paths to detection metadata JSONs
         """
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
 
         sample_id = line['video']
-        context = line.get('context', '')
         config_name = line.get('config_name', '')
-        original_question = line.get('original_question', '')
-        rule_id = str(line.get('rule_id', 'default')) if 'rule_id' in line else 'default'
 
         # Load pre-extracted frames
         frame_paths = self._load_frame_paths(sample_id)
 
-        # Load detection metadata paths
+        # Load local detection paths
         detection_paths = self._load_detection_paths(sample_id)
 
-        # Build message for SpecterProcessorVLM wrapper
+        # Build message for ProcessorCloudVLM wrapper
         message = [dict(type='image', value=frame) for frame in frame_paths]
         message.append(dict(type='config_name', value=config_name))
-        message.append(dict(type='context', value=context))
-        message.append(dict(type='original_question', value=original_question))
-        message.append(dict(type='rule_id', value=rule_id))
         message.append(dict(type='detection_paths', value=detection_paths))
 
         return message
