@@ -26,16 +26,18 @@ class SpecterAlertDataset:
     - rule_definition_path points to rule_definition.json with prompt metadata
 
     The dataset evaluates VLM predictions by extracting answers from <answer> tags
-    and comparing to ground truth (yes/no).
+    and comparing to ground truth (yes/no). If label_source is provided, the
+    ground-truth label will be overridden from metadata.json.
     """
 
     MODALITY = 'VIDEO'
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1):
+    def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1, label_source: Optional[str] = None):
         self.dataset_name = dataset
         self.nframe = nframe
         self.fps = fps
+        self.label_source = label_source
 
         ret = self.prepare_dataset(dataset)
         assert ret is not None
@@ -46,6 +48,9 @@ class SpecterAlertDataset:
 
         if 'index' not in self.data:
             self.data['index'] = np.arange(len(self.data))
+
+        if self.label_source:
+            self._apply_label_source(self.label_source)
 
     def __len__(self):
         return len(self.data)
@@ -101,6 +106,18 @@ class SpecterAlertDataset:
 
         return frame_paths
 
+    def _load_frame_paths(self, sample_id: str) -> List[str]:
+        """Load pre-extracted frame paths for a sample (legacy format)."""
+        frame_dir = osp.join(self.data_root, 'clips', str(sample_id), 'frames')
+        return self._load_frame_paths_from_dir(frame_dir)
+
+    def _load_detection_paths(self, sample_id: str) -> List[str]:
+        """Load local detection file paths for a sample (legacy format)."""
+        detections_dir = osp.join(self.data_root, 'clips', str(sample_id), 'detections')
+        if not osp.exists(detections_dir):
+            return []
+        return sorted(glob.glob(osp.join(detections_dir, 'frame_*.json')))
+
     def _load_detection_paths_from_metadata(self, metadata_path: str) -> List[str]:
         """Load local detection file paths from metadata.json."""
         if not metadata_path or not osp.exists(metadata_path):
@@ -127,6 +144,65 @@ class SpecterAlertDataset:
 
         return resolved
 
+    def _normalize_label_value(self, value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, bool):
+            return "yes" if value else "no"
+        text = str(value).strip().lower()
+        if not text:
+            return ""
+        mapping = {
+            "true": "yes",
+            "false": "no",
+            "positive": "yes",
+            "negative": "no",
+            "1": "yes",
+            "0": "no",
+            "y": "yes",
+            "n": "no",
+        }
+        return mapping.get(text, text)
+
+    def _extract_label_from_metadata(self, metadata: Dict[str, Any], label_source: str) -> str:
+        if not metadata or not label_source:
+            return ""
+        labels = metadata.get('labels', {})
+        if isinstance(labels, dict):
+            entry = labels.get(label_source)
+            if isinstance(entry, dict):
+                label_value = entry.get('label')
+                if label_value is not None:
+                    return self._normalize_label_value(label_value)
+            elif entry is not None:
+                return self._normalize_label_value(entry)
+        if label_source in metadata:
+            return self._normalize_label_value(metadata.get(label_source))
+        return ""
+
+    def _load_label_from_metadata(self, metadata_path: str, label_source: str) -> str:
+        if not metadata_path or not osp.exists(metadata_path):
+            return ""
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return ""
+        return self._extract_label_from_metadata(metadata, label_source)
+
+    def _apply_label_source(self, label_source: str) -> None:
+        if 'metadata_path' not in self.data:
+            return
+        updated_answers = []
+        for _, row in self.data.iterrows():
+            metadata_path = self._resolve_path(str(row.get('metadata_path', '')))
+            label = self._load_label_from_metadata(metadata_path, label_source)
+            if label in ['yes', 'no', 'unknown']:
+                updated_answers.append(label)
+            else:
+                updated_answers.append(str(row.get('answer', '')).lower().strip())
+        self.data['answer'] = updated_answers
+
     def build_prompt(self, line, video_llm=False):
         """Build prompt for processor-wrapped inference.
 
@@ -152,34 +228,47 @@ class SpecterAlertDataset:
             assert line < len(self)
             line = self.data.iloc[line]
 
-        video_path = self._resolve_path(line.get('video_path', ''))
-        metadata_path = self._resolve_path(line.get('metadata_path', ''))
-        rule_definition_path = self._resolve_path(line.get('rule_definition_path', ''))
+        if 'video_path' in line:
+            video_path = self._resolve_path(line.get('video_path', ''))
+            metadata_path = self._resolve_path(line.get('metadata_path', ''))
+            rule_definition_path = self._resolve_path(line.get('rule_definition_path', ''))
 
-        rule_definition = {}
-        if rule_definition_path and osp.exists(rule_definition_path):
-            with open(rule_definition_path, 'r') as f:
-                rule_definition = json.load(f)
+            rule_definition = {}
+            if rule_definition_path and osp.exists(rule_definition_path):
+                with open(rule_definition_path, 'r') as f:
+                    rule_definition = json.load(f)
 
-        config_name = rule_definition.get('prompt_config', '')
-        original_question = rule_definition.get('prompt_text', '')
+            config_name = rule_definition.get('prompt_config', '')
+            original_question = rule_definition.get('prompt_text', '')
 
-        # Load detection paths from metadata.json
-        detection_paths = self._load_detection_paths_from_metadata(metadata_path)
+            detection_paths = self._load_detection_paths_from_metadata(metadata_path)
 
-        # Build message for ProcessorCloudVLM wrapper
-        message = []
-        if video_path and osp.isdir(video_path):
-            frame_paths = self._load_frame_paths_from_dir(video_path)
-            message.extend([dict(type='image', value=frame) for frame in frame_paths])
-        elif video_path:
-            message.append(dict(type='video', value=video_path))
+            message = []
+            if video_path and osp.isdir(video_path):
+                frame_paths = self._load_frame_paths_from_dir(video_path)
+                message.extend([dict(type='image', value=frame) for frame in frame_paths])
+            elif video_path:
+                message.append(dict(type='video', value=video_path))
 
+            message.append(dict(type='config_name', value=config_name))
+            message.append(dict(type='original_question', value=original_question))
+            message.append(dict(type='detection_paths', value=detection_paths))
+            if rule_definition_path:
+                message.append(dict(type='rule_definition_path', value=rule_definition_path))
+
+            return message
+
+        sample_id = line['video']
+        config_name = line.get('config_name', '')
+        original_question = line.get('original_question', '')
+
+        frame_paths = self._load_frame_paths(sample_id)
+        detection_paths = self._load_detection_paths(sample_id)
+
+        message = [dict(type='image', value=frame) for frame in frame_paths]
         message.append(dict(type='config_name', value=config_name))
         message.append(dict(type='original_question', value=original_question))
         message.append(dict(type='detection_paths', value=detection_paths))
-        if rule_definition_path:
-            message.append(dict(type='rule_definition_path', value=rule_definition_path))
 
         return message
 
