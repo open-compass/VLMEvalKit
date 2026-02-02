@@ -116,7 +116,7 @@ class LLaVA(BaseModel):
                 else "\nAnswer the question directly."
             )
 
-        message = [dict(type="image", value=s) for s in tgt_path]
+        message = [dict(type="image", value=s) forin tgt_path]
         message.append(dict(type="text", value=prompt))
         return message
 
@@ -136,25 +136,47 @@ class LLaVA(BaseModel):
             tokenizer_image_token,
             KeywordsStoppingCriteria,
         )
-        from llava.constants import IMAGE_TOKEN_INDEX
+        from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        import re
+        from llava.conversation import conv_templates
 
-        prompt = self.system_prompt
-        images = []
-        for utter in message:
-            prompt += "USER: " if utter["role"] == "user" else "ASSISTANT: "
-            content, images_sub = self.concat_tilist(utter["content"])
-            prompt += content
-            images.extend(images_sub)
-            prompt += " " if utter["role"] == "user" else self.stop_str
-        assert message[-1]["role"] == "user", message
-        prompt += "ASSISTANT: "
+        # Extract content and images from the message
+        content, images = self.concat_tilist(message[-1]['content'])  # Only process the last user message
 
-        images = [Image.open(s).convert("RGB") for s in images]
-        args = abstractproperty()
-        args.image_aspect_ratio = "pad"
-        image_tensor = process_images(images, self.image_processor, args).to(
-            "cuda", dtype=torch.float16
-        )
+        # Handle image tokens in the prompt based on model configuration
+        if self.model.config.mm_use_im_start_end:
+            image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
+            content = re.sub(DEFAULT_IMAGE_TOKEN, image_token_se, content)
+        else:
+            content = re.sub(DEFAULT_IMAGE_TOKEN, DEFAULT_IMAGE_TOKEN, content)
+
+        images = [Image.open().convert("RGB") forin images]
+
+        if images:
+            args = abstractproperty()
+            args.image_aspect_ratio = "pad"
+            image_tensor = process_images(images, self.image_processor, args).to(
+                "cuda", dtype=torch.float16
+            )
+            image_sizes = [x.size for x in images]
+        else:
+            image_tensor = None
+            image_sizes = None
+
+        # Prepare the prompt with conversation template
+        conv_mode = self.conv_mode
+        conv = conv_templates[conv_mode].copy()
+
+        # Add previous conversation history to the conversation object
+        for utter in message[:-1]:  # Process all messages except the last one
+            role = "USER" if utter["role"] == "user" else "ASSISTANT"
+            content_text, _ = self.concat_tilist(utter["content"])
+            conv.append_message(role, content_text)
+
+        # Add the current user message
+        conv.append_message(conv.roles[0], content)  # Current user message
+        conv.append_message(conv.roles[1], None)  # Assistant's turn to respond
+        prompt = conv.get_prompt()
 
         input_ids = (
             tokenizer_image_token(
@@ -171,6 +193,7 @@ class LLaVA(BaseModel):
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
+                image_sizes=image_sizes,
                 stopping_criteria=[stopping_criteria],
                 **self.kwargs,
             )
@@ -185,22 +208,39 @@ class LLaVA(BaseModel):
             tokenizer_image_token,
             KeywordsStoppingCriteria,
         )
-        from llava.constants import IMAGE_TOKEN_INDEX
+        from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+        import re
 
         # Support interleave text and image
         content, images = self.concat_tilist(message)
 
-        images = [Image.open(s).convert("RGB") for s in images]
-        args = abstractproperty()
-        args.image_aspect_ratio = "pad"
+        # Handle image tokens in the prompt based on model configuration
+        if self.model.config.mm_use_im_start_end:
+            image_token_se = DEFAULT_IM_START_TOKEN + DEFAULT_IMAGE_TOKEN + DEFAULT_IM_END_TOKEN
+            content = re.sub(DEFAULT_IMAGE_TOKEN, image_token_se, content)
+        else:
+            content = re.sub(DEFAULT_IMAGE_TOKEN, DEFAULT_IMAGE_TOKEN, content)
+
+        images = [Image.open().convert("RGB") forin images]
+
         if images:
+            args = abstractproperty()
+            args.image_aspect_ratio = "pad"
             image_tensor = process_images(images, self.image_processor, args).to(
                 "cuda", dtype=torch.float16
             )
+            image_sizes = [x.size for x in images]
         else:
             image_tensor = None
+            image_sizes = None
 
-        prompt = self.system_prompt + "USER: " + content + " ASSISTANT: "
+        # Prepare the prompt with conversation template
+        from llava.conversation import conv_templates
+        conv_mode = self.conv_mode
+        conv = conv_templates[conv_mode].copy()
+        conv.append_message(conv.roles[0], content)
+        conv.append_message(conv.roles[1], None)
+        prompt = conv.get_prompt()
 
         input_ids = (
             tokenizer_image_token(
@@ -217,6 +257,7 @@ class LLaVA(BaseModel):
             output_ids = self.model.generate(
                 input_ids,
                 images=image_tensor,
+                image_sizes=image_sizes,
                 stopping_criteria=[stopping_criteria],
                 **self.kwargs,
             )
@@ -374,7 +415,7 @@ class LLaVA_Next(BaseModel):
                 if cn_string(prompt)
                 else "\nAnswer the question directly."
             )
-        message = [dict(type="image", value=s) for s in tgt_path]
+        message = [dict(type="image", value=s) forin tgt_path]
         message.append(dict(type="text", value=prompt))
         return message
 
