@@ -1,112 +1,63 @@
-"""Specter Alert VQA Dataset for evaluating PPE compliance detection."""
+"""Specter Alert Dataset for evaluating safety/compliance detection."""
 from ..smp import *
-from .video_base import VideoBaseDataset
 import re
-from typing import Optional, Dict, Any
+import glob
+import json
+from typing import Optional, Dict, Any, List
 
 
-class SpecterAlertDataset(VideoBaseDataset):
+class SpecterAlertDataset:
     """
-    Specter Alert VQA Dataset for evaluating PPE compliance detection.
+    Specter Alert Dataset for evaluating safety/compliance detection.
+
+    This dataset REQUIRES processor-wrapped VLMs. The dataset provides pre-extracted
+    frames along with config_name and metadata. The VLM wrapper (ProcessorCloudVLM)
+    is responsible for:
+    1. Instantiating the EventProcessor from config_name using Hydra
+    2. Loading detection metadata from local files
+    3. Calling processor.process_event() with frames to generate the VLM prompt
 
     Expected data format:
-    - TSV with columns: index, video, context, question, answer, rule_id, rule_name
-    - Videos in {root}/video/{video}.mp4
+    - TSV with columns: index, video_path, metadata_path, rule_definition_path, answer
+    - video_path points to either:
+      - a frames directory with frame_{timestamp}.jpg files, or
+      - a video file (e.g. video.mp4)
+    - metadata_path points to metadata.json with detection paths
+    - rule_definition_path points to rule_definition.json with prompt metadata
 
     The dataset evaluates VLM predictions by extracting answers from <answer> tags
-    and comparing to ground truth (yes/no).
-
-    Optionally loads a processor_config YAML that maps rule_id -> EventProcessor config
-    for per-rule preprocessing.
+    and comparing to ground truth (yes/no). If label_source is provided, the
+    ground-truth label will be overridden from metadata.json.
     """
 
+    MODALITY = 'VIDEO'
     TYPE = 'Video-VQA'
 
-    def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1, processor_config: Optional[str] = None):
-        super().__init__(dataset=dataset, nframe=nframe, fps=fps)
+    def __init__(self, dataset='SpecterAlert', nframe=8, fps=-1, label_source: Optional[str] = None):
+        self.dataset_name = dataset
+        self.nframe = nframe
+        self.fps = fps
+        self.label_source = label_source
 
-        # Load processor config if provided
-        self.processor_config_path = processor_config
-        self.processor_config = None
-        self.rule_processors: Dict[str, Any] = {}
-        self.default_processor = None
+        ret = self.prepare_dataset(dataset)
+        assert ret is not None
 
-        if processor_config:
-            self._load_processor_config(processor_config)
+        self.data_root = ret['root']
+        self.data_file = ret['data_file']
+        self.data = load(self.data_file)
 
-    def _load_processor_config(self, config_path: str):
-        """Load rule -> processor mapping from YAML."""
-        import yaml
+        if 'index' not in self.data:
+            self.data['index'] = np.arange(len(self.data))
 
-        if not osp.exists(config_path):
-            print(f"Warning: processor config not found: {config_path}")
-            return
+        if self.label_source:
+            self._apply_label_source(self.label_source)
 
-        with open(config_path) as f:
-            self.processor_config = yaml.safe_load(f)
+    def __len__(self):
+        return len(self.data)
 
-        default_cfg = self.processor_config.get('default', {})
-        rules_cfg = self.processor_config.get('rules', {})
-
-        # Build default processor
-        if default_cfg:
-            self.default_processor = self._build_processor(default_cfg)
-
-        # Build rule-specific processors
-        for rule_id, rule_cfg in rules_cfg.items():
-            self.rule_processors[str(rule_id)] = self._build_processor(rule_cfg)
-
-        print(f"Loaded processor config: default + {len(self.rule_processors)} rule-specific processors")
-
-    def _build_processor(self, config: dict):
-        """Build EventProcessor from config dict.
-
-        Note: prompt_kwargs (context/question) are NOT set here - they come from
-        the TSV and are applied by SpecterProcessorWrapper at inference time.
-
-        TODO: Replace if-else tree with Hydra config-based processor instantiation.
-        """
-        from specter_prompts.event_processor import (
-            EventProcessor, FallbackEventProcessor, BoxCropEventProcessor
-        )
-
-        processor_type = config.get('type', 'EventProcessor')
-        common_kwargs = {
-            'system_prompt': config.get('system_prompt'),
-            'short_side': config.get('short_side', 672),
-            'jpeg_quality': config.get('jpeg_quality', 80),
-            'max_frames': config.get('max_frames', 14),
-        }
-
-        if processor_type == 'FallbackEventProcessor':
-            return FallbackEventProcessor(
-                prompt=config['prompt'],
-                **common_kwargs
-            )
-        elif processor_type == 'EventProcessor':
-            return EventProcessor(
-                prompt_template=config['prompt_template'],
-                prompt_kwargs={},  # Will be set by SpecterProcessorWrapper from TSV
-                prompt_post_processor_kwargs=config.get('prompt_post_processor_kwargs', {}),
-                **common_kwargs
-            )
-        elif processor_type == 'BoxCropEventProcessor':
-            frame_processor = EventProcessor(
-                prompt_template=config['prompt_template'],
-                prompt_kwargs={},  # Will be set by SpecterProcessorWrapper from TSV
-                prompt_post_processor_kwargs=config.get('prompt_post_processor_kwargs', {}),
-                **common_kwargs
-            )
-            return BoxCropEventProcessor(
-                frame_event_processor=frame_processor,
-                **config.get('box_crop_kwargs', {})
-            )
-        else:
-            raise ValueError(f"Unknown processor type: {processor_type}")
-
-    def get_processor_for_rule(self, rule_id: str):
-        """Get the EventProcessor for a given rule_id."""
-        return self.rule_processors.get(str(rule_id), self.default_processor)
+    def __getitem__(self, idx):
+        assert idx < len(self.data)
+        return dict(self.data.iloc[idx])
 
     @classmethod
     def supported_datasets(cls):
@@ -117,85 +68,207 @@ class SpecterAlertDataset(VideoBaseDataset):
         Load dataset from local path.
         Expects:
         - TSV file at {LMUDataRoot()}/{dataset_name}.tsv
-        - Videos at {LMUDataRoot()}/{dataset_name}/video/{video}.mp4
+        - Clips at {LMUDataRoot()}/{dataset_name}/clips/{sample_id}/
+          - frames/frame_{timestamp}.jpg
+          - detections/frame_{timestamp}.json
+          - metadata.json
         """
         lmu_root = LMUDataRoot()
         data_file = osp.join(lmu_root, f'{dataset_name}.tsv')
-        video_root = osp.join(lmu_root, dataset_name)
+        dataset_root = osp.join(lmu_root, dataset_name)
 
         if not osp.exists(data_file):
             raise FileNotFoundError(f"Dataset TSV not found: {data_file}")
-        if not osp.exists(video_root):
-            raise FileNotFoundError(f"Video directory not found: {video_root}")
+        if not osp.exists(dataset_root):
+            raise FileNotFoundError(f"Dataset directory not found: {dataset_root}")
 
-        return dict(root=video_root, data_file=data_file)
+        return dict(root=dataset_root, data_file=data_file)
 
-    def save_video_frames(self, video):
-        """Override to handle video/ subdirectory structure."""
-        import decord
+    def _resolve_path(self, path_value: str) -> str:
+        if not path_value:
+            return ""
+        if osp.isabs(path_value):
+            return path_value
+        dataset_prefix = f"{self.dataset_name}{osp.sep}"
+        if path_value.startswith(dataset_prefix):
+            lmu_root = osp.dirname(self.data_root)
+            return osp.join(lmu_root, path_value)
+        return osp.join(self.data_root, path_value)
 
-        # Videos are in video/ subdirectory
-        vid_path = osp.join(self.data_root, 'video', str(video) + '.mp4')
-        if not osp.exists(vid_path):
-            raise FileNotFoundError(f"Video not found: {vid_path}")
+    def _load_frame_paths_from_dir(self, frame_dir: str) -> List[str]:
+        """Load pre-extracted frame paths from a directory."""
+        if not osp.exists(frame_dir):
+            raise FileNotFoundError(f"Frames directory not found: {frame_dir}")
 
-        vid = decord.VideoReader(vid_path)
-
-        if self.nframe > 0:
-            step_size = len(vid) / (self.nframe + 1)
-            indices = [int(i * step_size) for i in range(1, self.nframe + 1)]
-            frame_paths = self.frame_paths(str(video))
-        else:
-            raise ValueError("fps mode not supported, use nframe")
-
-        flag = np.all([osp.exists(p) for p in frame_paths])
-        if not flag:
-            lock_path = osp.join(self.frame_root, str(video) + '.lock')
-            with portalocker.Lock(lock_path, 'w', timeout=30):
-                if not np.all([osp.exists(p) for p in frame_paths]):
-                    images = [vid[i].asnumpy() for i in indices]
-                    images = [Image.fromarray(arr) for arr in images]
-                    for im, pth in zip(images, frame_paths):
-                        if not osp.exists(pth):
-                            im.save(pth)
+        frame_paths = sorted(glob.glob(osp.join(frame_dir, 'frame_*.jpg')))
+        if not frame_paths:
+            raise FileNotFoundError(f"No frames found in: {frame_dir}")
 
         return frame_paths
 
+    def _load_frame_paths(self, sample_id: str) -> List[str]:
+        """Load pre-extracted frame paths for a sample (legacy format)."""
+        frame_dir = osp.join(self.data_root, 'clips', str(sample_id), 'frames')
+        return self._load_frame_paths_from_dir(frame_dir)
+
+    def _load_detection_paths(self, sample_id: str) -> List[str]:
+        """Load local detection file paths for a sample (legacy format)."""
+        detections_dir = osp.join(self.data_root, 'clips', str(sample_id), 'detections')
+        if not osp.exists(detections_dir):
+            return []
+        return sorted(glob.glob(osp.join(detections_dir, 'frame_*.json')))
+
+    def _load_detection_paths_from_metadata(self, metadata_path: str) -> List[str]:
+        """Load local detection file paths from metadata.json."""
+        if not metadata_path or not osp.exists(metadata_path):
+            return []
+
+        with open(metadata_path, 'r') as f:
+            metadata = json.load(f)
+
+        detection_paths = metadata.get('detection_metadata_paths', []) or []
+        resolved = []
+        metadata_dir = osp.dirname(metadata_path)
+        for path_value in detection_paths:
+            if not path_value:
+                resolved.append("")
+                continue
+            if osp.isabs(path_value):
+                if osp.exists(path_value):
+                    resolved.append(path_value)
+                else:
+                    fallback = osp.join(metadata_dir, 'detections', osp.basename(path_value))
+                    resolved.append(fallback)
+            else:
+                resolved.append(osp.join(metadata_dir, path_value))
+
+        return resolved
+
+    def _normalize_label_value(self, value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, bool):
+            return "yes" if value else "no"
+        text = str(value).strip().lower()
+        if not text:
+            return ""
+        mapping = {
+            "true": "yes",
+            "false": "no",
+            "positive": "yes",
+            "negative": "no",
+            "1": "yes",
+            "0": "no",
+            "y": "yes",
+            "n": "no",
+        }
+        return mapping.get(text, text)
+
+    def _extract_label_from_metadata(self, metadata: Dict[str, Any], label_source: str) -> str:
+        if not metadata or not label_source:
+            return ""
+        labels = metadata.get('labels', {})
+        if isinstance(labels, dict):
+            entry = labels.get(label_source)
+            if isinstance(entry, dict):
+                label_value = entry.get('label')
+                if label_value is not None:
+                    return self._normalize_label_value(label_value)
+            elif entry is not None:
+                return self._normalize_label_value(entry)
+        if label_source in metadata:
+            return self._normalize_label_value(metadata.get(label_source))
+        return ""
+
+    def _load_label_from_metadata(self, metadata_path: str, label_source: str) -> str:
+        if not metadata_path or not osp.exists(metadata_path):
+            return ""
+        try:
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return ""
+        return self._extract_label_from_metadata(metadata, label_source)
+
+    def _apply_label_source(self, label_source: str) -> None:
+        if 'metadata_path' not in self.data:
+            return
+        updated_answers = []
+        for _, row in self.data.iterrows():
+            metadata_path = self._resolve_path(str(row.get('metadata_path', '')))
+            label = self._load_label_from_metadata(metadata_path, label_source)
+            if label in ['yes', 'no', 'unknown']:
+                updated_answers.append(label)
+            else:
+                updated_answers.append(str(row.get('answer', '')).lower().strip())
+        self.data['answer'] = updated_answers
+
     def build_prompt(self, line, video_llm=False):
-        """Build prompt for inference."""
+        """Build prompt for processor-wrapped inference.
+
+        This method builds a message containing frames or video plus metadata
+        for ProcessorCloudVLM wrapper. The wrapper is responsible for:
+        1. Instantiating EventProcessor from config_name using Hydra
+        2. Loading detections from local files
+        3. Calling processor.process_event() with frames to generate VLM prompt
+
+        Args:
+            line: Row from TSV or index
+            video_llm: Not used (frames are pre-extracted)
+
+        Returns:
+            List of message dicts with types:
+            - 'image' or 'video': Frame file paths or a video file
+            - 'config_name': EventProcessor config name for Hydra instantiation
+            - 'original_question': Fallback prompt text if config_name is empty
+            - 'detection_paths': Local paths to detection metadata JSONs
+            - 'rule_definition_path': Path to rule_definition.json (optional)
+        """
         if isinstance(line, int):
             assert line < len(self)
             line = self.data.iloc[line]
 
-        video = line['video']
-        question = line['question']
-        context = line.get('context', '')
-        rule_id = str(line.get('rule_id', 'default')) if 'rule_id' in line else 'default'
+        if 'video_path' in line:
+            video_path = self._resolve_path(line.get('video_path', ''))
+            metadata_path = self._resolve_path(line.get('metadata_path', ''))
+            rule_definition_path = self._resolve_path(line.get('rule_definition_path', ''))
 
-        # Get processor for this rule (if processor config was loaded)
-        processor = self.get_processor_for_rule(rule_id)
+            rule_definition = {}
+            if rule_definition_path and osp.exists(rule_definition_path):
+                with open(rule_definition_path, 'r') as f:
+                    rule_definition = json.load(f)
 
-        if video_llm:
-            # Direct video input for video-native models
-            video_path = osp.join(self.data_root, 'video', str(video) + '.mp4')
-            message = [
-                dict(type='video', value=video_path),
-                dict(type='text', value=question)
-            ]
-        else:
-            # Frame-based input for image-based models
-            frame_paths = self.save_video_frames(video)
+            config_name = rule_definition.get('prompt_config', '')
+            original_question = rule_definition.get('prompt_text', '')
+
+            detection_paths = self._load_detection_paths_from_metadata(metadata_path)
+
             message = []
-            for frame in frame_paths:
-                message.append(dict(type='image', value=frame))
-            message.append(dict(type='text', value=question))
+            if video_path and osp.isdir(video_path):
+                frame_paths = self._load_frame_paths_from_dir(video_path)
+                message.extend([dict(type='image', value=frame) for frame in frame_paths])
+            elif video_path:
+                message.append(dict(type='video', value=video_path))
 
-        # Include processor, rule_id, context, question for SpecterProcessorWrapper
-        if processor is not None:
-            message.append(dict(type='processor', value=processor))
-        message.append(dict(type='rule_id', value=rule_id))
-        message.append(dict(type='context', value=context))
-        message.append(dict(type='question', value=question))
+            message.append(dict(type='config_name', value=config_name))
+            message.append(dict(type='original_question', value=original_question))
+            message.append(dict(type='detection_paths', value=detection_paths))
+            if rule_definition_path:
+                message.append(dict(type='rule_definition_path', value=rule_definition_path))
+
+            return message
+
+        sample_id = line['video']
+        config_name = line.get('config_name', '')
+        original_question = line.get('original_question', '')
+
+        frame_paths = self._load_frame_paths(sample_id)
+        detection_paths = self._load_detection_paths(sample_id)
+
+        message = [dict(type='image', value=frame) for frame in frame_paths]
+        message.append(dict(type='config_name', value=config_name))
+        message.append(dict(type='original_question', value=original_question))
+        message.append(dict(type='detection_paths', value=detection_paths))
 
         return message
 

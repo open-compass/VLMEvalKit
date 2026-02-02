@@ -668,11 +668,19 @@ emu_series = {
     "emu3_gen": partial(Emu3_gen, model_path="BAAI/Emu3-Gen"),
 }
 
-granite_vision_series = {
-    'granite_vision_3.1_2b_preview': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.1-2b-preview"),
-    'granite_vision_3.2_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.2-2b"),
-    'granite_vision_3.3_2b': partial(GraniteVision3, model_path="ibm-granite/granite-vision-3.3-2b"),
-}
+granite_vision_series = {}
+if GraniteVision3 is not None:
+    granite_vision_series = {
+        'granite_vision_3.1_2b_preview': partial(
+            GraniteVision3, model_path="ibm-granite/granite-vision-3.1-2b-preview"
+        ),
+        'granite_vision_3.2_2b': partial(
+            GraniteVision3, model_path="ibm-granite/granite-vision-3.2-2b"
+        ),
+        'granite_vision_3.3_2b': partial(
+            GraniteVision3, model_path="ibm-granite/granite-vision-3.3-2b"
+        ),
+    }
 
 mmalaya_series = {
     "MMAlaya": partial(MMAlaya, model_path="DataCanvas/MMAlaya"),

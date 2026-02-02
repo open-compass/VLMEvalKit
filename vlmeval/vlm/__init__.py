@@ -9,7 +9,11 @@ from .thyme import Thyme
 from .cogvlm import CogVlm, GLM4v, GLMThinking
 from .emu import Emu, Emu3_chat, Emu3_gen
 from .eagle_x import Eagle
-from .granite_vision import GraniteVision3
+try:
+    from .granite_vision import GraniteVision3
+except Exception as exc:
+    GraniteVision3 = None
+    print(f"[VLMEvalKit] GraniteVision3 unavailable: {exc}")
 from .idefics import IDEFICS, IDEFICS2
 from .instructblip import InstructBLIP
 from .kosmos import Kosmos2
