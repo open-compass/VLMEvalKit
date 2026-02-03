@@ -3813,3 +3813,34 @@ class MMReason(ImageBaseDataset):
         score_pth = storage_score.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
+
+
+class VLMsAreBiased(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'vlms_are_biased_main': 'https://opencompass.openxlab.space/utils/VLMEval/vlms_are_biased_main.tsv',
+    }
+    DATASET_MD5 = {'vlms_are_biased_main': '96b929361f6417b32df95b5287f992f1'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vlmsarebiased import vlms_are_biased_process_results, vlms_are_biased_aggregate_by_topic
+
+        detailed_results_file = get_intermediate_file_path(eval_file, '_eval_meta')
+
+        if not os.path.exists(detailed_results_file):
+            detail_result = vlms_are_biased_process_results(eval_file)
+            dump(detail_result, detailed_results_file)
+        else:
+            print(f"Loading existing evaluation results from {detailed_results_file}")
+            detail_result = load(detailed_results_file)
+
+        summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
+
+        os.environ['EVAL_FORMAT'] = 'json'
+
+        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        dump(summary_dict, score_file)
+
+        return summary_dict
