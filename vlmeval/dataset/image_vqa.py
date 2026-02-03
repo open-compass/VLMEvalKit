@@ -3820,7 +3820,7 @@ class VLMsAreBiased(ImageBaseDataset):
     DATASET_URL = {
         'vlms_are_biased_main': 'https://opencompass.openxlab.space/utils/VLMEval/vlms_are_biased_main.tsv',
     }
-    DATASET_MD5 = {'vlms_are_biased_main': '226132948e4306c267d1a1e916e61a9a'}
+    DATASET_MD5 = {'vlms_are_biased_main': '96b929361f6417b32df95b5287f992f1'}
 
     # It returns a DataFrame
     @classmethod

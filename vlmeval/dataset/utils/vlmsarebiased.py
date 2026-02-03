@@ -54,6 +54,7 @@ def vlms_are_biased_aggregate_by_topic(
         }
 
     topic_correct = defaultdict(int)
+    topic_bias = defaultdict(int)
     topic_total = defaultdict(int)
 
     for r in detail_result:
@@ -61,9 +62,16 @@ def vlms_are_biased_aggregate_by_topic(
         topic_total[topic] += 1
         if r.get("is_correct", False):
             topic_correct[topic] += 1
+        if r.get("matches_bias", False):
+            topic_bias[topic] += 1
 
     per_topic_acc = {
         t: topic_correct[t] / topic_total[t]
+        for t in topic_total
+    }
+
+    per_topic_bias = {
+        t: topic_bias[t] / topic_total[t]
         for t in topic_total
     }
 
@@ -76,8 +84,10 @@ def vlms_are_biased_aggregate_by_topic(
     ) / len(detail_result)
 
     return {
-        **per_topic_acc,
         "overall_acc": overall_acc,
         "macro_acc": macro_acc,
-        "bias_ratio": bias_ratio,
+        "overall_bias_ratio": bias_ratio,
+        "macro_bias_ratio": sum(per_topic_bias.values()) / len(per_topic_bias),
+        'bias': per_topic_bias,
+        'acc': per_topic_acc,
     }
