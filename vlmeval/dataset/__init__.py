@@ -266,12 +266,13 @@ IMAGE_DATASET = [
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     Design2Code, VLADBench, SSIBenchDataset,
+]
 
-    # EASI add
+# add by EASI team
+IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, StareBench, OmniSpatialBench,
-    ERQABench, RoboSpatialBench, RefSpatialBench,
-    SPBench,
+    ERQABench, RoboSpatialBench, RefSpatialBench, SPBench,
 ]
 
 VIDEO_DATASET = [
@@ -282,10 +283,13 @@ VIDEO_DATASET = [
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
-    Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VsiBench, VsiSuperRecall, VsiSuperCount, STIBench, DSRBench,
-    SiteBenchVideo, MVUEval, OMTGBench, V2PBench
+    Video_Holmes, VCRBench, CGAVCounting,
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, MVUEval, OMTGBench, V2PBench
 ]
+
+# add by EASI team
+VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]
+VIDEO_DATASET += [SiteBenchVideo, VsiBench, MMSIVideoBench, VsiSuperRecall, VsiSuperCount, STIBench, DSRBench]
 TEXT_DATASET = [
     TextMCQDataset
 ]
