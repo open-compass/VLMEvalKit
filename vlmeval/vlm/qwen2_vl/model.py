@@ -192,7 +192,6 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
         verbose: bool = False,
         use_audio_in_video: bool = False,
-        model_name: str = None,
         **kwargs,
     ):
         super().__init__(use_custom_prompt=use_custom_prompt)
@@ -222,11 +221,9 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         self.FRAME_FACTOR = 2
         assert model_path is not None
         self.model_path = model_path
-        self.model_name = model_name if model_name is not None else model_path
-
         MODEL_CLS = None
 
-        if listinstr(['omni'], self.model_name.lower()):
+        if listinstr(['omni'], model_path.lower()):
             try:
                 from transformers import Qwen2_5OmniForConditionalGeneration, Qwen2_5OmniProcessor
             except Exception as err:
@@ -234,7 +231,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
                 raise err
             MODEL_CLS = Qwen2_5OmniForConditionalGeneration
             self.processor = Qwen2_5OmniProcessor.from_pretrained(model_path)
-        elif listinstr(['2.5', '2_5', 'qwen25', 'mimo'], self.model_name.lower()):
+        elif listinstr(['2.5', '2_5', 'qwen25', 'mimo'], model_path.lower()):
             from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
             MODEL_CLS = Qwen2_5_VLForConditionalGeneration
             self.processor = AutoProcessor.from_pretrained(model_path)
