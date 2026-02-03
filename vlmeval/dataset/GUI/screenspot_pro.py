@@ -141,12 +141,12 @@ class ScreenSpot_Pro(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "ScreenSpot_Pro_Development": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Development.tsv",  # noqa
-        "ScreenSpot_Pro_Creative": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Creative.tsv",  # noqa
-        "ScreenSpot_Pro_CAD": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_CAD.tsv",  # noqa
-        "ScreenSpot_Pro_Scientific": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Scientific.tsv",  # noqa
-        "ScreenSpot_Pro_Office": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
-        "ScreenSpot_Pro_OS": "http://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
+        "ScreenSpot_Pro_Development": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Development.tsv",  # noqa
+        "ScreenSpot_Pro_Creative": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Creative.tsv",  # noqa
+        "ScreenSpot_Pro_CAD": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_CAD.tsv",  # noqa
+        "ScreenSpot_Pro_Scientific": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Scientific.tsv",  # noqa
+        "ScreenSpot_Pro_Office": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_Office.tsv",  # noqa
+        "ScreenSpot_Pro_OS": "https://opencompass.openxlab.space/utils/benchmarks/GUI/ScreenSpot_Pro/ScreenSpot_Pro_OS.tsv",  # noqa
     }  # path
     DATASET_MD5 = {
         'ScreenSpot_Pro_Development': '45b93df1d5814885011d682fe1b0f959',

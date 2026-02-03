@@ -17,7 +17,7 @@ class Spatial457(ImageBaseDataset):
     ROBUST = True
 
     DATASET_URL = {
-        "Spatial457": "http://opencompass.openxlab.space/utils/VLMEval/Spatial457.tsv",
+        "Spatial457": "https://opencompass.openxlab.space/utils/VLMEval/Spatial457.tsv",
     }
 
     DATASET_MD5 = {

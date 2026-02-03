@@ -104,8 +104,8 @@ def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
 class CharXiv(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
-        "CharXiv_descriptive_val": "http://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
-        "CharXiv_reasoning_val": "http://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
+        "CharXiv_descriptive_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
+        "CharXiv_reasoning_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
     }
     DATASET_MD5 = {
         "CharXiv_descriptive_val": "e165037032f169a59dd09ea5d7ad3073",
