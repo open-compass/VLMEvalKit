@@ -21,6 +21,7 @@ from .image_vqa import (
 from .image_ccocr import CCOCRDataset
 from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
+from .SIBench import SIBench
 
 from .vcr import VCRDataset
 from .mmlongbench import MMLongBench
@@ -252,13 +253,15 @@ TEXT_DATASET = [
     TextMCQDataset
 ]
 
+MIXED_DATASET = [SIBench]
+
 CUSTOM_DATASET = [
     CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
 ]
 
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + MIXED_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
