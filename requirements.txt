@@ -1,5 +1,5 @@
 accelerate
-datasets
+datasets==4.4.1
 dotenv
 einops
 # for gemini api
