@@ -26,10 +26,10 @@ def take_screenshot(url, output_file="screenshot.png", do_it_again=False):
             page.screenshot(path=output_file, full_page=True, animations="disabled", timeout=60000)
 
             browser.close()
-    except Exception as e: 
+    except Exception as e:
         print(f"Failed to take screenshot due to: {e}. Generating a blank image.")
-        # Generate a blank image 
-        img = Image.new('RGB', (1280, 960), color = 'white')
+        # Generate a blank image
+        img = Image.new('RGB', (1280, 960), color='white')
         img.save(output_file)
 
 
