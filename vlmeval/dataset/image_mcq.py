@@ -261,7 +261,24 @@ class ImageMCQDataset(ImageBaseDataset):
             circular = True
 
         model = judge_kwargs.get('model', 'exact_matching')
-        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        # For the full list of supported judge backends / model aliases, see:
+        #   vlmeval/dataset/utils/judge_util.py (build_judge: model_map)
+        name_str_map = {
+            'gpt-4-turbo': 'gpt-4-turbo',
+            'gpt-4-0613': 'gpt-4-0613',
+            'gpt-4-0125': 'gpt-4-0125',
+            'gpt-4-0409': 'gpt-4-0409',
+            'chatgpt-1106': 'chatgpt-1106',
+            'chatgpt-0125': 'chatgpt-0125',
+            'gpt-4o': 'gpt-4o',
+            'gpt-4o-0806': 'gpt-4o-0806',
+            'gpt-4o-1120': 'gpt-4o-1120',
+            'gpt-4o-mini': 'gpt-4o-mini',
+        }
+        if model != 'exact_matching' and model not in name_str_map:
+            raise ValueError(
+                f'Unsupported judge model: {model}. Allowed: {list(name_str_map)} + exact_matching'
+            )
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
@@ -2389,23 +2406,62 @@ class _3DSRBench(ImageMCQDataset):
     DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
 
     def evaluate(self, eval_file, **judge_kwargs):
+        super().evaluate(eval_file, **judge_kwargs)
+        import glob
         from .utils.multiple_choice import report_acc
-        from .utils.sr3d import parse_3dsr_prediction, eval_3dsr
-        from ..smp import dump, load
-        from ..utils.dataset_util import TDBench_grounding_eval
-        from ..dataset import parse_img_path_list
-        from ..config import VLM_EVAL_WITH_SUBSET
-        data = load(eval_file)
-        # parse the model predictions
-        data = parse_img_path_list(data)
-        data = parse_3dsr_prediction(data)
-        # rotate the image and boxes
-        data['hit'] = eval_3dsr(data)
-        result_file = get_intermediate_file_path(eval_file, '_acc')
-        if VLM_EVAL_WITH_SUBSET:
-            data['subset'] = [x.split('|')[0] for x in data['index']]
-        dump(data, result_file)
-        return report_acc(data)
+
+        dname = osp.dirname(eval_file)
+        fname = osp.basename(eval_file)
+        base, _ = osp.splitext(fname)
+
+        pattern = osp.join(dname, f"{base}_*_result.xlsx")
+        result_files = glob.glob(pattern)
+
+        if len(result_files) != 1:
+            raise RuntimeError(f"Expected 1 result file, got {len(result_files)}: {result_files}")
+
+        result_file = result_files[0]
+        data = load(result_file)
+
+        acc_map = {}
+        acc_map['vanilla'] = report_acc(data)
+        # Flip Acc
+        qid2key = {x: x.replace('-flip', '') for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['flip_eval'] = report_acc(main)
+        # Circ Acc
+        qid2key = {x: x[:8] if '-flip' not in x else x[:13] for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['circ_eval'] = report_acc(main)
+        # Flip Circ Acc
+        qid2key = {x: x[:8] for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['flip_circ_eval'] = report_acc(main)
+
+        metrics = []
+        for k in acc_map:
+            acc_map[k].pop('split')
+            acc_map[k]['setting'] = [k] * len(acc_map[k])
+            metrics.append(acc_map[k])
+        res_all = pd.concat(metrics)
+        print(res_all)
+        dump(res_all, eval_file.replace('.xlsx', '_full_acc.csv'))
+        return res_all
 
 
 class AffordanceDataset(ImageMCQDataset):

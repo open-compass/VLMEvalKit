@@ -322,9 +322,9 @@ class SpatialMLLM(Qwen2VLPromptMixin, BaseModel):
 
         # Process vision information
         image_inputs, video_inputs = process_vision_info(messages)
-        if image_inputs:
-            # pad the image to the largest size, when multiple images have different sizes
-            image_inputs = pad_images_to_max(image_inputs)
+
+        # pad the image to the largest size, when multiple images have different sizes
+        image_inputs = pad_images_to_max(image_inputs)
 
         # Prepare inputs for the model
         inputs = self.processor(
