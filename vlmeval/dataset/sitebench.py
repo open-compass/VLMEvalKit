@@ -360,6 +360,7 @@ class SiteBenchVideo(SiteBenchBase, VideoBaseDataset):
 
     def save_video_frames(self, video, video_llm=False):
         vid_path = video
+        rel_video_path = os.path.relpath(video, self.dataset_path)
 
         vid = decord.VideoReader(vid_path)
         video_nframes = len(vid)
@@ -369,17 +370,34 @@ class SiteBenchVideo(SiteBenchBase, VideoBaseDataset):
             'n_frames': video_nframes,
         }
 
-        # Align with official SiteBench
-        indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
-        frame_paths = self.frame_paths(video.replace(self.dataset_path, ''))
+        if self.nframe > 0 and self.fps < 0:
+            indices = np.linspace(0, video_nframes - 1, self.nframe, dtype=int).tolist()
+            # Use os.path.relpath for robust relative path extraction
+            frame_paths = self.frame_paths(rel_video_path)
 
-        flag = np.all([os.path.exists(p) for p in frame_paths])
-        if not flag:
-            images = [vid[i].asnumpy() for i in indices]
-            images = [Image.fromarray(arr) for arr in images]
-            for im, pth in zip(images, frame_paths):
-                if not os.path.exists(pth) and not video_llm:
-                    im.save(pth)
+        elif self.fps > 0:
+            total_duration = video_nframes / video_fps
+            required_frames = int(total_duration * self.fps)
+            step_size = video_fps / self.fps
+
+            indices = [int(i * step_size) for i in range(required_frames)]
+            frame_paths = self.frame_paths_fps(rel_video_path, len(indices))
+
+        missing = [
+            (idx, pth) for idx, pth in zip(indices, frame_paths)
+            if not os.path.exists(pth)
+        ]
+
+        if missing and not video_llm:
+            for frame_idx, pth in missing:
+                try:
+                    frame_data = vid[frame_idx].asnumpy()
+                    Image.fromarray(frame_data).save(pth)
+                except Exception as e:
+                    error_msg = f"Error saving frame {frame_idx} from {vid_path}: {str(e)}"
+                    print(error_msg)
+
+                    raise ValueError(error_msg) from e
 
         return frame_paths, indices, video_info
 
