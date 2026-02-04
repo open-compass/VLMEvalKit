@@ -76,7 +76,7 @@ def LMUDataRoot():
 
 
 def HFCacheRoot():
-    cache_list = ['HUGGINGFACE_HUB_CACHE', 'HF_HOME']
+    cache_list = ['HF_HUB_CACHE', 'HUGGINGFACE_HUB_CACHE', 'HF_HOME']
     for cache_name in cache_list:
         if cache_name in os.environ and osp.exists(os.environ[cache_name]):
             if os.environ[cache_name].split('/')[-1] == 'hub':
