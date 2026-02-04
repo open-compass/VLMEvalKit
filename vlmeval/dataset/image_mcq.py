@@ -2390,12 +2390,19 @@ class _3DSRBench(ImageMCQDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         super().evaluate(eval_file, **judge_kwargs)
+        import glob
         from .utils.multiple_choice import report_acc
         dname = osp.dirname(eval_file)
-        base = osp.basename(eval_file).split('.')[0]
-        result_file = ls(dname, match=[base, 'result.xlsx'])
-        assert len(result_file) == 1
-        result_file = result_file[0]
+        fname = osp.basename(eval_file)
+        base, _ = osp.splitext(fname)
+
+        pattern = osp.join(dname, f"{base}_*_result.xlsx")
+        result_files = glob.glob(pattern)
+
+        if len(result_files) != 1:
+            raise RuntimeError(f"Expected 1 result file, got {len(result_files)}: {result_files}")
+
+        result_file = result_files[0]
         data = load(result_file)
 
         acc_map = {}
