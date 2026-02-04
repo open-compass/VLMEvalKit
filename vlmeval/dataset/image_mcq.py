@@ -261,7 +261,24 @@ class ImageMCQDataset(ImageBaseDataset):
             circular = True
 
         model = judge_kwargs.get('model', 'exact_matching')
-        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        # For the full list of supported judge backends / model aliases, see:
+        #   vlmeval/dataset/utils/judge_util.py (build_judge: model_map)
+        name_str_map = {
+            'gpt-4-turbo': 'gpt-4-turbo',
+            'gpt-4-0613': 'gpt-4-0613',
+            'gpt-4-0125': 'gpt-4-0125',
+            'gpt-4-0409': 'gpt-4-0409',
+            'chatgpt-1106': 'chatgpt-1106',
+            'chatgpt-0125': 'chatgpt-0125',
+            'gpt-4o': 'gpt-4o',
+            'gpt-4o-0806': 'gpt-4o-0806',
+            'gpt-4o-1120': 'gpt-4o-1120',
+            'gpt-4o-mini': 'gpt-4o-mini',
+        }
+        if model != 'exact_matching' and model not in name_str_map:
+            raise ValueError(
+                f'Unsupported judge model: {model}. Allowed: {list(name_str_map)} + exact_matching'
+            )
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
@@ -2559,39 +2576,22 @@ class _3DSRBench(ImageMCQDataset):
     DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
+        super().evaluate(eval_file, **judge_kwargs)
+        import glob
+        from .utils.multiple_choice import report_acc
 
-        nproc = judge_kwargs.pop('nproc', 4)
-        model = judge_kwargs.get('model', 'exact_matching')
+        dname = osp.dirname(eval_file)
+        fname = osp.basename(eval_file)
+        base, _ = osp.splitext(fname)
 
-        if model == 'exact_matching':
-            model = None
-        else:
-            model = build_judge(**judge_kwargs)
-            if not model.working():
-                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
-                warnings.warn(DEBUG_MESSAGE)
-                model = None
+        pattern = osp.join(dname, f"{base}_*_result.xlsx")
+        result_files = glob.glob(pattern)
 
-        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
+        if len(result_files) != 1:
+            raise RuntimeError(f"Expected 1 result file, got {len(result_files)}: {result_files}")
 
-        data = load(eval_file)
-        data = data.sort_values(by='index')
-        data['prediction'] = [str(x) for x in data['prediction']]
-        for k in data.keys():
-            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
-
-        meta = self.data
-        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
-        data_map = {x: y for x, y in zip(data['index'], data['question'])}
-        for k in data_map:
-            assert k in meta_q_map, (
-                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
-            )
-
-        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
-        result_xlsx = get_intermediate_file_path(eval_file, '_result', 'xlsx')
-        dump(data, result_xlsx)
+        result_file = result_files[0]
+        data = load(result_file)
 
         acc_map = {}
         acc_map['vanilla'] = report_acc(data)

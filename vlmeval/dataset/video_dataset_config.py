@@ -290,8 +290,6 @@ dataset_groups = [
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
     vsibench_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset
-    cg_av_counting_dataset, video_mmlu_dataset, dream_1k_dataset, egoexobench_dataset, video_tt_dataset,
-    mvu_eval_dataset, omtg_dataset, v2pbench_dataset
 ]
 
 # add by EASI team

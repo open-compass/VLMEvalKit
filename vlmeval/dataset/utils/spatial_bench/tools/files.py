@@ -50,7 +50,7 @@ def build_eval_paths(eval_file: str, judge_tag: str):
 
     acc_path = get_intermediate_file_path(
         eval_file,
-        suffix='_acc'
+        suffix=f'_{judge_tag}_acc'
         # target_format=None -> resolved via suffix '_acc' -> get_eval_file_format()
     )
 

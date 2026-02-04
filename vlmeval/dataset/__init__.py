@@ -76,6 +76,10 @@ from .videott import VideoTT
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 from .sitebench import SiteBenchVideo
+from .vsibench import VsiBench, VsiSuperRecall, VsiSuperCount
+from .mmsibench import MMSIVideoBench
+from .stibench import STIBench
+from .dsrbench import DSRBench
 
 from .cmmmu import CMMMU
 from .emma import EMMADataset
@@ -119,8 +123,6 @@ from .erqabench import ERQABench
 from .robospatialbench import RoboSpatialBench
 from .refspatialbench import RefSpatialBench
 from .spbench import SPBench
-from .stibench import STIBench
-from .dsrbench import DSRBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -289,7 +291,6 @@ VIDEO_DATASET = [
 
 # add by EASI team
 VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]
-VIDEO_DATASET += [SiteBenchVideo, VsiBench, MMSIVideoBench, VsiSuperRecall, VsiSuperCount, STIBench, DSRBench]
 TEXT_DATASET = [
     TextMCQDataset
 ]
