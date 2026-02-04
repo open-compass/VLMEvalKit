@@ -102,7 +102,7 @@ from .gsm8k_v import GSM8KVDataset
 from .macbench import MaCBench
 from .sarena_mini import SArena_MINI
 from .uni_svg import UniSVG
-
+from .omtgbench import OMTGBench
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -244,7 +244,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, OMTGBench
 
 ]
 
