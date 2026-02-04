@@ -188,7 +188,7 @@ class Qwen2VLChat(Qwen2VLPromptMixin, BaseModel):
         top_k=1,
         temperature=0.01,
         repetition_penalty=1.0,
-        do_sample: bool = False,
+        do_sample: bool = True,
         use_custom_prompt: bool = True,
         system_prompt: str | None = None,
         post_process: bool = False,  # if True, will try to only extract stuff in the last \boxed{}.
