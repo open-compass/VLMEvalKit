@@ -110,6 +110,7 @@ from .erqabench import ERQABench
 from .robospatialbench import RoboSpatialBench
 from .refspatialbench import RefSpatialBench
 from .spbench import SPBench
+from .eriq import ERIQBench
 
 from .reasonmap_plus import ReasonMap_Plus
 from .hipho import HiPhODataset
@@ -254,7 +255,7 @@ IMAGE_DATASET = [
 IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,
-    SPBench
+    SPBench, ERIQBench
 ]
 
 VIDEO_DATASET = [
