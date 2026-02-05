@@ -10,6 +10,7 @@ vcrbench_dataset = {
 }
 
 v2pbench_dataset = {
+    'V2PBench_2frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=2, pack=False),
     'V2PBench_8frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=8, pack=False),
     'V2PBench_16frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=16, pack=False),
     'V2PBench_64frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=64, pack=False),

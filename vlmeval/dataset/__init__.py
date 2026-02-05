@@ -55,6 +55,7 @@ from .moviechat1k import MovieChat1k
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .vdc import VDC
 from .vcrbench import VCRBench
+from .v2pbench import V2PBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
@@ -244,7 +245,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, V2PBench
 
 ]
 
