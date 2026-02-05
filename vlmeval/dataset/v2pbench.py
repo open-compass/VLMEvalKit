@@ -180,14 +180,11 @@ Please analyze these images and provide the answer to the question about the vid
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.v2pbench.prompt import Answer_Extraction_Prompt_part1, Answer_Scoring_Prompt_part1
-        from .utils.v2pbench.prompt import build_Extraction_prompt, build_Scoring_prompt
         from .utils.v2pbench.cau_acc import calu_acc_main, xlsx2json, extract_characters_regex, remove_think_blocks
 
         assert eval_file.endswith('.xlsx'), 'data file should be an xlsx file'
 
         tmp_file = eval_file.replace('.xlsx', '_tmp.pkl')
-        tgt_file = eval_file.replace('.xlsx', '_rating.json')
         score_file = eval_file.replace('.xlsx', '_score.xlsx')
 
         if not osp.exists(score_file):
@@ -196,7 +193,6 @@ Please analyze these images and provide the answer to the question about the vid
             res = {k: v for k, v in res.items() if FAIL_MSG not in v}
 
             data = load(eval_file)
-            data_un = data[~pd.isna(data['prediction'])]
 
             for idx in data['index']:
                 ans = data.loc[data['index'] == idx, 'answer'].values[0]

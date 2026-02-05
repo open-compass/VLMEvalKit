@@ -1,9 +1,7 @@
 import json
-import os
-from collections import defaultdict
-import sys
 import pandas as pd
 import re
+
 
 # for mimo-vl
 def remove_think_blocks(text: str) -> str:
@@ -12,18 +10,10 @@ def remove_think_blocks(text: str) -> str:
     (including the tags) from the input text.
     Handles multiline content and multiple blocks.
     """
+    # 修复 W605: 使用原始字符串 r'' 来处理反斜杠转义
     pattern = r'<think>.*?(?:<\/think>|<\\/think>)'
     return re.sub(pattern, '', text, flags=re.DOTALL)
 
-def extract_answer(text: str) -> str:
-    """
-    Extracts the content between <answer> and </answer> tags in a string.
-    Returns an empty string if not found.
-    """
-    match = re.search(r"<answer>(.*?)</answer>", text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    return ""
 
 def extract_characters_regex(s):
     s = s.strip()
@@ -49,13 +39,16 @@ def extract_characters_regex(s):
         return ''
     return matches[0]
 
+
 def xlsx2json(xlsx_file, json_file):
     df = pd.read_excel(xlsx_file)
     df.to_json(json_file, orient='records')
 
+
 def calu_acc_main(file_path, txt_file=None):
     # Load data
-    data = json.load(open(file_path, 'r', encoding='utf-8'))
+    with open(file_path, 'r', encoding='utf-8') as f_in:
+        data = json.load(f_in)
 
     durations = [0, 240, 1800, 7200]
     dim_mapping = {
@@ -106,7 +99,7 @@ def calu_acc_main(file_path, txt_file=None):
             else:
                 log(f"Dimension is zero: {dim_mapping[index + 1]}")
 
-    log("----------------------------------------------------------")
+    log("-" * 58)
     if short_sum != 0:
         log(f"Short\nCorrect: {short_cor}, Total: {short_sum}, Accuracy: {short_cor / short_sum:.3f}")
     if medium_sum != 0:
@@ -114,7 +107,7 @@ def calu_acc_main(file_path, txt_file=None):
     if long_sum != 0:
         log(f"Long\nCorrect: {long_cor}, Total: {long_sum}, Accuracy: {long_cor / long_sum:.3f}")
 
-    log("----------------------------------------------------------")
+    log("-" * 58)
     cor_data = sum(dim_list_cor)
     all_data = sum(dim_list_sum)
     log(f"Total Correct: {cor_data}")
