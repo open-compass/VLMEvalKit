@@ -1325,6 +1325,10 @@ idefics_series = {
     "Idefics3-8B-Llama3": partial(
         IDEFICS2, model_path="HuggingFaceM4/Idefics3-8B-Llama3"
     ),
+    'granite-docling-258M': partial(
+        DOCLING, model_path="ibm-granite/granite-docling-258M"
+    )
+
 }
 
 smolvlm_series = {
