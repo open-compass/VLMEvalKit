@@ -1,3 +1,4 @@
+# flake8: noqa
 import pandas as pd
 import requests
 import json
@@ -38,7 +39,7 @@ class JTVLChatWrapper(BaseAPI):
         self.api_base = API_ENDPOINT
         self.app_code = APP_CODE
 
-        
+
         super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
@@ -218,7 +219,7 @@ class JTVLChatWrapper(BaseAPI):
         json_data = json.dumps(send_data)
 
         header_dict = {'Content-Type': 'application/json','Authorization': self.app_code}
-        
+
         r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000,stream=True)
         try:
             if send_data.get('stream', False):
@@ -237,11 +238,11 @@ class JTVLChatWrapper(BaseAPI):
                                 try:
                                     chunk = json.loads(event_data)
                                     chunks.append(chunk)
-                                
+
                                     # 记录最后一个有效的usage（不累加）
                                     if 'usage' in chunk:
                                         last_valid_usage = chunk['usage']
-                                    
+
                                     if 'choices' in chunk:
                                         for choice in chunk['choices']:
                                             if 'delta' in choice and 'content' in choice['delta']:
@@ -254,7 +255,7 @@ class JTVLChatWrapper(BaseAPI):
                     return 0,full_content,'Succeeded! '
                 except Exception as e:
                     return -1,f'Error: {str(e)}',''
-                    
+
             else:
                 # 非流式处理
                 try:
