@@ -52,25 +52,25 @@ def save_jsonl(data, file_path):
             file.write("\n")
 
 def calculate_time_iou(interval1, interval2):
-    
+
     start1, end1 = interval1
     start2, end2 = interval2
-    
+
     intersection_start = max(start1, start2)
     intersection_end = min(end1, end2)
-    intersection = max(0, intersection_end - intersection_start) 
-    
+    intersection = max(0, intersection_end - intersection_start)
+
     union_start = min(start1, start2)
     union_end = max(end1, end2)
     union = union_end - union_start
-    
+
     if union == 0:
-        return 0  
+        return 0
     iou = intersection / union
     return iou
 
 def is_valid_time_interval(interval_str):
-    
+
     try:
         interval = ast.literal_eval(interval_str)
         if isinstance(interval, list) and len(interval) == 2:
@@ -89,9 +89,9 @@ def is_valid_space_interval(s):
         return False
     for part in parts:
         try:
-            int(part.strip()) 
+            int(part.strip())
         except ValueError:
-            return False  
+            return False
     return True
 
 
@@ -101,13 +101,13 @@ def string_to_list(s):
 
 
 def extract_json_between_backticks(s):
-    # pattern = r'```json\n(.*?)```'  
-    # match = re.search(pattern, s, re.DOTALL)   
+    # pattern = r'```json\n(.*?)```'
+    # match = re.search(pattern, s, re.DOTALL)
     # if not match:
     #     raise ValueError("No JSON content wrapped by ``` was found.")
-    # json_str = match.group(1).strip() 
+    # json_str = match.group(1).strip()
     json_str = s
-    
+
     try:
         json.loads(json_str)
         return json_str
@@ -126,12 +126,12 @@ def calculate_recall(json_object):
         step_type = item["step_type"]
         judgement = item["judgment"]
         stats[step_type][judgement] += 1
-    
+
     return stats
 
 
 def calculate_space_iou(box1, box2):
-    
+
     x1_1, y1_1, x2_1, y2_1 = box1
     x1_2, y1_2, x2_2, y2_2 = box2
 
@@ -141,7 +141,7 @@ def calculate_space_iou(box1, box2):
     y2_inter = min(y2_1, y2_2)
 
     if x2_inter < x1_inter or y2_inter < y1_inter:
-        return 0.0 
+        return 0.0
 
     inter_area = (x2_inter - x1_inter) * (y2_inter - y1_inter)
 
@@ -165,7 +165,7 @@ def calculate_precision(json_object):
         step_type = item["step_type"]
         judgement = item["judgment"]
         stats[step_type][judgement] += 1
-    
+
     return stats
 
 def extract_answer(item):
@@ -175,13 +175,13 @@ def extract_answer(item):
     return processed_item
 
 def match_answer(item):
-    
+
     processed_item = copy.deepcopy(item)
     try:
         if is_valid_time_interval(item.get('answer')) and is_valid_time_interval(item.get('extract_answer')):
             interval1 = ast.literal_eval(item['answer'])
             interval2 = ast.literal_eval(item['extract_answer'])
-            
+
             iou = calculate_time_iou(interval1, interval2)
             if iou > 0.7:
                 processed_item['answer_scoring'] = '1'
@@ -196,7 +196,7 @@ def match_answer(item):
             else:
                 processed_item['answer_scoring'] = '0'
         else:
-        
+
             answer = item['answer']
             prompt_new = Answer_Scoring_Prompt_part1 + Answer_Scoring_Prompt_part2.format(
                 question=item['question'],
@@ -206,7 +206,7 @@ def match_answer(item):
             processed_item['answer_scoring'] = get_output_wo_image(prompt=prompt_new)
     except Exception as e:
         print(f"An error occurred while processing the project: {e}")
-        processed_item['answer_scoring'] = 0 
+        processed_item['answer_scoring'] = 0
     return processed_item
 
 def recall(item):
@@ -214,14 +214,14 @@ def recall(item):
 
     json_object = json.loads(extract_json_between_backticks(processed_item['recall_eval']))
     stats = calculate_recall(json_object)
-            
+
     Video_recall = "" if (stats['Video Description Steps']['Matched'] + stats['Video Description Steps']['Unmatched']) == 0 else stats['Video Description Steps']['Matched'] / (stats['Video Description Steps']['Matched'] + stats['Video Description Steps']['Unmatched'])
-    
+
     logic_recall = "" if (stats['Logical Inference Steps']['Matched'] + stats['Logical Inference Steps']['Unmatched']) == 0 else stats['Logical Inference Steps']['Matched'] / (stats['Logical Inference Steps']['Matched'] + stats['Logical Inference Steps']['Unmatched'])
-    
+
     background_recall = "" if (stats['Background Review Steps']['Matched'] + stats['Background Review Steps']['Unmatched']) == 0 else stats['Background Review Steps']['Matched'] / (stats['Background Review Steps']['Matched'] + stats['Background Review Steps']['Unmatched'])
 
-    
+
     processed_item['Video_recall'] = Video_recall
     processed_item['logic_recall'] = logic_recall
     processed_item['background_recall'] = background_recall
@@ -239,7 +239,7 @@ def recall(item):
     )
 
     if total_steps == 0:
-        overall_recall = ""  
+        overall_recall = ""
     else:
         overall_recall = total_matched / total_steps
 
@@ -252,14 +252,14 @@ def precision(item):
 
     json_object = json.loads(extract_json_between_backticks(processed_item['precision_eval']))
     stats = calculate_precision(json_object)
-            
+
     Video_precision = "" if (stats['Video Description Steps']['Matched'] + stats['Video Description Steps']['Wrong']) == 0 else stats['Video Description Steps']['Matched'] / (stats['Video Description Steps']['Matched'] + stats['Video Description Steps']['Wrong'])
-    
+
     logic_precision = "" if (stats['Logical Inference Steps']['Matched'] + stats['Logical Inference Steps']['Wrong']) == 0 else stats['Logical Inference Steps']['Matched'] / (stats['Logical Inference Steps']['Matched'] + stats['Logical Inference Steps']['Wrong'])
-    
+
     background_precision = "" if (stats['Background Review Steps']['Matched'] + stats['Background Review Steps']['Wrong']) == 0 else stats['Background Review Steps']['Matched'] / (stats['Background Review Steps']['Matched'] + stats['Background Review Steps']['Wrong'])
 
-    
+
     processed_item['Video_precision'] = Video_precision
     processed_item['logic_precision'] = logic_precision
     processed_item['background_precision'] = background_precision
@@ -279,21 +279,21 @@ def precision(item):
 
 
     if (total_matched + total_wrong) == 0:
-        overall_precision = ""  
+        overall_precision = ""
     else:
         overall_precision = total_matched / (total_matched + total_wrong)
 
     processed_item['overall_precision'] = overall_precision
 
-    
+
     total_step_num = 0
     for counts in stats.values():
         total_step_num += sum(counts.values())
-        
-    redundant_num = 0 
+
+    redundant_num = 0
     for counts in stats.values():
         redundant_num += counts['Redundant']
-        
+
     efficiency = (total_step_num - redundant_num) / total_step_num
     processed_item['efficiency'] = efficiency
     return processed_item
@@ -301,7 +301,7 @@ def precision(item):
 
 def process_item(item):
     try:
-    
+
         item = extract_answer(item)
         item = match_answer(item)
         item = recall(item)
@@ -309,37 +309,37 @@ def process_item(item):
         return item
     except Exception as e:
         print(f"An error occurred while processing the project: {e}")
-        return None  
+        return None
 
 def main():
     parser = argparse.ArgumentParser(description='Process evaluation data with multi-threading')
     parser.add_argument('-i', '--input', required=True, help='Input JSON file path')
     parser.add_argument('-o', '--output', required=True, help='Output JSON file path')
     parser.add_argument('-w', '--workers', type=int, default=50, help='Number of worker threads')
-    
+
     args = parser.parse_args()
 
     # Validate paths
     input_path = Path(args.input)
     output_path = Path(args.output)
-    
+
     if not input_path.exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")
-    
+
     print(f"Processing {input_path} with {args.workers} workers...")
-    
+
     data = read_json(input_path)
     output = []
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = [executor.submit(process_item, item) for item in data]
-        
-        for future in tqdm(concurrent.futures.as_completed(futures), 
+
+        for future in tqdm(concurrent.futures.as_completed(futures),
                          total=len(futures),
                          desc="Processing"):
             if (result := future.result()) is not None:
                 output.append(result)
-    
+
     save_json(output, output_path)
     print(f"Results saved to {output_path}")
 

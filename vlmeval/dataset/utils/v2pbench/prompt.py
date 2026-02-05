@@ -26,7 +26,7 @@ Step Types:
    - No inferences or assumptions
    - Contains event time
 
-3. Background Review Steps: 
+3. Background Review Steps:
    - Repetition or review of the problem
    - Not directly related to solving the problem.
 
@@ -69,7 +69,7 @@ Convert the unstructured solution into distinct reasoning steps while:
    - No inferences or assumptions
    - Contains event time
 
-3. Background Review Steps: 
+3. Background Review Steps:
    - Repetition or review of the problem
    - Not directly related to solving the problem.
 
@@ -96,7 +96,7 @@ For Background review:
 If Step:
 - Premises must not contradict any ground truth or correct answer
 - Logic is valid
-- Conclusion must not contradict any ground truth 
+- Conclusion must not contradict any ground truth
 - Conclusion must support or be neutral to correct answer
 - Helpful in solving the problem, non-redundant steps
 this Step be viewed as matched.
@@ -126,15 +126,15 @@ Here is the problem, and the solution that needs to be reformatted to steps:
 
 """
 
-Answer_Extraction_Prompt_part1 = """You are an AI assistant who will help me to extract an answer of a question. You are provided with a question and a response, and you need to find the final answer of the question. 
+Answer_Extraction_Prompt_part1 = """You are an AI assistant who will help me to extract an answer of a question. You are provided with a question and a response, and you need to find the final answer of the question.
 
 Extract Rule:
 [Multiple choice question]
-1. The answer could be answering the option letter or the value. You should directly output the choice letter of the answer. 
+1. The answer could be answering the option letter or the value. You should directly output the choice letter of the answer.
 2. You should output a single uppercase character in A, B, C, D, E, F, G, H, I (if they are valid options), and Z.
-3. If the meaning of all options are significantly different from the final answer, output Z. 
+3. If the meaning of all options are significantly different from the final answer, output Z.
 
-Output Format: 
+Output Format:
 Directly output the extracted answer of the response.
 
 Example 1:
@@ -147,7 +147,7 @@ Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C.
 Response: a cute teddy bear
 Your output: A
 
-Example 3: 
+Example 3:
 Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog
 Answer: Spider
 Your output: Z
@@ -160,11 +160,11 @@ Answer: {response}
 Your output:
 """
 
-Answer_Scoring_Prompt_part1 = r"""You are an AI assistant who will help me to judge whether two answers are consistent. 
+Answer_Scoring_Prompt_part1 = r"""You are an AI assistant who will help me to judge whether two answers are consistent.
 
 Input Illustration:
-[Standard Answer] is the standard answer to the question 
-[Model Answer] is the answer extracted from a model's output to this question. 
+[Standard Answer] is the standard answer to the question
+[Model Answer] is the answer extracted from a model's output to this question.
 
 Task Illustration:
 Determine whether [Standard Answer] and [Model Answer] are consistent.
@@ -173,7 +173,7 @@ Consistent Criteria:
 1. If the [Model Answer] is the option letter, then it must completely matches the [Standard Answer].
 2. If the [Model Answer] is not an option letter, then the [Model Answer] must completely match the option content of [Standard Answer].
 
-Output Format: 
+Output Format:
 1. If they are consistent, output 1; if they are different, output 0.
 2. DIRECTLY output 1 or 0 without any other content.
 
@@ -183,13 +183,13 @@ Question: What is the main object in the image?\nOptions: A. teddy bear B. rabbi
 [Standard Answer]: A
 Your output: 1
 
-Example 2: 
+Example 2:
 Question: Find the value of AB. Choices: A.1;B.5;C.9;D.10
 [Model Answer]: \\boxed{5}
 [Standard Answer]: B
 Your output: 1
 
-Example 3: 
+Example 3:
 Question: Three of the following four slides are from the same presentation, but one is from a different one. Please identify the outlier: \n\n<image> <image> <image> <image>\nA. the forth image\nB. the second image\nC. the third image\nD. None of the choices provided
 [Model Answer]: \\boxed{B}
 [Standard Answer]: A

@@ -206,9 +206,8 @@ Please analyze these images and provide the answer to the question about the vid
 
             dump(data, score_file)
 
-        
+
         score_json = eval_file.replace('.xlsx', '_score.json')
         txt_file = eval_file.replace('.xlsx', '_score.txt')
         xlsx2json(score_file, score_json)
         calu_acc_main(score_json, txt_file)
-    
