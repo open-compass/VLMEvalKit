@@ -261,7 +261,24 @@ class ImageMCQDataset(ImageBaseDataset):
             circular = True
 
         model = judge_kwargs.get('model', 'exact_matching')
-        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
+        # For the full list of supported judge backends / model aliases, see:
+        #   vlmeval/dataset/utils/judge_util.py (build_judge: model_map)
+        name_str_map = {
+            'gpt-4-turbo': 'gpt-4-turbo',
+            'gpt-4-0613': 'gpt-4-0613',
+            'gpt-4-0125': 'gpt-4-0125',
+            'gpt-4-0409': 'gpt-4-0409',
+            'chatgpt-1106': 'chatgpt-1106',
+            'chatgpt-0125': 'chatgpt-0125',
+            'gpt-4o': 'gpt-4o',
+            'gpt-4o-0806': 'gpt-4o-0806',
+            'gpt-4o-1120': 'gpt-4o-1120',
+            'gpt-4o-mini': 'gpt-4o-mini',
+        }
+        if model != 'exact_matching' and model not in name_str_map:
+            raise ValueError(
+                f'Unsupported judge model: {model}. Allowed: {list(name_str_map)} + exact_matching'
+            )
         name_str = name_str_map[model] if model in name_str_map else model
 
         if model == 'exact_matching':
