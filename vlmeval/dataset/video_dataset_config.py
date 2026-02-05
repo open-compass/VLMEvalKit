@@ -192,12 +192,6 @@ egoexobench_dataset = {
 
 }
 
-vsibench_dataset = {
-    'vsibench_16frame': partial(VSIBench, dataset='VSIBench', nframe=16),
-    'vsibench_32frame': partial(VSIBench, dataset='VSIBench', nframe=32),
-    'vsibench_64frame': partial(VSIBench, dataset='VSIBench', nframe=64),
-}
-
 dream_1k_dataset = {
     'DREAM-1K_8frame': partial(DREAM, dataset='DREAM-1K', nframe=8),
     'DREAM-1K_64frame': partial(DREAM, dataset='DREAM-1K', nframe=64),
@@ -206,6 +200,72 @@ dream_1k_dataset = {
     'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
 }
 
+VSI_FRAME_VARIANTS = [
+    ("128frame", dict(nframe=128)),
+    ("64frame", dict(nframe=64)),
+    ("32frame", dict(nframe=32)),
+    ("16frame", dict(nframe=16)),
+    ("2fps", dict(fps=2.0)),
+    ("1fps", dict(fps=1.0)),
+]
+
+
+def _build_video_variants(subsets, cls, variants=VSI_FRAME_VARIANTS):
+    out = {}
+    for variant in subsets:
+        for suffix, params in variants:
+            out[f"{variant}_{suffix}"] = partial(cls, dataset=variant, **params)
+    return out
+
+
+# === VSI-Bench ===
+vsi_subsets = VsiBench.supported_datasets()
+video_vsi_dataset = _build_video_variants(vsi_subsets, VsiBench)
+
+# === VSI-SUPER-Recall ===
+vsisuper_recall_subsets = VsiSuperRecall.supported_datasets()
+vsisuper_recall_dataset = _build_video_variants(vsisuper_recall_subsets, VsiSuperRecall)
+
+# === VSI-SUPER-Count ===
+vsisuper_count_subsets = VsiSuperCount.supported_datasets()
+vsisuper_count_dataset = _build_video_variants(vsisuper_count_subsets, VsiSuperCount)
+
+sitebenchvideo_dataset = {
+    'SiteBenchVideo_64frame': partial(SiteBenchVideo, dataset='SiteBenchVideo', nframe=64),
+    'SiteBenchVideo_32frame': partial(SiteBenchVideo, dataset='SiteBenchVideo', nframe=32),
+    'SiteBenchVideo_1fps': partial(SiteBenchVideo, dataset='SiteBenchVideo', fps=1),
+}
+
+mmsi_video_dataset = {
+    # The 300 frame setting is aligned with Sufficient-Coverage policy proposed in MMSI-Video-Bench paper
+    'MMSIVideoBench_300frame': partial(MMSIVideoBench, dataset='MMSIVideoBench', nframe=300),
+    'MMSIVideoBench_64frame': partial(MMSIVideoBench, dataset='MMSIVideoBench', nframe=64),
+    'MMSIVideoBench_50frame': partial(MMSIVideoBench, dataset='MMSIVideoBench', nframe=50),
+    'MMSIVideoBench_32frame': partial(MMSIVideoBench, dataset='MMSIVideoBench', nframe=32),
+    'MMSIVideoBench_1fps': partial(MMSIVideoBench, dataset='MMSIVideoBench', fps=1),
+}
+
+sti_subsets = STIBench.supported_datasets()
+sti_variants = [
+    ("64frame", dict(nframe=64)),
+    ("32frame", dict(nframe=32)),
+    # The 30 frame setting is aligned with offical seting STI-Bench paper
+    ("30frame", dict(nframe=30)),
+    ("1fps", dict(fps=1.0)),
+]
+sti_dataset = _build_video_variants(sti_subsets, STIBench, sti_variants)
+
+dsr_subsets = DSRBench.supported_datasets()
+dsr_variants = [
+    ("64frame", dict(nframe=64)),
+    ("32frame", dict(nframe=32)),
+    ("30frame", dict(nframe=30)),
+    # The 1fps setting is aligned with offical seting DSR-Bench paper
+    ("1fps", dict(fps=1.0)),
+]
+dsr_dataset = _build_video_variants(dsr_subsets, DSRBench, dsr_variants)
+
+
 supported_video_datasets = {}
 
 dataset_groups = [
@@ -213,7 +273,12 @@ dataset_groups = [
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    vsibench_dataset
+]
+
+# add by EASI team
+dataset_groups += [
+    video_vsi_dataset, sitebenchvideo_dataset, mmsi_video_dataset, vsisuper_recall_dataset, vsisuper_count_dataset,
+    sti_dataset, dsr_dataset
 ]
 
 for grp in dataset_groups:
