@@ -350,7 +350,7 @@ def ChartX_auxeval(model, item):
         # Metadata from combined metadata column (JSON)
         metadata_str = item.get('metadata', '{}')
         try:
-            metadata = json.loads(metadata_str.replace('\\n', '\n'))
+            metadata = json.loads(metadata_str)
         except BaseException:
             metadata = {}
 
