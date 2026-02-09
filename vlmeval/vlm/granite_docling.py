@@ -48,7 +48,7 @@ class DOCLING(BaseModel):
                 if s['type'] == 'text':
                     new_message.append(s)
             message = new_message
-        
+
         content, images = [], []
         for msg in message:
             if msg['type'] == 'image':
@@ -57,12 +57,12 @@ class DOCLING(BaseModel):
                 content.append({'type': 'image'})
             elif msg['type'] == 'text':
                 content.append({'type': 'text', 'text': msg['value'].strip()})
-        
+
         if add_brief:
             content.append({'type': 'text', 'text': '\nGive a very brief answer.'})
         if add_yes_or_no:
             content.append({'type': 'text', 'text': '\nAnswer yes or no.'})
-            
+
         return content, images
 
     def build_prompt_puremcq(self, message):
@@ -82,7 +82,7 @@ class DOCLING(BaseModel):
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
                 content.append({'type': 'text', 'text': instruction})
-        
+
         return content, images
 
     def build_prompt_mt(self, message):
@@ -126,7 +126,7 @@ class DOCLING(BaseModel):
                         'Question:' + question + '\n' + hint + '\nChoices:' + choices
                     )
                 content.append({'type': 'text', 'text': instruction})
-        
+
         return content, images
 
     def build_prompt_mmmu(self, message):
@@ -137,18 +137,18 @@ class DOCLING(BaseModel):
         }
 
         content, images, img_counter = [], [], 1
-        
+
         # Pre-calculate counts for manual tagging if needed, or simply iterate
-        # The original code looped twice to build a specific prompt structure. 
+        # The original code looped twice to build a specific prompt structure.
         # First loop added manual image tags to prompt? No, it looks like it iterates to count images?
         # Re-reading original code:
         # Loop 1: for msg in message: if image: prompt += f'<image {img_counter}>:<image>\n'
         # Loop 2: for msg in message: if image: prompt += f' <image {img_counter}> ' else text replacement
         # It seems it formats images TWICE in the prompt? One as a list at start, and one inline?
         # Actually, the first loop adds to `prompt`. The second loop ADDS MORE to `prompt`.
-        
+
         # We will attempt to replicate this structure in the content list.
-        
+
         # First pass: List of images at the start
         for msg in message:
             if msg['type'] == 'image':
@@ -156,28 +156,32 @@ class DOCLING(BaseModel):
                 content.append({'type': 'image'})
                 content.append({'type': 'text', 'text': '\n'})
                 img_counter += 1
-        
+
         img_counter = 1
-        # Second pass: Inline images (re-using the same images? Need to check if processor handles duplicate image inputs)
+        # Second pass: Inline images (re-using the same images? Need to check if processor
+        # handles duplicate image inputs)
         # Processor usually takes list of images corresponding to <image> tokens.
-        # If we have MULTIPLE <image> tokens for the same logical image, we might need to duplicate the image in the list?
+        # If we have MULTIPLE <image> tokens for the same logical image,
+        #  we might need to duplicate the image in the list?
         # Use `formatted_images` list accumulation.
-        
+
         # Wait, the original code `images.append(img)` happens ONLY in the second loop.
         # The first loop adds `<image>` tokens to the prompt string but DOES NOT append to `images` list.
         # This implies the `images` list is only populated in the second loop.
         # BUT the prompt has `<image>` tokens from the first loop too.
         # This creates a mismatch: Prompt has 2*N image tokens, but `images` list has N images.
         # Unless `load_image` in the second loop is the only place it happens.
-        
-        # This seems like a potential bug or specific behavior of the original processor that maps N images to 2N tokens?
-        # Or maybe the first loop's `<image>` text is NOT the special token? 
-        # `prompt += f'<image {img_counter}>:<image>\n'` -> `<image>` is likely the special token placeholder.
-        
-        # If I want to be safe and strictly follow "new format for processor", I should stick to the content structure.
+
+        # This seems like a potential bug or specific behavior of the original
+        #  processor that maps N images to 2N tokens?
+        # Or maybe the first loop's `<image>` text is NOT the special token?
+        # `prompt += f'<image {img_counter}>:<image>\n'` -> `<image>` is likely the special
+        #  token placeholder.
+        # If I want to be safe and strictly follow "new format for processor", I should stick to
+        # the content structure.
         # The user said "Edit the functions to return formatted_messages in a different way".
         # If I replicate the existing structure:
-        
+
         for msg in message:
             if msg['type'] == 'image':
                 img = load_image(msg['value'])
@@ -185,39 +189,40 @@ class DOCLING(BaseModel):
                 # If the first loop added image tokens, we need images for them!
                 # But original code didn't append images in first loop.
                 # It likely relies on the tokenizer/processor collapsing or mapping?
-                # Unsafe assumption. 
-                
+                # Unsafe assumption.
+
                 # However, looking at the user request, they want a simplified list of content.
                 # "messages, content = [], [] ... content.append({'type': 'image'})"
-                
-                # If I simplify `mmmu` to just standard image/text flow (dropping the weird double header), 
+
+                # If I simplify `mmmu` to just standard image/text flow (dropping the weird double header),
                 # I might lose the specific "Image 1: [IMG]" labels.
-                
+
                 # Let's preserve the text labels but use one image token.
-                pass 
-                
+                pass
+
         # Re-evaluating MMMU strategy.
         # The original code's First Loop: `prompt += f'<image {img_counter}>:<image>\n'` -> it injects `<image>`.
-        # Second Loop: `prompt += f' <image {img_counter}> '` -> it injects TEXT `<image N>`, NOT `<image>` token (no `<image>` string).
+        # Second Loop: `prompt += f' <image {img_counter}> '` -> it injects TEXT `<image N>`,
+        #  NOT `<image>` token (no `<image>` string).
         # Wait. `f' <image {img_counter}> '` is a string like " <image 1> ". It is NOT the special token `<image>`.
         # The special token `<image>` ONLY appears in the FIRST loop.
-        
+
         # Aha!
         # First loop: Adds `<image>` token + Label.
         # Second loop: Adds REFERENCE text " <image 1> " explicitly, but NOT the token.
         # And `images.append(img)` happens in the second loop (which iterates the same messages).
         # This implies `images` list has N images. Prompt has N `<image>` tokens (from first loop).
         # Perfect.
-        
+
         # Implementation:
         # Loop 1: add Image Token + Label ("<image N>:<image token>\n")
         # Loop 2: add Reference Text (" <image N> ") instead of image token.
-        
+
         # But wait, in Loop 2, `if msg['type'] == 'image':`
         # Original: `images.append(img); prompt += f' <image {img_counter}> '; img_counter += 1`
         # So where the image appears in the flow, it puts a text label.
         # The ACTUAL image tokens are all gathered at the start (Loop 1).
-        
+
         # New Implementation:
         for msg in message:
             if msg['type'] == 'image':
@@ -225,7 +230,7 @@ class DOCLING(BaseModel):
                 content.append({'type': 'image'})
                 content.append({'type': 'text', 'text': '\n'})
                 img_counter += 1
-        
+
         img_counter = 1
         for msg in message:
             if msg['type'] == 'image':
@@ -237,8 +242,8 @@ class DOCLING(BaseModel):
                 instruction = msg['value'].strip()
                 for k, v in replace_mapping.items():
                     instruction = instruction.replace(k, v)
-                content.append({'type': 'text', 'text': instruction.strip()}) # strip? Original had strip.
-        
+                content.append({'type': 'text', 'text': instruction.strip()})  # strip? Original had strip.
+
         return content, images
 
     def build_prompt_mathvista(self, message):
@@ -257,7 +262,7 @@ class DOCLING(BaseModel):
 
         content, images = [], []
         # Original starts prompt with 'User:'.
-        
+
         for msg in message:
             if msg['type'] == 'image':
                 img = load_image(msg['value'])
@@ -272,11 +277,10 @@ class DOCLING(BaseModel):
         # Check for A. and B. to add suffix
         # We need to reconstruct the full text to check this condition, or check segments.
         # Safest is to check segments.
-        has_options = False
         full_text = "".join([c['text'] for c in content if c['type'] == 'text'])
         if 'A.' in full_text and 'B.' in full_text:
             content.append({'type': 'text', 'text': '\nAnswer with the letter.'})
-            
+
         return content, images
 
     def chat_inner(self, message, dataset=None):
@@ -335,13 +339,13 @@ class DOCLING(BaseModel):
             content, formatted_images = self.build_prompt_default(message, change_the_img_place=True)
         else:
             content, formatted_images = self.build_prompt_default(message)
-        
+
         messages = [{
             "role": "user",
             "content": content
         }]
         formatted_messages = self.processor.apply_chat_template(messages, add_generation_prompt=True)
-        
+
         # Handle suffixes that need to appear at the start of the assistant response
         # e.g. "Answer:" for PureMCQ/MMBench/MMMU/MathVista
         # We append these to the generated prompt string.
@@ -356,15 +360,15 @@ class DOCLING(BaseModel):
             formatted_messages += ' Answer:'
         elif dataset in ['MMMU_DEV_VAL', 'MMMU_TEST']:
             # MMMU logic: if 'A.' and 'B.' in prompt -> append ' Answer:'
-             # Flatten content to check
-             full_text = "".join([c['text'] for c in content if c['type'] == 'text'])
-             if 'A.' in full_text and 'B.' in full_text:
-                 formatted_messages += ' Answer:'
+            # Flatten content to check
+            full_text = "".join([c['text'] for c in content if c['type'] == 'text'])
+            if 'A.' in full_text and 'B.' in full_text:
+                formatted_messages += ' Answer:'
         elif dataset in ['MathVista_MINI']:
-             # MathVista logic: if 'A.' and 'B.' -> append ' Answer:'
-             full_text = "".join([c['text'] for c in content if c['type'] == 'text'])
-             if 'A.' in full_text and 'B.' in full_text:
-                 formatted_messages += ' Answer:'
+            # MathVista logic: if 'A.' and 'B.' -> append ' Answer:'
+            full_text = "".join([c['text'] for c in content if c['type'] == 'text'])
+            if 'A.' in full_text and 'B.' in full_text:
+                formatted_messages += ' Answer:'
 
         inputs = self._process(formatted_messages, formatted_images)
         self.validate_vlm_inputs(inputs, self.model, tokenizer=self.processor.tokenizer, messages=messages)
@@ -372,7 +376,7 @@ class DOCLING(BaseModel):
         generated_text = self.processor.batch_decode(
             generated_ids[:, inputs['input_ids'].size(1):], skip_special_tokens=True
         )[0]
-        response = generated_text.strip().strip('.' )
+        response = generated_text.strip().strip('.')
         if "ChartMuseum" in dataset if dataset else False:
             response = f"<answer>{response}</answer>"
         return response
@@ -414,7 +418,8 @@ class DOCLING(BaseModel):
             if pv is not None and pv.ndim == 5:
                 assert pam.ndim in (3, 4), f"unexpected pixel_attention_mask ndim {messages}"
                 if pam.ndim == 4:
-                    assert pam.shape[0] == pv.shape[0] and pam.shape[1] == pv.shape[1] and pam.shape[-2:] == pv.shape[-2:], \
+                    assert pam.shape[0] == pv.shape[0] and pam.shape[1] == pv.shape[1] and \
+                        pam.shape[-2:] == pv.shape[-2:], \
                         f"pixel_attention_mask shape must match (B,N,H,W) {messages}"
                 else:
                     assert pam.shape[0] == pv.shape[0] and pam.shape[-2:] == pv.shape[-2:], \
@@ -428,4 +433,3 @@ class DOCLING(BaseModel):
             num_imgs = 1 if (pv is not None and pv.ndim == 4) else (pv.shape[1] if pv is not None else 0)
             ph_counts = (input_ids == tokenizer.image_token_id).sum(dim=-1)
             assert torch.all(ph_counts == num_imgs), f"image placeholder count must match number of images {messages}"
-
