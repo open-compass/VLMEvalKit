@@ -6,7 +6,7 @@ import re
 # for mimo-vl
 def remove_think_blocks(text: str) -> str:
     """
-    Remove all occurrences of <think>...</think> or <think>...</\/think>
+    Remove all occurrences of <think>...</think> or <think>...</think>
     (including the tags) from the input text.
     Handles multiline content and multiple blocks.
     """

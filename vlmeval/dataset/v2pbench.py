@@ -7,9 +7,10 @@ import os
 import zipfile
 import shutil
 
-prompt_multi_choice="\nGive only your option letter that accurately addresses the question, no other words."
+prompt_multi_choice = "\nGive only your option letter that accurately addresses the question, no other words."
 
 FAIL_MSG = 'Failed to obtain answer via API.'
+
 
 # unzip video files
 def unzip_video(pth):
@@ -28,7 +29,7 @@ def unzip_video(pth):
        os.path.exists(os.path.join(videos_dir, "VCGBench-Diverse")) and \
        os.path.exists(os.path.join(videos_dir, "Video-MME_xk")) and \
        os.path.exists(os.path.join(videos_dir, "Video-MME_yk")):
-            print("All videos have been extracted. Skipping extraction step.")
+        print("All videos have been extracted. Skipping extraction step.")
     else:
         for fname in os.listdir(videos_dir):
             if fname.endswith(".zip"):
@@ -69,7 +70,6 @@ def unzip_video(pth):
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(target_dir)
-
 
 
 class V2PBench(VideoBaseDataset):
@@ -201,7 +201,6 @@ Please analyze these images and provide the answer to the question about the vid
                 data.loc[idx, 'score'] = int(extract_characters_regex(remove_think_blocks(pred)) == ans)
 
             dump(data, score_file)
-
 
         score_json = eval_file.replace('.xlsx', '_score.json')
         txt_file = eval_file.replace('.xlsx', '_score.txt')
