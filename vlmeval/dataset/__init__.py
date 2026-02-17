@@ -33,6 +33,7 @@ from .spatial457 import Spatial457
 from .charxiv import CharXiv
 from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
+from .ssi_bench import SSIBenchDataset
 from .refcoco import RefCOCODataset
 from .simplevqa import SimpleVQA
 from .chartx import ChartX
@@ -241,7 +242,7 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
-    FoxBench, VTCBench, Asclepius, PlotQA, ChartX
+    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, SSIBenchDataset
 ]
 
 VIDEO_DATASET = [
