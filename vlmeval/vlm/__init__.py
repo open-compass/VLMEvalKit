@@ -117,3 +117,4 @@ from .cosmos import Cosmos
 from .liquid import LFM2VL
 from .insight_v import InsightV
 from .covt import CoVTChat
+from .granite_docling import DOCLING
