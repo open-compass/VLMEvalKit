@@ -2389,23 +2389,83 @@ class _3DSRBench(ImageMCQDataset):
     DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc
-        from .utils.sr3d import parse_3dsr_prediction, eval_3dsr
-        from ..smp import dump, load
-        from ..utils.dataset_util import TDBench_grounding_eval
-        from ..dataset import parse_img_path_list
-        from ..config import VLM_EVAL_WITH_SUBSET
+        from .utils.multiple_choice import mcq_vanilla_eval, report_acc
+
+        nproc = judge_kwargs.pop('nproc', 4)
+        model = judge_kwargs.get('model', 'exact_matching')
+
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
+
         data = load(eval_file)
-        # parse the model predictions
-        data = parse_img_path_list(data)
-        data = parse_3dsr_prediction(data)
-        # rotate the image and boxes
-        data['hit'] = eval_3dsr(data)
-        result_file = get_intermediate_file_path(eval_file, '_acc')
-        if VLM_EVAL_WITH_SUBSET:
-            data['subset'] = [x.split('|')[0] for x in data['index']]
-        dump(data, result_file)
-        return report_acc(data)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, (
+                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+            )
+
+        data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
+        result_xlsx = get_intermediate_file_path(eval_file, '_result', 'xlsx')
+        dump(data, result_xlsx)
+
+        acc_map = {}
+        acc_map['vanilla'] = report_acc(data)
+        # Flip Acc
+        qid2key = {x: x.replace('-flip', '') for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['flip_eval'] = report_acc(main)
+        # Circ Acc
+        qid2key = {x: x[:8] if '-flip' not in x else x[:13] for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['circ_eval'] = report_acc(main)
+        # Flip Circ Acc
+        qid2key = {x: x[:8] for x in data['qid']}
+        key_set = set(list(qid2key.values()))
+        main = cp.deepcopy(data[data['qid'].isin(key_set)])
+        hit_map = {x: y for x, y in zip(main['qid'], main['hit'])}
+        for x, y in zip(data['qid'], data['hit']):
+            hit_map[qid2key[x]] *= y
+        main['hit'] = [hit_map[x] for x in main['qid']]
+        acc_map['flip_circ_eval'] = report_acc(main)
+
+        metrics = []
+        for k in acc_map:
+            acc_map[k].pop('split')
+            acc_map[k]['setting'] = [k] * len(acc_map[k])
+            metrics.append(acc_map[k])
+        res_all = pd.concat(metrics)
+        if 'setting' in res_all.columns:
+            res_all = res_all[['setting'] + [c for c in res_all.columns if c != 'setting']]
+
+        print(res_all)
+        results_file = osp.splitext(eval_file)[0] + '_results.tsv'
+        dump(res_all, results_file)
+        return res_all
 
 
 class AffordanceDataset(ImageMCQDataset):

@@ -1,4 +1,7 @@
 import base64
+# flake8: noqa
+import pandas as pd
+import requests
 import json
 import os
 
@@ -37,8 +40,8 @@ class JTVLChatWrapper(BaseAPI):
         self.api_base = API_ENDPOINT
         self.app_code = APP_CODE
 
-        super().__init__(
-            wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
+
+        super().__init__(wait=wait, retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
     def dump_image(self, line, dataset):
         """Dump the image(s) of the input line to the corresponding dataset folder.
@@ -245,8 +248,8 @@ class JTVLChatWrapper(BaseAPI):
                                     chunks.append(chunk)
 
                                     # 记录最后一个有效的usage（不累加）
-                                    # if 'usage' in chunk:
-                                    #     last_valid_usage = chunk['usage']
+                                    if 'usage' in chunk:
+                                        last_valid_usage = chunk['usage']
 
                                     if 'choices' in chunk:
                                         for choice in chunk['choices']:
