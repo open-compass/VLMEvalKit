@@ -118,6 +118,20 @@ def get_local_rank_and_local_world_size():
     )
 
 
+def build_yesorno_cot_prompt(line, prompt, cot_prompt=None):
+    if cot_prompt is None:
+        cot_prompt = (
+            "Answer the preceding yes-or-no question. Think step by step logically, considering all "
+            "relevant information before answering. If you are uncertain or the problem is ambiguous, make a "
+            "reasoned guess based on the information provided. The last line of your response must be exactly "
+            "in this format: 'Answer: \\boxed{Yes}' or 'Answer: \\boxed{No}' (without quotes)."
+        )
+    prompt = prompt.replace("Please answer yes or no. Answer the question using a single word or phrase.", '').strip()
+    prompt = prompt + '\n' + cot_prompt
+
+    return prompt
+
+
 def build_mcq_cot_prompt(line, prompt, cot_prompt=None):
     if cot_prompt is None:
         cot_prompt = (
@@ -207,6 +221,13 @@ def reorganize_prompt(message, image_num, dataset=None):
                     prompt += x["value"]
                 elif x["type"] == "image":
                     image_idx += 1
+    elif dataset is not None and listinstr(["mmsivideo"], dataset.lower()):
+        prompt, image_idx = '', 1
+        for x in message:
+            if x['type'] == 'text':
+                prompt += x['value']
+            elif x['type'] == 'image':
+                prompt += '<image>'
     elif image_num == 1:
         prompt = '<image>\n' + '\n'.join([x['value'] for x in message if x['type'] == 'text'])
     else:

@@ -66,7 +66,11 @@ class TextEvaluator:
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
                 texts = f.read()
-                texts = eval(texts)
+                try:
+                    texts = eval(texts)
+                except Exception as e:
+                    print(f"Error evaluating texts: {e}")
+                    print(f"Texts: {texts}")
             os.remove(output_file)
         else:
             texts = []
@@ -166,7 +170,7 @@ def log_function(func):
         y_rel = ( y / object.height / 72 ) * 100
         s = args[4]
 
-        drawed_texts.append( (x, y, x_rel, y_rel, s) )
+        drawed_texts.append( (float(x), float(y), float(x_rel), float(y_rel), s) )
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     return wrapper

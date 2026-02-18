@@ -235,7 +235,7 @@ class InternVLChat(BaseModel):
             'optics_dataset', 'quantum_dataset', 'statistics_dataset'
         ]:
             return False
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum'], dataset):  # noqa: E501
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum', 'MMSIVideo_U50','MMSIVideo_SC'], dataset):  # noqa: E501
             # For Multi-Turn we don't have custom prompt
             return False
         if DATASET_TYPE(dataset) == 'MCQ':
@@ -283,7 +283,7 @@ class InternVLChat(BaseModel):
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
-                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
+                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic', 'MMReason'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
