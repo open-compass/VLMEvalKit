@@ -221,6 +221,13 @@ def reorganize_prompt(message, image_num, dataset=None):
                     prompt += x["value"]
                 elif x["type"] == "image":
                     image_idx += 1
+    elif dataset is not None and listinstr(["mmsivideo"], dataset.lower()):
+        prompt, image_idx = '', 1
+        for x in message:
+            if x['type'] == 'text':
+                prompt += x['value']
+            elif x['type'] == 'image':
+                prompt += '<image>'
     elif image_num == 1:
         prompt = '<image>\n' + '\n'.join([x['value'] for x in message if x['type'] == 'text'])
     else:

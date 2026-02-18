@@ -16,9 +16,6 @@ from pathlib import Path
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# gpt4_key = "your-key"
-# client = OpenAI(api_key = gpt4_key)
-
 NUM_WORKERS = 16
 
 COMPARE_ANSWER_PROMPT = """
@@ -140,10 +137,19 @@ class SimpleVQA(ImageBaseDataset):
 
         return msgs
 
-    def get_scores(self, result_file: str) -> pd.DataFrame:
+    def get_scores(self, result_file: str, **judge_kwargs: Any) -> pd.DataFrame:
         data = file.load(result_file)
         model_keys = ['model_response']
         fout = open(str(Path(result_file).parent) + '/gpt_eval.json', 'w', encoding='utf-8')
+
+        gpt4_key = os.environ.get('OPENAI_API_KEY', None)
+        base_url = os.environ.get('OPENAI_API_BASE', None)
+        nproc = judge_kwargs.get('nproc', 16)
+
+        client = OpenAI(
+            api_key=gpt4_key,
+            base_url=base_url
+        )
 
         def process_one(idx):
             question = data['question'][idx]
@@ -175,7 +181,7 @@ class SimpleVQA(ImageBaseDataset):
             return idx, res_json
 
         results = [None] * len(data)
-        with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
+        with ThreadPoolExecutor(max_workers=nproc) as executor:
             futures = {executor.submit(process_one, i): i for i in range(len(data))}
 
             for future in tqdm(as_completed(futures), total=len(data)):
@@ -198,7 +204,7 @@ class SimpleVQA(ImageBaseDataset):
         Returns:
             DataFrame with evaluation scores by category
         """
-        score = self.get_scores(eval_file)
+        score = self.get_scores(eval_file, **judge_kwargs)
         score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
         file.dump(score, score_file)
         return score

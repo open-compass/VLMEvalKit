@@ -12,8 +12,6 @@ def img_root_map(dataset):
         return 'OCRVQA'
     if 'COCO_VAL' == dataset:
         return 'COCO'
-    if 'MMMU' in dataset:
-        return 'MMMU'
     if "QSpatial" in dataset:
         return "QSpatial"
 

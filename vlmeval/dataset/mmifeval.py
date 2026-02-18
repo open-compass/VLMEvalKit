@@ -293,7 +293,7 @@ def judge_one_item(item, retry=3):
                     for func_dict in constraint["judge"]["verify_funcs"]:
                         func = globals()[func_dict["func"]]
                         # use * to unpack the list, ** is used for dict
-                        judge_result = func(item["prediction"], *func_dict["params"])
+                        judge_result = func(str(item["prediction"]), *func_dict["params"])
                         # breakpoint()
                         if not judge_result:  # False -> score = 0
                             score = 0.0
@@ -463,7 +463,7 @@ class MMIFEval(ImageBaseDataset):
                 p_level_score_sum += line["eval_score_dict"]["total_score"]
                 p_level_cnt += 1
             elif line["tag"] == "C-Level":
-                c_level_score_sum += line["eval_score_dict"]["total_score"]
+                c_level_score_sum += line["eval_score_dict"].get("total_score", 0.)
                 c_level_cnt += 1
         p_level_accuracy = p_level_score_sum / p_level_cnt
         c_level_accuracy = c_level_score_sum / c_level_cnt
