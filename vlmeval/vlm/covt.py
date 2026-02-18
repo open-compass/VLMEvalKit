@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 import warnings
 import math
 import logging
-import re
+import string
+import pandas as pd
 
 import torch
 
 from .base import BaseModel
-from ..smp import get_rank_and_world_size, get_gpu_memory, listinstr
+from vlmeval.smp import get_rank_and_world_size, get_gpu_memory
 
 
 def ensure_image_url(image: str) -> str:
@@ -115,11 +117,6 @@ class CoVTPrompt:
 
     def _build_mmmu_prompt(self, line, dataset: str) -> list[dict[str, str]]:
         """change the prompt for MMMU dataset: keep all images at beginning."""
-
-        import string
-
-        import pandas as pd
-
         tgt_path = self.dump_image(line, dataset)
         question = line['question']
         options = {cand: line[cand] for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])}
@@ -148,13 +145,7 @@ class CoVTPrompt:
         MCQ_CN_PROMPT = '请直接回答选项字母。'
         MCQ_EN_PROMPT = 'Please select the correct answer from the options above.'
 
-        import string
-
-        import pandas as pd
-
         def cn_string(s):
-            import re
-
             if re.search('[\u4e00-\u9fff]', s):
                 return True
             return False
@@ -256,13 +247,10 @@ class CoVTChat(CoVTPrompt, BaseModel):
         self.model_path = model_path
         MODEL_CLS = None
 
-        import sys
-        import os
-        
         sys.path.append(os.path.join(os.getcwd(), "../src"))
-        
+
         from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
-        
+
         MODEL_CLS = Qwen2_5_VLForConditionalGeneration
         self.processor = AutoProcessor.from_pretrained(model_path)
 
@@ -283,7 +271,7 @@ class CoVTChat(CoVTPrompt, BaseModel):
             self.model.cuda().eval()
 
         torch.cuda.empty_cache()
-        
+
         self.total_response_len = 0
         # setup logging for cumulative response length per round
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -348,7 +336,7 @@ class CoVTChat(CoVTPrompt, BaseModel):
 
         text = self.processor.apply_chat_template([messages], tokenize=False, add_generation_prompt=True)
         images, videos = process_vision_info([messages])
-        
+
         inputs = self.processor(text=text, images=images, videos=videos, padding=True, return_tensors='pt')
         inputs = inputs.to('cuda')
 
@@ -385,7 +373,7 @@ class CoVTChat(CoVTPrompt, BaseModel):
             print(f'\033[32m{response}\033[0m')
         # red print the response
         print(f'\033[31m{response}\033[0m')
-            
+
         ANSWER_REGEX = re.compile(r"<\s*answer\s*>(.*?)<\s*/\s*answer\s*>", re.IGNORECASE | re.DOTALL)
 
         m = ANSWER_REGEX.search(response)
@@ -393,5 +381,5 @@ class CoVTChat(CoVTPrompt, BaseModel):
             response = response.strip()
         else:
             response = m.group(1).strip()
-        
+
         return response

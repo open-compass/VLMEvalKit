@@ -4023,8 +4023,8 @@ class CoreCognition(ImageBaseDataset):
         dump(acc, score_file)
 
         return acc
-      
-      
+
+
 class VLMsAreBiased(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
