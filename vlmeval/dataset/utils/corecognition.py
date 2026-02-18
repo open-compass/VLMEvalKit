@@ -17,6 +17,7 @@ OPTIONS_YORN = ['YES', 'NO']
 # Template Matching (MCQ and YORN)
 # ============================================================================
 
+
 def template_match(pred, question_type):
     """Template matching for answer extraction (MCQ and YORN)."""
     pred = str(pred).strip()
@@ -61,10 +62,12 @@ def build_prompt_mcq(question, prediction):
         'an answer with several options of a single-choice question. '
         'You are provided with a question, several options, and an answer, '
         'and you need to find which option is most similar to the answer. '
-        'If the answer is already a single uppercase or lowercase character in the given options, output the answer directly.\n'
+        'If the answer is already a single uppercase or lowercase character in the given options, '
+        'output the answer directly.\n'
         'If the meaning of all options are significantly different from the answer, output Z.\n'
         'If the answer is random words, noise or gibberish, also output Z.\n'
-        'You should output a single uppercase character in the given options (if they are valid options), or Z (if the answer is invalid). \n'
+        'You should output a single uppercase character in the given options (if they are valid options), '
+        'or Z (if the answer is invalid). \n'
         'You should output ONLY a single uppercase character WITHOUT ANYTHING ELSE.\n'
         'Example 1: \n'
         'Question: What is the main object in image?\nOptions: A. teddy bear, B. rabbit, C. cat, D. dog\n'
@@ -80,7 +83,7 @@ def build_prompt_mcq(question, prediction):
         'Answer: (empty space)\nYour output: Z\n'
         'Example 5: \n'
         'Question: To hang a framed photo on a wall, which tool should you use?\nOptions: A, B, C, D, E\n'
-        'Answer: 0\<<<<<<>\nYour output: Z\n'
+        'Answer: 0\\<<<<<<>\nYour output: Z\n'
         'Example 6: \n'
         'Question: What is the main object in image?\nOptions: A. teddy bear, B. rabbit, C. cat, D. dog\n'
         'Answer: B\nYour output: B\n'
@@ -100,7 +103,8 @@ def build_prompt_yorn(question, prediction):
         'If the answer is random words, noise or gibberish, also output Z.\n'
         'Your should output ONLY Yes or No, or Z (if the answer is invalid) WITHOUT ANYTHING ELSE. \n'
         'Example 1: \n'
-        'Question: In the image, are the lines completely separate from each other? Please answer with Yes or No. Do not show the reasoning trace, just output the final result.\n'
+        'Question: In the image, are the lines completely separate from each other? '
+        'Please answer with Yes or No. Do not show the reasoning trace, just output the final result.\n'
         'Answer: no\nYour output: No\n'
         'Example 2: \n'
         'Question: Are there circles that do not overlap other circles? Please answer with Yes or No.\n'
@@ -185,7 +189,7 @@ def rm_model_special(pred):
         pred = pred.split('>\n\n')[-1]
     if '**\n\n' in pred:
         pred = pred.split('**\n\n')[-1]
-    pred = pred.replace("\[ \\boxed{", "")
+    pred = pred.replace("\\[ \\boxed{", "")
     pred = pred.replace("} \\]", "")
     pred = pred.replace("<\uff5cend\u2581of\u2581sentence\uff5c>", "")
     pred = pred.replace("<|end_of_sentence|>", "")
