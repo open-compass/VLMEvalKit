@@ -15,7 +15,7 @@ from .image_vqa import (
     TableVQABench, CustomVQADataset, CRPE, MathVerse, OlympiadBench, SeePhys, QSpatial, VizWiz, MMNIAH, LogicVista,
     MME_CoT, MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
     ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench, MathCanvas, MMReason,
-    VLMsAreBiased
+    CoreCognition, VLMsAreBiased
 )
 
 from .image_ccocr import CCOCRDataset
@@ -62,7 +62,7 @@ from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
 from .vsibench import VSIBench
 from .mmsi_video import MMSIVideoBench
-
+from .groundingme import GroundingME
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
 
@@ -234,7 +234,8 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
-    UniSVG, SArena_MINI, MMSIVideoBench, VLMsAreBiased, MMESCIDataset, FoxBench,
+    UniSVG, SArena_MINI, MMSIVideoBench, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
+    FoxBench
 ]
 
 VIDEO_DATASET = [

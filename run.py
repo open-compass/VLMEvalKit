@@ -403,6 +403,8 @@ def main():
                     elif listinstr(['MathCanvas'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1-2025-04-14'
                     elif listinstr(['MMReason'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4.1',
+                    elif listinstr(['CoreCognition'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1'
 
                 if args.use_verifier:

@@ -3946,6 +3946,85 @@ class MMReason(ImageBaseDataset):
         return score
 
 
+class CoreCognition(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {
+        'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'
+    }
+
+    DATASET_MD5 = {
+        'CoreCognition': 'edb4569677adfb6d01e8056a610dddbb'
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
+        from .utils.corecognition import CoreCognition_eval, CoreCognition_acc
+
+        nproc = judge_kwargs.pop('nproc', 4)
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+            warnings.warn(DEBUG_MESSAGE)
+            model = None
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+
+        # Merge meta fields into data - drop existing columns to avoid conflicts
+        data = data.drop(columns=['answer', 'category', 'l2-category', 'question_type'], errors='ignore')
+        meta_merge = meta[['index', 'answer', 'category', 'l2-category', 'question_type']]
+        data = data.merge(meta_merge, on='index', how='left')
+
+        # Evaluate predictions using hybrid matching with parallel processing
+        data['correct'] = CoreCognition_eval(model, data, nproc=nproc)
+
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        dump(data, result_file)
+
+        # Calculate accuracy
+        acc = CoreCognition_acc(data)
+        dump(acc, score_file)
+
+        return acc
+
+
 class VLMsAreBiased(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
