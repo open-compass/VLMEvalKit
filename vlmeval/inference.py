@@ -36,7 +36,9 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     structs = []
     for i in range(lt):
         item = data.iloc[i]
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+            struct = dataset.build_prompt(item)
+        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             assert hasattr(model, 'build_prompt')
             struct = model.build_prompt(item, dataset=dataset_name)
         else:
@@ -149,7 +151,9 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         if idx in res:
             continue
 
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+            struct = dataset.build_prompt(data.iloc[i])
+        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
             struct = dataset.build_prompt(data.iloc[i])
@@ -177,6 +181,11 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     res = {k: res[k] for k in data_indices}
     dump(res, out_file)
     return model
+
+
+# Add for agent evaluation
+def _is_structured_record(v):
+    return isinstance(v, dict) and 'prediction' in v and 'extra_records' in v
 
 
 # A wrapper for infer_data, do the pre & post processing
@@ -218,7 +227,12 @@ def infer_data_job(
         for x in data['index']:
             assert x in data_all
         if os.getenv('SPLIT_THINK', False):
-            prediction = [str(data_all[x]) for x in data['index']]
+            if all(_is_structured_record(data_all[x]) for x in data['index']):
+                prediction = [data_all[x]['prediction'] for x in data['index']]
+                extra_records = [data_all[x]['extra_records'] for x in data['index']]
+                data['extra_records'] = extra_records
+            else:
+                prediction = [str(data_all[x]) for x in data['index']]
 
             def split_thinking(s):
                 if '</think>' in s:
@@ -240,7 +254,13 @@ def infer_data_job(
             data['prediction'] = [x[0] for x in tups]
             data['thinking'] = [x[1] for x in tups]
         else:
-            data['prediction'] = [str(data_all[x]) for x in data['index']]
+            # data['prediction'] = [str(data_all[x]) for x in data['index']]
+            # Add for agent evaluation
+            if all(_is_structured_record(data_all[x]) for x in data['index']):
+                data['prediction'] = [data_all[x]['prediction'] for x in data['index']]
+                data['extra_records'] = [data_all[x]['extra_records'] for x in data['index']]
+            else:
+                data['prediction'] = [str(data_all[x]) for x in data['index']]
         if 'image' in data:
             data.pop('image')
 

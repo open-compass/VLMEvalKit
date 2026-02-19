@@ -405,8 +405,8 @@ class SailVL(BaseModel):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(["MMDU", "MME-RealWorld", "MME-RealWorld-CN"], dataset):
-            # For Multi-Turn we don't have custom prompt
+        if listinstr(["MMDU", "MME-RealWorld", "MME-RealWorld-CN", "ChartQAPro", "ChartMuseum"], dataset):  # noqa: E501
+            # For Multi-Turn and some special datasets we don't have custom prompt
             return False
         if DATASET_MODALITY(dataset) == "VIDEO":
             # For Video benchmarks we don't have custom prompt at here
@@ -433,8 +433,6 @@ class SailVL(BaseModel):
             question = line["question"]
             if listinstr(["LLaVABench", "WildVision"], dataset):
                 prompt = question + "\nAnswer this question in detail."
-            elif listinstr(["MMVet"], dataset):
-                prompt = question + "\nProvide a step-by-step solution to the problem carefully."
             elif listinstr(
                 [
                     "OCRVQA",
@@ -456,6 +454,7 @@ class SailVL(BaseModel):
                     "MathVista",
                     "MathVision",
                     "VCR",
+                    "MMVet",
                     "MTVQA",
                     "MathVerse",
                     "MMDU",

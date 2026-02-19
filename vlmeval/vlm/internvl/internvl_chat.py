@@ -110,6 +110,7 @@ class InternVLChat(BaseModel):
 
     def __init__(self,
                  model_path='OpenGVLab/InternVL-Chat-V1-5',
+                 use_custom_prompt=True,
                  load_in_8bit=False,
                  use_mpo_prompt=False,
                  version='V1.0',
@@ -133,6 +134,7 @@ class InternVLChat(BaseModel):
         self.use_mpo_prompt = use_mpo_prompt
         self.use_cot = (os.getenv('USE_COT') == '1')
         self.use_postprocess = use_postprocess
+        self._use_custom_prompt = use_custom_prompt
 
         if cot_prompt_version == 'r1':
             self.system_prompt = R1_SYSTEM_PROMPT
@@ -192,7 +194,6 @@ class InternVLChat(BaseModel):
             self.model = AutoModel.from_pretrained(
                 model_path,
                 torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map="auto").eval()
@@ -207,7 +208,6 @@ class InternVLChat(BaseModel):
             self.reward_model = AutoModel.from_pretrained(
                 reward_model_path,
                 torch_dtype=torch.bfloat16,
-                load_in_8bit=load_in_8bit,
                 trust_remote_code=True,
                 low_cpu_mem_usage=True,
                 device_map="auto").eval()
@@ -229,15 +229,21 @@ class InternVLChat(BaseModel):
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
 
     def use_custom_prompt(self, dataset):
+        if not self._use_custom_prompt:
+            return False
+
         assert dataset is not None
         if dataset in [
             'atomic_dataset', 'electro_dataset', 'mechanics_dataset',
             'optics_dataset', 'quantum_dataset', 'statistics_dataset'
         ]:
             return False
-        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench'], dataset):
+        if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum', 'MMSIVideo_U50','MMSIVideo_SC'], dataset):  # noqa: E501
             # For Multi-Turn we don't have custom prompt
             return False
+        if DATASET_TYPE(dataset) == 'MCQ':
+            if dataset is not None and 'LEGO' in dataset:
+                return False
         if DATASET_MODALITY(dataset) == 'VIDEO':
             # For Video benchmarks we don't have custom prompt at here
             return False
@@ -280,7 +286,7 @@ class InternVLChat(BaseModel):
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)
             elif listinstr(['MathVista', 'MathVision', 'VCR', 'MTVQA', 'MMVet',
                             'MMDU', 'CRPE', 'MIA-Bench', 'MM-Math', 'DynaMath', 'QSpatial',
-                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic'], dataset):
+                            'WeMath', 'LogicVista', 'MM-IFEval', 'ChartMimic', 'MMReason'], dataset):
                 prompt = question
                 if os.getenv('USE_COT') == '1':
                     prompt = build_qa_cot_prompt(line, prompt, self.cot_prompt)

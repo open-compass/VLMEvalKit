@@ -12,8 +12,6 @@ def img_root_map(dataset):
         return 'OCRVQA'
     if 'COCO_VAL' == dataset:
         return 'COCO'
-    if 'MMMU' in dataset:
-        return 'MMMU'
     if "QSpatial" in dataset:
         return "QSpatial"
 
@@ -142,7 +140,7 @@ class ImageBaseDataset:
                     decode_base64_to_image_file(line['image'], tgt_path)
                 tgt_path = [tgt_path]
             else:
-                tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
+                tgt_path = osp.join(self.img_root, f"{line['index']}.png")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'], tgt_path)
                 tgt_path = [tgt_path]
