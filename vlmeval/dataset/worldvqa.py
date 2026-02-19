@@ -12,117 +12,128 @@ from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.smp import misc, file
 from vlmeval import utils
 from vlmeval.dataset.utils import build_judge
-import re
 import copy
-import base64
 import mimetypes
-# -------------------- Your judge rubric (kept) --------------------
-JUDGE_WORLDQA_PROMPT_EN = """
-### Role
-You are an expert judge specialized in evaluating the correctness of answers. Your task is to assess whether a model-generated answer is correct based on a given question, the model's response, and the ground truth answer.
 
-### Task: Evaluate Answer Correctness
-Please classify the model's response into one of the following three categories. Ignore differences in formatting, punctuation, language (Chinese vs. English), or abbreviations/full names. Focus strictly on the **core semantics** and the **level of detail (granularity)**:
+JUDGE_WORLDQA_PROMPT_EN = (
+    "### Role\n"
+    "You are an expert judge specialized in evaluating the correctness of answers. "
+    "Your task is to assess whether a model-generated answer is correct based on a given "
+    "question, the model's response, and the ground truth answer.\n\n"
 
-1. **Correct**:
-    - The model answer contains the core information of the ground truth.
-    - The model answer is semantically consistent with the ground truth and contains no contradictions.
-    - **The granularity of the model answer is equal to or finer than the ground truth.**
-    - Extra irrelevant information is allowed as long as it does not conflict with the ground truth.
+    "### Task: Evaluate Answer Correctness\n"
+    "Please classify the model's response into one of the following three categories. "
+    "Ignore differences in formatting, punctuation, language (Chinese vs. English), "
+    "or abbreviations/full names. Focus strictly on the **core semantics** and the "
+    "**level of detail (granularity)**:\n\n"
 
-2. **Incorrect**:
-    - The model answer provides information that contradicts the ground truth.
-    - The model answer provides the wrong specific entity, value, or description.
-    - **The granularity of the model answer is coarser than the ground truth**, leading to incomplete or insufficiently specific information.
-    - Even if the model expresses uncertainty but follows up with a wrong answer (e.g., "I'm not sure, maybe it's B" when the truth is A), it is considered Incorrect.
+    "1. **Correct**:\n"
+    "   - The model answer contains the core information of the ground truth.\n"
+    "   - The model answer is semantically consistent with the ground truth and contains no contradictions.\n"
+    "   - **The granularity of the model answer is equal to or finer than the ground truth.**\n"
+    "   - Extra irrelevant information is allowed as long as it does not conflict with the ground truth.\n\n"
 
-3. **Unattempted**:
-    - The model explicitly states it does not know the answer (e.g., "I don't know," "I cannot answer this question").
-    - The model suggests the user search elsewhere (e.g., "Please search the internet").
-    - The model answer contains no information from the ground truth but provides no incorrect or contradictory information.
+    "2. **Incorrect**:\n"
+    "   - The model answer provides information that contradicts the ground truth.\n"
+    "   - The model answer provides the wrong specific entity, value, or description.\n"
+    "   - **The granularity of the model answer is coarser than the ground truth**, "
+    "leading to incomplete or insufficiently specific information.\n"
+    "   - Even if the model expresses uncertainty but follows up with a wrong answer, "
+    "(e.g., \"I'm not sure, maybe it's B\" when the truth is A), it is considered Incorrect.\n\n"
 
-### Output Format
-Please strictly follow this two-line format for your output:
-1. **Evaluation**: [A brief explanation of your reasoning]
-2. **Label**: [Final classification: "Correct", "Incorrect", or "Unattempted"]
+    "3. **Unattempted**:\n"
+    "   - The model explicitly states it does not know the answer"
+    " (e.g., \"I don't know," "I cannot answer this question\").\n"
+    "   - The model suggests the user search elsewhere"
+    " (e.g., \"Please search the internet\").\n"
+    "   - The model answer contains no information from the ground truth"
+    " and provides no incorrect or contradictory information.\n\n"
 
----
-### Examples
+    "### Output Format\n"
+    "Please strictly follow this two-line format for your output:\n"
+    "1. **Evaluation**: [A brief explanation of your reasoning]\n"
+    "2. **Label**: [Final classification: \"Correct\", \"Incorrect\", or \"Unattempted\"]\n\n"
 
-**Example 1 (Incorrect - Granularity Mismatch/Too Coarse)**
-Input:
-'''
-Question: 图片中属于什么类型的田地？
-Model Answer: 图片中展示的是梯田。梯田是在山坡地上开垦并修筑的阶梯状农田。
-Ground Truth Answer: 龙脊梯田
-'''
-Evaluation: 标准答案特指“龙脊梯田”，模型只回答了通用的“梯田”。模型答案层级比答案层级更粗略，未能提供标准答案所需的特指信息，属于层级不一致导致的回答错误。
-Label: Incorrect
+    "---\n"
+    "### Examples\n\n"
 
-**Example 2 (Correct - Finer Granularity)**
-Input:
-'''
-Question: What weather phenomenon is in the image?
-Model Answer: Based on the visual evidence in the image, the weather phenomenon shown is a **severe storm with extremely high winds**, most likely a **tornado** or a very powerful **hurricane/typhoon**.
-Ground Truth Answer: High winds
-'''
-Evaluation: The ground truth is "high winds," and a "tornado" is a more specific and granular type of high wind. The semantics are correct and the detail is finer.
-Label: Correct
+    "**Example 1 (Incorrect - Granularity Mismatch/Too Coarse)**\n"
+    "Input:\n"
+    "'''\n"
+    "Question: 图片中属于什么类型的田地？\n"
+    "Model Answer: 图片中展示的是梯田。梯田是在山坡地上开垦并修筑的阶梯状农田。\n"
+    "Ground Truth Answer: 龙脊梯田\n"
+    "'''\n"
+    "Evaluation: 标准答案特指“龙脊梯田”，模型只回答了通用的“梯田”。"
+    "模型答案层级比答案层级更粗略，未能提供标准答案所需的特指信息，属于层级不一致导致的回答错误。\n"
+    "Label: Incorrect\n\n"
 
-**Example 3 (Correct)**
-Input:
-'''
-Question: 图中内容是什么品牌的logo？
-Model Answer: via浏览器
-Ground Truth Answer: via
-'''
-Evaluation: 模型答案“via浏览器”包含了标准答案“via”，核心语义一致，且“via浏览器”是更具体的描述，层级上是匹配的。
-Label: Correct
+    "**Example 2 (Correct - Finer Granularity)**\n"
+    "Input:\n"
+    "'''\n"
+    "Question: What weather phenomenon is in the image?\n"
+    "Model Answer: Based on the visual evidence, it is a severe storm with extremely high winds, "
+    "most likely a tornado or a very powerful hurricane/typhoon.\n"
+    "Ground Truth Answer: High winds\n"
+    "'''\n"
+    "Evaluation: The ground truth is \"high winds\" and a tornado is a more specific type of high wind. "
+    "The semantics are correct and the detail is finer.\n"
+    "Label: Correct\n\n"
 
-**Example 4 (Unattempted)**
-Input:
-'''
-Question: Which athlete is in the image?
-Model Answer: I cannot answer this question as I do not have relevant sports data.
-Ground Truth Answer: Wout Weghorst
-'''
-Evaluation: The model explicitly states its inability to answer and provides no incorrect information.
-Label: Unattempted
+    "**Example 3 (Correct)**\n"
+    "Input:\n"
+    "'''\n"
+    "Question: 图中内容是什么品牌的logo？\n"
+    "Model Answer: via浏览器\n"
+    "Ground Truth Answer: via\n"
+    "'''\n"
+    "Evaluation: 模型答案“via浏览器”包含标准答案“via”，语义一致，且“via浏览器”是更具体的描述，层级匹配。\n"
+    "Label: Correct\n\n"
 
-**Example 5 (Incorrect)**
-Input:
-'''
-Question: 图片中展示的是什么苹果品种？
-Model Answer: 我觉得可能是阿克苏苹果。
-Ground Truth Answer: 烟台苹果
-'''
-Evaluation: 虽然模型用了“可能”等词汇，但它给出的具体答案“阿克苏苹果”与标准答案“烟台苹果”不符，提供了错误信息。
-Label: Incorrect
+    "**Example 4 (Unattempted)**\n"
+    "Input:\n"
+    "'''\n"
+    "Question: Which athlete is in the image?\n"
+    "Model Answer: I cannot answer this question as I do not have relevant sports data.\n"
+    "Ground Truth Answer: Wout Weghorst\n"
+    "'''\n"
+    "Evaluation: The model explicitly states inability and provides no incorrect information.\n"
+    "Label: Unattempted\n\n"
 
-**Example 6 (Unattempted)**
-Input:
-'''
-Question: What is the name of the insect in this image?
-Model Answer: This is a photo of an insect. To find the species, consult an entomologist or use recognition software.
-Ground Truth Answer: Japanese rhinoceros beetle
-'''
-Evaluation: The model does not attempt to name the insect and suggests the user search elsewhere, providing no incorrect information.
-Label: Unattempted
+    "**Example 5 (Incorrect)**\n"
+    "Input:\n"
+    "'''\n"
+    "Question: 图片中展示的是什么苹果品种？\n"
+    "Model Answer: 我觉得可能是阿克苏苹果。\n"
+    "Ground Truth Answer: 烟台苹果\n"
+    "'''\n"
+    "Evaluation: 尽管模型使用了“可能”等词汇，但给出的“阿克苏苹果”与标准答案不符，"
+    "因此提供了错误信息。\n"
+    "Label: Incorrect\n\n"
 
----
-### Current Task
-Input:
-'''
-Question: {question}
-Model Answer: {model_answer}
-Ground Truth Answer: {ground_truth_answer}
-'''
+    "**Example 6 (Unattempted)**\n"
+    "Input:\n"
+    "'''\n"
+    "Question: What is the name of the insect in this image?\n"
+    "Model Answer: This is a photo of an insect."
+    " To find the species, consult an entomologist or use recognition software.\n"
+    "Ground Truth Answer: Japanese rhinoceros beetle\n"
+    "'''\n"
+    "Evaluation: The model does not attempt to name the insect and suggests searching elsewhere.\n"
+    "Label: Unattempted\n\n"
 
-Evaluation:
-"""
+    "---\n"
+    "### Current Task\n"
+    "Input:\n"
+    "'''\n"
+    "Question: {question}\n"
+    "Model Answer: {model_answer}\n"
+    "Ground Truth Answer: {ground_truth_answer}\n"
+    "'''\n\n"
+    "Evaluation:\n"
+)
 
 
-# -------------------- helpers --------------------
 def _strip_think(text: str) -> str:
     if not isinstance(text, str):
         return str(text)
@@ -182,7 +193,6 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
     temperature = kwargs.get("temperature", 0)
     seed = kwargs.get("seed", 42)
     top_p = kwargs.get("top_p", 1)
-    # breakpoint()
 
     for _ in range(retry):
         try:
@@ -193,23 +203,17 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 seed=seed,
                 top_p=top_p,
             )
-            print(resp)
             # must be json
             text = resp.strip().replace('*', '')
-            
-
-            eval_match = re.search(r"Evaluation:\s*(.*?)(?:\n\s*Label:|\Z)", text, re.S | re.I)
-            evaluation_text = eval_match.group(1).strip() if eval_match else text
             # print(f"{eval_match=}, {evaluation_text=}")
 
             label_match = re.search(r"Label:\s*(Correct|Incorrect|Unattempted)", text, re.I)
-            print(f"{label_match=}")
             if not label_match:
                 continue
 
             label = label_match.group(1).strip().lower()
             label = label.replace('label:', '').strip().strip('\t').strip('\n')
-            
+
             ans = copy.deepcopy(line)
             ans['judge_model_output'] = text
             if label == "correct":
@@ -263,7 +267,7 @@ class WorldVQA(ImageBaseDataset):
             line = self.data.iloc[line]
 
         def image_path_to_base64_url(path: str) -> str:
-    
+
             mime, _ = mimetypes.guess_type(path)
             if mime is None:
                 mime = "image/png"  # 兜底
@@ -279,10 +283,7 @@ class WorldVQA(ImageBaseDataset):
             img_base64_url = image_path_to_base64_url(img_path)
         else:
             img_base64_url = None
-        
 
-
-        # breakpoint()
         messages: List[Dict[str, str]] = []
         messages.append({"type": "image", "value": img_base64_url})
 
@@ -291,7 +292,15 @@ class WorldVQA(ImageBaseDataset):
         if lang == "zh":
             messages.append({"type": "text", "value": "请尽可能提供详细的回答。\n" + question})
         else:
-            messages.append({"type": "text", "value": "Please provide as much detail as possible in your answer.\n" + question})
+            messages.append(
+                {
+                    "type": "text",
+                    "value": (
+                        "Please provide as much detail as possible in your answer.\n"
+                        + question
+                    ),
+                }
+            )
 
         return messages
 
@@ -301,7 +310,7 @@ class WorldVQA(ImageBaseDataset):
             df = pd.DataFrame(df)
 
         s = df["extract_answer"].fillna("").str.lower()
-        # breakpoint()
+
         df = df.assign(
             _attempted=s.isin(["correct", "incorrect", "failed"]),
             _correct=(s == "correct")
@@ -316,10 +325,16 @@ class WorldVQA(ImageBaseDataset):
             attempt = att / tot if tot else 0.0
             f = 2 * cga * acc / (cga + acc) if (cga + acc) else 0.0
             return pd.Series(
-                {"Total": tot, "Attempted": att, "Correct": cor,
-                "Accuracy": acc, "CGA": cga, "AttemptRate": attempt, "F-score": f}
+                {
+                    "Total": tot,
+                    "Attempted": att,
+                    "Correct": cor,
+                    "Accuracy": acc,
+                    "CGA": cga,
+                    "AttemptRate": attempt,
+                    "F-score": f,
+                }
             )
-
 
         out = []
 
@@ -387,7 +402,7 @@ class WorldVQA(ImageBaseDataset):
             utils.track_progress_rich(
                 auxeval,
                 tups,
-                nproc=nproc,          
+                nproc=nproc,
                 chunksize=nproc,
                 keys=indices,
                 save=temp_result_file,

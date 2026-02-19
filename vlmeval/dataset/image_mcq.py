@@ -1650,6 +1650,7 @@ class LEGO(ImageMCQDataset):
         msgs = self.split_LEGO(msgs)
         return msgs
 
+
 class VisualPuzzles(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
@@ -1662,14 +1663,14 @@ class VisualPuzzles(ImageMCQDataset):
     def format_options(self, opt_str):
         if not opt_str or opt_str == 'nan':
             return None
-        
+
         # 提取所有被引号包住的内容
         items = re.findall(r"'(.*?)'", opt_str)
-        
+
         # 生成 A. B. C. D.
         letters = string.ascii_uppercase
         formatted = [f"({letters[i]}) {item}" for i, item in enumerate(items)]
-        
+
         return "\n".join(formatted)
 
     def build_prompt(self, line):
@@ -1682,15 +1683,16 @@ class VisualPuzzles(ImageMCQDataset):
             tgt_path = self.dump_image(line)
 
         question = line['question']
-    
+
         if not pd.isna(line['options']):
-            options = "Options:\n"+self.format_options(line['options'])
+            options = "Options:\n" + self.format_options(line['options'])
         else:
             options = 'Options: Choose from (A) (B) (C) (D) in the image.'
         prompt = ''
         prompt += question + '\n' + options
         prompt += "\nSolve the multiple-choice question and then answer with the option letter from the given choices. "
-        prompt += "The last line of your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of options. "
+        prompt += "The last line of your response should be of the following format:"
+        prompt += "'Answer: $LETTER' (without quotes) where LETTER is one of options. "
         prompt += "Think step by step before answering."
 
         msgs = []
@@ -1701,7 +1703,7 @@ class VisualPuzzles(ImageMCQDataset):
         msgs.append(dict(type='text', value=prompt))
         # breakpoint()
         return msgs
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.visualpuzzles import VisulPuzzles_acc
         from .utils.multiple_choice import mcq_vanilla_eval
@@ -1721,7 +1723,7 @@ class VisualPuzzles(ImageMCQDataset):
                 model = None
 
         storage = get_intermediate_file_path(eval_file, f'_{name_str}')
-        
+
         if osp.exists(storage):
             accuracy_scores = VisulPuzzles_acc(storage)
         else:
@@ -1731,11 +1733,9 @@ class VisualPuzzles(ImageMCQDataset):
         level_dict = accuracy_scores[1]
         # cross_dict = accuracy_scores[2]
 
-       # ===== 表1：category =====
         df_cat = pd.DataFrame(cat_dict).rename(columns={'category': 'group'})
         df_cat['type'] = 'category'
 
-        # ===== 表2：level =====
         df_level = pd.DataFrame(level_dict).rename(columns={'level': 'group'})
         df_level['type'] = 'level'
 
@@ -1747,6 +1747,7 @@ class VisualPuzzles(ImageMCQDataset):
         score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
         dump(combine_score, score_pth)
         return combine_score
+
 
 class PuzzleVQA(ImageMCQDataset):
     TYPE = "MCQ"
@@ -1770,13 +1771,14 @@ class PuzzleVQA(ImageMCQDataset):
         # breakpoint()
         options = line['options']
         letters = string.ascii_uppercase
-        
+
         options = '\n'.join([f"({letters[i]}) {item}" for i, item in enumerate(eval(options))])
-        
+
         prompt = ''
         prompt += question + '\nOptions:\n' + options
         prompt += "\nSolve the multiple-choice question and then answer with the option letter from the given choices. "
-        prompt += "The last line of your response should be of the following format: 'Answer: $LETTER' (without quotes) where LETTER is one of options. "
+        prompt += "The last line of your response should be of the following format:"
+        prompt += "'Answer: $LETTER' (without quotes) where LETTER is one of options. "
         prompt += "Think step by step before answering."
 
         msgs = []
@@ -1787,7 +1789,7 @@ class PuzzleVQA(ImageMCQDataset):
         msgs.append(dict(type='text', value=prompt))
 
         return msgs
-    
+
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.puzzlevqa import PuzzleVQA_acc
         from .utils.multiple_choice import mcq_vanilla_eval
@@ -1817,6 +1819,7 @@ class PuzzleVQA(ImageMCQDataset):
         score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
         dump(df_cat, score_pth)
         return df_cat
+
 
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"

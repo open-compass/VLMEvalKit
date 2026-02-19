@@ -2,7 +2,7 @@ import re
 from ...smp import *
 from ...utils import can_infer
 import timeout_decorator
-import re
+
 Option_list = ['A','B','C','D']
 
 
@@ -90,13 +90,14 @@ def extract_answer(ans):
     else:
         return "Z"
 
+
 def to_choice_letter(options, answer):
     answer_str = str(answer).strip()
-    
+
     for i, opt in enumerate(options):
         if str(opt).strip() == answer_str:
             return chr(ord('A') + i)
-    
+
     raise ValueError(f"Answer {answer} not found in options {options}")
 
 
@@ -124,7 +125,6 @@ def PuzzleVQA_acc(result_file):
         'triangle',
         'color_number_hexagon'
     ]
-    # breakpoint()
     data = load(result_file)
     lt = len(data)
     # print(data[0])
@@ -136,20 +136,19 @@ def PuzzleVQA_acc(result_file):
         cate = item['category']
         tot['overall'] += 1
         tot[cate] += 1
-        # breakpoint()
-        if extract_answer(item['prediction']).lower() == to_choice_letter(eval(item['options']), item['answer']).lower():
+        if (
+            extract_answer(item['prediction']).lower()
+            == to_choice_letter(eval(item['options']), item['answer']).lower()
+        ):
+
             hit['overall'] += 1
             hit[cate] += 1
-            
+
     res = defaultdict(list)
-    # breakpoint()
     for k in categories:
         res['category'].append(k)
         res['tot'].append(tot[k])
         res['hit'].append(hit[k])
         res['acc'].append(hit[k] / tot[k] * 100)
 
-    breakpoint()
-
-    
     return res

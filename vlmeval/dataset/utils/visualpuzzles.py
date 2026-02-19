@@ -2,7 +2,6 @@ import re
 from ...smp import *
 from ...utils import can_infer
 import timeout_decorator
-import re
 Option_list = ['A','B','C','D']
 
 
@@ -91,7 +90,6 @@ def extract_answer(ans):
         return "Z"
 
 
-
 def VisulPuzzles_acc(result_file):
     categories = [
         'overall',
@@ -107,7 +105,7 @@ def VisulPuzzles_acc(result_file):
         'hard',
         'overall'
     ]
-    # breakpoint()
+
     data = load(result_file)
     lt = len(data)
     # print(data[0])
@@ -119,13 +117,13 @@ def VisulPuzzles_acc(result_file):
         cate = item['category']
         tot['overall'] += 1
         tot[cate] += 1
-        
+
         if extract_answer(item['prediction']).lower() == item['answer'].lower():
             hit['overall'] += 1
             hit[cate] += 1
-            
+
     res = defaultdict(list)
-    # breakpoint()
+
     for k in categories:
         res['category'].append(k)
         res['tot'].append(tot[k])
@@ -140,15 +138,15 @@ def VisulPuzzles_acc(result_file):
         level = item['difficulty']
         tot_level['overall'] += 1
         tot_level[level] += 1
-        
+
         if extract_answer(item['prediction']).lower() == item['answer'].lower():
             hit_level['overall'] += 1
             hit_level[level] += 1
-            
+
     for k in difficulties:
         res_level['level'].append(k)
         res_level['tot'].append(tot_level[k])
         res_level['hit'].append(hit_level[k])
         res_level['acc'].append(hit_level[k] / tot_level[k] * 100)
-    
+
     return res, res_level
