@@ -7,19 +7,19 @@ import json
 from os import path as osp
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import decode_base64_to_image_file, load, dump, get_intermediate_file_path
+from vlmeval.smp import *
+
 
 class TextHaluBench(ImageBaseDataset):
     TYPE = 'TextHaluBench'
     DATASET_URL = {
         'TextHaluBench':'https://huggingface.co/datasets/LinYuanMo/TextHaluBench/resolve/main/TextHaluBench.tsv',
-        
+
     }
     DATASET_MD5 = {
         'TextHaluBench':' aa80286957b252cb92975486abf1d18e '
     }
 
-    
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -34,24 +34,14 @@ class TextHaluBench(ImageBaseDataset):
         else:
             msgs = [dict(type='image', value=tgt_path)]
         msgs.append(dict(type='text', value=question))
-        
+
         return msgs
+
     def evaluate(self, eval_file, **judge_kwargs):
-        
-        import re
-        import pandas as pd
-        import json
+        df = load(eval_file)
 
-        df = load(eval_file) 
-
-        
-        total_tp, total_fp, total_fn = 0, 0, 0
-        
-        total_tp_under, total_fp_under, total_fn_under = 0, 0, 0
-
-        spotting_f1_list = [] 
-        under_f1_list = []  
-
+        spotting_f1_list = []
+        under_f1_list = []
 
         def clean_spotting_text(text):
             if pd.isna(text):
@@ -81,13 +71,11 @@ class TextHaluBench(ImageBaseDataset):
                     seen.add(tok)
             return unique
 
-
         def get_predicted_letters(response3: str, question: str):
             response3 = response3.replace("·", "").strip()
             question = str(question).replace("·", "").strip()
 
             matched_letters = []
-
 
             matches = re.findall(r"\b([ABCD])\.", response3, flags=re.IGNORECASE)
             if matches:
@@ -99,13 +87,11 @@ class TextHaluBench(ImageBaseDataset):
                     if content and content in response3:
                         matched_letters.append(letter.upper())
 
-
                 if not matched_letters:
                     matches = re.findall(r"(?<![A-Za-z0-9])([ABCD])(?![A-Za-z0-9])", response3, flags=re.IGNORECASE)
                     matched_letters = [m.upper() for m in matches]
 
             return " ".join(sorted(set(matched_letters)))
-
 
         def compute_macro_f1(pred_str, ans_str):
             import re
@@ -134,33 +120,26 @@ class TextHaluBench(ImageBaseDataset):
 
             return sum(f1_list) / len(f1_list)
 
-
-
         for idx, row in df.iterrows():
             gt = row["answer"]
             pred_raw = row["prediction"]
             label = row.get("label")
             question = row.get("question")
-            
+
             if label == "understanding":
                 predicted_letters = get_predicted_letters(pred_raw, question)
-                
+
                 standardized_pred = ",".join([p.strip() for p in predicted_letters.split() if p.strip()])
                 df.at[idx, "prediction"] = standardized_pred
 
-                
                 f1 = compute_macro_f1(standardized_pred, gt)
                 df.at[idx, "f1"] = f1
                 under_f1_list.append(f1)
 
-                
-
-            elif label == "spotting" :
-                
-
+            elif label == "spotting":
                 real_groups = clean_spotting_text(gt)
                 predicted = clean_spotting_text(pred_raw)
-                
+
                 df.at[idx, "prediction"] = " ".join(predicted)
 
                 real_set, pred_set = set(real_groups), set(predicted)
@@ -172,12 +151,11 @@ class TextHaluBench(ImageBaseDataset):
                 f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
                 df.at[idx, "f1"] = f1
                 spotting_f1_list.append(f1)
-                
 
         under_macro_f1 = sum(under_f1_list) / len(under_f1_list) if under_f1_list else 0.0
         spotting_macro_f1 = sum(spotting_f1_list) / len(spotting_f1_list) if spotting_f1_list else 0.0
 
-        overall_score = (spotting_macro_f1 + under_macro_f1) / 2  
+        overall_score = (spotting_macro_f1 + under_macro_f1) / 2
 
         details_file = get_intermediate_file_path(eval_file, "_details")
         dump(df, details_file)
