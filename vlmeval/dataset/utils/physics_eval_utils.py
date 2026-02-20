@@ -40,6 +40,7 @@ def extract_final_answer_list(last_answer):
     return [extract_final_answer(last_answer)]
 
 
+@timeout_decorator.timeout(30, use_signals=False)
 def extract_final_answer_allform(latex_response, answer_type=None, latex_wrap=r'\\boxed{(.*?)}'):
     boxed_content = extract_all_boxed_content(latex_response, latex_wrap)
     if not boxed_content:
@@ -72,6 +73,13 @@ def _standardize_expr(expr):
     return simplify(expand(trigsimp(expr)))
 
 
+@timeout_decorator.timeout(30, use_signals=False)
+def _sympy_is_equal(expr1_sympy, expr2_sympy):
+    sympy_result = simplify(expr1_sympy - expr2_sympy) == 0
+    sympy_result = sympy_result or expr1_sympy.equals(expr2_sympy)
+    return sympy_result
+
+
 def is_equiv(model, expr1: str, expr2: str, verbose: bool = False) -> dict:
     result_data = {
         "input_expressions": {"expr1": expr1, "expr2": expr2},
@@ -83,7 +91,7 @@ def is_equiv(model, expr1: str, expr2: str, verbose: bool = False) -> dict:
         "llm_comparison_result": None,
     }
     try:
-        if "\text" in expr1 or "\text" in expr2:
+        if r"\text" in expr1 or r"\text" in expr2:
             model.sys_prompt = Judge_SYS_PROMPT
             user_prompt = Judge_USER_PROMPT.format(expr1=expr1, expr2=expr2)
             generate_result = model.generate(user_prompt)
@@ -106,8 +114,10 @@ def is_equiv(model, expr1: str, expr2: str, verbose: bool = False) -> dict:
                 "expr1": str(expr1_sympy),
                 "expr2": str(expr2_sympy)
             }
-
-            sympy_result = simplify(expr1_sympy - expr2_sympy) == 0 or expr1_sympy.equals(expr2_sympy)
+            sympy_result = _sympy_is_equal(expr1_sympy, expr2_sympy)
+        except TimeoutError:
+            result_data["error"] = "SymPy computation timed out!"
+            sympy_result = None
         except Exception as e:
             result_data["error"] = str(e)
             sympy_result = None

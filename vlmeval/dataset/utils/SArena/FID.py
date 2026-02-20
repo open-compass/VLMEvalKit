@@ -1,3 +1,4 @@
+import os
 import torch
 import clip
 import torchvision.transforms as TF
@@ -8,6 +9,7 @@ from scipy import linalg
 from .base_metric import BaseMetric
 from .inception import InceptionV3
 from torch.nn.functional import adaptive_avg_pool2d
+from vlmeval.smp.file import LMUDataRoot
 
 
 class FIDCalculator(BaseMetric):
@@ -22,14 +24,15 @@ class FIDCalculator(BaseMetric):
 
         if self.model_name == 'ViT-B/32':
             self.dims = 512
-            model, preprocess = clip.load('ViT-B/32')
+            root = os.path.join(LMUDataRoot(), 'aux_models')
+            model, preprocess = clip.load('ViT-B/32', download_root=root)
         elif self.model_name == 'InceptionV3':
             self.dims = 2048
             block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[self.dims]
             model = InceptionV3([block_idx]).to(self.device)
             preprocess = TF.Compose([TF.ToTensor()])
 
-        self.model = model.cuda()
+        self.model = model.to(self.device)
         self.preprocess = preprocess
 
     def calculate_frechet_distance(self, mu1, sigma1, mu2, sigma2, eps=1e-6):
@@ -123,7 +126,7 @@ class FIDCalculator(BaseMetric):
     def pil_images_to_tensor(self, images_list):
         """Convert a list of PIL Images to a torch.Tensor."""
         tensors_list = [self.preprocess(img) for img in images_list]
-        return torch.stack(tensors_list).cuda()  # BxCxHxW format
+        return torch.stack(tensors_list).to(self.device)  # BxCxHxW format
 
     def calculate_score(self, batch, update=True):
         m1, s1 = self.calculate_activation_statistics(batch['gt_im'])

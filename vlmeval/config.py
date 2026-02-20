@@ -79,6 +79,7 @@ ungrouped = {
     ),
     "Pixtral-12B": partial(Pixtral, model_path="mistralai/Pixtral-12B-2409"),
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
+    "KVL": partial(InternVLChat, model_path="amoeba04/KVL", version="V2.0"),
 }
 
 o1_key = os.environ.get('O1_API_KEY', None)
@@ -477,6 +478,7 @@ api_models = {
     # TeleMM
     "TeleMM": partial(TeleMMAPI, model="TeleAI/TeleMM", temperature=0, retry=10),
     "TeleMM2.0": partial(TeleMM2_API, model="TeleAI/TeleMM", retry=3, timeout=600),
+    "TeleMM2.0Thinking": partial(TeleMM2Thinking_API, model="TeleAI/TeleMM", retry=3, timeout=600),
     "Qwen2.5-VL-32B-Instruct-SiliconFlow": partial(
         SiliconFlowAPI, model="Qwen/Qwen2.5-VL-32B-Instruct", temperature=0, retry=10),
     "Qwen3-VL-8B--crop--arm_thinker_prompt--sglang": partial(
@@ -1324,6 +1326,10 @@ idefics_series = {
     "Idefics3-8B-Llama3": partial(
         IDEFICS2, model_path="HuggingFaceM4/Idefics3-8B-Llama3"
     ),
+    'granite-docling-258M': partial(
+        DOCLING, model_path="ibm-granite/granite-docling-258M"
+    )
+
 }
 
 smolvlm_series = {
@@ -1361,6 +1367,12 @@ deepseekvl2_series = {
         DeepSeekVL2, model_path="deepseek-ai/deepseek-vl2-small"
     ),
     "deepseek_vl2": partial(DeepSeekVL2, model_path="deepseek-ai/deepseek-vl2"),
+}
+
+deepseekocr_series = {
+    "DeepSeek-OCR": partial(
+        DeepSeekOCR, model_path="deepseek-ai/DeepSeek-OCR"
+    ),
 }
 
 janus_series = {
@@ -1728,6 +1740,7 @@ eagle_series = {
 moondream_series = {
     "Moondream1": partial(Moondream1, model_path="vikhyatk/moondream1"),
     "Moondream2": partial(Moondream2, model_path="vikhyatk/moondream2"),
+    "Moondream3": partial(Moondream3, model_path="moondream/moondream3-preview"),
 }
 
 llama_series = {
@@ -1980,6 +1993,37 @@ lfm2vl_series = {
     "LFM2-VL-3B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
 }
 
+covt_series = {
+    "CoVT-7B-seg": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-depth": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-depth",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-seg_depth_dino": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg_depth_dino",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-seg_depth_dino_edge": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg_depth_dino_edge",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -2000,7 +2044,7 @@ supported_VLM = {}
 model_groups = [
     ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
-    idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
+    idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
     mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,qwen3vl_series,
@@ -2011,7 +2055,7 @@ model_groups = [
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
     flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
-    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series, covt_series
 ]
 
 for grp in model_groups:
