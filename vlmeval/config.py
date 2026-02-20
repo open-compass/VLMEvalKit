@@ -1371,7 +1371,7 @@ deepseekvl2_series = {
 
 deepseekocr_series = {
     "DeepSeek-OCR": partial(
-        DeepSeekOCR, model_path="deepseek-ai/DeepSeek-OCR", use_vllm=True
+        DeepSeekOCR, model_path="deepseek-ai/DeepSeek-OCR"
     ),
 }
 

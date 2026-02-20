@@ -15,13 +15,9 @@ class DeepSeekOCR(BaseModel):
         base_size=1024,
         image_size=640,
         crop_mode=True,
-        test_compress=False,
-        save_results=False,
-        output_path=None,
+        output_path='/tmp/',
         prompt_template=None,
         torch_dtype=None,
-        device=None,
-        attn_implementation=None,
         model_kwargs=None,
         infer_kwargs=None,
         use_vllm=False,
@@ -36,7 +32,7 @@ class DeepSeekOCR(BaseModel):
             )
             raise exc
 
-        self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dtype = torch_dtype or (torch.bfloat16 if self.device.type == "cuda" else torch.float32)
         if isinstance(self.dtype, str):
             self.dtype = getattr(torch, self.dtype)
@@ -45,7 +41,8 @@ class DeepSeekOCR(BaseModel):
         self.use_vllm = use_vllm
 
         model_kwargs = model_kwargs or {}
-        if attn_implementation is None and self.device.type == "cuda":
+        attn_implementation = None
+        if self.device.type == "cuda":
             attn_implementation = "flash_attention_2"
         if attn_implementation is not None:
             model_kwargs.setdefault("_attn_implementation", attn_implementation)
@@ -67,7 +64,6 @@ class DeepSeekOCR(BaseModel):
             vllm_defaults = dict(
                 model=model_path,
                 enable_prefix_caching=False,
-                mm_processor_cache_gb=0,
             )
             if logits_processors:
                 vllm_defaults["logits_processors"] = logits_processors
@@ -95,8 +91,6 @@ class DeepSeekOCR(BaseModel):
             base_size=base_size,
             image_size=image_size,
             crop_mode=crop_mode,
-            test_compress=test_compress,
-            save_results=save_results,
         )
         if infer_kwargs:
             self.infer_kwargs.update(infer_kwargs)
@@ -117,6 +111,7 @@ class DeepSeekOCR(BaseModel):
                 prompt=full_prompt,
                 image_file=image,
                 output_path=self.output_path,
+                eval_mode=True,
                 **self.infer_kwargs,
             )
 
