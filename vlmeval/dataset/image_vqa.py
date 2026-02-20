@@ -426,19 +426,19 @@ class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MathVerse_MINI':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
         'MathVerse_MINI_Vision_Only':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Only_cot':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
         'MathVerse_MINI_Vision_Intensive':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
         'MathVerse_MINI_Text_Lite':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
         'MathVerse_MINI_Text_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -695,23 +695,154 @@ class MathVision(ImageBaseDataset):
         return score
 
 
+class LENS(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LENS-CN-QA':
+        'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
+        'LENS-CN-QA_MINI':
+        'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA_MINI.tsv'
+    }
+    DATASET_MD5 = {
+        'LENS-CN-QA': 'D382365A2C977543BEB890BAC240E731',
+        'LENS-CN-QA_MINI':'4CEA1BDE46537DE2428C1D05A0B36094'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
+        from .utils.lens import LENS_auxeval, LENS_acc
+
+        if 'model' in judge_kwargs:
+            model = judge_kwargs['model']
+        else:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), 'LENS evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    LENS_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = LENS_acc(storage)
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # Add verifier evaluation for LENS
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+            dump(data, detailed_result_file)
+
+        else:
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+            if not osp.exists(detailed_result_file):
+                dump(data, detailed_result_file)
+
+        def LENS_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['category'] if 'category' in item else 'Overall'
+                tot['Overall'] += 1
+                tot[cate] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Subject'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
+            return res
+
+        score = LENS_acc_verifier(detailed_result_file)
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'atomic_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
         'electro_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
         'mechanics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
         'optics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
         'quantum_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
+        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -1271,15 +1402,13 @@ class LogicVista(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
+    DEFAULT_JUDGE = ['gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in [
-            'exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'
-        ], model
         name_str_map = {
             'gpt-4-0125': 'gpt4',
             'gpt-4-turbo': 'gpt4-turbo',
@@ -1289,7 +1418,7 @@ class LogicVista(ImageBaseDataset):
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn(
@@ -1297,11 +1426,6 @@ class LogicVista(ImageBaseDataset):
                 )
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn(
-                'OPENAI_API_KEY is not set properly, will use exact matching for evaluation'
-            )
-            model = None
 
         storage = get_intermediate_file_path(eval_file, f'_{name_str}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{name_str}', 'pkl')
@@ -1623,7 +1747,7 @@ class MMVet(ImageBaseDataset):
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
         'MMVet_Hard':
-        'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
     DATASET_MD5 = {
         'MMVet': '748aa6d4aa9d4de798306a63718455e3',
@@ -2541,6 +2665,7 @@ class MMSci_Captioning(ImageBaseDataset):
         'MMSci_DEV_Captioning_image_only': '0f5f0fd7ff383699fbd2203a4659d3e8',
         'MMSci_DEV_Captioning_with_abs': 'ae4a9b88166153efd74e28c989e4a484'
     }
+    DEFAULT_JUDGE = ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.mmsci import (get_all_metrics_for_g_eval_score,
@@ -2618,7 +2743,6 @@ class MMSci_Captioning(ImageBaseDataset):
             model = judge_kwargs.pop('model', 'gpt-4o-0806')
             nproc = judge_kwargs.pop('nproc', 4)
             # not supported gemini-1.5-pro-exp-0801 as judge model yet、
-            assert model in ['gpt-4o-0806', 'gemini-1.5-pro-exp-0801']
             judge_model = build_judge(model=model, **judge_kwargs)
 
             assert judge_model.working(), (
@@ -3724,5 +3848,209 @@ class MathCanvas(ImageBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_metrics')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
+
+        return summary_dict
+
+
+class MMReason(ImageBaseDataset):
+    TYPE = 'VQA'
+    mini_path = 'https://huggingface.co/datasets/HuanjinYao/MMReason/resolve/main/MMReason_testmini.tsv?download=true'
+    DATASET_URL = {
+        'MMReason_testmini': mini_path,
+    }
+    DATASET_MD5 = {'MMReason_testmini': '630205345349ac51c9999d4fbfd1d630'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mmreason import MMReason_auxeval_extract, MMReason_auxeval_score, MMReason_acc
+
+        model = judge_kwargs['model']
+        suffix = eval_file.split('.')[-1]
+        storage_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.xlsx')
+        tmp_file_extract = eval_file.replace(f'.{suffix}', f'_{model}_extract.pkl')
+        storage_score = eval_file.replace(f'.{suffix}', f'_{model}_score.xlsx')
+        tmp_file_score = eval_file.replace(f'.{suffix}', f'_{model}_score.pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+        # stage1: extract the answer
+        if not osp.exists(storage_extract):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MMReason evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_extract):
+                ans = load(tmp_file_extract)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMReason_auxeval_extract,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_extract,
+                )
+                ans = load(tmp_file_extract)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_extract'] == v['log_extract'] and ans[k]['extract'] == v['extract']
+
+            data['extract'] = [ans[idx]['extract'] for idx in data['index']]
+            data['log_extract'] = [ans[idx]['log_extract'] for idx in data['index']]
+            dump(data, storage_extract)
+
+        # stage2: score the answer
+        if not osp.exists(storage_score):
+            data = load(storage_extract)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), ('MMReason evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file_score):
+                ans = load(tmp_file_score)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    MMReason_auxeval_score,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_score,
+                )
+                ans = load(tmp_file_score)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log_score'] == v['log_score'] and ans[k]['score'] == v['score']
+
+            data['score'] = [ans[idx]['score'] for idx in data['index']]
+            data['log_score'] = [ans[idx]['log_score'] for idx in data['index']]
+            dump(data, storage_score)
+
+        score = MMReason_acc(storage_score)
+        score_pth = storage_score.replace('.xlsx', '_score.csv')
+        dump(score, score_pth)
+        return score
+
+
+class CoreCognition(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {
+        'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'
+    }
+
+    DATASET_MD5 = {
+        'CoreCognition': 'edb4569677adfb6d01e8056a610dddbb'
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
+        from .utils.corecognition import CoreCognition_eval, CoreCognition_acc
+
+        nproc = judge_kwargs.pop('nproc', 4)
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+            warnings.warn(DEBUG_MESSAGE)
+            model = None
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+
+        # Merge meta fields into data - drop existing columns to avoid conflicts
+        data = data.drop(columns=['answer', 'category', 'l2-category', 'question_type'], errors='ignore')
+        meta_merge = meta[['index', 'answer', 'category', 'l2-category', 'question_type']]
+        data = data.merge(meta_merge, on='index', how='left')
+
+        # Evaluate predictions using hybrid matching with parallel processing
+        data['correct'] = CoreCognition_eval(model, data, nproc=nproc)
+
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        dump(data, result_file)
+
+        # Calculate accuracy
+        acc = CoreCognition_acc(data)
+        dump(acc, score_file)
+
+        return acc
+
+
+class VLMsAreBiased(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'vlms_are_biased_main': 'https://opencompass.openxlab.space/utils/VLMEval/vlms_are_biased_main.tsv',
+    }
+    DATASET_MD5 = {'vlms_are_biased_main': '96b929361f6417b32df95b5287f992f1'}
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.vlmsarebiased import vlms_are_biased_process_results, vlms_are_biased_aggregate_by_topic
+
+        detailed_results_file = get_intermediate_file_path(eval_file, '_eval_meta')
+
+        if not os.path.exists(detailed_results_file):
+            detail_result = vlms_are_biased_process_results(eval_file)
+            dump(detail_result, detailed_results_file)
+        else:
+            print(f"Loading existing evaluation results from {detailed_results_file}")
+            detail_result = load(detailed_results_file)
+
+        summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
+
+        os.environ['EVAL_FORMAT'] = 'json'
+
+        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        dump(summary_dict, score_file)
 
         return summary_dict

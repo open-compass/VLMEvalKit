@@ -603,6 +603,18 @@ def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):
     return matches[0]
 
 
+def report_acc_MMVP(df):
+    assert len(df) % 2 == 0
+    for i in range(len(df) // 2):
+        assert df['question'][2 * i] == df['question'][2 * i + 1]
+    res = {}
+    res['Average'] = np.mean(df['hit'])
+    hits = list(df['hit'])
+    both_correct = [hits[2 * i] and hits[2 * i + 1] for i in range(len(df) // 2)]
+    res['Overall'] = np.mean(both_correct)
+    return d2df(res)
+
+
 def get_dimension_rating(data_path):
     TASKS = [
         'Reasoning',
