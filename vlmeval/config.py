@@ -418,6 +418,31 @@ api_models = {
         verbose=False,
         timeout=1800
     ),
+    # AWS Bedrock (Converse API; set AWS_REGION or pass region_name)
+    "Bedrock_Claude3-5Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Opus": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-opus-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Haiku": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        temperature=0,
+        retry=10,
+    ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
     "GLM4V_PLUS": partial(GLMVisionAPI, model="glm-4v-plus", temperature=0, retry=10),
