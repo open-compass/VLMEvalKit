@@ -318,6 +318,37 @@ api_models = {
         Gemini, model="gemini-2.5-pro", temperature=0, retry=10
     ),
     
+    # GCP Vertex AI – Claude (same GCPVertexAPI; model name selects Claude backend)
+    "GCP_Claude3-5Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-5-sonnet-20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-5Haiku": partial(
+        GCPVertexAPI,
+        model="claude-3-5-haiku@20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-7Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-7-sonnet@20250219",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeSonnet4-5": partial(
+        GCPVertexAPI,
+        model="claude-sonnet-4-5@20250929",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeOpus4-6": partial(
+        GCPVertexAPI,
+        model="claude-opus-4-6",
+        temperature=0,
+        retry=10,
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
