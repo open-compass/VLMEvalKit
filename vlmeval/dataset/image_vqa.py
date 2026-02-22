@@ -9,7 +9,6 @@ from tqdm import tqdm
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
 from ..utils import track_progress_rich
 
 
@@ -210,6 +209,260 @@ class VizWiz(ImageBaseDataset):
             ret['Overall'] = np.mean(hit) * 100
             ret = d2df(ret)
             ret.round(2)
+
+            dump(ret, result_file)
+
+        retz = load(result_file)
+        return retz
+
+
+class VTCBench(ImageBaseDataset):
+    TYPE = 'VQA'
+    _DATASET_PATH = "https://huggingface.co/datasets/MLLM-CL/VTCBench"
+    # Dataset URL mapping - points to different splits of HuggingFace dataset
+    DATASET_URL = {
+        "Retrieval": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+        "Reasoning": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+        "Memory": f"https://huggingface.co/datasets/{_DATASET_PATH}",
+    }
+
+    # MD5 values are empty as HuggingFace datasets are dynamically loaded
+    DATASET_MD5 = {
+        "Retrieval": "",
+        "Reasoning": "",
+        "Memory": "",
+    }
+
+    @classmethod
+    def supported_datasets(cls):
+        return 'VTCBench'
+
+    def load_data(self, dataset: str):
+        """Load dataset from HuggingFace"""
+
+        from datasets import load_dataset
+
+        COLUMNS_ORGINIAL = ["problem", "answers", "images"]
+        all_dataframes = []
+        current_index = 0
+
+        for task in ["Retrieval", "Reasoning", "Memory"]:
+
+            def _gen_fields(example: dict, idx: int) -> dict:
+                # example schema:
+                # problem: str
+                # answers: list[str]
+                # images: list[dict[str, bytes]] # bytes obj <=> jpeg image
+                def encode_image_bytes_to_base64(image_bytes) -> str:
+                    """Encode image bytes to base64 string."""
+                    return base64.b64encode(image_bytes).decode()
+
+                b64_imgs: list[str] = [
+                    encode_image_bytes_to_base64(img["bytes"]) for img in example["images"]
+                ]
+                return {
+                    "index": int(idx) + current_index,
+                    "question": example["problem"],
+                    "answer": json.dumps(example["answers"], ensure_ascii=False),
+                    "image": json.dumps(b64_imgs),
+                    "category": task,
+                }
+
+            hf_dataset = load_dataset(
+                self._DATASET_PATH, split=task, columns=COLUMNS_ORGINIAL,
+            )
+            # apply transformation to VLMEval format
+            hf_dataset = hf_dataset.map(
+                _gen_fields,
+                remove_columns=COLUMNS_ORGINIAL,
+                with_indices=True,
+                num_proc=16,
+            )
+            data = hf_dataset.to_pandas()
+            all_dataframes.append(data)
+            current_index += len(data)
+
+        # Concatenate all dataframes
+        merged_data = pd.concat(all_dataframes, ignore_index=False)
+
+        '''
+        # now data has schema:
+        # index <class 'int'> 0
+        # question <class 'str'> What are all the special magic numbers for 019cc30e-2da8-4162-b145-df514e17 and demonic-heaven mentioned in the provided text?
+        # answer <class 'str'> ["9199619", "1202641"]
+        # image <class 'list'> [/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAx...XMBiHGRwbbBzgefJ8knJJ9ydXdTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQTU1NTQf/2Q==, ...]
+        # category <class 'str'> Retrieval
+        '''  # noqa: E501
+
+        return merged_data
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        base64_list = line['image']
+
+        quesiton = line['question']
+        category = line['category']
+
+        if category == 'Reasoning':
+            prompt = 'Answer a question based on the above book snippet. Your answer should be short and based on either explicitly stated facts or strong, logical inferences. Return only the final answer with no additional explanation or reasoning. Question: ' + quesiton  # noqa: E501
+        elif category == 'Retrieval':
+            prompt = 'Answer a question based on the above book snippet. Some special magic numbers are hidden within the following text. Make sure to memorizeit. I will quiz you about the numbers afterwards. Question: ' + quesiton  # noqa: E501
+        elif category == 'Memory':
+            prompt = 'Based on the above context, write an answer in the form of a short phrase for the following question. Answer with exact words from the context whenever possible. Question: ' + quesiton  # noqa: E501
+        else:
+            raise ValueError(f"Unknown category: {category}")
+
+        msgs = []
+        if isinstance(base64_list, list):
+            msgs.extend([dict(type='image', value='data:image/jpeg;base64,' + p) for p in base64_list])
+        else:
+            msgs = [dict(type='image', value='data:image/jpeg;base64,' + base64_list)]
+        msgs.append(dict(type='text', value=prompt))
+        return msgs
+
+    @classmethod
+    def evaluate(self, eval_file, **judge_kwargs):
+        try:
+            judge_model = build_judge(max_tokens=1024, **judge_kwargs)
+            assert judge_model.working(), ('VTCBench evaluation requires a working OPENAI API\n')
+            return self.get_scores_gpt(eval_file, **judge_kwargs)
+        except:
+            print('No GPT model specified, using heuristic evaluation.')
+            return self.get_scores(eval_file, **judge_kwargs)
+
+    @classmethod
+    def get_scores_gpt(self, eval_file, **judge_kwargs):
+        from .utils.vtcbench import gpt_eval_vtcbemch
+        model = build_judge(max_tokens=128, **judge_kwargs)
+        score_file = get_intermediate_file_path(eval_file, f'_{model}_score')
+        tmp_file_score = get_intermediate_file_path(eval_file, f'_{model}_score', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(score_file):
+            data = load(eval_file)
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            scores = {}
+            if osp.exists(tmp_file_score):
+                scores = load(tmp_file_score)
+            tups = [x for x, i in zip(tups, indices) if i not in scores]
+            indices = [i for i in indices if i not in scores]
+
+            if len(indices):
+                new_result = track_progress_rich(
+                    gpt_eval_vtcbemch,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file_score,
+                )
+                scores = load(tmp_file_score)
+                for k, v in zip(indices, new_result):
+                    assert k in scores
+                    assert scores[k]['score'] == v['score'] and scores[k]['category'] == v['category'] and scores[k]['calc_metric'] == v['calc_metric']  # noqa: E501
+
+            data['score'] = [scores[idx]['score'] for idx in data['index']]
+            data['category'] = [scores[idx]['category'] for idx in data['index']]
+            data['calc_metric'] = [
+                scores[idx]['calc_metric'] for idx in data['index']
+            ]
+
+            dump(data, score_file)
+
+        # 加载评分后的数据并按calc_metric聚合
+        data = load(score_file)
+
+        # 按照calc_metric聚合结果
+        category_scores = {}
+        category_counts = {}
+
+        # 遍历data中的每个结果
+        for _, row in data.iterrows():
+            category = row['calc_metric']
+            score = row['score']
+
+            # 累加分数和计数
+            if category not in category_scores:
+                category_scores[category] = 0
+                category_counts[category] = 0
+
+            category_scores[category] += score
+            category_counts[category] += 1
+
+        # 计算每个category的平均分数
+        ret = dict()
+        for category in category_scores:
+            ret[category] = category_scores[category] / category_counts[category]
+
+        # 添加Overall平均分
+        if category_scores:  # 确保有数据才计算
+            total_score = sum(category_scores.values())
+            total_count = sum(category_counts.values())
+            ret['Overall'] = total_score / total_count
+        else:
+            ret['Overall'] = 0.0
+
+        result_file = get_intermediate_file_path(eval_file, '_result', 'json')
+        dump(ret, result_file)
+        return ret
+
+    @classmethod
+    def get_scores(self, eval_file, **judge_kwargs):
+        from .utils.vtcbench import process_vtc_line
+
+        result_file = get_intermediate_file_path(eval_file, '_tmp')
+
+        if not osp.exists(result_file):
+            data = load(eval_file)
+
+            assert 'answer' in data and 'prediction' in data
+            data['prediction'] = [str(x) for x in data['prediction']]
+            data['answer'] = [str(x) for x in data['answer']]
+            data['category'] = [str(x) for x in data['category']]
+
+            lt = len(data)
+            pool = mp.Pool(1)
+            lines = [data.iloc[i] for i in range(lt)]
+
+            res = pool.map(process_vtc_line, lines)
+
+            # 按照category聚合结果
+            category_scores = {}
+            category_counts = {}
+
+            # 遍历res中的每个结果
+            for item in res:
+                category = item['category']
+                score = item['score']
+
+                # 累加分数和计数
+                if category not in category_scores:
+                    category_scores[category] = 0
+                    category_counts[category] = 0
+
+                category_scores[category] += score
+                category_counts[category] += 1
+
+            ret = dict()
+
+            # 计算每个category的平均分数
+            for category in category_scores:
+                ret[category] = category_scores[category] / category_counts[category]
+
+            # 添加Overall平均分
+            if category_scores:  # 确保有数据才计算
+                total_score = sum(category_scores.values())
+                total_count = sum(category_counts.values())
+                ret['Overall'] = total_score / total_count
+            else:
+                ret['Overall'] = 0.0
 
             dump(ret, result_file)
 
@@ -426,19 +679,19 @@ class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'MathVerse_MINI':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
         'MathVerse_MINI_Vision_Only':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Only_cot':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
         'MathVerse_MINI_Vision_Intensive':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
         'MathVerse_MINI_Text_Lite':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
         'MathVerse_MINI_Text_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -695,23 +948,154 @@ class MathVision(ImageBaseDataset):
         return score
 
 
+class LENS(ImageBaseDataset):
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'LENS-CN-QA':
+        'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA.tsv',
+        'LENS-CN-QA_MINI':
+        'https://huggingface.co/datasets/songlier/LENS/resolve/main/LENS-CN-QA_MINI.tsv'
+    }
+    DATASET_MD5 = {
+        'LENS-CN-QA': 'D382365A2C977543BEB890BAC240E731',
+        'LENS-CN-QA_MINI':'4CEA1BDE46537DE2428C1D05A0B36094'
+    }
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        if judge_kwargs.get('use_verifier', False):
+            return self.evaluate_verifier(eval_file, **judge_kwargs)
+        else:
+            return self.evaluate_heuristic(eval_file, **judge_kwargs)
+
+    def evaluate_heuristic(self, eval_file, **judge_kwargs):
+        from .utils.lens import LENS_auxeval, LENS_acc
+
+        if 'model' in judge_kwargs:
+            model = judge_kwargs['model']
+        else:
+            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        storage = get_intermediate_file_path(eval_file, f'_{model}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
+        nproc = judge_kwargs.pop('nproc', 4)
+
+        if not osp.exists(storage):
+            data = load(eval_file)
+            model = build_judge(max_tokens=128, **judge_kwargs)
+            assert model.working(), 'LENS evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
+            lt = len(data)
+            lines = [data.iloc[i] for i in range(lt)]
+            tups = [(model, line) for line in lines]
+            indices = [line['index'] for line in lines]
+
+            ans = {}
+            if osp.exists(tmp_file):
+                ans = load(tmp_file)
+            tups = [x for x, i in zip(tups, indices) if i not in ans]
+            indices = [i for i in indices if i not in ans]
+
+            if len(indices):
+                new_results = track_progress_rich(
+                    LENS_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunksize=nproc,
+                    keys=indices,
+                    save=tmp_file,
+                )
+                ans = load(tmp_file)
+                for k, v in zip(indices, new_results):
+                    assert k in ans
+                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v['res']
+
+            data['res'] = [ans[idx]['res'] for idx in data['index']]
+            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            dump(data, storage)
+
+        score = LENS_acc(storage)
+        score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+    # It returns a DataFrame
+    @classmethod
+    def evaluate_verifier(self, eval_file, **judge_kwargs):
+        # Add verifier evaluation for LENS
+        data = load(eval_file)
+        if 'verifier_score' not in data.columns:
+            from .utils.verifier import Verifier
+            verifier = Verifier(use_vllm=judge_kwargs.get('use_vllm', False))
+
+            verifier_scores = []
+            verifier_matches = []
+            for idx, row in tqdm(data.iterrows(), total=len(data), desc="Verifier Evaluation Progress"):
+                question_text = row['question'] if 'question' in row else ""
+                prediction_text = row['prediction'] if 'prediction' in row else ""
+                answer_text = row['answer'] if 'answer' in row else ""
+
+                score = verifier.evaluate(question_text, prediction_text, answer_text)
+                verifier_scores.append(score)
+                verifier_matches.append(1.0 if score else 0.0)
+
+            data['verifier_score'] = verifier_scores
+            data['verifier_match'] = verifier_matches
+
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+            dump(data, detailed_result_file)
+
+        else:
+            detailed_result_file = get_intermediate_file_path(eval_file, '_detailed_results')
+            if not osp.exists(detailed_result_file):
+                dump(data, detailed_result_file)
+
+        def LENS_acc_verifier(result_file):
+            from collections import defaultdict
+            data = load(result_file)
+            tot = defaultdict(lambda: 0)
+            hit = defaultdict(lambda: 0)
+            lt = len(data)
+
+            for i in range(lt):
+                item = data.iloc[i]
+                cate = item['category'] if 'category' in item else 'Overall'
+                tot['Overall'] += 1
+                tot[cate] += 1
+
+                if item['verifier_score'] is True:
+                    hit['Overall'] += 1
+                    hit[cate] += 1
+
+            res = defaultdict(list)
+            for k in tot.keys():
+                res['Subject'].append(k)
+                res['tot'].append(tot[k])
+                res['hit'].append(hit[k])
+                res['acc'].append(hit[k] / tot[k] * 100)
+            res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
+            return res
+
+        score = LENS_acc_verifier(detailed_result_file)
+        score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
+        dump(score, score_pth)
+        return score
+
+
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'atomic_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
         'electro_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
         'mechanics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
         'optics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
         'quantum_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
+        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -1616,7 +2000,7 @@ class MMVet(ImageBaseDataset):
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
         'MMVet_Hard':
-        'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
     DATASET_MD5 = {
         'MMVet': '748aa6d4aa9d4de798306a63718455e3',
@@ -2897,10 +3281,9 @@ class OCR_Reasoning(ImageBaseDataset):
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        nproc = 1
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=1024, **judge_kwargs)
+            model = build_judge(max_tokens=16384, **judge_kwargs)
             assert model.working(), 'OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -3813,6 +4196,85 @@ class MMReason(ImageBaseDataset):
         score_pth = storage_score.replace('.xlsx', '_score.csv')
         dump(score, score_pth)
         return score
+
+
+class CoreCognition(ImageBaseDataset):
+    TYPE = 'VQA'
+
+    DATASET_URL = {
+        'CoreCognition': 'https://huggingface.co/datasets/ZTWHHH/CoreCognition/resolve/main/CoreCognition.tsv'
+    }
+
+    DATASET_MD5 = {
+        'CoreCognition': 'edb4569677adfb6d01e8056a610dddbb'
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=question))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        assert os.path.exists(eval_file), '{} does not exist!'.format(eval_file)
+        from .utils.corecognition import CoreCognition_eval, CoreCognition_acc
+
+        nproc = judge_kwargs.pop('nproc', 4)
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4', 'gpt-4o-mini': 'gpt4omini', 'gpt-4.1': 'gpt41'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
+        if osp.exists(score_file):
+            acc = load(score_file)
+            return acc
+
+        model = build_judge(**judge_kwargs)
+        if not model.working():
+            warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+            warnings.warn(DEBUG_MESSAGE)
+            model = None
+
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = [str(x) for x in data['prediction']]
+
+        meta = self.data
+        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
+        data_map = {x: y for x, y in zip(data['index'], data['question'])}
+        for k in data_map:
+            assert k in meta_q_map, f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
+
+        # Merge meta fields into data - drop existing columns to avoid conflicts
+        data = data.drop(columns=['answer', 'category', 'l2-category', 'question_type'], errors='ignore')
+        meta_merge = meta[['index', 'answer', 'category', 'l2-category', 'question_type']]
+        data = data.merge(meta_merge, on='index', how='left')
+
+        # Evaluate predictions using hybrid matching with parallel processing
+        data['correct'] = CoreCognition_eval(model, data, nproc=nproc)
+
+        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result')
+        dump(data, result_file)
+
+        # Calculate accuracy
+        acc = CoreCognition_acc(data)
+        dump(acc, score_file)
+
+        return acc
 
 
 class VLMsAreBiased(ImageBaseDataset):
