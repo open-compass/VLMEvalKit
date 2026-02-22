@@ -26,7 +26,11 @@ from .mug_u import MUGUAPI
 from .kimivl_api import KimiVLAPIWrapper, KimiVLAPI
 from .rbdashmm_chat3_api import RBdashMMChat3_API, RBdashChat3_5_API
 from .rbdashmm_chat3_5_api import RBdashMMChat3_78B_API, RBdashMMChat3_5_38B_API
+<<<<<<< gcp_vertex
 from .gcp_vertex import GCPVertexAPI
+=======
+from .bedrock import BedrockAPI
+>>>>>>> main
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini',
@@ -37,5 +41,9 @@ __all__ = [
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
     'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API',
+<<<<<<< gcp_vertex
     'GCPVertexAPI',
+=======
+    'BedrockAPI',
+>>>>>>> main
 ]
