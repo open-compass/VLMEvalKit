@@ -1,4 +1,4 @@
-![LOGO](http://opencompass.openxlab.space/utils/MMLB.jpg)
+![LOGO](https://opencompass.openxlab.space/utils/MMLB.jpg)
 
 <b>A Toolkit for Evaluating Large Vision-Language Models. </b>
 
@@ -71,7 +71,9 @@ Note that some VLMs may not be able to run under certain transformer versions, w
 - **Please use** `transformers==4.42.0` **for**: `AKI`.
 - **Please use** `transformers==4.44.0` **for**: `Moondream2`, `H2OVL series`.
 - **Please use** `transformers==4.45.0` **for**: `Aria`.
-- **Please use** `transformers==latest` **for**: `LLaVA-Next series`, `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
+- **Please use** `transformers==4.48.0` (or `4.46.0`) **for**: `LLaVA-Next series` (e.g., `llava-hf/llava-v1.6-vicuna-7b-hf`).
+- **Please use** `transformers==latest` **for**: `PaliGemma-3B`, `Chameleon series`, `Video-LLaVA-7B-HF`, `Ovis series`, `Mantis series`, `MiniCPM-V2.6`, `OmChat-v2.0-13B-sinlge-beta`, `Idefics-3`, `GLM-4v-9B`, `VideoChat2-HD`, `RBDash_72b`, `Llama-3.2 series`, `Kosmos series`.
+- **Please use** `transformers==4.50.3` (or `4.46.1` or `4.51` or `4.53`) **for**: `Molmo series`.
 
 **Torchvision Version Recommendation:**
 

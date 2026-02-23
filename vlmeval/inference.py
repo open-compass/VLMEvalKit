@@ -36,7 +36,9 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     structs = []
     for i in range(lt):
         item = data.iloc[i]
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+            struct = dataset.build_prompt(item)
+        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             assert hasattr(model, 'build_prompt')
             struct = model.build_prompt(item, dataset=dataset_name)
         else:
@@ -51,7 +53,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
         v11_pred = f'{work_dir}/{model_name}_{dataset_name}_V11.{pred_format}'
         if osp.exists(v11_pred):
             try:
-                reuse_inds = load('http://opencompass.openxlab.space/utils/mmb_reuse.pkl')
+                reuse_inds = load('https://opencompass.openxlab.space/utils/mmb_reuse.pkl')
                 data = load(v11_pred)
                 ans_map = {x: y for x, y in zip(data['index'], data['prediction']) if x in reuse_inds}
                 dump(ans_map, out_file)
@@ -149,7 +151,9 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
         if idx in res:
             continue
 
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+        if hasattr(dataset, 'force_use_dataset_prompt') and dataset.force_use_dataset_prompt:
+            struct = dataset.build_prompt(data.iloc[i])
+        elif hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
             struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
         else:
             struct = dataset.build_prompt(data.iloc[i])
