@@ -1,6 +1,5 @@
 apted
 distance
-distance
 editdistance
 ipdb
 jieba
