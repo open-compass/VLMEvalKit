@@ -53,7 +53,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
         v11_pred = f'{work_dir}/{model_name}_{dataset_name}_V11.{pred_format}'
         if osp.exists(v11_pred):
             try:
-                reuse_inds = load('http://opencompass.openxlab.space/utils/mmb_reuse.pkl')
+                reuse_inds = load('https://opencompass.openxlab.space/utils/mmb_reuse.pkl')
                 data = load(v11_pred)
                 ans_map = {x: y for x, y in zip(data['index'], data['prediction']) if x in reuse_inds}
                 dump(ans_map, out_file)

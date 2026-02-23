@@ -27,7 +27,7 @@ from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6, MiniCPM_o_2_6
 from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya, MMAlaya2
 from .monkey import Monkey, MonkeyChat
-from .moondream import Moondream1, Moondream2
+from .moondream import Moondream1, Moondream2, Moondream3
 from .minimonkey import MiniMonkey
 from .mplug_owl2 import mPLUG_Owl2
 from .omnilmm import OmniLMM12B
@@ -50,6 +50,7 @@ from .internvl import InternVLChat
 from .interns1 import InternS1Chat
 from .deepseek_vl import DeepSeekVL
 from .deepseek_vl2 import DeepSeekVL2
+from .deepseek_ocr import DeepSeekOCR
 from .janus import Janus
 from .mgm import Mini_Gemini
 from .bunnyllama3 import BunnyLLama3
