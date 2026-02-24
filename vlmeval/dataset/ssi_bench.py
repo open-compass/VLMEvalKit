@@ -27,7 +27,7 @@ def _find_first_bracketed_list(text: str) -> Optional[str]:
         elif ch == "]":
             depth -= 1
             if depth == 0:
-                return text[start : i + 1]
+                return text[start:i + 1]
     return None
 
 
@@ -44,7 +44,7 @@ def _iter_bracketed_spans(text: str):
         elif ch == "]" and depth > 0:
             depth -= 1
             if depth == 0 and start is not None:
-                yield text[start : i + 1]
+                yield text[start:i + 1]
                 start = None
 
 
