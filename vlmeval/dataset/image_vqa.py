@@ -3872,8 +3872,12 @@ class OCRBench_v2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBench_v2':
         'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+        'OCRBench_v2_MINI': None,
     }
-    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+    DATASET_MD5 = {
+        'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0',
+        'OCRBench_v2_MINI': '11f79b8e1e0b0fe150964de4cb2feb02',
+    }
 
     # It returns a dictionary
     @classmethod
