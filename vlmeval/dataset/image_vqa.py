@@ -1255,8 +1255,10 @@ class OlympiadBench(ImageBaseDataset):
         return tgt_path_z
 
     def build_prompt(self, line):
-
         from .utils.olympiadbench import get_answer_type_text, make_input
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
