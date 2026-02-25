@@ -9,6 +9,15 @@ vcrbench_dataset = {
     'VCRBench_1fps_nopack': partial(VCRBench, dataset='VCR-Bench', fps=1.0, pack=False)
 }
 
+v2pbench_dataset = {
+    'V2PBench_2frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=2, pack=False),
+    'V2PBench_8frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=8, pack=False),
+    'V2PBench_16frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=16, pack=False),
+    'V2PBench_64frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=64, pack=False),
+    'V2PBench_128frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=128, pack=False),
+    'V2PBench_1fps_nopack': partial(V2PBench, dataset='V2P-Bench', fps=1.0, pack=False)
+}
+
 mmbench_video_dataset = {
     'MMBench_Video_8frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=False),
     'MMBench_Video_8frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=True),
@@ -224,7 +233,7 @@ dataset_groups = [
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    vsibench_dataset, mvu_eval_dataset, omtg_dataset
+    vsibench_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset
 ]
 
 for grp in dataset_groups:
