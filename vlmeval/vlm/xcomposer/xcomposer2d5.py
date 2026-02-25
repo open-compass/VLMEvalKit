@@ -16,7 +16,7 @@ conv_pattern = '\\[UNUSED_TOKEN_146\\]user\\\n|\\[UNUSED_TOKEN_146\\]assistant\\
 
 def get_font():
     try:
-        truetype_url = "http://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
+        truetype_url = "https://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
         ff = urlopen(truetype_url)
         font = ImageFont.truetype(ff, size=40)
     except Exception as e:

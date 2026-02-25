@@ -9,6 +9,15 @@ vcrbench_dataset = {
     'VCRBench_1fps_nopack': partial(VCRBench, dataset='VCR-Bench', fps=1.0, pack=False)
 }
 
+v2pbench_dataset = {
+    'V2PBench_2frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=2, pack=False),
+    'V2PBench_8frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=8, pack=False),
+    'V2PBench_16frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=16, pack=False),
+    'V2PBench_64frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=64, pack=False),
+    'V2PBench_128frame_nopack': partial(V2PBench, dataset='V2P-Bench', nframe=128, pack=False),
+    'V2PBench_1fps_nopack': partial(V2PBench, dataset='V2P-Bench', fps=1.0, pack=False)
+}
+
 mmbench_video_dataset = {
     'MMBench_Video_8frame_nopack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=False),
     'MMBench_Video_8frame_pack': partial(MMBenchVideo, dataset='MMBench-Video', nframe=8, pack=True),
@@ -200,6 +209,17 @@ dream_1k_dataset = {
     'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
 }
 
+omtg_dataset = {
+    "OMTGBench_1fps": partial(OMTGBench, dataset="OMTGBench", fps=1.0),
+    "OMTGBench_2fps": partial(OMTGBench, dataset="OMTGBench", fps=2.0),
+}
+
+mvu_eval_dataset = {
+    'MVU-Eval_8frame': partial(MVUEval, dataset='MVU-Eval', nframe=8),
+    'MVU-Eval_16frame': partial(MVUEval, dataset='MVU-Eval', nframe=16),
+}
+
+
 VSI_FRAME_VARIANTS = [
     ("128frame", dict(nframe=128)),
     ("64frame", dict(nframe=64)),
@@ -273,6 +293,7 @@ dataset_groups = [
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
+    mvu_eval_dataset, omtg_dataset, v2pbench_dataset
 ]
 
 # add by EASI team
