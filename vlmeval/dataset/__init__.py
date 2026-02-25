@@ -7,7 +7,7 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-    TreeBench, CVQA, TopViewRS
+    TreeBench, CVQA, TopViewRS, PuzzleVQA, VisualPuzzles
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -18,6 +18,7 @@ from .image_vqa import (
     CoreCognition, VLMsAreBiased, VTCBench
 )
 
+from .worldvqa import WorldVQA
 from .image_ccocr import CCOCRDataset
 from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
@@ -35,6 +36,8 @@ from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
 from .refcoco import RefCOCODataset
 from .simplevqa import SimpleVQA
+from .chartx import ChartX
+from .plotqa import PlotQA
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -55,6 +58,7 @@ from .moviechat1k import MovieChat1k
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .vdc import VDC
 from .vcrbench import VCRBench
+from .v2pbench import V2PBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
@@ -62,6 +66,7 @@ from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
 from .vsibench import VSIBench
 from .mvu_eval import MVUEval
+from .omtgbench import OMTGBench
 
 from .mmsi_video import MMSIVideoBench
 from .groundingme import GroundingME
@@ -107,6 +112,8 @@ from .mmesci import MMESCIDataset
 from .sarena_mini import SArena_MINI
 from .uni_svg import UniSVG
 from .design2code import Design2Code
+from .chartcap import ChartCapDataset
+from .asclepius import Asclepius
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -238,7 +245,8 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
-    FoxBench, VTCBench, Design2Code
+    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles, 
+    Design2Code
 ]
 
 VIDEO_DATASET = [
@@ -250,8 +258,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval
-
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval, OMTGBench, V2PBench
 ]
 
 TEXT_DATASET = [

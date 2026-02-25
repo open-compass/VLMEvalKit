@@ -318,6 +318,37 @@ api_models = {
         Gemini, model="gemini-2.5-pro", temperature=0, retry=10
     ),
     
+    # GCP Vertex AI – Claude (same GCPVertexAPI; model name selects Claude backend)
+    "GCP_Claude3-5Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-5-sonnet-20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-5Haiku": partial(
+        GCPVertexAPI,
+        model="claude-3-5-haiku@20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-7Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-7-sonnet@20250219",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeSonnet4-5": partial(
+        GCPVertexAPI,
+        model="claude-sonnet-4-5@20250929",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeOpus4-6": partial(
+        GCPVertexAPI,
+        model="claude-opus-4-6",
+        temperature=0,
+        retry=10,
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -361,6 +392,42 @@ api_models = {
         model="yi-vision",
         api_base="https://api.lingyiwanwu.com/v1/chat/completions",
         temperature=0,
+        retry=10,
+    ),
+    # Together AI (set TOGETHER_API_KEY)
+    "Together_Llama3.2-11B-Vision": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama3.2-90B-Vision": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama4-Scout-17B": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama4-Maverick-17B": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Qwen2-VL-72B": partial(
+        TogetherAPI,
+        model="Qwen/Qwen2-VL-72B-Instruct",
+        temperature=0,
+        max_tokens=2048,
         retry=10,
     ),
     # Claude
@@ -417,6 +484,31 @@ api_models = {
         retry=10,
         verbose=False,
         timeout=1800
+    ),
+    # AWS Bedrock (Converse API; set AWS_REGION or pass region_name)
+    "Bedrock_Claude3-5Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Opus": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-opus-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Haiku": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        temperature=0,
+        retry=10,
     ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),

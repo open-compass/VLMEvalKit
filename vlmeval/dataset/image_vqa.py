@@ -3281,10 +3281,9 @@ class OCR_Reasoning(ImageBaseDataset):
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        nproc = 1
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=1024, **judge_kwargs)
+            model = build_judge(max_tokens=16384, **judge_kwargs)
             assert model.working(), 'OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
