@@ -140,7 +140,7 @@ def convert_bbox(bbox, image_path, convert_xywh_to_x1y1x2y2=True):
 class VBGD(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
-    DATASET_URL = {"VBGD": ""}  # path
+    DATASET_URL = {"VBGD": "https://huggingface.co/datasets/Zery/VBGD_Dataset/resolve/main/VBGD.tsv"}  # path
     DATASET_MD5 = {"VBGD": "54615d8e27a93b3be13c71ddc09a6277"}
     EVAL_TYPE = "point"  # point or rectangle
     RE_TYPE = "functional"  # type of referring expressions: functional or composite
