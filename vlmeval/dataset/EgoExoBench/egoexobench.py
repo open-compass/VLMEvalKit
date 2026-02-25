@@ -19,7 +19,6 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 class EgoExoBench_MCQ(VideoBaseDataset):
     MD5 = '9c0aa8da235d766d02dd7e9a19182719'
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='EgoExoBench_MCQ', nframe=64, skip_EgoExo4D=False):
         super().__init__(dataset=dataset, nframe=nframe)
@@ -254,6 +253,7 @@ class EgoExoBench_MCQ(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

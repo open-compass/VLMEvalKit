@@ -48,7 +48,6 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='Video-MME', use_subtitle=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -223,8 +222,8 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         text_prompt = self.FRAMES_TMPL_NOSUB if not self.use_subtitle else self.FRAMES_TMPL_SUB.format(subtitles)
         message.append(dict(type='text', value=text_prompt))
-        question = line['question'] + '\n' + '\n'.join(eval(line['candidates']))
-        prompt = 'Question: {}\nAnswer: '.format(question)
+        line['question'] += '\n' + '\n'.join(eval(line['candidates']))
+        prompt = 'Question: {}\nAnswer: '.format(line['question'])
         message.append(dict(type='text', value=prompt))
         return message
 
@@ -241,6 +240,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
+            # assert model in ['chatgpt-0126', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

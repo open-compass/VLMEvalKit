@@ -40,7 +40,6 @@ class Video_Holmes(VideoBaseDataset):
     """  # noqa: E501
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='Video_Holmes', nframe=32, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -214,6 +213,7 @@ class Video_Holmes(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

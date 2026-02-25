@@ -36,7 +36,6 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='WorldSense', use_subtitle=False, use_audio=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -292,6 +291,7 @@ Respond with only the letter (A, B, C, or D) of the correct option.
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

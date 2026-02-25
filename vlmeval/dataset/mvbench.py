@@ -26,7 +26,6 @@ Based on your observations, select the best option that accurately addresses the
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MVBench', nframe=0, fps=-1):
         self.type_data_list = {
@@ -371,6 +370,7 @@ Based on your observations, select the best option that accurately addresses the
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None
@@ -426,7 +426,6 @@ Based on your observations, select the best option that accurately addresses the
 
 
 class MVBench_MP4(VideoBaseDataset):
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     MP4_MD5 = '5c8c6f8b7972c2de65a629590f7c42f5'
     SYS = """Carefully watch the video and pay attention to the cause and sequence of events, \
@@ -615,6 +614,7 @@ Based on your observations, select the best option that accurately addresses the
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

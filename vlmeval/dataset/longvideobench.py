@@ -94,7 +94,6 @@ class LongVideoBench(VideoBaseDataset):
     SYS = ''
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='LongVideoBench', use_subtitle=False, nframe=0, fps=-1):
         super().__init__(dataset=dataset, nframe=nframe, fps=fps)
@@ -287,6 +286,7 @@ class LongVideoBench(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.get('model', 'exact_matching')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

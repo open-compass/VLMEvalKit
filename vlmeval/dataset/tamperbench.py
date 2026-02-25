@@ -30,7 +30,6 @@ class MVTamperBench(VideoBaseDataset):
 """
 
     TYPE = 'Video-MCQ'
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
     def __init__(self, dataset='MVTamperBench', nframe=0, fps=-1):
         self.dataset_name = dataset
@@ -467,6 +466,7 @@ class MVTamperBench(VideoBaseDataset):
 
         if not osp.exists(score_file):
             model = judge_kwargs.setdefault('model', 'chatgpt-0125')
+            assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
 
             if model == 'exact_matching':
                 model = None

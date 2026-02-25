@@ -11,8 +11,6 @@ class TextMCQDataset(TextBaseDataset):
 
     DATASET_MD5 = {}
 
-    DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
-
     def build_prompt(self, line):
 
         if isinstance(line, int):
@@ -56,6 +54,7 @@ class TextMCQDataset(TextBaseDataset):
 
         circular = False
         model = judge_kwargs.get('model', 'exact_matching')
+        # assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
         name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
         name_str = name_str_map[model] if model in name_str_map else model
 
