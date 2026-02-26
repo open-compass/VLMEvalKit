@@ -1,3 +1,4 @@
+import os
 import torch
 import lpips
 
@@ -5,6 +6,7 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor, Normalize
 from .base_metric import BaseMetric
+from vlmeval.smp.file import LMUDataRoot
 
 
 class LPIPSCalculator(BaseMetric):
@@ -12,7 +14,8 @@ class LPIPSCalculator(BaseMetric):
         super().__init__()
         self.class_name = self.__class__.__name__
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = lpips.LPIPS(net='vgg').to(self.device)
+        model_path = os.path.join(LMUDataRoot(), 'aux_models', 'vgg.pth')
+        self.model = lpips.LPIPS(net='vgg', model_path=model_path).to(self.device)
         self.metric = self.LPIPS
         self.to_tensor = ToTensor()
         self.normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
