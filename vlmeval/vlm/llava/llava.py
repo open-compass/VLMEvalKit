@@ -116,7 +116,7 @@ class LLaVA(BaseModel):
                 else "\nAnswer the question directly."
             )
 
-        message = [dict(type="image", value=s) forin tgt_path]
+        message = [dict(type="image", value=s) for s in tgt_path]
         message.append(dict(type="text", value=prompt))
         return message
 
@@ -415,7 +415,7 @@ class LLaVA_Next(BaseModel):
                 if cn_string(prompt)
                 else "\nAnswer the question directly."
             )
-        message = [dict(type="image", value=s) forin tgt_path]
+        message = [dict(type="image", value=s) for s in tgt_path]
         message.append(dict(type="text", value=prompt))
         return message
 
