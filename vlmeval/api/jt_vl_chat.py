@@ -1,20 +1,21 @@
+import base64
 # flake8: noqa
 import pandas as pd
 import requests
 import json
 import os
-import base64
-from vlmeval.smp import *
+
+import pandas as pd
+import requests
+
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.dataset import img_root_map
+from vlmeval.dataset import DATASET_TYPE, img_root_map
+from vlmeval.smp import *
 
+API_ENDPOINT = "https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-4dfc1be4e6854a75a833aab9b956128c/service-e5893ba5c1154a1192cb8e60af11e276/v1/chat/completions"  # noqa: E501
 
+APP_CODE = "B0m6Tuglt5shfY7t3GyoJn1V5yVAm0Ba"
 
-API_ENDPOINT ="https://hl.jiutian.10086.cn/kunlun/ingress/api/hl-4a9c15/7b11a3451e1a4612a6661c3e22235df6/ai-4dfc1be4e6854a75a833aab9b956128c/service-e5893ba5c1154a1192cb8e60af11e276/v1/chat/completions"
-
-
-APP_CODE="B0m6Tuglt5shfY7t3GyoJn1V5yVAm0Ba"
 
 class JTVLChatWrapper(BaseAPI):
     is_api: bool = True
@@ -55,7 +56,9 @@ class JTVLChatWrapper(BaseAPI):
         ROOT = LMUDataRoot()
         assert isinstance(dataset, str)
 
-        img_root = os.path.join(ROOT, 'images', img_root_map(dataset) if dataset in img_root_map(dataset) else dataset)
+        img_root = os.path.join(
+            ROOT, 'images',
+            img_root_map(dataset) if dataset in img_root_map(dataset) else dataset)
         os.makedirs(img_root, exist_ok=True)
         if 'image' in line:
             if isinstance(line['image'], list):
@@ -79,7 +82,7 @@ class JTVLChatWrapper(BaseAPI):
 
     def use_custom_prompt(self, dataset):
         assert dataset is not None
-        if listinstr(['MMMU_DEV_VAL','MMMU_TEST'], dataset):
+        if listinstr(['MMMU_DEV_VAL', 'MMMU_TEST'], dataset):
             return False
         else:
             return True
@@ -92,8 +95,7 @@ class JTVLChatWrapper(BaseAPI):
 
         options = {
             cand: line[cand]
-            for cand in string.ascii_uppercase
-            if cand in line and not pd.isna(line[cand])
+            for cand in string.ascii_uppercase if cand in line and not pd.isna(line[cand])
         }
         for key, item in options.items():
             question += f'\n{key}. {item}'
@@ -142,9 +144,8 @@ class JTVLChatWrapper(BaseAPI):
         assert not self.INTERLEAVE
         model_name = self.__class__.__name__
         import warnings
-        warnings.warn(
-            f'Model {model_name} does not support interleaved input. '
-            'Will use the first image and aggregated texts as prompt. ')
+        warnings.warn(f'Model {model_name} does not support interleaved input. '
+                      'Will use the first image and aggregated texts as prompt. ')
         num_images = len([x for x in message if x['type'] == 'image'])
         if num_images == 0:
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
@@ -153,43 +154,49 @@ class JTVLChatWrapper(BaseAPI):
             prompt = '\n'.join([x['value'] for x in message if x['type'] == 'text'])
             if dataset == 'BLINK':
                 image = concat_images_vlmeval(
-                    [x['value'] for x in message if x['type'] == 'image'],
-                    target_size=512)
+                    [x['value'] for x in message if x['type'] == 'image'], target_size=512)
             else:
                 image = [x['value'] for x in message if x['type'] == 'image'][0]
         return prompt, image
 
-    def get_send_data(self,prompt, image_path, temperature, max_tokens,stream=False,understanding_plus=False):
+    def get_send_data(self,
+                      prompt,
+                      image_path,
+                      temperature,
+                      max_tokens,
+                      stream=False,
+                      understanding_plus=False):
         image = ''
         with open(image_path, 'rb') as f:
             image = str(base64.b64encode(f.read()), 'utf-8')
         send_data = {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            "messages": [{
+                "role": "user",
+                "content": prompt
+            }],
             "image_base64": image,
             "max_tokens": max_tokens,
             "temperature": temperature,
             "do_sample": False,
-            "understanding_plus":understanding_plus,
+            "understanding_plus": understanding_plus,
             "stream": stream
         }
         return send_data
 
-    def get_send_data_no_image(self,prompt, temperature, max_tokens, stream=False,understanding_plus=False):
+    def get_send_data_no_image(self,
+                               prompt,
+                               temperature,
+                               max_tokens,
+                               stream=False,
+                               understanding_plus=False):
         send_data = {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            "messages": [{
+                "role": "user",
+                "content": prompt
+            }],
             "max_tokens": max_tokens,
             "temperature": temperature,
-            "understanding_plus":understanding_plus,
+            "understanding_plus": understanding_plus,
             "stream": stream
         }
         return send_data
@@ -206,26 +213,27 @@ class JTVLChatWrapper(BaseAPI):
                 image_path=image_path,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
-                understanding_plus = True,
-                stream = True)
+                understanding_plus=True,
+                stream=True)
         else:
             send_data = self.get_send_data_no_image(
                 prompt=prompt,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
-                understanding_plus = True,
-                stream = True)
+                understanding_plus=True,
+                stream=True)
 
         json_data = json.dumps(send_data)
 
-        header_dict = {'Content-Type': 'application/json','Authorization': self.app_code}
+        header_dict = {'Content-Type': 'application/json', 'Authorization': self.app_code}
 
-        r = requests.post(self.api_base, headers=header_dict, data=json_data, timeout=3000,stream=True)
+        r = requests.post(
+            self.api_base, headers=header_dict, data=json_data, timeout=3000, stream=True)
         try:
             if send_data.get('stream', False):
                 chunks = []
                 full_content = ""
-                last_valid_usage = None  # 用于记录最后一个有效的usage
+                # last_valid_usage = None  # 用于记录最后一个有效的usage
                 # 流式处理 - 直接迭代并打印结果
                 try:
                     for line in r.iter_lines():
@@ -252,16 +260,16 @@ class JTVLChatWrapper(BaseAPI):
                                 except json.JSONDecodeError:
                                     continue
                     print()  # 打印换行
-                    return 0,full_content,'Succeeded! '
+                    return 0, full_content, 'Succeeded! '
                 except Exception as e:
-                    return -1,f'Error: {str(e)}',''
+                    return -1, f'Error: {str(e)}', ''
 
             else:
                 # 非流式处理
                 try:
                     r_json = r.json()
                     output = r_json['choices'][0]['message']['content']
-                    return 0,output,'Succeeded! '
+                    return 0, output, 'Succeeded! '
                 except:
                     error_msg = f'Error! code {r.status_code} content: {r.content}'
                     error_con = r.content.decode('utf-8')
@@ -269,10 +277,9 @@ class JTVLChatWrapper(BaseAPI):
                         self.logger.error(error_msg)
                         self.logger.error(error_con)
                         self.logger.error(f'The input messages are {inputs}.')
-                    return -1,error_msg,''
+                    return -1, error_msg, ''
         except Exception as e:
-            return -1,f'Error: {str(e)}',''
-
+            return -1, f'Error: {str(e)}', ''
 
 
 class JTVLChatAPI(JTVLChatWrapper):

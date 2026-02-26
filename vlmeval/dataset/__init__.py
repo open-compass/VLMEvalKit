@@ -7,7 +7,7 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-    TreeBench, CVQA, TopViewRS
+    TreeBench, CVQA, TopViewRS, PuzzleVQA, VisualPuzzles
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -15,9 +15,10 @@ from .image_vqa import (
     TableVQABench, CustomVQADataset, CRPE, MathVerse, OlympiadBench, SeePhys, QSpatial, VizWiz, MMNIAH, LogicVista,
     MME_CoT, MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
     ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench, MathCanvas, MMReason,
-    CoreCognition, VLMsAreBiased
+    CoreCognition, VLMsAreBiased, VTCBench
 )
 
+from .worldvqa import WorldVQA
 from .image_ccocr import CCOCRDataset
 from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
@@ -35,6 +36,8 @@ from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
 from .refcoco import RefCOCODataset
 from .simplevqa import SimpleVQA
+from .chartx import ChartX
+from .plotqa import PlotQA
 
 from .mmbench_video import MMBenchVideo
 from .videomme import VideoMME
@@ -55,12 +58,16 @@ from .moviechat1k import MovieChat1k
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .vdc import VDC
 from .vcrbench import VCRBench
+from .v2pbench import V2PBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
 from .vsibench import VSIBench
+from .mvu_eval import MVUEval
+from .omtgbench import OMTGBench
+
 from .mmsi_video import MMSIVideoBench
 from .groundingme import GroundingME
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
@@ -80,6 +87,7 @@ from .utils import *
 from .video_dataset_config import *
 from ..smp import *
 from .OmniDocBench.omnidocbench import OmniDocBench
+from .foxbench import FoxBench
 from .moat import MOAT
 from .GUI.screenspot import ScreenSpot
 from .GUI.screenspot_v2 import ScreenSpotV2
@@ -104,6 +112,10 @@ from .mmesci import MMESCIDataset
 from .sarena_mini import SArena_MINI
 from .uni_svg import UniSVG
 from .vladbench import VLADBench
+from .design2code import Design2Code
+from .chartcap import ChartCapDataset
+from .asclepius import Asclepius
+
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -219,7 +231,7 @@ IMAGE_DATASET = [
     MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
     SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
     HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
-    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,
+    OlympiadBench, SeePhys, WildVision, MMMath, QSpatial, Dynamath, GSM8KVDataset, MMGenBench, VizWiz,
     MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
     CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
     VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
@@ -233,7 +245,9 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
-    UniSVG, SArena_MINI, MMSIVideoBench, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME
+    UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
+    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
+    Design2Code, VLADBench
 ]
 
 VIDEO_DATASET = [
@@ -244,9 +258,8 @@ VIDEO_DATASET = [
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
-    Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench
-
+    Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval, OMTGBench, V2PBench
 ]
 
 TEXT_DATASET = [
@@ -321,15 +334,18 @@ def build_dataset(dataset_name, **kwargs):
 
     data = load(data_file)
     if 'question' not in [x.lower() for x in data.columns]:
-        warnings.warn(f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
+        warnings.warn(
+            f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
         return None
 
     if 'A' in data and 'B' in data:
         if 'image' in data or 'image_path' in data:
-            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
+            warnings.warn(
+                f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
             return CustomMCQDataset(dataset=dataset_name, **kwargs)
         else:
-            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ')
+            warnings.warn(
+                f'Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ')
             return CustomTextMCQDataset(dataset=dataset_name, **kwargs)
     else:
         warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ')
