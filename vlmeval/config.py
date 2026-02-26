@@ -1366,6 +1366,35 @@ qwen3vl_series = {
 }
 
 qwen3_5_series = {
+    # vllm serve command example: 
+    # vllm serve Qwen/Qwen3.5-122B-A10B --port 8000 --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3
+    "Qwen3.5-122B-A10B_ThinkMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+    ),
+    "Qwen3.5-122B-A10B_InstructMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+        chat_template_kwargs={"enable_thinking": False},
+    ),
     "Qwen3.5-397B-A17B": partial(
         Qwen3VLChat,
         model_path="Qwen/Qwen3.5-397B-A17B",
