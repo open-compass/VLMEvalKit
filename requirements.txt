@@ -25,6 +25,7 @@ lxml>=6.0.2
 math-verify
 matplotlib
 nltk
+num2words
 numpy
 omegaconf>=2.4.0.dev4
 openai
