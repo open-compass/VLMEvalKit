@@ -186,6 +186,30 @@ def extract_gpt_score(resp):
 
 
 def judge_one_item(item):
+    try:
+        return _judge_one_item(item)
+    except Exception as e:
+        logger.warning(f'Failed to judge ChartMimic item because {repr(e)}:\n{item}')
+        zero_score_dict = {
+            "low_level": {
+                "original_py_file": None,
+                "generated_py_file": None,
+                "text_metrics": {"precision": 0, "recall": 0, "f1": 0},
+                "chart_type_metrics": {"precision": 0, "recall": 0, "f1": 0},
+                "layout_metrics": {"precision": 0, "recall": 0, "f1": 0},
+                "color_metrics": {"precision": 0, "recall": 0.0, "f1": 0},
+            },
+            "high_level": {
+                "resp": None,
+                "msg": None,
+                "score": 0.0,
+            },
+        }
+        return 0, zero_score_dict
+
+
+@timeout(600, use_signals=False)
+def _judge_one_item(item):
     score_dict = {}
     zero_score_dict = {
         "low_level": {
@@ -316,7 +340,7 @@ def judge_one_item(item):
         logger.info(f"Failed to evaluate text for {item['index']} because {repr(e)}")
 
     try:
-        timeout(60.)(chart_type_evaluator)(
+        timeout(120.)(chart_type_evaluator)(
             generation_code_file=generated_py_file, golden_code_file=original_py_file
         )
     except Exception as e:
@@ -357,7 +381,7 @@ def judge_one_item(item):
             "msg": "Generated image file does not exist",
             "score": 0.0,
         }
-        logger.info(f"index: {item['index']}, return 0, score_dict: {score_dict}")
+        # logger.info(f"index: {item['index']}, return 0, score_dict: {score_dict}")
         return 0, score_dict
 
     # image order should align with prompt
@@ -372,16 +396,16 @@ def judge_one_item(item):
             "msg": "Error in getting response from judge model!",
             "score": 0.0,
         }
-        logger.info(f"index: {item['index']}, return -1, score_dict: {score_dict}")
+        logger.debug(f"index: {item['index']}, return -1, score_dict: {score_dict}")
         return -1, score_dict
     else:
-        # logger.info(f"Successfully got response from judge model:\n{resp}")
+        logger.debug(f"Successfully got response from judge model:\n{resp}")
         score_dict["high_level"] = {
             "resp": resp,
             "msg": "Successfully got response from judge model!",
             "score": extract_gpt_score(resp),
         }
-        logger.info(f"index: {item['index']}, return 0, score_dict: {score_dict}")
+        logger.debug(f"index: {item['index']}, return 0, score_dict: {score_dict}")
     return 0, score_dict
 
 

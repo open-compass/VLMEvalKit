@@ -1,25 +1,43 @@
-from multiprocessing import Pool
-import os
-from typing import Callable, Iterable, Sized
+from pathlib import Path
+from typing import Callable, Iterable
 
-from rich.progress import (BarColumn, MofNCompleteColumn, Progress, Task,
-                           TaskProgressColumn, TextColumn, TimeRemainingColumn)
-from rich.text import Text
 import os.path as osp
-import time
-import portalocker
 from ..smp import load, dump
+
+
+def cpu_count():
+    # Handle K8s LXCFS setting.
+    period = Path('/sys/fs/cgroup/cpu/cpu.cfs_period_us')
+    quota = Path('/sys/fs/cgroup/cpu/cpu.cfs_quota_us')
+    try:
+        if period.exists() and quota.exists():
+            return int(quota.read_text()) // int(period.read_text())
+    except:
+        pass
+
+    import os
+    return os.cpu_count()
+
+
+def new_func(idx: int, func, inputs):
+    if not isinstance(inputs, (tuple, list, dict)):
+        inputs = (inputs, )
+    if isinstance(inputs, dict):
+        return idx, func(**inputs)
+    else:
+        return idx, func(*inputs)
 
 
 def track_progress_rich(
         func: Callable,
         tasks: Iterable = tuple(),
-        nproc: int = 1,
+        nproc: int | None = 1,
         save=None,
         keys=None,
+        use_process: bool = False,
         **kwargs) -> list:
 
-    from concurrent.futures import ThreadPoolExecutor
+    from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
     from tqdm import tqdm
     if save is not None:
         assert osp.exists(osp.dirname(save)) or osp.dirname(save) == ''
@@ -32,40 +50,25 @@ def track_progress_rich(
     if not isinstance(tasks, Iterable):
         raise TypeError(
             f'tasks must be an iterable object, but got {type(tasks)}')
-    assert nproc > 0, 'nproc must be a positive number'
+    assert nproc is None or nproc > 0, 'nproc must be a positive number'
+    nproc = nproc or cpu_count()
     res = load(save) if save is not None else {}
     results = [None for _ in range(len(tasks))]
 
-    with ThreadPoolExecutor(max_workers=nproc) as executor:
+    executor_type = ProcessPoolExecutor if use_process else ThreadPoolExecutor
+    with executor_type(max_workers=nproc) as executor:
         futures = []
 
-        for inputs in tasks:
-            if not isinstance(inputs, (tuple, list, dict)):
-                inputs = (inputs, )
-            if isinstance(inputs, dict):
-                future = executor.submit(func, **inputs)
-            else:
-                future = executor.submit(func, *inputs)
+        for idx, inputs in enumerate(tasks):
+            future = executor.submit(new_func, idx, func, inputs)
             futures.append(future)
 
-        unfinished = set(range(len(tasks)))
-        pbar = tqdm(total=len(unfinished))
-        while len(unfinished):
-            new_finished = set()
-            for idx in unfinished:
-                if futures[idx].done():
-                    results[idx] = futures[idx].result()
-                    new_finished.add(idx)
-                    if keys is not None:
-                        res[keys[idx]] = results[idx]
-            if len(new_finished):
-                if save is not None:
-                    dump(res, save)
-                pbar.update(len(new_finished))
-                for k in new_finished:
-                    unfinished.remove(k)
-            time.sleep(0.1)
-        pbar.close()
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            idx, result = future.result()
+            results[idx] = result
+            if keys is not None:
+                res[keys[idx]] = result
+                dump(res, save)
 
     if save is not None:
         dump(res, save)

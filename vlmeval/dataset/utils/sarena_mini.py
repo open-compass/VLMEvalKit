@@ -6,27 +6,19 @@ import shutil
 import re
 import multiprocessing
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
 import numpy as np
 import requests
 from tqdm import tqdm
 from PIL import Image
+from vlmeval.smp.file import LMUDataRoot
 
 # Configure parallelism before importing tokenizers
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Import metrics
-try:
-    from .SArena.metrics import MetricsConfig, InternSVGMetrics
-except ImportError:
-    # Fallback or placeholder if relative import fails in standalone mode
-    class MetricsConfig:
-        pass
-
-    class InternSVGMetrics:
-        pass
+from .SArena.metrics import MetricsConfig, InternSVGMetrics
 
 try:
     from ...smp import load, dump
@@ -45,7 +37,7 @@ except ImportError:
 
 # ================= Configuration =================
 
-SARENA_ROOT = os.path.expanduser("~/LMUData/SArena_MINI_SrcData")
+SARENA_ROOT = os.path.join(LMUDataRoot(), "SArena_MINI_SrcData")
 SARENA_URL = "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/resolve/main/SArena_MINI.zip"
 SARENA_ZIP_MD5 = "d49fe7241d16b54aa33a09e90d95af96"
 TOKENIZER_PATH = "OpenGVLab/InternVL3-8B"
@@ -481,12 +473,7 @@ def evaluate_sarena_mini(eval_file, tokenizer_path=TOKENIZER_PATH):
         use_DINO_Score=True, use_LPIPS=True, use_SSIM=True, use_PSNR=True,
         use_token_length=True
     )
-    try:
-        edit_calculator = InternSVGMetrics(edit_config, tokenizer_path)
-    except Exception:
-        edit_calculator = None
-        print("Warning: Could not initialize Metrics Calculator. Metrics will be skipped.")
-
+    edit_calculator = InternSVGMetrics(edit_config, tokenizer_path)
     has_processed_edit = False
 
     try:

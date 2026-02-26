@@ -10,6 +10,7 @@ from .cloudwalk import CWWrapper
 from .sensechat_vision import SenseChatVisionAPI
 from .siliconflow import SiliconFlowAPI, TeleMMAPI
 from .telemm import TeleMM2_API
+from .telemm_thinking import TeleMM2Thinking_API
 from .hunyuan import HunyuanVision
 from .bailingmm import bailingMMAPI
 from .bluelm_api import BlueLMWrapper, BlueLM_API
@@ -25,6 +26,9 @@ from .mug_u import MUGUAPI
 from .kimivl_api import KimiVLAPIWrapper, KimiVLAPI
 from .rbdashmm_chat3_api import RBdashMMChat3_API, RBdashChat3_5_API
 from .rbdashmm_chat3_5_api import RBdashMMChat3_78B_API, RBdashMMChat3_5_38B_API
+from .together import TogetherAPI
+from .gcp_vertex import GCPVertexAPI
+from .bedrock import BedrockAPI
 
 __all__ = [
     'OpenAIWrapper', 'HFChatModel', 'GeminiWrapper', 'GPT4V', 'Gemini',
@@ -34,5 +38,6 @@ __all__ = [
     'bailingMMAPI', 'TaiyiAPI', 'TeleMMAPI', 'SiliconFlowAPI', 'LMDeployAPI', 'ARM_thinker',
     'TaichuVLAPI', 'TaichuVLRAPI', 'DoubaoVL', "MUGUAPI", 'KimiVLAPIWrapper', 'KimiVLAPI',
     'RBdashMMChat3_API', 'RBdashChat3_5_API', 'RBdashMMChat3_78B_API', 'RBdashMMChat3_5_38B_API',
-    'VideoChatOnlineV2API', 'TeleMM2_API'
+    'VideoChatOnlineV2API', 'TeleMM2_API', 'TeleMM2Thinking_API',
+    'TogetherAPI', 'GCPVertexAPI', 'BedrockAPI',
 ]

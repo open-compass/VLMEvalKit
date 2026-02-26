@@ -1,6 +1,15 @@
 accelerate
+anls>=0.0.2
+antlr4-python3-runtime==4.11.1
+apted>=1.0.3
+bert_score
+cairosvg
+colormath>=3.0.0
 datasets
+decord>=0.6.0
+distance>=0.1.3
 dotenv
+editdistance>=0.8.1
 einops
 # for gemini api
 google-genai
@@ -8,17 +17,24 @@ gradio
 huggingface_hub
 imageio
 ipdb
+jieba>=0.42.1
 json_repair
+levenshtein>=0.27.1
+lpips
+lxml>=6.0.2
 math-verify
 matplotlib
 nltk
 numpy
-omegaconf
+omegaconf>=2.4.0.dev4
 openai
+openai-clip
 opencv-python>=4.7.0.72
 openpyxl
 pandas
+pdf2image>=1.17.0
 pillow
+polygon3>=3.0.9.1
 portalocker
 protobuf
 pylatexenc==2.10
@@ -26,7 +42,10 @@ python-dotenv
 qwen_vl_utils
 requests
 rich
+scikit-image
 scikit-learn
+# For UniSVG
+sentence_transformers
 sentencepiece
 setuptools
 sty
@@ -36,9 +55,12 @@ tiktoken
 timeout-decorator
 timm
 torch
+# For SArena
+torchmetrics
 torchvision
 tqdm
 transformers
 typing_extensions
 validators
 xlsxwriter
+zss>=1.2.0
