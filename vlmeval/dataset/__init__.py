@@ -113,6 +113,12 @@ from .uni_svg import UniSVG
 from .chartcap import ChartCapDataset
 from .asclepius import Asclepius
 
+from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoning
+from .SGI_Bench_1_0.deep_research import SGI_Bench_Deep_Research
+from .SGI_Bench_1_0.dry_experiment import SGI_Bench_Dry_Experiment
+from .SGI_Bench_1_0.wet_experiment import SGI_Bench_Wet_Experiment
+from .SGI_Bench_1_0.idea_generation import SGI_Bench_Idea_Generation
+
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -243,7 +249,8 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
-    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset
+    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset,
+    SGI_Bench_Experimental_Reasoning
 ]
 
 VIDEO_DATASET = [
@@ -259,7 +266,7 @@ VIDEO_DATASET = [
 ]
 
 TEXT_DATASET = [
-    TextMCQDataset
+    TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment, SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation
 ]
 
 CUSTOM_DATASET = [
