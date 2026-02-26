@@ -367,6 +367,10 @@ def main():
                     ):
                         if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
                             judge_kwargs['model'] = 'gpt-4o-mini'
+                        elif listinstr(['VisualPuzzles'], dataset_name):
+                            judge_kwargs['model'] = 'exact_matching'
+                        elif listinstr(['PuzzleVQA'], dataset_name):
+                            judge_kwargs['model'] = 'exact_matching'
                         elif listinstr(['VisuLogic'], dataset_name):
                             judge_kwargs['model'] = 'exact_matching'
                         else:
@@ -406,6 +410,8 @@ def main():
                         judge_kwargs['model'] = 'gpt-4.1',
                     elif listinstr(['CoreCognition'], dataset_name):
                         judge_kwargs['model'] = 'gpt-4.1'
+                    elif listinstr(['WorldVQA'], dataset_name):
+                        judge_kwargs['model'] = 'gpt-4o-1120'
 
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True

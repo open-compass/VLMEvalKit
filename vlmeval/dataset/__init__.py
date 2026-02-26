@@ -7,7 +7,7 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-    TreeBench, CVQA, TopViewRS
+    TreeBench, CVQA, TopViewRS, PuzzleVQA, VisualPuzzles
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
@@ -18,6 +18,7 @@ from .image_vqa import (
     CoreCognition, VLMsAreBiased, VTCBench
 )
 
+from .worldvqa import WorldVQA
 from .image_ccocr import CCOCRDataset
 from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
@@ -58,6 +59,7 @@ from .moviechat1k import MovieChat1k
 from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
 from .vdc import VDC
 from .vcrbench import VCRBench
+from .v2pbench import V2PBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
@@ -110,6 +112,9 @@ from .macbench import MaCBench
 from .mmesci import MMESCIDataset
 from .sarena_mini import SArena_MINI
 from .uni_svg import UniSVG
+from .vladbench import VLADBench
+from .design2code import Design2Code
+from .chartcap import ChartCapDataset
 from .asclepius import Asclepius
 
 
@@ -242,7 +247,8 @@ IMAGE_DATASET = [
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
-    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, SSIBenchDataset
+    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
+    Design2Code, VLADBench, SSIBenchDataset
 ]
 
 VIDEO_DATASET = [
@@ -254,8 +260,7 @@ VIDEO_DATASET = [
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
     Video_MMLU_CAP, Video_MMLU_QA,
     Video_Holmes, VCRBench, CGAVCounting, MMSIVideoBench,
-    EgoExoBench_MCQ, DREAM, VideoMMMU, VSIBench, MVUEval, OMTGBench
-
+    EgoExoBench_MCQ, DREAM, VideoTT, VideoMMMU, VSIBench, MVUEval, OMTGBench, V2PBench
 ]
 
 TEXT_DATASET = [
@@ -330,15 +335,18 @@ def build_dataset(dataset_name, **kwargs):
 
     data = load(data_file)
     if 'question' not in [x.lower() for x in data.columns]:
-        warnings.warn(f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
+        warnings.warn(
+            f'Data file {data_file} does not have a `question` column. Dataset building failed. ')
         return None
 
     if 'A' in data and 'B' in data:
         if 'image' in data or 'image_path' in data:
-            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
+            warnings.warn(
+                f'Will assume unsupported dataset {dataset_name} as a Custom MCQ dataset. ')
             return CustomMCQDataset(dataset=dataset_name, **kwargs)
         else:
-            warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ')
+            warnings.warn(
+                f'Will assume unsupported dataset {dataset_name} as a Custom Text MCQ dataset. ')
             return CustomTextMCQDataset(dataset=dataset_name, **kwargs)
     else:
         warnings.warn(f'Will assume unsupported dataset {dataset_name} as a Custom VQA dataset. ')
