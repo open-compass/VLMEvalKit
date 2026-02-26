@@ -185,8 +185,21 @@ def average_color(image_path, coordinates):
     return tuple(avg_color.astype(int))
 
 
+def robust_cv2_imread(img_name):
+    image = Image.open(img_name)
+    # Convert Image to numpy array
+    # It's not the most efficient way, but it works. *(link¹)
+    image = np.asarray(image)
+    # Remove alpha channel if existent
+    if len(image.shape) == 3 and image.shape[2] == 4:
+        image = image[:, :, : 3]
+    # Restore RGB colors
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    return image
+
+
 def get_blocks_from_image_diff_pixels(image_path, html_text_color_tree, different_pixels):
-    image = cv2.imread(image_path)
+    image = robust_cv2_imread(image_path)
     x_w = image.shape[0]
     y_w = image.shape[1]
 

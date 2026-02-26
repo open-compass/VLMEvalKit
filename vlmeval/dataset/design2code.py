@@ -84,49 +84,16 @@ class Design2Code(ImageBaseDataset):
     TYPE = "VQA"
 
     DATASET_URL = {
-        "Design2Code": "https://huggingface.co/datasets/yanghtr/Design2Code-VLMEvalKit/resolve/main/Design2Code.tsv",
+        "Design2Code": "https://opencompass.openxlab.space/utils/VLMEval/Design2Code.tsv",
     }
 
     DATASET_MD5 = {
-        "Design2Code": "bab51290e57ae8dc611de7978d9f414b",
+        "Design2Code": "e666dba4b19da290c8db9f5b88b012bb",
     }
 
     def __init__(self, dataset="Design2Code"):
         super().__init__(dataset=dataset)
         self.dataset_name = dataset
-
-    @staticmethod
-    def generate_tsv(lmudata_dir):
-        data_file = osp.join(lmudata_dir, "Design2Code.tsv")
-        if os.path.exists(data_file):
-            print(f"{data_file} exists.")
-            return
-
-        img_dir = f"{lmudata_dir}/images/Design2Code/"
-        img_fname_list = []
-        for img_fname in os.listdir(img_dir):
-            if img_fname.endswith(".png"):
-                img_fname_list.append(img_fname)
-        img_fname_list.sort()
-        assert len(img_fname_list) == 484
-
-        data_list = []
-        for img_fname in tqdm(img_fname_list, total=len(img_fname_list)):
-            data_list.append(
-                {
-                    "question": get_direct_prompt(),
-                    "image": encode_image_file_to_base64(
-                        f"{img_dir}/{img_fname}",
-                        target_size=-1,
-                        fmt="PNG",
-                    ),
-                    "img_fname": img_fname,
-                }
-            )
-        data_df = pd.DataFrame(data_list)
-        data_df = data_df.assign(index=range(len(data_df)))
-        data_df.to_csv(data_file, sep="\t", index=False)
-        print(f"Done: tsv file saved in {data_file}.")
 
     def build_prompt(self, line):
         if isinstance(line, int):
@@ -147,8 +114,6 @@ class Design2Code(ImageBaseDataset):
         reference_dir = f"{save_root}/reference/"
         os.makedirs(predictions_dir, exist_ok=True)
         os.makedirs(reference_dir, exist_ok=True)
-        root = LMUDataRoot()
-        orig_reference_dir = os.path.join(root, "images", "Design2Code")
 
         for item in infer_data_all:
             code = cleanup_response(item["prediction"].strip())
@@ -156,16 +121,11 @@ class Design2Code(ImageBaseDataset):
             predict_html = f"{predictions_dir}/{filename}"
             with open(predict_html, "w") as f:
                 f.write(code)
+            gt_code = item['html']
+            gt_html = f"{reference_dir}/{filename}"
+            with open(gt_html, "w") as f:
+                f.write(gt_code)
 
-        # Copy original html references because screenshot code writes generated pngs.
-        for filename in os.listdir(orig_reference_dir):
-            if filename.endswith(".html") or filename == "rick.jpg":
-                src_path = os.path.join(orig_reference_dir, filename)
-                dst_path = os.path.join(reference_dir, filename)
-                shutil.copy(src_path, dst_path)
-        print("copied original reference directory to ", reference_dir)
-
-        shutil.copy(f"{orig_reference_dir}/rick.jpg", f"{predictions_dir}/rick.jpg")
         test_dirs = {
             "direct_prompting": predictions_dir,
         }
@@ -239,8 +199,3 @@ class Design2Code(ImageBaseDataset):
             values = list(res_dict[key].values())
             current_res = np.mean(np.array(values), axis=0)
             print_multi_score(current_res)
-
-
-if __name__ == "__main__":
-    root = LMUDataRoot()
-    Design2Code.generate_tsv(root)

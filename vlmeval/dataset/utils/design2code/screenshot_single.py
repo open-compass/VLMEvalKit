@@ -1,5 +1,15 @@
 import os
-from playwright.sync_api import sync_playwright
+try:
+    from playwright.sync_api import sync_playwright
+except ImportError:
+    error_msg = """
+playwright not installed. Please install it with the following commands:
+pip install playwright
+playwright install-deps
+playwright install --no-shell chromium-headless-shell
+"""
+    print(error_msg)
+    exit(1)
 import argparse
 from PIL import Image
 
@@ -16,7 +26,20 @@ def take_screenshot(url, output_file="screenshot.png", do_it_again=False):
     try:
         with sync_playwright() as p:
             # Choose a browser, e.g., Chromium, Firefox, or WebKit
-            browser = p.chromium.launch()
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-web-security",
+                    "--disable-features=VizDisplayCompositor",
+                    "--disable-gpu",
+                    "--no-first-run",
+                    "--disable-background-timer-throttling",
+                    "--disable-renderer-backgrounding",
+                    "--disable-backgrounding-occluded-windows",
+                ],
+            )
             page = browser.new_page()
 
             # Navigate to the URL

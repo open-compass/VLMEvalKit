@@ -6,7 +6,6 @@ from copy import deepcopy
 from difflib import SequenceMatcher
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from bs4 import BeautifulSoup, Comment, NavigableString
@@ -15,8 +14,6 @@ from colormath.color_diff import delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor
 from PIL import Image, ImageDraw
 from scipy.optimize import linear_sum_assignment
-from sklearn.metrics.pairwise import cosine_similarity
-from tqdm import tqdm
 
 from .dedup_post_gen import check_repetitive_content
 from .ocr_free_utils import get_blocks_ocr_free
