@@ -17,6 +17,7 @@ from .image_vqa import (
     ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench, MathCanvas, MMReason,
     CoreCognition, VLMsAreBiased, VTCBench
 )
+from .da2k import DA2K
 
 from .worldvqa import WorldVQA
 from .image_ccocr import CCOCRDataset
@@ -248,7 +249,7 @@ IMAGE_DATASET = [
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
-    Design2Code, VLADBench, SSIBenchDataset
+    Design2Code, VLADBench, SSIBenchDataset, DA2K
 ]
 
 VIDEO_DATASET = [
