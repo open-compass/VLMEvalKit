@@ -12,9 +12,12 @@ from ipdb import set_trace as st
 
 logger = get_logger("RUN")
 
-SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""
+SYSTEM_PROMPT = "You are a GUI agent. You are given a task and a screenshot of the screen. " \
+    "You need to perform pyautogui click/moveTo action to complete the task. " \
+    "The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"
 
-USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""
+USER_INSTRUCTION = "Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"
+
 
 def parse_bbox_aguvis(response):
     match = re.search(r"x=([\d.]+), y=([\d.]+)", response)
@@ -28,7 +31,7 @@ class VenusBench_GD(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
     DATASET_URL = {
-        "VenusBench-GD": "https://huggingface.co/datasets/Zery/VBGD_Dataset/resolve/main/VenusBench.tsv", 
+        "VenusBench-GD": "https://huggingface.co/datasets/Zery/VBGD_Dataset/resolve/main/VenusBench.tsv",
     }
     DATASET_MD5 = {
         'VenusBench-GD': '6a2fe92d3ecf5a3b6503a1fe4891c5ea'
@@ -106,7 +109,7 @@ class VenusBench_GD(ImageBaseDataset):
         assert "bbox" in data and "prediction" in data
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
-        
+
         for i in tqdm(range(len(lines))):
             line = lines[i]
             bbox = (
@@ -162,13 +165,13 @@ class VenusBench_GD(ImageBaseDataset):
 
         final_score_dict = {}
         final_score_dict.update({k + ':cnt': len(stats[k]) for k in stats})
-        
+
         full_stats = []
         for v in stats.values():
             full_stats.extend(v)
         final_score_dict['Overall_Accuracy'] = np.mean([x > 0 for x in full_stats]) * 100
         final_score_dict['Format_Err_Rate'] = np.mean([x < 0 for x in full_stats]) * 100
-        
+
         cates = list(set([line["category"] for line in lines]))
         for c in cates:
             sub_stats = [v for k, v in stats.items() if k.split(":")[0] == c for x in v]
