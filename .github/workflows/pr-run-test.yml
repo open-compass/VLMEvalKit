@@ -69,7 +69,7 @@ jobs:
             echo "Current status: $current_status, stop checking"
             if [[ $current_status == "Succeeded" ]]; then
               echo "Task succeeded"
-              rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+              rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
               exit 0
             elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
               echo "Task failed or stopped, fetching logs"
@@ -79,7 +79,7 @@ jobs:
             sleep 6
           done
           rjob stop vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
-          rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+          rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} -n 100
           echo "Task timeout"
           exit 1
       - name: assert_result
