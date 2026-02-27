@@ -15,26 +15,10 @@ from ipdb import set_trace as st
 
 logger = get_logger("RUN")
 
-"""
-{
-    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png",
-    "bbox": [42, 1102, 197, 70],
-    "question": "view the details of the item",
-    "data_type": "text",
-    "data_source": "shop"
-},
-{
-    "img_filename": "web_3b0ad239-da6b-4f6f-8f12-f674dc90ff33.png",
-    "bbox": [93, 74, 86, 132],
-    "question": "view the previous photo",
-    "data_type": "icon",
-    "data_source": "shop" 
-}
-"""
-
 SYSTEM_PROMPT = """You are a GUI agent. You are given a task and a screenshot of the screen. You need to perform pyautogui click/moveTo action to complete the task. The answer format is `pyautogui.click(x=?, y=?), x and y is necessary`"""  # noqa: E501
 
 USER_INSTRUCTION = """Please complete the following tasks by clicking using `pyautogui.click`:\n{instruction}"""  # noqa: E501
+
 
 def parse_bbox_aguvis(response):
     match = re.search(r"x=([\d.]+), y=([\d.]+)", response)
@@ -359,8 +343,11 @@ class OSWorld_G(ImageBaseDataset):
                 # draw click point and box on image
                 # from PIL import ImageDraw
                 # draw = ImageDraw.Draw(image)
-                # draw.rectangle([bbox[0] * img_size[0], bbox[1] * img_size[1], bbox[2] * img_size[0], bbox[3] * img_size[1]], outline="red", width=2)
-                # draw.ellipse([click_point[0] * img_size[0] - 5, click_point[1] * img_size[1] - 5, click_point[0] * img_size[0] + 5, click_point[1] * img_size[1] + 5], outline="red", width=2)
+                # draw.rectangle([bbox[0] * img_size[0], bbox[1] * img_size[1],
+                #                 bbox[2] * img_size[0], bbox[3] * img_size[1]], outline="red", width=2)
+                # draw.ellipse([click_point[0] * img_size[0] - 5, click_point[1] * img_size[1] - 5,
+                #               click_point[0] * img_size[0] + 5, click_point[1] * img_size[1] + 5],
+                #              outline="red", width=2)
                 # image.save(f"debug_{i}.png")
 
                 if match:
