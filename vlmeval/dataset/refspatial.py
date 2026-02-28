@@ -55,7 +55,13 @@ class RefSpatialDataset(ImageBaseDataset):
     PROMPT_TEMPLATES = {
         'default': {
             'prefix': '',
-            'suffix': 'Please provide the normalized coordinates (x, y) in JSON format like [(0.5, 0.5)].'
+            'suffix': (
+                ' Output the point coordinates in JSON format.\n'
+                'For example:\n'
+                '[\n'
+                '{"point_2d": [x, y], "label": "point_1"}\n'
+                ']'
+            )
         },
         'roborefer': {
             'prefix': '',
@@ -71,8 +77,8 @@ class RefSpatialDataset(ImageBaseDataset):
         }
     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, dataset='MMBench', **kwargs):
+        super().__init__(dataset=dataset, **kwargs)
 
     @classmethod
     def supported_datasets(cls):
@@ -207,13 +213,10 @@ class RefSpatialDataset(ImageBaseDataset):
         # Dump image
         tgt_path = self.dump_image(line)
         
-        # Get question
-        question = line.get('question', '')
-        if not question:
-            # Fallback: construct from prompt and suffix
-            prompt = line.get('prompt', '')
-            suffix = line.get('suffix', '')
-            question = f"{prompt} {suffix}".strip()
+        # Always rebuild question with the current template suffix (ignores stale TSV question column)
+        prompt = line.get('prompt', '') or line.get('question', '')
+        suffix = self.PROMPT_TEMPLATES['default']['suffix']
+        question = f"{prompt}{suffix}".strip()
         
         msgs = []
         if isinstance(tgt_path, list):
@@ -255,14 +258,27 @@ class RefSpatialDataset(ImageBaseDataset):
             
             # Parse prediction to get points
             pred_points = self._parse_prediction(pred_text)
-            
+
             # Load mask and check if points are inside
             success = False
-            if pred_points and meta_row.get('mask'):
-                mask = self._load_mask(meta_row['mask'])
-                if mask is not None:
-                    success = self._check_points_in_mask(pred_points, mask)
-            
+            failure_reason = ''
+            if not pred_text or not pred_text.strip():
+                failure_reason = 'empty_prediction'
+            elif pred_points is None:
+                failure_reason = 'parse_failed'
+            else:
+                mask_data = meta_row.get('mask', '')
+                if not mask_data or (isinstance(mask_data, str) and len(mask_data) < 100):
+                    failure_reason = 'no_mask'
+                else:
+                    mask = self._load_mask(mask_data)
+                    if mask is None:
+                        failure_reason = 'mask_load_failed'
+                    else:
+                        success = self._check_points_in_mask(pred_points, mask)
+                        if not success:
+                            failure_reason = 'point_outside_mask'
+
             results.append({
                 'index': record_idx,
                 'split': meta_row.get('split', 'Unknown'),
@@ -270,6 +286,7 @@ class RefSpatialDataset(ImageBaseDataset):
                 'prediction': pred_text,
                 'pred_points': str(pred_points) if pred_points else '',
                 'success': int(success),
+                'failure_reason': failure_reason,
             })
         
         results_df = pd.DataFrame(results)
@@ -346,31 +363,49 @@ class RefSpatialDataset(ImageBaseDataset):
             
             if isinstance(data, list):
                 for item in data:
-                    if isinstance(item, dict) and 'point' in item:
+                    if isinstance(item, dict) and 'point_2d' in item:
+                        # Qwen3-VL native format: {"point_2d": [x, y], "label": "..."}
+                        # Coordinates in [0, 1000] range
+                        pt = item['point_2d']
+                        if len(pt) == 2:
+                            x, y = float(pt[0]), float(pt[1])
+                            if x > 1 or y > 1:
+                                x, y = x / 1000.0, y / 1000.0
+                            points.append((x, y))
+                    elif isinstance(item, dict) and 'point' in item:
                         # Gemini format: {"point": [y, x]}
                         pt = item['point']
                         if len(pt) == 2:
                             y, x = pt
-                            # Gemini uses 0-1000 range
                             if isinstance(y, (int, float)) and isinstance(x, (int, float)):
                                 if y > 1 or x > 1:  # Likely 0-1000 range
                                     x, y = x / 1000.0, y / 1000.0
                                 points.append((float(x), float(y)))
                     elif isinstance(item, (list, tuple)) and len(item) == 2:
-                        # Simple coordinate pair
-                        x, y = item
-                        points.append((float(x), float(y)))
+                        # Simple coordinate pair [[x, y]]
+                        x, y = float(item[0]), float(item[1])
+                        if x > 1 or y > 1:
+                            x, y = x / 1000.0, y / 1000.0
+                        points.append((x, y))
             elif isinstance(data, dict):
-                # Single object format: {"point": [y, x]}
-                if 'point' in data:
+                if 'point_2d' in data:
+                    # Single Qwen3-VL native object
+                    pt = data['point_2d']
+                    if len(pt) == 2:
+                        x, y = float(pt[0]), float(pt[1])
+                        if x > 1 or y > 1:
+                            x, y = x / 1000.0, y / 1000.0
+                        points.append((x, y))
+                elif 'point' in data:
+                    # Single object format: {"point": [y, x]}
                     pt = data['point']
                     if len(pt) == 2:
                         y, x = pt
                         if isinstance(y, (int, float)) and isinstance(x, (int, float)):
-                            if y > 1 or x > 1:  # Likely 0-1000 range
+                            if y > 1 or x > 1:
                                 x, y = x / 1000.0, y / 1000.0
                             points.append((float(x), float(y)))
-            
+
             if points:
                 return points
         except (json.JSONDecodeError, ValueError):

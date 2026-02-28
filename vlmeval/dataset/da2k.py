@@ -9,6 +9,9 @@ Task: Given a single image and a question about relative depth,
       predict which point is closer/farther or the depth relationship.
 """
 
+import json
+import os
+import os.path as osp
 from ..smp import *
 from .image_vqa import ImageVQADataset
 
@@ -34,7 +37,7 @@ class DA2K(ImageVQADataset):
     
     # HuggingFace dataset repository
     DATASET_URL = {
-        'DA-2K': 'https://huggingface.co/datasets/DepthAnything/DA-2K',
+        'DA-2K': 'https://huggingface.co/datasets/depth-anything/DA-2K',
     }
     
     def __init__(self, dataset='DA-2K', **kwargs):
@@ -49,18 +52,39 @@ class DA2K(ImageVQADataset):
         """
         Prepare DA-2K dataset from HuggingFace
         """
-        from huggingface_hub import snapshot_download
+        from huggingface_hub import hf_hub_download
+        import zipfile
         
-        repo_id = 'DepthAnything/DA-2K'
+        repo_id = 'depth-anything/DA-2K'
         
-        # Download dataset
-        dataset_path = snapshot_download(
+        # Download the ZIP file
+        cache_dir = osp.expanduser('~/.cache/huggingface/hub')
+        dataset_root = osp.join(cache_dir, 'DA-2K-extracted')
+        
+        # Check if already extracted
+        data_file = osp.join(dataset_root, 'da2k.tsv')
+        if osp.exists(data_file):
+            img_root = osp.join(dataset_root, 'DA-2K')
+            if not osp.exists(img_root):
+                img_root = dataset_root
+            return dict(data_file=data_file, root=img_root)
+        
+        # Download ZIP
+        print(f"Downloading DA-2K dataset from HuggingFace...")
+        zip_path = hf_hub_download(
             repo_id=repo_id,
+            filename='DA-2K.zip',
             repo_type='dataset',
-            allow_patterns=['*.json', '*.jsonl', '*.csv', '*.tsv', '*.parquet', 'images/*', 'data/*']
+            cache_dir=cache_dir
         )
         
-        # Look for annotation file
+        # Extract ZIP
+        print(f"Extracting DA-2K dataset...")
+        os.makedirs(dataset_root, exist_ok=True)
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(dataset_root)
+        
+        # Look for annotation file in extracted content
         possible_files = [
             'da2k.json', 'da2k.jsonl', 'da-2k.json', 'da-2k.jsonl',
             'annotations.json', 'test.json', 'val.json',
@@ -69,43 +93,111 @@ class DA2K(ImageVQADataset):
         
         data_file = None
         for fname in possible_files:
-            fpath = osp.join(dataset_path, fname)
+            # Check root directory
+            fpath = osp.join(dataset_root, fname)
             if osp.exists(fpath):
                 data_file = fpath
                 break
+            # Check DA-2K subdirectory
+            fpath = osp.join(dataset_root, 'DA-2K', fname)
+            if osp.exists(fpath):
+                data_file = fpath
+                break
+            # Also check other subdirectories
+            for root, dirs, files in os.walk(dataset_root):
+                if fname in files:
+                    data_file = osp.join(root, fname)
+                    break
+            if data_file:
+                break
         
-        # If no annotation file found, create from HuggingFace dataset format
+        # Determine images directory
+        img_root = osp.join(dataset_root, 'DA-2K')
+        if not osp.exists(img_root):
+            img_root = dataset_root
+        
+        # If no annotation file found, try loading with datasets library
         if data_file is None:
             try:
-                from datasets import load_dataset
-                ds = load_dataset(repo_id, split='test')
+                # DA-2K JSON format: {image_path: [{'point1': [y,x], 'point2': [y,x], 'closer_point': 'point1'}]}
+                with open(osp.join(dataset_root, 'DA-2K', 'annotations.json'), 'r') as f:
+                    annotations = json.load(f)
                 
-                # Convert to DataFrame
+                # Convert to DataFrame - each comparison is a sample
                 data_list = []
-                for item in ds:
-                    data_list.append({
-                        'index': len(data_list),
-                        'image': item.get('image_path', item.get('image', '')),
-                        'question': item.get('question', ''),
-                        'answer': item.get('answer', item.get('depth_answer', '')),
-                        'scene_category': item.get('scene_category', item.get('category', '')),
-                    })
+                for img_path, comparisons in annotations.items():
+                    for comp in comparisons:
+                        p1 = comp.get('point1', [0, 0])
+                        p2 = comp.get('point2', [0, 0])
+                        closer = comp.get('closer_point', 'point1')
+                        
+                        # Create question: Which point is closer to the camera?
+                        question = f"Which point is closer to the camera: point1 at ({p1[1]}, {p1[0]}) or point2 at ({p2[1]}, {p2[0]})?"
+                        answer = closer
+                        
+                        data_list.append({
+                            'index': len(data_list),
+                            'image': img_path,
+                            'question': question,
+                            'answer': answer,
+                            'point1': str(p1),
+                            'point2': str(p2),
+                            'scene_category': img_path.split('/')[1] if '/' in img_path else 'unknown',
+                        })
                 
                 import pandas as pd
                 df = pd.DataFrame(data_list)
-                data_file = osp.join(dataset_path, 'da2k.tsv')
+                data_file = osp.join(dataset_root, 'da2k.tsv')
                 df.to_csv(data_file, sep='\t', index=False)
                 
             except Exception as e:
                 print(f"Failed to load dataset from HuggingFace: {e}")
                 raise
         
-        return dict(data_file=data_file, root=dataset_path)
+        return dict(data_file=data_file, root=img_root)
     
     def load_data(self, dataset_name=None):
         """Load and process DA-2K data"""
-        data = super().load_data(dataset_name)
+        # Use prepare_dataset to download and extract
+        result = self.prepare_dataset(dataset_name)
+        data_file = result['data_file']
         
+        # Load the data file
+        import pandas as pd
+        if data_file.endswith('.tsv'):
+            data = pd.read_csv(data_file, sep='\t')
+        elif data_file.endswith('.csv'):
+            data = pd.read_csv(data_file)
+        elif data_file.endswith('.jsonl'):
+            data = pd.read_json(data_file, lines=True)
+        elif data_file.endswith('.json'):
+            # Try JSON lines format first (each line is a JSON object)
+            try:
+                data = pd.read_json(data_file, lines=True)
+            except:
+                # Fall back to regular JSON
+                data = pd.read_json(data_file)
+        else:
+            data = pd.read_csv(data_file, sep='\t')
+        
+        # Map column names if needed
+        if 'instruction' in data.columns and 'question' not in data.columns:
+            data['question'] = data['instruction']
+        
+        # Ensure image paths are absolute
+        if 'image' in data.columns:
+            import unicodedata
+            img_root = osp.dirname(data_file)
+            if osp.exists(osp.join(img_root, 'DA-2K')):
+                img_root = osp.join(img_root, 'DA-2K')
+            data['image'] = data['image'].apply(lambda x: osp.join(img_root, x) if x and not x.startswith('/') else x)
+            # Filter out rows with inaccessible images (e.g., macOS Unicode NFD/NFC normalization issues)
+            accessible = data['image'].apply(lambda x: osp.exists(unicodedata.normalize('NFC', x)) or osp.exists(x))
+            if not accessible.all():
+                n_skip = (~accessible).sum()
+                print(f'[DA-2K] Skipping {n_skip} rows with inaccessible image paths')
+                data = data[accessible].reset_index(drop=True)
+
         # Ensure required columns exist
         if 'question' not in data.columns:
             raise ValueError("Dataset must contain 'question' column")
@@ -119,46 +211,17 @@ class DA2K(ImageVQADataset):
         return data
     
     def build_prompt(self, line, dataset=None):
-        """
-        Build prompt for DA-2K
-        
-        Expected format:
-        - Image with two points marked (A and B)
-        - Question about relative depth
-        - Answer: "A", "B", or descriptive
-        """
+        """Build prompt for DA-2K."""
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
-        # Dump/load image
-        if self.meta_only:
-            tgt_path = toliststr(line['image_path'])
-        else:
-            tgt_path = self.dump_image(line)
-        
+
+        # image column holds absolute file paths (not base64)
+        img_path = line['image']
+
         question = line['question']
-        
-        # Build prompt
-        # DA-2K questions are typically:
-        # "Which point is closer to the camera, A or B?"
-        # "Point A or Point B, which one is farther?"
-        
-        prompt = question
-        
-        # Some DA-2K questions may need context
-        if 'scene_category' in line and not pd.isna(line.get('scene_category')):
-            # Scene category can be used for analysis but not in prompt
-            pass
-        
-        msgs = []
-        if isinstance(tgt_path, list):
-            for p in tgt_path:
-                msgs.append(dict(type='image', value=p))
-        else:
-            msgs.append(dict(type='image', value=tgt_path))
-        
-        msgs.append(dict(type='text', value=prompt))
-        
+        prompt = question + " Answer with 'point1' or 'point2'."
+
+        msgs = [dict(type='image', value=img_path), dict(type='text', value=prompt)]
         return msgs
     
     @classmethod
@@ -191,27 +254,21 @@ class DA2K(ImageVQADataset):
                     model = None
             
             # Evaluate each sample
+            import re as _re
             for idx in data['index']:
-                ans = data.loc[data['index'] == idx, 'answer'].values[0]
-                pred = str(data.loc[data['index'] == idx, 'prediction'].values[0])
-                
-                # Normalize answers
-                ans = str(ans).strip().lower()
-                pred = pred.strip().lower()
-                
-                # Simple case: A/B answer
-                if ans in ['a', 'b']:
-                    score = int(pred == ans)
-                # Case: answer contains key word
-                elif ans in pred or pred in ans:
+                ans = str(data.loc[data['index'] == idx, 'answer'].values[0]).strip().lower()
+                pred = str(data.loc[data['index'] == idx, 'prediction'].values[0]).strip().lower()
+
+                # Extract "point1" or "point2" from prediction
+                m = _re.search(r'point\s*([12])', pred)
+                if m:
+                    pred_label = f'point{m.group(1)}'
+                    score = int(pred_label == ans)
+                elif ans in pred:
                     score = 1
-                # Use LLM judge for complex cases
-                elif model is not None:
-                    # TODO: Implement LLM-based evaluation
-                    score = 0
                 else:
                     score = 0
-                
+
                 data.loc[data['index'] == idx, 'score'] = score
             
             dump(data, score_file)
