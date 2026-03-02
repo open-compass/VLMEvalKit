@@ -105,9 +105,9 @@ class ImageMCQDataset(ImageBaseDataset):
             'https://huggingface.co/datasets/ryokamoi/VisOnlyQA_Eval_Real/'
             'resolve/main/visonlyqa_vlmevalkit.tsv'
         ),
-        'MMCR': 'http://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
+        'MMCR': 'https://opencompass.openxlab.space/utils/VLMEval/MMCR.tsv',
         'MMSci_DEV_MCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MMSci_DEV_MCQ.tsv',
-        "MMVP": "http://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
+        "MMVP": "https://opencompass.openxlab.space/utils/VLMEval/MMVP.tsv",
         "K-DTCBench": "https://huggingface.co/datasets/NCSOFT/K-DTCBench/resolve/main/K-DTCBench.tsv",
         # For Internal Use Only
         'MMBench_V11_MINI': 'https://opencompass.openxlab.space/utils/TEST/MMBench_V11_MINI.tsv',
@@ -627,7 +627,7 @@ class MMMUProDataset(MMMUDataset):
 class MUIRDataset(ImageMCQDataset):
 
     DATASET_URL = {
-        'MUIRBench': 'http://opencompass.openxxlab.com/utils/VLMEval/MUIRBench.tsv'
+        'MUIRBench': 'https://opencompass.openxlab.space/utils/VLMEval/MUIRBench.tsv'
     }
 
     DATASET_MD5 = {
@@ -1155,8 +1155,8 @@ class CVBench(ImageMCQDataset):
         See [Cambrian-1](https://arxiv.org/pdf/2406.16860) Appendix C
     """
     DATASET_URL = {
-        "CV-Bench-2D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-2D.tsv",
-        "CV-Bench-3D": "http://opencompass.openxlab.space/utils/VLMEval/CV-Bench-3D.tsv",
+        "CV-Bench-2D": "https://opencompass.openxlab.space/utils/VLMEval/CV-Bench-2D.tsv",
+        "CV-Bench-3D": "https://opencompass.openxlab.space/utils/VLMEval/CV-Bench-3D.tsv",
     }
 
     DATASET_MD5 = {
@@ -1651,10 +1651,180 @@ class LEGO(ImageMCQDataset):
         return msgs
 
 
+class VisualPuzzles(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'VisualPuzzles': 'https://opencompass.openxlab.space/utils/VLMEval/VisualPuzzles.tsv'
+    }
+    DATASET_MD5 = {
+        'VisualPuzzles': '12bcc3f6dd7a11b33ffcd526b5601076',
+    }
+
+    def format_options(self, opt_str):
+        if not opt_str or opt_str == 'nan':
+            return None
+
+        # 提取所有被引号包住的内容
+        items = re.findall(r"'(.*?)'", opt_str)
+
+        # 生成 A. B. C. D.
+        letters = string.ascii_uppercase
+        formatted = [f"({letters[i]}) {item}" for i, item in enumerate(items)]
+
+        return "\n".join(formatted)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        if not pd.isna(line['options']):
+            options = "Options:\n" + self.format_options(line['options'])
+        else:
+            options = 'Options: Choose from (A) (B) (C) (D) in the image.'
+        prompt = ''
+        prompt += question + '\n' + options
+        prompt += "\nSolve the multiple-choice question and then answer with the option letter from the given choices. "
+        prompt += "The last line of your response should be of the following format:"
+        prompt += "'Answer: $LETTER' (without quotes) where LETTER is one of options. "
+        prompt += "Think step by step before answering."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        # breakpoint()
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.visualpuzzles import VisulPuzzles_acc
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
+
+        if osp.exists(storage):
+            accuracy_scores = VisulPuzzles_acc(storage)
+        else:
+            accuracy_scores = VisulPuzzles_acc(eval_file)
+        # combine_score = {**accuracy_scores,}
+        cat_dict = accuracy_scores[0]
+        level_dict = accuracy_scores[1]
+        # cross_dict = accuracy_scores[2]
+
+        df_cat = pd.DataFrame(cat_dict).rename(columns={'category': 'group'})
+        df_cat['type'] = 'category'
+
+        df_level = pd.DataFrame(level_dict).rename(columns={'level': 'group'})
+        df_level['type'] = 'level'
+
+        combine_score = pd.concat(
+            [df_cat, df_level],
+            ignore_index=True
+        )
+
+        score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
+        dump(combine_score, score_pth)
+        return combine_score
+
+
+class PuzzleVQA(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'PuzzleVQA': 'https://opencompass.openxlab.space/utils/VLMEval/PuzzleVQA.tsv'
+    }
+    DATASET_MD5 = {
+        'PuzzleVQA': '6a4a40bd8967db728c06202e8265a49b',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        # breakpoint()
+        options = line['options']
+        letters = string.ascii_uppercase
+
+        options = '\n'.join([f"({letters[i]}) {item}" for i, item in enumerate(eval(options))])
+
+        prompt = ''
+        prompt += question + '\nOptions:\n' + options
+        prompt += "\nSolve the multiple-choice question and then answer with the option letter from the given choices. "
+        prompt += "The last line of your response should be of the following format:"
+        prompt += "'Answer: $LETTER' (without quotes) where LETTER is one of options. "
+        prompt += "Think step by step before answering."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.puzzlevqa import PuzzleVQA_acc
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
+        if osp.exists(storage):
+            accuracy_scores = PuzzleVQA_acc(storage)
+        else:
+            accuracy_scores = PuzzleVQA_acc(eval_file)
+        cat_dict = accuracy_scores
+
+        df_cat = pd.DataFrame(cat_dict)
+        score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
+        dump(df_cat, score_pth)
+        return df_cat
+
+
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VisuLogic': 'http://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
+        'VisuLogic': 'https://opencompass.openxlab.space/utils/VLMEval/VisuLogic.tsv'
     }
     DATASET_MD5 = {
         'VisuLogic': 'b0820b5ec1e01dfe3951927f0def73b6',
@@ -2189,7 +2359,7 @@ class OmniMedVQA(ImageMCQDataset):
 class MSEarthMCQ(ImageMCQDataset):
 
     DATASET_URL = {
-        'MSEarthMCQ': 'http://opencompass.openxlab.space/utils/VLMEval/MSEarthMCQ.tsv',
+        'MSEarthMCQ': 'https://opencompass.openxlab.space/utils/VLMEval/MSEarthMCQ.tsv',
     }
 
     DATASET_MD5 = {
@@ -2254,7 +2424,7 @@ directly state the correct option content. Do not give any explanation.
 class VLMBlind(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {
-        'VLMBlind': 'http://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
+        'VLMBlind': 'https://opencompass.openxlab.space/utils/VLMEval/VLMBlind.tsv'
     }
     DATASET_MD5 = {
         'VLMBlind': 'e0f960236afe08f9fa48e8ccc908b2a9',
@@ -2385,7 +2555,7 @@ class SCAM(ImageMCQDataset):
 
 class _3DSRBench(ImageMCQDataset):
 
-    DATASET_URL = {'3DSRBench': 'http://opencompass.openxlab.space/utils/VLMEval/3DSRBench.tsv'}
+    DATASET_URL = {'3DSRBench': 'https://opencompass.openxlab.space/utils/VLMEval/3DSRBench.tsv'}
     DATASET_MD5 = {'3DSRBench': '610516a0b4710595545b7613c60524e8'}
 
     def evaluate(self, eval_file, **judge_kwargs):
@@ -2469,7 +2639,7 @@ class _3DSRBench(ImageMCQDataset):
 
 
 class AffordanceDataset(ImageMCQDataset):
-    DATASET_URL = {'A4Bench': "http://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
+    DATASET_URL = {'A4Bench': "https://opencompass.openxlab.space/utils/VLMEval/A4Bench.tsv"}
     DATASET_MD5 = {'A4Bench': "7c0dc90e8c03e67ff937f3abb4a3fffb"}
     DEFAULT_JUDGE = ['chatgpt-0125', 'gpt-4-0125']
 
