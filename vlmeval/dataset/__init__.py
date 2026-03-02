@@ -65,16 +65,16 @@ from .sfebench import SFE
 from .visfactor import VisFactor
 from .ost_bench import OSTDataset
 from .videommmu import VideoMMMU
-from .vsibench import VsiBench, VsiSuperRecall, VsiSuperCount
 from .mvu_eval import MVUEval
 from .omtgbench import OMTGBench
-from .mmsi_video import MMSIVideoBench
 from .groundingme import GroundingME
 from .EgoExoBench.egoexobench import EgoExoBench_MCQ
 from .videott import VideoTT
 
 from .worldsense import WorldSense
 from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
+
+# Add by EASI team
 from .sitebench import SiteBenchVideo
 from .vsibench import VsiBench, VsiSuperRecall, VsiSuperCount
 from .mmsibench import MMSIVideoBench
@@ -109,7 +109,7 @@ from .olmOCRBench.olmocrbench import olmOCRBench
 from .oceanocr import OceanOCRBench
 from .matbench import MATBench
 
-# EASI add
+# Add by EASI team
 from .mindcubebench import MindCubeBench
 from .embspatialbench import EmbSpatialBench
 from .viewspatialbench import ViewSpatialBench
