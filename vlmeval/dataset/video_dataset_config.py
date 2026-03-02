@@ -214,6 +214,12 @@ omtg_dataset = {
     "OMTGBench_2fps": partial(OMTGBench, dataset="OMTGBench", fps=2.0),
 }
 
+
+mvu_eval_dataset = {
+    'MVU-Eval_8frame': partial(MVUEval, dataset='MVU-Eval', nframe=8),
+    'MVU-Eval_16frame': partial(MVUEval, dataset='MVU-Eval', nframe=16),
+}
+
 VSI_FRAME_VARIANTS = [
     ("128frame", dict(nframe=128)),
     ("64frame", dict(nframe=64)),
@@ -250,10 +256,6 @@ sitebenchvideo_dataset = {
     'SiteBenchVideo_1fps': partial(SiteBenchVideo, dataset='SiteBenchVideo', fps=1),
 }
 
-mvu_eval_dataset = {
-    'MVU-Eval_8frame': partial(MVUEval, dataset='MVU-Eval', nframe=8),
-    'MVU-Eval_16frame': partial(MVUEval, dataset='MVU-Eval', nframe=16),
-}
 mmsi_video_dataset = {
     # The 300 frame setting is aligned with Sufficient-Coverage policy proposed in MMSI-Video-Bench paper
     'MMSIVideoBench_300frame': partial(MMSIVideoBench, dataset='MMSIVideoBench', nframe=300),
