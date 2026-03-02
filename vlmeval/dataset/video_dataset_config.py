@@ -209,6 +209,11 @@ dream_1k_dataset = {
     'DREAM-1K_0.5fps': partial(DREAM, dataset='DREAM-1K', fps=0.5),
 }
 
+omtg_dataset = {
+    "OMTGBench_1fps": partial(OMTGBench, dataset="OMTGBench", fps=1.0),
+    "OMTGBench_2fps": partial(OMTGBench, dataset="OMTGBench", fps=2.0),
+}
+
 VSI_FRAME_VARIANTS = [
     ("128frame", dict(nframe=128)),
     ("64frame", dict(nframe=64)),
@@ -243,11 +248,6 @@ sitebenchvideo_dataset = {
     'SiteBenchVideo_64frame': partial(SiteBenchVideo, dataset='SiteBenchVideo', nframe=64),
     'SiteBenchVideo_32frame': partial(SiteBenchVideo, dataset='SiteBenchVideo', nframe=32),
     'SiteBenchVideo_1fps': partial(SiteBenchVideo, dataset='SiteBenchVideo', fps=1),
-}
-
-omtg_dataset = {
-    "OMTGBench_1fps": partial(OMTGBench, dataset="OMTGBench", fps=1.0),
-    "OMTGBench_2fps": partial(OMTGBench, dataset="OMTGBench", fps=2.0),
 }
 
 mvu_eval_dataset = {
