@@ -214,7 +214,6 @@ omtg_dataset = {
     "OMTGBench_2fps": partial(OMTGBench, dataset="OMTGBench", fps=2.0),
 }
 
-
 mvu_eval_dataset = {
     'MVU-Eval_8frame': partial(MVUEval, dataset='MVU-Eval', nframe=8),
     'MVU-Eval_16frame': partial(MVUEval, dataset='MVU-Eval', nframe=16),
@@ -291,7 +290,7 @@ dataset_groups = [
     mlvu_dataset, tempcompass_dataset, cgbench_dataset, worldsense_dataset, tamperbench_dataset,
     megabench_dataset, qbench_video_dataset, moviechat1k_dataset, vdc_dataset, video_holmes_dataset, vcrbench_dataset,
     cg_av_counting_dataset, video_mmlu_dataset, egoexobench_dataset, dream_1k_dataset, video_tt_dataset,
-    vsibench_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset
+    video_vsi_dataset, mvu_eval_dataset, omtg_dataset, v2pbench_dataset
 ]
 
 # add by EASI team
