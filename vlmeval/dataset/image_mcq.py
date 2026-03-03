@@ -1651,6 +1651,176 @@ class LEGO(ImageMCQDataset):
         return msgs
 
 
+class VisualPuzzles(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'VisualPuzzles': 'https://opencompass.openxlab.space/utils/VLMEval/VisualPuzzles.tsv'
+    }
+    DATASET_MD5 = {
+        'VisualPuzzles': '12bcc3f6dd7a11b33ffcd526b5601076',
+    }
+
+    def format_options(self, opt_str):
+        if not opt_str or opt_str == 'nan':
+            return None
+
+        # 提取所有被引号包住的内容
+        items = re.findall(r"'(.*?)'", opt_str)
+
+        # 生成 A. B. C. D.
+        letters = string.ascii_uppercase
+        formatted = [f"({letters[i]}) {item}" for i, item in enumerate(items)]
+
+        return "\n".join(formatted)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+
+        if not pd.isna(line['options']):
+            options = "Options:\n" + self.format_options(line['options'])
+        else:
+            options = 'Options: Choose from (A) (B) (C) (D) in the image.'
+        prompt = ''
+        prompt += question + '\n' + options
+        prompt += "\nSolve the multiple-choice question and then answer with the option letter from the given choices. "
+        prompt += "The last line of your response should be of the following format:"
+        prompt += "'Answer: $LETTER' (without quotes) where LETTER is one of options. "
+        prompt += "Think step by step before answering."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+        # breakpoint()
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.visualpuzzles import VisulPuzzles_acc
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
+
+        if osp.exists(storage):
+            accuracy_scores = VisulPuzzles_acc(storage)
+        else:
+            accuracy_scores = VisulPuzzles_acc(eval_file)
+        # combine_score = {**accuracy_scores,}
+        cat_dict = accuracy_scores[0]
+        level_dict = accuracy_scores[1]
+        # cross_dict = accuracy_scores[2]
+
+        df_cat = pd.DataFrame(cat_dict).rename(columns={'category': 'group'})
+        df_cat['type'] = 'category'
+
+        df_level = pd.DataFrame(level_dict).rename(columns={'level': 'group'})
+        df_level['type'] = 'level'
+
+        combine_score = pd.concat(
+            [df_cat, df_level],
+            ignore_index=True
+        )
+
+        score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
+        dump(combine_score, score_pth)
+        return combine_score
+
+
+class PuzzleVQA(ImageMCQDataset):
+    TYPE = "MCQ"
+    DATASET_URL = {
+        'PuzzleVQA': 'https://opencompass.openxlab.space/utils/VLMEval/PuzzleVQA.tsv'
+    }
+    DATASET_MD5 = {
+        'PuzzleVQA': '6a4a40bd8967db728c06202e8265a49b',
+    }
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
+        else:
+            tgt_path = self.dump_image(line)
+
+        question = line['question']
+        # breakpoint()
+        options = line['options']
+        letters = string.ascii_uppercase
+
+        options = '\n'.join([f"({letters[i]}) {item}" for i, item in enumerate(eval(options))])
+
+        prompt = ''
+        prompt += question + '\nOptions:\n' + options
+        prompt += "\nSolve the multiple-choice question and then answer with the option letter from the given choices. "
+        prompt += "The last line of your response should be of the following format:"
+        prompt += "'Answer: $LETTER' (without quotes) where LETTER is one of options. "
+        prompt += "Think step by step before answering."
+
+        msgs = []
+        if isinstance(tgt_path, list):
+            msgs.extend([dict(type='image', value=p) for p in tgt_path])
+        else:
+            msgs = [dict(type='image', value=tgt_path)]
+        msgs.append(dict(type='text', value=prompt))
+
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.puzzlevqa import PuzzleVQA_acc
+        from .utils.multiple_choice import mcq_vanilla_eval
+
+        # model = judge_kwargs['model']
+        model = judge_kwargs.get('model', 'exact_matching')
+        name_str_map = {'gpt-4-0125': 'gpt4', 'gpt-4-turbo': 'gpt4-turbo', 'gpt-4o-mini': 'gpt4o-mini'}
+        name_str = name_str_map[model] if model in name_str_map else model
+
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
+        if osp.exists(storage):
+            accuracy_scores = PuzzleVQA_acc(storage)
+        else:
+            accuracy_scores = PuzzleVQA_acc(eval_file)
+        cat_dict = accuracy_scores
+
+        df_cat = pd.DataFrame(cat_dict)
+        score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
+        dump(df_cat, score_pth)
+        return df_cat
+
+
 class VisuLogic(ImageMCQDataset):
     TYPE = "MCQ"
     DATASET_URL = {

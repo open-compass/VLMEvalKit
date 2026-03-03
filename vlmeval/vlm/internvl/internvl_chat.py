@@ -238,6 +238,8 @@ class InternVLChat(BaseModel):
             'optics_dataset', 'quantum_dataset', 'statistics_dataset'
         ]:
             return False
+        if dataset in ["SSI_Bench"]:
+            return False
         if listinstr(['MMDU', 'MME-RealWorld', 'MME-RealWorld-CN', 'WeMath_COT', 'MMAlignBench', 'ChartQAPro', 'ChartMuseum', 'MMSIVideo_U50','MMSIVideo_SC'], dataset):  # noqa: E501
             # For Multi-Turn we don't have custom prompt
             return False

@@ -29,6 +29,8 @@ class Qwen3VLPromptMixin:
 
         if not self._use_custom_prompt:
             return False
+        if dataset in {"SSI_Bench"}:
+            return False
         # Follow Qwen3-VL convention: apply concise, task-specified prompts for MCQ/YN/VQA
         if dataset in {'MMMU_DEV_VAL', 'MMMU_TEST'}:
             return True
