@@ -16,6 +16,7 @@ from vlmeval.dataset.utils.NPMM.dominating_set import validation as dominating_s
 from vlmeval.dataset.utils.NPMM.vertex_cover import validation as vertex_cover_validation
 from vlmeval.dataset.utils.NPMM.maximum_cut import validation as maximum_cut_validation
 
+
 class NPMM(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
@@ -35,8 +36,7 @@ class NPMM(ImageBaseDataset):
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file)
         stats = defaultdict[Any, dict[str, int | float]](lambda: {'total': 0, 'valid': 0, 'ar_accum': 0.0})
-        target_tasks = ["NpTsp", "NpHamiltonianCycle", "NpMaximumCliqueProblem", 
-                        "NpMinimumCut", "NpMaximumSet", "NpGcpD", "NpFeedbackVertexSet", "NpDominatingSet", "NpVertexCover", "NpMaximumCut"]
+        target_tasks = ["NpTsp", "NpHamiltonianCycle", "NpMaximumCliqueProblem", "NpMinimumCut", "NpMaximumSet", "NpGcpD", "NpFeedbackVertexSet", "NpDominatingSet", "NpVertexCover", "NpMaximumCut"]  # noqa: E501
         for index, data_item in data.iterrows():
             task = data_item.get("data_source").split("/")[1]
             if task not in target_tasks:
@@ -83,10 +83,10 @@ class NPMM(ImageBaseDataset):
             if not is_invalid:
                 stats[task]['valid'] += 1
                 if task in ["NpGcpD", "NpMinimumCut","NpTsp","NpVertexCover","NpDominatingSet","NpFeedbackVertexSet"]:
-                    stats[task]['ar_accum'] +=  float(ground_truth) / value
+                    stats[task]['ar_accum'] += float(ground_truth) / value
                 else:
-                    stats[task]['ar_accum'] += value / float(ground_truth) 
-                    
+                    ratio = value / float(ground_truth)
+                    stats[task]['ar_accum'] += ratio
         # cal each task's result
         subtask_results = {}
         for task in target_tasks:
@@ -115,14 +115,14 @@ class NPMM(ImageBaseDataset):
                 continue
             avg_sr = sum(subtask_results[t]['SR'] for t in relevant_tasks) / len(relevant_tasks)
             avg_ar = sum(subtask_results[t]['AR'] for t in relevant_tasks) / len(relevant_tasks)
-            
+
             group_stats.append({
-                'Task': group, 
+                'Task': group,
                 'SR': avg_sr,
                 'AR': avg_ar,
                 'num_subtasks': len(relevant_tasks)
             })
-            
+
             total_sr += avg_sr
             total_ar += avg_ar
             valid_tasks_count += 1
@@ -140,7 +140,7 @@ class NPMM(ImageBaseDataset):
             if g['Task'] == 'Overall':
                 res.update({'SR': round(g['SR'] * 100, 1), 'AR': round(g['AR'] * 100, 1)})
             else:
-                res.update({f"{g['Task']}_success_rate": round(g['SR'] * 100, 1), 
+                res.update({f"{g['Task']}_success_rate": round(g['SR'] * 100, 1),
                             f"{g['Task']}_avg_ratio": round(g['AR'] * 100, 1)})
         accuracy_df = pd.DataFrame([res])
         score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')

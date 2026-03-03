@@ -65,7 +65,7 @@ def validation(graph, answer):
     # 2. 检查是否访问了所有城市且只访问一次（除了起点/终点）
     num_cities = len(graph)
     if len(path) != num_cities + 1:
-        return True, total_distance_sum, f"path length is incorrect. Expected {num_cities + 1} cities in path, but got {len(path)}"
+        return True, total_distance_sum, f"path length is incorrect. Expected {num_cities + 1} cities in path, but got {len(path)}"  # noqa: E501
 
     visited = set()
     for city in path[:-1]:  # Exclude the last city (which is the same as the first)
@@ -73,7 +73,7 @@ def validation(graph, answer):
             return True, total_distance_sum, f"invalid city: {city} (either repeated, negative, or out of range)"
         visited.add(city)
     if len(visited) != num_cities:
-        return True, total_distance_sum, f"not all cities are visited. Expected {num_cities}, but visited {len(visited)}"
+        return True, total_distance_sum, f"not all cities are visited. Expected {num_cities}, but visited {len(visited)}"  # noqa: E501
     # 3. 计算总距离
     total_distance = 0
     for i in range(len(path) - 1):
@@ -86,4 +86,3 @@ def validation(graph, answer):
             return True, total_distance_sum, f"no distance found between cities {current} and {next_city}"
 
     return False, total_distance, f"Total distance: {total_distance}"
-
