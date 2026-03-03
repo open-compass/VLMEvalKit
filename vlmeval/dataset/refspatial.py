@@ -22,11 +22,11 @@ logger = logging.getLogger(__name__)
 
 class RefSpatialDataset(ImageBaseDataset):
     """RefSpatial-Bench: A Benchmark for Multi-step Spatial Referring with Reasoning.
-    
-    Paper: RoboRefer: Towards Spatial Referring with Reasoning in Vision-Language Models 
+
+    Paper: RoboRefer: Towards Spatial Referring with Reasoning in Vision-Language Models
            for Robotics (NeurIPS 2025)
     Dataset: https://huggingface.co/datasets/BAAI/RefSpatial-Bench
-    
+
     This benchmark evaluates models on spatial referring tasks with three splits:
     - Location: Predict a 2D point indicating the unique target object (100 samples)
     - Placement: Predict a 2D point within the desired free space (100 samples)
@@ -44,7 +44,7 @@ class RefSpatialDataset(ImageBaseDataset):
     SPLITS = ['Location', 'Placement', 'Unseen']
     SPLIT_ALIASES = {
         'RefSpatial-Location': 'Location',
-        'RefSpatial-Placement': 'Placement', 
+        'RefSpatial-Placement': 'Placement',
         'RefSpatial-Unseen': 'Unseen',
         'RefSpatial_Location': 'Location',
         'RefSpatial_Placement': 'Placement',
@@ -93,31 +93,31 @@ class RefSpatialDataset(ImageBaseDataset):
         """Normalize dataset name to split name."""
         if dataset in self.SPLIT_ALIASES:
             return self.SPLIT_ALIASES[dataset]
-        
+
         # Try to extract split from dataset name
         for split in self.SPLITS:
             if split in dataset:
                 return split
-        
+
         # Default to Location if no split specified
         return 'Location'
 
     def load_data(self, dataset):
         """Load RefSpatial-Bench data.
-        
+
         Data is loaded from HuggingFace datasets and converted to TSV format.
         """
         data_root = LMUDataRoot()
         split_name = self._get_split_name(dataset)
-        
+
         # Target file path
         tsv_file = osp.join(data_root, f'RefSpatial_{split_name}.tsv')
-        
+
         # Check if TSV already exists
         if osp.exists(tsv_file):
             logger.info(f'Loading RefSpatial {split_name} from {tsv_file}')
             return load(tsv_file)
-        
+
         # Try to download from HuggingFace
         try:
             logger.info(f'Downloading RefSpatial {split_name} from HuggingFace...')
@@ -138,10 +138,10 @@ class RefSpatialDataset(ImageBaseDataset):
             raise ImportError(
                 'Please install datasets library: pip install datasets'
             )
-        
+
         # Load dataset from HuggingFace
         ds = load_dataset(self.HF_DATASET_NAME, split=split_name.lower())
-        
+
         records = []
         for i, sample in enumerate(ds):
             # Convert PIL image to base64
@@ -152,7 +152,7 @@ class RefSpatialDataset(ImageBaseDataset):
                 img_base64 = base64.b64encode(buffered.getvalue()).decode()
             else:
                 img_base64 = str(img_pil)
-            
+
             # Convert mask to base64 if available
             mask_base64 = ''
             if 'mask' in sample and sample['mask'] is not None:
@@ -161,7 +161,7 @@ class RefSpatialDataset(ImageBaseDataset):
                     buffered = BytesIO()
                     mask_pil.save(buffered, format="PNG")
                     mask_base64 = base64.b64encode(buffered.getvalue()).decode()
-            
+
             record = {
                 'index': f'{split_name}_{i}',
                 'image': img_base64,
@@ -173,19 +173,19 @@ class RefSpatialDataset(ImageBaseDataset):
                 'split': split_name,
                 'dataset': f'RefSpatial-{split_name}',
             }
-            
+
             # Construct question
             record['question'] = self._build_question(record)
-            
+
             records.append(record)
-        
+
         df = pd.DataFrame(records)
-        
+
         # Save to TSV
         os.makedirs(osp.dirname(tsv_file), exist_ok=True)
         dump(df, tsv_file)
         logger.info(f'Saved RefSpatial {split_name} to {tsv_file} ({len(df)} samples)')
-        
+
         return df
 
     def _build_question(self, record: dict) -> str:
@@ -193,31 +193,31 @@ class RefSpatialDataset(ImageBaseDataset):
         template = self.PROMPT_TEMPLATES['default']
         prefix = template['prefix']
         suffix = template['suffix']
-        
+
         # Use object field for more concise prompt
         obj = record.get('object', '')
         prompt = record.get('prompt', '')
-        
+
         if prefix and obj:
             question = f"{prefix}{obj}{suffix}"
         else:
             question = f"{prompt} {suffix}"
-        
+
         return question.strip()
 
     def build_prompt(self, line):
         """Build the prompt for model inference."""
         if isinstance(line, int):
             line = self.data.iloc[line]
-        
+
         # Dump image
         tgt_path = self.dump_image(line)
-        
-        # Always rebuild question with the current template suffix (ignores stale TSV question column)
+
+        # Rebuild question with the current template suffix
         prompt = line.get('prompt', '') or line.get('question', '')
         suffix = self.PROMPT_TEMPLATES['default']['suffix']
         question = f"{prompt}{suffix}".strip()
-        
+
         msgs = []
         if isinstance(tgt_path, list):
             msgs.extend([dict(type='image', value=p) for p in tgt_path])
@@ -228,34 +228,34 @@ class RefSpatialDataset(ImageBaseDataset):
 
     def evaluate(self, eval_file, **judge_kwargs):
         """Evaluate predictions on RefSpatial-Bench.
-        
+
         Metric: Success Rate (percentage of predictions falling within the mask)
         """
         logger.info(f'Evaluating RefSpatial from {eval_file}')
-        
+
         data = load(eval_file)
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data)
-        
+
         if 'prediction' not in data:
             raise KeyError('Prediction file must contain a `prediction` column.')
-        
+
         # Get metadata with masks
         meta = self.data.copy()
-        
+
         results = []
         for idx, row in data.iterrows():
             record_idx = row.get('index', idx)
             pred_text = str(row.get('prediction', ''))
-            
+
             # Find corresponding metadata
             meta_row = meta[meta['index'] == record_idx]
             if len(meta_row) == 0:
                 logger.warning(f'Index {record_idx} not found in metadata')
                 continue
-            
+
             meta_row = meta_row.iloc[0]
-            
+
             # Parse prediction to get points
             pred_points = self._parse_prediction(pred_text)
 
@@ -288,12 +288,12 @@ class RefSpatialDataset(ImageBaseDataset):
                 'success': int(success),
                 'failure_reason': failure_reason,
             })
-        
+
         results_df = pd.DataFrame(results)
-        
+
         # Calculate metrics
         summary_rows = []
-        
+
         # Overall success rate
         overall_success = results_df['success'].mean() * 100 if len(results_df) > 0 else 0.0
         summary_rows.append({
@@ -301,7 +301,7 @@ class RefSpatialDataset(ImageBaseDataset):
             'Success Rate (%)': overall_success,
             'Samples': len(results_df),
         })
-        
+
         # Per-split success rate
         for split in results_df['split'].unique():
             split_df = results_df[results_df['split'] == split]
@@ -311,7 +311,7 @@ class RefSpatialDataset(ImageBaseDataset):
                 'Success Rate (%)': split_success,
                 'Samples': len(split_df),
             })
-        
+
         # Per-step success rate
         for step in sorted(results_df['step'].unique()):
             step_df = results_df[results_df['step'] == step]
@@ -321,23 +321,26 @@ class RefSpatialDataset(ImageBaseDataset):
                 'Success Rate (%)': step_success,
                 'Samples': len(step_df),
             })
-        
+
         summary_df = pd.DataFrame(summary_rows)
-        
+
         # Save detailed results
         detail_file = get_intermediate_file_path(eval_file, '_detail')
         dump(results_df, detail_file)
-        
+
         # Save summary
         score_file = get_intermediate_file_path(eval_file, '_acc')
         dump(summary_df, score_file)
-        
-        logger.info(f'RefSpatial evaluation completed. Overall Success Rate: {overall_success:.2f}%')
+
+        logger.info(
+            f'RefSpatial evaluation completed. '
+            f'Overall Success Rate: {overall_success:.2f}%'
+        )
         return summary_df
 
     def _parse_prediction(self, text: str) -> Optional[List[Tuple[int, int]]]:
         """Parse model prediction to extract point coordinates.
-        
+
         Supports multiple formats:
         - JSON: [(0.5, 0.5)] or [{"point": [y, x]}]
         - XML: <points x1="50" y1="50" .../>
@@ -345,22 +348,22 @@ class RefSpatialDataset(ImageBaseDataset):
         """
         if not isinstance(text, str) or not text.strip():
             return None
-        
+
         points = []
-        
+
         # Try JSON format first
         try:
             # Clean up the text
             json_text = text.strip()
-            
+
             # Extract JSON from markdown code blocks
             json_match = re.search(r'```(?:json)?\n(.*?)```', json_text, re.DOTALL)
             if json_match:
                 json_text = json_match.group(1).strip()
-            
+
             # Try to parse as JSON
             data = json.loads(json_text)
-            
+
             if isinstance(data, list):
                 for item in data:
                     if isinstance(item, dict) and 'point_2d' in item:
@@ -410,7 +413,7 @@ class RefSpatialDataset(ImageBaseDataset):
                 return points
         except (json.JSONDecodeError, ValueError):
             pass
-        
+
         # Try XML format (Molmo style)
         xml_pattern = r'<points\s+(.*?)/>'
         xml_match = re.search(xml_pattern, text)
@@ -424,20 +427,20 @@ class RefSpatialDataset(ImageBaseDataset):
                 if x_val > 1 or y_val > 1:
                     x_val, y_val = x_val / 100.0, y_val / 100.0
                 points.append((x_val, y_val))
-            
+
             if points:
                 return points
-        
+
         # Try plain text with parentheses: (0.5, 0.5)
         paren_pattern = r'\(\s*([\d.]+)\s*,\s*([\d.]+)\s*\)'
         for match in re.finditer(paren_pattern, text):
             x = float(match.group(1))
             y = float(match.group(2))
             points.append((x, y))
-        
+
         if points:
             return points
-        
+
         return None
 
     def _load_mask(self, mask_data) -> Optional[np.ndarray]:
@@ -457,35 +460,35 @@ class RefSpatialDataset(ImageBaseDataset):
             logger.warning(f'Failed to load mask: {e}')
         return None
 
-    def _check_points_in_mask(self, points: List[Tuple[float, float]], 
+    def _check_points_in_mask(self, points: List[Tuple[float, float]],
                               mask: np.ndarray) -> bool:
         """Check if any of the predicted points fall within the mask.
-        
+
         Args:
             points: List of (x, y) coordinates in normalized 0-1 range
             mask: Binary mask array
-        
+
         Returns:
             True if at least one point is inside the mask
         """
         if mask is None or not points:
             return False
-        
+
         h, w = mask.shape[:2]
-        
+
         for x_norm, y_norm in points:
             # Convert normalized coordinates to pixel coordinates
             x = int(x_norm * w)
             y = int(y_norm * h)
-            
+
             # Clip to valid range
             x = max(0, min(x, w - 1))
             y = max(0, min(y, h - 1))
-            
+
             # Check if point is in mask (non-zero)
             if mask[y, x] > 0:
                 return True
-        
+
         return False
 
 
