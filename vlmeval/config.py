@@ -318,6 +318,37 @@ api_models = {
         Gemini, model="gemini-2.5-pro", temperature=0, retry=10
     ),
     
+    # GCP Vertex AI – Claude (same GCPVertexAPI; model name selects Claude backend)
+    "GCP_Claude3-5Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-5-sonnet-20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-5Haiku": partial(
+        GCPVertexAPI,
+        model="claude-3-5-haiku@20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-7Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-7-sonnet@20250219",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeSonnet4-5": partial(
+        GCPVertexAPI,
+        model="claude-sonnet-4-5@20250929",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeOpus4-6": partial(
+        GCPVertexAPI,
+        model="claude-opus-4-6",
+        temperature=0,
+        retry=10,
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -361,6 +392,42 @@ api_models = {
         model="yi-vision",
         api_base="https://api.lingyiwanwu.com/v1/chat/completions",
         temperature=0,
+        retry=10,
+    ),
+    # Together AI (set TOGETHER_API_KEY)
+    "Together_Llama3.2-11B-Vision": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama3.2-90B-Vision": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama4-Scout-17B": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama4-Maverick-17B": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Qwen2-VL-72B": partial(
+        TogetherAPI,
+        model="Qwen/Qwen2-VL-72B-Instruct",
+        temperature=0,
+        max_tokens=2048,
         retry=10,
     ),
     # Claude
@@ -417,6 +484,31 @@ api_models = {
         retry=10,
         verbose=False,
         timeout=1800
+    ),
+    # AWS Bedrock (Converse API; set AWS_REGION or pass region_name)
+    "Bedrock_Claude3-5Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Opus": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-opus-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Haiku": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        temperature=0,
+        retry=10,
     ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
@@ -1273,6 +1365,82 @@ qwen3vl_series = {
     
 }
 
+qwen3_5_series = {
+    # vllm serve command example: 
+    # vllm serve Qwen/Qwen3.5-122B-A10B --port 8000 --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3
+    "Qwen3.5-122B-A10B_ThinkMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+    ),
+    "Qwen3.5-122B-A10B_InstructMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+        chat_template_kwargs={"enable_thinking": False},
+    ),
+    "Qwen3.5-397B-A17B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-397B-A17B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-122B-A10B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-122B-A10B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-35B-A3B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-35B-A3B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-27B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-27B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -2047,7 +2215,7 @@ model_groups = [
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
-    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,qwen3vl_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series, qwen3vl_series, qwen3_5_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,

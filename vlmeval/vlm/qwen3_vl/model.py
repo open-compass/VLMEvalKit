@@ -15,13 +15,11 @@ VLLM_MAX_IMAGE_INPUT_NUM = 24
 
 
 def is_moe_model(model_path: str) -> bool:
-    """Check if the model is a Mixture of Experts model."""
-    path_parts = model_path.split('/')
-    non_moe_patterns = ['2B','4B','8B','32B']
-    for part in path_parts:
-        if any(pattern in part for pattern in non_moe_patterns):
-            return False
-    return True
+    """Check if the model is a Mixture of Experts model by looking for active-param suffixes like A3B, A17B."""
+    import re
+    if re.search(r'-A\d+B', model_path):
+        return True
+    return False
 
 
 def ensure_image_url(image: str) -> str:
