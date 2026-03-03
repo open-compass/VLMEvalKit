@@ -27,6 +27,7 @@ def parse_bbox_aguvis(response):
         click_point = [0.0, 0.0]
     return click_point
 
+
 class VenusBench_GD(ImageBaseDataset):
     MODALITY = "IMAGE"
     TYPE = "GUI"
