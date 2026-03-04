@@ -20,7 +20,7 @@ from vlmeval.dataset.utils.NPMM.maximum_cut import validation as maximum_cut_val
 class NPMM(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
-        'npmm': '',
+        'npmm': 'https://opencompass.openxlab.space/utils/VLMEval/npmm.tsv',
     }
     DATASET_MD5 = {
         'npmm': 'a4d3255566303a1337b5c237259402d5',
