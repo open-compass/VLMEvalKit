@@ -17,6 +17,7 @@ from .image_vqa import (
     ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench, MathCanvas, MMReason,
     CoreCognition, VLMsAreBiased, VTCBench
 )
+from .da2k import DA2K
 
 from .worldvqa import WorldVQA
 from .image_ccocr import CCOCRDataset
@@ -36,6 +37,8 @@ from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
 from .ssi_bench import SSIBenchDataset
 from .refcoco import RefCOCODataset
+from .refspatial import RefSpatialDataset
+from .erqa import ERQADataset
 from .simplevqa import SimpleVQA
 from .chartx import ChartX
 from .plotqa import PlotQA
@@ -269,7 +272,8 @@ IMAGE_DATASET = [
     OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
-    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
+    olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
+    ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     Design2Code, VLADBench, SSIBenchDataset, NPMM
@@ -279,7 +283,7 @@ IMAGE_DATASET = [
 IMAGE_DATASET += [
     MindCubeBench, EmbSpatialBench, ViewSpatialBench, MMSIBench, SiteBenchImage,
     SparBench, SpatialVizBench, StareBench, OmniSpatialBench, ERQABench, RoboSpatialBench, RefSpatialBench,
-    SPBench, ERIQBench
+    SPBench, ERIQBench, DA2K
 ]
 
 VIDEO_DATASET = [
