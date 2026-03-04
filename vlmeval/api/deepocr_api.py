@@ -17,7 +17,7 @@ class DeepOCRAPI(OpenAIWrapper):
 
     def __init__(
         self,
-        model: str = "gpt-4-1106-vision-preview",
+        model: str = "deepocr",
         retry: int = 5,
         verbose: bool = False,
         system_prompt: str | None = None,
