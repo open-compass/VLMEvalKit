@@ -1365,6 +1365,82 @@ qwen3vl_series = {
     
 }
 
+qwen3_5_series = {
+    # vllm serve command example: 
+    # vllm serve Qwen/Qwen3.5-122B-A10B --port 8000 --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3
+    "Qwen3.5-122B-A10B_ThinkMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+    ),
+    "Qwen3.5-122B-A10B_InstructMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+        chat_template_kwargs={"enable_thinking": False},
+    ),
+    "Qwen3.5-397B-A17B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-397B-A17B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-122B-A10B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-122B-A10B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-35B-A3B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-35B-A3B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-27B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-27B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -1498,6 +1574,11 @@ cambrian_series = {
     "cambrian_8b": partial(Cambrian, model_path="nyu-visionx/cambrian-8b"),
     "cambrian_13b": partial(Cambrian, model_path="nyu-visionx/cambrian-13b"),
     "cambrian_34b": partial(Cambrian, model_path="nyu-visionx/cambrian-34b"),
+    
+    "cambrian-s-0.5b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-0.5B"),
+    "cambrian-s-1.5b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-1.5B"),
+    "cambrian-s-3b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-3B"),
+    "cambrian-s-7b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-7B"),
 }
 
 chameleon_series = {
@@ -2116,6 +2197,151 @@ covt_series = {
     ),
 }
 
+bagel_series = {
+    "BAGEL-7B-MoT": partial(Bagel, model_path='ByteDance-Seed/BAGEL-7B-MoT'),
+}
+
+spatial_related_models = {
+    # 3B models
+    "MindCube-Qwen2.5VL-RawQA-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-RawQA-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MindCube-Qwen2.5VL-Aug-CGMap-FFR-Out-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-Aug-CGMap-FFR-Out-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MindCube-Qwen2.5VL-Plain-CGMap-FFR-Out-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-Plain-CGMap-FFR-Out-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SpatialLadder-3B": partial(
+        Qwen2VLChat,
+        model_path="hongxingli/SpatialLadder-3B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Spatial-MLLM-subset-sft": partial(
+        SpatialMLLM,
+        model_path="Diankun/Spatial-MLLM-subset-sft",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        max_num_frames=16,
+        use_custom_prompt=False,
+        post_process=True,
+    ),
+    "VST-3B-SFT": partial(
+        Qwen2VLChat,
+        model_path="rayruiyang/VST-3B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    
+    # 7B models
+    "SpaceR-SFT-7B": partial(
+        Qwen2VLChat,
+        model_path="RUBBISHLIKE/SpaceR-SFT-7B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "ViLaSR": partial(
+        Qwen2VLChat,
+        model_path="inclusionAI/ViLaSR",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "VST-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="rayruiyang/VST-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "VLM-3R": partial(
+        VLM3R, 
+        model_path="Journey9ni/vlm-3r-llava-qwen2-lora",
+    ),
+}
+
+sensenova_si_series = {
+    # SenseNova-SI-1.0 series
+    "SenseNova-SI-InternVL3-2B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-InternVL3-2B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    # SenseNova-SI-1.1 series
+    "SenseNova-SI-1.1-InternVL3-2B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-InternVL3-2B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-1.1-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-1.1-Qwen2.5-VL-3B": partial(
+        Qwen2VLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-Qwen2.5-VL-3B", 
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SenseNova-SI-1.1-Qwen2.5-VL-7B": partial(
+        Qwen2VLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-Qwen2.5-VL-7B", 
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SenseNova-SI-1.1-Qwen3-VL-8B": partial(
+        Qwen3VLChat,
+        model_path="sensenova/SenseNova-SI-1.1-Qwen3-VL-8B",
+        use_custom_prompt=False,
+    ),
+    "SenseNova-SI-1.1-BAGEL-7B-MoT": partial(
+        Bagel, 
+        model_path='sensenova/SenseNova-SI-1.1-BAGEL-7B-MoT'
+    ),
+    # SenseNova-SI-1.2 series
+    "SenseNova-SI-1.2-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.2-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    # SenseNova-SI-1.3 series
+    "SenseNova-SI-1.3-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.3-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -2139,7 +2365,7 @@ model_groups = [
     idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
-    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,qwen3vl_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series, qwen3vl_series, qwen3_5_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
@@ -2149,6 +2375,9 @@ model_groups = [
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
     lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series, covt_series
 ]
+
+# add by EASI team
+model_groups.extend([bagel_series, spatial_related_models, sensenova_si_series])
 
 for grp in model_groups:
     supported_VLM.update(grp)
