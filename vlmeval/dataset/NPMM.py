@@ -23,7 +23,7 @@ class NPMM(ImageBaseDataset):
         'npmm': 'https://opencompass.openxlab.space/utils/VLMEval/npmm.tsv',
     }
     DATASET_MD5 = {
-        'npmm': 'a4d3255566303a1337b5c237259402d5',
+        'npmm': 'e161f597458786805cbb78e1a6f7e5f7',
     }
     GROUP_LIST = {
         "constraint": ["NpGcpD", "NpFeedbackVertexSet"],
