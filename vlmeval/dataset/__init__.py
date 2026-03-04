@@ -134,6 +134,7 @@ from .gsm8k_v import GSM8KVDataset
 from .macbench import MaCBench
 from .mmesci import MMESCIDataset
 from .sarena_mini import SArena_MINI
+from .sarena import SArena
 from .uni_svg import UniSVG
 from .vladbench import VLADBench
 from .design2code import Design2Code
@@ -269,7 +270,7 @@ IMAGE_DATASET = [
     AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset, MathCanvas, MMReason,
     MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro, ReasonMap_Plus,
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, SimpleVQA, HiPhODataset, MaCBench,
-    UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
+    UniSVG, SArena_MINI, SArena, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     Design2Code, VLADBench, SSIBenchDataset,
 ]
