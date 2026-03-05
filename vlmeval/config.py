@@ -144,6 +144,15 @@ api_models = {
         retry=10,
         verbose=False,
     ),
+    "DEEPOCR": partial(
+        DeepOCRAPI,
+        model="gpt-4-1106-vision-preview",
+        temperature=0,
+        img_size=-1,
+        img_detail="high",
+        retry=10,
+        verbose=False,
+    ),
     "GPT4V_20240409": partial(
         GPT4V,
         model="gpt-4-turbo-2024-04-09",
