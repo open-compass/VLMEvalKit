@@ -7,12 +7,18 @@ from transformers import AutoTokenizer
 from .base_metric import BaseMetric
 from .average_meter import AverageMeter
 
+from vlmeval.smp.misc import get_cache_path
+
 
 class TokenLengthCalculator(BaseMetric):
+
     def __init__(self, tokenizer_path: str):
         super().__init__()
         self.class_name = self.__class__.__name__
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        if get_cache_path(tokenizer_path, repo_type='models'):
+            # AutoTokenizer won't use cached path.
+            tokenizer_path = get_cache_path(tokenizer_path, repo_type='models')
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         self.metric = self.count_token_length
 
