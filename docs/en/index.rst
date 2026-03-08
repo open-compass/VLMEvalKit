@@ -1,41 +1,40 @@
-Welcome to the VLMEvalKit Tutorial!
-==========================================
+Welcome to the VLMEvalKit English Docs!
+======================================
 
-VLMEvalKit Getting Started Guide
--------------------------------
+Getting started with VLMEvalKit
+------------------------------
 
-To help users get started quickly, we recommend the following process:
+To help users get started quickly, we recommend the following path:
 
-- For users who want to use VLMEvalKit, we recommend reading the "Start Your First Step" section to set up the environment and start a mini-experiment to familiarize yourself with the process.
+- If you want to use VLMEvalKit, start with the :ref:`Quick Start` section to set up the environment and run a small experiment to understand the workflow.
+- If you want deeper customization (e.g., adding datasets/models), see the :ref:`Advanced` section.
 
-- If you want to customize more modules, such as adding datasets and models, we provide an "Advanced Tutorial."
+We always welcome PRs and Issues to improve VLMEvalKit.
 
-We always welcome users' PRs (Pull Requests) and Issues to improve VLMEvalKit!
-
-.. _Start Your First Step:
+.. _Quick Start:
 .. toctree::
    :maxdepth: 1
-   :caption: Start Your First Step
+   :caption: Quick Start
 
+   README.md
    Quickstart.md
+   Workflow.md
+   Model.md
+   Dataset.md
+   Tools.md
+   Environment.md
+   Troubleshooting.md
 
-.. _Advanced Tutorial:
+.. _Advanced:
 .. toctree::
    :maxdepth: 1
-   :caption: Advanced Tutorial
+   :caption: Advanced
 
    Development.md
    ConfigSystem.md
 
-.. _Other Notes:
-.. toctree::
-   :maxdepth: 1
-   :caption: Other Notes
-
-   Contributors.md
-
 Index and Tables
-==================
+================
 
 * :ref:`genindex`
 * :ref:`search`

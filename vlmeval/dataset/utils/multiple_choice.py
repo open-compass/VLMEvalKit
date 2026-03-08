@@ -1,5 +1,5 @@
 import pandas as pd
-from ...utils import can_infer, track_progress_rich, can_infer_lego
+from .matching_util import can_infer, can_infer_lego
 from ...smp import *
 import numpy as np
 import re
@@ -58,14 +58,34 @@ def MMMU_preproc(data):
         if pd.isna(As[i]):
             As[i] = Ans[i]
             Bs[i] = 'Other Answers'
+            Ans[i] = 'A'
             cnt += 1
     logger.info(f'During MMMU_preproc in Evaluation, {cnt} open questions are re-formulated to multi-choice ones. ')
     data['A'] = As
     data['B'] = Bs
+    data['answer'] = Ans
     return data
 
 
-def report_acc(df):
+def report_acc_json(df, inds=['category'], key='hit'):
+    res = {}
+    assert key in df, df.keys()
+    scores = list(df[key])
+    data = cp.deepcopy(df)
+    res['response_err_rate'] = np.mean([x is None for x in scores])
+    data[key] = [x if x is not None else 0 for x in scores]
+    res['overall'] = np.mean(data[key])
+    for group in inds:
+        if group not in df:
+            continue
+        cates = list(set(data[group]))
+        for c in cates:
+            sub = data[data[group] == c]
+            res[f'{c}'] = np.mean(sub[key])
+    return res
+
+
+def report_acc(df, inds=['category', 'l2-category'], key='hit'):
     # assert group in [None, 'category', 'l2-category']
     res = defaultdict(list)
 
@@ -76,9 +96,9 @@ def report_acc(df):
         df['split'] = ['none'] * len(df)
         res['split'] = ['none']
 
-    for group in [None, 'l2-category', 'category']:
+    for group in [None] + inds:
         if group is None:
-            res['Overall'] = [np.mean(df[df['split'] == sp]['hit']) for sp in res['split']]
+            res['Overall'] = [np.mean(df[df['split'] == sp][key]) for sp in res['split']]
         elif group not in df:
             continue
         else:
@@ -88,7 +108,21 @@ def report_acc(df):
                 ab_name = MMB_abbrs[ab] if ab in MMB_abbrs else ab
                 sub_df = df[df[group] == ab]
                 res[ab_name] = [np.mean(sub_df[sub_df['split'] == sp]['hit']) for sp in res['split']]
+    if len(res['split']) == 1:
+        res.pop('split')
     return pd.DataFrame(res)
+
+
+def report_acc_MMVP(df):
+    assert len(df) % 2 == 0
+    for i in range(len(df) // 2):
+        assert df['question'][2 * i] == df['question'][2 * i + 1]
+    res = {}
+    res['Average'] = np.mean(df['hit'])
+    hits = list(df['hit'])
+    both_correct = [hits[2 * i] and hits[2 * i + 1] for i in range(len(df) // 2)]
+    res['Overall'] = np.mean(both_correct)
+    return d2df(res)
 
 
 def report_acc_MMT(df):
@@ -221,13 +255,13 @@ def build_prompt(question, options, prediction):
         'If the meaning of all options are significantly different from the answer, output Z. '
         'Your should output a single uppercase character in A, B, C, D (if they are valid options), and Z. \n'
         'Example 1: \n'
-        'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
-        'Answer: a cute teddy bear\nYour output: A\n'
+        '[Question]: What is the main object in image?\n[Options]: A. teddy bear B. rabbit C. cat D. dog\n'
+        '[Prediction]: a cute teddy bear\n[Output]: A\n'
         'Example 2: \n'
-        'Question: What is the main object in image?\nOptions: A. teddy bear B. rabbit C. cat D. dog\n'
-        'Answer: Spider\nYour output: Z\n'
-        'Example 3: \n'
-        'Question: {}?\nOptions: {}\nAnswer: {}\nYour output: '
+        '[Question]: What is the main object in image?\n[Options]: A. teddy bear B. rabbit C. cat D. dog\n'
+        '[Prediction]: Spider\n[Output]: Z\n'
+        'Your Task: \n'
+        '[Question]: {}?\n[Options]: {}\n[Prediction]: {}\n[Output]: '
     )
     return tmpl.format(question, options, prediction)
 
@@ -296,15 +330,15 @@ def build_prompt_blink(question, options, prediction):
 def build_prompt_cn(question, options, prediction):
     tmpl = (
         '你是一个帮助我匹配答案与单选题中多个选项的 AI 助手。'
-        '你会被提供：一个问题，多个选项，一个答案。你的任务是找到与答案意义最相近的选项。'
-        '如果所有选项的意义都与答案显著不同，则输出 Z。'
+        '你会被提供：一个问题，多个选项，一个模型预测。你的任务是找到与答案意义最相近的选项。'
+        '如果所有选项的意义都与模型预测显著不同，则输出 Z。'
         '你应该输出一个单个的大写字母，例如 A, B, C, D（如果它们是有效选项），或 Z。'
         '例 1:'
-        '问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 一只可爱的泰迪熊\n输出: A\n'
+        '[问题]: 图中最主要的物体是什么?\n[选项]: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n[模型预测]: 一只可爱的泰迪熊\n[输出]: A\n'
         '例 2: \n'
-        '问题: 图中最主要的物体是什么?\n选项: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n答案: 蜘蛛\n输出: Z\n'
-        '例 3: \n'
-        '问题: {}?\n选项: {}\n答案: {}\n输出: '
+        '[问题]: 图中最主要的物体是什么?\n[选项]: A. 泰迪熊 B. 兔子 C. 猫 D. 狗\n[模型预测]: 蜘蛛\n[输出]: Z\n'
+        '你的任务: \n'
+        '[问题]: {}?\n[选项]: {}\n[模型预测]: {}\n[输出]: '
     )
     return tmpl.format(question, options, prediction)
 
@@ -353,6 +387,17 @@ def extract_answer_from_item(model, item, dataset_name=None):
     choices = build_choices(item)
     option_str = build_option_str(choices)
 
+    if len(choices) == 0:
+        from .extractor import LLM_Extractor
+        EXTRACT_PROMPT = 'Please extract the answer (an uppercase letter) from the response and directly output it. '
+        verifier = lambda x: len(str(x)) == 1 and x in string.ascii_uppercase  # noqa: E731
+        extractor = LLM_Extractor(model, EXTRACT_PROMPT, verifier=verifier)
+        ans = extractor.extract(item['prediction'])
+        if ans:
+            return dict(opt=ans, log=f"Prediction: {item['prediction']}, Extracted: {ans}")
+        else:
+            return dict(opt='Z', log=f"Prediction: {item['prediction']}, Failed to extract answer.")
+
     if dataset_name == 'BLINK':
         prompt = build_prompt_blink(item['question'], option_str, item['prediction'])
     elif dataset_name == 'WeMath':
@@ -387,14 +432,15 @@ def extract_answer_from_item(model, item, dataset_name=None):
                 return dict(opt=ret, log=ans)
             else:
                 logger.warning(
-                    f'Failed to in infer: prediction is {ans}, choice labels are {set(choices)}'
+                    f'Failed to infer: prediction is {ans}, choice labels are {set(choices)}'
+                    f', Prompt is {prompt}'
                     f', Answer is {item["answer"]}' if "answer" in item else ""
                 )
         retry -= 1
 
         if retry == 0:
             options = list(choices) + ['Z'] if 'Z' not in choices else []
-            return dict(opt=rd.choice(options), log='Failed to predict, thus randomly generate one. ')
+            return dict(opt=rd.choice(options), log=f'Failed to predict, thus randomly generate one. {FAIL_MSG}')
 
 
 # For Circular Evaluation
@@ -403,7 +449,7 @@ def prefetch_circular_group(sub_data, verbose=False):
     GT, PRED = [], []
     for i in range(lt):
         item = sub_data.iloc[i]
-        GT.append(item['GT'])
+        GT.append(item['answer'])
         PRED.append(prefetch_answer(item))
         if PRED[-1] and (GT[-1] != PRED[-1]):
             log = (
@@ -421,9 +467,17 @@ def prefetch_circular_group(sub_data, verbose=False):
 
 
 def eval_vanilla(model, item, dataset_name=None):
+    item = dict(cp.deepcopy(item))
+    if 'options' in item and istype(item['options'], list):
+        options = item['options'] if isinstance(item['options'], list) else eval(item['options'])
+        for ch, opt in zip(string.ascii_uppercase, options):
+            item[ch] = opt
+        if item['answer'] in options:
+            item['answer'] = string.ascii_uppercase[options.index(item['answer'])]
+
     res = extract_answer_from_item(model, item, dataset_name=dataset_name)
     opt, match_log = res['opt'], res['log']
-    if opt == item['GT']:
+    if opt == item['answer']:
         return dict(hit=1, log=f'Match Log: {match_log}. ')
     else:
         return dict(hit=0, log=f'Match Log: {match_log}. ')
@@ -463,29 +517,18 @@ def eval_circular_group(model, sub_data, dataset_name=None):
     return dict(hit=1, log=log)
 
 
-# data, meta are pd.DataFrame, result_file is a path
-def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
+# data is pd.DataFrame, result_file is a path
+def mcq_vanilla_eval(model, data, nproc, result_file, dataset_name=None):
     result = {}
     if osp.exists(result_file):
         result = load(result_file)
-    answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
 
-    if 'MMMU' in dataset_name:
+    if dataset_name is not None and 'MMMU' in dataset_name:
         data = MMMU_preproc(data)
-        answer_map = {k: (v if v in list(string.ascii_uppercase) else 'A') for k, v in answer_map.items()}
+    rows = [row for _, row in data.iterrows() if row['index'] not in result]
+    tups = [dict(model=model, item=x, dataset_name=dataset_name) for x in rows]
+    keys = [x['index'] for x in rows]
 
-    data = data[data['index'].isin(answer_map)]
-    data['GT'] = [answer_map[idx] for idx in data['index']]
-    items = []
-
-    for i in range(len(data)):
-        # Dealing with the normal part
-        item = data.iloc[i]
-        if item['index'] not in result:
-            items.append(item)
-
-    tups = [dict(model=model, item=x, dataset_name=dataset_name) for x in items]
-    keys = [x['index'] for x in items]
     if len(tups):
         res = track_progress_rich(eval_vanilla, tups, nproc=nproc, chunksize=nproc, save=result_file, keys=keys)
         result = load(result_file)
@@ -494,85 +537,26 @@ def mcq_vanilla_eval(model, data, meta, nproc, result_file, dataset_name=None):
                 result[k] = v
     data['hit'] = [result[i]['hit'] for i in data['index']]
     data['log'] = [result[i]['log'] for i in data['index']]
-    if 'GT' in data:
-        data.pop('GT')
     return data
 
 
-# data, meta are pd.DataFrame, result_file is a path
-def mcq_circular_eval(model, data, meta, nproc, result_file, dataset_name=None):
-    result = {}
-    if osp.exists(result_file):
-        result = load(result_file)
-    # Build Answer Map
-    answer_map = {i: c for i, c in zip(meta['index'], meta['answer'])}
-
-    for idx in list(meta['index']) + list(data['index']):
-        assert istype(idx, int)
-    if 'g_index' not in data:
-        data['g_index'] = [int(x % 1e6) for x in data['index']]
-
-    # Only keep those lines in the meta data
-    data = data[data['index'].isin(answer_map)]
-    data['GT'] = [answer_map[idx] for idx in data['index']]
-
-    data['tmp_flag'] = [x == y for x, y in zip(data['index'], data['g_index'])]
-    data_main = data[data['tmp_flag']]
-    data_main.pop('tmp_flag')
-
-    data_groups = []
-    for i in range(len(data_main)):
-        # Dealing with the normal part
-        idx = data_main.iloc[i]['index']
-        if idx not in result:
-            sub_data = data[data['g_index'] == idx]
-            data_groups.append(sub_data)
-
-    if len(data_groups):
-        prefetched = [prefetch_circular_group(g, verbose=False) for g in data_groups]
-        remain = []
-        for dg, pf in zip(data_groups, prefetched):
-            if pf is not None:
-                result[dg.iloc[0]['g_index']] = pf
-            else:
-                remain.append(dg)
-        dump(result, result_file)
-
-        tups = [dict(model=model, sub_data=x, dataset_name=dataset_name) for x in remain]
-        keys = [x.iloc[0]['g_index'] for x in remain]
-
-        if len(tups) == 0:
-            pass
-        elif model is None:
-            logger = get_logger('Evaluation')
-            logger.warning('Exact Matching mode, will not do GPT-based answer matching. ')
-            for k in keys:
-                result[k] = dict(
-                    hit=0, log='Failed in Prefetch, no GPT-based answer matching under `exact_matching` policy.')
-        else:
-            res = track_progress_rich(
-                eval_circular_group,
-                tups,
-                nproc=nproc,
-                chunksize=nproc,
-                save=result_file,
-                keys=keys)
-            result = load(result_file)
-            for k, v in zip(keys, res):
-                if k not in result:
-                    result[k] = v
-
-    tmp_ext = get_pred_file_format()
-    tmp_pth = f'/tmp/{timestr()}.{tmp_ext}'
-    dump(data_main, tmp_pth)
-    data_main = load(tmp_pth)
-    indices = data_main['index']
-    data_main['hit'] = [result[i]['hit'] for i in indices]
-    data_main['log'] = [result[i]['log'] for i in indices]
-    if 'GT' in data_main:
-        data_main.pop('GT')
-
-    return data_main
+def merge_vanilla_judge(vanilla_data, hit_key='hit', log_key='log'):
+    assert 'g_index' in vanilla_data, 'g_index is required for circular evaluation.'
+    g_indices = list(set(vanilla_data['g_index']))
+    g_indices.sort()
+    lines = []
+    for g_index in g_indices:
+        sub_group = vanilla_data[vanilla_data['g_index'] == g_index]
+        hits = list(sub_group[hit_key])
+        new_log = {k: v for k, v in zip(sub_group['index'], sub_group[log_key])}
+        new_line = dict(sub_group.iloc[0])
+        new_line[log_key] = new_log
+        new_line[hit_key] = np.all([x > 0 for x in hits])
+        lines.append(new_line)
+    keys = list(lines[0].keys())
+    res = {k: [item[k] for item in lines] for k in keys}
+    merged_df = pd.DataFrame(res)
+    return merged_df
 
 
 def extract_characters_regex(s, choices=['(A)', '(B)', '(C)', '(D)', '(E)']):

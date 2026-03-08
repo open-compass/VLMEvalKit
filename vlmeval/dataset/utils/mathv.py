@@ -1,18 +1,14 @@
 from ...smp import *
-from ...utils import can_infer
-import timeout_decorator
-try:
-    from latex2sympy2 import latex2sympy
-except Exception as e:
-    logging.critical(f'{type(e)}: {e}')
-    logging.critical('Please install latex2sympy2 by running "pip install latex2sympy2"')
+from .matching_util import can_infer
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+def check_equal_judge(model, a, b):
+    prompt = f'Are {a} and {b} equal? (Yes/No)'
+    res = model.generate(prompt, temperature=0)
+    return 'yes' in res.lower()
 
 
-@timeout_decorator.timeout(30)
-def is_equal(asw: str, gt_asw: str) -> bool:
+def is_equal(asw, gt_asw, judge=None) -> bool:
     if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
         print('Warning: input is not string')
         print(asw, gt_asw)
@@ -27,15 +23,8 @@ def is_equal(asw: str, gt_asw: str) -> bool:
             return True
     except:
         pass
-    try:
-        a = latex2sympy(gt_asw)
-        b = latex2sympy(asw)
-        if abs(eval(str(a)) - eval(str(b))) < 1e-6:
-            return True
-        if abs(a - b) < 1e-6:
-            return True
-    except:
-        pass
+    if judge is not None:
+        return check_equal_judge(judge, asw, gt_asw)
     return False
 
 
@@ -101,40 +90,14 @@ def list_to_dict(lst):
     return {chr(65 + i): val for i, val in enumerate(lst)}
 
 
-def post_check(line, prefetch=False):
-    res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
-    try:
-        if len(eval(line['choices'])) > 0:
-            ans = line['answer']
-            choices = list_to_dict(eval(line['choices']))
-            res = can_infer(response, choices)
-            if prefetch:
-                return res
-        else:
-            res = str(response)
-            ans = str(ans)
-    except ValueError:
-        pass
-
-    try:
-        if is_equal(res, ans):
-            return res if prefetch else True
-        else:
-            return False
-    except Exception as err:
-        logging.warning(f'{type(err)}: {err}')
-        return False
-
-
-def MATH_V_auxeval(model, line):
+def MATH_V_auxeval_MCQ(model, line, choices):
+    choices = list_to_dict(choices)
     prompt = build_mathv_gpt4_prompt(line)
-    log = ''
-    retry = 5
-    if post_check(line, prefetch=True):
-        res = post_check(line, prefetch=True)
-        return dict(log='Prefetch succeed', res=res)
+    log, retry = '', 5
+    res = can_infer(line['prediction'], choices)
+    if res:
+        return dict(log='Prefetch succeed', res=res, hit=is_equal(res, line['answer']))
+
     for i in range(retry):
         prediction = line['prediction']
         res = model.generate(prompt, temperature=i * 0.5)
@@ -143,15 +106,47 @@ def MATH_V_auxeval(model, line):
             log += f'Try {i}: output is {prediction}, failed to parse.\n'
         else:
             log += 'Succeed'
-            return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')
+            res2 = can_infer(res, choices)
+            if res2:
+                return dict(log=log, res=res2, hit=is_equal(res2, line['answer']))
+            else:
+                return dict(log=log, res=res, hit=is_equal(res, line['answer'], judge=model))
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
+    return dict(log=log, res='', hit=False)
+
+
+def MATH_V_auxeval_Open(model, line):
+    log, retry = '', 5
+    prompt = build_mathv_gpt4_prompt(line)
+    if is_equal(line['prediction'], line['answer']):
+        return dict(log='Prefetch succeed', res=line['prediction'], hit=True)
+
+    for i in range(retry):
+        prediction = line['prediction']
+        res = model.generate(prompt, temperature=i * 0.5)
+
+        if FAIL_MSG in res:
+            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+        else:
+            log += 'Succeed'
+            return dict(log=log, res=res, hit=is_equal(res, line['answer'], judge=model))
+
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
+    return dict(log=log, res='', hit=False)
+
+
+def MATH_V_auxeval(model, line):
+    line['answer'], line['prediction'] = str(line['answer']), str(line['prediction'])
+    choices = eval(line['choices'])
+    if len(choices) > 0:
+        return MATH_V_auxeval_MCQ(model, line, choices)
+    else:
+        return MATH_V_auxeval_Open(model, line)
 
 
 def MATH_V_acc(result_file):
     data = load(result_file)
     tot = defaultdict(lambda: 0)
-    fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
     from tqdm import tqdm
@@ -160,10 +155,7 @@ def MATH_V_acc(result_file):
         cate = item['category']
         tot['Overall'] += 1
         tot[cate] += 1
-        if item['log'] == 'Prefetch succeed':
-            fetch['Overall'] += 1
-            fetch[cate] += 1
-        if post_check(item, prefetch=False):
+        if item['hit']:
             hit['Overall'] += 1
             hit[cate] += 1
 
@@ -171,9 +163,7 @@ def MATH_V_acc(result_file):
     for k in tot.keys():
         res['Subject'].append(k)
         res['tot'].append(tot[k])
-        res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])
-        res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
         res['acc'].append(hit[k] / tot[k] * 100)
     res = pd.DataFrame(res).sort_values('Subject', ignore_index=True)
     return res

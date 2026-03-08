@@ -1,10 +1,8 @@
-from vlmeval import *
+from ..smp import *
 from .image_base import ImageBaseDataset
-from .utils import build_judge
+from .utils import build_judge, DEBUG_MESSAGE
 from .utils.multiple_choice import report_acc, eval_vanilla, eval_circular_group
 from .utils.shortqa import ShortQA_prompt
-from ..utils import track_progress_rich
-from ..smp.file import get_intermediate_file_path
 
 
 def ShortQA_auxeval(model, line):
@@ -50,12 +48,10 @@ def Comprehensive_auxeval(model, data):
     if isinstance(data, pd.DataFrame) and len(data) > 1:
         # Should Adopt CircularEval
         assert valid(data.iloc[0], 'A')
-        data['GT'] = data['answer']
         return eval_circular_group(model, data)
     else:
         item = data.iloc[0] if isinstance(data, pd.DataFrame) else data
         if valid(item, 'A') and len(item['answer']) == 1:
-            item['GT'] = item['answer']
             return eval_vanilla(model, item)
         else:
             return ShortQA_auxeval(model, item)
@@ -69,12 +65,11 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Perception': '',
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
-        'hle':'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
+        'PathVQA_VAL': 'https://huggingface.co/datasets/Pfei111/PathVQA/resolve/main/PathVQA_VAL.tsv',
+        'PathVQA_TEST': 'https://huggingface.co/datasets/Pfei111/PathVQA/resolve/main/PathVQA_TEST.tsv',
     }
 
-    DATASET_MD5 = {
-        'hle': 'a83cbdbea89f27c2aa5b8f34a8894b72',
-    }
+    DEFAULT_JUDGE = 'gpt-4o-mini'
 
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
@@ -92,23 +87,20 @@ class ImageShortQADataset(ImageBaseDataset):
 
         storage = get_intermediate_file_path(eval_file, '_judge')
         tmp_file = get_intermediate_file_path(eval_file, '_tmp', 'pkl')
-        nproc = judge_kwargs.pop('nproc', 4)
+        nproc = judge_kwargs.pop('nproc', 32)
 
         if not osp.exists(storage):
             ans_map = {} if not osp.exists(tmp_file) else load(tmp_file)
 
-            model = judge_kwargs.get('model', 'gpt-4o-mini')
+            model = judge_kwargs.pop('model', 'gpt-4o-mini')
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(model=model, **judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                model = None
-                warnings.warn('OPENAI_API_KEY is not working properly, will use exact matching for evaluation')
 
             if model is not None:
                 if 'g_index' not in data:
@@ -141,23 +133,3 @@ class ImageShortQADataset(ImageBaseDataset):
         score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
         dump(acc, score_file)
         return acc
-
-
-class PathVQA_VAL(ImageShortQADataset):
-    DATASET_URL = {
-        'PathVQA_VAL': 'https://huggingface.co/datasets/Pfei111/PathVQA/resolve/main/PathVQA_VAL.tsv',
-    }
-
-    DATASET_MD5 = {
-        'PathVQA_VAL': None,
-    }
-
-
-class PathVQA_TEST(ImageShortQADataset):
-    DATASET_URL = {
-        'PathVQA_TEST': 'https://huggingface.co/datasets/Pfei111/PathVQA/resolve/main/PathVQA_TEST.tsv',
-    }
-
-    DATASET_MD5 = {
-        'PathVQA_TEST': None,
-    }

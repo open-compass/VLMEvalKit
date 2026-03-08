@@ -1,8 +1,31 @@
 from ...smp import *
-from ...utils import can_infer
+from .matching_util import can_infer
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+def check_equal_judge(model, a, b):
+    prompt = f'Are {a} and {b} equal? (Yes/No)'
+    res = model.generate(prompt, temperature=0)
+    return 'yes' in res.lower()
+
+
+def is_equal(asw, gt_asw, judge=None) -> bool:
+    if not isinstance(asw, str) != str or not isinstance(gt_asw, str):
+        print('Warning: input is not string')
+        print(asw, gt_asw)
+    asw = str(asw).lower().strip()
+    gt_asw = str(gt_asw).lower().strip()
+    if gt_asw == asw:
+        return True
+    try:
+        a = eval(gt_asw)
+        b = eval(asw)
+        if abs(a - b) < 1e-6:
+            return True
+    except:
+        pass
+    if judge is not None:
+        return check_equal_judge(judge, asw, gt_asw)
+    return False
 
 
 def get_gpt4_ICE():
@@ -71,43 +94,20 @@ def list_to_dict(lst):
     return {chr(65 + i): val for i, val in enumerate(lst)}
 
 
-def post_check(line, prefetch=False):
-    res = None
-    ans = line['answer']
-    response = line['prediction'] if prefetch else line['res']
-    try:
-        if line['question_type'] == 'multi_choice':
-            ans = line['answer_option']
-            choices = list_to_dict(eval(line['choices']))
-            res = can_infer(response, choices)
-            if prefetch:
-                return res
-        else:
-            if line['answer_type'] == 'integer':
-                res = int(response)
-                ans = int(line['answer'])
-            elif line['answer_type'] == 'float':
-                res = float(response)
-                ans = float(line['answer'])
-            else:
-                res = str(res)
-                ans = str(ans)
-    except ValueError:
-        pass
-
-    if res == ans:
-        return res if prefetch else True
-    else:
-        return False
-
-
-def MathVista_auxeval(model, line):
+def MathVista_auxeval_MCQ(model, line, choices):
+    choices = list_to_dict(choices)
     prompt = build_mathvista_gpt4_prompt(line)
-    log = ''
-    retry = 5
-    if post_check(line, prefetch=True):
-        res = post_check(line, prefetch=True)
-        return dict(log='Prefetch succeed', res=res)
+    answer_label = None
+    for k in choices:
+        if str(choices[k]) == line['answer']:
+            answer_label = k
+            break
+    assert answer_label is not None, (choices, line['answer'])
+    log, retry = '', 5
+    res = can_infer(line['prediction'], choices)
+    if res:
+        return dict(log='Prefetch succeed', res=res, hit=is_equal(res, answer_label))
+
     for i in range(retry):
         prediction = line['prediction']
         res = model.generate(prompt, temperature=i * 0.5)
@@ -116,15 +116,47 @@ def MathVista_auxeval(model, line):
             log += f'Try {i}: output is {prediction}, failed to parse.\n'
         else:
             log += 'Succeed'
-            return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
-    return dict(log=log, res='')
+            res2 = can_infer(res, choices)
+            if res2:
+                return dict(log=log, res=res2, hit=is_equal(res2, answer_label))
+            else:
+                return dict(log=log, res=res, hit=is_equal(res, answer_label, judge=model))
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
+    return dict(log=log, res='', hit=False)
+
+
+def MathVista_auxeval_Open(model, line):
+    log, retry = '', 5
+    prompt = build_mathvista_gpt4_prompt(line)
+    if is_equal(line['prediction'], line['answer']):
+        return dict(log='Prefetch succeed', res=line['prediction'], hit=True)
+
+    for i in range(retry):
+        prediction = line['prediction']
+        res = model.generate(prompt, temperature=i * 0.5)
+
+        if FAIL_MSG in res:
+            log += f'Try {i}: output is {prediction}, failed to parse.\n'
+        else:
+            log += 'Succeed'
+            return dict(log=log, res=res, hit=is_equal(res, line['answer'], judge=model))
+
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
+    return dict(log=log, res='', hit=False)
+
+
+def MathVista_auxeval(model, line):
+    line['answer'], line['prediction'] = str(line['answer']), str(line['prediction'])
+    if line['question_type'] == 'multi_choice':
+        choices = eval(line['choices'])
+        return MathVista_auxeval_MCQ(model, line, choices)
+    else:
+        return MathVista_auxeval_Open(model, line)
 
 
 def MathVista_acc(result_file):
     data = load(result_file)
     tot = defaultdict(lambda: 0)
-    fetch = defaultdict(lambda: 0)
     hit = defaultdict(lambda: 0)
     lt = len(data)
     skill_list = []
@@ -141,12 +173,7 @@ def MathVista_acc(result_file):
                 skill_list.append(skill)
             tot[skill] += 1
         tot[cate] += 1
-        if item['log'] == 'Prefetch succeed':
-            fetch['Overall'] += 1
-            fetch[cate] += 1
-            for skill in skills:
-                fetch[skill] += 1
-        if post_check(item, prefetch=False):
+        if item['hit']:
             hit['Overall'] += 1
             hit[cate] += 1
             for skill in skills:
@@ -156,9 +183,7 @@ def MathVista_acc(result_file):
     for k in tot.keys():
         res['Task&Skill'].append(k)
         res['tot'].append(tot[k])
-        res['prefetch'].append(fetch[k])
         res['hit'].append(hit[k])
-        res['prefetch_rate'].append(fetch[k] / tot[k] * 100)
         res['acc'].append(hit[k] / tot[k] * 100)
     res = pd.DataFrame(res)
     return res

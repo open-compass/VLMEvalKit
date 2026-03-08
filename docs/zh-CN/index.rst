@@ -17,7 +17,14 @@ VLMEvalKit 上手路线
    :maxdepth: 1
    :caption: 快速开始
 
+   README.md
    Quickstart.md
+   Workflow.md
+   Model.md
+   dataset.md
+   Tools.md
+   Environment.md
+   Troubleshooting.md
 
 
 .. .. _教程:

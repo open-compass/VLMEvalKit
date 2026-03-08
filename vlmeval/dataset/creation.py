@@ -3,9 +3,7 @@ from .image_base import ImageBaseDataset
 import numpy as np
 import pandas as pd
 from ..smp import *
-from ..smp.file import get_intermediate_file_path
 from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
 import re
 
 prompt_dict = {}

@@ -1,5 +1,4 @@
 from ..smp import *
-from ..utils import *
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 
@@ -7,6 +6,7 @@ from .utils import build_judge, DEBUG_MESSAGE
 class ImageYORNDataset(ImageBaseDataset):
 
     TYPE = 'Y/N'
+    DEFAULT_JUDGE = 'chatgpt-0125'
 
     DATASET_URL = {
         'MME': 'https://opencompass.openxlab.space/utils/VLMEval/MME.tsv',
@@ -24,6 +24,8 @@ class ImageYORNDataset(ImageBaseDataset):
         'AMBER': '970d94c0410916166e0a76ba75da7934',
         'VSR-zeroshot': '5ff5e49908ac1cfad35c60b92b001aeb',
     }
+
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
 
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
@@ -60,15 +62,12 @@ class ImageYORNDataset(ImageBaseDataset):
             model = judge_kwargs.get('model', 'exact_matching')
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(**judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     warnings.warn(DEBUG_MESSAGE)
                     model = None
-            else:
-                model = None
-                warnings.warn('OPENAI_API_KEY is not working properly, will use exact matching for evaluation')
 
             if model is not None:
                 lt = len(unknown)
@@ -107,3 +106,25 @@ class ImageYORNDataset(ImageBaseDataset):
         score_tgt = get_intermediate_file_path(eval_file, '_score', 'csv')
         dump(score, score_tgt)
         return score
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        if dataset_name == 'MME':
+            res = {}
+            rating = {k: rating.iloc[0][k] for k in rating.columns}
+            rating['cognition'] = rating.pop('reasoning')
+            res['overall'] = rating['perception'] + rating['cognition']
+            res['rating'] = rating
+            return res
+        elif dataset_name == 'HallusionBench':
+            rating = rating[rating['split'] == 'Overall']
+            rating = {k: rating.iloc[0][k] for k in rating.columns}
+            rating.pop('split')
+            rating['overall'] = (rating['aAcc'] + rating['fAcc'] + rating['qAcc']) / 3
+            res = {'overall': rating['overall'], 'rating': rating}
+            return res
+        else:
+            return super().report_score(model_name, dataset_name, root, verbose=verbose, **kwargs)

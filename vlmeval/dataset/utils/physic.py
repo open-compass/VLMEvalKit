@@ -4,14 +4,12 @@ import timeout_decorator
 from sympy import simplify, expand, trigsimp
 from sympy.parsing.latex import parse_latex
 from ...smp import *
-from ...utils import can_infer
+from .matching_util import can_infer
 import json
 from collections import defaultdict
 from tqdm import tqdm
 import pandas as pd
 from .physics_eval_utils import extract_final_answer_allform, is_equiv
-
-FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 def build_physic_prompt(line):

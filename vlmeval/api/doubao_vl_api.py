@@ -1,32 +1,26 @@
 from vlmeval.smp import *
 import os
-import sys
 from vlmeval.api.base import BaseAPI
-import math
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.dataset import img_root_map
-from io import BytesIO
-import pandas as pd
-import requests
-import json
-import base64
-import time
-from openai import OpenAI
+from volcenginesdkarkruntime import Ark
 
 
 class DoubaoVLWrapper(BaseAPI):
 
-    is_api: bool = True
-
     def __init__(self,
                  model: str = '',
+                 key: str = None,
                  retry: int = 5,
-                 verbose: bool = True,
+                 verbose: bool = False,
                  system_prompt: str = None,
                  temperature: float = 0,
                  timeout: int = 60,
                  max_tokens: int = 4096,
                  api_base: str = 'https://ark.cn-beijing.volces.com/api/v3',  # 使用系统推荐的服务区域地址
+                 img_size: int = -1,
+                 compress: str = None,
+                 detail: str = None,
+                 batch_api: bool = False,
+                 image_pixel_limit: dict = None,
                  **kwargs):
 
         self.model = model  # This variable is unused
@@ -34,16 +28,26 @@ class DoubaoVLWrapper(BaseAPI):
         self.fail_msg = 'Failed to obtain answer via API. '
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.batch_api = batch_api
+        self.detail = detail
+        assert self.detail in ['low', 'high', 'xhigh', None]
+        if image_pixel_limit is not None:
+            assert isinstance(image_pixel_limit, dict), image_pixel_limit
+            assert isinstance(image_pixel_limit.get('min_pixels', None), int), image_pixel_limit
+            assert isinstance(image_pixel_limit.get('max_pixels', None), int), image_pixel_limit
+        self.image_pixel_limit = image_pixel_limit
 
-        assert 'DOUBAO_VL_KEY' in os.environ, 'You may need to set the env variable DOUBAO_VL_KEY to use DOUBAO_VL.'
-
-        key = os.environ.get('DOUBAO_VL_KEY', None)
+        if key is None:
+            assert 'DOUBAO_VL_KEY' in os.environ, 'You may need to set the env variable DOUBAO_VL_KEY to use DOUBAO_VL.'
+            key = os.environ.get('DOUBAO_VL_KEY', None)
         assert key is not None, 'Please set the environment variable DOUBAO_VL_KEY. '
         self.key = key
 
         assert api_base is not None, 'Please set the variable API_BASE. '
         self.api_base = api_base
         self.timeout = timeout
+        self.img_size = img_size
+        self.compress = compress
 
         super().__init__(retry=retry, system_prompt=system_prompt, verbose=verbose, **kwargs)
 
@@ -61,7 +65,7 @@ class DoubaoVLWrapper(BaseAPI):
             )
             self.endpoint = model
 
-        self.client = OpenAI(
+        self.client = Ark(
             api_key=self.key,
             base_url=self.api_base,
             timeout=self.timeout
@@ -82,6 +86,7 @@ class DoubaoVLWrapper(BaseAPI):
         ROOT = LMUDataRoot()
         assert isinstance(dataset, str)
 
+        from vlmeval.dataset import img_root_map
         img_root = os.path.join(ROOT, 'images', img_root_map(dataset) if dataset in img_root_map(dataset) else dataset)
         os.makedirs(img_root, exist_ok=True)
         if 'image' in line:
@@ -94,7 +99,7 @@ class DoubaoVLWrapper(BaseAPI):
                         decode_base64_to_image_file(img, path)
                     tgt_path.append(path)
             else:
-                tgt_path = osp.join(img_root, f"{line['index']}.jpg")
+                tgt_path = osp.join(img_root, f"{line['index']}.png")
                 if not read_ok(tgt_path):
                     decode_base64_to_image_file(line['image'], tgt_path)
                 tgt_path = [tgt_path]
@@ -125,7 +130,7 @@ class DoubaoVLWrapper(BaseAPI):
         question = line['question']
 
         # remove 'directly' from the prompt, so the model will answer the question in Chain-of-Thought (CoT) manner
-        prompt = question.replace('directly','',1)
+        prompt = question.replace('directly', '', 1)
 
         msgs = []
         if isinstance(tgt_path, list):
@@ -146,10 +151,14 @@ class DoubaoVLWrapper(BaseAPI):
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    from PIL import Image
-                    img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img)
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}')
+                    img_struct = self._openai_image_url_struct(msg['value'])
+                    if self.image_pixel_limit is not None:
+                        img_struct['image_pixel_limit'] = self.image_pixel_limit
+                    elif self.detail is not None:
+                        img_struct['detail'] = self.detail
+                    if self.img_size > 0 or self.compress is not None:
+                        img_struct = self._compress_openai_image_url_struct(
+                            img_struct, target_size=self.img_size, compress=self.compress)
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])
@@ -176,13 +185,25 @@ class DoubaoVLWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
+        if 'reasoning_effort' not in kwargs:
+            kwargs['reasoning_effort'] = 'high'
 
         ret_code = -1
         answer = self.fail_msg
         response = None
-        payload = dict(model=self.endpoint, messages=input_msgs, max_tokens=max_tokens, temperature=temperature)
+        if 'thinking' not in kwargs:
+            kwargs['thinking'] = {"type": "enabled"}
+        payload = dict(
+            model=self.endpoint,
+            messages=input_msgs,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            **kwargs)
         try:
-            response = self.client.chat.completions.create(**payload)
+            if self.batch_api:
+                response = self.client.batch.chat.completions.create(**payload)
+            else:
+                response = self.client.chat.completions.create(**payload)
             answer = response.choices[0].message.content.strip()
             ret_code = 0
         except Exception as err:

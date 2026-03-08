@@ -1,14 +1,19 @@
 from .text_base import TextBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from .utils.multiple_choice import report_acc, mcq_vanilla_eval, merge_vanilla_judge
 
 
 class TextMCQDataset(TextBaseDataset):
+
     TYPE = 'MCQ'
+    DEFAULT_JUDGE = 'chatgpt-0125'
+    JUDGE_FORMAT = "{model_name}_{dataset_name}_{judge_name}.tsv"
+    RATING_FORMAT = "{model_name}_{dataset_name}_{judge_name}_acc.csv"
+    VANILLA_JUDGE_FORMAT = "{model_name}_{dataset_name}_{judge_name}_vanilla.tsv"
+    VANILLA_RATING_FORMAT = "{model_name}_{dataset_name}_{judge_name}_vanilla_acc.csv"
 
     DATASET_URL = {}
-
     DATASET_MD5 = {}
 
     def build_prompt(self, line):
@@ -40,72 +45,79 @@ class TextMCQDataset(TextBaseDataset):
 
         return msgs
 
-    def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.multiple_choice import report_acc, report_acc_MMT, mcq_circular_eval, mcq_vanilla_eval
+    @classmethod
+    def evaluate_heuristic(cls, eval_file, **judge_kwargs):
         # assert dataset is not None
-        dataset_map = {
-            'MMBench_TEST_EN': 'MMBench', 'MMBench_TEST_EN_V11': 'MMBench_V11',
-            'MMBench_TEST_CN': 'MMBench_CN', 'MMBench_TEST_CN_V11': 'MMBench_CN_V11'
-        }
-        dataset = self.dataset_name
-        if dataset in dataset_map:
-            dataset = dataset_map[dataset]
-        nproc = judge_kwargs.pop('nproc', 4)
+        nproc = judge_kwargs.pop('nproc', 16)
 
-        circular = False
-        model = judge_kwargs.get('model', 'exact_matching')
-        assert model in ['chatgpt-0125', 'exact_matching', 'gpt-4-0125']
-        name_str_map = {'chatgpt-0125': 'openai', 'gpt-4-0125': 'gpt4'}
-        name_str = name_str_map[model] if model in name_str_map else model
+        # Some preprocessing
+        data = load(eval_file)
+        data = data.sort_values(by='index')
+        data['prediction'] = data['prediction'].astype(str)
+        for k in data.keys():
+            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
 
-        if model == 'exact_matching':
+        circular = ('g_index' in data)
+
+        model_name = judge_kwargs.get('model', 'exact_matching')
+
+        if model_name == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn('OPENAI_API_KEY is not set properly, will use exact matching for evaluation')
-            model = None
+        if model is None:
+            model_name = 'EM'
+        judge_file = cls.get_judge_file_path(eval_file, judge_name=model_name)
+        rating_file = cls.get_rating_file_path(eval_file, judge_name=model_name)
+        tmp_file = judge_file.replace('.tsv', '.pkl')
 
-        result_file = get_intermediate_file_path(eval_file, f'_{name_str}_result', 'pkl')
-
-        data = load(eval_file)
-        data = data.sort_values(by='index')
-        data['prediction'] = [str(x) for x in data['prediction']]
-        # If not choice label, then use lower case
-        for k in data.keys():
-            data[k.lower() if k not in list(string.ascii_uppercase) else k] = data.pop(k)
-
-        meta = self.data
-        meta_q_map = {x: y for x, y in zip(meta['index'], meta['question'])}
-        data_map = {x: y for x, y in zip(data['index'], data['question'])}
-        for k in data_map:
-            assert k in meta_q_map, (
-                f'eval_file should be the same as or a subset of dataset {self.dataset_name}'
-            )
+        acc_func = report_acc
 
         if circular:
-            data = mcq_circular_eval(model, data, meta, nproc, result_file, self.dataset_name)
+            vanilla_judge_file = judge_file.replace(model_name, model_name + '_vanilla')
+            vanilla_rating_file = rating_file.replace(model_name, model_name + '_vanilla')
+            vanilla_tmp_file = vanilla_judge_file.replace('.tsv', '.pkl')
+            if not osp.exists(vanilla_judge_file):
+                vanilla_data = mcq_vanilla_eval(model, data, nproc, vanilla_tmp_file)
+                dump(vanilla_data, vanilla_judge_file)
+            else:
+                vanilla_data = load(vanilla_judge_file)
+
+            circ_df = merge_vanilla_judge(vanilla_data)
+            dump(circ_df, judge_file)
+            # May have different report acc functions for different datasets
+            acc = acc_func(circ_df)
+            dump(acc, rating_file)
+
+            if os.environ.get('PRINT_VANILLA', None) == '1':
+                vanilla_acc = acc_func(vanilla_data)
+                circ0_data = vanilla_data[vanilla_data['index'] == vanilla_data['g_index']]
+                circ0_acc = acc_func(circ0_data)
+                acc_map = {'vanilla': vanilla_acc, 'circular': acc, 'vanilla_0': circ0_acc}
+                # Merge & Print the Evaluation Results
+                for k, v in acc_map.items():
+                    if 'split' not in v:
+                        v['split'] = [None] * len(v)
+                    if len(v) == 1 and pd.isna(v['split'][0]):
+                        v['split'] = [k]
+                    else:
+                        assert not pd.isna(v['split'][0])
+                        v['split'] = [k + '_' + sp for sp in v['split']]
+                score_all = [acc_map['vanilla_0'], acc_map['vanilla'], acc_map['circular']]
+                score_all = pd.concat(score_all)
+                dump(score_all, vanilla_rating_file)
         else:
-            data = mcq_vanilla_eval(model, data, meta, nproc, result_file, self.dataset_name)
-
-        # load split
-        eval_name_result = get_intermediate_file_path(eval_file, f'_{name_str}_result')
-        dump(data, eval_name_result)
-        data = load(eval_name_result)
-
-        # May have different report acc functions for different datasets
-        if 'MMT' in dataset:
-            acc = report_acc_MMT(data)
-        else:
-            acc = report_acc(data)
-
-        score_file = get_intermediate_file_path(eval_file, '_acc', 'csv')
-        dump(acc, score_file)
-
+            if not osp.exists(judge_file):
+                data = mcq_vanilla_eval(model, data, nproc, tmp_file)
+                dump(data, judge_file)
+            else:
+                data = load(judge_file)
+            acc = acc_func(data)
+            dump(acc, rating_file)
         return acc
 
 
@@ -117,7 +129,6 @@ class CustomTextMCQDataset(TextMCQDataset):
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
-                from ..tools import LOCALIZE
-                LOCALIZE(data_path, local_path)
+                localize_tsv(data_path, local_path)
             data_path = local_path
         return load(data_path)

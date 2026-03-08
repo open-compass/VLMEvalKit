@@ -4,8 +4,6 @@ from functools import partial
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
 
 
 SYSTEM_PROMPT = """\
@@ -91,6 +89,8 @@ def WildVision_auxeval(model, line):
 
 class WildVision(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
+
     DATASET_URL = {
         'WildVision': 'https://opencompass.openxlab.space/utils/VLMEval/WildVision.tsv'
     }

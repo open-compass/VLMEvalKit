@@ -1,5 +1,5 @@
-from vlmeval.smp import *
-from vlmeval.utils import can_infer
+from ...smp import *
+from .matching_util import can_infer
 import re
 import json
 import os
@@ -8,8 +8,6 @@ import argparse
 from tqdm import tqdm
 from collections import defaultdict
 import ast
-
-FAIL_MSG = 'Failed to obtain answer via API.'
 
 # ************** Answer Evaluation ****************
 
@@ -211,7 +209,7 @@ def PhyX_auxeval(model, line):
             elif "0" in res or 0 == res:
                 log += "LLM judgement {}".format(res)
                 return dict(log=log, res=0, extracted=prediction)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, res=0, extracted=prediction)
 
 
@@ -253,7 +251,7 @@ def PhyX_auxeval_MC(model, line):
             elif "0" in res or 0 == res:
                 log += "LLM judgement {}".format(res)
                 return dict(log=log, res=0, extracted=prediction)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, res=0, extracted=prediction)
 
 
@@ -272,7 +270,7 @@ def PhyX_acc(result_file):
         hit += item['res']
 
     final_res = {}
-    final_res["Overall Acc"] = hit / lt
+    final_res["Overall"] = hit / lt
     for k,v in res.items():
         final_res[k] = sum(v) / len(v)
     df = pd.DataFrame(final_res, index=[0])

@@ -5,7 +5,6 @@ from functools import partial
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
-from ..utils import track_progress_rich
 
 
 SYSTEM_PROMPT = """\
@@ -127,6 +126,8 @@ def MMAlignBench_auxeval(model, line):
 
 class MMAlignBench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
+
     DATASET_URL = {'MMAlignBench': 'https://opencompass.openxlab.space/utils/VLMEval/MMAlignBench.tsv'}
     DATASET_MD5 = {'MMAlignBench': 'd00d8e61c99257cbaf76d8d5e926f01e'}
 

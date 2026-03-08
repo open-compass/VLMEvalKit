@@ -2,7 +2,6 @@ from .image_base import ImageBaseDataset
 from .utils.judge_util import build_judge
 from ..smp import *
 from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
 
 
 class ImageMTDataset(ImageBaseDataset):
@@ -51,6 +50,8 @@ class ImageMTDataset(ImageBaseDataset):
 
 
 class MMDUDataset(ImageMTDataset):
+
+    DEFAULT_JUDGE = 'gpt-4o'
 
     DATASET_URL = {'MMDU': 'https://opencompass.openxlab.space/utils/VLMEval/MMDU.tsv'}
     DATASET_MD5 = {'MMDU': '848b635a88a078f49aebcc6e39792061'}

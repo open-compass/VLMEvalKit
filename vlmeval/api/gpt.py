@@ -31,8 +31,6 @@ def GPT_context_window(model):
 
 class OpenAIWrapper(BaseAPI):
 
-    is_api: bool = True
-
     def __init__(self,
                  model: str = 'gpt-3.5-turbo-0613',
                  retry: int = 5,
@@ -54,6 +52,9 @@ class OpenAIWrapper(BaseAPI):
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.use_azure = use_azure
+
+        if key is not None and os.environ.get(key, None) is not None:
+            key = os.environ.get(key, None)
 
         if 'step' in model:
             env_key = os.environ.get('STEPAI_API_KEY', '')
@@ -105,10 +106,6 @@ class OpenAIWrapper(BaseAPI):
                 env_key = os.environ.get('OPENAI_API_KEY', '')
                 if key is None:
                     key = env_key
-                assert isinstance(key, str) and key.startswith('sk-'), (
-                    f'Illegal openai_key {key}. '
-                    'Please set the environment variable OPENAI_API_KEY to your openai key. '
-                )
 
         self.key = key
         assert img_size > 0 or img_size == -1
@@ -156,6 +153,8 @@ class OpenAIWrapper(BaseAPI):
             if os.environ.get('BOYUE', None):
                 self.api_base = os.environ.get('BOYUE_API_BASE')
                 self.key = os.environ.get('BOYUE_API_KEY')
+            from openai import OpenAI
+            self.client = OpenAI(api_key=key, base_url=api_base.split('/chat/completions')[0])
 
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
@@ -170,10 +169,8 @@ class OpenAIWrapper(BaseAPI):
                 if msg['type'] == 'text':
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
-                    from PIL import Image
-                    img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img, target_size=self.img_size)
-                    img_struct = dict(url=f'data:image/jpeg;base64,{b64}', detail=self.img_detail)
+                    img_struct = self._openai_image_url_struct(msg['value'])
+                    img_struct['detail'] = self.img_detail
                     content_list.append(dict(type='image_url', image_url=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])
@@ -199,6 +196,7 @@ class OpenAIWrapper(BaseAPI):
         input_msgs = self.prepare_inputs(inputs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
+        response_format = kwargs.pop('response_format', None)
 
         # Will send request if use Azure, dk how to use openai client for it
         if self.use_azure:
@@ -228,9 +226,26 @@ class OpenAIWrapper(BaseAPI):
             payload.pop('n')
             payload['reasoning_effort'] = 'high'
 
+        if response_format is not None:
+            payload['response_format'] = response_format
+            response = self.client.beta.chat.completions.parse(**payload)
+            api_result = response.choices[0].message.parsed
+            res = api_result.model_dump() if hasattr(api_result, 'model_dump') else api_result.dict()
+            return 0, res, response
+
+        proxies = {}
+        if os.getenv('http_proxy'):
+            proxies['http'] = os.getenv('http_proxy')
+        if os.getenv('https_proxy'):
+            proxies['https'] = os.getenv('https_proxy')
+        proxies = proxies or None
+
         response = requests.post(
             self.api_base,
-            headers=headers, data=json.dumps(payload), timeout=self.timeout * 1.1)
+            headers=headers,
+            data=json.dumps(payload),
+            proxies=proxies,
+            timeout=self.timeout * 1.1)
         ret_code = response.status_code
         ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
         answer = self.fail_msg

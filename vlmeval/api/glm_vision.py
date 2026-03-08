@@ -4,13 +4,10 @@ requests.packages.urllib3.disable_warnings()
 
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import DATASET_TYPE
 from vlmeval.smp.vlm import encode_image_file_to_base64
 
 
 class GLMVisionWrapper(BaseAPI):
-
-    is_api: bool = True
 
     def __init__(self,
                  model: str,

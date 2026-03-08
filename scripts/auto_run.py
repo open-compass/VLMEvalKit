@@ -23,7 +23,7 @@ parser.add_argument('--data', type=str, nargs='+', required=True)
 args = parser.parse_args()
 
 # Skip some models
-models = [x for x in models if not listinstr(['MiniGPT', 'grounding-generalist'], x)]
+models = [x for x in models if not listinstr(['grounding-generalist'], x)]
 
 for m in models:
     from vlmeval.smp import get_pred_file_format

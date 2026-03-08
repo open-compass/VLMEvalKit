@@ -195,7 +195,7 @@ def isfloat(num):
 
 def get_font():
     try:
-        truetype_url = "http://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
+        truetype_url = "https://opencompass.openxlab.space/utils/Fonts/SimHei.ttf"
         ff = urlopen(truetype_url)
         font = ImageFont.truetype(ff, size=40)
     except Exception as e:
@@ -424,12 +424,13 @@ def MMLongBench_acc(result_file):
 class MMLongBench(ImageBaseDataset):
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
 
     DATASET_URL = {
         'MMLongBench_DOC': 'https://opencompass.openxlab.space/utils/VLMEval/MMLongBench_DOC.tsv',
     }
     DATASET_MD5 = {
-        'MMLongBench_DOC': '9b393e1f4c52718380d50586197eac9b',
+        'MMLongBench_DOC': '75f5d29965d0db68254993f6170da7c2',
     }
 
     SUPPORTED_MODELS = {

@@ -3,7 +3,7 @@ import json
 import os
 from typing import Any, Dict, List
 import ast
-from vlmeval import load, dump
+from vlmeval.smp import load, dump
 
 
 from . import MetricType, AggregationType, ResponseParseType

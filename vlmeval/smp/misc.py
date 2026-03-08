@@ -14,21 +14,43 @@ import subprocess
 import warnings
 import pandas as pd
 from collections import OrderedDict, defaultdict
-from multiprocessing import Pool, current_process
 from tqdm import tqdm
 import datetime
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 from json import JSONDecoder
-from huggingface_hub import scan_cache_dir
 from huggingface_hub.utils._cache_manager import _scan_cached_repo
 from sty import fg, bg, ef, rs
+import uuid
 import portalocker
+import functools
+import logging
 
+
+def run_once(f):
+    """Runs a function (successfully) only once.
+    The running can be reset by setting the `has_run` attribute to False
+    """
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            result = f(*args, **kwargs)
+            wrapper.has_run = True
+            return result
+        else:
+            logging.info(f'Function {f.__name__} has already been called.')
+
+    wrapper.has_run = False
+    return wrapper
+
+def random_uuid():
+    return str(uuid.uuid4())
+
+def named_uuid(name):
+    return str(uuid.uuid5(name=name, namespace=uuid.NAMESPACE_URL))
 
 def modelscope_flag_set():
     return os.environ.get('VLMEVALKIT_USE_MODELSCOPE', None) in ['1', 'True']
-
 
 def process_punctuation(inText):
     import re
@@ -64,11 +86,14 @@ def colored(s, color):
         color = h2r(color)
     return fg(*color) + s + fg.rs
 
-def istype(s, type):
-    if isinstance(s, type):
+def istype(s, type_cls):
+    if type_cls is int:
+        import string
+        return all([ch in string.digits for ch in str(s)])
+    if isinstance(s, type_cls):
         return True
     try:
-        return isinstance(eval(s), type)
+        return isinstance(eval(s), type_cls)
     except Exception as _:
         return False
 
@@ -77,6 +102,20 @@ def bincount(lst):
     for item in lst:
         bins[item] += 1
     return bins
+
+def distribution(lst):
+    import numpy as np
+    assert all([isinstance(x, int) or isinstance(x, float) for x in lst])
+    stats = {}
+    stats['mean'] = np.mean(lst)
+    for i in [1, 10, 100, 500, 900, 990, 999]:
+        stats[f'Q-{i}‰'] = np.quantile(lst, i / 1000)
+    df = d2df(stats)
+    return df
+
+def strlen_distribution(lst):
+    lens = [len(x) for x in lst]
+    return distribution(lens)
 
 def get_cache_path(repo_id, branch='main', repo_type='datasets'):
     try:
@@ -99,7 +138,6 @@ def get_cache_path(repo_id, branch='main', repo_type='datasets'):
             rev2keep = max(revs.values(), key=lambda r: r.last_modified)
             return str(rev2keep.snapshot_path)
     except Exception as e:
-        import logging
         logging.warning(f'{type(e)}: {e}')
         return None
 
@@ -169,7 +207,6 @@ def githash(fallback='unknown', digits=8):
     try:
         import vlmeval
     except ImportError as e:
-        import logging
         logging.error(f'ImportError: {str(e)}')
         return fallback
     try:
@@ -197,29 +234,30 @@ def run_command(cmd):
         cmd = cmd.split()
     return subprocess.check_output(cmd).decode()
 
+@run_once
 def load_env():
-    import logging
     logging.basicConfig(
         format='[%(asctime)s] %(levelname)s - %(filename)s: %(funcName)s - %(lineno)d: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S')
-
     try:
         import vlmeval
     except ImportError:
         logging.error('VLMEval is not installed. Failed to import environment variables from .env file. ')
         return
-    pth = osp.realpath(vlmeval.__path__[0])
-    pth = osp.join(pth, '../.env')
-    pth = osp.realpath(pth)
-    if not osp.exists(pth):
-        logging.error(f'Did not detect the .env file at {pth}, failed to load. ')
-        return
+    vlmeval_root = osp.realpath(vlmeval.__path__[0])
+    pth = osp.join(vlmeval_root, '../.env')
+    pth_default = osp.join(vlmeval_root, '../.env_template')
 
     from dotenv import dotenv_values
-    values = dotenv_values(pth)
+    values = dotenv_values(pth_default)
+    values_update = dotenv_values(pth)
+    values.update(values_update)
     for k, v in values.items():
         if v is not None and len(v):
-            os.environ[k] = v
+            if k not in os.environ:
+                os.environ[k] = v
+            else:
+                logging.info(f'Environment variable {k} is already set, will not override it with {v}')
     logging.info(f'API Keys successfully loaded from {pth}')
 
 def pip_install_robust(package):

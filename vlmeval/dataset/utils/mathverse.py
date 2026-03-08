@@ -1,8 +1,4 @@
 from ...smp import *
-from ...utils import can_infer
-
-
-FAIL_MSG = 'Failed to obtain answer via API.'
 
 
 def get_gpt4_extract_ICE():
@@ -138,7 +134,7 @@ def MathVerse_auxeval_extract(model, line):
         else:
             log += 'Succeed'
             return dict(log_extract=log, extract=res)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log_extract=log, extract='')
 
 
@@ -158,7 +154,7 @@ def MathVerse_auxeval_score(model, line):
         else:
             log += 'Succeed'
             return dict(log_score=log, score=int(res) == 1)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log_score=log, score=False)
 
 

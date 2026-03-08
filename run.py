@@ -1,7 +1,11 @@
-import json
-import os
-import subprocess
-from functools import partial
+from vlmeval.smp import *
+from vlmeval.config import supported_VLM
+from vlmeval.dataset.VideoBench.video_dataset_config import supported_video_datasets
+from vlmeval.dataset import build_dataset
+from vlmeval.inference import infer_data_job
+from vlmeval.inference_video import infer_data_job_video
+from vlmeval.inference_mt import infer_data_job_mt
+from vlmeval.dataset.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
 # GET the number of GPUs on the node without importing libs like torch
@@ -37,16 +41,6 @@ if LOCAL_WORLD_SIZE > 1 and len(GPU_LIST):
         f'RANK: {RANK}, LOCAL_RANK: {LOCAL_RANK}, WORLD_SIZE: {WORLD_SIZE},'
         f'LOCAL_WORLD_SIZE: {LOCAL_WORLD_SIZE}, CUDA_VISIBLE_DEVICES: {CUDA_VISIBLE_DEVICES}'
     )
-
-
-from vlmeval.config import supported_VLM
-from vlmeval.dataset.video_dataset_config import supported_video_datasets
-from vlmeval.dataset import build_dataset
-from vlmeval.inference import infer_data_job
-from vlmeval.inference_video import infer_data_job_video
-from vlmeval.inference_mt import infer_data_job_mt
-from vlmeval.smp import *
-from vlmeval.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
 # Make WORLD_SIZE invisible when build models
@@ -174,20 +168,20 @@ You can launch the evaluation by setting either --data and --model or --config.
     parser.add_argument('--model', type=str, nargs='+', help='Names of Models')
     parser.add_argument('--config', type=str, help='Path to the Config Json File')
     # Work Dir
-    parser.add_argument('--work-dir', type=str, default='./outputs', help='select the output directory')
+    # Priority: --work-dir > .env config > default "./outputs"
+    parser.add_argument('--work-dir', type=str, default=None, help='select the output directory')
     # Infer + Eval or Infer Only
     parser.add_argument('--mode', type=str, default='all', choices=['all', 'infer', 'eval'])
     # API Kwargs, Apply to API VLMs and Judge API LLMs
     parser.add_argument('--api-nproc', type=int, default=4, help='Parallel API calling')
     parser.add_argument('--retry', type=int, default=None, help='retry numbers for API VLMs')
+    parser.add_argument('--timeout', type=int, default=None, help='timeout for API VLMs')
     parser.add_argument('--judge-args', type=str, default=None, help='Judge arguments in JSON format')
     # Explicitly Set the Judge Model
     parser.add_argument('--judge', type=str, default=None)
     # Logging Utils
     parser.add_argument('--verbose', action='store_true')
     # Configuration for Resume
-    # Ignore: will not rerun failed VLM inference
-    parser.add_argument('--ignore', action='store_true', help='Ignore failed indices. ')
     # Reuse: will reuse the existing prediction files
     parser.add_argument('--reuse', action='store_true')
     # Reuse-aux: if set, when reuse is True, will also reuse the auxiliary evaluation files
@@ -212,14 +206,38 @@ def main():
     else:
         assert len(args.data), '--data should be a list of data files'
 
+    from vlmeval.config import DATASET_GROUPS
+    from vlmeval.dataset import SUPPORTED_DATASETS
+    data_all = []
+    for k in args.data:
+        if k in DATASET_GROUPS:
+            data_all.extend(DATASET_GROUPS[k])
+        elif k in SUPPORTED_DATASETS:
+            data_all.append(k)
+        else:
+            logger.warning(f'Unknown dataset {k}, will be skipped. ')
+    data_exist = [k for k in data_all if k in SUPPORTED_DATASETS]
+    data_all = []
+    for x in data_exist:
+        if x not in data_all:
+            data_all.append(x)
+
+    logger.info(f'Will use the following datasets for eval: {data_all}')
+    args.data = data_all
+
     if RANK == 0:
         if not args.reuse:
             logger.warning('--reuse is not set, will not reuse previous (before one day) temporary files')
         else:
             logger.warning('--reuse is set, will reuse the latest prediction & temporary pickle files')
+        from vlmeval.smp.log import judge_router_logging
+        judge_router_logging()
 
-    if 'MMEVAL_ROOT' in os.environ:
-        args.work_dir = os.environ['MMEVAL_ROOT']
+    if args.work_dir is None:
+        if 'MMEVAL_ROOT' in os.environ:
+            args.work_dir = os.environ['MMEVAL_ROOT']
+        else:
+            args.work_dir = './outputs'
 
     if not use_config:
         for k, v in supported_VLM.items():
@@ -229,16 +247,9 @@ def main():
             if hasattr(v, 'keywords') and 'verbose' in v.keywords and args.verbose is not None:
                 v.keywords['verbose'] = args.verbose
                 supported_VLM[k] = v
-
-        # If FWD_API is set, will use class `GPT4V` for all API models in the config
-        if os.environ.get('FWD_API', None) == '1':
-            from vlmeval.config import api_models as supported_APIs
-            from vlmeval.api import GPT4V
-            for m in args.model:
-                if m in supported_APIs:
-                    kws = supported_VLM[m].keywords
-                    supported_VLM[m] = partial(GPT4V, **kws)
-                    logger.warning(f'FWD_API is set, will use class `GPT4V` for {m}')
+            if hasattr(v, 'keywords') and 'timeout' in v.keywords and args.timeout is not None:
+                v.keywords['timeout'] = args.timeout
+                supported_VLM[k] = v
 
     if WORLD_SIZE > 1:
         import torch.distributed as dist
@@ -286,7 +297,11 @@ def main():
                 else:
                     dataset_kwargs = {}
                     if dataset_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI', 'SLIDEVQA', 'SLIDEVQA_MINI']:
-                        dataset_kwargs['model'] = model_name
+                        from vlmeval.config import supported_APIs
+                        if model_name in supported_APIs:
+                            dataset_kwargs['model'] = 'DEFAULT'
+                        else:
+                            dataset_kwargs['model'] = model_name
 
                     # If distributed, first build the dataset on the main process for doing preparation works
                     if WORLD_SIZE > 1:
@@ -298,6 +313,8 @@ def main():
                     if dataset is None:
                         logger.error(f'Dataset {dataset_name} is not valid, will be skipped. ')
                         continue
+                assert dataset.TYPE not in ['T2I', 'TI2I', 'TI2TI'], \
+                    f'Dataset {dataset_name} is for generation evaluation, use `run_gen.py` as the entry point. '
 
                 # Handling Multi-Turn Dataset
                 result_file = osp.join(pred_root, result_file_base)
@@ -334,7 +351,6 @@ def main():
                             dataset=dataset,
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
-                            ignore_failed=args.ignore,
                             use_vllm=args.use_vllm)
                     else:
                         model = infer_data_job(
@@ -344,62 +360,19 @@ def main():
                             dataset=dataset,
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
-                            ignore_failed=args.ignore,
                             use_vllm=args.use_vllm)
 
-                # Set the judge kwargs first before evaluation or dumping
+                if args.mode == 'infer':
+                    continue
 
+                # Set the judge kwargs first before evaluation or dumping
                 judge_kwargs = {
-                    'nproc': args.api_nproc,
+                    'model': args.judge if args.judge is not None else getattr(dataset, 'DEFAULT_JUDGE', None),
+                    'nproc': min(32, args.api_nproc),
                     'verbose': args.verbose,
                     'retry': args.retry if args.retry is not None else 3,
                     **(json.loads(args.judge_args) if args.judge_args else {}),
                 }
-
-                if args.retry is not None:
-                    judge_kwargs['retry'] = args.retry
-                if args.judge is not None:
-                    judge_kwargs['model'] = args.judge
-                else:
-                    print(dataset_name)
-                    if dataset.TYPE in ['MCQ', 'Y/N', 'MCQ_MMMU_Pro'] or listinstr(
-                        ['moviechat1k', 'mme-reasoning'], dataset_name.lower()
-                    ):
-                        if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
-                            judge_kwargs['model'] = 'gpt-4o-mini'
-                        elif listinstr(['VisuLogic'], dataset_name):
-                            judge_kwargs['model'] = 'exact_matching'
-                        else:
-                            judge_kwargs['model'] = 'chatgpt-0125'
-                    elif listinstr(['MMVet', 'LLaVABench', 'MMBench_Video'], dataset_name):
-                        if listinstr(['LLaVABench_KO'], dataset_name):
-                            judge_kwargs['model'] = 'gpt-4o-0806'
-                        else:
-                            judge_kwargs['model'] = 'gpt-4-turbo'
-                    elif listinstr(['VGRPBench'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['MathVista', 'MathVerse', 'MathVision', 'DynaMath', 'VL-RewardBench', 'LogicVista', 'MOAT', 'OCR_Reasoning'], dataset_name):  # noqa: E501
-                        judge_kwargs['model'] = 'gpt-4o-mini'
-                    elif listinstr(['OlympiadBench'], dataset_name):
-                        use_api_judger = judge_kwargs.get("olympiad_use_api_judger", False)
-                        if use_api_judger:
-                            judge_kwargs['model'] = 'gpt-4o-mini'
-                    elif listinstr(['MMLongBench', 'MMDU', 'DUDE', 'SLIDEVQA', 'MIA-Bench', 'WildVision', 'MMAlignBench', 'MM-IFEval'], dataset_name):  # noqa: E501
-                        judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['ChartMimic'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['VDC'], dataset_name):
-                        judge_kwargs['model'] = 'llama31-8b'
-                    elif listinstr(['Video_MMLU_QA', 'Video_MMLU_CAP'], dataset_name):
-                        judge_kwargs['model'] = 'qwen-72b'
-                    elif listinstr(['MMVMBench'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['CVQA_EN', 'CVQA_LOC'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4.1'
-                    elif listinstr(['M4Bench'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4o'
-                    elif listinstr(['AyaVisionBench'], dataset_name):
-                        judge_kwargs['model'] = 'gpt-4.1'
 
                 if args.use_verifier:
                     judge_kwargs['use_verifier'] = True
@@ -414,42 +387,14 @@ def main():
 
                 # Only RANK 0 handles the evaluation part
                 if RANK == 0:
-                    # Prepare Submission Files for MMMU_TEST AND MMT-Bench_ALL
-                    if dataset_name in ['MMMU_TEST']:
-                        result_json = MMMU_result_transfer(result_file)
-                        logger.info(f'Transfer MMMU_TEST result to json for official evaluation, '
-                                    f'json file saved in {result_json}')
-                        continue
-                    elif 'MMT-Bench_ALL' in dataset_name:
-                        submission_file = MMTBench_result_transfer(result_file, **judge_kwargs)
-                        logger.info(f'Extract options from prediction of MMT-Bench FULL split for official evaluation '
-                                    f'(https://eval.ai/web/challenges/challenge-page/2328/overview), '
-                                    f'submission file saved in {submission_file}')
-                        continue
-
-                    # Skip the evaluation part if only infer
-                    if args.mode == 'infer':
-                        continue
-
-                    # Skip the evaluation part if the dataset evaluation is not supported or annotations are missing
-                    if 'MLLMGuard_DS' in dataset_name:
-                        logger.info('The evaluation of MLLMGuard_DS is not supported yet. ')
-                        continue
-                    elif 'AesBench_TEST' == dataset_name:
-                        logger.info(f'The results are saved in {result_file}. '
-                                    f'Please send it to the AesBench Team via huangyipo@hotmail.com.')
-                        continue
-                    elif dataset_name in ['DocVQA_TEST', 'InfoVQA_TEST', 'Q-Bench1_TEST', 'A-Bench_TEST']:
-                        logger.info(f'{dataset_name} is a test split without ground-truth. '
-                                    'Thus only the inference part is supported for those datasets. ')
-                        continue
-                    elif dataset_name in [
-                        'MMBench_TEST_CN', 'MMBench_TEST_EN', 'MMBench', 'MMBench_CN',
-                        'MMBench_TEST_CN_V11', 'MMBench_TEST_EN_V11', 'MMBench_V11', 'MMBench_CN_V11'
-                    ] and not MMBenchOfficialServer(dataset_name):
-                        logger.error(
-                            f'Can not evaluate {dataset_name} on non-official servers, will skip the evaluation.')
-                        continue
+                    # Create the symbolic links for the prediction files
+                    files = os.listdir(pred_root)
+                    files = [x for x in files if (f'{model_name}_{dataset_name}' in x or "status.json" in x)]
+                    for f in files:
+                        cwd = os.getcwd()
+                        file_addr = osp.join(cwd, pred_root, f)
+                        link_addr = osp.join(cwd, pred_root_meta, f)
+                        rel_symlink(file_addr, link_addr)
 
                     # Setup the proxy for the evaluation
                     eval_proxy = os.environ.get('EVAL_PROXY', None)
@@ -482,9 +427,7 @@ def main():
                         cwd = os.getcwd()
                         file_addr = osp.join(cwd, pred_root, f)
                         link_addr = osp.join(cwd, pred_root_meta, f)
-                        if osp.exists(link_addr) or osp.islink(link_addr):
-                            os.remove(link_addr)
-                        os.symlink(file_addr, link_addr)
+                        rel_symlink(file_addr, link_addr)
 
             except Exception as e:
                 logger.exception(f'Model {model_name} x Dataset {dataset_name} combination failed: {e}, '

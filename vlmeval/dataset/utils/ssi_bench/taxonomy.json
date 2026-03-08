@@ -1,0 +1,78 @@
+{
+  "categories": [
+    { "slug": "geometric", "name": "Geometric" },
+    { "slug": "topological", "name": "Topological" }
+  ],
+  "tasks": [
+    {
+      "slug": "ground_height",
+      "name": "Ground Height",
+      "categorySlug": "geometric",
+      "optionCount": 4,
+      "description": "Rank targets by ground height. Answer format: a sequence of option indices, e.g. 3 4 1 2."
+    },
+    {
+      "slug": "ground_angle",
+      "name": "Ground Angle",
+      "categorySlug": "geometric",
+      "optionCount": 4,
+      "description": "Rank targets by angle w.r.t. ground. Answer format: option indices."
+    },
+    {
+      "slug": "dimension",
+      "name": "Dimension",
+      "categorySlug": "geometric",
+      "optionCount": 4,
+      "description": "Rank targets by size (e.g., length/diameter). Answer format: option indices, e.g. 2 1 4 3."
+    },
+    {
+      "slug": "relative_distance",
+      "name": "Relative Distance",
+      "categorySlug": "geometric",
+      "optionCount": 3,
+      "description": "Rank targets by relative distance (pairwise). Answer format: option indices."
+    },
+    {
+      "slug": "area",
+      "name": "Area",
+      "categorySlug": "geometric",
+      "optionCount": 3,
+      "description": "Rank targets by area (group-level). Answer format: option indices."
+    },
+    {
+      "slug": "volume",
+      "name": "Volume",
+      "categorySlug": "geometric",
+      "optionCount": 3,
+      "description": "Rank targets by volume (group-level). Answer format: option indices."
+    },
+    {
+      "slug": "multi_view_geometric",
+      "name": "Multi-View (Geo.)",
+      "categorySlug": "geometric",
+      "optionCount": 3,
+      "description": "Rank targets by geometric property using multiple views. Answer format: option indices."
+    },
+    {
+      "slug": "hop_distance",
+      "name": "Hop Distance",
+      "categorySlug": "topological",
+      "optionCount": 3,
+      "description": "Rank pairs by shortest topological distance (hops). Answer format: option indices."
+    },
+    {
+      "slug": "cycle_length",
+      "name": "Cycle Length",
+      "categorySlug": "topological",
+      "optionCount": 3,
+      "description": "Rank candidates by cycle length. Answer format: option indices."
+    },
+    {
+      "slug": "multi_view_topological",
+      "name": "Multi-View (Topo.)",
+      "categorySlug": "topological",
+      "optionCount": 3,
+      "description": "Rank targets by topological property using multiple views. Answer format: option indices."
+    }
+  ]
+}

@@ -1,9 +1,44 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+import binascii
+import ipaddress
+import random
+import time
+from six import ensure_text
 import logging
+
 logging.basicConfig(
     format='[%(asctime)s] %(levelname)s - %(filename)s: %(funcName)s - %(lineno)d: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S')
 
 logger_initialized = {}
+
+
+def judge_router_logging():
+    logger = get_logger('Judge')
+    import os
+    logger.info(
+        "In VLMEvalKit, we use env variable `JUDGE_ROUTER` to control the source of judge models. "
+        "Feasible values are `default` (if variable not set) and `modelcard`. "
+    )
+    judge_router = os.environ.get('JUDGE_ROUTER', 'default')
+    if judge_router == 'default':
+        logger.warning(
+            "JUDGE_ROUTER is set to `default`, please make sure you have already set "
+            "`OPENAI_API_KEY`, `OPENAI_API_BASE`, and other essential environment variables. "
+        )
+    elif judge_router == 'modelcard':
+        logger.warning(
+            "JUDGE_ROUTER is set to `modelcard`, please make sure you have access to the modelcard APIs and "
+            "have all internal dependencies properly installed. "
+        )
+    elif judge_router == 'openrouter':
+        logger.warning(
+            "JUDGE_ROUTER is set to `openrouter`, please make sure you have already set "
+            "`OPENROUTER_API_KEY`, `OPENROUTER_API_BASE`, and other essential environment variables. "
+        )
+    else:
+        raise ValueError(f"Invalid JUDGE_ROUTER value: {judge_router}")
 
 
 def get_logger(name, log_file=None, log_level=logging.INFO, file_mode='w'):
@@ -47,3 +82,8 @@ def get_logger(name, log_file=None, log_level=logging.INFO, file_mode='w'):
 
     logger_initialized[name] = True
     return logger
+
+
+length = 53
+lower_rand_num = 1 << 20
+upper_rand_num = (1 << 24) - 1

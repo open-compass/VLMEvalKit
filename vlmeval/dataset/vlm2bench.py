@@ -20,6 +20,7 @@ class VLM2Bench(ImageBaseDataset):
     }
     # DATASET_MD5
     DATASET_MD5 = {'VLM2Bench': '16f474bfc4e269c583468bf89139da8f'}
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
 
     def build_prompt(self, line):
         """
@@ -69,18 +70,7 @@ class VLM2Bench(ImageBaseDataset):
                 • grp: suitable for oc-grp, pc-grp
         - Write the scores of each sub-task to a CSV file and return a DataFrame.
         """
-        model = judge_kwargs.get("model")
-        if model:
-            storage = get_intermediate_file_path(eval_file, f'_{model}')
-            score_file = get_intermediate_file_path(eval_file, f'_{model}_score', 'csv')
-            tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
-            if os.path.exists(storage):
-                data = load(storage)
-            else:
-                data = load(eval_file)
-        else:
-            data = load(eval_file)
-
+        data = load(eval_file)
         results = data.to_dict(orient="records")
         processed = common_process_results(results)
 
@@ -92,23 +82,35 @@ class VLM2Bench(ImageBaseDataset):
                 except Exception as e:
                     rec["image_seq_len"] = 2
 
-        eval_scores = {}
+        eval_stats = {}
         for cat in sorted(set([r["category"] for r in processed])):
             sub_results = [r for r in processed if r["category"] == cat]
             if cat in ["gc-mat", "gc-trk", "oc-cpr", "pc-cpr"]:
-                score = tf_pair_aggregate_accuracy(sub_results)
+                corr, tot = tf_pair_aggregate_accuracy(sub_results)
             elif cat in ["oc-cnt", "pc-cnt"]:
-                score = cnt_aggregate_metric(sub_results)
+                corr, tot = cnt_aggregate_metric(sub_results)
             elif cat in ["oc-grp", "pc-grp"]:
-                score = grp_aggregate_accuracy(sub_results)
+                corr, tot = grp_aggregate_accuracy(sub_results)
             else:
-                score = None
-            eval_scores[cat] = score
+                raise NotImplementedError(f"Category {cat} is not implemented.")
+            eval_stats[cat] = (corr, tot)
+        eval_scores = {k: v[0] / v[1] * 100 if v[1] > 0 else 0 for k, v in eval_stats.items()}
+        keys = ["gc-mat", "gc-trk", "oc-cpr", "pc-cpr", "oc-cnt", "pc-cnt", "oc-grp", "pc-grp"]
+        eval_scores["micro.avg"] = sum([eval_stats[k][0] for k in keys]) / sum([eval_stats[k][1] for k in keys]) * 100
+        eval_scores["macro.avg"] = np.mean([eval_scores[k] for k in keys])
 
         score_df = pd.DataFrame({k: [v] for k, v in eval_scores.items()})
-        if model:
-            final_score_file = score_file
-        else:
-            final_score_file = get_intermediate_file_path(eval_file, "_score", "csv")
+        final_score_file = get_intermediate_file_path(eval_file, "_score", "csv")
         dump(score_df, final_score_file)
         return score_df
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        rating = {k: rating.iloc[0][k] for k in rating.columns}
+        res = {'overall': (rating['macro.avg'] + rating['micro.avg']) / 2}
+        if verbose:
+            res['rating'] = rating
+        return res

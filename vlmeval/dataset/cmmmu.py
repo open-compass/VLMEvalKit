@@ -320,6 +320,14 @@ class CMMMU(ImageBaseDataset):
         result = pd.read_csv(result_file)
         return result
 
+    @classmethod
+    def parse_df_rating(self, df, factor=100):
+        assert len(df) == 1
+        dic = {k: df.iloc[0][k] for k in df.columns}
+        dic['overall'] = dic.pop('总准确率')
+        dic = {k: v * factor if not istype(v, str) else v for k, v in dic.items()}
+        return dic
+
     def build_prompt(self, line):
         if line['type'] == '选择':
             tgt_path = self.dump_image(line)

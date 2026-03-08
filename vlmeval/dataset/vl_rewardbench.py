@@ -3,7 +3,6 @@ from ast import literal_eval
 from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
-from ..utils import track_progress_rich
 
 
 LLM_PARSE_ANSWER_PROMPT = '''
@@ -71,6 +70,8 @@ def VLRewardBench_eval_answer(model, line):
 
 class VLRewardBench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'VL-RewardBench': 'https://huggingface.co/datasets/MMInstruction/VL-RewardBench/resolve/main/vl_rewardbench.tsv'
     }
@@ -115,7 +116,7 @@ class VLRewardBench(ImageBaseDataset):
             data['human_ranking'] = [literal_eval(x) for x in raw_data['answer']]
 
             judge_kwargs['temperature'] = 0
-            judge_kwargs['timeout'] = 60
+            judge_kwargs['timeout'] = 300
             model = build_judge(max_tokens=128, **judge_kwargs)
 
             assert model.working(), (

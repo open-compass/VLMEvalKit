@@ -1,10 +1,10 @@
 import torch
 import torch.distributed as dist
-from vlmeval.config import supported_VLM
-from vlmeval.utils import track_progress_rich
+from vlmeval.config import build_model
 from vlmeval.smp import *
+from vlmeval.dataset import ImageBaseDataset
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+is_response_err = ImageBaseDataset.is_response_err
 
 
 def parse_args():
@@ -22,7 +22,7 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
-    model = supported_VLM[model_name]() if isinstance(model, str) else model
+    model = build_model(model_name) if isinstance(model, str) else model
     assert getattr(model, 'is_api', False)
 
     indices = list(samples_dict.keys())
@@ -62,10 +62,11 @@ def infer_data_api(model, work_dir, model_name, dataset, samples_dict={}, api_np
     else:
         out_file = f'{work_dir}/{model_name}_{dataset_name}_{dataset.fps}fps_{packstr}_supp.pkl'
     res = load(out_file) if osp.exists(out_file) else {}
+    res = {k: v for k, v in res.items() if not is_response_err(v)}
 
-    structs = [s for i, s in zip(indices, structs) if i not in res or res[i] == FAIL_MSG]
+    structs = [s for i, s in zip(indices, structs) if i not in res]
     structs = [struct for struct in structs if struct is not None]
-    indices = [i for i in indices if i not in res or res[i] == FAIL_MSG]
+    indices = [i for i in indices if i not in res]
 
     gen_func = model.generate
     structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
@@ -105,7 +106,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     # (In VLMEvalKit, we use torchrun to launch multiple model instances on a single node).
     # To bypass this problem, we unset `WORLD_SIZE` before building the model to not use TP parallel.
     ws_bak = os.environ.pop('WORLD_SIZE', None)
-    model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
+    model = build_model(model_name, **kwargs) if isinstance(model, str) else model
     if ws_bak:
         os.environ['WORLD_SIZE'] = ws_bak
 
@@ -180,7 +181,6 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
         # If `SKIP_ERR` flag is set, the model will skip the generation if error is encountered
         if os.environ.get('SKIP_ERR', False) == '1':
-            FAIL_MSG = 'Failed to obtain answer'
             try:
                 response = model.generate(message=struct, dataset=dataset_name)
             except RuntimeError as err:
@@ -242,7 +242,7 @@ def infer_data_job_video(
         for i in range(world_size):
             data_all.update(load(tmpl.format(i)))
 
-        meta = dataset.data
+        meta = cp.deepcopy(dataset.data)
         if dataset_name == 'MMBench-Video' and getattr(dataset, 'pack', False):
             meta, vstats = dataset.load_pack_answers(data_all)
             print(f'Statitics of Pack Video Inference: {vstats}')

@@ -1,14 +1,9 @@
 # flake8: noqa
-import os
-import json
 from typing import Dict, List, Tuple, Any, Union
 import pandas as pd
-import warnings
 
 from vlmeval.dataset.image_base import ImageBaseDataset
 from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
 from .utils import build_judge
 from openai import OpenAI
 from tqdm import tqdm

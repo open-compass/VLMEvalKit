@@ -10,7 +10,6 @@ from ..image_base import img_root_map
 from .screenspot import ScreenSpot
 from ..utils import build_judge, DEBUG_MESSAGE
 from ...smp import *
-from ...utils import track_progress_rich
 from ipdb import set_trace as st
 
 logger = get_logger("RUN")

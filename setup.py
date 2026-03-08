@@ -87,7 +87,7 @@ with open('README.md', encoding="utf-8") as f:
 def do_setup():
     setup(
         name='vlmeval',
-        version='0.1.0',
+        version='20251217.0',
         description='OpenCompass VLM Evaluation Kit',
         author='Haodong Duan',
         author_email='dhd.efz@gmail.com',
@@ -105,7 +105,10 @@ def do_setup():
         ]),
         keywords=['AI', 'NLP', 'in-context learning'],
         entry_points={
-            'console_scripts': ['vlmutil = vlmeval:cli']
+            'console_scripts': [
+                'vlmutil = vlmeval.tools:cli',
+                've = vlmeval.tools:cli',
+            ]
         },
         classifiers=[
             'Programming Language :: Python :: 3.7',

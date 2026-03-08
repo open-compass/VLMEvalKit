@@ -1,3 +1,4 @@
+import math
 import os
 import io
 import pandas as pd
@@ -10,6 +11,10 @@ from PIL import Image
 import sys
 
 Image.MAX_IMAGE_PIXELS = 1e9
+im_data = np.ones([224, 224, 3])
+im_data = im_data.astype(np.uint8)
+im_data *= 255
+EMPTY_IMAGE = Image.fromarray(im_data)
 
 
 def rescale_img(img, tgt=None):
@@ -96,41 +101,97 @@ def resize_image_by_factor(img, factor=1):
     return img
 
 
-def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
+def resize_image_by_short_edge(img, short_edge=-1):
+    if short_edge == -1:
+        return img
+    assert short_edge > 0, short_edge
+    factor = short_edge / min(img.size)
+    return resize_image_by_factor(img, factor)
+
+
+def _round_to_factor(value: float, factor: int) -> int:
+    """将数值调整为最接近的factor的倍数"""
+    return round(value / factor) * factor
+
+
+def _floor_to_factor(value: float, factor: int) -> int:
+    """将数值向下调整为factor的最大倍数"""
+    return math.floor(value / factor) * factor
+
+
+def _ceil_to_factor(value: float, factor: int) -> int:
+    """将数值向上调整为factor的最小倍数"""
+    return math.ceil(value / factor) * factor
+
+
+def resize_image_by_pixel_limits(img, image_pixel_limit, factor=42):
+    width, height = img.size
+    min_pixels = image_pixel_limit['min_pixels']
+    max_pixels = image_pixel_limit['max_pixels']
+
+    resized_height = height
+    resized_width = width
+    pixels = height * width
+    if pixels > max_pixels:
+        scale = math.sqrt((height * width) / max_pixels)
+        resized_height = _floor_to_factor(height / scale, factor)
+        resized_width = _floor_to_factor(width / scale, factor)
+    elif pixels < min_pixels:
+        scale = math.sqrt(min_pixels / (height * width))
+        resized_height = _ceil_to_factor(height * scale, factor)
+        resized_width = _ceil_to_factor(width * scale, factor)
+    img = img.resize((resized_width, resized_height))
+    return img
+
+
+def convert_image_to_base64(img, fmt='PNG'):
+    img_buffer = io.BytesIO()
+    img.save(img_buffer, format=fmt)
+    image_data = img_buffer.getvalue()
+    return base64.b64encode(image_data).decode('utf-8')
+
+
+# The `fmt` arg is only needed when writing PIL Image to io buffer
+def encode_image_to_base64(img, target_size=-1, fmt='PNG'):
     # if target_size == -1, will not do resizing
     # else, will set the max_size ot (target_size, target_size)
     if img.mode in ('RGBA', 'P', 'LA'):
         img = img.convert('RGB')
     if target_size > 0:
         img.thumbnail((target_size, target_size))
-    img_buffer = io.BytesIO()
-    img.save(img_buffer, format=fmt)
-    image_data = img_buffer.getvalue()
-    ret = base64.b64encode(image_data).decode('utf-8')
-    max_size = os.environ.get('VLMEVAL_MAX_IMAGE_SIZE', 1e9)
-    min_edge = os.environ.get('VLMEVAL_MIN_IMAGE_EDGE', 1e2)
+    ret = convert_image_to_base64(img, fmt)
+    # The max size of the image after encoding to base64 string, 1e7 is approximately 10MB
+    max_bytes = os.environ.get('VLMEVAL_MAX_IMAGE_BYTES', 1e7)
+    # The max size of the image, 1e8 is a huge number, 10000 x 10000
+    max_size = os.environ.get('VLMEVAL_MAX_IMAGE_SIZE', 1e8)
+    # The min edge length of the image, default to 100
+    min_edge = os.environ.get('VLMEVAL_MIN_IMAGE_EDGE', 100)
     max_size = int(max_size)
     min_edge = int(min_edge)
+    max_bytes = int(max_bytes)
 
     if min(img.size) < min_edge:
-        factor = min_edge / min(img.size)
-        image_new = resize_image_by_factor(img, factor)
-        img_buffer = io.BytesIO()
-        image_new.save(img_buffer, format=fmt)
-        image_data = img_buffer.getvalue()
-        ret = base64.b64encode(image_data).decode('utf-8')
+        img = resize_image_by_short_edge(img, min_edge)
+        ret = convert_image_to_base64(img, fmt)
+
+    if img.size[0] * img.size[1] > max_size:
+        # For images that exceeds max_size, JPEG encoding is more efficient
+        fmt = 'JPEG'
+        img = resize_image_by_pixel_limits(img, {'min_pixels': 1, 'max_pixels': max_size})
+        ret = convert_image_to_base64(img, fmt)
+
+    if len(ret) > max_bytes:
+        fmt = 'JPEG'
+        ret = convert_image_to_base64(img, fmt)
 
     factor = 1
     while len(ret) > max_size:
         factor *= 0.7  # Half Pixels Per Resize, approximately
-        image_new = resize_image_by_factor(img, factor)
-        img_buffer = io.BytesIO()
-        image_new.save(img_buffer, format=fmt)
-        image_data = img_buffer.getvalue()
-        ret = base64.b64encode(image_data).decode('utf-8')
+        img = resize_image_by_factor(img, factor)
+        ret = convert_image_to_base64(img, fmt)
 
     if factor < 1:
-        new_w, new_h = image_new.size
+        new_w, new_h = img.size
         print(
             f'Warning: image size is too large and exceeds `VLMEVAL_MAX_IMAGE_SIZE` {max_size}, '
             f'resize to {factor:.2f} of original size: ({new_w}, {new_h})'
@@ -139,15 +200,27 @@ def encode_image_to_base64(img, target_size=-1, fmt='JPEG'):
     return ret
 
 
-def encode_image_file_to_base64(image_path, target_size=-1, fmt='JPEG'):
+def encode_image_file_to_base64(image_path, target_size=-1, fmt=None):
     image = Image.open(image_path)
+    if fmt is None:
+        suffix = osp.splitext(image_path)[1][1:]
+        fmt = 'PNG' if suffix.lower() == 'png' else 'JPEG'
     return encode_image_to_base64(image, target_size=target_size, fmt=fmt)
 
 
 def decode_base64_to_image(base64_string, target_size=-1):
-    image_data = base64.b64decode(base64_string)
-    image = Image.open(io.BytesIO(image_data))
-    if image.mode in ('RGBA', 'P', 'LA'):
+    try:
+        image_data = base64.b64decode(base64_string)
+        image = Image.open(io.BytesIO(image_data))
+    except Exception as e:
+        print(f'Warning: failed to decode base64 string: {type(e)} {e}')
+        if os.environ.get('SKIP_CORRUPTED_IMAGE', 0):
+            print('Warning: the image is corrupted, return empty image')
+            image = EMPTY_IMAGE
+        else:
+            image = None
+
+    if image.mode in ('RGBA', 'P', 'LA', 'CMYK'):
         image = image.convert('RGB')
     if target_size > 0:
         image.thumbnail((target_size, target_size))
@@ -163,7 +236,7 @@ def decode_base64_to_image_file(base64_string, image_path, target_size=-1):
 
 
 def build_option_str(option_dict):
-    s = 'There are several options: \n'
+    s = ''
     for c, content in option_dict.items():
         if not pd.isna(content):
             s += f'{c}. {content}\n'
@@ -185,14 +258,37 @@ def read_ok(img_path):
         return False
 
 
-def gpt_key_set():
-    openai_key = os.environ.get('OPENAI_API_KEY', None)
-    if openai_key is None:
-        openai_key = os.environ.get('AZURE_OPENAI_API_KEY', None)
-        return isinstance(openai_key, str)
-    return isinstance(openai_key, str) and openai_key.startswith('sk-')
+def compare_outputs(model1, model2, dataset_name, fields=[], root=None):
+    import vlmeval
+    from vlmeval.dataset import build_dataset
+    from vlmeval.smp import load
+    default_root = osp.join(vlmeval.__path__[0], '../outputs/')
+    if root is None:
+        root = default_root
+    if fields == []:
+        fields = ['prediction', 'hit', 'score']
+    dataset = build_dataset(dataset_name)
+    judge_format = dataset.JUDGE_FORMAT
+    pred_format = dataset.PRED_FORMAT
+    kwargs = dict(dataset_name=dataset_name)
+    if 'judge_name' in judge_format:
+        kwargs['judge_name'] = dataset.DEFAULT_JUDGE
+    kwargs1 = {'model_name': model1, **kwargs}
+    kwargs2 = {'model_name': model2, **kwargs}
+    pth1 = osp.join(root, model1, judge_format.format(**kwargs1))
+    pth2 = osp.join(root, model2, judge_format.format(**kwargs2))
+    if not osp.exists(pth1) and not osp.exists(pth2):
+        print(f'Both judge files {pth1} and {pth2} not found in {root}')
+        pth1 = osp.join(root, model1, pred_format.format(**kwargs1))
+        pth2 = osp.join(root, model2, pred_format.format(**kwargs2))
 
+    if not osp.exists(pth1) or not osp.exists(pth2):
+        raise FileNotFoundError(f'One of {pth1} or {pth2} not found in {root}')
 
-def apiok(wrapper):
-    s = wrapper.generate('Hello!')
-    return wrapper.fail_msg not in s
+    data = load(pth1)
+    data2 = load(pth2)
+    for k in fields:
+        if k in data:
+            data[f'm1_{k}'] = data.pop(k)
+            data[f'm2_{k}'] = data2.pop(k)
+    return data

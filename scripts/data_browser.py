@@ -16,8 +16,9 @@ from io import BytesIO
 from argparse import Namespace
 # from llava import conversation as conversation_lib
 from typing import Sequence
-from vlmeval import *
+from vlmeval.smp import *
 from vlmeval.dataset import SUPPORTED_DATASETS, build_dataset
+from vlmeval.api import OpenAIWrapper
 
 SYS = "You are a helpful assistant. Your job is to faithfully translate all provided text into Chinese faithfully. "
 

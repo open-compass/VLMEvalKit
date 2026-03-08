@@ -6,8 +6,6 @@ headers = 'Content-Type: application/json'
 
 class GeminiWrapper(BaseAPI):
 
-    is_api: bool = True
-
     def __init__(self,
                  model: str = 'gemini-1.0-pro',
                  retry: int = 5,
