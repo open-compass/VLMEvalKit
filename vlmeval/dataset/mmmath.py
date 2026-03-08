@@ -10,8 +10,7 @@ import timeout_decorator
 import logging
 
 from .image_base import ImageBaseDataset
-from ..utils import track_progress_rich
-from ..smp import load, dump, get_intermediate_file_path
+from ..smp import load, dump, get_intermediate_file_path, track_progress_rich
 
 try:
     import sympy as sp

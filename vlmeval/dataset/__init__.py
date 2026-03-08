@@ -1,4 +1,6 @@
 import warnings
+from .utils import *
+from ..smp import *
 
 from .image_base import img_root_map, ImageBaseDataset
 from .image_caption import ImageCaptionDataset
@@ -7,18 +9,22 @@ from .image_mcq import (
     ImageMCQDataset, MMMUDataset, CustomMCQDataset, MUIRDataset, GMAIMMBenchDataset, MMERealWorld, HRBenchDataset,
     NaturalBenchDataset, WeMath, MMMUProDataset, VMCBenchDataset, MedXpertQA_MM_test, LEGO, VisuLogic, CVBench, TDBench,
     MicroBench, OmniMedVQA, MSEarthMCQ, VLMBlind, SCAM, _3DSRBench, AffordanceDataset, OmniEarthMCQBench, XLRSBench,
-    TreeBench, CVQA, TopViewRS
+    TreeBench, TopViewRS, SpatialViz
 )
 from .image_mt import MMDUDataset
 from .image_vqa import (
-    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet, MTVQADataset,
+    ImageVQADataset, MathVision, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,
     TableVQABench, CustomVQADataset, CRPE, MathVerse, OlympiadBench, SeePhys, QSpatial, VizWiz, MMNIAH, LogicVista,
-    MME_CoT, MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX, CountBenchQA,
-    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench
+    MME_CoT, MMSci_Captioning, Physics_yale, TDBenchGrounding, WildDocBenchmark, OCR_Reasoning, PhyX,
+    ZEROBench, Omni3DBench, TallyQA, MMEReasoning, MMVMBench, BMMR, OCRBench_v2, AyaVisionBench, MathCanvas
 )
+from .image_vqa_int import VPCTDataset
+from .image_vqa_char import MathKangaroo
+from .image_vqa_simple import ImageVQASimple, BabyVision, VibeEval
 
 from .image_ccocr import CCOCRDataset
-from .image_shortqa import ImageShortQADataset, PathVQA_VAL, PathVQA_TEST
+from .image_shortqa import ImageShortQADataset
+from .counting import CountBenchQA, FSC147, PointBench
 from .text_mcq import CustomTextMCQDataset, TextMCQDataset
 
 from .vcr import VCRDataset
@@ -32,35 +38,18 @@ from .spatial457 import Spatial457
 from .charxiv import CharXiv
 from .chartmuseum import ChartMuseum
 from .chartqapro import ChartQAPro
+from .mathvr import MathVR
+from .ssi_bench import SSIBenchDataset
+from .simplevqa import SimpleVQA
 
-from .mmbench_video import MMBenchVideo
-from .videomme import VideoMME
-from .video_holmes import Video_Holmes
-from .mvbench import MVBench, MVBench_MP4
-from .tamperbench import MVTamperBench
 from .miabench import MIABench
-from .mlvu import MLVU, MLVU_MCQ, MLVU_OpenEnded
-from .tempcompass import TempCompass, TempCompass_Captioning, TempCompass_MCQ, TempCompass_YorN
-from .longvideobench import LongVideoBench
-from .video_concat_dataset import ConcatVideoDataset
 from .mmgenbench import MMGenBench
-from .cgbench import CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded
-from .CGAVCounting.cg_av_counting import CGAVCounting
 
-from .megabench import MEGABench
-from .moviechat1k import MovieChat1k
-from .video_mmlu import Video_MMLU_CAP, Video_MMLU_QA
-from .vdc import VDC
-from .vcrbench import VCRBench
 from .gobench import GOBenchDataset
 from .sfebench import SFE
 from .visfactor import VisFactor
+from .puzzleworld import PuzzleWorldDataset
 from .ost_bench import OSTDataset
-
-from .EgoExoBench.egoexobench import EgoExoBench_MCQ
-
-from .worldsense import WorldSense
-from .qbench_video import QBench_Video, QBench_Video_MCQ, QBench_Video_VQA
 
 from .cmmmu import CMMMU
 from .emma import EMMADataset
@@ -69,21 +58,70 @@ from .mmmath import MMMath
 from .dynamath import Dynamath
 from .creation import CreationMMBenchDataset
 from .mmalignbench import MMAlignBench
-from .utils import *
-from .video_dataset_config import *
-from ..smp import *
 from .OmniDocBench.omnidocbench import OmniDocBench
+from .foxbench import FoxBench
 from .moat import MOAT
-from .GUI.screenspot import ScreenSpot
-from .GUI.screenspot_v2 import ScreenSpotV2
-from .GUI.screenspot_pro import ScreenSpot_Pro
+from .GUI import (
+    ScreenSpot, ScreenSpot_Pro, ScreenSpotV2,
+    OSWorld_G, VenusBench_GD, VBGD
+)
+from .refcoco import RefCOCODataset
+from .GenBench import (
+    OmniContext, WISE, GenEvalPP, ImagineBench, RISEBench, UnifyBench, GenExam,
+    ImgGenEval, ImageEditEval, UToolEval, VTBench,
+)
 from .mmifeval import MMIFEval
 from .chartmimic import ChartMimic
 from .m4bench import M4Bench
+from .vlrmbench import VLRMBench
 from .mmhelix import MMHELIX
 from .medqbench_mcq import MedqbenchMCQDataset
 from .medqbench_caption import MedqbenchCaptionDataset
 from .medqbench_paired_description import MedqbenchPairedDescriptionDataset
+from .olmOCRBench.olmocrbench import olmOCRBench
+from .oceanocr import OceanOCRBench
+from .matbench import MATBench
+from .core_cognition import CoreCognition
+
+from .reasonmap_plus import ReasonMap_Plus
+from .hle import HLE
+from .arcagi import ArcAGI
+from .mmreason import MMReason
+from .macbench import MaCBench
+from .mmesci import MMESCIDataset
+from .uni_svg import UniSVG
+from .vtcbench import VTCBench
+from .HiPhO import HiPhODataset
+from .worldvqa import WorldVQA
+from .grounding_me import GroundingME
+from .puzzlevqa import PuzzleVQA
+from .visualpuzzles import VisualPuzzles
+
+from .MultiLingual import MMMB, MTL_MMBench, CVQA, MTVQADataset
+from .VideoBench.video_dataset_config import *
+from .VideoBench import (
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, Video_MMLU_CAP, Video_MMLU_QA,
+    LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
+    MLVU, MLVU_MCQ, MLVU_OpenEnded,
+    TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
+    CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
+    QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
+    Video_Holmes, VCRBench, CGAVCounting, EgoExoBench_MCQ, DREAM, MMSIVideoBench, VideoMMMU,
+    VSIBench, MVUEval, OMTGBench, V2PBench, STIBench, DSRBench, MMSIVideoBench_EASI,
+    VsiBench_EASI, VsiSuperRecall_EASI, VsiSuperCount_EASI, SiteBenchVideo
+)
+from .refspatial import RefSpatial
+from .SArena import SArena_MINI
+from .asclepius import Asclepius
+from .chartcap import ChartCapDataset
+from .design2code import Design2Code
+from .vladbench import VLADBench
+# The Benchmarks are supported by the EASI team
+from .spatial_easi import EmbSpatialBench, ERIQ, MindCube, OmniSpatialBench, ViewSpatialBench
+from .sparbench import SparBench
+from .spbench import SPBench
+from .starebench import StareBench
+from .sitebench import SiteBenchImage
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -193,38 +231,109 @@ class ConcatDataset(ImageBaseDataset):
             return dict_all
 
 
-# Add new supported dataset class here
-IMAGE_DATASET = [
-    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
-    MathVision, MMMUDataset, OCRBench, MathVista, LLaVABench, LLaVABench_KO, VGRPBench, MMVet,
-    MTVQADataset, TableVQABench, MMLongBench, VCRDataset, MMDUDataset, DUDE,
-    SlideVQA, MUIRDataset, CCOCRDataset, GMAIMMBenchDataset, MMERealWorld,
-    HRBenchDataset, CRPE, MathVerse, NaturalBenchDataset, MIABench,
-    OlympiadBench, SeePhys,WildVision, MMMath, QSpatial, Dynamath, MMGenBench, VizWiz,
-    MMNIAH, CMMMU, VLRewardBench, WeMath, LogicVista, MMMUProDataset,
-    CreationMMBenchDataset, ImageShortQADataset, MMAlignBench, OmniDocBench,
-    VLM2Bench, VMCBenchDataset, EMMADataset, MME_CoT, MOAT, MedXpertQA_MM_test,
-    LEGO, MMSci_Captioning, Physics_yale, ScreenSpot_Pro, ScreenSpot,
-    ScreenSpotV2, MMIFEval, Spatial457, VisuLogic, CVBench, PathVQA_VAL,
-    PathVQA_TEST, TDBench, TDBenchGrounding, MicroBench, CharXiv, OmniMedVQA,
-    WildDocBenchmark, MSEarthMCQ, OCR_Reasoning, PhyX, VLMBlind, CountBenchQA,
-    ZEROBench, SCAM, Omni3DBench, TallyQA, _3DSRBench, BMMR, AffordanceDataset,
-    MMEReasoning, GOBenchDataset, SFE, ChartMimic, MMVMBench, XLRSBench,
-    OmniEarthMCQBench, VisFactor, OSTDataset, OCRBench_v2, TreeBench, CVQA, M4Bench,
-    AyaVisionBench, TopViewRS, VLMBias, MMHELIX, MedqbenchMCQDataset,
-    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, ChartMuseum, ChartQAPro
+IMAGE_GUI = [
+    ScreenSpot, ScreenSpot_Pro, ScreenSpotV2, OSWorld_G, VenusBench_GD, VBGD
 ]
 
+IMAGE_BASE = [
+    ImageCaptionDataset, ImageYORNDataset, ImageMCQDataset, ImageVQADataset,
+    ImageShortQADataset, ImageVQASimple
+]
+
+IMAGE_MATH = [
+    MathVision, MathVista, MathVerse, MMMath, Dynamath, WeMath, MathCanvas,
+    MathVR, MathKangaroo
+]
+
+IMAGE_STEM = [
+    MMMUDataset, OlympiadBench, SeePhys, CMMMU, MMMUProDataset, MSEarthMCQ,
+    PhyX, XLRSBench, MaCBench, HiPhODataset, SFE, EMMADataset, Physics_yale,
+    HLE, OmniEarthMCQBench, MMSci_Captioning, MMESCIDataset, BMMR, MMReason,
+    MATBench
+]
+
+IMAGE_OCR = [
+    OCRBench, TableVQABench, CCOCRDataset, OmniDocBench, OCRBench_v2, CharXiv,
+    olmOCRBench, OceanOCRBench, WildDocBenchmark, OCR_Reasoning, ChartMuseum,
+    ChartQAPro, ChartCapDataset, FoxBench,
+]
+
+IMAGE_ALIGNMENT = [
+    LLaVABench, LLaVABench_KO, MMVet, MIABench, WildVision, MMAlignBench,
+    CreationMMBenchDataset, MMIFEval, VibeEval
+]
+
+IMAGE_PUZZLE = [
+    VGRPBench, LogicVista, ArcAGI, VPCTDataset, ZEROBench, PuzzleWorldDataset,
+    MMHELIX, VisuLogic, PuzzleVQA, VisualPuzzles
+]
+
+IMAGE_MTL = [
+    MTVQADataset, MMMB, MTL_MMBench, CVQA, AyaVisionBench,
+]
+
+IMAGE_LONGCTX = [
+    MMLongBench, MMDUDataset, DUDE, SlideVQA, MMNIAH,
+]
+
+IMAGE_MISC = [
+    VCRDataset, CRPE, MMGenBench, VLRewardBench, VLM2Bench, GOBenchDataset,
+    AffordanceDataset, M4Bench, VTCBench, VLRMBench, ReasonMap_Plus, SCAM,
+    MMVMBench,
+]
+
+IMAGE_PERCEPTION = [
+    MMERealWorld, HRBenchDataset, VLMBias, VLMBlind, VisFactor, BabyVision,
+    VLADBench, CoreCognition, TDBench,
+]
+
+IMAGE_GVQA = [
+    MUIRDataset, NaturalBenchDataset, VizWiz, WorldVQA, SimpleVQA, VMCBenchDataset,
+    MME_CoT, MOAT, MMEReasoning
+]
+
+IMAGE_MED = [
+    GMAIMMBenchDataset, MedXpertQA_MM_test, OmniMedVQA, MedqbenchMCQDataset,
+    MedqbenchPairedDescriptionDataset, MedqbenchCaptionDataset, Asclepius, MicroBench,
+]
+
+IMAGE_SPATIAL = [
+    QSpatial, MindCube, ERIQ, EmbSpatialBench, SSIBenchDataset, _3DSRBench,
+    OmniSpatialBench, ViewSpatialBench, SparBench, SPBench, StareBench, SiteBenchImage,
+    Spatial457, CVBench, TreeBench, LEGO, OSTDataset, SpatialViz, RefSpatial,
+    Omni3DBench, TopViewRS
+]
+
+IMAGE_GROUNDING = [
+    CountBenchQA, FSC147, PointBench, GroundingME, RefCOCODataset, TDBenchGrounding,
+    TallyQA
+]
+
+IMAGE_CODING = [
+    SArena_MINI, ChartMimic, Design2Code, UniSVG,
+]
+
+IMAGE_DATASET = []
+for datasets in [
+    IMAGE_BASE, IMAGE_GUI, IMAGE_MATH, IMAGE_STEM, IMAGE_OCR, IMAGE_ALIGNMENT,
+    IMAGE_PUZZLE, IMAGE_MTL, IMAGE_LONGCTX, IMAGE_MISC, IMAGE_PERCEPTION, IMAGE_GVQA,
+    IMAGE_MED, IMAGE_SPATIAL, IMAGE_GROUNDING, IMAGE_CODING,
+]:
+    IMAGE_DATASET.extend(datasets)
+
+# Add new supported dataset class here
+
+
 VIDEO_DATASET = [
-    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench,
+    MMBenchVideo, VideoMME, MVBench, MVBench_MP4, MVTamperBench, Video_MMLU_CAP, Video_MMLU_QA,
     LongVideoBench, WorldSense, VDC, MovieChat1k, MEGABench,
     MLVU, MLVU_MCQ, MLVU_OpenEnded,
     TempCompass, TempCompass_MCQ, TempCompass_Captioning, TempCompass_YorN,
     CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded_Mini, CGBench_MCQ_Grounding, CGBench_OpenEnded,
     QBench_Video, QBench_Video_MCQ, QBench_Video_VQA,
-    Video_MMLU_CAP, Video_MMLU_QA,
-    Video_Holmes, VCRBench, CGAVCounting,
-    EgoExoBench_MCQ,
+    Video_Holmes, VCRBench, CGAVCounting, EgoExoBench_MCQ, DREAM, MMSIVideoBench, VideoMMMU,
+    VSIBench, MVUEval, OMTGBench, V2PBench, STIBench, DSRBench, MMSIVideoBench_EASI,
+    VsiBench_EASI, VsiSuperRecall_EASI, VsiSuperCount_EASI, SiteBenchVideo,
 ]
 
 TEXT_DATASET = [
@@ -235,12 +344,22 @@ CUSTOM_DATASET = [
     CustomMCQDataset, CustomVQADataset, CustomTextMCQDataset
 ]
 
+GEN_DATASET = [
+    OmniContext, WISE, GenEvalPP, ImagineBench, RISEBench, UnifyBench, GenExam,
+    ImgGenEval, ImageEditEval, UToolEval, VTBench
+]
+
 DATASET_COLLECTION = [ConcatDataset, ConcatVideoDataset]
 
-DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION  # noqa: E501
+DATASET_CLASSES = IMAGE_DATASET + VIDEO_DATASET + TEXT_DATASET + CUSTOM_DATASET + DATASET_COLLECTION + GEN_DATASET  # noqa: E501
 SUPPORTED_DATASETS = []
 for DATASET_CLS in DATASET_CLASSES:
     SUPPORTED_DATASETS.extend(DATASET_CLS.supported_datasets())
+SUPPORTED_DATASETS = list(set(SUPPORTED_DATASETS))
+SUPPORTED_DATASETS.sort()
+SUPPORTED_VIDEO_DATASETS = list(supported_video_datasets)
+SUPPORTED_VIDEO_DATASETS.sort()
+SUPPORTED_DATASETS += SUPPORTED_VIDEO_DATASETS
 
 
 def DATASET_TYPE(dataset, *, default: str = 'MCQ') -> str:

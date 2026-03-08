@@ -1,7 +1,6 @@
 import re
-from vlmeval import *
+from ..smp import *
 from .image_base import ImageBaseDataset
-from ..smp.file import get_intermediate_file_path
 
 
 class VisFactor(ImageBaseDataset):
@@ -19,15 +18,18 @@ class VisFactor(ImageBaseDataset):
     }
 
     DATASET_MD5 = {
-        'VisFactor': 'a069bcd8eb529e1d8c66e4cd7e279d13',
-        'VisFactor_CoT': 'a069bcd8eb529e1d8c66e4cd7e279d13',
-        'VisFactor_GE': '7e1377b46faff392409a7d4e56688dba',
-        'VisFactor_GE_CoT': '7e1377b46faff392409a7d4e56688dba',
-        'VisFactor_GN': '34bec098b47f87a8a6239a68f19b9ec8',
-        'VisFactor_GN_CoT': '34bec098b47f87a8a6239a68f19b9ec8',
-        'VisFactor_GH': '03c902ea44da8469814a8c1933baa923',
-        'VisFactor_GH_CoT': '03c902ea44da8469814a8c1933baa923',
+        # 'VisFactor': 'a069bcd8eb529e1d8c66e4cd7e279d13',
+        # 'VisFactor_CoT': 'a069bcd8eb529e1d8c66e4cd7e279d13',
+        # 'VisFactor_GE': '7e1377b46faff392409a7d4e56688dba',
+        # 'VisFactor_GE_CoT': '7e1377b46faff392409a7d4e56688dba',
+        # 'VisFactor_GN': '34bec098b47f87a8a6239a68f19b9ec8',
+        # 'VisFactor_GN_CoT': '34bec098b47f87a8a6239a68f19b9ec8',
+        # 'VisFactor_GH': '03c902ea44da8469814a8c1933baa923',
+        # 'VisFactor_GH_CoT': '03c902ea44da8469814a8c1933baa923',
     }
+
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_judge.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.json'
 
     def replace_additional_tags(self, text, additional):
         def replacer(match):
@@ -140,13 +142,10 @@ class VisFactor(ImageBaseDataset):
             results = [accuracy[subtest][eval_index] for eval_index in accuracy[subtest]]
             accuracy[subtest] = sum(results) / len(results)
 
-        accuracy['ALL'] = sum([accuracy[s] for s in accuracy]) / len([accuracy[s] for s in accuracy])
+        accuracy['Overall'] = sum([accuracy[s] for s in accuracy]) / len([accuracy[s] for s in accuracy])
 
-        verbose_file = get_intermediate_file_path(eval_file, '_verbose')
-        dump(data, verbose_file)
-
-        score_df = d2df(accuracy)
-        score_file = get_intermediate_file_path(eval_file, '_acc')
-        dump(score_df, score_file)
-
+        judge_file = self.get_judge_file_path(eval_file)
+        dump(data, judge_file)
+        rating_file = self.get_rating_file_path(eval_file)
+        dump(accuracy, rating_file)
         return accuracy

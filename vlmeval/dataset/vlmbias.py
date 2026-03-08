@@ -1,6 +1,5 @@
 from ..smp import *
-from ..utils import track_progress_rich
-from .image_vqa import ImageVQADataset
+from .image_base import ImageBaseDataset
 from .utils.omni_verifier import OmniVerifier
 from .utils.multiple_choice import report_acc
 
@@ -9,10 +8,17 @@ def VLMBias_auxeval(verifier, pred, gt):
     return verifier.verify(pred, gt)
 
 
-class VLMBias(ImageVQADataset):
+class VLMBias(ImageBaseDataset):
 
-    DATASET_URL = {'VLMBias': 'https://opencompass.openxlab.space/utils/VLMEval/VLMBias.tsv'}
-    DATASET_MD5 = {'VLMBias': '23d0119c89243954e81f41a11a2ef347'}
+    TYPE = 'VQA'
+    DATASET_URL = {
+        'VLMBias': 'https://opencompass.openxlab.space/utils/VLMEval/VLMBias.tsv',
+    }
+    DATASET_MD5 = {
+        'VLMBias': '23d0119c89243954e81f41a11a2ef347',
+    }
+    DEFAULT_JUDGE = 'gpt-4o'
+    JUDGE_FORMAT = "{model_name}_{dataset_name}_{judge_name}.tsv"
 
     def evaluate(self, eval_file, **judge_kwargs):
         model = judge_kwargs.pop('model', 'gpt-4o')

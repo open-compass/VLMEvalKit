@@ -4,9 +4,6 @@ import pandas as pd
 from ...smp import *
 
 
-FAIL_MSG = 'Failed to obtain answer via API.'
-
-
 def build_prompt_logicvista(line):
     question = line['question']
     prediction = str(line['prediction'])
@@ -65,7 +62,7 @@ def LogicVista_auxeval(model, line):
             if extracted == answer:
                 hit = 1
             return dict(log=log, res=res, hit=hit)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, res='', hit=0)
 
 

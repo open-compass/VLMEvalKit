@@ -14,6 +14,9 @@ import multiprocessing as mp
 from .misc import toliststr
 from .vlm import decode_base64_to_image_file
 
+pd.set_option('display.max_rows', 200)
+pd.set_option('display.max_columns', 20)
+
 
 def decode_img_omni(tup):
     root, im, p = tup
@@ -64,6 +67,18 @@ def localize_df(data, dname, nproc=32):
     if 'image_path' not in data:
         data['image_path'] = [x[0] if len(x) == 1 else x for x in ret]
     return data
+
+
+def localize_tsv(fname, new_fname=None, nproc=32):
+    if new_fname is None:
+        new_fname = fname.replace('.tsv', '_local.tsv')
+    base_name = osp.basename(fname)
+    dname = osp.splitext(base_name)[0]
+
+    data = load(fname)
+    data_new = localize_df(data, dname, nproc=nproc)
+    dump(data_new, new_fname)
+    print(f'The localized version of data file is {new_fname}')
 
 
 def LMUDataRoot():
@@ -161,13 +176,18 @@ def dump(data, f, **kwargs):
 
     handlers = dict(pkl=dump_pkl, json=dump_json, jsonl=dump_jsonl, xlsx=dump_xlsx, csv=dump_csv, tsv=dump_tsv)
     suffix = f.split('.')[-1]
-    return handlers[suffix](data, f, **kwargs)
+    try:
+        return handlers[suffix](data, f, **kwargs)
+    except Exception as e:
+        print(f'Error dumping {f} with suffix {suffix}: {e}')
+        new_fname = osp.splitext(f)[0] + '.pkl'
+        return handlers['pkl'](data, new_fname, **kwargs)
 
 
 def get_pred_file_format():
     pred_format = os.getenv('PRED_FORMAT', '').lower()
     if pred_format == '':
-        return 'xlsx'  # default format
+        return 'tsv'  # default format
     else:
         assert pred_format in ['tsv', 'xlsx', 'json'], f'Unsupported PRED_FORMAT {pred_format}'
         return pred_format
@@ -194,19 +214,6 @@ def get_pred_file_path(work_dir, model_name, dataset_name, use_env_format=True):
     else:
         # default
         return osp.join(work_dir, f'{model_name}_{dataset_name}.xlsx')
-
-
-def get_eval_file_path(eval_file, judge_model, use_env_format=True):
-    suffix = eval_file.split('.')[-1]
-    if use_env_format:
-        file_format = get_eval_file_format()
-        if file_format == 'csv':
-            return eval_file.replace(f'.{suffix}', f'_{judge_model}.csv')
-        elif file_format == 'json':
-            return eval_file.replace(f'.{suffix}', f'_{judge_model}.json')
-    else:
-        # default
-        return eval_file.replace(f'.{suffix}', f'_{judge_model}.xlsx')
 
 
 def _should_convert_to_dataframe(data):
@@ -266,7 +273,7 @@ def load(f, fmt=None):
     return handlers[suffix](f)
 
 
-def download_file(url, filename=None):
+def download_file(url, filename=None, md5sum=None):
     import urllib.request
     from tqdm import tqdm
 
@@ -279,6 +286,11 @@ def download_file(url, filename=None):
     if filename is None:
         filename = url.split('/')[-1]
 
+    if osp.exists(filename):
+        if md5sum is None or md5(filename) == md5sum:
+            return filename
+        else:
+            warnings.warn('The md5 does not match, will re-download')
     try:
         with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
             urllib.request.urlretrieve(url, filename=filename, reporthook=t.update_to)
@@ -301,6 +313,9 @@ def download_file(url, filename=None):
 
 
 def ls(dirname='.', match=[], mode='all', level=1):
+    if dirname in ['', None]:
+        dirname = '.'
+
     if isinstance(level, str):
         assert '+' in level
         level = int(level[:-1])
@@ -369,42 +384,49 @@ def last_modified(pth):
     return t
 
 
-def parse_file(s):
+def get_mime_type(s):
+    from mimetypes import types_map
+    suffix = '.' + s.split('.')[-1].lower()
+    if suffix == '.webp':
+        return 'image/webp'
+    else:
+        return types_map.get(suffix, 'unknown')
+
+
+def parse_file(s, force_local=False):
+    mime = None
     if osp.exists(s) and s != '.':
         assert osp.isfile(s)
         suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            return ('image/webp', s)
-        mime = mimetypes.types_map.get(suffix, 'unknown')
-        return (mime, s)
+        return get_mime_type(suffix), s
     elif s.startswith('data:image/'):
         # To be compatible with OPENAI base64 format
         content = s[11:]
-        mime = content.split(';')[0]
-        content = ';'.join(content.split(';')[1:])
-        dname = osp.join(LMUDataRoot(), 'files')
+        assert len(content.split(';')) == 2, content
+        fmt, content = content.split(';')
         assert content.startswith('base64,')
-        b64 = content[7:]
-        os.makedirs(dname, exist_ok=True)
-        tgt = osp.join(dname, md5(b64) + '.png')
-        decode_base64_to_image_file(b64, tgt)
-        return parse_file(tgt)
+        if force_local:
+            dname = osp.join(LMUDataRoot(), 'files')
+            b64 = content[7:]
+            os.makedirs(dname, exist_ok=True)
+            tgt = osp.join(dname, md5(b64) + f'.{fmt}')
+            decode_base64_to_image_file(b64, tgt)
+            return parse_file(tgt)
+        else:
+            return (f'image/{fmt}', s)
     elif validators.url(s):
         suffix = osp.splitext(s)[1].lower()
-        # 添加对webp的支持
-        if suffix == '.webp':
-            mime = 'image/webp'
-        elif suffix in mimetypes.types_map:
-            mime = mimetypes.types_map[suffix]
+        mime = get_mime_type(suffix)
+        if force_local:
             dname = osp.join(LMUDataRoot(), 'files')
             os.makedirs(dname, exist_ok=True)
             tgt = osp.join(dname, md5(s) + suffix)
             download_file(s, tgt)
-            return (mime, tgt)
+            return parse_file(tgt)
+        elif mime != 'unknown':
+            return (mime, s)
         else:
             return ('url', s)
-
     else:
         return (None, s)
 
@@ -456,12 +478,18 @@ def get_file_extension(file_path):
 def get_intermediate_file_path(eval_file, suffix, target_format=None):
     original_ext = get_file_extension(eval_file)
 
+    def ends_with_list(s, lst):
+        for item in lst:
+            if s.endswith(item):
+                return True
+        return False
+
     if target_format is None:
-        if suffix in ['_tmp', '_response', '_processed']:
+        if ends_with_list(suffix, ['_tmp', '_response', '_processed']):
             target_format = 'pkl'
-        elif suffix in ['_rating', '_config', '_meta']:
+        elif ends_with_list(suffix, ['_rating', '_config', '_meta']):
             target_format = 'json'
-        elif suffix in ['_acc', '_fine', '_metrics']:
+        elif ends_with_list(suffix, ['_acc', '_fine', '_metrics']):
             target_format = get_eval_file_format()
         else:
             target_format = get_pred_file_format()
@@ -486,7 +514,7 @@ def prepare_reuse_files(pred_root_meta, eval_id, model_name, dataset_name, reuse
                 f'--reuse flag not set but history records detected in {work_dir}. '
                 f'Those files are moved to {bak_dir} for backup. '
             )
-            return
+        return
     # reuse flag is set
     prev_pred_roots = ls(pred_root_meta, mode='dir')
     prev_pred_roots.sort()
@@ -510,15 +538,43 @@ def prepare_reuse_files(pred_root_meta, eval_id, model_name, dataset_name, reuse
             warnings.warn(f'--reuse is set, will reuse prediction file {prev_file}')
             os.system(f'cp {prev_file} {work_dir}')
 
+    if prev_file is not None:
+        data = load(prev_file)
+        from vlmeval.dataset import ImageBaseDataset
+        is_response_err = ImageBaseDataset.is_response_err
+        num_errors = sum([is_response_err(x) for x in data['prediction']])
+        if num_errors > 1:
+            reuse_aux = False
+            warnings.warn(f'Detect multiple errors in {prev_file}, will not reuse auxiliary files')
+
     if not reuse_aux:
         warnings.warn(f'--reuse-aux is not set, all auxiliary files in {work_dir} are removed. ')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*openai*")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*csv")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*json")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*pkl")}')
-        os.system(f'rm -rf {osp.join(work_dir, f"{model_name}_{dataset_name}_*gpt*")}')
+        fs = ls(work_dir, match=f'{model_name}_{dataset_name}_')
+        from vlmeval.dataset import SUPPORTED_DATASETS
+        as_prefix = [x for x in SUPPORTED_DATASETS if x != dataset_name and x.startswith(dataset_name)]
+        for other_dataset_name in as_prefix:
+            fs = [x for x in fs if other_dataset_name not in x]
+        for f in fs:
+            os.remove(f)
     elif prev_aux_files is not None:
         for f in prev_aux_files:
             os.system(f'cp {f} {work_dir}')
             warnings.warn(f'--reuse-aux is set, will reuse auxiliary file {f}')
     return
+
+
+def rel_symlink(file_addr, link_addr):
+    assert osp.exists(file_addr), f'{file_addr} does not exist'
+    if osp.exists(link_addr) or osp.islink(link_addr):
+        os.remove(link_addr)
+    dir_file = osp.dirname(file_addr)
+    dir_link = osp.dirname(link_addr)
+    if dir_link[-1] != '/':
+        dir_link += '/'
+    if dir_file.startswith(dir_link):
+        cwd = os.getcwd()
+        os.chdir(dir_link)
+        os.symlink(file_addr[len(dir_link):], osp.basename(link_addr))
+        os.chdir(cwd)
+    else:
+        os.symlink(file_addr, link_addr)

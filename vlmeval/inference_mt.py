@@ -1,10 +1,11 @@
 import torch
 import torch.distributed as dist
-from vlmeval.config import supported_VLM
-from vlmeval.utils import track_progress_rich
+from vlmeval.config import build_model
 from vlmeval.smp import *
+from vlmeval.dataset import ImageBaseDataset
 
-FAIL_MSG = 'Failed to obtain answer via API.'
+
+is_response_err = ImageBaseDataset.is_response_err
 
 
 def parse_args():
@@ -37,7 +38,7 @@ def chat_mt(model, messages, dataset_name):
 
 
 # Only API model is accepted
-def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_nproc=4, ignore_failed=False):
+def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_nproc=4):
     rank, world_size = get_rank_and_world_size()
     assert rank == 0 and world_size == 1
     dataset_name = dataset.dataset_name
@@ -45,7 +46,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     if index_set is not None:
         data = data[data['index'].isin(index_set)]
 
-    model = supported_VLM[model_name]() if isinstance(model, str) else model
+    model = build_model(model_name) if isinstance(model, str) else model
     assert getattr(model, 'is_api', False)
     assert hasattr(model, 'chat_inner')
 
@@ -56,8 +57,7 @@ def infer_data_api(model, work_dir, model_name, dataset, index_set=None, api_npr
     res = {}
     if osp.exists(out_file):
         res = load(out_file)
-        if ignore_failed:
-            res = {k: v for k, v in res.items() if FAIL_MSG not in v}
+        res = {k: v for k, v in res.items() if not is_response_err(v)}
 
     structs = [s for i, s in zip(indices, structs) if i not in res]
     indices = [i for i in indices if i not in res]
@@ -114,7 +114,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
     # (In VLMEvalKit, we use torchrun to launch multiple model instances on a single node).
     # To bypass this problem, we unset `WORLD_SIZE` before building the model to not use TP parallel.
     ws_bak = os.environ.pop('WORLD_SIZE', None)
-    model = supported_VLM[model_name](**kwargs) if isinstance(model, str) else model
+    model = build_model(model_name, **kwargs) if isinstance(model, str) else model
     if ws_bak:
         os.environ['WORLD_SIZE'] = ws_bak
     assert hasattr(model, 'chat_inner')
@@ -165,7 +165,7 @@ def infer_data(model, model_name, work_dir, dataset, out_file, verbose=False, ap
 
 # A wrapper for infer_data, do the pre & post processing
 def infer_data_job_mt(
-    model, work_dir, model_name, dataset, verbose=False, api_nproc=4, ignore_failed=False, use_vllm=False
+    model, work_dir, model_name, dataset, verbose=False, api_nproc=4, use_vllm=False
 ):
     rank, world_size = get_rank_and_world_size()
     dataset_name = dataset.dataset_name
@@ -185,7 +185,7 @@ def infer_data_job_mt(
         for i in range(world_size):
             data_all.update(load(tmpl.format(i)))
 
-        data = dataset.data
+        data = cp.deepcopy(dataset.data)
         for x in data['index']:
             assert x in data_all
 

@@ -1,10 +1,14 @@
 # 快速开始
 
-在运行评测脚本之前，你需要先**配置** VLMs，并正确设置模型路径。然后你可以使用脚本 `run.py` 进行多个VLMs和基准测试的推理和评估。
+本文档面向首次使用 VLMEvalKit 的用户，覆盖安装、API 密钥配置、模型/数据集选择、推理与评测、输出目录结构与常见环境变量。更深入的结构与开发细节请参阅：
 
-## 第0步 安装和设置必要的密钥
+- 项目入口文档：`docs/zh-CN/README.md`
+- 模型接口与最佳实践：`docs/zh-CN/Model.md`
+- 数据集格式与规范：`docs/zh-CN/Dataset.md`
+- 配置系统：`docs/zh-CN/ConfigSystem.md`
+- CLI 工具：`docs/zh-CN/Tools.md`
 
-**安装**
+## 1. 安装
 
 ```bash
 git clone https://github.com/open-compass/VLMEvalKit.git
@@ -12,205 +16,140 @@ cd VLMEvalKit
 pip install -e .
 ```
 
-**设置密钥**
+建议使用独立的 Python 环境，并保证与模型依赖（如 transformers）兼容。当前包要求 `python>=3.7`（详见 `setup.py`）。
 
-要使用 API 模型（如 GPT-4v, Gemini-Pro-V 等）进行推理，或使用 LLM API 作为**评判者或选择提取器**，你需要首先设置 API 密钥。如果你设置了密钥，VLMEvalKit 将使用一个评判 LLM 从输出中提取答案，否则它将使用**精确匹配模式**（在输出字符串中查找 "Yes", "No", "A", "B", "C"...）。**精确匹配模式只能应用于是或否任务和多项选择任务。**
+## 2. 设置 API 密钥（仅 API 模型或 Judge 需要）
 
-- 你可以将所需的密钥放在 `$VLMEvalKit/.env` 中，或直接将它们设置为环境变量。如果你选择创建 `.env` 文件，其内容将如下所示：
+API 模型和 LLM Judge 需要密钥。你可以：
 
-  ```bash
-  # .env 文件，将其放置在 $VLMEvalKit 下
-  # 专有 VLMs 的 API 密钥
-  # QwenVL APIs
-  DASHSCOPE_API_KEY=
-  # Gemini w. Google Cloud Backends
-  GOOGLE_API_KEY=
-  # OpenAI API
-  OPENAI_API_KEY=
-  OPENAI_API_BASE=
-  # StepAI API
-  STEPAI_API_KEY=
-  # REKA API
-  REKA_API_KEY=
-  # GLMV API
-  GLMV_API_KEY=
-  # CongRong API
-  CW_API_BASE=
-  CW_API_KEY=
-  # SenseNova API
-  SENSENOVA_API_KEY=
-  # Hunyuan-Vision API
-  HUNYUAN_SECRET_KEY=
-  HUNYUAN_SECRET_ID=
-  # LMDeploy API
-  LMDEPLOY_API_BASE=
-  # 你可以设置一个评估时代理，评估阶段产生的 API 调用将通过这个代理进行
-  EVAL_PROXY=
-  ```
+- 在仓库根目录创建 `.env` 文件
+- 或直接设置环境变量
 
-- 如果需要使用 API 在对应键值空白处填写上你的密钥。这些 API 密钥将在进行推理和评估时自动加载。
-## 第1步 配置
-
-**VLM 配置**：所有 VLMs 都在 `vlmeval/config.py` 中配置。对于某些 VLMs（如 MiniGPT-4、LLaVA-v1-7B），需要额外的配置（在配置文件中配置代码 / 模型权重根目录）。在评估时，你应该使用 `vlmeval/config.py` 中 `supported_VLM` 指定的模型名称来选择 VLM。确保在开始评估之前，你可以成功使用 VLM 进行推理，使用以下命令 `vlmutil check {MODEL_NAME}`。
-
-## 第2步 评测
-
-**新功能!!!** 我们集成了一个新的配置系统，以实现更灵活的评估设置。查看[文档](/docs/zh-CN/ConfigSystem.md)或运行`python run.py --help`了解更多详情 🔥🔥🔥
-
-我们使用 `run.py` 进行评估。你可以使用 `$VLMEvalKit/run.py` 或创建脚本的软链接运行（以便在任何地方使用该脚本）：
-
-**参数**
-
-- `--data (list[str])`: 设置在 VLMEvalKit 中支持的数据集名称（可以在代码库首页的 README 中找到支持的数据集列表）
-- `--model (list[str])`: 设置在 VLMEvalKit 中支持的 VLM 名称（在 `vlmeval/config.py` 中的 `supported_VLM` 中定义）
-- `--mode (str, 默认值为 'all', 可选值为 ['all', 'infer'])`：当 mode 设置为 "all" 时，将执行推理和评估；当设置为 "infer" 时，只执行推理
-- `--api-nproc (int, 默认值为 4)`: 调用 API 的线程数
-- `--work-dir (str, default to '.')`: 存放测试结果的目录
-
-**用于评测图像多模态评测集的命令**
-
-你可以使用 `python` 或 `torchrun` 来运行脚本:
+`.env` 示例（仅列出常见项，可按需补充）：
 
 ```bash
-# 使用 `python` 运行时，只实例化一个 VLM，并且它可能使用多个 GPU。
-# 这推荐用于评估参数量非常大的 VLMs（如 IDEFICS-80B-Instruct）。
-
-# 在 MMBench_DEV_EN、MME 和 SEEDBench_IMG 上使用 IDEFICS-80B-Instruct 进行推理和评估
-python run.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct --verbose
-# 在 MMBench_DEV_EN、MME 和 SEEDBench_IMG 上使用 IDEFICS-80B-Instruct 仅进行推理
-python run.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct --verbose --mode infer
-
-# 使用 `torchrun` 运行时，每个 GPU 上实例化一个 VLM 实例。这可以加快推理速度。
-# 但是，这仅适用于消耗少量 GPU 内存的 VLMs。
-
-# 在 MMBench_DEV_EN、MME 和 SEEDBench_IMG 上使用 IDEFICS-9B-Instruct、Qwen-VL-Chat、mPLUG-Owl2。在具有 8 个 GPU 的节点上进行推理和评估。
-torchrun --nproc-per-node=8 run.py --data MMBench_DEV_EN MME SEEDBench_IMG --model idefics_80b_instruct qwen_chat mPLUG-Owl2 --verbose
-# 在 MME 上使用 Qwen-VL-Chat。在具有 2 个 GPU 的节点上进行推理和评估。
-torchrun --nproc-per-node=2 run.py --data MME --model qwen_chat --verbose
+DASHSCOPE_API_KEY=
+GOOGLE_API_KEY=
+OPENAI_API_KEY=
+OPENAI_API_BASE=
+STEPAI_API_KEY=
+GLMV_API_KEY=
+CW_API_BASE=
+CW_API_KEY=
+SENSENOVA_API_KEY=
+HUNYUAN_SECRET_KEY=
+HUNYUAN_SECRET_ID=
+EVAL_PROXY=
 ```
 
-**用于评测视频多模态评测集的命令**
+程序会在入口脚本中自动加载 `.env`。
+
+## 3. 查看可用模型 / 数据集
+
+`vlmutil` 是命令行工具入口（等价别名为 `ve`）：
 
 ```bash
-# 使用 `python` 运行时，只实例化一个 VLM，并且它可能使用多个 GPU。
-# 这推荐用于评估参数量非常大的 VLMs（如 IDEFICS-80B-Instruct）。
-
-# 在 MMBench-Video 上评测 IDEFCIS2-8B, 视频采样 8 帧作为输入，不采用 pack 模式评测. MMBench_Video_8frame_nopack 是一个定义在 `vlmeval/dataset/video_dataset_config.py` 的数据集设定.
-torchrun --nproc-per-node=8 run.py --data MMBench_Video_8frame_nopack --model idefics2_8
-# 在 MMBench-Video 上评测 GPT-4o (API 模型), 视频采样每秒一帧作为输入，采用 pack 模式评测
-python run.py --data MMBench_Video_1fps_pack --model GPT4o
+vlmutil mlist VLM     # 可用理解类模型
+vlmutil mlist ULM     # 可用生成类模型
+vlmutil mlist API     # 可用 API 模型
+vlmutil dlist all     # 所有支持数据集
+vlmutil dlist MMBench # 数据集组（若存在）
 ```
 
-评估结果将作为日志打印出来。此外，**结果文件**也会在目录 `$YOUR_WORKING_DIRECTORY/{model_name}` 中生成。以 `.csv` 结尾的文件包含评估的指标。
-### 常见问题
-#### 构建输入prompt：`build_prompt()`函数
-如果您在评测某个benchmark时，发现模型输出的结果与预期不符，可能是因为您使用的模型没有正确构建输入prompt。
+如需快速检查模型可用性：
 
-在VLMEvalkit中，每个`dataset`类都包含一个名为`build_prompt()`的函数，用于构建输入问题的格式。不同的benchmark可以选择自定义`build_prompt()`函数，也可以使用默认的实现。
-
-例如，在处理默认的[多选题/Multi-Choice QA]([vlmeval/dataset/image_mcq.py](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/dataset/image_mcq.py#L164))时，`ImageMCQDataset.build_prompt()`类会将`hint`、`question`、`options`等元素（若数据集中包含）组合成一个完整的问题格式，如下所示：
-```
-HINT
-QUESTION
-Options:
-A. Option A
-B. Option B
-···
-Please select the correct answer from the options above.
-```
-
-此外，由于不同模型对评测的需求可能有所不同，VLMEvalkit也支持在模型层面自定义对不同benchmark构建prompt的方法，即`model.build_prompt()`，具体示例可以参考[InternVL](https://github.com/open-compass/VLMEvalKit/blob/43af13e052de6805a8b08cd04aed5e0d74f82ff5/vlmeval/vlm/internvl_chat.py#L324)。
-
-**注意：当同时定义了`model.build_prompt()`以及`dataset.build_prompt()`时，`model.build_prompt()`将优先于`dataset.build_prompt()`，即前者会覆盖后者。**
-
-由于部分模型（如Qwen2VL，InternVL等）对于不同类型的benchmark定义了广泛的prompt构建方法，为了更灵活地适应不同的benchmark，VLMEvalkit支持在模型中自定义`model.use_custom_prompt()`函数。通过添加或者修改`use_custom_prompt()`函数，您可以决定对于哪些benchmark使用模型自定义的`use_custom_prompt()`方法，示例如下：
-```
-def use_custom_prompt(self, dataset: str) -> bool:
-    from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
-    dataset_type = DATASET_TYPE(dataset, default=None)
-    if not self._use_custom_prompt:
-        return False
-    if listinstr(['MMVet'], dataset):
-        return True
-    if dataset_type == 'MCQ':
-        return True
-    if DATASET_MODALITY(dataset) == 'VIDEO':
-        return False
-    return False
-```
-仅当`use_custom_prompt()`函数返回`True`时，VLMEvalkit才会对当前benchmark调用模型的`build_prompt()`函数。
-通过这种方式，您可以根据具体需求灵活地控制哪些benchmark使用模型自定义的prompt构建逻辑，从而更好地适配不同模型和任务的需求。
-
-#### 模型切分
-
-目前 VLMEvalKit 的启动方式自动支持同机上进程间 GPU 资源的划分与模型切分。该功能在推理后端为 `lmdeploy` 或 `transformers` 时被支持，具体行为如下：
-
-- 基于 `python` 命令启动时，模型默认分配到所有可用的 GPU 上，如想指定使用哪些 GPU，可以使用 `CUDA_VISIBLE_DEVICES` 环境变量。
-- 基于 `torchrun` 命令启动时，每个模型实例会被分配到 `N_GPU // N_PROC` 个 GPU 上，`N_PROC` 为 torchrun 命令中的 `--nproc-per-node` 参数所指定的进程数。`N_GPU` 的取值为：
-    - 如 `CUDA_VISIBLE_DEVICES` 环境变量未设置，`N_GPU` 为全部可用 GPU 数量。
-    - 如 `CUDA_VISIBLE_DEVICES` 环境变量被设置，`N_GPU` 为 `CUDA_VISIBLE_DEVICES` 环境变量所指定的 GPU 数量，并且，仅有指定的 GPU 会被利用。
-
-下面提供了，在一台配备 8 块 GPU 的机器上运行评测任务的具体示例：
 ```bash
-# <!-- 起两个模型实例数据并行，每个实例用 4 GPU -->
-torchrun --nproc-per-node=2 run.py --data MMBench_DEV_EN --model InternVL3-78B
-# <!-- 起一个模型实例，每个实例用 8 GPU -->
-python run.py --data MMBench_DEV_EN --model InternVL3-78B
-# <!-- 起三个模型实例，每个实例用 2 GPU，0 号、7 号 GPU 未被使用 -->
-CUDA_VISIBLE_DEVICES=1,2,3,4,5,6 torchrun --nproc-per-node=3 run.py --data MMBench_DEV_EN --model InternVL3-38B
+vlmutil check InternVL3-8B
 ```
 
-注：此方式不支持 `vllm` 后端，基于 `vllm` 后端起评测任务时，请用 `python` 命令启动，默认调用所有可见的 GPU。
+## 4. 评测理解类模型（run.py）
 
-#### 性能差距
-在不同的运行环境中，模型的性能表现可能会有所差异。因此，在评估过程中，您可能会发现自己的评测结果与VLMEvalKit官方榜单上的结果存在差距。这种差异可能与`transformers`, `cuda`, `torch`等版本的变化有关。
+理解类评测入口为 `run.py`，支持图像、视频、多轮对话数据集。
 
-此外，对于异常的表现，我们建议您优先查看运行完成后的本地生成记录`{model}_{dataset}.xlsx`或者评估记录`{model}_{dataset}_{judge_model}.xlsx`，这可能会帮助您更好地理解评估结果并发现问题。
+### 4.1 基本用法
 
-
-
-### 部署本地语言模型作为评判 / 选择提取器
-上述默认设置使用 OpenAI 的 GPT 作为评判 LLM。你也可以使用 [LMDeploy](https://github.com/InternLM/lmdeploy) 部署本地评判 LLM。
-
-首先进行安装:
-```
-pip install lmdeploy openai
+```bash
+python run.py --data MMBench_DEV_EN MME --model InternVL3-8B --verbose
 ```
 
-然后可以通过一行代码部署本地评判 LLM。LMDeploy 将自动从 Huggingface 下载模型。假设我们使用 internlm2-chat-1_8b 作为评判，端口为 23333，密钥为 sk-123456（密钥必须以 "sk-" 开头，后跟任意数字）：
-```
-lmdeploy serve api_server internlm/internlm2-chat-1_8b --server-port 23333
+仅推理不评测：
+
+```bash
+python run.py --data MMBench_DEV_EN --model InternVL3-8B --mode infer
 ```
 
-使用以下 Python 代码获取由 LMDeploy 注册的模型名称：
-```
-from openai import OpenAI
-client = OpenAI(
-    api_key='sk-123456',
-    base_url="http://0.0.0.0:23333/v1"
-)
-model_name = client.models.list().data[0].id
+仅评测（已有预测文件时）：
+
+```bash
+python run.py --data MMBench_DEV_EN --model InternVL3-8B --mode eval
 ```
 
-配置对应环境变量，以告诉 VLMEvalKit 如何使用本地评判 LLM。正如上面提到的，也可以在  `$VLMEvalKit/.env` 文件中设置：
+### 4.2 多卡并行
+
+`torchrun` 会启动多个进程，每个进程实例化一个模型实例。每个实例分配 `N_GPU // N_PROC` 张卡（详见 `run.py` 启动逻辑）。
+
+```bash
+torchrun --nproc-per-node=4 run.py --data MME --model InternVL3-8B
 ```
-OPENAI_API_KEY=sk-123456
-OPENAI_API_BASE=http://0.0.0.0:23333/v1/chat/completions
-LOCAL_LLM=<model_name you get>
+
+### 4.3 使用配置文件
+
+当模型/数据集组合复杂时，推荐用 `--config`：
+
+```bash
+python run.py --config config.json
 ```
 
-最后，你可以运行第2步中的命令，使用本地评判 LLM 来评估你的 VLM。
+配置格式详见 `docs/zh-CN/ConfigSystem.md`。
 
-**请注意：**
+## 5. 评测生成类模型（run_gen.py）
 
-- 如果你希望将评判 LLM 部署在单独的一个 GPU 上，并且由于 GPU 内存有限而希望在其他 GPU 上评估你的 VLM，可以使用 `CUDA_VISIBLE_DEVICES=x` 这样的方法，例如：
+当数据集类型为生成类（如 T2I/TI2I/TI2TI），必须使用 `run_gen.py`：
+
+```bash
+python run_gen.py --data DPGBench --model Janus-Pro-7B
 ```
-CUDA_VISIBLE_DEVICES=0 lmdeploy serve api_server internlm/internlm2-chat-1_8b --server-port 23333
-CUDA_VISIBLE_DEVICES=1,2,3 torchrun --nproc-per-node=3 run.py --data HallusionBench  --model qwen_chat --verbose
+
+`run_gen.py` 支持 `--num-generations` 用于每条样本多次采样，详细说明见 `docs/zh-CN/Workflow.md`。
+
+## 6. 输出目录结构
+
+默认输出目录为 `./outputs`，也可通过 `MMEVAL_ROOT` 修改：
+
+```bash
+export MMEVAL_ROOT=/path/to/outputs
 ```
-- 如果本地评判 LLM 在遵循指令方面不够好，评估过程可能会失败。请通过 issues 报告此类失败情况。
-- 可以以不同的方式部署评判 LLM，例如使用私有 LLM（而非来自 HuggingFace）或使用量化 LLM。请参考 [LMDeploy doc](https://lmdeploy.readthedocs.io/en/latest/serving/api_server.html) 文档。也可以使用其他支持 OpenAI API 框架的方法。
 
-### 使用 LMDeploy 加速模型推理
+理解类评测的典型输出路径：
 
-可参考[文档](/docs/zh-CN/EvalByLMDeploy.md)
+```
+outputs/
+  {model_name}/
+    T{date}_G{git_hash}/
+      {model_name}_{dataset}.tsv
+      {model_name}_{dataset}_{judge}_score.csv
+```
+
+生成类评测输出路径结构类似，但会包含额外的 sample/instance 级记录文件。
+
+## 7. 常用环境变量
+
+| 变量名 | 作用 |
+| --- | --- |
+| `LMUData` | 数据集下载/缓存根目录，默认 `~/LMUData` |
+| `MMEVAL_ROOT` | 推理与评测输出根目录 |
+| `PRED_FORMAT` | 预测文件格式（默认 tsv，可选 xlsx/json） |
+| `EVAL_FORMAT` | 评测结果格式（默认 csv，可选 json） |
+| `EVAL_PROXY` | 评测阶段 API 代理 |
+| `DIST_TIMEOUT` | 分布式超时（秒） |
+| `SKIP_ERR=1` | 推理异常时跳过并记录错误 |
+
+## 8. 常见问题
+
+### 8.1 评测结果差异
+
+不同运行环境（transformers、torch、CUDA 等版本）会带来一定差异。建议保留 `outputs` 中的中间记录以便复现与排查。
+
+### 8.2 模型不支持图文交错
+
+若模型 `INTERLEAVE=False`，框架会自动降级为“第一张图像 + 拼接文本”的输入形式。可在自定义模型中通过 `message_to_promptimg` 处理。

@@ -4,7 +4,7 @@ from tqdm import tqdm
 import numpy as np
 import os.path as osp
 import pandas as pd
-from vlmeval import load, dump, track_progress_rich
+from ...smp import load, dump, track_progress_rich
 
 g_eval_prompt = """
 You will be given a oracle caption that describes an image. You will then be given a second caption written for the same image.

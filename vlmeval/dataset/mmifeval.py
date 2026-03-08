@@ -5,10 +5,9 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
 from ..dataset.utils.mmif.function_and_compare import *
 
-logger = get_logger("MMIFEval")
+logger = get_logger(__name__)
 
 aux_data_dict = {}
 judge_model = None
@@ -293,7 +292,7 @@ def judge_one_item(item, retry=3):
                     for func_dict in constraint["judge"]["verify_funcs"]:
                         func = globals()[func_dict["func"]]
                         # use * to unpack the list, ** is used for dict
-                        judge_result = func(item["prediction"], *func_dict["params"])
+                        judge_result = func(str(item["prediction"]), *func_dict["params"])
                         # breakpoint()
                         if not judge_result:  # False -> score = 0
                             score = 0.0
@@ -323,13 +322,14 @@ def judge_one_item(item, retry=3):
                 total_score += value
                 cnt += 1
             score_dict["total_score"] = total_score / cnt
-            logger.info(f"score_dict:\n{score_dict}")
+            logger.debug(f"score_dict:\n{score_dict}")
             return 0, "success", score_dict
     return 1, "C-Level, fail in judge", {}
 
 
 class MMIFEval(ImageBaseDataset):
     TYPE = "VQA"
+    DEFAULT_JUDGE = 'gpt-4o'
 
     # TODO: add dataset url and md5
     DATASET_URL = {"MM-IFEval": 'https://opencompass.openxlab.space/utils/VLMEval/MM-IFEval.tsv'}
@@ -460,10 +460,10 @@ class MMIFEval(ImageBaseDataset):
         c_level_cnt = 0
         for line in eval_data:
             if line["tag"] == "P-Level":
-                p_level_score_sum += line["eval_score_dict"]["total_score"]
+                p_level_score_sum += line["eval_score_dict"].get("total_score", 0.0)
                 p_level_cnt += 1
             elif line["tag"] == "C-Level":
-                c_level_score_sum += line["eval_score_dict"]["total_score"]
+                c_level_score_sum += line["eval_score_dict"].get("total_score", 0.0)
                 c_level_cnt += 1
         p_level_accuracy = p_level_score_sum / p_level_cnt
         c_level_accuracy = c_level_score_sum / c_level_cnt

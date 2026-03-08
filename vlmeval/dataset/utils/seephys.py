@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict
 import re
 from sympy.parsing.latex import parse_latex
 from sympy import latex, Eq, simplify
-FAIL_MSG = 'Failed to obtain answer via API.'
+
 
 prompt_scoring = r"""
 You are a physics professor, please determine if the Standard answer and Model Answer are equivalent. Note that the significant figures in the answer must meet the requirements. Your judgment should be 0 (non-equivalent) or 1 (equivalent).
@@ -222,7 +222,7 @@ def extract(model, line):
                     log += '\nScore failed'
                     return dict(log=log, extract=res, score=-1)
                 return dict(log=log, extract=res, score=score)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, extract='', score=-1)
 
 
@@ -230,7 +230,10 @@ def score_func(model, response, query, gt):
     if not response:
         return 0
     try:
-        full_prompt = prompt_scoring.strip() + f"\n[Question]: \{query}\\n[Standard Answer]: {gt}\\n[Model Answer]: {response}\\nJudgement: "  # noqa
+        full_prompt = (
+            prompt_scoring.strip()
+            + f"\n[Question]: {query}\n[Standard Answer]: {gt}\n[Model Answer]: {response}\nJudgement: "
+        )
         try_n = 0
         while try_n < 5:
             score = model.generate(full_prompt, temperature=try_n * 0.3)

@@ -1,7 +1,6 @@
 import math
 from vlmeval.smp import *
 from vlmeval.api.base import BaseAPI
-from vlmeval.dataset import img_root_map
 
 API_BASE = "https://api.siliconflow.cn/v1/chat/completions"
 
@@ -38,8 +37,6 @@ def encode_image(path: str, max_height: int = 1024, max_width: int = 1024) -> st
 
 
 class SiliconFlowAPI(BaseAPI):
-
-    is_api: bool = True
 
     def __init__(
         self,
@@ -129,149 +126,3 @@ class SiliconFlowAPI(BaseAPI):
         except:
             pass
         return ret_code, answer, response
-
-
-class TeleMMAPI(SiliconFlowAPI):
-
-    is_api: bool = True
-
-    def __init__(
-        self,
-        model: str = "TeleAI/TeleMM",
-        key: str = None,
-        max_height: int = 1280,
-        max_width: int = 784,
-        **kwargs,
-    ):
-        super().__init__(model=model, key=key, **kwargs)
-        self.max_height = max_height
-        self.max_width = max_width
-
-    def dump_image(self, line, dataset):
-        """Dump the image(s) of the input line to the corresponding dataset folder.
-
-        Args:
-            line (line of pd.DataFrame): The raw input line.
-            dataset (str): The name of the dataset.
-
-        Returns:
-            str | list[str]: The paths of the dumped images.
-        """
-        ROOT = LMUDataRoot()
-        assert isinstance(dataset, str)
-        # img_root = osp.join(ROOT, 'images', img_root_map[dataset] if dataset in img_root_map else dataset)
-        img_root = osp.join(ROOT, "images", img_root_map(dataset))
-        os.makedirs(img_root, exist_ok=True)
-        if "image" in line:
-            if isinstance(line["image"], list):
-                tgt_path = []
-                assert "image_path" in line
-                for img, im_name in zip(line["image"], line["image_path"]):
-                    path = osp.join(img_root, im_name)
-                    if not read_ok(path):
-                        decode_base64_to_image_file(img, path)
-                    tgt_path.append(path)
-            else:
-                tgt_path = osp.join(img_root, f"{line['index']}.jpg")
-                if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line["image"], tgt_path)
-                tgt_path = [tgt_path]
-        else:
-            assert "image_path" in line
-            tgt_path = toliststr(line["image_path"])
-        return tgt_path
-
-    def _prepare_content(
-        self, inputs: list[dict[str, str]], dataset: str = None
-    ) -> list[dict[str, str]]:
-        """
-        inputs list[dict[str, str]], each dict has keys: ['type', 'value']
-        """
-        content = []
-        has_image = False
-        for s in inputs:
-            if s["type"] == "image":
-                if not has_image:
-                    item = {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": encode_image(
-                                s["value"],
-                                max_height=self.max_height,
-                                max_width=self.max_width,
-                            )
-                        },
-                    }
-                    has_image = True
-                else:
-                    continue
-            elif s["type"] == "text":
-                prompt = s["value"]
-                if len(prompt) == 0:
-                    continue
-                if dataset == "HallusionBench":
-                    prompt += " Please answer yes or no directly, without any unnecessary explanation."
-                elif dataset == "OCRBench":
-                    prompt = (
-                        prompt + "\nExtract the text from the image intactly and "
-                        + "answer the question concisely and clearly if possible."
-                    )
-
-                elif (
-                    dataset == "AI2D_TEST"
-                    or dataset == "MMStar"
-                    or dataset == "MMBench_TEST_EN_V11"
-                    or dataset == "MMVet"
-                ):
-                    prompt = prompt.replace(
-                        "Please select the correct answer from the options above. \n",
-                        "Please select the correct option from the above choices based on the "
-                        + "input image and question. The final output should only be one option, such as 'A'",
-                    )
-                elif dataset == "MMBench_TEST_CN_V11":
-                    prompt = prompt.replace(
-                        "Please select the correct answer from the options above. \n",
-                        "请根据输入图像和问题从上述选项中选择正确选项，最终的输出只有一个选项，例如'A'",
-                    )
-                item = {"type": "text", "text": prompt}
-            else:
-                raise ValueError(f"Invalid message type: {s['type']}, {s}")
-            content.append(item)
-
-        return content
-
-    def generate_inner(self, inputs, **kwargs) -> str:
-        default_kwargs = self.default_kwargs
-        default_kwargs.update(kwargs)
-
-        messages = []
-        messages.append(
-            {
-                "role": "user",
-                "content": self._prepare_content(
-                    inputs, dataset=kwargs.get("dataset", None)
-                ),
-            }
-        )
-
-        payload = dict(model=self.model, messages=messages, **default_kwargs)
-
-        response = requests.post(
-            self.api_base, headers=self.headers, data=json.dumps(payload)
-        )
-        ret_code = response.status_code
-        ret_code = 0 if (200 <= int(ret_code) < 300) else ret_code
-
-        answer = self.fail_msg
-        try:
-            resp_struct = json.loads(response.text)
-            answer = resp_struct["choices"][0]["message"]["content"].strip()
-            return ret_code, answer, response
-        except Exception as err:
-            import traceback
-
-            traceback.print_exc()
-            if self.verbose:
-                self.logger.error(f"{type(err)}: {err}")
-                self.logger.error(f"The input messages are {inputs}.")
-            return -1, "", ""

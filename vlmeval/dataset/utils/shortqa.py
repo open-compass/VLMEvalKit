@@ -116,7 +116,7 @@ en_multiple_ICEs = [
         'answer': 'Usain Bolt',
         'prediction': 'Bolt',
         'correctness': 'no',
-        'reason': 'The question asks the model to output the '
+        'reason': 'The question asks the model to output the name of the man in the format of "[First Name] [Given Name]". Thus the response is incorrect.'
     },
     {
         'question': 'Name all countries besides this lake',

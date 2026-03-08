@@ -98,7 +98,7 @@ def tf_pair_aggregate_accuracy(results):
                 break
         if group_correct:
             correct_groups += 1
-    return (correct_groups / total_groups) * 100 if total_groups > 0 else 0
+    return correct_groups, total_groups
 
 ##########################################
 # 3. CNT Task Evaluation (suitable for oc-cnt, pc-cnt)
@@ -196,7 +196,7 @@ def cnt_aggregate_metric(results):
         else:
             raw_diff = abs(parsed - gt)
             if raw_diff == 0:
-                norm_score = 100.0
+                norm_score = 1.0
             else:
                 max_error = max(gt - 1, image_seq_len - gt)
                 if max_error <= 0:
@@ -204,9 +204,9 @@ def cnt_aggregate_metric(results):
                 relative_error = raw_diff / max_error
                 weight = L_MAX / image_seq_len
                 penalty = weight * (relative_error ** (1.0 / PENALTY_FACTOR))
-                norm_score = 100 * (1 - penalty) if penalty < 1 else 0.0
+                norm_score = (1 - penalty) if penalty < 1 else 0.0
         total_norm_score += norm_score
-    return total_norm_score / total_count if total_count > 0 else 0
+    return total_norm_score, total_count
 
 
 ##########################################
@@ -240,4 +240,4 @@ def grp_aggregate_accuracy(results):
             continue
         if grp_clean_answer(model_ans) == grp_clean_answer(gt_ans):
             correct += 1
-    return (correct / total * 100) if total > 0 else 0
+    return correct, total

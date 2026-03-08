@@ -7,7 +7,6 @@ import shutil
 import zipfile
 import subprocess
 import vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.rrc_evaluation_funcs_1_1 as rrc_evaluation_funcs
-from vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.script import default_evaluation_params,validate_data,evaluate_method
 
 
 def extract_bounding_boxes_robust(predict_str):
@@ -123,19 +122,6 @@ def zip_folder(source_folder, destination_zip):
 def spotting_evaluation(prediction_list, img_metas):
     score = 0
 
-    submit_path = ".vlmeval/dataset/utils/Ocrbench_v2/spotting_eval/submit"
-    gt_path = ".vlmeval/dataset/utils/Ocrbench_v2/spotting_eval/gt"
-    submit_zip_path = ".vlmeval/dataset/utils/Ocrbench_v2/spotting_eval/submit.zip"
-    gt_zip_path = ".vlmeval/dataset/utils/Ocrbench_v2/spotting_eval/gt.zip"
-    for file_path in [submit_path, gt_path, submit_zip_path, gt_zip_path]:
-        if "zip" in file_path:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-        else:
-            if os.path.exists(file_path):
-                shutil.rmtree(file_path)
-            os.makedirs(file_path)
-
     res_submit_list = []
     for item in prediction_list:
         if len(item) != 5:
@@ -159,27 +145,13 @@ def spotting_evaluation(prediction_list, img_metas):
     if len(res_submit_list) == 0 or len(res_gt_list) == 0:
         return 0
 
-    with open(os.path.join(submit_path,"res_img_0.txt"), "w") as f:
-        for item in res_submit_list[:-1]:
-            f.write(item + "\n")
-        f.write(res_submit_list[-1])
-
-    with open(os.path.join(gt_path,"gt_img_0.txt"), "w") as f:
-        for item in res_gt_list[:-1]:
-            f.write(item + "\n")
-        f.write(res_gt_list[-1])
-
-    zip_folder(submit_path, submit_zip_path)
-    zip_folder(gt_path, gt_zip_path)
-
     command = {
-        'g': gt_zip_path,
-        's': submit_zip_path,
-        'o': './',
+        'g': res_gt_list,
+        's': res_submit_list,
         'p': '{"IOU_CONSTRAINT":0.5}'
     }
 
     # run rrc_evaluation_funcs
-    result = rrc_evaluation_funcs.main_evaluation(command,default_evaluation_params,validate_data,evaluate_method)
+    result = rrc_evaluation_funcs.main_evaluation(command)
     score = result["method"]["hmean"]
     return score

@@ -1,76 +1,73 @@
-# Develop new Benchmark / MLLM
+# 🛠️ How to Implement a New Benchmark or Multimodal Model (VLM) in VLMEvalKit
 
->  🛠️ How to implement a new Benchmark / VLM in VLMEvalKit?
+## Implementing a new benchmark
 
-## Implement a new benchmark
+Example PR: **Add Math-Vision Benchmark** ([#292](https://github.com/open-compass/VLMEvalKit/pull/292/files))
 
-Example PR: **Math-Vision Benchmark** ([#292](https://github.com/open-compass/VLMEvalKit/pull/292/files))
+In VLMEvalKit, benchmarks are implemented as dataset classes. When adding a new benchmark, you can either reuse an existing dataset class (e.g., reuse `ImageMCQDataset` for single-choice MCQ benchmarks) or implement a new dataset class. Your dataset class must support the following two methods (either inherited from a base class or implemented yourself):
 
-In VLMEvalKit, benchmarks are organized as dataset classes. When you try to implement a new benchmark, you can either reuse existing dataset classes (*e.g.*, You can reuse `ImageMCQDataset` when implementing a new multi-choice benchmark), or support a new dataset class. Each dataset must have the following two member functions (either reuse the one of the parent class or implement your own):
+- `build_prompt(self, line)`: input `line` is an `int` (row index in data) or a `pd.Series` (raw record). Output is one “multi-modal message” as the model input. A “multi-modal message” is an interleaved image/text list, for example (one image + one text): `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`.
+- `evaluate(self, eval_file, **judge_kwargs)`: input `eval_file` is the model prediction file (often `.xlsx`), and `judge_kwargs` provides judge model parameters when evaluation needs an LLM (often GPT). Output is evaluation results in `dict` or `pd.DataFrame`.
 
-- `build_prompt(self, line)`: The function input `line` is an integer (the sample index) or a `pd.Series` object (the raw record of the sample). The function outputs a `multi-modal message`, serving as the input of an MLLM. The `multi-modal message` is an interleaved list of multi-modal messages adopting the following format (the example includes an image and a text message): `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`.
-- `evaluate(self, eval_file,  **judge_kwargs)`: The function input `eval_file` is the MLLM prediction (typically in `.xlsx` format). If the benchmark requires an external LLM (typically GPT) for evaluation, then `judge_kwargs` can pass the arguments for the LLM. The function outputs the benchmark evaluation results (metrics) in the form of `dict` or `pd.DataFrame`.
+Below is a typical workflow for adding a dataset:
 
-We then brief the typical steps to implement a new benchmark under VLMEvalKit:
+### 1. Prepare the TSV data file (image-text benchmarks)
 
-### 1. Prepare your benchmark tsv file
+Currently, each benchmark is packaged as a single TSV file. During inference, the data file is automatically downloaded to `$LMUData` from the dataset’s `DATASET_URL` (default path is `$HOME/LMUData` if not explicitly set). You can upload the TSV to a downloadable location (e.g., HuggingFace), or email it to <opencompass@pjlab.org.cn> for help uploading to the server. You can also customize the download path via `LMUData=/path/to/your/data`.
 
-Currently, we organize a benchmark as one single TSV file. During inference, the data file will be automatically downloaded from the definited `DATASET_URL` link to `$LMUData` file (default path is `$HOME/LMUData`, if not set explicitly). You can upload the prepared TSV file to a downloadable address (e.g., Huggingface) or send it to us at <opencompass@pjlab.org.cn>. We will assist in uploading the dataset to the server. You can also customize `LMUData` path in the environment variable `LMUData=/path/to/your/data`.
+TSV fields typically look like:
 
-The contents of the TSV file consist of:
+| Dataset \\ Field  | index | image | image_path | question | hint | multi-choice<br>options | answer | category | l2-category | split |
+| ---------------------- | ----- | ----- | ---------- | -------- | ---- | ----------------------- | ------ | -------- | ----------- | ----- |
+| MMBench_DEV_[CN/EN]    | ✅     | ✅     |            | ✅        | ✅    | ✅                       | ✅      | ✅        | ✅           | ✅     |
+| MMBench_TEST_[CN/EN]   | ✅     | ✅     |            | ✅        | ✅    | ✅                       |        | ✅        | ✅           | ✅     |
+| CCBench                | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
+| SEEDBench_IMG          | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
+| MME                    | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
+| MMVet                  | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
+| MMMU_DEV_VAL           | ✅     | ✅     | ✅          | ✅        |      | ✅                       | ✅      | ✅        | ✅           | ✅     |
+| COCO_VAL               | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |
+| OCRVQA_[TEST/TESTCORE] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| TextVQA_VAL            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
+| VCR_[EN/ZH]_[EASY/HARD]_[ALL/500/100]            | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
 
-| Dataset Name \ Fields                   | index | image | image_path | question | hint | multi-choice<br>options | answer | category | l2-category | split |
-| --------------------------------------- | ----- | ----- | ---------- | -------- | ---- | ----------------------- | ------ | -------- | ----------- | ----- |
-| MMBench_DEV_[CN/EN]                     | ✅     | ✅     |            | ✅        | ✅    | ✅                       | ✅      | ✅        | ✅           | ✅     |
-| MMBench_TEST_[CN/EN]                    | ✅     | ✅     |            | ✅        | ✅    | ✅                       |        | ✅        | ✅           | ✅     |
-| CCBench                                 | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
-| SEEDBench_IMG                           | ✅     | ✅     |            | ✅        |      | ✅                       | ✅      | ✅        |             |       |
-| MME                                     | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
-| MMVet                                   | ✅     | ✅     |            | ✅        |      |                         | ✅      | ✅        |             |       |
-| MMMU_DEV_VAL                            | ✅     | ✅     | ✅          | ✅        |      | ✅                       | ✅      | ✅        | ✅           | ✅     |
-| COCO_VAL                                | ✅     | ✅     |            |          |      |                         | ✅      |          |             |       |
-| OCRVQA_[TEST/TESTCORE]                  | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
-| TextVQA_VAL                             | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
-| VCR_[EN/ZH]\_[EASY/HARD]\_[ALL/500/100] | ✅     | ✅     |            | ✅        |      |                         | ✅      |          |             |       |
-| MMMB_[en/cn/pt/ar/tr/ru] | ✅     | ✅     |            | ✅        | ✅     | ✅     | ✅      | ✅         |             |✅       |
-| MMBench_dev_[en/cn/pt/ar/tr/ru] | ✅     | ✅     |            | ✅        | ✅     | ✅     | ✅      | ✅         | ✅            |✅       |
+<div align="center"><b>Table 1. TSV fields for supported datasets.</b></div>
 
-<div align="center"><b>Table 1. TSV fields of supported datasets.</b></div>
+Required fields:
 
-**Intro to mandatory fields in the `TSV` file:**
+- **index:** an integer unique identifier for each row in TSV
+- **image:** base64-encoded image; you can use helper APIs in `vlmeval/smp/vlm.py`:
+   - Encode: `encode_image_to_base64` (PIL Image) / `encode_image_file_to_base64` (image file path)
+   - Decode: `decode_base64_to_image` (PIL Image) / `decode_base64_to_image_file` (image file path)
+- **question:** the question string
+- **answer:** the answer string; may be missing for test-only splits
 
-- **index:** Integer, Unique for each line in `tsv`
-- **image:** The base64 of the image, you can use APIs implemented in `vlmeval/smp/vlm.py` for encoding and decoding:
-  - Encoding: `encode_image_to_base64 `(for PIL Image) / `encode_image_file_to_base64` (for image file path)
-  - Decoding: `decode_base64_to_image`(for PIL Image) / `decode_base64_to_image_file` (for image file path)
-- **question**: The question corresponding to the image, a string
-- **answer**: The answer to the question, a string. The `test` split does not need this field
+### 2. Build custom prompts for the dataset
 
-### 2. Cutomize your benchmark prompt
+`ImageBaseDataset` defines a default prompt format. If you need extra prompt fields or an interleaved input format, implement `build_prompt(line)`. The input is a row from the TSV containing fields like index/image/question, and the output is a list of dicts such as `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`, containing the image path and the text prompt passed to VLMs. For interleaved inputs, place the image dict at the image token position.
 
-`ImageBaseDataset` defines the default prompt format. If you need to add prompts specific to the dataset or input data in the `Interleave` format to the model, you can implement this through the `build_prompt(line)` function. This function takes a line from a TSV file as input, containing fields such as index, image, question, etc. The function returns a dictionary list of multimodal messages `msg` in the format `[dict(type='image', value=IMAGE_PTH), dict(type='text', value=prompt)]`, including the image path and the text prompt to be input into VLMs. For interleave type inputs, you can directly place the dictionary of the image path at the image token position.
+### 3. Implement dataset metrics / evaluation
 
-### 3. Cutomize your benchmark metrics
+To support evaluation, define a dataset class that computes metrics. Image-text multimodal datasets inherit from `ImageBaseDataset` in `vlmeval/dataset/image_base.py`. `TYPE` defines dataset type; `DATASET_URL` is the download URL; `DATASET_MD5` is used to verify file integrity.
 
-To add evaluation for a new benchmark, you need to customize a class object to implement the dataset’s metrics calculation. Multimodal datasets inherit from the `ImageBaseDataset` object in `vlmeval/dataset/image_base.py`. The TYPE defines the type of dataset, `DATASET_URL` is the download address of the dataset, and `DATASET_MD5` is the MD5 checksum for consistency checking of the dataset file.
+You **must implement** `evaluate(eval_file, **judge_kwargs)` to compute metrics and output results. Input `eval_file` is the model prediction file path `{model_name}_{dataset}.xlsx`. You can load it into a pandas DataFrame via `load(eval_file)`, which typically includes fields like index/question/answer/category/prediction. `judge_kwargs` provides evaluation-related parameters (judge model name, API threads, etc.). The return value is a set of metrics (often a dict of lists) and can be organized into a pandas DataFrame.
 
-In this class, **you need to implement** the `evaluate(eval_file, **judge_kwargs)` class function to calculate metrics and output results for the custom dataset. The function input `eval_file` is the path to the model prediction results file `{model_name}_{dataset}.xlsx`. This file can be read as a pandas.DataFrame using the `load(eval_file)` method, containing fields such as index, question, answer, category, prediction, etc. The judge_kwargs will pass a dictionary related to evaluation, such as the name of the `judge model`, the number of API request threads, etc. **The return value** of the function is the calculated accuracy and other metrics, formatted as a dictionary composed of lists, organized into a pandas.DataFrame.
-
-## Implement a new model
+## Implementing a new model
 
 Example PR: **Support LLaVA-Next-Interleave** ([#294](https://github.com/open-compass/VLMEvalKit/pull/294))
 
-**1. Support `generate_inner` API (mandatory).**
+### 1. Support `generate_inner` API (required)
 
-All existing models are implemented in `vlmeval/vlm`. For a minimal model, your model class **must implement the method** `generate_inner(msgs, dataset=None)`. In this function, you feed a multi-modal message to your VLM and return the VLM prediction (which is a string). The optional argument `dataset` can be used as the flag for the model to switch among various inference strategies.
+All models are implemented under `vlmeval/vlm`. For a minimal model, your model class **should implement** `generate_inner(msgs, dataset=None)`. This function sends a multimodal message to the VLM and returns the prediction (a string). Optional `dataset` can be used as a flag to switch strategies for different datasets.
 
-The multi-modal messages `msgs` is a list of dictionaries, each dictionary has two keys: type and value:
-- `type`: We currently support two types, choices are ["image", "text"].
-- `value`: When type=='text' , the value is the text message (a single string); when type=='image', the value can be the local path of an image file, or the image URL.
+The multimodal message `msgs` is a list of dicts. Each dict has two keys:
 
-Currently a multi-modal message may contain arbitrarily interleaved images and texts. If your model do not support that, a practice can be taking the 1st image and concatenated text messages as the input. You can set the `INTERLEAVE = False` in your model class and use `self.message_to_promptimg(message, dataset=dataset)` to build your prompt and the first image's path.
+- `type`: supported types currently include `image` and `text`
+- `value`: for `text`, a string; for `image`, a local image path or an image URL
 
-Here are some examples of multi-modal messages:
+Currently, a message can contain arbitrary interleavings of images and text. If your model does not support that, the recommended approach is to use the first image plus concatenated text. You can set `INTERLEAVE = False` in the class and call `self.message_to_promptimg(message, dataset=dataset)` to obtain the prompt and the first image path.
+
+Examples:
 
 ```python
 IMAGE_PTH = 'assets/apple.jpg'
@@ -87,7 +84,7 @@ msg2 = [
 response = model.generate(msg1)
 ```
 
-For convenience sake, we also support to take a list of string as inputs. In that case, we will check if a string is an image path or image URL and automatically convert it to the list[dict] format:
+For convenience, string lists are also supported. In that case, the framework checks whether a string is an image path or an image URL and normalizes it into `list[dict]`:
 
 ```python
 IMAGE_PTH = 'assets/apple.jpg'
@@ -97,49 +94,48 @@ msg2 = [IMAGE_URL, IMAGE_URL,  'How many apples are there in these images?']
 response = model.generate(msg1)
 ```
 
-**Support Custom Prompt (optional).**
+### 2. Support custom prompt construction (optional)
 
-Besides, your model can support **custom prompt building** by implementing two optional methods: `use_custom_prompt(dataset)` and `build_prompt(line, dataset=None)`.
+You can support custom prompting by implementing two optional methods: `use_custom_prompt(dataset)` and `build_prompt(line, dataset=None)`.
 
-Both functions take the dataset name as the input：
+- `use_custom_prompt(dataset)` returns a boolean indicating whether the model should use its own prompt strategy.
+- If `use_custom_prompt(dataset)` returns True, `build_prompt(line, dataset)` should return a custom multimodal message for the dataset row. If False, the default dataset prompt strategy is used.
 
--  `use_custom_prompt(dataset)` returns a boolean flag, indicating whether the model should use the custom prompt building strategy.
-- If `use_custom_prompt(dataset)` returns True, `build_prompt(line, dataset)` should return a customly bulit multimodal message for the corresponding `dataset`, given `line`, which is a dictionary that includes the necessary information of a data sample. If `use_custom_prompt(dataset)` returns False, the default prompt building strategy will be used.
+### 3. Support multi-turn chat (optional)
 
-**Support multi-turn chatting (optional).**
-
-You can also support the multi-turn chatting and evaluation with your VLM by supporting the `chat_inner(message, dataset)` function. The function outputs a single string response, and the `message` is a list of chat history, following the below format.
+To support multi-turn dialogue evaluation, implement `chat_inner(message, dataset)` and use the model’s `chat()` interface. This API returns a string response. The input `message` is a chat history list:
 
 ```python
 # Assume msg1, msg2, msg3, ... are multi-modal messages following the previously described format
-# `chat_inner` take the following chat history list as input:
+# `chat_inner` takes the following chat history list as input:
 message = [
     dict(role='user', content=msg1),
     dict(role='assistant', content=msg2),
     dict(role='user', content=msg3),
     dict(role='assistant', content=msg4),
-	......
+    ......
     dict(role='user', content=msgn),
 ]
-# `message` should contain an odd number of chat utterances, the role of utterances should be interleaved "user" and "assistant", with the role of the last utterance to be "user".
-# The chat function will call `chat_inner`
+# `message` should contain an odd number of utterances, roles should alternate between
+# "user" and "assistant", and the last utterance must be "user".
+# The chat function will call `chat_inner`.
 response = model.chat(message)
 ```
 
-### Example PRs:
+Example PRs:
 
-- VLM that doesn't support interleaved images and texts, and does not use custom prompts: [[Model] Support glm-4v-9b](https://github.com/open-compass/VLMEvalKit/pull/221)
-- VLM that supports interleaved images and texts and custom prompts: [Add MiniCPM-Llama3-V-2.5](https://github.com/open-compass/VLMEvalKit/pull/205)
-- VLM API: [Feature add glmv](https://github.com/open-compass/VLMEvalKit/pull/201)
+- A VLM that does not support interleaving and does not use custom prompts: [[Model] Support glm-4v-9b](https://github.com/open-compass/VLMEvalKit/pull/221)
+- A VLM that supports interleaving and custom prompts: [Add MiniCPM-Llama3-V-2.5](https://github.com/open-compass/VLMEvalKit/pull/205)
+- A VLM API: [Feature: add glmv](https://github.com/open-compass/VLMEvalKit/pull/201)
 
-## Contribute to VLMEvalKit
+## Contributing code to VLMEvalKit
 
-If you want to contribute codes to **VLMEvalKit**, please do the pre-commit check before you submit a PR. That helps to keep the code tidy.
+If you want to contribute to **VLMEvalKit**, run pre-commit checks before submitting PRs to keep the codebase clean:
 
 ```bash
-# Under the directory of VLMEvalKit, install the pre-commit hook:
+# Under the VLMEvalKit directory, install pre-commit hooks:
 pip install pre-commit
 pre-commit install
 pre-commit run --all-files
-# Then you can commit your code.
+# Then submit your PR.
 ```

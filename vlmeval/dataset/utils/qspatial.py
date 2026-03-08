@@ -1,8 +1,5 @@
 from ...smp import *
-from ...utils import can_infer
-
-
-FAIL_MSG = 'Failed to obtain answer via API.'
+from .matching_util import can_infer
 
 
 def get_gpt4_ICE_for_qspatial():
@@ -119,5 +116,5 @@ def QSpatial_auxeval(model, line):
         else:
             log += 'Succeed'
             return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, res='')

@@ -1,6 +1,6 @@
 import pandas as pd
 from abc import abstractmethod
-from ..smp import *
+from vlmeval.smp import *
 
 
 def img_root_map(dataset):
@@ -12,8 +12,6 @@ def img_root_map(dataset):
         return 'OCRVQA'
     if 'COCO_VAL' == dataset:
         return 'COCO'
-    if 'MMMU' in dataset:
-        return 'MMMU'
     if "QSpatial" in dataset:
         return "QSpatial"
 
@@ -36,6 +34,12 @@ class ImageBaseDataset:
     MODALITY = 'IMAGE'
     DATASET_URL = {}
     DATASET_MD5 = {}
+    DEFAULT_JUDGE = 'chatgpt-0125'
+
+    PRED_FORMAT = "{model_name}_{dataset_name}.tsv"
+    RATING_FORMAT = "{model_name}_{dataset_name}_acc.csv"
+    JUDGE_FORMAT = "{model_name}_{dataset_name}_openai_result.tsv"
+    FAIL_MSG = 'Failed to obtain answer via API.'
 
     def __init__(self, dataset='MMBench', skip_noimg=True):
         ROOT = LMUDataRoot()
@@ -57,9 +61,9 @@ class ImageBaseDataset:
             data['image'] = [str(x) for x in data['image']]
             image_map = {x: y for x, y in zip(data['index'], data['image'])}
             for k in image_map:
-                if len(image_map[k]) <= 64:
+                if len(image_map[k]) <= 64 and image_map[k] in image_map:
                     idx = image_map[k]
-                    assert idx in image_map and len(image_map[idx]) > 64
+                    # assert idx in image_map and len(image_map[idx]) > 64
                     image_map[k] = image_map[idx]
 
             images = [toliststr(image_map[k]) for k in data['index']]
@@ -70,8 +74,11 @@ class ImageBaseDataset:
             paths = [toliststr(x) for x in data['image_path']]
             data['image_path'] = [x[0] if len(x) == 1 else x for x in paths]
 
-        if np.all([istype(x, int) for x in data['index']]):
-            data['index'] = [int(x) for x in data['index']]
+        IS_GEN_BENCH = getattr(self, 'SUPPORT_GEN', False)
+
+        if not IS_GEN_BENCH:
+            if np.all([istype(x, int) for x in data['index']]):
+                data['index'] = [int(x) for x in data['index']]
 
         self.data = data
         self.post_build(dataset)
@@ -82,7 +89,55 @@ class ImageBaseDataset:
     def __getitem__(self, idx):
         return dict(self.data.iloc[idx])
 
-    def prepare_tsv(self, url, file_md5=None):
+    @classmethod
+    def pred_file_basename(cls, model_name, dataset_name):
+        return cls.PRED_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+
+    @classmethod
+    def judge_file_basename(cls, model_name, dataset_name, **kwargs):
+        info = {'model_name': model_name, 'dataset_name': dataset_name}
+        if 'judge_name' in cls.JUDGE_FORMAT:
+            info['judge_name'] = kwargs.get('judge_name', cls.DEFAULT_JUDGE)
+        return cls.JUDGE_FORMAT.format(**info)
+
+    @classmethod
+    def rating_file_basename(cls, model_name, dataset_name, **kwargs):
+        info = {'model_name': model_name, 'dataset_name': dataset_name}
+        if 'judge_name' in cls.RATING_FORMAT:
+            info['judge_name'] = kwargs.get('judge_name', cls.DEFAULT_JUDGE)
+        return cls.RATING_FORMAT.format(**info)
+
+    @staticmethod
+    def extract_model_dataset(file_name):
+        from vlmeval.dataset import SUPPORTED_DATASETS
+        fname = osp.splitext(file_name)[0].split('/')[-1]
+        parts = fname.split('_')
+        for i in range(len(parts)):
+            if '_'.join(parts[i:]) in SUPPORTED_DATASETS:
+                return '_'.join(parts[:i]), '_'.join(parts[i:])
+        return None, None
+
+    @classmethod
+    def get_judge_file_path(cls, eval_file, **kwargs):
+        model_name, dataset_name = cls.extract_model_dataset(eval_file)
+        dname = osp.dirname(eval_file)
+        return osp.join(dname, cls.judge_file_basename(model_name, dataset_name, **kwargs))
+
+    @classmethod
+    def get_rating_file_path(cls, eval_file, **kwargs):
+        model_name, dataset_name = cls.extract_model_dataset(eval_file)
+        dname = osp.dirname(eval_file)
+        return osp.join(dname, cls.rating_file_basename(model_name, dataset_name, **kwargs))
+
+    def prepare_tsv(self, url, file_md5=None, img_zip=None, img_zip_md5=None):
+        def is_local_path(path: str) -> bool:
+            if osp.exists(path) and osp.isfile(path):
+                return True
+            return False
+
+        if is_local_path(url):
+            return load(url)
+
         data_root = LMUDataRoot()
         os.makedirs(data_root, exist_ok=True)
         update_flag = False
@@ -111,13 +166,53 @@ class ImageBaseDataset:
                 download_file(url, data_path)
                 update_flag = True
 
+        # === Unzip image ===
+        # When images are pre-packaged in a zip file, we need to download and unzip it to LMUDataRoot/images
+        # At that time, the tsv include 'image_path', which is the relative path to LMUDataRoot/images
+        if img_zip is not None:
+            data = load(data_path)
+            assert 'image_path' in data and 'image' not in data
+            assert img_zip.startswith('http'), f'img_zip must be a url, but got {img_zip}'
+            img_root = osp.join(LMUDataRoot(), 'images')
+            tmp_file = None
+            ready_flag = True
+            for pth in data['image_path']:
+                pth = toliststr(pth)
+                if not all([osp.exists(osp.join(img_root, p)) for p in pth]):
+                    ready_flag = False
+                    break
+            if not ready_flag:
+                tmp_file = osp.join('/tmp/', osp.basename(img_zip))
+                download_file(img_zip, tmp_file, md5sum=img_zip_md5)
+                import zipfile
+                with zipfile.ZipFile(tmp_file, 'r') as zip_ref:
+                    zip_ref.extractall(img_root)
+            new_pth = []
+            for pth in data['image_path']:
+                pth = toliststr(pth)
+                abs_pth = [osp.join(img_root, p) for p in pth]
+                assert all([osp.exists(p) for p in abs_pth]), f'image_path {pth} not found in {img_root}'
+                new_pth.append(abs_pth[0] if len(abs_pth) == 1 else abs_pth)
+            data['image_path'] = new_pth
+            if tmp_file is not None and osp.exists(tmp_file):
+                os.remove(tmp_file)
+            return data
+
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
             if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
-                from ..tools import LOCALIZE
-                LOCALIZE(data_path, local_path)
+                localize_tsv(data_path, local_path)
             data_path = local_path
         return load(data_path)
+
+    def dump_image_atomic(self, im_b64, base_name):
+        tgt_path = osp.join(self.img_root, base_name)
+        dname = osp.dirname(tgt_path)
+        if not osp.exists(dname):
+            os.makedirs(dname, exist_ok=True)
+        if not read_ok(tgt_path):
+            decode_base64_to_image_file(im_b64, tgt_path)
+        return tgt_path
 
     def dump_image(self, line):
         os.makedirs(self.img_root, exist_ok=True)
@@ -131,22 +226,14 @@ class ImageBaseDataset:
                     index = line['index']
                     image_path = [f'{index}_{i}.png' for i in range(len(line['image']))]
                 for img, im_name in zip(line['image'], image_path):
-                    path = osp.join(self.img_root, im_name)
-                    if not read_ok(path):
-                        decode_base64_to_image_file(img, path)
-                    tgt_path.append(path)
+                    tgt_path.append(self.dump_image_atomic(img, im_name))
 
             elif isinstance(line['image'], str) and 'image_path' in line:
                 assert isinstance(line['image_path'], str)
-                tgt_path = osp.join(self.img_root, line['image_path'])
-                if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
-                tgt_path = [tgt_path]
+                tgt_path = [self.dump_image_atomic(line['image'], line['image_path'])]
             else:
-                tgt_path = osp.join(self.img_root, f"{line['index']}.jpg")
-                if not read_ok(tgt_path):
-                    decode_base64_to_image_file(line['image'], tgt_path)
-                tgt_path = [tgt_path]
+                im_name = f"{line['index']}.png"
+                tgt_path = [self.dump_image_atomic(line['image'], im_name)]
         else:
             assert 'image_path' in line
             tgt_path = toliststr(line['image_path'])
@@ -207,3 +294,108 @@ class ImageBaseDataset:
     @abstractmethod
     def evaluate(self, eval_file, **judge_kwargs):
         pass
+
+    @classmethod
+    def is_response_err(cls, x):
+        if x is None or pd.isna(x) or x == '':
+            return True
+        for pattern in [cls.FAIL_MSG, "思考过程过长", "Error code: ", '"error":{"message":']:
+            if pattern in str(x):
+                return True
+        return False
+
+    @classmethod
+    def report_response_err_rate(cls, model_name, dataset_name, root):
+        pred_file = cls.pred_file_basename(model_name, dataset_name)
+        pred_file = osp.join(root, pred_file)
+        assert osp.exists(pred_file), f'Pred file {pred_file} does not exist.'
+        data = load(pred_file)
+        err_rate = sum([cls.is_response_err(x) for x in data['prediction']]) / (len(data))
+        err_rate = round(err_rate, 4)
+        return {'response_err_rate': err_rate}
+
+    @classmethod
+    def report_judge_err_rate(cls, model_name, dataset_name, root, **kwargs):
+        logger = get_logger('ImageBaseDataset')
+        ret = {'judge_err_rate': None}
+        if cls.JUDGE_FORMAT is not None:
+            judge_file = cls.judge_file_basename(model_name, dataset_name, **kwargs)
+        else:
+            return ret
+        judge_file = osp.join(root, judge_file)
+        if not osp.exists(judge_file):
+            logger.warning(f'Judge file {judge_file} does not exist. ')
+            return ret
+        data = load(judge_file)
+        if 'log' in data:
+            err_rate = sum([cls.is_response_err(x) for x in data['log']]) / (len(data))
+            err_rate = round(err_rate, 4)
+            ret['judge_err_rate'] = err_rate
+        else:
+            logger.warning(f'Judge file {judge_file} does not contain `log` field. ')
+        err_rate = sum([cls.is_response_err(x) for x in data['prediction']]) / (len(data))
+        err_rate = round(err_rate, 4)
+        ret['response_err_rate (judge)'] = err_rate
+        return ret
+
+    @classmethod
+    def parse_df_rating(self, df, factor=100):
+        if len(df) > 1:
+            if 'split' in df:
+                for sp_name in ['test', 'validation', 'circular_none']:
+                    if sp_name in set(df['split']):
+                        df = df[df['split'] == sp_name]
+                        break
+                assert len(df) == 1
+            else:
+                warnings.warn('Multiple lines in df, will use the first row by default. ')
+                df = df.iloc[:1]
+
+        assert len(df) == 1, df
+        dic = dict(df.iloc[0])
+        dic = {k: v for k, v in dic.items() if not pd.isna(v) and k != 'split'}
+        dic = {k: float(v) if isinstance(v, float) else v for k, v in dic.items()}
+        for k in dic:
+            if k.lower() == 'overall':
+                dic[k.lower()] = dic.pop(k)
+                break
+        if 'overall' in dic and dic['overall'] > 1:
+            return dic
+        dic = {k: v * factor if not istype(v, str) else v for k, v in dic.items()}
+        return dic
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.rating_file_basename(model_name, dataset_name, **kwargs)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        overall = None
+        if isinstance(rating, dict):
+            for k in rating.keys():
+                if k.lower() == 'overall':
+                    overall = rating[k]
+                    rating[k.lower()] = rating.pop(k)
+                    break
+        elif isinstance(rating, pd.DataFrame):
+            rating = cls.parse_df_rating(rating)
+            overall = rating.get('overall', None)
+        assert overall is not None, f'Overall rating not found in {rating_file}'
+        res = {}
+        res['overall'] = overall
+        if verbose:
+            res['rating'] = rating
+        return res
+
+    @classmethod
+    def report(cls, model_name, dataset_name, root=None, verbose=False, **kwargs):
+        import vlmeval
+        if root is None:
+            default_root = osp.join(vlmeval.__path__[0], '../outputs/')
+            root = os.getenv('MMEVAL_ROOT', default_root)
+        root = osp.join(root, model_name)
+        # Default Name, if the name is not used, should override
+        res = dict(model_name=model_name, dataset_name=dataset_name)
+        res.update(cls.report_response_err_rate(model_name, dataset_name, root))
+        res.update(cls.report_judge_err_rate(model_name, dataset_name, root, **kwargs))
+        res.update(cls.report_score(model_name, dataset_name, root, verbose=verbose, **kwargs))
+        return res

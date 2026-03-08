@@ -62,7 +62,7 @@ def MMVet_auxeval(model, line):
         else:
             log += 'Succeed'
             return dict(log=log, score=score)
-    log += 'All 5 retries failed.\n'
+    log += F'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, score=0.0)
 
 

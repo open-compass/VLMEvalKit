@@ -10,7 +10,6 @@ from .image_base import ImageBaseDataset
 from .utils import build_judge, DEBUG_MESSAGE
 from ..smp import *
 from ..smp.file import get_intermediate_file_path, get_file_extension
-from ..utils import track_progress_rich
 
 
 class ImageVQADataset(ImageBaseDataset):
@@ -49,14 +48,20 @@ class ImageVQADataset(ImageBaseDataset):
         'GQA_TestDev_Balanced': '99b62f22e224d9b2f32dcbe41359d1c9',
     }
 
+    SKIP_EVAL = ['DocVQA_TEST', 'InfoVQA_TEST']
+
     def build_prompt(self, line):
         msgs = super().build_prompt(line)
         assert msgs[-1]['type'] == 'text'
-        msgs[-1][
-            'value'] += '\nAnswer the question using a single word or phrase.'
+        msgs[-1]['value'] += '\nAnswer the question using a single word or phrase.'
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        dataset_name = self.dataset_name
+        if dataset_name in self.SKIP_EVAL:
+            logger = get_logger('RUN')
+            logger.info(f'The evaluation of {dataset_name} is not supported yet, will skip. ')
+            return None
         if judge_kwargs.get('use_verifier', False):
             return self.evaluate_verifier(eval_file, **judge_kwargs)
         else:
@@ -227,6 +232,7 @@ class OCRBench(ImageBaseDataset):
         'https://opencompass.openxlab.space/utils/TEST/OCRBench_MINI.tsv'
     }
     DATASET_MD5 = {'OCRBench': 'e953d98a987cc6e26ef717b61260b778'}
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.json'
 
     # It returns a dictionary
     @classmethod
@@ -292,14 +298,29 @@ class OCRBench(ImageBaseDataset):
         dump(final_score_dict, score_pth)
         return final_score_dict
 
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        score_pth = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        score_pth = osp.join(root, score_pth)
+        assert osp.exists(score_pth), f'Score file {score_pth} does not exist.'
+        score = load(score_pth)
+        ret = {'overall': score['Final Score']}
+        if verbose:
+            ret['rating'] = score
+        return ret
+
 
 class MathVista(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVista_MINI':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVista_MINI.tsv'
     }
     DATASET_MD5 = {'MathVista_MINI': 'f199b98e178e5a2a20e7048f5dcb0464'}
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_{judge_name}_score.csv'
 
     def evaluate(self, eval_file, **judge_kwargs):
         if judge_kwargs.get('use_verifier', False):
@@ -333,7 +354,7 @@ class MathVista(ImageBaseDataset):
             indices = [i for i in indices if i not in ans]
 
             if len(indices):
-                new_results = track_progress_rich(
+                _ = track_progress_rich(
                     MathVista_auxeval,
                     tups,
                     nproc=nproc,
@@ -342,13 +363,10 @@ class MathVista(ImageBaseDataset):
                     save=tmp_file,
                 )
                 ans = load(tmp_file)
-                for k, v in zip(indices, new_results):
-                    assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
-                        'res']
 
-            data['res'] = [ans[idx]['res'] for idx in data['index']]
-            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            keys = ['res', 'log', 'hit']
+            for k in keys:
+                data[k] = [ans[idx][k] for idx in data['index']]
             dump(data, storage)
 
         score = MathVista_acc(storage)
@@ -421,24 +439,43 @@ class MathVista(ImageBaseDataset):
         dump(score, score_pth)
         return score
 
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        judge_name = kwargs['judge_name'] if 'judge_name' in kwargs else cls.DEFAULT_JUDGE
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name, judge_name=judge_name)
+        rating_file = osp.join(root, rating_file)
+        df = load(rating_file)
+        rating = {k: float(v) for k, v in zip(df['Task&Skill'], df['acc'])}
+        overall = rating['Overall']
+        res = {}
+        res['overall'] = overall
+        if verbose:
+            res['rating'] = rating
+        return res
+
 
 class MathVerse(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+    EXTRACT_FORMAT = '{model_name}_{dataset_name}_{judge_name}_extract.tsv'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}_score.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_{judge_name}_score.csv'
+
     DATASET_URL = {
         'MathVerse_MINI':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIV.tsv',  # noqa
         'MathVerse_MINI_Vision_Only':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Only_cot':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVOnly.tsv',  # noqa
         'MathVerse_MINI_Vision_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVDom.tsv',  # noqa
         'MathVerse_MINI_Vision_Intensive':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINIVInt.tsv',  # noqa
         'MathVerse_MINI_Text_Lite':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITLite.tsv',  # noqa
         'MathVerse_MINI_Text_Dominant':
-        'http://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
+        'https://opencompass.openxlab.space/utils/benchmarks/MathVerse/MathVerse_MINITDom.tsv',  # noqa
     }
     DATASET_MD5 = {
         'MathVerse_MINI': '5017caca32b7fa110c350a1bea861b65',
@@ -478,10 +515,11 @@ class MathVerse(ImageBaseDataset):
         from .utils.mathverse import MathVerse_auxeval_extract, MathVerse_auxeval_score, MathVerse_acc
 
         model = judge_kwargs['model']
-        storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract')
+        storage_extract = get_intermediate_file_path(eval_file, f'_{model}_extract', 'tsv')
         tmp_file_extract = get_intermediate_file_path(eval_file, f'_{model}_extract', 'pkl')
-        storage_score = get_intermediate_file_path(eval_file, f'_{model}_score')
+        storage_score = get_intermediate_file_path(eval_file, f'_{model}_score', 'tsv')
         tmp_file_score = get_intermediate_file_path(eval_file, f'_{model}_score', 'pkl')
+        score_pth = get_intermediate_file_path(eval_file, f'_{model}_score', 'csv')
         nproc = judge_kwargs.pop('nproc', 4)
         # stage1: extract the answer
         if not osp.exists(storage_extract):
@@ -558,13 +596,14 @@ class MathVerse(ImageBaseDataset):
             dump(data, storage_score)
 
         score = MathVerse_acc(storage_score)
-        score_pth = get_intermediate_file_path(storage_score, '', 'csv')
         dump(score, score_pth)
         return score
 
 
 class MathVision(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MathVision':
         'https://opencompass.openxlab.space/utils/VLMEval/MathVision.tsv',
@@ -576,6 +615,9 @@ class MathVision(ImageBaseDataset):
         'MathVision_MINI': '060fe4fa5d868987ce179307bd5f8a33'
     }
 
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_{judge_name}_score.csv'
+
     def evaluate(self, eval_file, **judge_kwargs):
         if judge_kwargs.get('use_verifier', False):
             return self.evaluate_verifier(eval_file, **judge_kwargs)
@@ -585,10 +627,9 @@ class MathVision(ImageBaseDataset):
     def evaluate_heuristic(self, eval_file, **judge_kwargs):
         from .utils.mathv import MATH_V_auxeval, MATH_V_acc
 
-        if 'model' in judge_kwargs:
-            model = judge_kwargs['model']
-        else:
-            model = os.path.basename(os.environ.get('LOCAL_LLM'))
+        assert 'model' in judge_kwargs, 'MathVision evaluation requires a model'
+        model = judge_kwargs['model']
+
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -609,7 +650,7 @@ class MathVision(ImageBaseDataset):
             indices = [i for i in indices if i not in ans]
 
             if len(indices):
-                new_results = track_progress_rich(
+                _ = track_progress_rich(
                     MATH_V_auxeval,
                     tups,
                     nproc=nproc,
@@ -618,13 +659,10 @@ class MathVision(ImageBaseDataset):
                     save=tmp_file,
                 )
                 ans = load(tmp_file)
-                for k, v in zip(indices, new_results):
-                    assert k in ans
-                    assert ans[k]['log'] == v['log'] and ans[k]['res'] == v[
-                        'res']
 
-            data['res'] = [ans[idx]['res'] for idx in data['index']]
-            data['log'] = [ans[idx]['log'] for idx in data['index']]
+            keys = ['res', 'log', 'hit']
+            for k in keys:
+                data[k] = [ans[idx][k] for idx in data['index']]
             dump(data, storage)
 
         score = MATH_V_acc(storage)
@@ -694,24 +732,42 @@ class MathVision(ImageBaseDataset):
         dump(score, score_pth)
         return score
 
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        judge_name = kwargs['judge_name'] if 'judge_name' in kwargs else cls.DEFAULT_JUDGE
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name, judge_name=judge_name)
+        rating_file = osp.join(root, rating_file)
+        df = load(rating_file)
+        rating = {k: float(v) for k, v in zip(df['Subject'], df['acc'])}
+        overall = rating['Overall']
+        res = {}
+        res['overall'] = overall
+        if verbose:
+            res['rating'] = rating
+        return res
+
 
 class Physics_yale(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_{judge_name}_score.csv'
+
     DATASET_URL = {
         'atomic_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/atomic_dataset.tsv',
         'electro_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/electro_dataset.tsv',
         'mechanics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/mechanics_dataset.tsv',
         'optics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/optics_dataset.tsv',
         'quantum_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/quantum_dataset.tsv',
         'statistics_dataset':
-        'http://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
-        'Physics_blankim': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
-        'Physics': 'http://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
+        'https://opencompass.openxlab.space/utils/benchmarks/physics/statistics_dataset.tsv',
+        'Physics_blankim': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics_blankim.tsv',
+        'Physics': 'https://opencompass.openxlab.space/utils/benchmarks/physics/Physics.tsv'
     }
     DATASET_MD5 = {
         'atomic_dataset': 'b927fae6bcc6163b0bd89041e4421c70',
@@ -784,12 +840,9 @@ class Physics_yale(ImageBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
+        assert 'model' in judge_kwargs, 'Physics_yale evaluation requires a model'
+        model = judge_kwargs['model']
 
-        if 'LOCAL_LLM' in os.environ:
-            model = os.path.basename(os.environ.get('LOCAL_LLM'))
-            print(f'Using local model as judge model for PHYSICS: {model}')
-        else:
-            model = judge_kwargs.setdefault('model', 'gpt-4o-mini')
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
@@ -835,9 +888,23 @@ class Physics_yale(ImageBaseDataset):
         dump(score, score_pth)
         return score
 
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(
+            model_name=model_name, dataset_name=dataset_name, judge_name=cls.DEFAULT_JUDGE)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        rating = {k: float(v) for k, v in zip(rating['Subject'], rating['acc'])}
+        res = {'overall': rating['Overall']}
+        if verbose:
+            res['rating'] = rating
+        return res
+
 
 class OlympiadBench(ImageBaseDataset):
     TYPE = 'VQA_ex_prompt'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'OlympiadBench':
         'https://opencompass.openxlab.space/utils/VLMEval/OlympiadBench.tsv',
@@ -873,6 +940,9 @@ class OlympiadBench(ImageBaseDataset):
     def build_prompt(self, line):
 
         from .utils.olympiadbench import get_answer_type_text, make_input
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
@@ -1266,30 +1336,26 @@ class SeePhys(ImageBaseDataset):
 
 class LogicVista(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'LogicVista':
         'https://opencompass.openxlab.space/utils/VLMEval/LogicVista.tsv'
     }
     DATASET_MD5 = {'LogicVista': '41c5d33adf33765c399e0e6ae588c061'}
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
 
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.logicvista import LogicVista_auxeval, evaluate_logicvista
 
         # model = judge_kwargs['model']
         model = judge_kwargs.get('model', 'exact_matching')
-        assert model in [
-            'exact_matching', 'gpt-4-0125', 'gpt-4-turbo', 'gpt-4o-mini'
-        ], model
-        name_str_map = {
-            'gpt-4-0125': 'gpt4',
-            'gpt-4-turbo': 'gpt4-turbo',
-            'gpt-4o-mini': 'gpt4o-mini'
-        }
-        name_str = name_str_map[model] if model in name_str_map else model
+        model_name = model
 
         if model == 'exact_matching':
             model = None
-        elif gpt_key_set():
+        else:
             model = build_judge(**judge_kwargs)
             if not model.working():
                 warnings.warn(
@@ -1297,14 +1363,9 @@ class LogicVista(ImageBaseDataset):
                 )
                 warnings.warn(DEBUG_MESSAGE)
                 model = None
-        else:
-            warnings.warn(
-                'OPENAI_API_KEY is not set properly, will use exact matching for evaluation'
-            )
-            model = None
 
-        storage = get_intermediate_file_path(eval_file, f'_{name_str}')
-        tmp_file = get_intermediate_file_path(eval_file, f'_{name_str}', 'pkl')
+        storage = get_intermediate_file_path(eval_file, f'_{model_name}')
+        tmp_file = get_intermediate_file_path(eval_file, f'_{model_name}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage) and model is not None:
@@ -1344,10 +1405,22 @@ class LogicVista(ImageBaseDataset):
             dump(data, storage)
         if osp.exists(storage):
             accuracy_scores = evaluate_logicvista(storage)
-            score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+            score_pth = get_intermediate_file_path(eval_file, '_score', 'csv')
             dump(accuracy_scores, score_pth)
 
             return accuracy_scores
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        scores = {k: v for k, v in zip(rating['Task&Skill'], rating['acc'])}
+        scores['overall'] = scores.pop('Overall')
+        ret = {'overall': scores['overall']}
+        if verbose:
+            ret['rating'] = scores
+        return ret
 
 
 class MME_CoT(ImageBaseDataset):
@@ -1462,6 +1535,8 @@ class MME_CoT(ImageBaseDataset):
 
 class LLaVABench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4-turbo'
+
     DATASET_URL = {
         'LLaVABench':
         'https://opencompass.openxlab.space/utils/VLMEval/LLaVABench.tsv'
@@ -1507,6 +1582,8 @@ class LLaVABench(ImageBaseDataset):
 
 class LLaVABench_KO(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-0806'
+
     DATASET_URL = {
         'LLaVABench_KO':
         'https://huggingface.co/datasets/NCSOFT/K-LLaVA-W/resolve/main/LLaVABench_KO.tsv'
@@ -1553,6 +1630,7 @@ class LLaVABench_KO(ImageBaseDataset):
 
 class VGRPBench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
 
     DATASET_URL = {
         'VGRPBench':
@@ -1619,11 +1697,13 @@ class VGRPBench(ImageBaseDataset):
 
 class MMVet(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4-turbo'
+
     DATASET_URL = {
         'MMVet':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVet.tsv',
         'MMVet_Hard':
-        'http://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
+        'https://opencompass.openxlab.space/utils/VLMEval/MMVet_Hard.tsv'
     }
     DATASET_MD5 = {
         'MMVet': '748aa6d4aa9d4de798306a63718455e3',
@@ -1677,55 +1757,6 @@ class MMVet(ImageBaseDataset):
         dump(score, score_pth)
         dump(score_fine, score_fine_pth)
         return score
-
-
-class MTVQADataset(ImageBaseDataset):
-    TYPE = 'VQA'
-    DATASET_URL = {
-        'MTVQA_TEST':
-        'https://opencompass.openxlab.space/utils/VLMEval/MTVQA_TEST.tsv'
-    }
-    DATASET_MD5 = {'MTVQA_TEST': 'd87c17dbab934b7cd89c0a3c1c5657f4'}
-
-    @classmethod
-    def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file)
-        assert 'answer' in data and 'prediction' in data and 'category' in data
-        data['prediction'] = [str(x) for x in data['prediction']]
-        data['answer'] = [str(x) for x in data['answer']]
-        if 'split' in data:
-            assert np.all([x.lower() == 'test' for x in data['split']
-                           ]), 'We only support MTVQA_TEST for now. '
-        lt = len(data)
-        category_scores = defaultdict(list)
-        for i in range(lt):
-            line = data.iloc[i]
-            ans = line['answer'].strip().lower().replace('.', '')
-            pred = line['prediction'].strip().lower().replace('.', '')
-            cate = line['category']
-            score = 1.0 if ans in pred else 0.0
-            category_scores[cate].append(score)
-            category_scores['Average'].append(score)
-        # Calculate the average score for each category, the score is normalized to [0, 100]
-        category_averages = {
-            category: np.mean(scores) * 100
-            for category, scores in category_scores.items()
-        }
-
-        result_file = get_intermediate_file_path(eval_file, '_acc', 'json')
-        dump(category_averages, result_file)
-
-        return category_averages
-
-    # MT-VQA adopts a custom prompt
-    def build_prompt(self, line):
-        msgs = super().build_prompt(line)
-        assert sum([x['type'] == 'text' for x in msgs]) == 1
-        for item in msgs:
-            if item['type'] == 'text':
-                item[
-                    'value'] += '\nAnswer the question using a word or phrase in the language of the question.'
-        return msgs
 
 
 class WildDocBenchmark(ImageBaseDataset):
@@ -1997,11 +2028,8 @@ class CustomVQADataset(ImageBaseDataset):
 
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get(
-                    'FORCE_LOCAL', None):
-                from ..tools import LOCALIZE
-
-                LOCALIZE(data_path, local_path)
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None):
+                localize_tsv(data_path, local_path)
             data_path = local_path
         return load(data_path)
 
@@ -2396,10 +2424,8 @@ class MMNIAH(ImageBaseDataset):
 
         if file_size(data_path, 'GB') > 1:
             local_path = data_path.replace('.tsv', '_local.tsv')
-            if not osp.exists(local_path) or os.environ.get(
-                    'FORCE_LOCAL', None) or update_flag:
-                from ..tools import LOCALIZE
-                LOCALIZE(data_path, local_path)
+            if not osp.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+                localize_tsv(data_path, local_path)
             data_path = local_path
         return load(data_path)
 
@@ -2782,9 +2808,7 @@ class TDBenchGrounding(ImageVQADataset):
                                  osp.basename(file_addr))
             re_result.to_csv(file_addr, index=True)
             print(tabulate(re_result, headers="keys"))
-            if osp.exists(link_addr) or osp.islink(link_addr):
-                os.remove(link_addr)
-            os.symlink(file_addr, link_addr)
+            rel_symlink(file_addr, link_addr)
         return summary_scores
 
     def build_prompt(self, line):
@@ -2801,94 +2825,97 @@ class TDBenchGrounding(ImageVQADataset):
 
 
 class ZEROBench(ImageVQADataset):
-    DATASET_URL = {'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench.tsv',
-                   'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/zerobench_sub.tsv'}
-    DATASET_MD5 = {'ZEROBench': '600d5e89325f1dab5ad3fa2ea200cea6',
-                   'ZEROBench_sub': '2d2131bffb7f09ca099fdd0f3ad0392b'}
+
+    DATASET_URL = {
+        'ZEROBench': 'https://opencompass.openxlab.space/utils/VLMEval/ZEROBench.tsv',
+        'ZEROBench_sub': 'https://opencompass.openxlab.space/utils/VLMEval/ZEROBench_sub.tsv',
+    }
+    DATASET_MD5 = {
+        'ZEROBench': '61838a0325b3ae8bc7b56adc93a66abf',
+        'ZEROBench_sub': '0e5c50ac9309174636efe4050ec59d12'
+    }
+
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_judge.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_acc.csv'
+    DEFAULT_JUDGE = 'gpt-4.1'
+
+    def extract_pred(self, pred):
+        pred = pred.strip().lower()
+        parsed_answer = ''
+        try:
+            pattern = r"\{(.*?)\}"
+            parsed_answer = re.findall(pattern, pred)[-1]
+        except IndexError:
+            pass
+        return parsed_answer
+
+    @classmethod
+    def judge_single_sample(cls, judge, line):
+        if line['exact_match']:
+            return True
+        prompt_tmpl = """\
+Given the question: {question}.
+Do the following two answers have **exactly** the same meaning?
+The numerical values should be **exactly the same**.
+Answer1: {answer1};
+Answer2: {answer2}.
+Please respond with 'Yes' or 'No' and calrify the reason in a new line."""
+        groundtruth = line['answers'] if 'answers' in line else line['answer']
+        prompt = prompt_tmpl.format(
+            question=line['question'],
+            answer1=groundtruth,
+            answer2=line['extracted']
+        )
+        resp = judge.generate(prompt)
+        resp_line1 = resp.split('\n')[0].strip()
+        return 'yes' in resp_line1.lower() and 'no' not in resp_line1.lower()
 
     def evaluate(self, eval_file, **judge_kwargs):
         data = load(eval_file).sort_values(by='index')
-        predictions = [str(x) for x in data['prediction']]
-        answers = [str(x) for x in data['answers']]
-        indexes = [str(x) for x in data['index']]
-        output_df = pd.DataFrame(columns=["Question_ID", "Ground_Truth", "Model_Output", "Correct?"])
-        for idx, (pred, ans, index) in enumerate(zip(predictions, answers, indexes)):
-            formatted_response = pred.strip()
-            # convert to lowercase
-            formatted_response = formatted_response.lower()
-            # try to extract final answer from curly braces
-            parsed_answer = ''
-            try:
-                pattern = r"\{(.*?)\}"
-                parsed_answer = re.findall(pattern, formatted_response)[-1]
-            except IndexError:
-                pass
-
-            # evaluate via exact matching
-            correct = ans.strip().lower() in parsed_answer.lower()
-            # store results
-            results_row = {"Question_ID": idx,
-                           "Ground_Truth": ans,
-                           "Model_Output": pred,
-                           "Correct?": correct}
-            output_df = pd.concat([output_df, pd.DataFrame([results_row])],
-                                  ignore_index=True)
-
+        nproc = judge_kwargs.pop('nproc', 16)
+        judge = build_judge(**judge_kwargs)
+        data['extracted'] = data['prediction'].apply(self.extract_pred)
+        if 'answers' in data:
+            groundtruth = [x.strip().lower() for x in data['answers']]
+        else:
+            groundtruth = [x.strip().lower() for x in data['answer']]
+        data['exact_match'] = [x == y for x, y in zip(data['extracted'], groundtruth)]
+        tups = [dict(judge=judge, line=row) for _, row in data.iterrows()]
+        ret = track_progress_rich(
+            ZEROBench.judge_single_sample,
+            tups,
+            nproc=nproc,
+            desc="LM-based matching on ZEROBench"
+        )
+        data['hit'] = ret
         # compute accuracy
-        accuracy = output_df["Correct?"].mean()
-        return {"accuracy": accuracy}
+        dump(data, eval_file.replace('.tsv', '_judge.tsv'))
+        accuracy = data["exact_match"].mean()
+        lm_accuracy = data['hit'].mean()
+        res = {'Overall_EM': accuracy, 'Overall': lm_accuracy}
+        dump(d2df(res), eval_file.replace('.tsv', '_acc.csv'))
+        return res
 
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
         obj = line['question']
-        question = f"{obj} \n\n\nLet's think step by step and give the final answer in curly braces,  like this: {{final answer}}"   # noqa: E501
+        question = f"{obj} \n\n\nLet's think step by step and give the final answer in curly braces, \nlike this: {{final answer}}"   # noqa: E501
         tgt_path = self.dump_image(line)
         msgs = []
         msgs.extend([dict(type='image', value=p) for p in tgt_path])
-        msgs.append(dict(type='text', value=question))
-        return msgs
-
-
-class CountBenchQA(ImageVQADataset):
-    TYPE = "VQA"
-    DATASET_URL = {
-        "CountBenchQA":
-        "https://opencompass.openxlab.space/utils/VLMEval/CountBenchQA.tsv"
-    }
-    DATASET_MD5 = {"CountBenchQA": "fc73c8d4ffa665431448753f094d56ff"}
-
-    def build_prompt(self, line):
-        if isinstance(line, int):
-            line = self.data.iloc[line]
-        tgt_path = self.dump_image(line)
-        msgs = []
-        msgs.extend([dict(type='image', value=p) for p in tgt_path])
-        ques = line['question']
-        question = f'{ques} Note that: answer with a number directly e.g. 3. Do not include any additional text.'
-        msgs.append(dict(type='text', value=question))
-        return msgs
-
-    def evaluate(self, eval_file, **judge_kwargs):
-        data = load(eval_file).sort_values(by='index')
-        predictions = [str(x) for x in data['prediction']]
-        answers = [str(x) for x in data['answer']]
-        correct_count = 0
-        total_count = len(predictions)
-
-        for pred, ans in zip(predictions, answers):
-            if ans in pred:
-                correct_count += 1
-        accuracy = correct_count / total_count if total_count > 0 else 0
-
-        result = {'accuracy': accuracy * 100}
-        result_file = get_intermediate_file_path(eval_file, '_acc')
-        dump(d2df(result), result_file)
-        return result
+        if 'rev' in self.dataset_name:
+            msgs = [dict(type='text', value=question)] + msgs
+            return msgs
+        else:
+            msgs.append(dict(type='text', value=question))
+            return msgs
 
 
 class OCR_Reasoning(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'OCR_Reasoning':
         'https://opencompass.openxlab.space/utils/VLMEval/OCR_Reasoning.tsv'
@@ -2904,10 +2931,9 @@ class OCR_Reasoning(ImageBaseDataset):
         storage = get_intermediate_file_path(eval_file, f'_{model}')
         tmp_file = get_intermediate_file_path(eval_file, f'_{model}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 4)
-        nproc = 1
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=1024, **judge_kwargs)
+            model = build_judge(max_tokens=16384, **judge_kwargs)
             assert model.working(), 'OCRReasoning evaluation requires a working OPENAI API\n' + DEBUG_MESSAGE
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
@@ -2961,6 +2987,9 @@ class OCR_Reasoning(ImageBaseDataset):
 
 class PhyX(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'deepseek'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_{judge_name}_acc.csv'
 
     def __init__(self, dataset='PhyX_mini', skip_noimg=True):
         if dataset != 'PhyX_mini_OE':
@@ -3015,12 +3044,13 @@ class PhyX(ImageBaseDataset):
     # It returns a DataFrame
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        valid_type = judge_kwargs["valid_type"]
-        assert valid_type in ["STR", "LLM"], print(
-            "To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
-            " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: "
-            "--judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command."
-        )
+        # valid_type = judge_kwargs["valid_type"]
+        # assert valid_type in ["STR", "LLM"], print(
+        #     "To evaluate PhyX, you need to set valid_type in judge-args, STR for string level and LLM for LLM."
+        #     " Please add: --judge-args '{\"valid_type\": \"STR\"}' or add: "
+        #     "--judge deepseek --judge-args '{\"valid_type\": \"LLM\"}' in your command."
+        # )
+        valid_type = 'LLM'
         if valid_type == "STR":
             # Match at string level
             from .utils.phyx import PhyX_process_line, PhyX_process_line_MC
@@ -3118,7 +3148,7 @@ class PhyX(ImageBaseDataset):
                 dump(data, storage)
 
             score = PhyX_acc(storage)
-            score_pth = get_intermediate_file_path(storage, '_score', 'csv')
+            score_pth = get_intermediate_file_path(storage, '_acc', 'csv')
             dump(score, score_pth)
             return score
 
@@ -3181,6 +3211,8 @@ class Omni3DBench(ImageBaseDataset):
 
 class MMEReasoning(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {'MME-Reasoning': 'https://huggingface.co/datasets/U4R/MME-Reasoning/blob/main/MME_Reasoning.tsv'}
     DATASET_MD = {'MME-Reasoning': 'b243f44778782d3821523689f6b40a1e'}
 
@@ -3375,6 +3407,7 @@ class MMEReasoning(ImageBaseDataset):
 
 class MMVMBench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
     DATASET_URL = {
         'MMVMBench':
         'https://opencompass.openxlab.space/utils/VLMEval/MMVMBench.tsv'
@@ -3495,9 +3528,12 @@ class OCRBench_v2(ImageBaseDataset):
     TYPE = 'VQA'
     DATASET_URL = {
         'OCRBench_v2':
-        'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+        'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv',
     }
     DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_judge.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.json'
 
     # It returns a dictionary
     @classmethod
@@ -3506,10 +3542,15 @@ class OCRBench_v2(ImageBaseDataset):
         from .utils.ocrbrnch_v2_eval import process_predictions, ocrbench_v2_aggregate_accuracy
         import pandas as pd
 
+        nproc = judge_kwargs.pop("nproc", 16)
+        judge = build_judge(**judge_kwargs)
+        judge_file = get_intermediate_file_path(eval_file, '_judge', 'tsv')
+
         data = load(eval_file)
         lt = len(data)
         lines = [data.iloc[i] for i in range(lt)]
         predict_result = []
+
         for i in tqdm(range(len(lines))):
             line = lines[i]
             predict = str(line['prediction']) if pd.notna(line['prediction']) else ''
@@ -3537,8 +3578,19 @@ class OCRBench_v2(ImageBaseDataset):
             if evals != 'without eval':
                 result_entry["eval"] = evals
             predict_result.append(result_entry)
-        res_data_list = process_predictions(predict_result)
-        en_scores, cn_scores = ocrbench_v2_aggregate_accuracy(res_data_list)
+
+        if not osp.exists(judge_file):
+            scores = process_predictions(judge, predict_result, nproc=nproc)
+            data['score'] = scores
+            dump(data, judge_file)
+        else:
+            judge_data = load(judge_file)
+            scores = list(judge_data['score'])
+
+        for s, item in zip(scores, predict_result):
+            item['score'] = s
+
+        en_scores, cn_scores = ocrbench_v2_aggregate_accuracy(predict_result)
         score_en_overall = sum(en_scores.values()) / len(en_scores)
         score_cn_overall = sum(cn_scores.values()) / len(cn_scores)
         final_score_dict = {**en_scores, **cn_scores}
@@ -3548,9 +3600,25 @@ class OCRBench_v2(ImageBaseDataset):
         dump(final_score_dict, score_pth)
         return final_score_dict
 
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        rating = {k: v * 100 for k, v in rating.items()}
+        res = {
+            'overall_en': rating['English Overall Score'],
+            'overall_cn': rating['Chinese Overall Score'],
+        }
+        if verbose:
+            res['rating'] = rating
+        return res
+
 
 class AyaVisionBench(ImageVQADataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4.1'
+
     DATASET_URL = {
         "AyaVisionBench":
             "https://huggingface.co/datasets/timothycdc/"
@@ -3626,3 +3694,120 @@ class AyaVisionBench(ImageVQADataset):
         result_file = get_intermediate_file_path(eval_file, '_acc')
         dump(ret, result_file)
         return ret
+
+
+class MathCanvas(ImageBaseDataset):
+    TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4.1'
+    RATING_FORMAT = '{model_name}_{dataset_name}_metrics.json'
+
+    DATASET_URL = {
+        "MathCanvas": "https://opencompass.openxlab.space/utils/VLMEval/MathCanvas.tsv",  # noqa: E501
+    }
+    DATASET_MD5 = {
+        "MathCanvas": "9fd0b783ca416dbb20ecfb04d2711411",
+    }
+
+    HINT = (
+        "Your task is to answer the question above. "
+        "Give step by step reasoning, and conclude all the answers "
+        "(include sub-questions) at the end of your solution."
+    )
+
+    def __init__(self, dataset='MathCanvas-Bench', skip_noimg=False):
+        ROOT = LMUDataRoot()
+        # You can override this variable to save image files to a different directory
+        self.dataset_name = dataset
+        self.img_root = osp.join(ROOT, 'images', dataset)
+
+        data = self.load_data(dataset)
+        self.skip_noimg = skip_noimg
+
+        data['index'] = [str(x) for x in data['index']]
+        data['image'] = [str(x) for x in data['image']]
+        image_map = {x: y for x, y in zip(data['index'], data['image'])}
+        images = [toliststr(image_map[k]) for k in data['index']]
+        data['image'] = [x[0] if len(x) == 1 else x for x in images]
+
+        if np.all([istype(x, int) for x in data['index']]):
+            data['index'] = [int(x) for x in data['index']]
+
+        self.data = data
+        self.post_build(dataset)
+
+    def build_prompt(self, line):
+        if isinstance(line, int):
+            line = self.data.iloc[line]
+
+        tgt_path = self.dump_image(line)
+        question_text = line['question']
+
+        pattern = r'(<image>)'
+        tokens = re.split(pattern, question_text)
+
+        num_placeholders = tokens.count('<image>')
+        num_images = len(tgt_path)
+        assert num_placeholders == num_images, (
+            f"Mismatch between image placeholders ({num_placeholders}) and "
+            f"image count ({num_images}) for index {line.get('index', 'N/A')}"
+        )
+
+        msgs = []
+        img_idx = 0
+        for token in tokens:
+            if token == '<image>':
+                msgs.append({'type': 'image', 'value': tgt_path[img_idx]})
+                img_idx += 1
+            elif token.strip():
+                msgs.append({'type': 'text', 'value': token})
+
+        msgs.append({'type': 'text', 'value': self.HINT})
+        return msgs
+
+    def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.mathcanvas import evaluate_with_judge, summarize_mathcanvas_results
+
+        judge_kwargs.update({
+            "max_tokens": 2048,
+            "temperature": 0.0,
+        })
+
+        config = {'hint': self.HINT, 'judge_kwargs': judge_kwargs}
+        config_file = get_intermediate_file_path(eval_file, '_config', 'json')
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+
+        detailed_results_file = get_intermediate_file_path(eval_file, '_meta', 'json')
+        if not os.path.exists(detailed_results_file):
+            print("Evaluating with judge, this may take a while...")
+            eval_results_list = evaluate_with_judge(eval_file, self.data, **judge_kwargs)
+            with open(detailed_results_file, 'w', encoding='utf-8') as f:
+                json.dump(eval_results_list, f, ensure_ascii=False, indent=4)
+        else:
+            print(f"Loading existing evaluation results from {detailed_results_file}")
+            eval_results_list = load(detailed_results_file)
+
+        summary_dict = summarize_mathcanvas_results(eval_results_list)
+
+        score_file = get_intermediate_file_path(eval_file, '_metrics', 'json')
+        with open(score_file, 'w', encoding='utf-8') as f:
+            json.dump(summary_dict, f, ensure_ascii=False, indent=4)
+
+        return summary_dict
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        overall_summary = rating['overall_summary']
+        res = {
+            'overall_complete': overall_summary['complete_accuracy'],
+            'overall_weighted': overall_summary['weighted_accuracy'],
+            'judge_err_rate': overall_summary['processing_errors'] / overall_summary['total_evaluated'],
+            'no_image_acc': rating['accuracy_by_question_image_count']['No Image']['accuracy'],
+            'with_image_acc': rating['accuracy_by_question_image_count']['Has Image']['accuracy'],
+        }
+        if verbose:
+            res['rating'] = rating
+        return res

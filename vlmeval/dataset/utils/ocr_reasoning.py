@@ -1,8 +1,7 @@
 from ...smp import *
-from ...utils import can_infer
+from .matching_util import can_infer
 import re
 
-FAIL_MSG = 'Failed to obtain answer via API.'
 
 judge_prompts = '''Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant to the user question displayed below. Your evaluation should consider correctness and helpfulness. You will be given a reference answer and the assistant's answer. Begin your evaluation by comparing the assistant's answer with the reference answer. Identify and correct any mistakes. Be as objective as possible. After providing your explanation, you must rate the response on a scale of 1 to 10 by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".\n\n[Question]\n{question}\n\n[The Start of Reference Answer]\n{ref_answer_1}\n[The End of Reference Answer]\n\n[The Start of Assistant's Answer]\n{answer}\n[The End of Assistant's Answer]". Again, you must output a score by strictly following this format: \"[[rating]]\", for example: \"Rating: [[5]]\".''' # noqa e501
 
@@ -119,7 +118,7 @@ def OcrR_auxeval(model, line):
         else:
             log += 'Succeed'
             return dict(log=log, res=res, reason_score=reason_score)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, res='', reason_score=0.0)
 
 

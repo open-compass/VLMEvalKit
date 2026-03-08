@@ -78,6 +78,7 @@ docs/_build/
 # PyBuilder
 .pybuilder/
 target/
+work
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -164,35 +165,25 @@ scripts/*ttf
 .history
 cache_dir/*
 
+# Ignore data and ckpts
+*.pth
+data
+
 # Evaluation Outputs
 outputs/*
-demo.ipynb
+*.ipynb
+!scripts/*.ipynb
 *json
-!vlmeval/dataset/utils/vgrpbench/configs/formating-prompt/**/*.json
+!vlmeval/dataset/utils/**/*.json
 .vscode
 *.swp
-GPT4o_MINI/
+*.txt
+!requirements.txt
 
-2weiyun*
+data/
 script.py
-Gemini*
-Claude3-5V*
-GLM4V*
-GPT4o*
-GPT4V*
-mmmu_debug
-bailingMM
-BailingMM*
-SenseChat*
-Step*
-DoubaoVL
+./data/
 arch
-BlueLM*
-mmb_*
-gpt-4.1*
-Reka*
-Taiyi
-TeleMM
 apple.jpg
 assets/LOGO.png
 api_list.txt
@@ -200,13 +191,21 @@ vlmeval/gemini_tmp.py
 run.sh
 run_g.sh
 tmp/
-InternVL*
-Qwen*
-CongRong*
-Seed1.5*
-aguvis*
-grok-*
-GLM4.5*
-SenseNova*
 
 .DS_Store
+tmp*
+outputs
+./*.ipynb
+./*.tsv
+*.csv
+data/
+oss_eval/
+vlmeval/config/vlm_api_tmp.py
+vlmeval/config/ug_api_tmp.py
+*debug/
+
+temp
+result*
+outputs
+scripts/data
+reproduce/

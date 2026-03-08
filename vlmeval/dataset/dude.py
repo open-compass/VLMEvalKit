@@ -1,11 +1,9 @@
 import math
 from typing import List
 
-from .utils.judge_util import build_judge
 from .image_base import ImageBaseDataset
 from .mmlongbench import concat_images, MMLongBench_auxeval, anls_compute
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from vlmeval.smp import *
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -13,6 +11,7 @@ FAIL_MSG = 'Failed to obtain answer via API.'
 
 def DUDE_acc(result_file):
     data = load(result_file)
+    data['pred'] = data['pred'].astype(str)
     overall_score = 0.0
     score_list = list()
     for i in range(len(data)):
@@ -38,6 +37,9 @@ def DUDE_acc(result_file):
 class DUDE(ImageBaseDataset):
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_{judge_name}_score.csv'
 
     DATASET_URL = {
         'DUDE': 'https://opencompass.openxlab.space/utils/VLMEval/DUDE.tsv',
@@ -55,6 +57,7 @@ class DUDE(ImageBaseDataset):
         'GPT4o': (1, 1),
         'GPT4o_HIGH': (1, 1),
         'GPT4o_MINI': (1, 1),
+        'DEFAULT': (1, 1),
         'XComposer2d5': (1, -1),
         'XComposer2_4KHD': (1, -1),
         'MiniCPM-Llama3-V-2_5': (1, 5),
@@ -63,12 +66,12 @@ class DUDE(ImageBaseDataset):
 
     def __init__(self, dataset, **kwargs):
         self.model_list = list(self.SUPPORTED_MODELS.keys())
-        model_name = kwargs['model']
+        model_name = kwargs.get('model', 'DEFAULT')
         if not listinstr(self.model_list, model_name):
             raise AssertionError("{} doesn't support the evaluation on DUDE.".format(model_name))
         super(DUDE, self).__init__(dataset)
 
-        self.is_api = True if listinstr(['GPT4'], model_name) else False
+        self.is_api = True if listinstr(['GPT4', 'DEFAULT'], model_name) else False
         self.max_pages = 120
         concat_num, column_num = self.SUPPORTED_MODELS.get(model_name)
         self.concat_num = concat_num
@@ -173,7 +176,11 @@ class DUDE(ImageBaseDataset):
             logger.warning(f'GPT scoring file {storage} already exists, will reuse it in DUDE_eval. ')
         else:
             data = load(eval_file)
-            model = build_judge(max_tokens=128, **judge_kwargs)
+
+            from vlmeval.dataset.utils import build_judge
+            nproc = judge_kwargs.pop('nproc', 16)
+            model = build_judge(**judge_kwargs)
+
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
             tups = [(model, line) for line in lines]
@@ -186,10 +193,12 @@ class DUDE(ImageBaseDataset):
             indices = [i for i in indices if i not in ans]
 
             if len(indices):
-                new_results = list()
-                for model, line in tqdm(tups):
-                    res = MMLongBench_auxeval(model, line)
-                    new_results.append(res)
+                new_results = track_progress_rich(
+                    MMLongBench_auxeval,
+                    tups,
+                    nproc=nproc,
+                    chunk_size=nproc
+                )
 
             log_map, res_map, pred_map = {}, {}, {}
             all_inds = [line['index'] for line in lines]
@@ -209,3 +218,11 @@ class DUDE(ImageBaseDataset):
         logger.info(f'DUDE successfully finished evaluating {eval_file}, results saved in {score_pth}')
         logger.info('Score: ')
         logger.info(score)
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        judge_name = kwargs.get('judge_name', cls.DEFAULT_JUDGE)
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name, judge_name=judge_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        return {'overall': rating.iloc[0]['avg_score'] * 100}

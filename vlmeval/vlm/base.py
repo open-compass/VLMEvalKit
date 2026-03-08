@@ -79,7 +79,7 @@ class BaseModel:
         elif self.check_content(inputs) == 'liststr':
             res = []
             for s in inputs:
-                mime, pth = parse_file(s)
+                mime, pth = parse_file(s, force_local=True)
                 if mime is None or mime == 'unknown':
                     res.append(dict(type='text', value=s))
                 else:
@@ -88,7 +88,7 @@ class BaseModel:
         elif self.check_content(inputs) == 'listdict':
             for item in inputs:
                 assert 'type' in item and 'value' in item
-                mime, s = parse_file(item['value'])
+                mime, s = parse_file(item['value'], force_local=True)
                 if mime is None:
                     assert item['type'] == 'text'
                 else:

@@ -1,14 +1,10 @@
-import os
 import re
-import evaluate
-import numpy as np
 import pandas as pd
 import json
-import jsonlines
 from tqdm import tqdm
 import os.path as osp
-from vlmeval import load, dump, track_progress_rich
-from vlmeval.dataset.utils.bmmr_grade import math_equal
+from ...smp import load, dump, track_progress_rich
+from .bmmr_grade import math_equal
 
 
 def extract_boxed_content(text):

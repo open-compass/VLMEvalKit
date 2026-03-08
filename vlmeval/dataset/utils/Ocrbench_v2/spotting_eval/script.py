@@ -14,65 +14,44 @@
 from collections import namedtuple
 import vlmeval.dataset.utils.Ocrbench_v2.spotting_eval.rrc_evaluation_funcs_1_1 as rrc_evaluation_funcs
 import importlib
+import numpy as np
+# python package name: Polygon3
+import Polygon as plg
 
-def evaluation_imports():
-    """
-    evaluation_imports: Dictionary ( key = module name , value = alias  )  with python modules used in the evaluation.
-    """
-    return {
-            'Polygon':'plg',
-            'numpy':'np'
-            }
 
 def default_evaluation_params():
     """
     default_evaluation_params: Default parameters to use for the validation and evaluation.
     """
     return {
-            'IOU_CONSTRAINT' :0.5,
-            'AREA_PRECISION_CONSTRAINT' :0.5,
-            'WORD_SPOTTING' :False,
-            'MIN_LENGTH_CARE_WORD' :3,
-            'GT_SAMPLE_NAME_2_ID':'gt_img_([0-9]+).txt',
-            'DET_SAMPLE_NAME_2_ID':'res_img_([0-9]+).txt',
-            'LTRB':False, #LTRB:2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
-            'CRLF':False, # Lines are delimited by Windows CRLF format
-            'CONFIDENCES':False, #Detections must include confidence value. AP will be calculated,
-            'SPECIAL_CHARACTERS':'!?.:,*"()·[]/\'',
-            'ONLY_REMOVE_FIRST_LAST_CHARACTER' : True
-        }
+        'IOU_CONSTRAINT' :0.5,
+        'AREA_PRECISION_CONSTRAINT' :0.5,
+        'WORD_SPOTTING' :False,
+        'MIN_LENGTH_CARE_WORD' :3,
+        'LTRB':False, #LTRB:2points(left,top,right,bottom) or 4 points(x1,y1,x2,y2,x3,y3,x4,y4)
+        'CONFIDENCES':False, #Detections must include confidence value. AP will be calculated,
+        'SPECIAL_CHARACTERS':'!?.:,*"()·[]/\'',
+        'ONLY_REMOVE_FIRST_LAST_CHARACTER' : True
+    }
 
-def validate_data(gtFilePath, submFilePath, evaluationParams):
+def validate_data(gt_lines, submit_lines, evaluationParams):
     """
     Method validate_data: validates that all files in the results folder are correct (have the correct name contents).
                             Validates also that there are no missing files in the folder.
                             If some error detected, the method raises the error
     """
-    gt = rrc_evaluation_funcs.load_zip_file(gtFilePath, evaluationParams['GT_SAMPLE_NAME_2_ID'])
-
-    subm = rrc_evaluation_funcs.load_zip_file(submFilePath, evaluationParams['DET_SAMPLE_NAME_2_ID'], True)
-
     #Validate format of GroundTruth
-    for k in gt:
-        rrc_evaluation_funcs.validate_lines_in_file(k,gt[k],evaluationParams['CRLF'],evaluationParams['LTRB'],True)
-
-    #Validate format of results
-    for k in subm:
-        if (k in gt) == False :
-            raise Exception("The sample %s not present in GT" %k)
-
-        rrc_evaluation_funcs.validate_lines_in_file(k,subm[k],evaluationParams['CRLF'],evaluationParams['LTRB'],True,evaluationParams['CONFIDENCES'])
+    rrc_evaluation_funcs.validate_lines(gt_lines, evaluationParams['LTRB'], True)
+    rrc_evaluation_funcs.validate_lines(submit_lines, evaluationParams['LTRB'], True, evaluationParams['CONFIDENCES'])
 
 
-def evaluate_method(gtFilePath, submFilePath, evaluationParams):
+def evaluate_method(gt_lines, submit_lines, evaluationParams):
     """
     Method evaluate_method: evaluate method and returns the results
         Results. Dictionary with the following values:
         - method (required)  Global method metrics. Ex: { 'Precision':0.8,'Recall':0.9 }
         - samples (optional) Per sample metrics. Ex: {'sample1' : { 'Precision':0.8,'Recall':0.9 } , 'sample2' : { 'Precision':0.8,'Recall':0.9 }
     """
-    for module,alias in evaluation_imports().items():
-        globals()[alias] = importlib.import_module(module)
 
     def polygon_from_points(points,correctOffset=False):
         """
@@ -117,13 +96,13 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
         return points
 
     def get_union(pD,pG):
-        areaA = pD.area();
-        areaB = pG.area();
-        return areaA + areaB - get_intersection(pD, pG);
+        areaA = pD.area()
+        areaB = pG.area()
+        return areaA + areaB - get_intersection(pD, pG)
 
     def get_intersection_over_union(pD,pG):
         try:
-            return get_intersection(pD, pG) / get_union(pD, pG);
+            return get_intersection(pD, pG) / get_union(pD, pG)
         except:
             return 0
 
@@ -198,21 +177,21 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             transcription = transcription[0:len(transcription)-2]
 
         #hypens at init or final of the word
-        transcription = transcription.strip('-');
+        transcription = transcription.strip('-')
 
-        specialCharacters = "'!?.:,*\"()·[]/";
+        specialCharacters = "'!?.:,*\"()·[]/"
         for character in specialCharacters:
             transcription = transcription.replace(character,' ')
 
         transcription = transcription.strip()
 
         if len(transcription) != len(transcription.replace(" ","")) :
-            return False;
+            return False
 
         if len(transcription) < evaluationParams['MIN_LENGTH_CARE_WORD']:
-            return False;
+            return False
 
-        notAllowed = "×÷·";
+        notAllowed = "×÷·"
 
         range1 = [ ord(u'a'), ord(u'z') ]
         range2 = [ ord(u'A'), ord(u'Z') ]
@@ -241,9 +220,9 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
             transcription = transcription[0:len(transcription)-2]
 
         #hypens at init or final of the word
-        transcription = transcription.strip('-');
+        transcription = transcription.strip('-')
 
-        specialCharacters = "'!?.:,*\"()·[]/";
+        specialCharacters = "'!?.:,*\"()·[]/"
         for character in specialCharacters:
             transcription = transcription.replace(character,' ')
 
@@ -257,176 +236,163 @@ def evaluate_method(gtFilePath, submFilePath, evaluationParams):
 
     Rectangle = namedtuple('Rectangle', 'xmin ymin xmax ymax')
 
-    gt = rrc_evaluation_funcs.load_zip_file(gtFilePath,evaluationParams['GT_SAMPLE_NAME_2_ID'])
-    subm = rrc_evaluation_funcs.load_zip_file(submFilePath,evaluationParams['DET_SAMPLE_NAME_2_ID'],True)
+    numGlobalCareGt = 0
+    numGlobalCareDet = 0
 
-    numGlobalCareGt = 0;
-    numGlobalCareDet = 0;
+    arrGlobalConfidences = []
+    arrGlobalMatches = []
 
-    arrGlobalConfidences = [];
-    arrGlobalMatches = [];
+    recall = 0
+    precision = 0
+    hmean = 0
+    detCorrect = 0
+    iouMat = np.empty([1,1])
+    gtPols = []
+    detPols = []
+    gtTrans = []
+    detTrans = []
+    gtPolPoints = []
+    detPolPoints = []
+    gtDontCarePolsNum = [] #Array of Ground Truth Polygons' keys marked as don't Care
+    detDontCarePolsNum = [] #Array of Detected Polygons' matched with a don't Care GT
+    detMatchedNums = []
+    pairs = []
 
-    for resFile in gt:
+    arrSampleConfidences = []
+    arrSampleMatch = []
+    sampleAP = 0
 
-        gtFile = rrc_evaluation_funcs.decode_utf8(gt[resFile])
-        if (gtFile is None) :
-            raise Exception("The file %s is not UTF-8" %resFile)
+    evaluationLog = ""
 
-        recall = 0
-        precision = 0
-        hmean = 0
-        detCorrect = 0
-        iouMat = np.empty([1,1])
-        gtPols = []
-        detPols = []
-        gtTrans = []
-        detTrans = []
-        gtPolPoints = []
-        detPolPoints = []
-        gtDontCarePolsNum = [] #Array of Ground Truth Polygons' keys marked as don't Care
-        detDontCarePolsNum = [] #Array of Detected Polygons' matched with a don't Care GT
-        detMatchedNums = []
-        pairs = []
-
-        arrSampleConfidences = [];
-        arrSampleMatch = [];
-        sampleAP = 0;
-
-        evaluationLog = ""
-
-        pointsList,_,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(gtFile,evaluationParams['CRLF'],evaluationParams['LTRB'],True,False)
-        for n in range(len(pointsList)):
-            points = pointsList[n]
-            transcription = transcriptionsList[n]
-            dontCare = transcription == "###"
-            if evaluationParams['LTRB']:
-                gtRect = Rectangle(*points)
-                gtPol = rectangle_to_polygon(gtRect)
-            else:
-                gtPol = polygon_from_points(points)
-            gtPols.append(gtPol)
-            gtPolPoints.append(points)
-
-            #On word spotting we will filter some transcriptions with special characters
-            if evaluationParams['WORD_SPOTTING'] :
-                if dontCare == False :
-                    if include_in_dictionary(transcription) == False :
-                        dontCare = True
-                    else:
-                        transcription = include_in_dictionary_transcription(transcription)
-
-            gtTrans.append(transcription)
-            if dontCare:
-                gtDontCarePolsNum.append( len(gtPols)-1 )
-
-        evaluationLog += "GT polygons: " + str(len(gtPols)) + (" (" + str(len(gtDontCarePolsNum)) + " don't care)\n" if len(gtDontCarePolsNum)>0 else "\n")
-
-        if resFile in subm:
-
-            detFile = rrc_evaluation_funcs.decode_utf8(subm[resFile])
-
-            pointsList,confidencesList,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_file_contents(detFile,evaluationParams['CRLF'],evaluationParams['LTRB'],True,evaluationParams['CONFIDENCES'])
-
-            for n in range(len(pointsList)):
-                points = pointsList[n]
-                transcription = transcriptionsList[n]
-
-                if evaluationParams['LTRB']:
-                    detRect = Rectangle(*points)
-                    detPol = rectangle_to_polygon(detRect)
-                else:
-                    detPol = polygon_from_points(points)
-                detPols.append(detPol)
-                detPolPoints.append(points)
-                detTrans.append(transcription)
-
-                if len(gtDontCarePolsNum)>0 :
-                    for dontCarePol in gtDontCarePolsNum:
-                        dontCarePol = gtPols[dontCarePol]
-                        intersected_area = get_intersection(dontCarePol,detPol)
-                        pdDimensions = detPol.area()
-                        precision = 0 if pdDimensions == 0 else intersected_area / pdDimensions
-                        if (precision > evaluationParams['AREA_PRECISION_CONSTRAINT'] ):
-                            detDontCarePolsNum.append( len(detPols)-1 )
-                            break
-
-            evaluationLog += "DET polygons: " + str(len(detPols)) + (" (" + str(len(detDontCarePolsNum)) + " don't care)\n" if len(detDontCarePolsNum)>0 else "\n")
-
-            if len(gtPols)>0 and len(detPols)>0:
-                #Calculate IoU and precision matrixs
-                outputShape=[len(gtPols),len(detPols)]
-                iouMat = np.empty(outputShape)
-                gtRectMat = np.zeros(len(gtPols),np.int8)
-                detRectMat = np.zeros(len(detPols),np.int8)
-                for gtNum in range(len(gtPols)):
-                    for detNum in range(len(detPols)):
-                        pG = gtPols[gtNum]
-                        pD = detPols[detNum]
-                        iouMat[gtNum,detNum] = get_intersection_over_union(pD,pG)
-
-                for gtNum in range(len(gtPols)):
-                    for detNum in range(len(detPols)):
-                        if gtRectMat[gtNum] == 0 and detRectMat[detNum] == 0 and gtNum not in gtDontCarePolsNum and detNum not in detDontCarePolsNum :
-                            if iouMat[gtNum,detNum]>evaluationParams['IOU_CONSTRAINT']:
-                                gtRectMat[gtNum] = 1
-                                detRectMat[detNum] = 1
-                                #detection matched only if transcription is equal
-                                if evaluationParams['WORD_SPOTTING']:
-                                    correct = gtTrans[gtNum].upper() == detTrans[detNum].upper()
-                                else:
-                                    correct = transcription_match(gtTrans[gtNum].upper(),detTrans[detNum].upper(),evaluationParams['SPECIAL_CHARACTERS'],evaluationParams['ONLY_REMOVE_FIRST_LAST_CHARACTER'])==True
-                                detCorrect += (1 if correct else 0)
-                                if correct:
-                                    detMatchedNums.append(detNum)
-                                pairs.append({'gt':gtNum,'det':detNum,'correct':correct})
-                                evaluationLog += "Match GT #" + str(gtNum) + " with Det #" + str(detNum) + " trans. correct: " + str(correct) + "\n"
-
-            if evaluationParams['CONFIDENCES']:
-                for detNum in range(len(detPols)):
-                    if detNum not in detDontCarePolsNum :
-                        #we exclude the don't care detections
-                        match = detNum in detMatchedNums
-
-                        arrSampleConfidences.append(confidencesList[detNum])
-                        arrSampleMatch.append(match)
-
-                        arrGlobalConfidences.append(confidencesList[detNum]);
-                        arrGlobalMatches.append(match);
-
-        numGtCare = (len(gtPols) - len(gtDontCarePolsNum))
-        numDetCare = (len(detPols) - len(detDontCarePolsNum))
-        if numGtCare == 0:
-            recall = float(1)
-            precision = float(0) if numDetCare >0 else float(1)
-            sampleAP = precision
+    pointsList,_,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_lines(gt_lines, evaluationParams['LTRB'],True,False)
+    for n in range(len(pointsList)):
+        points = pointsList[n]
+        transcription = transcriptionsList[n]
+        dontCare = transcription == "###"
+        if evaluationParams['LTRB']:
+            gtRect = Rectangle(*points)
+            gtPol = rectangle_to_polygon(gtRect)
         else:
-            recall = float(detCorrect) / numGtCare
-            precision = 0 if numDetCare==0 else float(detCorrect) / numDetCare
-            if evaluationParams['CONFIDENCES']:
-                sampleAP = compute_ap(arrSampleConfidences, arrSampleMatch, numGtCare )
+            gtPol = polygon_from_points(points)
+        gtPols.append(gtPol)
+        gtPolPoints.append(points)
 
-        hmean = 0 if (precision + recall)==0 else 2.0 * precision * recall / (precision + recall)
+        #On word spotting we will filter some transcriptions with special characters
+        if evaluationParams['WORD_SPOTTING'] :
+            if dontCare == False :
+                if include_in_dictionary(transcription) == False :
+                    dontCare = True
+                else:
+                    transcription = include_in_dictionary_transcription(transcription)
 
-        matchedSum += detCorrect
-        numGlobalCareGt += numGtCare
-        numGlobalCareDet += numDetCare
+        gtTrans.append(transcription)
+        if dontCare:
+            gtDontCarePolsNum.append( len(gtPols)-1 )
 
-        perSampleMetrics[resFile] = {
-                                        'precision':precision,
-                                        'recall':recall,
-                                        'hmean':hmean,
-                                        'pairs':pairs,
-                                        'AP':sampleAP,
-                                        'iouMat':[] if len(detPols)>100 else iouMat.tolist(),
-                                        'gtPolPoints':gtPolPoints,
-                                        'detPolPoints':detPolPoints,
-                                        'gtTrans':gtTrans,
-                                        'detTrans':detTrans,
-                                        'gtDontCare':gtDontCarePolsNum,
-                                        'detDontCare':detDontCarePolsNum,
-                                        'evaluationParams': evaluationParams,
-                                        'evaluationLog': evaluationLog
-                                    }
+    evaluationLog += "GT polygons: " + str(len(gtPols)) + (" (" + str(len(gtDontCarePolsNum)) + " don't care)\n" if len(gtDontCarePolsNum)>0 else "\n")
+
+    pointsList,confidencesList,transcriptionsList = rrc_evaluation_funcs.get_tl_line_values_from_lines(submit_lines,evaluationParams['LTRB'],True,evaluationParams['CONFIDENCES'])
+
+    for n in range(len(pointsList)):
+        points = pointsList[n]
+        transcription = transcriptionsList[n]
+
+        if evaluationParams['LTRB']:
+            detRect = Rectangle(*points)
+            detPol = rectangle_to_polygon(detRect)
+        else:
+            detPol = polygon_from_points(points)
+        detPols.append(detPol)
+        detPolPoints.append(points)
+        detTrans.append(transcription)
+
+        if len(gtDontCarePolsNum)>0 :
+            for dontCarePol in gtDontCarePolsNum:
+                dontCarePol = gtPols[dontCarePol]
+                intersected_area = get_intersection(dontCarePol,detPol)
+                pdDimensions = detPol.area()
+                precision = 0 if pdDimensions == 0 else intersected_area / pdDimensions
+                if (precision > evaluationParams['AREA_PRECISION_CONSTRAINT'] ):
+                    detDontCarePolsNum.append( len(detPols)-1 )
+                    break
+
+    evaluationLog += "DET polygons: " + str(len(detPols)) + (" (" + str(len(detDontCarePolsNum)) + " don't care)\n" if len(detDontCarePolsNum)>0 else "\n")
+
+    if len(gtPols)>0 and len(detPols)>0:
+        #Calculate IoU and precision matrixs
+        outputShape=[len(gtPols),len(detPols)]
+        iouMat = np.empty(outputShape)
+        gtRectMat = np.zeros(len(gtPols),np.int8)
+        detRectMat = np.zeros(len(detPols),np.int8)
+        for gtNum in range(len(gtPols)):
+            for detNum in range(len(detPols)):
+                pG = gtPols[gtNum]
+                pD = detPols[detNum]
+                iouMat[gtNum,detNum] = get_intersection_over_union(pD,pG)
+
+        for gtNum in range(len(gtPols)):
+            for detNum in range(len(detPols)):
+                if gtRectMat[gtNum] == 0 and detRectMat[detNum] == 0 and gtNum not in gtDontCarePolsNum and detNum not in detDontCarePolsNum :
+                    if iouMat[gtNum,detNum]>evaluationParams['IOU_CONSTRAINT']:
+                        gtRectMat[gtNum] = 1
+                        detRectMat[detNum] = 1
+                        #detection matched only if transcription is equal
+                        if evaluationParams['WORD_SPOTTING']:
+                            correct = gtTrans[gtNum].upper() == detTrans[detNum].upper()
+                        else:
+                            correct = transcription_match(gtTrans[gtNum].upper(),detTrans[detNum].upper(),evaluationParams['SPECIAL_CHARACTERS'],evaluationParams['ONLY_REMOVE_FIRST_LAST_CHARACTER'])==True
+                        detCorrect += (1 if correct else 0)
+                        if correct:
+                            detMatchedNums.append(detNum)
+                        pairs.append({'gt':gtNum,'det':detNum,'correct':correct})
+                        evaluationLog += "Match GT #" + str(gtNum) + " with Det #" + str(detNum) + " trans. correct: " + str(correct) + "\n"
+
+    if evaluationParams['CONFIDENCES']:
+        for detNum in range(len(detPols)):
+            if detNum not in detDontCarePolsNum :
+                #we exclude the don't care detections
+                match = detNum in detMatchedNums
+
+                arrSampleConfidences.append(confidencesList[detNum])
+                arrSampleMatch.append(match)
+
+                arrGlobalConfidences.append(confidencesList[detNum])
+                arrGlobalMatches.append(match)
+
+    numGtCare = (len(gtPols) - len(gtDontCarePolsNum))
+    numDetCare = (len(detPols) - len(detDontCarePolsNum))
+    if numGtCare == 0:
+        recall = float(1)
+        precision = float(0) if numDetCare >0 else float(1)
+        sampleAP = precision
+    else:
+        recall = float(detCorrect) / numGtCare
+        precision = 0 if numDetCare==0 else float(detCorrect) / numDetCare
+        if evaluationParams['CONFIDENCES']:
+            sampleAP = compute_ap(arrSampleConfidences, arrSampleMatch, numGtCare )
+
+    hmean = 0 if (precision + recall)==0 else 2.0 * precision * recall / (precision + recall)
+
+    matchedSum += detCorrect
+    numGlobalCareGt += numGtCare
+    numGlobalCareDet += numDetCare
+
+    perSampleMetrics[0] = {
+        'precision':precision,
+        'recall':recall,
+        'hmean':hmean,
+        'pairs':pairs,
+        'AP':sampleAP,
+        'iouMat':[] if len(detPols)>100 else iouMat.tolist(),
+        'gtPolPoints':gtPolPoints,
+        'detPolPoints':detPolPoints,
+        'gtTrans':gtTrans,
+        'detTrans':detTrans,
+        'gtDontCare':gtDontCarePolsNum,
+        'detDontCare':detDontCarePolsNum,
+        'evaluationParams': evaluationParams,
+        'evaluationLog': evaluationLog
+    }
 
     # Compute AP
     AP = 0

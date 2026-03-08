@@ -17,8 +17,6 @@ try:
 except ImportError:
     logging.warning('sympy or antlr4 is not installed, please install it for OlympiadBench evaluation.')
 
-FAIL_MSG = 'Failed to obtain answer via API.'
-
 
 def get_gpt4_extract_ICE():
     example_1 = """
@@ -153,7 +151,7 @@ def Olympiad_auxeval_extract(model, line):
         else:
             log += 'Succeed'
             return dict(log_extract=log, extract=res)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log_extract=log, extract='')
 
 
@@ -173,7 +171,7 @@ def Olympiad_auxeval_score(model, line):
         else:
             log += 'Succeed'
             return dict(log_score=log, score=int(res) == 1)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log_score=log, score=False)
 
 

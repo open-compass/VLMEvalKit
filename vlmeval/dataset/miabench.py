@@ -6,7 +6,6 @@ import pandas as pd
 from .image_base import ImageBaseDataset
 from ..smp import *
 from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
 
 
 def generate_prompt(d):
@@ -101,6 +100,7 @@ def get_score_dict(data, score_raw):
 
 class MIABench(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o'
 
     DATASET_URL = {
         'MIA-Bench': 'https://opencompass.openxlab.space/utils/VLMEval/Mia-Bench.tsv',

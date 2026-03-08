@@ -1,7 +1,6 @@
 from vlmeval.dataset.utils import build_judge
 from vlmeval.smp import *
 from .image_base import ImageBaseDataset
-from ..utils import track_progress_rich
 from ..smp import load, dump, decode_base64_to_image
 from .utils import DEBUG_MESSAGE
 from ..smp.file import get_intermediate_file_path
@@ -41,6 +40,8 @@ def str2json(s: str):
 
 class MOAT(ImageBaseDataset):
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-mini'
+
     DATASET_URL = {
         'MOAT': "https://huggingface.co/datasets/waltsun/MOAT/resolve/main/MOAT.tsv",
     }

@@ -10,9 +10,7 @@ import argparse
 
 from .image_base import ImageBaseDataset
 from .utils import build_judge
-from ..utils import track_progress_rich
-from ..smp import load, dump, d2df, toliststr
-from ..smp.file import get_intermediate_file_path
+from ..smp import load, dump, d2df, toliststr, track_progress_rich, get_intermediate_file_path
 
 
 def preprocess(str1):
@@ -116,6 +114,8 @@ def DynaMath_auxeval(model, line):
 class Dynamath(ImageBaseDataset):
 
     TYPE = 'VQA'
+    DEFAULT_JUDGE = 'gpt-4o-1120'
+
     DATASET_URL = {
         'DynaMath': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
         'DynaMath_noprompt': 'https://opencompass.openxlab.space/utils/VLMEval/DynaMath.tsv',
@@ -137,6 +137,8 @@ Example of expected JSON response format:
         "short answer": "[Concise Answer]"
     }
     TEXT_EXAMPLE = json.dumps(EXAMPLE, indent=4)
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
 
     # Given one data record, return the built prompt (a multi-modal message), can override
     def build_prompt(self, line):
@@ -173,7 +175,7 @@ Example of expected JSON response format:
         model = build_judge(model=judge_name, **judge_kwargs)
 
         storage = get_intermediate_file_path(eval_file, f'_{judge_name}')
-        score_file = get_intermediate_file_path(eval_file, f'_{judge_name}_score', 'csv')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
         tmp_file = get_intermediate_file_path(eval_file, f'_{judge_name}', 'pkl')
         nproc = judge_kwargs.pop('nproc', 6)  # noqa: F841
 
@@ -243,3 +245,15 @@ You are a helpful assistant that helps me to format free-form answers into a sho
 
         dump(score, score_file)
         return score
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        df = load(rating_file)
+        df = df[df['Setting'] == 'Worst Case']
+        rating = {k: df.iloc[0][k] * 100 for k in df.columns if k != 'Setting'}
+        res = {'overall': rating['Overall']}
+        if verbose:
+            res['rating'] = rating
+        return res

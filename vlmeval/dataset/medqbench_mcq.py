@@ -14,6 +14,7 @@ class MedqbenchMCQDataset(ImageMCQDataset):
     """MedQ-Bench MCQ Dataset"""
 
     TYPE = 'MCQ'
+    DEFAULT_JUDGE = 'chatgpt-0125'
 
     DATASET_URL = {
         'MedqbenchMCQ_dev': 'medqbench_QA_dev.tsv',

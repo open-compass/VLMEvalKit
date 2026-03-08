@@ -5,10 +5,12 @@ import pandas as pd
 import warnings
 import ast
 import math
+import os.path as osp
 
 from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
+from vlmeval.smp import *
 from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.dataset.utils import build_judge
 from vlmeval.dataset.utils.chartqapro import *
 
 
@@ -24,6 +26,11 @@ class ChartQAPro(ImageBaseDataset):
         "ChartQAPro_CoT": "27653ea8dd8dd3a85bc4f432db96447a",
         "ChartQAPro_PoT": "27653ea8dd8dd3a85bc4f432db96447a",
     }
+
+    # deepseek-v3-0324, serve as extractor if needed
+    DEFAULT_JUDGE = 'deepseek'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_rating.json'
 
     def build_prompt(self, line: Union[int, pd.Series], qa_type: str = 'Direct') -> List[Dict[str, str]]:
         """
@@ -73,39 +80,6 @@ class ChartQAPro(ImageBaseDataset):
 
         return msgs
 
-    def get_scores(self, result_file: str) -> pd.DataFrame:
-        """
-        Calculate scores by category from evaluation results.
-
-        Args:
-            result_file: Path to the file containing evaluation results
-
-        Returns:
-            DataFrame with scores for each category and overall score
-
-        Raises:
-            ValueError: If the dataset name is invalid
-        """
-
-        if "CoT" in self.dataset_name or "PoT" in self.dataset_name:
-            print("********** Warning: We follow the evaluation script for Direct to assess CoT and PoT, \
-                    the scores can be very low! **********")
-
-        data = file.load(result_file)
-
-        ans_list = []
-        for idx in range(len(data)):
-            llm_ans = {}
-            llm_ans['Answer'] = ast.literal_eval(data['answer'][idx])
-            llm_ans['Question Type'] = data['question_type'][idx]
-            llm_ans['Year'] = ast.literal_eval(data['year'][idx])
-            llm_ans['prediction'] = data['prediction'][idx]
-            ans_list.append(llm_ans)
-
-        scores = evaluate_predictions_chartqapro(ans_list)
-
-        return pd.DataFrame(list(scores.items()))
-
     def evaluate(self, eval_file: str, **judge_kwargs: Any) -> pd.DataFrame:
         """
         Evaluate model predictions on the ChartQAPro dataset.
@@ -117,10 +91,95 @@ class ChartQAPro(ImageBaseDataset):
         Returns:
             DataFrame with evaluation scores by category
         """
+        nproc = judge_kwargs.pop('nproc', 16)
 
-        score = self.get_scores(eval_file)
-        score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
+        model_name = judge_kwargs['model']
 
-        file.dump(score, score_file)
+        tgt_file = get_intermediate_file_path(eval_file, f"_{model_name}", 'tsv')
+        rating_file = get_intermediate_file_path(eval_file, "_rating", 'json')
 
+        if osp.exists(tgt_file):
+            data = load(tgt_file)
+        else:
+            model = build_judge(**judge_kwargs)
+            data = load(eval_file)
+            data['prediction'] = data['prediction'].astype(str)
+            jobs = [dict(model=model, line=line) for _, line in data.iterrows()]
+            ret = track_progress_rich(
+                ChartQAPro_auxeval,
+                jobs,
+                nproc=nproc,
+                desc='ChartQAPro Evaluation'
+            )
+            for k in ['score', 'extracted']:
+                data[k] = [item[k] for item in ret]
+            dump(data, tgt_file)
+        cates = list(set(data['question_type']))
+        score = {}
+        for c in cates:
+            score[c] = np.mean(data[data['question_type'] == c]['score'])
+        score['Overall'] = np.mean(data['score'])
+        dump(score, rating_file)
         return score
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        rating = {k: v * 100 for k, v in rating.items()}
+        res = {'overall': rating['Overall']}
+        if verbose:
+            res['rating'] = rating
+        return res
+
+
+EXTRACT_PROMPT = """\
+You are an AI assistant to help me extract the final answer from a model prediction. \
+You will be provided with a question and a model prediction. \
+Your should output **one single short answer** without any additional content. \
+If there are multiple final answers, put them in brackets using this format [’Answer1’, ’Answer2’].
+
+Example 1:
+Question: estimate the year in which wind capacity first exceeds 100 gw based on the trend shown in the chart.
+Prediction: Based on the chart, the "Wind" capacity is represented by the green bars. In a stacked bar chart, the value is typically read from the top of the segment to understand the cumulative capacity up to that point, or the segment height for individual capacity.\n\nThe individual height of the green "Wind" segment does not appear to exceed 100 GW on its own (it is roughly 70-75 GW at its peak in 2049-50). However, interpreting the question as asking when the cumulative capacity level *reached by the Wind segment* (the top of the green bar) crosses the 100 GW threshold:\n\n1.  Locate the 100 GW line on the Y-axis.\n2.  Trace the top of the green bars across the years.\n3.  In **2035-36**, the top of the green bar is clearly below the 100 GW line.\n4.  In **2036-37**, the top of the green bar is just touching or slightly below the line.\n5.  In **2037-38**, the top of the green bar clearly exceeds the 100 GW line.\n\nTherefore, the year in which the level first clearly exceeds 100 GW is 2037-38.\n\nAnswer: 2037-3
+Your output: 2037-3
+
+Example 2:
+Question: which player had the secnd highest rating average at age 21?
+Prediction: Marcus Bontempelli
+Your output: Marcus Bontempelli
+
+Your Task:
+Question: {question}?\nPrediction: {prediction}\nYour output:
+"""  # noqa: E501
+
+
+def ChartQAPro_auxeval(model, line):
+    answer_list = ast.literal_eval(line['answer'])
+    year_list = ast.literal_eval(line['year'])
+    prediction = line['prediction'].strip(".")
+    # will only use the last answer
+    answer = answer_list[-1].strip('.').strip("\n")
+    q_type = line['question_type']
+    if q_type == 'Conversational':
+        year = year_list[-1:]
+        # year = year_list
+    else:
+        year = year_list
+    questions = ast.literal_eval(line['question'])
+    question = questions[-1] if q_type == 'Conversational' else questions[0]
+    extracted = None
+
+    score = relaxed_correctness_chartqapro(answer, prediction, year_flags=year)
+    if score != 1 and len(prediction) > len(answer):
+        # Will Give it another try w. LLM extraction
+        extract_prompt = EXTRACT_PROMPT.format(question=question, prediction=prediction)
+        extracted = model.generate(extract_prompt)
+        score2 = relaxed_correctness_chartqapro(answer, extracted, year_flags=year)
+        if score2 > score:
+            score = score2
+        else:
+            extracted = None
+
+    return dict(score=score, extracted=extracted)

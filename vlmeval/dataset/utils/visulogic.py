@@ -1,6 +1,6 @@
 import re
 from ...smp import *
-from ...utils import can_infer
+from .matching_util import can_infer
 import timeout_decorator
 
 Option_list = ['A','B','C','D']

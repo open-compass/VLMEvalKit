@@ -20,6 +20,7 @@ class OmniDocBench(ImageBaseDataset):
     DATASET_URL = {'OmniDocBench':'https://huggingface.co/datasets/ouyanglinke/OmniDocBench_tsv/resolve/main/OmniDocBench.tsv'}
     DATASET_MD5 = {'OmniDocBench': '0fa5ccf31e682e219cb9ca83da741a59'}
 
+    RATING_FORMAT = '{model_name}_{dataset_name}_overall.tsv'
 
     system_prompt = r'''You are an AI assistant specialized in converting PDF images to Markdown format. Please follow these instructions for the conversion:
 
@@ -69,6 +70,19 @@ class OmniDocBench(ImageBaseDataset):
         metircs_table=Table_evalutor.score()
 
         return metrics_all
+
+    @classmethod
+    def report_score(cls, model_name, dataset_name, root, verbose=False, **kwargs):
+        rating_file = cls.RATING_FORMAT.format(model_name=model_name, dataset_name=dataset_name)
+        rating_file = osp.join(root, rating_file)
+        rating = load(rating_file)
+        rating = {k: rating.iloc[0][k] for k in rating.columns}
+        res = {}
+        res['overall_en'] = rating['overall_EN']
+        res['overall_cn'] = rating['overall_CH']
+        if verbose:
+            res['rating'] = rating
+        return res
 
 
 class end2end_evaluator():

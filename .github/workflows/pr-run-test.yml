@@ -74,8 +74,16 @@ jobs:
           for i in {1..300}; do
             current_status=$(rjob get vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }} | grep -oP 'rjob [^:]+: \K[^ ]+')
             echo "Current status: $current_status, stop checking"
-            if [[ $current_status == "Succeeded" || $current_status == "Failed" || $current_status == "Stopped" ]]; then
-                break
+            if [[ $current_status == "Succeeded" ]]; then
+              echo "任务成功完成"
+              break
+            elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
+              echo "任务失败"
+              rjob logs job vllm-pr-test-${{ github.run_id }}-${{matrix.model_name}}-${{matrix.dataset_name}}-${{ github.run_attempt }}
+              exit 1
+            elif [[ $current_status == "Failed" || $current_status == "Stopped" ]]; then
+              echo "任务被停止"
+              exit 1
             fi
             sleep 6
           done

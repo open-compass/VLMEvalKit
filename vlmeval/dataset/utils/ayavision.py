@@ -2,9 +2,6 @@ import pandas as pd
 from ...smp import *
 
 
-FAIL_MSG = "Failed to obtain answer via API."
-
-
 def build_prompt_ayavision(line):
     question = line["question"]
     prediction = str(line["prediction"])
@@ -34,7 +31,7 @@ def AyaVision_auxeval(model, line):
         res = model.generate(prompt, temperature=i * 0.5)
 
         if FAIL_MSG in res:
-            log += f"Try {i}: output is {res}, failed to parse.\\n"
+            log += f"Try {i}: output is {res}, failed to parse.\n"
         elif "[[CORRECT]]" in res:
             log += "Succeed"
             hit = 1
@@ -44,7 +41,7 @@ def AyaVision_auxeval(model, line):
             hit = 0
             return dict(log=log, res=res, hit=hit)
         else:
-            log += f"Try {i}: output is {res}, failed to parse.\\n"
+            log += f"Try {i}: output is {res}, failed to parse.\n"
 
-    log += "All 5 retries failed.\\n"
+    log += f"All 5 retries failed. {FAIL_MSG}\n"
     return dict(log=log, res="", hit=0)

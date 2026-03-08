@@ -4,7 +4,6 @@ import sympy
 import re
 import pandas as pd
 
-FAIL_MSG = 'Failed to obtain answer via API.'
 
 id_answer_pair_prompt = """Please read the following example. Then extract the answer from the model response and type it at the end of the prompt.
 Example:
@@ -1129,7 +1128,7 @@ def MMEReasoning_extract(model, line):
         else:
             log += 'Succeed'
             return dict(log=log, res=res)
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log=log, res='')
 
 def MMEReasoning_openeval(model, line):
@@ -1175,7 +1174,7 @@ You should only output the judgement without any other texts.
                 return dict(log_score=log, score=int(res) == 1)
         except:
             continue
-    log += 'All 5 retries failed.\n'
+    log += f'All 5 retries failed. {FAIL_MSG}\n'
     return dict(log_score=log, score=False)
 
 

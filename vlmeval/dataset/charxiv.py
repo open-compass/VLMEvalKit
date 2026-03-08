@@ -4,11 +4,9 @@ from typing import Dict, List, Tuple, Any, Union
 import pandas as pd
 import warnings
 
-from vlmeval.dataset.image_base import ImageBaseDataset
-from vlmeval.smp import misc, file
-from vlmeval.smp.file import get_intermediate_file_path
-from vlmeval import utils
-from vlmeval.dataset.utils import build_judge
+from .image_base import ImageBaseDataset
+from ..smp import misc, file, track_progress_rich, get_intermediate_file_path, parse_json
+from .utils import build_judge
 
 
 def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
@@ -21,13 +19,12 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
         **kwargs: Additional arguments for the judge model
 
     Returns:
-        Dict containing evaluation results with extract_answer and score
+        Dict containing evaluation results with extracted_answer and score
     """
-    failure_result = {"extract_answer": "Failed to parse response", "score": 0.0}
+    failure_result = {"extracted_answer": "Failed to parse response", "score": 0.0}
     prompt = line["grading_query"].replace("{PREDICTION}", line["prediction"])
-
-    retry = kwargs.get("retry", 10)
-    max_tokens = kwargs.get("max_tokens", 256)
+    retry = kwargs.get("retry", 3)
+    max_tokens = kwargs.get("max_tokens", 1024)
     temperature = kwargs.get("temperature", 0)
     seed = kwargs.get("seed", 42)
     top_p = kwargs.get("top_p", 1)
@@ -41,12 +38,12 @@ def auxeval(judge_model: Any, line: pd.Series, **kwargs: Any) -> Dict[str, Any]:
                 seed=seed,
                 top_p=top_p,
             )
-            content = json.loads(response)
-            if not isinstance(content, dict):
-                return failure_result
-            if "score" not in content or "extract_answer" not in content:
-                return failure_result
-            return content
+            content = parse_json(response)
+            if 'score' in content and 'extracted_answer' in content:
+                return content
+            else:
+                print(response, flush=True)
+            temperature += 0.5
         except Exception:
             continue
 
@@ -104,13 +101,15 @@ def qid2category(mode: str) -> Tuple[Dict[int, str], str]:
 class CharXiv(ImageBaseDataset):
     TYPE = "VQA"
     DATASET_URL = {
-        "CharXiv_descriptive_val": "http://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
-        "CharXiv_reasoning_val": "http://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
+        "CharXiv_descriptive_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_descriptive_val.tsv",
+        "CharXiv_reasoning_val": "https://opencompass.openxlab.space/utils/VLMEval/CharXiv_reasoning_val.tsv",
     }
     DATASET_MD5 = {
-        "CharXiv_descriptive_val": "e165037032f169a59dd09ea5d7ad3073",
-        "CharXiv_reasoning_val": "98eeff269b40726982627b19338ccd45",
+        'CharXiv_descriptive_val': '8507c3740f8ddaedcb6b5c1cfcb3fa06',
+        'CharXiv_reasoning_val': '6fc1a522ad32c2e3d72a89857b8cf10b',
     }
+    DEFAULT_JUDGE = 'gpt-4o'
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_{judge_name}.tsv'
 
     def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
         """
@@ -190,23 +189,21 @@ class CharXiv(ImageBaseDataset):
             DataFrame with evaluation scores by category
         """
         # Set up judge model
-        if "LOCAL_LLM" in os.environ:
-            judge_model = os.path.basename(os.environ.get("LOCAL_LLM"))
-        else:
-            judge_model = judge_kwargs.get("model", "gpt-4o-mini")
+        judge_model = judge_kwargs.pop("model", "gpt-4o-mini")
 
         if judge_model != "gpt-4o-mini":
             warnings.warn(
                 f"The judge_model '{judge_model}' is not gpt-4o-mini. Evaluation results may not be accurate."
             )
 
+        judge_model_name = judge_model
+        nproc = judge_kwargs.pop("nproc", 16)
         judge_model = build_judge(model=judge_model, **judge_kwargs)
-        judge_model_name = judge_model.model
 
         # Define file paths
         result_file = get_intermediate_file_path(eval_file, f"_{judge_model_name}")
         temp_result_file = get_intermediate_file_path(eval_file, f"_{judge_model_name}", "pkl")
-        score_file = get_intermediate_file_path(result_file, "_acc", "csv")
+        score_file = get_intermediate_file_path(eval_file, "_acc", "csv")
 
         # Return existing results if available
         if os.path.exists(result_file):
@@ -215,10 +212,11 @@ class CharXiv(ImageBaseDataset):
             return score
 
         data = file.load(eval_file)
+        data['prediction'] = data['prediction'].astype(str)
         if "score" not in data.columns:
             data["score"] = 0
-        if "extract_answer" not in data.columns:
-            data["extract_answer"] = ""
+        if "extracted_answer" not in data.columns:
+            data["extracted_answer"] = ""
 
         # Load intermediate results if available
         processed_results = {}
@@ -230,23 +228,21 @@ class CharXiv(ImageBaseDataset):
         tups = [(judge_model, data.iloc[i]) for i in range(len(data)) if i not in processed_results]
 
         # Process remaining examples
-        nproc = judge_kwargs.pop("nproc", 4)
         if len(indices):
-            utils.track_progress_rich(
+            track_progress_rich(
                 auxeval,
                 tups,
                 nproc=nproc,
                 chunksize=nproc,
                 keys=indices,
                 save=temp_result_file,
-                **judge_kwargs,
             )
             processed_results = file.load(temp_result_file)
 
         # Update data with evaluation results
         data["score"] = data.apply(lambda x: processed_results[x.name]["score"], axis=1)
-        data["extract_answer"] = data.apply(
-            lambda x: processed_results[x.name]["extract_answer"], axis=1
+        data["extracted_answer"] = data.apply(
+            lambda x: processed_results[x.name]["extracted_answer"], axis=1
         )
 
         # Save results and return scores

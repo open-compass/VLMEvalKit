@@ -3,19 +3,12 @@ import os
 import sys
 from vlmeval.api.base import BaseAPI
 import math
-from vlmeval.dataset import DATASET_TYPE
-from vlmeval.dataset import img_root_map
-from io import BytesIO
 import pandas as pd
-import requests
 import json
-import base64
-import time
 
 
 class HunyuanWrapper(BaseAPI):
 
-    is_api: bool = True
     _apiVersion = '2024-12-31'
     _service = 'hunyuan'
 
@@ -71,6 +64,7 @@ class HunyuanWrapper(BaseAPI):
         )
 
     def use_custom_prompt(self, dataset_name):
+        from vlmeval.dataset import DATASET_TYPE
         if DATASET_TYPE(dataset_name) == 'MCQ':
             return True
         else:
@@ -119,10 +113,8 @@ class HunyuanWrapper(BaseAPI):
                 if msg['type'] == 'text':
                     content_list.append(dict(Type='text', Text=msg['value']))
                 elif msg['type'] == 'image':
-                    from PIL import Image
-                    img = Image.open(msg['value'])
-                    b64 = encode_image_to_base64(img)
-                    img_struct = dict(Url=f'data:image/jpeg;base64,{b64}')
+                    img_struct = self._openai_image_url_struct(msg['value'])
+                    img_struct['Url'] = img_struct.pop('url')
                     content_list.append(dict(Type='image_url', ImageUrl=img_struct))
         else:
             assert all([x['type'] == 'text' for x in inputs])

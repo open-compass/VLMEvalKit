@@ -1,10 +1,8 @@
 import string
-from vlmeval import *
 from ..smp import *
 from ..smp.file import get_intermediate_file_path
 from .image_vqa import ImageVQADataset
 from .utils.judge_util import build_judge
-from ..utils import track_progress_rich
 
 EVAL_TEMPLATE = """
 You are a strict evaluator assessing answer correctness. You must score the model's prediction on a scale from 0 to 9.
@@ -129,6 +127,10 @@ class SFE(ImageVQADataset):
         + "The question is an open-ended question. Answer the question using a phrase."
     )
 
+    JUDGE_FORMAT = '{model_name}_{dataset_name}_judge.tsv'
+    RATING_FORMAT = '{model_name}_{dataset_name}_score.csv'
+    DEFAULT_JUDGE = 'gpt-4o-1120'
+
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
@@ -183,14 +185,11 @@ class SFE(ImageVQADataset):
             model = judge_kwargs.pop('model', 'gpt-4o-1120')
             if model == 'exact_matching':
                 model = None
-            elif gpt_key_set():
+            else:
                 model = build_judge(model=model, **judge_kwargs)
                 if not model.working():
                     warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
                     model = None
-            else:
-                model = None
-                warnings.warn('OPENAI_API_KEY is not working properly, will use exact matching for evaluation')
 
             if model is not None:
                 if 'g_index' not in data:
