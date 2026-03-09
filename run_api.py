@@ -11,8 +11,22 @@ from vlmeval.config import supported_VLM
 from vlmeval.dataset import build_dataset
 from vlmeval.smp import *
 from vlmeval.api import LMDeployAPI
+from vlmeval.api.adapters import get_adapter_registry
 
 from vlmeval.inference_api import APIEvalPipeline, DatasetConfig
+
+
+group_dic = {
+    'general-mini': ['MMMU_Pro_10c'],
+    'math-reasoning-mini': ['MathVista_MINI', 'OlympiadBench', 'IPhO_2025', 'Physics'],
+    'sci-reasoning-mini': ['SFE', 'MaCBench', 'MicroVQA', 'XLRS-Bench-lite', 'MSEarthMCQ'],
+    'language-mini': ['MM-IFEval'],
+    'coding-mini': ['ChartMimic_v2_direct'],
+    'svg-mini': ['SArena_MINI'],
+    'agent-mini': ['ScreenSpot_v2_Mobile', 'ScreenSpot_v2_Desktop', 'ScreenSpot_v2_Web'],
+    'video-mini': ['Video-MME_64frame', 'VideoMMMU_48frame'],
+    'sensing-mini': ['RefCOCO', 'OCRBench_v2_MINI', 'CCOCR', 'ChartQAPro', 'BLINK'],
+}
 
 
 def get_judge_kwargs(dataset_name: str, args) -> dict:
@@ -20,7 +34,8 @@ def get_judge_kwargs(dataset_name: str, args) -> dict:
     judge_kwargs = {
         'nproc': args.judge_api_nproc,
         'verbose': args.verbose,
-        'retry': args.retry if args.retry is not None else 3,
+        'retry': args.judge_retry,
+        'timeout': args.judge_timeout,
         **(json.loads(args.judge_args) if args.judge_args else {}),
     }
 
@@ -28,15 +43,11 @@ def get_judge_kwargs(dataset_name: str, args) -> dict:
         judge_kwargs['api_base'] = f"{args.judge_base_url.rstrip('/')}/chat/completions"
     if args.judge_key:
         judge_kwargs['key'] = args.judge_key
-    if args.retry is not None:
-        judge_kwargs['retry'] = args.retry
 
     if args.judge is not None:
         judge_kwargs['model'] = args.judge
     else:
         judge_kwargs['model'] = 'gpt-4o-mini'  # default
-
-        dataset_lower = dataset_name.lower()
 
         if listinstr(['WeMath', 'MME-Reasoning'], dataset_name):
             judge_kwargs['model'] = 'gpt-4o-mini'
@@ -110,46 +121,59 @@ For more details, see the documentation in run.py.
     )
 
     parser.add_argument('--data', type=str, nargs='+', help='Names of Datasets')
+    parser.add_argument('--group', type=str, nargs='+', default=None,
+                        help='Benchmark groups to evaluate (see group_dic). Use "all" to run all groups.')
 
-    # ================ For infer model ==============
+    # ================ 推理模型参数 ==============
     parser.add_argument('--model', type=str, required=True)
-    parser.add_argument('--base-url', type=str, default=None, help='API base URL')
-    parser.add_argument('--key', type=str, default='sk-admin', help='API key')
+    parser.add_argument('--base-url', type=str, default=None,
+                        help='Base URL of OpenAI-compatible API (e.g. http://localhost:8080/v1). '
+                             'If set, LMDeployAPI is used for inference without modifying config.py.')
+    parser.add_argument('--key', type=str, default='sk-admin', help='API key for inference model')
     parser.add_argument('--thinker', action='store_true',
-                        help='Longer timeout and higher max_tokens')
-    parser.add_argument('--temperature', type=float, default=0.7)
-    parser.add_argument('--top-k', type=int, default=50)
-    parser.add_argument('--top-p', type=float, default=1.0)
+                        help='Enable thinking mode: doubles timeout and max_tokens.')
+    parser.add_argument('--use-enable-thinking', action='store_true',
+                        help='Pass enable_thinking flag to the model.')
+    parser.add_argument('--enable-thinking', action='store_true',
+                        help='Value of enable_thinking passed to model (requires --use-enable-thinking).')
+    parser.add_argument('--max-tokens', type=int, default=2 ** 15,
+                        help='Max tokens for model generation.')
+    parser.add_argument('--temperature', type=float, default=None)
+    parser.add_argument('--top-k', type=int, default=None)
+    parser.add_argument('--top-p', type=float, default=None)
     parser.add_argument('--repetition-penalty', type=float, default=None)
+    parser.add_argument('--presence-penalty', type=float, default=None)
     parser.add_argument('--api-nproc', type=int, default=32,
                         help='Parallel API calling (inference concurrency)')
     parser.add_argument('--timeout', type=int, default=1800,
-                        help='Max time for inferencing')
+                        help='Max time in seconds for a single inference request.')
+    parser.add_argument('--retry', type=int, default=6,
+                        help='Retry times for failed inference.')
+    parser.add_argument('--custom-prompt', type=str,
+                        choices=list(get_adapter_registry().keys()), default=None,
+                        help='Manually select a model adapter by name.')
 
-    # ================ For judge model ==============
+    # ================ judge 模型参数 ==============
     parser.add_argument('--judge', type=str, default=None)
     parser.add_argument('--judge-base-url', type=str, default=None,
-                        help='The base url of judger')
-    parser.add_argument('--judge-key', type=str, default='sk-admin',
-                        help='The key of judger')
+                        help='Base URL of judge API')
+    parser.add_argument('--judge-key', type=str, default=None,
+                        help='API key for judge model')
     parser.add_argument('--judge-api-nproc', type=int, default=32,
                         help='Parallel API calling for judger')
+    parser.add_argument('--judge-retry', type=int, default=6,
+                        help='Retry times for failed judgement.')
+    parser.add_argument('--judge-timeout', type=int, default=600,
+                        help='Max time in seconds for judgement.')
+    # legacy judger parameters
     parser.add_argument('--judge-args', type=str, default=None,
                         help='Judge arguments in JSON format')
-
-    # ==============================================
-    parser.add_argument('--custom-prompt',
-                        type=str,
-                        choices=list(LMDeployAPI.prompt_map.keys()),
-                        default=None)
 
     parser.add_argument('--work-dir', type=str, default='./outputs',
                         help='Select the output directory')
     parser.add_argument('--mode', type=str, default='all',
                         choices=['all', 'infer', 'eval'],
                         help='Mode: all (infer+eval), infer (only), eval (only)')
-    parser.add_argument('--retry', type=int, default=None,
-                        help='Retry numbers for API VLMs')
     parser.add_argument('--verbose', action='store_true')
     parser.add_argument('--ignore', action='store_true',
                         help='Ignore failed indices')
@@ -174,7 +198,23 @@ def main():
     args = parse_args()
 
     # ==============================================
-    # Prepare work dir
+    # Resolve --group into dataset list
+    # ==============================================
+    if args.group is not None and len(args.group) > 0:
+        if 'all' in args.group:
+            groups = list(group_dic.keys())
+        else:
+            groups = args.group
+        assert args.data is None, '--data and --group should not be set at the same time'
+        args.data = []
+        for g in groups:
+            assert g in group_dic, f'Unknown group: {g}. Available: {list(group_dic.keys())}'
+            args.data.extend(group_dic[g])
+
+    assert args.data, '--data or --group must be set'
+
+    # ==============================================
+    # Prepare work dir and logging
     # ==============================================
     date, commit_id = timestr('day'), githash(digits=8)
     eval_id = f"T{date}_G{commit_id}"
@@ -209,38 +249,43 @@ def main():
         return
 
     # ==============================================
+    # Build model args (shared across all datasets)
+    # ==============================================
+    use_think_args = args.thinker
+    if args.base_url is not None:
+        model_args = dict(
+            model=args.model,
+            api_base=f"{args.base_url.rstrip('/')}/chat/completions",
+            key=args.key,
+            custom_prompt=args.custom_prompt,
+            max_tokens=args.max_tokens,
+            retry=args.retry,
+            timeout=args.timeout,
+            temperature=args.temperature,
+            top_k=args.top_k,
+            top_p=args.top_p,
+            repetition_penalty=args.repetition_penalty,
+            presence_penalty=args.presence_penalty,
+            verbose=args.verbose,
+        )
+        model_args = {k: v for k, v in model_args.items() if v is not None}
+        if args.use_enable_thinking:
+            model_args['enable_thinking'] = args.enable_thinking
+        if use_think_args:
+            model_args.update(dict(timeout=args.timeout * 2, max_tokens=args.max_tokens * 2))
+        model_builder = partial(LMDeployAPI, **model_args)
+    else:
+        assert model_name in supported_VLM, \
+            f'Model "{model_name}" not found in supported_VLM. Consider using --base-url to specify an API endpoint.'
+        model_builder = supported_VLM[model_name]
+
+    # ==============================================
     # Prepare all datasets
     # ==============================================
     dataset_configs: List[DatasetConfig] = []
 
     for ds_name in args.data:
-        logger.info(f'Preparing dataset: {ds_name}')
-
-        use_think_args = args.thinker
-
-        # Construct the model builder for the dataset.
-        if args.base_url is not None:
-            model_args = dict(
-                model=args.model,
-                api_base=f"{args.base_url.rstrip('/')}/chat/completions",
-                key=args.key,
-                custom_prompt=args.custom_prompt,
-                max_tokens=2**15,
-                retry=6,
-                timeout=args.timeout,
-                temperature=args.temperature,
-                top_k=args.top_k,
-                top_p=args.top_p,
-                repetition_penalty=args.repetition_penalty,
-                verbose=args.verbose,
-            )
-            if use_think_args:
-                model_args.update(dict(timeout=args.timeout * 2, max_tokens=2**16))
-            model_builder = partial(LMDeployAPI, **model_args)
-        else:
-            assert model_name in supported_VLM, \
-                f'Unsupported internal VLM name: {model_name}. Consider using `--base-url`.'
-            model_builder = supported_VLM[model_name]
+        logger.info(f'-------------------- {ds_name} --------------------')
 
         # Construct the dataset.
         try:
@@ -278,8 +323,8 @@ def main():
                 logger.info(f'{ds_name} requires special handling, skipped in pipeline.')
                 continue
 
-            # Prepare judge kwargs
             judge_kwargs = get_judge_kwargs(ds_name, args)
+            logger.info(f'Judge kwargs: {judge_kwargs}')
 
             # Complete the dataset config
             if dataset.MODALITY == 'VIDEO':
@@ -327,7 +372,7 @@ def main():
     try:
         asyncio.run(pipeline.run())
     except KeyboardInterrupt:
-        logger.warning("⚠️ Pipeline interrupted by user.")
+        logger.warning("Pipeline interrupted by user.")
     except Exception as e:
         logger.exception(f"Pipeline failed with error: {e}")
 
