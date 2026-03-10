@@ -8,10 +8,10 @@
 
 ## Installation
 
-1. 推荐在虚拟环境中安装 VLMEvalKit，例如使用 conda / venv 创建虚拟环境 (推荐基于 python 3.10+)，创建好环境后，请遵循以下安装步骤：
-  - 由于不同开源模型常使用不同的 torch 与 transformers 版本，为了避免冲突，建议在安装 VLMEvalKit 前先安装好对应版本的 torch 与 transformers。如对 torch，transformers 版本无特殊要求，可直接安装任一较新版本 (推荐 torch 2.4+)
-  - 安装依赖 `pip install -r requirements.txt`
-  - 安装 VLMEvalKit `pip install -e .`
+ We recommend installing VLMEvalKit in a virtual environment, such as using conda / venv to create a virtual environment (recommended to be based on python 3.10+). After creating the environment, please follow the installation steps below:
+1. Since different open-source models often use different versions of torch and transformers, to avoid conflicts, it is recommended to install the corresponding versions of torch and transformers before installing VLMEvalKit. If there are no special requirements for torch and transformers versions, you can directly install any newer version (recommended torch 2.4+)
+2. Install dependencies `pip install -r requirements.txt`
+3. Install VLMEvalKit `pip install -e .`
 
 ## Documentation
 
