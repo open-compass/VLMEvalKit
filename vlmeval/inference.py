@@ -264,7 +264,6 @@ def infer_data_job(
 
         if os.getenv('SPLIT_THINK', False):
             prediction = list(data['prediction'])
-            from vlmeval.api.seed_thirdparty.postprocess import extract_and_remove_think_tags
             print(f'Prediction format: {os.getenv("SPLIT_THINK")},splitting func: {extract_and_remove_think_tags}')
             tups = [extract_and_remove_think_tags(x) for x in prediction]
             data['raw_prediction'] = prediction

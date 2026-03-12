@@ -314,3 +314,42 @@ def get_gpu_memory():
     except Exception as e:
         print(f'{type(e)}: {str(e)}')
         return []
+
+
+def _rm(text, key_pair):
+    result_text = []
+    think_contents = []
+    start = 0
+    text_length = len(text)
+    while start < text_length:
+        think_start = text.find(key_pair[0], start)
+        if think_start == -1:
+            result_text.append(text[start:])
+            break
+
+        think_end = text.find(key_pair[1], think_start)
+        if think_end == -1:
+            think_contents.append(text[start:])
+            result_text.append("思考过程过长，被截断")
+            break
+
+        # 添加标签前的文本
+        result_text.append(text[start:think_start])
+
+        # 提取并存储标签内的内容 (去除<think>和</think>标签)
+        content_start = think_start + len(key_pair[0])  # <think> 的长度是7
+        think_contents.append(text[content_start:think_end])
+
+        start = think_end + len(key_pair[1])  # </think> 的长度是8
+
+    return "".join(result_text), think_contents
+
+
+def extract_and_remove_think_tags(text: str, thinking_tags=['<think>', "◁/think▷", "<thinking>"]):
+    result_text = text
+    think_contents = []
+    for bot in thinking_tags:
+        eot = bot[0] + '/' + bot[1:]
+        result_text, think = _rm(result_text, key_pair=(bot, eot))
+        think_contents.extend(think)
+    return result_text, think_contents
