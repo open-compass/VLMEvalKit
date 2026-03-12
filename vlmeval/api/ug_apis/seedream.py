@@ -8,6 +8,7 @@ from PIL import Image
 
 from ..base import BaseAPI
 
+
 class Seedream4ImageWrapper(BaseAPI):
 
     SUPPORT_GEN = True
@@ -134,7 +135,8 @@ class Seedream4ImageWrapper(BaseAPI):
                 extra_body=extra,
             )
             if not resp.data:
-                return -1, self.fail_msg, {'error': 'empty response', 'resp': getattr(resp, 'model_dump', lambda: str(resp))()}
+                return -1, self.fail_msg, {
+                    'error': 'empty response', 'resp': getattr(resp, 'model_dump', lambda: str(resp))()}
 
             item = resp.data[0]
             if response_format == 'url':
@@ -154,6 +156,7 @@ class Seedream4ImageWrapper(BaseAPI):
                 return -1, self.fail_msg, {'error': f'unsupported response_format={response_format}', 'resp': resp}
         except Exception as e:
             return -1, f'{self.fail_msg}{type(e)} {str(e)}', ''
+
 
 class SeedreamImage(Seedream4ImageWrapper):
 
