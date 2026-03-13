@@ -4298,7 +4298,7 @@ class VLMsAreBiased(ImageBaseDataset):
 
         summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
 
-        score_file = get_intermediate_file_path(eval_file, '_metrics', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         dump(summary_dict, score_file)
 
         return summary_dict
