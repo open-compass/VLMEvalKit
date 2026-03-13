@@ -4095,7 +4095,7 @@ class MathCanvas(ImageBaseDataset):
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        score_file = get_intermediate_file_path(eval_file, '_metrics', 'json')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
