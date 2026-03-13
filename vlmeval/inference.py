@@ -9,6 +9,22 @@ from vlmeval.dataset import ImageBaseDataset
 is_response_err = ImageBaseDataset.is_response_err
 
 
+def omni_remove_think_tag(s):
+    from vlmeval.api.seed_thirdparty.postprocess import extract_and_remove_think_tags
+    if isinstance(s, str):
+        pred, think = extract_and_remove_think_tags(s)
+        pred = pred.strip() if len(pred.strip()) else think[0]
+        return dict(raw_prediction=s, prediction=pred, thinking=think)
+    elif isinstance(s, list):
+        ret = [omni_remove_think_tag(x) for x in s]
+        results = {}
+        for k in ['raw_prediction', 'prediction', 'thinking']:
+            results[k] = [x[k] for x in ret]
+        return results
+    else:
+        raise NotImplementedError(f'omni_remove_think_tag not implemented for {type(s)}')
+
+
 def validate_prediction(prediction):
     if prediction is None or pd.isna(prediction) or prediction == '':
         return False
@@ -60,43 +76,50 @@ def infer_data_api(model, work_dir, model_name, dataset, out_file=None, api_npro
     res = {k: v for k, v in res.items() if not is_response_err(v)}
     indices = list(data['index'])
     missing = [i for i in indices if i not in res]
-    if len(missing):
-        missing_set = set(missing)
-        # subset that needs inference
-        data = data[data['index'].isin(missing_set)]
-
-        assert getattr(model, 'is_api', False)
-        if hasattr(model, 'set_dump_image'):
-            model.set_dump_image(dataset.dump_image)
-        indices = list(data['index'])
-
-        structs = []
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            assert hasattr(model, 'build_prompt')
-            func = model.build_prompt
-            jobs = [dict(line=data.iloc[i], dataset=dataset_name) for i in range(len(data))]
-        else:
-            func = dataset.build_prompt
-            jobs = [dict(line=data.iloc[i]) for i in range(len(data))]
-
-        data_nproc = min(mp.cpu_count(), 32)
-        structs = track_progress_rich(
-            func, jobs, nproc=data_nproc, desc=f'Building Prompt [{dataset_name}]')
-
-        gen_func = model.generate
-        structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
-
-        if len(structs):
-            track_progress_rich(
-                gen_func,
-                structs,
-                nproc=api_nproc,
-                save=out_file,
-                keys=indices,
-                desc=f'API Inference [{model_name} on {dataset_name}]')
-    else:
+    if len(missing) == 0:
         dump(res, out_file)
-    return
+        return
+
+    # subset that needs inference
+    data = data[data['index'].isin(set(missing))]
+
+    assert getattr(model, 'is_api', False)
+    if hasattr(model, 'set_dump_image'):
+        model.set_dump_image(dataset.dump_image)
+    indices = list(data['index'])
+
+    if dataset.with_inferencer():
+        func = dataset.inference
+        jobs = [dict(model=model, sample=data.iloc[i]) for i in range(len(data))]
+        track_progress_rich(
+            func, jobs, nproc=api_nproc, save=out_file, keys=indices,
+            desc=f'API Inference [{model_name} on {dataset_name}, dataset inferencer]')
+        return
+
+    structs = []
+    if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+        assert hasattr(model, 'build_prompt')
+        func = model.build_prompt
+        jobs = [dict(line=data.iloc[i], dataset=dataset_name) for i in range(len(data))]
+    else:
+        func = dataset.build_prompt
+        jobs = [dict(line=data.iloc[i]) for i in range(len(data))]
+
+    data_nproc = min(mp.cpu_count(), 32)
+    structs = track_progress_rich(
+        func, jobs, nproc=data_nproc, desc=f'Building Prompt [{dataset_name}]')
+
+    gen_func = model.generate
+    structs = [dict(message=struct, dataset=dataset_name) for struct in structs]
+
+    if len(structs):
+        track_progress_rich(
+            gen_func,
+            structs,
+            nproc=api_nproc,
+            save=out_file,
+            keys=indices,
+            desc=f'API Inference [{model_name} on {dataset_name}]')
 
 
 def _build_infer_model(model, model_name, use_vllm=False):
@@ -136,11 +159,7 @@ def infer_data_opensource(model, model_name, work_dir, dataset, out_file, verbos
     res = {k: v for k, v in res.items() if k in data_indices_set}
     dump(res, out_file)
 
-    all_finished = True
-    for idx in data_indices:
-        if idx not in res:
-            all_finished = False
-            break
+    all_finished = all([idx in res for idx in data_indices])
     if all_finished:
         return
 
@@ -152,23 +171,31 @@ def infer_data_opensource(model, model_name, work_dir, dataset, out_file, verbos
 
     for i in tqdm(range(lt), desc=f'Infer {model_name}/{dataset_name}, Rank {rank}/{world_size}'):
         idx = data.iloc[i]['index']
-        if idx in res:
-            continue
 
-        if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
-            struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
+        if dataset.with_inferencer():
+            try:
+                response = dataset.inference(model, data.iloc[i])
+            except RuntimeError as err:
+                if os.environ.get('SKIP_ERR', False) == '1':
+                    torch.cuda.synchronize()
+                    warnings.warn(f'{type(err)} {str(err)}')
+                    response = f'{FAIL_MSG}: {type(err)} {str(err)}'
+                else:
+                    raise err
         else:
-            struct = dataset.build_prompt(data.iloc[i])
-
-        if os.environ.get('SKIP_ERR', False) == '1':
+            if hasattr(model, 'use_custom_prompt') and model.use_custom_prompt(dataset_name):
+                struct = model.build_prompt(data.iloc[i], dataset=dataset_name)
+            else:
+                struct = dataset.build_prompt(data.iloc[i])
             try:
                 response = model.generate(message=struct, dataset=dataset_name)
             except RuntimeError as err:
-                torch.cuda.synchronize()
-                warnings.warn(f'{type(err)} {str(err)}')
-                response = f'{FAIL_MSG}: {type(err)} {str(err)}'
-        else:
-            response = model.generate(message=struct, dataset=dataset_name)
+                if os.environ.get('SKIP_ERR', False) == '1':
+                    torch.cuda.synchronize()
+                    warnings.warn(f'{type(err)} {str(err)}')
+                    response = f'{FAIL_MSG}: {type(err)} {str(err)}'
+                else:
+                    raise err
         torch.cuda.empty_cache()
 
         if verbose:
@@ -256,6 +283,7 @@ def infer_data_job(
         else:
             prediction = [data_all[x] for x in data['index']]
             if all([isinstance(x, dict) for x in prediction]):
+                # Handling scenarios that `prediction` is generated with `stats` in a dict
                 assert 'response' in prediction[0] and 'stats' in prediction[0], prediction[0]
                 data['prediction'] = [str(item['response']) for item in prediction]
                 data['stats'] = [item['stats'] for item in prediction]
@@ -263,12 +291,15 @@ def infer_data_job(
                 data['prediction'] = [str(item) for item in prediction]
 
         if os.getenv('SPLIT_THINK', False):
+            # Prediction is Text Only now
             prediction = list(data['prediction'])
             print(f'Prediction format: {os.getenv("SPLIT_THINK")},splitting func: {extract_and_remove_think_tags}')
-            tups = [extract_and_remove_think_tags(x) for x in prediction]
-            data['raw_prediction'] = prediction
-            data['prediction'] = [x[0].strip() if len(x[0].strip()) else x[1][0] for x in tups]
-            data['thinking'] = [x[1] for x in tups]
+
+            if dataset.TYPE == 'MT':
+                prediction = [toliststr(x) for x in prediction]
+            results = [omni_remove_think_tag(x) for x in prediction]
+            for k in ['raw_prediction', 'prediction', 'thinking']:
+                data[k] = [x[k] for x in results]
 
         if 'image' in data:
             data.pop('image')

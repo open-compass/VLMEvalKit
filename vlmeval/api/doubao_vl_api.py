@@ -140,45 +140,21 @@ class DoubaoVLWrapper(BaseAPI):
         msgs.append(dict(type='text', value=prompt))
         return msgs
 
-    # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
-    # content can be a string or a list of image & text
-    def prepare_itlist(self, inputs):
-        assert np.all([isinstance(x, dict) for x in inputs])
-        has_images = np.sum([x['type'] == 'image' for x in inputs])
-        if has_images:
-            content_list = []
-            for msg in inputs:
-                if msg['type'] == 'text':
-                    content_list.append(dict(type='text', text=msg['value']))
-                elif msg['type'] == 'image':
-                    img_struct = self._openai_image_url_struct(msg['value'])
-                    if self.image_pixel_limit is not None:
-                        img_struct['image_pixel_limit'] = self.image_pixel_limit
-                    elif self.detail is not None:
-                        img_struct['detail'] = self.detail
-                    if self.img_size > 0 or self.compress is not None:
-                        img_struct = self._compress_openai_image_url_struct(
-                            img_struct, target_size=self.img_size, compress=self.compress)
-                    content_list.append(dict(type='image_url', image_url=img_struct))
-        else:
-            assert all([x['type'] == 'text' for x in inputs])
-            text = '\n'.join([x['value'] for x in inputs])
-            content_list = [dict(type='text', text=text)]
-        return content_list
-
     def prepare_inputs(self, inputs):
-        input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
-        assert isinstance(inputs, list) and isinstance(inputs[0], dict)
-        assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
-        if 'role' in inputs[0]:
-            assert inputs[-1]['role'] == 'user', inputs[-1]
-            for item in inputs:
-                input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
-        else:
-            input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
-        return input_msgs
+        img_kwargs = {}
+        if self.image_pixel_limit is not None:
+            img_kwargs['image_pixel_limit'] = self.image_pixel_limit
+        elif self.detail is not None:
+            img_kwargs['detail'] = self.detail
+        oai_messages = self.message_to_openai_message(inputs, **img_kwargs)
+        if self.img_size > 0 or self.compress is not None:
+            for item in oai_messages:
+                if isinstance(item['content'], list):
+                    for content_item in item['content']:
+                        if content_item['type'] == 'image_url':
+                            content_item['image_url'] = self._compress_openai_image_url_struct(
+                                content_item['image_url'], target_size=self.img_size, compress=self.compress)
+        return oai_messages
 
     def generate_inner(self, inputs, **kwargs) -> str:
 

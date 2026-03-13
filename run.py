@@ -4,8 +4,6 @@ from vlmeval.dataset.VideoBench.video_dataset_config import supported_video_data
 from vlmeval.dataset import build_dataset
 from vlmeval.inference import infer_data_job
 from vlmeval.inference_video import infer_data_job_video
-from vlmeval.inference_mt import infer_data_job_mt
-from vlmeval.dataset.utils.result_transfer import MMMU_result_transfer, MMTBench_result_transfer
 
 
 # GET the number of GPUs on the node without importing libs like torch
@@ -340,15 +338,6 @@ def main():
                             model_name=model_name,
                             dataset=dataset,
                             result_file_name=result_file_base,
-                            verbose=args.verbose,
-                            api_nproc=args.api_nproc,
-                            use_vllm=args.use_vllm)
-                    elif dataset.TYPE == 'MT':
-                        model = infer_data_job_mt(
-                            model,
-                            work_dir=pred_root,
-                            model_name=model_name,
-                            dataset=dataset,
                             verbose=args.verbose,
                             api_nproc=args.api_nproc,
                             use_vllm=args.use_vllm)

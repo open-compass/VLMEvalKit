@@ -399,3 +399,10 @@ class ImageBaseDataset:
         res.update(cls.report_judge_err_rate(model_name, dataset_name, root, **kwargs))
         res.update(cls.report_score(model_name, dataset_name, root, verbose=verbose, **kwargs))
         return res
+
+    @abstractmethod
+    def inference(self, model, sample):
+        pass
+
+    def with_inferencer(self):
+        return getattr(self.inference, '__isabstractmethod__', True)

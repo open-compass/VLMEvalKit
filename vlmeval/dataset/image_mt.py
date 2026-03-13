@@ -48,6 +48,24 @@ class ImageMTDataset(ImageBaseDataset):
             dlgs.append(dict(role='assistant', content=content))
         return dlgs
 
+    def inference(self, model, sample):
+        # Real Multi-Turn Dialog
+        messages = self.build_prompt(sample)
+        assert len(messages) % 2 == 0, f'Invalid prompt format: {messages}'
+        nturn = len(messages) // 2
+        utter_stack, prediction = [], []
+        for i in range(nturn):
+            utter = messages[2 * i]
+            utter_stack.append(utter)
+            try:
+                resp = model.generate(utter_stack, dataset=self.dataset_name)
+                utter_stack.append(dict(role='assistant', content=resp))
+            except Exception as e:
+                resp = FAIL_MSG + str(e)
+                utter_stack.append(dict(role='assistant', content=resp))
+            prediction.append(resp)
+        return prediction
+
 
 class MMDUDataset(ImageMTDataset):
 

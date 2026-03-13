@@ -158,42 +158,9 @@ class OpenAIWrapper(BaseAPI):
 
         self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
-    # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
-    # content can be a string or a list of image & text
-    def prepare_itlist(self, inputs):
-        assert np.all([isinstance(x, dict) for x in inputs])
-        has_images = np.sum([x['type'] == 'image' for x in inputs])
-        if has_images:
-            content_list = []
-            for msg in inputs:
-                if msg['type'] == 'text':
-                    content_list.append(dict(type='text', text=msg['value']))
-                elif msg['type'] == 'image':
-                    img_struct = self._openai_image_url_struct(msg['value'])
-                    img_struct['detail'] = self.img_detail
-                    content_list.append(dict(type='image_url', image_url=img_struct))
-        else:
-            assert all([x['type'] == 'text' for x in inputs])
-            text = '\n'.join([x['value'] for x in inputs])
-            content_list = [dict(type='text', text=text)]
-        return content_list
-
-    def prepare_inputs(self, inputs):
-        input_msgs = []
-        if self.system_prompt is not None:
-            input_msgs.append(dict(role='system', content=self.system_prompt))
-        assert isinstance(inputs, list) and isinstance(inputs[0], dict)
-        assert np.all(['type' in x for x in inputs]) or np.all(['role' in x for x in inputs]), inputs
-        if 'role' in inputs[0]:
-            assert inputs[-1]['role'] == 'user', inputs[-1]
-            for item in inputs:
-                input_msgs.append(dict(role=item['role'], content=self.prepare_itlist(item['content'])))
-        else:
-            input_msgs.append(dict(role='user', content=self.prepare_itlist(inputs)))
-        return input_msgs
-
     def generate_inner(self, inputs, **kwargs) -> str:
-        input_msgs = self.prepare_inputs(inputs)
+        img_kwargs = {'detail': self.img_detail}
+        input_msgs = self.message_to_openai_message(inputs, **img_kwargs)
         temperature = kwargs.pop('temperature', self.temperature)
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         response_format = kwargs.pop('response_format', None)

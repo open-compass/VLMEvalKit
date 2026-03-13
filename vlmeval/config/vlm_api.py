@@ -22,16 +22,46 @@ openrouter_apis = {
         max_tokens=2**14,
         timeout=1200
     ),
-    'GPT-5.1-High-OpenRouter': partial(
+    'GPT-5.4-OR': partial(
         OpenRouter,
-        model='openai/gpt-5.1',
+        model='openai/gpt-5.4',
+        retry=3,
+        temperature=1, 
+        verbose=False,
+        max_tokens=2**15,
+        timeout=3600, 
+        reasoning_effort='high'
+    ),
+    'Gemini-3.1-Pro-OR': partial(
+        OpenRouter,
+        model='google/gemini-3.1-pro-preview',
         retry=3,
         temperature=0, 
         verbose=False,
         max_tokens=2**15,
-        timeout=1200, 
+        timeout=3600, 
         reasoning_effort='high'
-    )
+    ),
+    'Gemini-3.1-Flash-Lite-OR': partial(
+        OpenRouter,
+        model='google/gemini-3.1-flash-lite-preview',
+        retry=3,
+        temperature=0, 
+        verbose=False,
+        max_tokens=2**15,
+        timeout=3600, 
+        reasoning_effort='high'
+    ),
+    'Claude-4.6-Opus-OR': partial(
+        OpenRouter,
+        model='anthropic/claude-opus-4.6',
+        retry=3,
+        temperature=1, 
+        verbose=False,
+        max_tokens=2**15,
+        timeout=3600, 
+        reasoning_effort='high'
+    ),
 }
 
 o1_key = os.environ.get('O1_API_KEY', None)
