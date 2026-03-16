@@ -69,14 +69,14 @@ class MMOral_OPG_OPEN(MMOralBase):
         suffix = eval_file.split('.')[-1]
         # Some call sites may not explicitly set `judge_kwargs['model']`,
         # so we fall back to a default name for the judge model.
-        judge_model_name = judge_kwargs.get('model', 'mmoral-opg-judge')
+        judge_model_name = judge_kwargs.pop('model', 'mmoral-opg-judge')
         storage = eval_file.replace(f'.{suffix}', f'_{judge_model_name}.xlsx')
         tmp_file = eval_file.replace(f'.{suffix}', f'_{judge_model_name}.pkl')
         nproc = judge_kwargs.pop('nproc', 4)
 
         if not osp.exists(storage):
             data = load(eval_file)
-            model = build_judge(max_tokens=16384, **judge_kwargs)
+            model = build_judge(model=judge_model_name, max_tokens=16384, **judge_kwargs)
             assert model.working(), (
                 'MMOral-Open-ended evaluation requires a working OPENAI API\n'
                 + DEBUG_MESSAGE
