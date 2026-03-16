@@ -1,5 +1,7 @@
 # VLMEvalKit (lite)
 
+> This is a fork of [VLMEvalKit](https://github.com/OpenCompass/VLMEvalKit) with additional features, maintained by the OpenSource community.
+
 ![LOGO](https://opencompass.openxlab.space/utils/MMLB.jpg)
 
 <b>A Toolkit for Evaluating Large Vision-Language Models. </b>
