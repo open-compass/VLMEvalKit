@@ -1,6 +1,6 @@
 # VLMEvalKit (lite)
 
-> This is a fork of [VLMEvalKit](https://github.com/OpenCompass/VLMEvalKit) with additional features, maintained by the OpenSource community.
+> This is a fork of [VLMEvalKit](https://github.com/OpenCompass/VLMEvalKit) with additional features, maintained by the OpenSource community. It also serves as the `lite` branch of [VLMEvalKit](https://github.com/OpenCompass/VLMEvalKit).
 
 ![LOGO](https://opencompass.openxlab.space/utils/MMLB.jpg)
 
