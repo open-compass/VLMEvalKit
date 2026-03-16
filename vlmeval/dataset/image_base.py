@@ -405,4 +405,4 @@ class ImageBaseDataset:
         pass
 
     def with_inferencer(self):
-        return getattr(self.inference, '__isabstractmethod__', True)
+        return not getattr(self.inference, '__isabstractmethod__', False)
