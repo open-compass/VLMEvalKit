@@ -144,7 +144,7 @@ from .design2code import Design2Code
 from .chartcap import ChartCapDataset
 from .asclepius import Asclepius
 
-from .mmoral_opg_closed import MMOral_OPG_CLOSED
+from .mmoral_opg_open import MMOral_OPG_OPEN
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -277,7 +277,7 @@ IMAGE_DATASET = [
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
-    Design2Code, VLADBench, SSIBenchDataset, NPMM, MMOral_OPG_CLOSED
+    Design2Code, VLADBench, SSIBenchDataset, NPMM, MMOral_OPG_OPEN
 ]
 
 # add by EASI team
