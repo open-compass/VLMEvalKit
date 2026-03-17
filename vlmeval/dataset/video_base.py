@@ -145,3 +145,40 @@ class VideoBaseDataset:
         # `root` (directory that containing video files)
         # `data_file` (the TSV dataset file)
         pass
+
+    def prepare_tsv(self, url, file_md5=None):
+        data_root = LMUDataRoot()
+        os.makedirs(data_root, exist_ok=True)
+        update_flag = False
+        file_name_legacy = url.split('/')[-1]
+        file_name = f"{self.dataset_name}.tsv"
+        data_path_legacy = os.path.join(data_root, file_name_legacy)
+        data_path = os.path.join(data_root, file_name)
+
+        self.data_path = data_path
+        if os.path.exists(data_path):
+            if file_md5 is None or md5(data_path) == file_md5:
+                pass
+            else:
+                warnings.warn(f'The tsv file is in {data_root}, but the md5 does not match, will re-download')
+                download_file(url, data_path)
+                update_flag = True
+        else:
+            if os.path.exists(data_path_legacy) and (file_md5 is None or md5(data_path_legacy) == file_md5):
+                warnings.warn(
+                    'Due to a modification in #1055, the local target file name has changed. '
+                    f'We detected the tsv file with legacy name {data_path_legacy} exists and will do the rename. '
+                )
+                import shutil
+                shutil.move(data_path_legacy, data_path)
+            else:
+                download_file(url, data_path)
+                update_flag = True
+
+        if file_size(data_path, 'GB') > 1:
+            local_path = data_path.replace('.tsv', '_local.tsv')
+            if not os.path.exists(local_path) or os.environ.get('FORCE_LOCAL', None) or update_flag:
+                from ..tools import LOCALIZE
+                LOCALIZE(data_path, local_path)
+            data_path = local_path
+        return load(data_path)

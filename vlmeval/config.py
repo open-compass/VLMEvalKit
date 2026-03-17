@@ -79,6 +79,7 @@ ungrouped = {
     ),
     "Pixtral-12B": partial(Pixtral, model_path="mistralai/Pixtral-12B-2409"),
     "Falcon2-VLM-11B": partial(Falcon2VLM, model_path="tiiuae/falcon-11B-vlm"),
+    "KVL": partial(InternVLChat, model_path="amoeba04/KVL", version="V2.0"),
 }
 
 o1_key = os.environ.get('O1_API_KEY', None)
@@ -317,6 +318,37 @@ api_models = {
         Gemini, model="gemini-2.5-pro", temperature=0, retry=10
     ),
     
+    # GCP Vertex AI – Claude (same GCPVertexAPI; model name selects Claude backend)
+    "GCP_Claude3-5Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-5-sonnet-20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-5Haiku": partial(
+        GCPVertexAPI,
+        model="claude-3-5-haiku@20241022",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_Claude3-7Sonnet": partial(
+        GCPVertexAPI,
+        model="claude-3-7-sonnet@20250219",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeSonnet4-5": partial(
+        GCPVertexAPI,
+        model="claude-sonnet-4-5@20250929",
+        temperature=0,
+        retry=10,
+    ),
+    "GCP_ClaudeOpus4-6": partial(
+        GCPVertexAPI,
+        model="claude-opus-4-6",
+        temperature=0,
+        retry=10,
+    ),
     # Qwen-VL
     "QwenVLPlus": partial(QwenVLAPI, model="qwen-vl-plus", temperature=0, retry=10),
     "QwenVLMax": partial(QwenVLAPI, model="qwen-vl-max", temperature=0, retry=10),
@@ -360,6 +392,42 @@ api_models = {
         model="yi-vision",
         api_base="https://api.lingyiwanwu.com/v1/chat/completions",
         temperature=0,
+        retry=10,
+    ),
+    # Together AI (set TOGETHER_API_KEY)
+    "Together_Llama3.2-11B-Vision": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama3.2-90B-Vision": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama4-Scout-17B": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-4-Scout-17B-16E-Instruct",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Llama4-Maverick-17B": partial(
+        TogetherAPI,
+        model="meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+        temperature=0,
+        max_tokens=2048,
+        retry=10,
+    ),
+    "Together_Qwen2-VL-72B": partial(
+        TogetherAPI,
+        model="Qwen/Qwen2-VL-72B-Instruct",
+        temperature=0,
+        max_tokens=2048,
         retry=10,
     ),
     # Claude
@@ -416,6 +484,31 @@ api_models = {
         retry=10,
         verbose=False,
         timeout=1800
+    ),
+    # AWS Bedrock (Converse API; set AWS_REGION or pass region_name)
+    "Bedrock_Claude3-5Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-5-sonnet-20241022-v2:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Opus": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-opus-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Sonnet": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+        temperature=0,
+        retry=10,
+    ),
+    "Bedrock_Claude3Haiku": partial(
+        BedrockAPI,
+        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        temperature=0,
+        retry=10,
     ),
     # GLM4V
     "GLM4V": partial(GLMVisionAPI, model="glm4v-biz-eval", temperature=0, retry=10),
@@ -689,6 +782,7 @@ minicpm_series = {
     "MiniCPM-o-2_6": partial(MiniCPM_o_2_6, model_path="openbmb/MiniCPM-o-2_6"),
     "MiniCPM-V-4": partial(MiniCPM_V_4, model_path="openbmb/MiniCPM-V-4"),
     "MiniCPM-V-4_5": partial(MiniCPM_V_4_5, model_path="openbmb/MiniCPM-V-4_5"),
+    "MiniCPM-o-4_5": partial(MiniCPM_o_4_5, model_path="openbmb/MiniCPM-o-4_5"),
 }
 
 xtuner_series = {
@@ -1272,6 +1366,82 @@ qwen3vl_series = {
     
 }
 
+qwen3_5_series = {
+    # vllm serve command example: 
+    # vllm serve Qwen/Qwen3.5-122B-A10B --port 8000 --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3
+    "Qwen3.5-122B-A10B_ThinkMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+    ),
+    "Qwen3.5-122B-A10B_InstructMode_vllm": partial(
+        LMDeployAPI,
+        api_base="http://0.0.0.0:8000/v1/chat/completions",
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        min_p=0.0,
+        presence_penalty=1.5,
+        repetition_penalty=1.0,
+        max_tokens=81920,
+        retry=10,
+        timeout=900,
+        chat_template_kwargs={"enable_thinking": False},
+    ),
+    "Qwen3.5-397B-A17B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-397B-A17B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-122B-A10B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-122B-A10B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-35B-A3B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-35B-A3B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+    "Qwen3.5-27B": partial(
+        Qwen3VLChat,
+        model_path="Qwen/Qwen3.5-27B",
+        use_custom_prompt=False,
+        use_vllm=True,
+        temperature=1.0,
+        top_p=0.95,
+        top_k=20,
+        presence_penalty=1.5,
+        max_new_tokens=32768,
+    ),
+}
+
 sail_series = {
     "SAIL-VL-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-2B"),
     "SAIL-VL-1.5-2B": partial(SailVL, model_path="BytedanceDouyinContent/SAIL-VL-1d5-2B", use_msac = True),
@@ -1325,6 +1495,10 @@ idefics_series = {
     "Idefics3-8B-Llama3": partial(
         IDEFICS2, model_path="HuggingFaceM4/Idefics3-8B-Llama3"
     ),
+    'granite-docling-258M': partial(
+        DOCLING, model_path="ibm-granite/granite-docling-258M"
+    )
+
 }
 
 smolvlm_series = {
@@ -1364,6 +1538,12 @@ deepseekvl2_series = {
     "deepseek_vl2": partial(DeepSeekVL2, model_path="deepseek-ai/deepseek-vl2"),
 }
 
+deepseekocr_series = {
+    "DeepSeek-OCR": partial(
+        DeepSeekOCR, model_path="deepseek-ai/DeepSeek-OCR"
+    ),
+}
+
 janus_series = {
     "Janus-1.3B": partial(Janus, model_path="deepseek-ai/Janus-1.3B"),
     "Janus-Pro-1B": partial(Janus, model_path="deepseek-ai/Janus-Pro-1B"),
@@ -1395,6 +1575,11 @@ cambrian_series = {
     "cambrian_8b": partial(Cambrian, model_path="nyu-visionx/cambrian-8b"),
     "cambrian_13b": partial(Cambrian, model_path="nyu-visionx/cambrian-13b"),
     "cambrian_34b": partial(Cambrian, model_path="nyu-visionx/cambrian-34b"),
+    
+    "cambrian-s-0.5b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-0.5B"),
+    "cambrian-s-1.5b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-1.5B"),
+    "cambrian-s-3b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-3B"),
+    "cambrian-s-7b": partial(CambrianS, model_path="nyu-visionx/Cambrian-S-7B"),
 }
 
 chameleon_series = {
@@ -1729,6 +1914,7 @@ eagle_series = {
 moondream_series = {
     "Moondream1": partial(Moondream1, model_path="vikhyatk/moondream1"),
     "Moondream2": partial(Moondream2, model_path="vikhyatk/moondream2"),
+    "Moondream3": partial(Moondream3, model_path="moondream/moondream3-preview"),
 }
 
 llama_series = {
@@ -1981,6 +2167,182 @@ lfm2vl_series = {
     "LFM2-VL-3B": partial(LFM2VL, model_path="LiquidAI/LFM2-VL-3B"),
 }
 
+covt_series = {
+    "CoVT-7B-seg": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-depth": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-depth",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-seg_depth_dino": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg_depth_dino",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "CoVT-7B-seg_depth_dino_edge": partial(
+        CoVTChat,
+        model_path="Wakals/CoVT-7B-seg_depth_dino_edge",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+}
+
+bagel_series = {
+    "BAGEL-7B-MoT": partial(Bagel, model_path='ByteDance-Seed/BAGEL-7B-MoT'),
+}
+
+spatial_related_models = {
+    # 3B models
+    "MindCube-Qwen2.5VL-RawQA-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-RawQA-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MindCube-Qwen2.5VL-Aug-CGMap-FFR-Out-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-Aug-CGMap-FFR-Out-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "MindCube-Qwen2.5VL-Plain-CGMap-FFR-Out-SFT": partial(
+        Qwen2VLChat,
+        model_path="MLL-Lab/MindCube-Qwen2.5VL-Plain-CGMap-FFR-Out-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SpatialLadder-3B": partial(
+        Qwen2VLChat,
+        model_path="hongxingli/SpatialLadder-3B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "Spatial-MLLM-subset-sft": partial(
+        SpatialMLLM,
+        model_path="Diankun/Spatial-MLLM-subset-sft",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        max_num_frames=16,
+        use_custom_prompt=False,
+        post_process=True,
+    ),
+    "VST-3B-SFT": partial(
+        Qwen2VLChat,
+        model_path="rayruiyang/VST-3B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    
+    # 7B models
+    "SpaceR-SFT-7B": partial(
+        Qwen2VLChat,
+        model_path="RUBBISHLIKE/SpaceR-SFT-7B",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "ViLaSR": partial(
+        Qwen2VLChat,
+        model_path="inclusionAI/ViLaSR",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "VST-7B-SFT": partial(
+        Qwen2VLChat,
+        model_path="rayruiyang/VST-7B-SFT",
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "VLM-3R": partial(
+        VLM3R, 
+        model_path="Journey9ni/vlm-3r-llava-qwen2-lora",
+    ),
+}
+
+sensenova_si_series = {
+    # SenseNova-SI-1.0 series
+    "SenseNova-SI-InternVL3-2B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-InternVL3-2B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    # SenseNova-SI-1.1 series
+    "SenseNova-SI-1.1-InternVL3-2B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-InternVL3-2B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-1.1-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    "SenseNova-SI-1.1-Qwen2.5-VL-3B": partial(
+        Qwen2VLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-Qwen2.5-VL-3B", 
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SenseNova-SI-1.1-Qwen2.5-VL-7B": partial(
+        Qwen2VLChat, 
+        model_path="sensenova/SenseNova-SI-1.1-Qwen2.5-VL-7B", 
+        min_pixels=1280 * 28 * 28,
+        max_pixels=16384 * 28 * 28,
+        use_custom_prompt=False,
+    ),
+    "SenseNova-SI-1.1-Qwen3-VL-8B": partial(
+        Qwen3VLChat,
+        model_path="sensenova/SenseNova-SI-1.1-Qwen3-VL-8B",
+        use_custom_prompt=False,
+    ),
+    "SenseNova-SI-1.1-BAGEL-7B-MoT": partial(
+        Bagel, 
+        model_path='sensenova/SenseNova-SI-1.1-BAGEL-7B-MoT'
+    ),
+    # SenseNova-SI-1.2 series
+    "SenseNova-SI-1.2-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.2-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+    # SenseNova-SI-1.3 series
+    "SenseNova-SI-1.3-InternVL3-8B": partial(
+        InternVLChat, 
+        model_path="sensenova/SenseNova-SI-1.3-InternVL3-8B", 
+        use_custom_prompt=False,
+        version="V2.0"
+    ),
+}
+
 internvl_groups = [
     internvl, internvl2, internvl2_5, mini_internvl, internvl2_5_mpo, 
     internvl3, internvl3_5
@@ -2001,10 +2363,10 @@ supported_VLM = {}
 model_groups = [
     ungrouped, o1_apis, api_models, xtuner_series, qwen_series, llava_series, granite_vision_series,
     internvl_series, yivl_series, xcomposer_series, minigpt4_series, 
-    idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, 
+    idefics_series, instructblip_series, deepseekvl_series, deepseekvl2_series, deepseekocr_series,
     janus_series, minicpm_series, cogvlm_series, wemm_series, cambrian_series, 
     chameleon_series, video_models, ovis_series, vila_series, mantis_series,
-    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series,qwen3vl_series,
+    mmalaya_series, phi3_series, phi4_series, xgen_mm_series, qwen2vl_series, qwen3vl_series, qwen3_5_series,
     slime_series, eagle_series, moondream_series, llama_series, molmo_series,
     kosmos_series, points_series, nvlm_series, vintern_series, h2ovl_series,
     aria_series, smolvlm_series, sail_series, valley_series, vita_series,
@@ -2012,8 +2374,11 @@ model_groups = [
     long_vita_series, ristretto_series, kimi_series, aguvis_series, hawkvl_series,
     flash_vl, kimi_vllm_series, oryx_series, treevgr_series, varco_vision_series, qtunevl_series, 
     xvl_series, thyme_series, logics_series, cosmos_series, keye_series, qianfanvl_series, 
-    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series
+    lfm2vl_series, rbdashmm_api_series_lmdeploy, interns1_series, insight_v_series, covt_series
 ]
+
+# add by EASI team
+model_groups.extend([bagel_series, spatial_related_models, sensenova_si_series])
 
 for grp in model_groups:
     supported_VLM.update(grp)
