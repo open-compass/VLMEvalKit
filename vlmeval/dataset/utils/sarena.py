@@ -1,6 +1,5 @@
 import os
-
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
+import math
 import json
 import pandas as pd
 import numpy as np
@@ -18,6 +17,11 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_compl
 from collections import defaultdict
 from tqdm import tqdm
 from PIL import Image
+
+try:
+    from ...utils.mp_util import cpu_count
+except ImportError:
+    from os import cpu_count
 
 # Import metrics
 try:
@@ -41,7 +45,7 @@ except ImportError:
 
 
 try:
-    from ...smp import load, dump
+    from ...smp import load, dump, LMUDataRoot
 except ImportError:
     # Fallback to pandas if smp is not available
     def load(file_path):
@@ -54,12 +58,29 @@ except ImportError:
     def dump(data, file_path):
         pass
 
+    def LMUDataRoot():
+        return os.path.expanduser("~/LMUData")
+
 
 # ================= Configuration =================
 
-SARENA_ROOT = os.path.expanduser("~/LMUData/SArenaSrcData")
-SARENA_URL = "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/resolve/main/SArena.zip"
-SARENA_ZIP_MD5 = "884c4a5eff55325e22c5f0aae21b13e7"
+SARENA_CONFIGS = {
+    "SArena": {
+        "root": os.path.join(LMUDataRoot(), "SArenaSrcData"),
+        "url": "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/resolve/main/SArena.zip",
+        "zip_md5": "884c4a5eff55325e22c5f0aae21b13e7",
+        "zip_name": "SArena.zip",
+        "has_animation": True,
+    },
+    "SArena_MINI": {
+        "root": os.path.join(LMUDataRoot(), "SArena_MINI_SrcData"),
+        "url": "https://huggingface.co/datasets/JoeLeelyf/SArena-VLMEvalKit/resolve/main/SArena_MINI.zip",
+        "zip_md5": "d49fe7241d16b54aa33a09e90d95af96",
+        "zip_name": "SArena_MINI.zip",
+        "has_animation": False,
+    },
+}
+
 TOKENIZER_PATH = "OpenGVLab/InternVL3-8B"
 
 # Chromium args for Pyppeteer
@@ -71,7 +92,8 @@ CHROME_ARGS = [
 ]
 
 # ================= Task Definitions =================
-TASK_CONFIGS = [
+# Tasks for full SArena (includes Animation)
+TASK_CONFIGS_FULL = [
     # --- Icon ---
     ("SArena-Icon", "Understanding", "Icon/understanding/sarena_un.jsonl", False),
     ("SArena-Icon", "Generation-T2SVG", "Icon/generation/text2svg.jsonl", False),
@@ -97,10 +119,41 @@ TASK_CONFIGS = [
     # --- Chemistry ---
     ("SArena-Chemistry", "Generation-T2SVG", "chemistry/text2svg.jsonl", False),
     ("SArena-Chemistry", "Generation-I2SVG", "chemistry/img2svg.jsonl", True),
-    # --- Animation (NEW) ---
+    # --- Animation ---
     ("SArena-Animation", "Generation-T2SANI", "animation/text2sani.jsonl", False),
     ("SArena-Animation", "Generation-V2SANI", "animation/video2sani.jsonl", True),
 ]
+
+# Tasks for MINI subset (no Animation)
+TASK_CONFIGS_MINI = [
+    # --- Icon ---
+    ("SArena-Icon", "Understanding", "Icon/understanding/sarena_un.jsonl", False),
+    ("SArena-Icon", "Generation-T2SVG", "Icon/generation/text2svg.jsonl", False),
+    ("SArena-Icon", "Generation-I2SVG", "Icon/generation/img2svg.jsonl", True),
+    ("SArena-Icon", "Edit-Color-Complex", "Icon/edit/color_complex.jsonl", False),
+    ("SArena-Icon", "Edit-Color-Simple", "Icon/edit/color_simple.jsonl", False),
+    ("SArena-Icon", "Edit-Crop", "Icon/edit/crop.jsonl", False),
+    ("SArena-Icon", "Edit-Flip", "Icon/edit/flip.jsonl", False),
+    ("SArena-Icon", "Edit-Opacity", "Icon/edit/opacity.jsonl", False),
+    ("SArena-Icon", "Edit-Outline", "Icon/edit/outline.jsonl", False),
+    ("SArena-Icon", "Edit-Rotate", "Icon/edit/rotate.jsonl", False),
+    ("SArena-Icon", "Edit-Scale", "Icon/edit/scale.jsonl", False),
+    ("SArena-Icon", "Edit-StyleTransform", "Icon/edit/styletransform_openmoji.jsonl", False),
+    ("SArena-Icon", "Edit-Translate", "Icon/edit/translate.jsonl", False),
+    # --- Illustration ---
+    ("SArena-Illustration", "Generation-T2SVG", "illustration/text2svg.jsonl", False),
+    ("SArena-Illustration", "Generation-I2SVG", "illustration/img2svg.jsonl", True),
+    # --- Chemistry ---
+    ("SArena-Chemistry", "Generation-T2SVG", "chemistry/text2svg.jsonl", False),
+    ("SArena-Chemistry", "Generation-I2SVG", "chemistry/img2svg.jsonl", True),
+]
+
+
+def get_task_configs(dataset):
+    """Return appropriate task configs based on dataset name."""
+    if "MINI" in dataset:
+        return TASK_CONFIGS_MINI
+    return TASK_CONFIGS_FULL
 
 EDIT_TASK_MAP = {
     "Edit-Color-Complex": "color_complex",
@@ -118,6 +171,17 @@ EDIT_TASK_MAP = {
 # ================= Data Prep Utilities =================
 
 
+def _read_file_safe(file_path):
+    """Safely read file contents with proper resource management."""
+    if not os.path.exists(file_path):
+        return ""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return ""
+
+
 def check_md5(file_path, expected_md5):
     if expected_md5 is None:
         return True
@@ -128,20 +192,23 @@ def check_md5(file_path, expected_md5):
     return hash_md5.hexdigest() == expected_md5
 
 
-def download_and_extract_sarena():
-    zip_path = os.path.join(SARENA_ROOT, "SArena.zip")
-    if not os.path.exists(SARENA_ROOT):
-        os.makedirs(SARENA_ROOT)
+def download_and_extract_sarena(dataset="SArena"):
+    config = SARENA_CONFIGS[dataset]
+    sarena_root = config["root"]
+    zip_path = os.path.join(sarena_root, config["zip_name"])
+
+    if not os.path.exists(sarena_root):
+        os.makedirs(sarena_root)
 
     need_download = not os.path.exists(zip_path)
-    if not need_download and SARENA_ZIP_MD5:
-        if not check_md5(zip_path, SARENA_ZIP_MD5):
+    if not need_download and config["zip_md5"]:
+        if not check_md5(zip_path, config["zip_md5"]):
             need_download = True
 
     if need_download:
-        print(f"Downloading SArena data from {SARENA_URL}...")
+        print(f"Downloading SArena data from {config['url']}...")
         try:
-            response = requests.get(SARENA_URL, stream=True)
+            response = requests.get(config["url"], stream=True)
             with open(zip_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
@@ -149,10 +216,10 @@ def download_and_extract_sarena():
             print(f"Download failed: {e}")
             return
 
-    if not os.path.exists(os.path.join(SARENA_ROOT, "Icon")):
-        print("Extracting SArena.zip...")
+    if not os.path.exists(os.path.join(sarena_root, "Icon")):
+        print(f"Extracting {config['zip_name']}...")
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall(SARENA_ROOT)
+            zip_ref.extractall(sarena_root)
 
 
 def load_gt_captions(caption_path):
@@ -466,8 +533,8 @@ def evaluate_image_generation(
                 else Image.new("RGB", (448, 448))
             )
 
-            pred_svgs.append(open(p_svg, "r").read() if os.path.exists(p_svg) else "")
-            gt_svgs.append(open(g_svg, "r").read() if os.path.exists(g_svg) else "")
+            pred_svgs.append(_read_file_safe(p_svg))
+            gt_svgs.append(_read_file_safe(g_svg))
             captions.append(data.get("caption", ""))
 
     batch = {
@@ -535,7 +602,7 @@ def evaluate_video_generation(task_l2, gt_root, task_temp_dir, tokenizer_path):
             # Validations
             if os.path.exists(p_vid):
                 pred_videos.append(p_vid)
-                pred_svgs.append(open(p_svg, "r").read())
+                pred_svgs.append(_read_file_safe(p_svg))
             else:
                 pred_videos.append(
                     "example/pure_black.mp4"
@@ -552,7 +619,7 @@ def evaluate_video_generation(task_l2, gt_root, task_temp_dir, tokenizer_path):
 
             overall_video.append(overall_video_dir)
             gt_videos.append(g_vid)
-            gt_svgs.append(open(g_svg, "r").read() if os.path.exists(g_svg) else "")
+            gt_svgs.append(_read_file_safe(g_svg))
 
             # Caption extraction from instruction if present
             # Assuming task_records saved 'caption' or raw instruction
@@ -564,7 +631,7 @@ def evaluate_video_generation(task_l2, gt_root, task_temp_dir, tokenizer_path):
                         cap_text = q.split("Instruction: ")[1]
                     else:
                         cap_text = q
-                except:
+                except Exception:
                     pass
             caption.append(cap_text)
 
@@ -608,8 +675,8 @@ def process_editing_batch(gt_root, task_temp_dir, task_name, calculator):
                 else Image.new("RGB", (448, 448))
             )
 
-            pred_svgs.append(open(p_svg, "r").read() if os.path.exists(p_svg) else "")
-            gt_svgs.append(open(g_svg, "r").read() if os.path.exists(g_svg) else "")
+            pred_svgs.append(_read_file_safe(p_svg))
+            gt_svgs.append(_read_file_safe(g_svg))
 
     batch = {
         "gt_im": gt_imgs,
@@ -707,11 +774,14 @@ def convert_np_to_native(obj):
 # ================= Main Function =================
 
 
-def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH):
-    download_and_extract_sarena()
+def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH, dataset="SArena"):
+    config = SARENA_CONFIGS[dataset]
+    sarena_root = config["root"]
+
+    download_and_extract_sarena(dataset)
     all_preds_df = load_all_predictions_df(eval_file)
     eval_dir = os.path.dirname(os.path.abspath(eval_file))
-    temp_root = os.path.join(eval_dir, "sarena_svg_temp")
+    temp_root = os.path.join(eval_dir, f"{dataset.lower()}_svg_temp")
     if not os.path.exists(temp_root):
         os.makedirs(temp_root)
     print(f"Render output directory: {temp_root}")
@@ -728,232 +798,229 @@ def evaluate_sarena(eval_file, tokenizer_path=TOKENIZER_PATH):
     )
     try:
         edit_calculator = InternSVGMetrics(edit_config, tokenizer_path)
-    except:
+    except Exception:
         edit_calculator = None
         print("Warning: Could not initialize Image Metrics Calculator.")
 
     has_processed_edit = False
 
-    try:
-        for category, l2_prefix, rel_path, _ in TASK_CONFIGS:
-            src_path = os.path.join(SARENA_ROOT, rel_path)
-            if not os.path.exists(src_path):
-                print(f"[Warning] File not found: {rel_path}. Skipping.")
-                continue
+    task_configs = get_task_configs(dataset)
+    for category, l2_prefix, rel_path, _ in task_configs:
+        src_path = os.path.join(sarena_root, rel_path)
+        if not os.path.exists(src_path):
+            print(f"[Warning] File not found: {rel_path}. Skipping.")
+            continue
 
-            task_key = f"{category}_{l2_prefix}"
-            print(f"Processing Task: {task_key}")
+        task_key = f"{category}_{l2_prefix}"
+        print(f"Processing Task: {task_key}")
 
-            current_task_preds = get_task_predictions_map(
-                all_preds_df, category, l2_prefix
-            )
+        current_task_preds = get_task_predictions_map(
+            all_preds_df, category, l2_prefix
+        )
 
-            # --- Load GT Captions/Instructions ---
-            caption_map = {}
-            target_caption_file = None
-            if "Generation" in l2_prefix and "Animation" not in category:
-                if "Icon" in category:
-                    target_caption_file = os.path.join(
-                        SARENA_ROOT, "Icon/generation/caption.jsonl"
-                    )
-                elif "Illustration" in category:
-                    target_caption_file = os.path.join(
-                        SARENA_ROOT, "illustration/caption.jsonl"
-                    )
-                elif "Chemistry" in category:
-                    target_caption_file = os.path.join(
-                        SARENA_ROOT, "chemistry/caption.jsonl"
-                    )
-                if target_caption_file and os.path.exists(target_caption_file):
-                    caption_map = load_gt_captions(target_caption_file)
+        # --- Load GT Captions/Instructions ---
+        caption_map = {}
+        target_caption_file = None
+        if "Generation" in l2_prefix and "Animation" not in category:
+            if "Icon" in category:
+                target_caption_file = os.path.join(
+                    sarena_root, "Icon/generation/caption.jsonl"
+                )
+            elif "Illustration" in category:
+                target_caption_file = os.path.join(
+                    sarena_root, "illustration/caption.jsonl"
+                )
+            elif "Chemistry" in category:
+                target_caption_file = os.path.join(
+                    sarena_root, "chemistry/caption.jsonl"
+                )
+            if target_caption_file and os.path.exists(target_caption_file):
+                caption_map = load_gt_captions(target_caption_file)
 
-            # --- Setup Task Directories ---
-            task_dir = os.path.join(temp_root, task_key.replace(" ", "_"))
-            if os.path.exists(task_dir):
-                shutil.rmtree(task_dir)
-            os.makedirs(os.path.join(task_dir, "svg"), exist_ok=True)
+        # --- Setup Task Directories ---
+        task_dir = os.path.join(temp_root, task_key.replace(" ", "_"))
+        if os.path.exists(task_dir):
+            shutil.rmtree(task_dir)
+        os.makedirs(os.path.join(task_dir, "svg"), exist_ok=True)
 
-            is_anim = "Animation" in category
-            if is_anim:
-                os.makedirs(os.path.join(task_dir, "video"), exist_ok=True)
-                os.makedirs(os.path.join(task_dir, "video_128"), exist_ok=True)
-            else:
-                os.makedirs(os.path.join(task_dir, "images"), exist_ok=True)
+        is_anim = "Animation" in category
+        if is_anim:
+            os.makedirs(os.path.join(task_dir, "video"), exist_ok=True)
+            os.makedirs(os.path.join(task_dir, "video_128"), exist_ok=True)
+        else:
+            os.makedirs(os.path.join(task_dir, "images"), exist_ok=True)
 
-            with open(src_path, "r", encoding="utf-8") as f:
-                src_lines = f.readlines()
+        with open(src_path, "r", encoding="utf-8") as f:
+            src_lines = f.readlines()
 
-            render_queue = []
-            predictions_map_un = {}
-            task_records = []
+        render_queue = []
+        predictions_map_un = {}
+        task_records = []
 
-            for line in src_lines:
-                src_item = json.loads(line)
-                orig_id = src_item["id"]
-                prediction = current_task_preds.get(orig_id, "")
+        for line in src_lines:
+            src_item = json.loads(line)
+            orig_id = src_item["id"]
+            prediction = current_task_preds.get(orig_id, "")
 
-                if "Understanding" in l2_prefix:
-                    predictions_map_un[orig_id] = str(prediction)
-                else:
-                    svg_code = extract_svg_code(str(prediction))
-                    svg_path = os.path.join(task_dir, "svg", f"{orig_id}.svg")
-                    with open(svg_path, "w", encoding="utf-8") as sf:
-                        sf.write(svg_code)
-
-                    if is_anim:
-                        vid_path = os.path.join(task_dir, "video", f"{orig_id}.mp4")
-                        vid_path_128 = os.path.join(
-                            task_dir, "video_128", f"{orig_id}.mp4"
-                        )
-                        render_queue.append(
-                            {
-                                "svg_path": svg_path,
-                                "out_path": vid_path,
-                                "w": 448,
-                                "h": 448,
-                                "type": "video",
-                            }
-                        )
-                        render_queue.append(
-                            {
-                                "svg_path": svg_path,
-                                "out_path": vid_path_128,
-                                "w": 128,
-                                "h": 128,
-                                "type": "video",
-                            }
-                        )
-                    else:
-                        img_path = os.path.join(task_dir, "images", f"{orig_id}.png")
-                        render_queue.append(
-                            {
-                                "svg_path": svg_path,
-                                "out_path": img_path,
-                                "w": 448,
-                                "h": 448,
-                                "type": "image",
-                            }
-                        )
-
-                meta = {"id": orig_id}
-                # For Animation, get instruction as caption
-                if is_anim and "conversations" in src_item:
-                    q = src_item["conversations"][0]["value"]
-                    meta["caption"] = (
-                        q.split("Instruction: ")[1] if "Instruction: " in q else q
-                    )
-                else:
-                    meta["caption"] = caption_map.get(orig_id, "")
-                task_records.append(meta)
-
-            with open(os.path.join(task_dir, "test.jsonl"), "w") as tf:
-                for r in task_records:
-                    tf.write(json.dumps(r) + "\n")
-
-            # --- 1. Evaluation: Understanding ---
             if "Understanding" in l2_prefix:
-                acc, sub_acc = evaluate_understanding(src_path, predictions_map_un)
-                final_json_results[category]["Understanding"]["Overall"] = acc
-                for subj, val in sub_acc.items():
-                    final_json_results[category]["Understanding"][subj] = val
-                print(f"  Accuracy: {acc:.2%}")
-                continue
+                predictions_map_un[orig_id] = str(prediction)
+            else:
+                svg_code = extract_svg_code(str(prediction))
+                svg_path = os.path.join(task_dir, "svg", f"{orig_id}.svg")
+                with open(svg_path, "w", encoding="utf-8") as sf:
+                    sf.write(svg_code)
 
-            # --- 2. Rendering ---
-            if render_queue:
-                video_tasks = [x for x in render_queue if x["type"] == "video"]
-                image_tasks = [x for x in render_queue if x["type"] == "image"]
-
-                if image_tasks:
-                    print(f"  Rasterizing {len(image_tasks)} Images...")
-                    pool_args = [
-                        (t["svg_path"], t["out_path"], t["w"], t["h"])
-                        for t in image_tasks
-                    ]
-                    with multiprocessing.Pool(
-                        processes=32, maxtasksperchild=50
-                    ) as pool:
-                        for _ in tqdm(
-                            pool.imap_unordered(_raster_worker_safe, pool_args),
-                            total=len(pool_args),
-                            desc="Images",
-                        ):
-                            pass
-
-                if video_tasks:
-                    print(f"  Rendering {len(video_tasks)} Videos (Async/MP)...")
-                    pool_args = [
-                        (t["svg_path"], t["out_path"], t["w"], t["h"])
-                        for t in video_tasks
-                    ]
-                    # Use ProcessPoolExecutor to handle async loops in subprocesses
-                    with ProcessPoolExecutor(max_workers=16) as executor:
-                        futures = [
-                            executor.submit(_video_render_wrapper, arg)
-                            for arg in pool_args
-                        ]
-                        for f in tqdm(
-                            as_completed(futures), total=len(futures), desc="Videos"
-                        ):
-                            try:
-                                f.result()
-                            except Exception as e:
-                                print(f"  Video rendering error: {e}")
-
-            # --- 3. Evaluation: Generation & Editing ---
-            try:
                 if is_anim:
-                    # Animation Metrics
-                    gt_root = os.path.join(SARENA_ROOT, "animation")
-                    metrics_res = evaluate_video_generation(
-                        l2_prefix, gt_root, task_dir, tokenizer_path
+                    vid_path = os.path.join(task_dir, "video", f"{orig_id}.mp4")
+                    vid_path_128 = os.path.join(
+                        task_dir, "video_128", f"{orig_id}.mp4"
                     )
-                    final_json_results[category][l2_prefix] = metrics_res
-                    print(f"  Video Scores: {metrics_res}")
-
-                elif "Icon" in category and "Edit" in l2_prefix and edit_calculator:
-                    # Icon Editing Accumulation
-                    task_name = EDIT_TASK_MAP.get(l2_prefix, "unknown")
-                    gt_root = os.path.join(SARENA_ROOT, "Icon/edit")
-                    process_editing_batch(gt_root, task_dir, task_name, edit_calculator)
-                    has_processed_edit = True
-                    print(f"  [Accumulated] Editing metrics for {task_name}")
-
-                elif "Generation" in l2_prefix:
-                    # Image Generation
-                    bench_name = category.split("-")[1]
-                    task_type = "text2svg" if "T2SVG" in l2_prefix else "img2svg"
-
-                    if bench_name == "Icon":
-                        gt_root = os.path.join(SARENA_ROOT, "Icon/generation")
-                    elif bench_name == "Illustration":
-                        gt_root = os.path.join(SARENA_ROOT, "illustration")
-                    elif bench_name == "Chemistry":
-                        gt_root = os.path.join(SARENA_ROOT, "chemistry")
-
-                    metrics_res = evaluate_image_generation(
-                        bench_name, task_type, gt_root, task_dir, tokenizer_path
+                    render_queue.append(
+                        {
+                            "svg_path": svg_path,
+                            "out_path": vid_path,
+                            "w": 448,
+                            "h": 448,
+                            "type": "video",
+                        }
                     )
-                    clean_task_name = "T2SVG" if "T2SVG" in l2_prefix else "I2SVG"
-                    final_json_results[category][clean_task_name] = metrics_res
-                    print(f"  Scores: {metrics_res}")
+                    render_queue.append(
+                        {
+                            "svg_path": svg_path,
+                            "out_path": vid_path_128,
+                            "w": 128,
+                            "h": 128,
+                            "type": "video",
+                        }
+                    )
+                else:
+                    img_path = os.path.join(task_dir, "images", f"{orig_id}.png")
+                    render_queue.append(
+                        {
+                            "svg_path": svg_path,
+                            "out_path": img_path,
+                            "w": 448,
+                            "h": 448,
+                            "type": "image",
+                        }
+                    )
 
-            except Exception as e:
-                print(f"  Error calculating metrics for {task_key}: {e}")
-                import traceback
+            meta = {"id": orig_id}
+            # For Animation, get instruction as caption
+            if is_anim and "conversations" in src_item:
+                q = src_item["conversations"][0]["value"]
+                meta["caption"] = (
+                    q.split("Instruction: ")[1] if "Instruction: " in q else q
+                )
+            else:
+                meta["caption"] = caption_map.get(orig_id, "")
+            task_records.append(meta)
 
-                traceback.print_exc()
-                final_json_results[category][l2_prefix]["ERROR"] = str(e)
+        with open(os.path.join(task_dir, "test.jsonl"), "w") as tf:
+            for r in task_records:
+                tf.write(json.dumps(r) + "\n")
 
-        # 4. Finalize Editing Metrics
-        if has_processed_edit and edit_calculator:
-            print("\nCalculating Overall Editing Metrics...")
-            overall_edit_score = edit_calculator.summarize_metrics()
-            final_json_results["SArena-Icon"]["Editing"] = overall_edit_score
-            print(f"Editing Overall Scores: {overall_edit_score}")
+        # --- 1. Evaluation: Understanding ---
+        if "Understanding" in l2_prefix:
+            acc, sub_acc = evaluate_understanding(src_path, predictions_map_un)
+            final_json_results[category]["Understanding"]["Overall"] = acc
+            for subj, val in sub_acc.items():
+                final_json_results[category]["Understanding"][subj] = val
+            print(f"  Accuracy: {acc:.2%}")
+            continue
 
-    finally:
-        pass
+        # --- 2. Rendering ---
+        if render_queue:
+            video_tasks = [x for x in render_queue if x["type"] == "video"]
+            image_tasks = [x for x in render_queue if x["type"] == "image"]
+
+            if image_tasks:
+                print(f"  Rasterizing {len(image_tasks)} Images...")
+                pool_args = [
+                    (t["svg_path"], t["out_path"], t["w"], t["h"])
+                    for t in image_tasks
+                ]
+                with multiprocessing.Pool(
+                    processes=min(cpu_count(), 32), maxtasksperchild=50
+                ) as pool:
+                    for _ in tqdm(
+                        pool.imap_unordered(_raster_worker_safe, pool_args),
+                        total=len(pool_args),
+                        desc="Images",
+                    ):
+                        pass
+
+            if video_tasks:
+                print(f"  Rendering {len(video_tasks)} Videos (Async/MP)...")
+                pool_args = [
+                    (t["svg_path"], t["out_path"], t["w"], t["h"])
+                    for t in video_tasks
+                ]
+                # Use ProcessPoolExecutor to handle async loops in subprocesses
+                with ProcessPoolExecutor(max_workers=min(cpu_count(), 16)) as executor:
+                    futures = [
+                        executor.submit(_video_render_wrapper, arg)
+                        for arg in pool_args
+                    ]
+                    for f in tqdm(
+                        as_completed(futures), total=len(futures), desc="Videos"
+                    ):
+                        try:
+                            f.result()
+                        except Exception as e:
+                            print(f"  Video rendering error: {e}")
+
+        # --- 3. Evaluation: Generation & Editing ---
+        try:
+            if is_anim:
+                # Animation Metrics
+                gt_root = os.path.join(sarena_root, "animation")
+                metrics_res = evaluate_video_generation(
+                    l2_prefix, gt_root, task_dir, tokenizer_path
+                )
+                final_json_results[category][l2_prefix] = metrics_res
+                print(f"  Video Scores: {metrics_res}")
+
+            elif "Icon" in category and "Edit" in l2_prefix and edit_calculator:
+                # Icon Editing Accumulation
+                task_name = EDIT_TASK_MAP.get(l2_prefix, "unknown")
+                gt_root = os.path.join(sarena_root, "Icon/edit")
+                process_editing_batch(gt_root, task_dir, task_name, edit_calculator)
+                has_processed_edit = True
+                print(f"  [Accumulated] Editing metrics for {task_name}")
+
+            elif "Generation" in l2_prefix:
+                # Image Generation
+                bench_name = category.split("-")[1]
+                task_type = "text2svg" if "T2SVG" in l2_prefix else "img2svg"
+
+                if bench_name == "Icon":
+                    gt_root = os.path.join(sarena_root, "Icon/generation")
+                elif bench_name == "Illustration":
+                    gt_root = os.path.join(sarena_root, "illustration")
+                elif bench_name == "Chemistry":
+                    gt_root = os.path.join(sarena_root, "chemistry")
+
+                metrics_res = evaluate_image_generation(
+                    bench_name, task_type, gt_root, task_dir, tokenizer_path
+                )
+                clean_task_name = "T2SVG" if "T2SVG" in l2_prefix else "I2SVG"
+                final_json_results[category][clean_task_name] = metrics_res
+                print(f"  Scores: {metrics_res}")
+
+        except Exception as e:
+            print(f"  Error calculating metrics for {task_key}: {e}")
+            import traceback
+
+            traceback.print_exc()
+            final_json_results[category][l2_prefix]["ERROR"] = str(e)
+
+    # 4. Finalize Editing Metrics
+    if has_processed_edit and edit_calculator:
+        print("\nCalculating Overall Editing Metrics...")
+        overall_edit_score = edit_calculator.summarize_metrics()
+        final_json_results["SArena-Icon"]["Editing"] = overall_edit_score
+        print(f"Editing Overall Scores: {overall_edit_score}")
 
     # --- Save Results ---
     def recursive_convert(d):

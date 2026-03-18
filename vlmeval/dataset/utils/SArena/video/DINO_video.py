@@ -20,13 +20,13 @@ class DINOVideoCalculator(BaseMetric):
         self.use_amp = use_amp and self.device == "cuda"
 
     def get_DINOv2_model(self, model_size):
-        if model_size == "small":
-            name = "facebook/dinov2-small"
-        elif model_size == "base":
-            name = "facebook/dinov2-base"
-        elif model_size == "large":
-            name = "facebook/dinov2-large"
-        else:
+        model_map = {
+            "small": "facebook/dinov2-small",
+            "base": "facebook/dinov2-base",
+            "large": "facebook/dinov2-large",
+        }
+        name = model_map.get(model_size)
+        if not name:
             raise ValueError(
                 f"model_size should be either 'small', 'base' or 'large', got {model_size}"
             )

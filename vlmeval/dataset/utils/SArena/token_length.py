@@ -1,9 +1,10 @@
+import os
 import torch
 
 from tqdm import tqdm
 from torch.utils.data import DataLoader
-from transformers import AutoTokenizer
 
+from vlmeval.smp.file import LMUDataRoot
 from .base_metric import BaseMetric
 from .average_meter import AverageMeter
 

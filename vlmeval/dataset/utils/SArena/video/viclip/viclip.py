@@ -66,7 +66,7 @@ class ViCLIP(nn.Module):
 
         if pretrain:
             logger.info(f"Load pretrained weights from {pretrain}")
-            state_dict = torch.load(pretrain, map_location="cpu")["model"]
+            state_dict = torch.load(pretrain, map_location="cpu", weights_only=True)["model"]
             self.load_state_dict(state_dict)
 
         # Freeze weights

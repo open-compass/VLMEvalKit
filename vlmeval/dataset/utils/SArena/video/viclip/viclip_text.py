@@ -238,7 +238,7 @@ def clip_text_l14(
         else:
             pretrained = _MODELS["ViT-L/14"]
         logger.info(f"Load pretrained weights from {pretrained}")
-        state_dict = torch.load(pretrained, map_location="cpu")
+        state_dict = torch.load(pretrained, map_location="cpu", weights_only=True)
         if context_length != state_dict["positional_embedding"].size(0):
             # assert context_length < state_dict["positional_embedding"].size(0), "Cannot increase context length."
             print(
@@ -278,5 +278,10 @@ def clip_text_l14_336(
 
 def build_clip(config):
     model_cls = config.text_encoder.clip_teacher
-    model = eval(model_cls)()
+    model_builders = {
+        "clip_text_l14": clip_text_l14,
+    }
+    if model_cls not in model_builders:
+        raise ValueError(f"Unknown model class: {model_cls}")
+    model = model_builders[model_cls]()
     return model

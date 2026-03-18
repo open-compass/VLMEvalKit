@@ -1,3 +1,4 @@
+import os
 import torch
 import numpy as np
 import cv2
@@ -5,6 +6,7 @@ import cv2
 from tqdm import tqdm
 from typing import Literal
 from torch.utils.data import DataLoader
+from vlmeval.smp.file import LMUDataRoot
 from .viclip.simple_tokenizer import SimpleTokenizer as _Tokenizer
 from .viclip.viclip import ViCLIP
 from ..base_metric import BaseMetric
@@ -13,6 +15,24 @@ from ..base_metric import BaseMetric
 def get_clip(name="viclip", ckpt_path="sarena_ckpt/ViClip-InternVid-10M-FLT.pth"):
     if name == "viclip":
         tokenizer = _Tokenizer()
+        # Check aux_models first
+        local_path = os.path.join(LMUDataRoot(), 'aux_models', 'ViClip-InternVid-10M-FLT.pth')
+
+        if os.path.exists(local_path):
+            ckpt_path = local_path
+        else:
+            # Download from HuggingFace to aux_models
+            aux_models_dir = os.path.dirname(local_path)
+            os.makedirs(aux_models_dir, exist_ok=True)
+
+            from huggingface_hub import hf_hub_download
+            downloaded_path = hf_hub_download(
+                repo_id="OpenGVLab/ViCLIP",
+                filename="ViClip-InternVid-10M-FLT.pth",
+                local_dir=aux_models_dir,
+            )
+            ckpt_path = downloaded_path
+
         vclip = ViCLIP(tokenizer, pretrain=ckpt_path)
         m = (vclip, tokenizer)
     else:

@@ -321,7 +321,7 @@ def clip_joint_b16(
     raise NotImplementedError
     if pretrained:
         logger.info("load pretrained weights")
-        state_dict = torch.load(_MODELS["ViT-B/16"], map_location="cpu")
+        state_dict = torch.load(_MODELS["ViT-B/16"], map_location="cpu", weights_only=True)
         load_state_dict(
             model,
             state_dict,
@@ -363,7 +363,7 @@ def clip_joint_l14(
         else:
             model_name = "ViT-L/14"
         logger.info("load pretrained weights")
-        state_dict = torch.load(_MODELS[model_name], map_location="cpu")
+        state_dict = torch.load(_MODELS[model_name], map_location="cpu", weights_only=True)
         load_state_dict(
             model,
             state_dict,
@@ -397,7 +397,7 @@ def clip_joint_l14_336(
     )
     if pretrained:
         logger.info("load pretrained weights")
-        state_dict = torch.load(_MODELS["ViT-L/14_336"], map_location="cpu")
+        state_dict = torch.load(_MODELS["ViT-L/14_336"], map_location="cpu", weights_only=True)
         load_state_dict(
             model,
             state_dict,

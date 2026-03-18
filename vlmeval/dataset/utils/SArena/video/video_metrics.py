@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from typing import Dict, Callable
 
@@ -88,7 +89,7 @@ class InternSVGVideoMetrics:
         for metric_name, metric in self.active_metrics.items():
             print(f"Calculating {metric_name}...")
             avg_result, values = metric.calculate_score(batch)
-            if avg_result is not float("nan"):
+            if not math.isnan(avg_result):
                 avg_results_dict[metric_name] = avg_result
 
         return avg_results_dict
