@@ -130,7 +130,7 @@ class MedQDEGBenchDataset(ImageMCQDataset):
                 sub = data[data['source'] == src]
                 result[f'Source_{src}'] = sub['hit'].mean()
 
-        score_file = eval_file.replace('.xlsx', '_score.json')
+        score_file = get_intermediate_file_path(eval_file, '_score', 'json')
         dump(result, score_file)
 
         return result
