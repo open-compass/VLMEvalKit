@@ -3872,7 +3872,7 @@ class OCRBench_v2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBench_v2':
         'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
-        'OCRBench_v2_MINI': None,
+        'OCRBench_v2_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2_MINI.tsv',
     }
     DATASET_MD5 = {
         'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0',
