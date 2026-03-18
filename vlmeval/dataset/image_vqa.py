@@ -4095,9 +4095,7 @@ class MathCanvas(ImageBaseDataset):
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
@@ -4300,9 +4298,7 @@ class VLMsAreBiased(ImageBaseDataset):
 
         summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         dump(summary_dict, score_file)
 
         return summary_dict
