@@ -1116,10 +1116,30 @@ class Physics_yale(ImageBaseDataset):
 
         data = self.load_data(dataset)
         self.skip_noimg = skip_noimg
+        if skip_noimg and 'image' in data:
+            data = data[~pd.isna(data['image'])]
+
         data['index'] = [str(x) for x in data['index']]
-        self.meta_only = False
+
+        self.meta_only = True
+
+        # The image field can store the base64 encoded image or another question index (for saving space)
+        if 'image' in data:
+            images = [toliststr(x) for x in data['image']]
+            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            self.meta_only = False
+
+        if 'image_path' in data:
+            paths = [toliststr(x) for x in data['image_path']]
+            data['image_path'] = [x[0] if len(x) == 1 else x for x in paths]
+
+        if 'answer' in data:
+            answers = [toliststr(x) for x in data['answer']]
+            data['answer'] = answers
+
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
+
         self.data = data
         self.post_build(dataset)
 
@@ -1127,13 +1147,10 @@ class Physics_yale(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if pd.isna(line['image']):
-            tgt_path = None
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
         else:
-            if self.meta_only:
-                tgt_path = toliststr(line['image'])
-            else:
-                tgt_path = self.dump_image(line)
+            tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -1165,7 +1182,6 @@ class Physics_yale(ImageBaseDataset):
 
         return msgs
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
 
@@ -1186,7 +1202,7 @@ class Physics_yale(ImageBaseDataset):
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
+            tups = [(model, line, self.data.iloc[i]['answer']) for i, line in enumerate(lines)]
             indices = [line['index'] for line in lines]
 
             ans = {}
