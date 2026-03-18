@@ -115,4 +115,3 @@ class MMOral_OPG_OPEN(MMOralBase):
         dump(score, score_pth)
         dump(score_fine, score_fine_pth)
         return score
-

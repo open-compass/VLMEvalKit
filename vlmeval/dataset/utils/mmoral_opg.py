@@ -1,32 +1,58 @@
 from ...smp import *
 import random
 
-############## for MMOral-OPG-Bench ##############
+# for MMOral-OPG-Bench
+
 
 def build_mmoral_opg_gpt4_prompt(line):
     question = line['question']
     gt = str(line['answer'])
     prediction = str(line['prediction'])
+    # Keep this prompt readable and flake8-friendly (avoid overly long lines).
     prompt = """
-Given the question, compare the ground truth and prediction from AI models, to generate a correctness score for the prediction.
-The correctness score is 0.0 (totally wrong), 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, or 1.0 (totally right).
+Given the question, compare the ground truth and prediction from AI
+models, to generate a correctness score for the prediction.
+The correctness score is 0.0 (totally wrong), 0.1, 0.2, 0.3, 0.4, 0.5,
+0.6, 0.7, 0.8, 0.9, or 1.0 (totally right).
 Just complete the last space of the correctness score.
 
 Question | Ground truth | Prediction | Correctness
 --- | --- | --- | ---
 How many teeth are visualized in the radiograph? | 30 teeth are visualized with clear anatomical definition. | 30 | 1.0
-How many teeth are visualized in the radiograph? | 30 teeth are visualized with clear anatomical definition. | 29 teeth are visualized with clear anatomical definition. | 0.0
-What is the status of the wisdom teeth in the radiograph? | Three wisdom teeth are detected, all of which are impacted: #18, #28, and #48. | #18: impacted, #28: impacted, #48: erupted | 0.7
-What is the condition of the teeth #26 and #14? | Teeth #26 and #14 show signs of periapical abscesses. | Teeth #26 and #23 show signs of periapical abscesses. | 0.5
-What is the condition of the bone architecture and visible structures in the jaw? | No apparent bone loss is observed. Bilateral mandibular canals and maxillary sinuses are clearly visible. | Bilateral mandibular canals and maxillary sinuses are clearly visible. | 0.5
-What is the clinical priority concern regarding the periapical lesions? | Periapical cysts at #11 and #12, and granuloma at #46 require endodontic evaluation. | Periapical lesions at #11, #12, and #46 require endodontic evaluation. | 0.8
-What radiographic features are visible in tooth #31 on the panoramic X-ray? | [\n{\"Teeth position\": {\"point_2d\": [1242, 726]}},\n{\"Crown\": {\"box_2d\": [1220, 637, 1266, 741]}}\n] | Crown | 0.8
-What radiographic features are visible in tooth #31 on the panoramic X-ray? | [\n{\"Teeth position\": {\"point_2d\": [1242, 726]}},\n{\"Crown\": {\"box_2d\": [1220, 637, 1266, 741]}}\n] | Crown at position: [1230, 627, 1276, 750] | 0.9
-What radiographic features are visible in tooth #31 on the panoramic X-ray? | [\n{\"Teeth position\": {\"point_2d\": [1242, 726]}},\n{\"Crown\": {\"box_2d\": [1220, 637, 1266, 741]}}\n] | Teeth at position: {\"point_2d\": [1242, 726]}},\n{Crown at position: {\"box_2d\": [1230, 627, 1276, 750]}} | 1.0
+How many teeth are visualized in the radiograph? | 30 teeth are visualized with clear anatomical
+definition. | 29 teeth are visualized with clear anatomical definition. | 0.0
+What is the status of the wisdom teeth in the radiograph? | Three
+wisdom teeth are detected, all of which are impacted: #18, #28, and #48.
+| #18: impacted, #28: impacted, #48: erupted | 0.7
+What is the condition of the teeth #26 and #14? | Teeth #26 and #14
+show signs of periapical abscesses. | Teeth #26 and #23 show signs
+of periapical abscesses. | 0.5
+What is the condition of the bone architecture and visible structures in
+the jaw? | No apparent bone loss is observed. Bilateral mandibular
+canals and maxillary sinuses are clearly visible. | Bilateral
+mandibular canals and maxillary sinuses are clearly visible. | 0.5
+What is the clinical priority concern regarding the periapical lesions?
+| Periapical cysts at #11 and #12, and granuloma at #46 require
+endodontic evaluation. | Periapical lesions at #11, #12, and #46
+require endodontic evaluation. | 0.8
+What radiographic features are visible in tooth #31 on the panoramic X-ray? | [\n
+{\"Teeth position\": {\"point_2d\": [1242, 726]}},\n
+{\"Crown\": {\"box_2d\": [1220, 637, 1266, 741]}}\n
+] | Crown | 0.8
+What radiographic features are visible in tooth #31 on the panoramic X-ray? | [\n
+{\"Teeth position\": {\"point_2d\": [1242, 726]}},\n
+{\"Crown\": {\"box_2d\": [1220, 637, 1266, 741]}}\n
+] | Crown at position: [1230, 627, 1276, 750] | 0.9
+What radiographic features are visible in tooth #31 on the panoramic X-ray? | [\n
+{\"Teeth position\": {\"point_2d\": [1242, 726]}},\n
+{\"Crown\": {\"box_2d\": [1220, 637, 1266, 741]}}\n
+] | Teeth at position: {\"point_2d\": [1242, 726]}},\n
+{Crown at position: {\"box_2d\": [1230, 627, 1276, 750]}} | 1.0
 """
     gpt4_prompt = prompt + '\n' + ' | '.join(
         [question, gt.replace('<AND>', ' <AND> ').replace('<OR>', ' <OR> '), prediction, ''])
     return gpt4_prompt
+
 
 def MMOral_opg_auxeval(model, line):
     def float_cvt(s):
@@ -50,6 +76,7 @@ def MMOral_opg_auxeval(model, line):
             return dict(log=log, score=score)
     log += 'All 5 retries failed.\n'
     return dict(log=log, score=0.0)
+
 
 def MMOral_opg_acc(result_file):
     data = load(result_file)
