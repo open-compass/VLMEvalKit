@@ -1116,10 +1116,30 @@ class Physics_yale(ImageBaseDataset):
 
         data = self.load_data(dataset)
         self.skip_noimg = skip_noimg
+        if skip_noimg and 'image' in data:
+            data = data[~pd.isna(data['image'])]
+
         data['index'] = [str(x) for x in data['index']]
-        self.meta_only = False
+
+        self.meta_only = True
+
+        # The image field can store the base64 encoded image or another question index (for saving space)
+        if 'image' in data:
+            images = [toliststr(x) for x in data['image']]
+            data['image'] = [x[0] if len(x) == 1 else x for x in images]
+            self.meta_only = False
+
+        if 'image_path' in data:
+            paths = [toliststr(x) for x in data['image_path']]
+            data['image_path'] = [x[0] if len(x) == 1 else x for x in paths]
+
+        if 'answer' in data:
+            answers = [toliststr(x) for x in data['answer']]
+            data['answer'] = answers
+
         if np.all([istype(x, int) for x in data['index']]):
             data['index'] = [int(x) for x in data['index']]
+
         self.data = data
         self.post_build(dataset)
 
@@ -1127,13 +1147,10 @@ class Physics_yale(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        if pd.isna(line['image']):
-            tgt_path = None
+        if self.meta_only:
+            tgt_path = toliststr(line['image_path'])
         else:
-            if self.meta_only:
-                tgt_path = toliststr(line['image'])
-            else:
-                tgt_path = self.dump_image(line)
+            tgt_path = self.dump_image(line)
 
         instruction = (
             "You are a physics expert assistant. Solve the following question step-by-step.\n\n"
@@ -1165,7 +1182,6 @@ class Physics_yale(ImageBaseDataset):
 
         return msgs
 
-    @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
         from .utils.physic import PHYSIC_acc, PHYSIC_auxeval
 
@@ -1186,7 +1202,7 @@ class Physics_yale(ImageBaseDataset):
 
             lt = len(data)
             lines = [data.iloc[i] for i in range(lt)]
-            tups = [(model, line) for line in lines]
+            tups = [(model, line, self.data.iloc[i]['answer']) for i, line in enumerate(lines)]
             indices = [line['index'] for line in lines]
 
             ans = {}
@@ -1255,8 +1271,10 @@ class OlympiadBench(ImageBaseDataset):
         return tgt_path_z
 
     def build_prompt(self, line):
-
         from .utils.olympiadbench import get_answer_type_text, make_input
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
@@ -3872,8 +3890,12 @@ class OCRBench_v2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBench_v2':
         'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+        'OCRBench_v2_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2_MINI.tsv',
     }
-    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+    DATASET_MD5 = {
+        'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0',
+        'OCRBench_v2_MINI': '11f79b8e1e0b0fe150964de4cb2feb02',
+    }
 
     # It returns a dictionary
     @classmethod
@@ -4095,9 +4117,7 @@ class MathCanvas(ImageBaseDataset):
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
@@ -4300,9 +4320,7 @@ class VLMsAreBiased(ImageBaseDataset):
 
         summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         dump(summary_dict, score_file)
 
         return summary_dict

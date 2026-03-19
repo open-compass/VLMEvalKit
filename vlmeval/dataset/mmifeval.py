@@ -8,7 +8,7 @@ from ..smp.file import get_intermediate_file_path
 from ..utils import track_progress_rich
 from ..dataset.utils.mmif.function_and_compare import *
 
-logger = get_logger("MMIFEval")
+logger = get_logger(__name__)
 
 aux_data_dict = {}
 judge_model = None
@@ -323,7 +323,7 @@ def judge_one_item(item, retry=3):
                 total_score += value
                 cnt += 1
             score_dict["total_score"] = total_score / cnt
-            logger.info(f"score_dict:\n{score_dict}")
+            logger.debug(f"score_dict:\n{score_dict}")
             return 0, "success", score_dict
     return 1, "C-Level, fail in judge", {}
 

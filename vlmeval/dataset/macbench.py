@@ -141,7 +141,7 @@ class MaCBench(ImageBaseDataset):
     DATASET_URL = {'MaCBench': ''}
     DATASET_MD5 = {'MaCBench': '0e163396dd28886fd828e101f24afdf6'}
 
-    def __init__(self, dataset='MMBench', skip_noimg=True, interleave=False):
+    def __init__(self, dataset='MMBench', skip_noimg=True, interleave=True):
         super().__init__(dataset=dataset, skip_noimg=skip_noimg)
         self.interleave = interleave
 
@@ -191,6 +191,8 @@ class MaCBench(ImageBaseDataset):
 
         if not self.interleave:
             new_msgs = []
+            for img_path in tgt_path:
+                join_append(new_msgs, dict(type='image', value=img_path))
             for msg in msgs:
                 if msg['type'] == 'text':
                     join_append(new_msgs, dict(type='text',
@@ -198,8 +200,6 @@ class MaCBench(ImageBaseDataset):
                 elif msg['type'] == 'image':
                     join_append(new_msgs, dict(type='text', value='<IMAGE>'),
                                 ' ')
-            for img_path in tgt_path:
-                join_append(new_msgs, dict(type='image', value=img_path))
             msgs = new_msgs
         return msgs
 

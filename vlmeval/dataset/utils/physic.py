@@ -40,7 +40,7 @@ def build_physic_prompt(line):
     return [{"type": "text", "value": prompt_text}]
 
 
-def PHYSIC_auxeval(model, line):
+def PHYSIC_auxeval(model, line, all_gts):
     equiv_data = {}
     try:
         response = line['prediction']
@@ -49,26 +49,32 @@ def PHYSIC_auxeval(model, line):
             return dict(log=equiv_data, res=False)
 
         pred_boxed = extract_final_answer_allform(response)
-        gt = line['answer'].strip()
 
         flat_preds = [item.strip() for group in pred_boxed for item in (group if isinstance(group, list) else [group])]
+        # Deduplicate preds to handle repeat output.
+        flat_preds = list(set(flat_preds))
 
-        if gt in flat_preds:
-            equiv_data['LOG'] = 'GT found in prediction, returning True.'
-            return dict(log=equiv_data, res=True)
+        equiv_results = []
+        correct_count = 0
 
         for pred in flat_preds:
-            equiv_data = is_equiv(model, pred, gt)
-            if equiv_data['llm_result']:
-                equiv_data['LOG'] = 'Equivalence found, returning True.'
-                return dict(log=equiv_data, res=True)
+            for gt in all_gts:
+                equiv_data = is_equiv(model, pred, gt)
+                equiv_results.append(equiv_data)
 
-        equiv_data['LOG'] = 'No equivalence found, returning False.'
-        return dict(log=equiv_data, res=False)
+                # sympy_result = equiv_data['sympy_result']
+                # llm_result = equiv_data['llm_result']
+
+                if equiv_data.get('final_result'):
+                    correct_count += 1
+                    break
+
+        acc = correct_count / len(flat_preds) if len(flat_preds) else 0.
+        return dict(log=equiv_results, res=acc)
     except Exception as e:
         logging.warning(f'post_check error: {e}')
         equiv_data['LOG'] = f'Exception occurred: {e}'
-        return dict(log=equiv_data, res=False)
+        return dict(log=equiv_data, res=0.)
 
 
 def PHYSIC_acc(result_file):
@@ -85,8 +91,8 @@ def PHYSIC_acc(result_file):
         tot[cate] += 1
 
         if item.get('res'):
-            hit['Overall'] += 1
-            hit[cate] += 1
+            hit['Overall'] += item.get('res')
+            hit[cate] += item.get('res')
 
         pred_raw = item.get("res", "")
         gt = item.get("answer", "").strip()  # noqa: F841
