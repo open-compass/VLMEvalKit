@@ -1,6 +1,7 @@
 import re
 import logging
 import os
+import signal
 from sympy import simplify, expand, trigsimp
 from sympy.parsing.latex import parse_latex
 from dotenv import load_dotenv
@@ -12,6 +13,11 @@ load_dotenv()
 Judge_SYS_PROMPT = "You are an assistant that compares LaTeX expressions for equivalence."
 
 Judge_USER_PROMPT = "Compare the following LaTeX expressions and check if the numerical parts are equivalent in meaning.\n\nExpression 1:\n{expr1}\n\nExpression 2:\n{expr2}\n\nReturn True if they are equivalent, otherwise return False. Focus on mathematical content."  # noqa: E501
+
+
+def timeout_handler(signum, frame):
+    """Handler for timeout protection."""
+    raise TimeoutError("SymPy computation took too long!")
 
 
 def extract_all_boxed_content(latex_response, latex_wrap=r'\\boxed{([^{}]*|{.*?})}'):
@@ -119,6 +125,7 @@ def is_equiv(model, expr1: str, expr2: str, verbose: bool = False) -> dict:
             result_data["error"] = "SymPy computation timed out!"
             sympy_result = None
         except Exception as e:
+            signal.alarm(0)  # Cancel timeout
             result_data["error"] = str(e)
             sympy_result = None
 
