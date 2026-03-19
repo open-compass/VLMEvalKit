@@ -143,6 +143,14 @@ from .vladbench import VLADBench
 from .design2code import Design2Code
 from .chartcap import ChartCapDataset
 from .asclepius import Asclepius
+from .mmsafetybench import MMSafetyBenchDataset
+from .mssbench import MSSBenchDataset
+from .siuo import SIUODataset
+from .siuo_gen import SIUOGenDataset
+from .siuo_mcq import SIUOMCQDataset
+from .xstest import XSTestDataset
+from .flames import FlamesDataset
+from .m3oralbench import M3oralBenchDataset
 
 
 class ConcatDataset(ImageBaseDataset):
@@ -275,7 +283,8 @@ IMAGE_DATASET = [
     olmOCRBench, OceanOCRBench, MATBench, VLRMBench, RefCOCODataset, RefSpatialDataset,
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
-    FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
+    FoxBench, VTCBench, Asclepius, MMSafetyBenchDataset, MSSBenchDataset, SIUODataset, SIUOGenDataset, SIUOMCQDataset,
+    M3oralBenchDataset, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
     Design2Code, VLADBench, SSIBenchDataset, NPMM
 ]
 
@@ -301,7 +310,7 @@ VIDEO_DATASET = [
 # add by EASI team
 VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]
 TEXT_DATASET = [
-    TextMCQDataset
+    TextMCQDataset, XSTestDataset, FlamesDataset
 ]
 
 CUSTOM_DATASET = [
