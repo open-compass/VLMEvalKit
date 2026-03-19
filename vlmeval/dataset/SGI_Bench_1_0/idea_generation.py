@@ -20,6 +20,7 @@ from .utils import *
 embedding_model = None
 logger = get_logger(__name__)
 
+
 def parse_generated_idea(text: str) -> Dict[str, Any]:
     """Parse the generated research proposal text into a structured dictionary"""
     json_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
@@ -150,7 +151,7 @@ def node_text_similarity(G1, G2):
         union = words1.union(words2)
         jaccard_sim = len(intersection) / len(union) if union else 0.0
         return jaccard_sim
-    except Exception as e:
+    except Exception:
         return 0.0
 
 
@@ -188,7 +189,7 @@ def graph_similarity(dict1, dict2, alpha=0.5):
                             if src in step_keys and dst in step_keys:
                                 graph.add_edge(src, dst)
                                 edges_added = True
-                        except Exception as e:
+                        except Exception:
                             pass
             return edges_added
 
@@ -213,7 +214,7 @@ def graph_similarity(dict1, dict2, alpha=0.5):
         edge_sim = edge_jaccard(G1, G2)
         text_sim = node_text_similarity(G1, G2)
         return alpha * edge_sim + (1 - alpha) * text_sim
-    except Exception as e:
+    except Exception:
         return 0.0
 
 
@@ -259,7 +260,7 @@ def get_vote_from_model(model, original_idea_data, generated_idea_data, context=
     retry_count = 0
     while retry_count < MAX_RETRIES:
         try:
-            response = model.generate(message = dict(type = 'text', value = prompt), temperature = 0.1)
+            response = model.generate(message=dict(type='text', value=prompt), temperature=0.1)
             if response is None:
                 retry_count += 1
                 logger.warning(f"model {model.model} API call failed, retry {retry_count}")
@@ -588,13 +589,13 @@ class ImprovedIdeaEvaluator:
 
     def merge_scores(self) -> None:
         self.scores["novelty_objective"] = (
-                0.5 * self.raw_scores["novelty_similarity"] +
-                0.5 * self.raw_scores["cutting_edge"]
+            0.5 * self.raw_scores["novelty_similarity"]
+            + 0.5 * self.raw_scores["cutting_edge"]
         )
         self.scores["detailedness_objective"] = (
-                0.2 * self.raw_scores["completeness"] +
-                0.4 * (10 - self.raw_scores["repetition_penalty"]) +
-                0.4 * (10 - self.raw_scores["length_penalty"])
+            0.2 * self.raw_scores["completeness"]
+            + 0.4 * (10 - self.raw_scores["repetition_penalty"])
+            + 0.4 * (10 - self.raw_scores["length_penalty"])
         )
 
     def calculate_final_score(self, llm_judges) -> Dict[str, Any]:
@@ -626,11 +627,11 @@ class ImprovedIdeaEvaluator:
         })
 
         self.idea_dict["final_score"] = (
-                                                self.idea_dict["effectiveness"] +
-                                                self.idea_dict["novelty"] +
-                                                self.idea_dict["detailedness"] +
-                                                self.idea_dict["feasibility"]
-                                        ) / 4
+            self.idea_dict["effectiveness"]
+            + self.idea_dict["novelty"]
+            + self.idea_dict["detailedness"]
+            + self.idea_dict["feasibility"]
+        ) / 4
 
         return self.idea_dict
 
@@ -653,25 +654,78 @@ def evaluate_single_idea(ques_dict, llm_judges):
 class SGI_Bench_Idea_Generation(TextBaseDataset):
     TYPE = 'QA'
     example = {
-        "Idea": "We propose an adaptive optimization framework based on a dynamic feature interaction network. This framework captures feature correlations through a hierarchical attention mechanism and combines it with a data distribution-aware dynamic weight adjustment strategy to improve the model's adaptability to heterogeneous data while ensuring computational efficiency.",
+        "Idea": (
+            "We propose an adaptive optimization framework based on a dynamic feature interaction "
+            "network. This framework captures feature correlations through a hierarchical attention "
+            "mechanism and combines it with a data distribution-aware dynamic weight adjustment "
+            "strategy to improve the model's adaptability to heterogeneous data while ensuring "
+            "computational efficiency."
+        ),
         "ImplementationSteps": {
-            "1": "Data preprocessing: missing value filling, outlier handling, feature normalization and type conversion, and building a basic feature set",
-            "2": "Feature engineering: generating statistically derived features, time series features, and cross-features, and building a feature candidate pool",
-            "3": "Model architecture design: building a basic network module, integrating a hierarchical attention mechanism with a dynamic interaction layer",
-            "4": "Dynamic weight mechanism implementation: designing a data distribution-aware weight adjustment function and embedding it into the network's intermediate layers",
-            "5": "Model training and tuning: adopting a phased training strategy, using grid search and early stopping to optimize hyperparameters",
-            "6": "Performance Verification: Conduct comparative experiments on multiple datasets to analyze model performance differences in different scenarios."
+            "1": (
+                "Data preprocessing: missing value filling, outlier handling, feature "
+                "normalization and type conversion, and building a basic feature set"
+            ),
+            "2": (
+                "Feature engineering: generating statistically derived features, time series "
+                "features, and cross-features, and building a feature candidate pool"
+            ),
+            "3": (
+                "Model architecture design: building a basic network module, integrating a "
+                "hierarchical attention mechanism with a dynamic interaction layer"
+            ),
+            "4": (
+                "Dynamic weight mechanism implementation: designing a data distribution-aware "
+                "weight adjustment function and embedding it into the network's intermediate layers"
+            ),
+            "5": (
+                "Model training and tuning: adopting a phased training strategy, using grid "
+                "search and early stopping to optimize hyperparameters"
+            ),
+            "6": (
+                "Performance Verification: Conduct comparative experiments on multiple datasets "
+                "to analyze model performance differences in different scenarios."
+            )
         },
         "ImplementationOrder": ["1-2", "2-3", "3-4", "4-5", "1-5", "5-6"],
-        "Dataset": "Contains three types of public datasets and one actual business data: 1) Public structured dataset (approximately 500,000 samples, 30+ features); 2) Text-numeric mixed dataset (approximately 200,000 samples, including text embedding features); 3) Time series sparse dataset (approximately 100,000 samples, spanning 1 year); 4) Real transaction data from an e-commerce platform (approximately 1 million samples, including user behavior and product attribute features)",
+        "Dataset": (
+            "Contains three types of public datasets and one actual business data: "
+            "1) Public structured dataset (approximately 500,000 samples, 30+ features); "
+            "2) Text-numeric mixed dataset (approximately 200,000 samples, including text "
+            "embedding features); 3) Time series sparse dataset (approximately 100,000 samples, "
+            "spanning 1 year); 4) Real transaction data from an e-commerce platform "
+            "(approximately 1 million samples, including user behavior and product attribute "
+            "features)"
+        ),
         "EvaluationMetrics": {
-            "Prediction Accuracy": "AUC and F1-score are used for classification tasks; MAE and RMSE are used for regression tasks to evaluate the basic predictive ability of the model.",
-            "Robustness": "Performance decay rate is calculated through data perturbation testing (adding noise and simulating feature loss) to measure model stability.",
-            "Efficiency": "Record model training time, inference latency, and memory usage to evaluate computing resource consumption.",
-            "Interpretability": "Use SHAP values and feature importance ranking to quantify the feature contribution to model decisions.",
-            "Generalization": "Performance retention across datasets to evaluate the model's adaptability to unseen data."
+            "Prediction Accuracy": (
+                "AUC and F1-score are used for classification tasks; MAE and RMSE are used for "
+                "regression tasks to evaluate the basic predictive ability of the model."
+            ),
+            "Robustness": (
+                "Performance decay rate is calculated through data perturbation testing (adding "
+                "noise and simulating feature loss) to measure model stability."
+            ),
+            "Efficiency": (
+                "Record model training time, inference latency, and memory usage to evaluate "
+                "computing resource consumption."
+            ),
+            "Interpretability": (
+                "Use SHAP values and feature importance ranking to quantify the feature "
+                "contribution to model decisions."
+            ),
+            "Generalization": (
+                "Performance retention across datasets to evaluate the model's adaptability "
+                "to unseen data."
+            )
         },
-        "ExpectedOutcome": "The proposed framework outperforms existing mainstream methods in comprehensive performance (accuracy, robustness, and efficiency) across multiple datasets, particularly in scenarios with uneven data distribution and cross-scenario migration. It also enhances model interpretability through a dynamic feature interaction mechanism, providing effective support for practical business decision-making."
+        "ExpectedOutcome": (
+            "The proposed framework outperforms existing mainstream methods in comprehensive "
+            "performance (accuracy, robustness, and efficiency) across multiple datasets, "
+            "particularly in scenarios with uneven data distribution and cross-scenario migration. "
+            "It also enhances model interpretability through a dynamic feature interaction "
+            "mechanism, providing effective support for practical business decision-making."
+        )
     }
 
     @classmethod

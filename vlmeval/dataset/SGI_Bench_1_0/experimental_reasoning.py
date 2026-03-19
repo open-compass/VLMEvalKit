@@ -44,42 +44,82 @@ def judge_aux(judge, row):
     reference_steps = row["steps"]
     reference_steps = "\n".join([f"{i + 1}. {step}" for i, step in enumerate(reference_steps)])
 
-    judge_prompt = f"""You are a strict evaluator assessing the **validity of the model prediction's reasoning process**. You must score this reasoning validity on a scale from 0 to 10, where 0 means the reasoning is completely invalid and 10 means the reasoning is fully rigorous.
-# Input
-Question:
-```
-{row['question']}
-```
-Reference Reasoning:
-```
-{reference_steps}
-```
-Model Prediction:
-```
-{row['prediction']}
-```
-# Evaluation Rules
-1. First, identify the **complete reasoning process** from the model prediction (ignore only the final answer if it is not accompanied by reasoning).
-2. Evaluate reasoning validity against two core criteria:
-   - **Logical Coherence**: Check if the reasoning steps are sequential, self-consistent, and free of contradictions (e.g., no conflicting premises or illogical deductions).
-   - **Alignment with Reference Reasoning**: Check if the reasoning direction, key premises, and deduction logic match the reference reasoning (partial alignment counts for partial credit).
-3. Deduct points for:
-   - Irrelevant content (reasoning that does not address the question or key conditions).
-   - Missing key reasoning steps (even if the final answer is correct).
-   - Flawed logic (e.g., circular reasoning, false premises leading to conclusions).
-4. Do not prioritize the correctness of the **final answer**—a correct answer with invalid reasoning still scores low, while an incorrect answer with partially valid reasoning may score higher.
-# Scoring Guide
-- **10**: Reasoning is fully rigorous, logically coherent (no contradictions), and perfectly aligned with the reference reasoning (all key steps and logic match).
-- **7-9**: Reasoning is mostly coherent, with minor logical gaps or partial misalignment with the reference reasoning (no major contradictions).
-- **4-6**: Reasoning has obvious logical flaws (e.g., one missing key step, minor contradictions) or limited alignment with the reference reasoning (only some core logic matches).
-- **1-3**: Reasoning is barely valid, with severe logical flaws (e.g., multiple contradictions) or almost no alignment with the reference reasoning (only tangentially related to the question).
-- **0**: Reasoning is completely invalid, contradictory (self-conflicting logic), or irrelevant (no connection to the question or key conditions).
-# Strict Output format example
-6"""
+    judge_prompt = (
+        f"You are a strict evaluator assessing the "
+        f"**validity of the model prediction's reasoning "
+        f"process**. You must score this reasoning validity "
+        f"on a scale from 0 to 10, where 0 means the "
+        f"reasoning is completely invalid and 10 means the "
+        f"reasoning is fully rigorous.\n"
+        f"# Input\n"
+        f"Question:\n"
+        f"```\n"
+        f"{row['question']}\n"
+        f"```\n"
+        f"Reference Reasoning:\n"
+        f"```\n"
+        f"{reference_steps}\n"
+        f"```\n"
+        f"Model Prediction:\n"
+        f"```\n"
+        f"{row['prediction']}\n"
+        f"```\n"
+        f"# Evaluation Rules\n"
+        f"1. First, identify the **complete reasoning "
+        f"process** from the model prediction (ignore only "
+        f"the final answer if it is not accompanied by "
+        f"reasoning).\n"
+        f"2. Evaluate reasoning validity against two core "
+        f"criteria:\n"
+        f"   - **Logical Coherence**: Check if the reasoning "
+        f"steps are sequential, self-consistent, and free of "
+        f"contradictions (e.g., no conflicting premises or "
+        f"illogical deductions).\n"
+        f"   - **Alignment with Reference Reasoning**: Check "
+        f"if the reasoning direction, key premises, and "
+        f"deduction logic match the reference reasoning "
+        f"(partial alignment counts for partial credit).\n"
+        f"3. Deduct points for:\n"
+        f"   - Irrelevant content (reasoning that does not "
+        f"address the question or key conditions).\n"
+        f"   - Missing key reasoning steps (even if the "
+        f"final answer is correct).\n"
+        f"   - Flawed logic (e.g., circular reasoning, "
+        f"false premises leading to conclusions).\n"
+        f"4. Do not prioritize the correctness of the "
+        f"**final answer**\u2014a correct answer with invalid "
+        f"reasoning still scores low, while an incorrect "
+        f"answer with partially valid reasoning may score "
+        f"higher.\n"
+        f"# Scoring Guide\n"
+        f"- **10**: Reasoning is fully rigorous, logically "
+        f"coherent (no contradictions), and perfectly "
+        f"aligned with the reference reasoning (all key "
+        f"steps and logic match).\n"
+        f"- **7-9**: Reasoning is mostly coherent, with "
+        f"minor logical gaps or partial misalignment with "
+        f"the reference reasoning (no major "
+        f"contradictions).\n"
+        f"- **4-6**: Reasoning has obvious logical flaws "
+        f"(e.g., one missing key step, minor "
+        f"contradictions) or limited alignment with the "
+        f"reference reasoning (only some core logic "
+        f"matches).\n"
+        f"- **1-3**: Reasoning is barely valid, with severe "
+        f"logical flaws (e.g., multiple contradictions) or "
+        f"almost no alignment with the reference reasoning "
+        f"(only tangentially related to the question).\n"
+        f"- **0**: Reasoning is completely invalid, "
+        f"contradictory (self-conflicting logic), or "
+        f"irrelevant (no connection to the question or key "
+        f"conditions).\n"
+        f"# Strict Output format example\n"
+        f"6"
+    )
     try:
         msgs = []
         msgs.append({'role': 'system', 'value': 'You are a helpful assistant.'})
-        msgs.append({'role': 'user', 'type':'text' ,'value': judge_prompt})
+        msgs.append({'role': 'user', 'type':'text','value': judge_prompt})
 
         images = ast.literal_eval(row['step_images'])
         for image in images:
@@ -88,7 +128,7 @@ Model Prediction:
         pattern = r"(\d+)"
         match = re.search(pattern, llm_judge)
         rv_score = float(match.group(1)) if match else 0.0
-    except Exception as e:
+    except Exception:
         rv_score = 0.0
 
     mcc_score = mm_reasoning_is_correct(row['prediction'], chr(ord('A') + int(row['answer'])))
@@ -108,6 +148,7 @@ class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
         os.makedirs(step_dir, exist_ok=True)
 
         results = {}
+
         def _process_field(key_name, path_key_name, save_root):
             tgt_paths = []
             if key_name in line:
@@ -180,13 +221,25 @@ class SGI_Bench_Experimental_Reasoning(ImageBaseDataset):
     def build_prompt(self, line):
         if isinstance(line, int):
             line = self.data.iloc[line]
-        question = """
-Please solve the following multiple-choice question step-by-step. Each question is provided with several options labeled A, B, C, D, E, etc. Carefully analyze the question and each option, reason step-by-step, then select the single most correct option.
-
-Your final output **must** include both **the reasoning** and **the final answer**. The final answer must meet two core requirements:
-1. It consists solely of the corresponding letter of the correct option (e.g., A, B, C, D, E, etc.);
-2. This letter is enclosed in the \\boxed{} format. Example: \\boxed{A}
-    """.strip() + "\n\nQuestion:\n" + line['question'] + "\n\nOptions:\n"
+        question = (
+            "Please solve the following multiple-choice "
+            "question step-by-step. Each question is "
+            "provided with several options labeled A, B, "
+            "C, D, E, etc. Carefully analyze the question "
+            "and each option, reason step-by-step, then "
+            "select the single most correct option.\n\n"
+            "Your final output **must** include both "
+            "**the reasoning** and **the final answer**. "
+            "The final answer must meet two core "
+            "requirements:\n"
+            "1. It consists solely of the corresponding "
+            "letter of the correct option (e.g., A, B, C, "
+            "D, E, etc.);\n"
+            "2. This letter is enclosed in the \\boxed{} "
+            "format. Example: \\boxed{A}"
+            "\n\nQuestion:\n" + line['question']
+            + "\n\nOptions:\n"
+        )
         for i, option in enumerate(line['options']):
             option_label = chr(ord('A') + i)
             question += f"{option_label}. {option}\n"
@@ -248,7 +301,7 @@ Your final output **must** include both **the reasoning** and **the final answer
             data.at[index, 'rv'] = rv_score / 10.0
 
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
-        result = {"MCC": sum(all_mcc)/len(all_mcc), "RV": sum(all_rv)/(10.0*len(all_rv))}
+        result = {"MCC": sum(all_mcc) / len(all_mcc), "RV": sum(all_rv) / (10.0 * len(all_rv))}
         result_file = get_intermediate_file_path(eval_file, '_result', 'json')
         dump(data, score_file)
         dump(result, result_file)

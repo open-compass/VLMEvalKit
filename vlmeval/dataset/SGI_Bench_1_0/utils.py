@@ -1,6 +1,8 @@
 import re
 
-############################## Idea Generation ##############################
+# ############################ Idea Generation ##############################
+
+
 def format_idea_data(idea_data):
     fields = [
         "Idea",
@@ -60,7 +62,9 @@ def get_evaluation_prompt_modified(hypothesis_A, hypothesis_B, context=None):
 
     prompt = f"""
 You are assisting researchers tasked with comparing TWO research hypotheses (Hypothesis A and Hypothesis B).
-Your job is to evaluate both hypotheses across five separate dimensions defined below, and to choose a winner (either Hypothesis A or Hypothesis B) for each dimension. Ties are NOT allowed — you MUST pick one winner per dimension. Base your judgments on scientific principles and the provided context only.
+Your job is to evaluate both hypotheses across five separate dimensions defined below, and to choose a winner
+(either Hypothesis A or Hypothesis B) for each dimension. Ties are NOT allowed — you MUST pick one winner per
+dimension. Base your judgments on scientific principles and the provided context only.
 
 ##Background context:
 {context_text}
@@ -73,24 +77,38 @@ Your job is to evaluate both hypotheses across five separate dimensions defined 
 
 ##Definition of each dimension:
 ###1) Effectiveness
-Which hypothesis is more likely to produce a successful experimental or empirical outcome in service of the stated research objective? Evaluate the likelihood that, if implemented using standard practices in the relevant discipline, the hypothesis will achieve the intended measurable result. Focus on mechanistic plausibility, causal logic, and whether the hypothesis addresses the core problem directly.
+Which hypothesis is more likely to produce a successful experimental or empirical outcome in service of the stated
+research objective? Evaluate the likelihood that, if implemented using standard practices in the relevant discipline,
+the hypothesis will achieve the intended measurable result. Focus on mechanistic plausibility, causal logic, and
+whether the hypothesis addresses the core problem directly.
 
 ###2)Novelty
-Novelty: Which hypothesis presents more innovative or original approaches? Compare the similarity between the idea and the related work and existing solutions in the background to assess its novelty. A lower similarity to the core idea indicates greater novelty.
+Novelty: Which hypothesis presents more innovative or original approaches? Compare the similarity between the idea
+and the related work and existing solutions in the background to assess its novelty. A lower similarity to the core
+idea indicates greater novelty.
 
 ###3) Detailedness (Level of Specification)
-Which hypothesis provides clearer, more actionable, and more complete specification of mechanisms, assumptions, experimental steps, required variables, and dependencies? Detailedness rewards clarity that would enable a competent researcher to design an experiment or implementation with minimal ambiguity.
+Which hypothesis provides clearer, more actionable, and more complete specification of mechanisms, assumptions,
+experimental steps, required variables, and dependencies? Detailedness rewards clarity that would enable a competent
+researcher to design an experiment or implementation with minimal ambiguity.
 
 ###4) Feasibility
 Which hypothesis presents a more realistic and implementable solution given current technological constraints?
 
 ###5) Overall
-Considering the overall aspects together but emphasizing conceptual coherence and scientific grounding, which hypothesis is superior overall? This is a synthesis judgment: prefer the hypothesis that is logically consistent, grounded in accepted principles, avoids critical unstated assumptions or contradictions, and is most defensible as a scientific proposition.
+Considering the overall aspects together but emphasizing conceptual coherence and scientific grounding, which
+hypothesis is superior overall? This is a synthesis judgment: prefer the hypothesis that is logically consistent,
+grounded in accepted principles, avoids critical unstated assumptions or contradictions, and is most defensible as
+a scientific proposition.
 
 Unified constraints:
-- Use only the provided context and widely accepted scientific principles in the relevant discipline. Do NOT invent facts external to the context unless they are broadly standard domain knowledge.
-- When a dimension explicitly says to ignore other factors (e.g., Novelty should ignore feasibility), strictly follow that guidance for that dimension. When evaluating a certain dimension, it should focus on this dimension itself and ignore the influence of other dimensions.
-- Be concise but specific: for each dimension provide a short judgment line (exact format below) plus 1–3 sentences of succinct reasoning grounded in the definitions above.
+- Use only the provided context and widely accepted scientific principles in the relevant discipline. Do NOT invent
+facts external to the context unless they are broadly standard domain knowledge.
+- When a dimension explicitly says to ignore other factors (e.g., Novelty should ignore feasibility), strictly follow
+that guidance for that dimension. When evaluating a certain dimension, it should focus on this dimension itself and
+ignore the influence of other dimensions.
+- Be concise but specific: for each dimension provide a short judgment line (exact format below) plus 1–3 sentences
+of succinct reasoning grounded in the definitions above.
 - Format must match exactly (case-insensitive for "Win A/Win B") and include a reason after "because".
 
 
@@ -184,7 +202,7 @@ def extract_reason(result_text, dimension):
     return "No specific reason provided"
 
 
-############################## Idea Generation ##############################
+# ############################ Idea Generation ##############################
 
 
 def mean(l: list):

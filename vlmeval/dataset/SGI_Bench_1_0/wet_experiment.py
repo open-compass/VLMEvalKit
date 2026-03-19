@@ -3,25 +3,38 @@ from datasets import load_dataset
 from ..text_base import TextBaseDataset
 import re
 import pandas as pd
-from ...smp.file import load ,dump , get_intermediate_file_path
+from ...smp.file import load, dump, get_intermediate_file_path
 from itertools import combinations
 
+
 def parse_experiment_steps(text):
-    # Regular expression to match experiment steps until encountering a single line containing only a right parenthesis ")"
+    # Regular expression to match experiment steps until
+    # encountering a single line containing only a right
+    # parenthesis ")"
     # Match format: variable_name = <action_name>(parameter_list)
     # Capture groups:
     #   1: output variable name (e.g., "multimer_cells")
-    #   2: action name (e.g., "Incubate cells with MHC multimers")
-    #   3: parameter list (e.g., "cells=washed_cells,\nmultimer_pool=\"tetramer pool (23 nM each)\",\n...")
-    #   Condition: parameter list continues until a single line of ")" (whitespace allowed around it)
-    step_pattern = r'(\w+)\s*=\s*<([^>]+)>\(\s*([\s\S]*?)(?=\n\s*\)\s*$)'
+    #   2: action name (e.g., "Incubate cells with MHC
+    #      multimers")
+    #   3: parameter list (e.g.,
+    #      "cells=washed_cells,\nmultimer_pool=...")
+    #   Condition: parameter list continues until a single
+    #   line of ")" (whitespace allowed around it)
+    step_pattern = (
+        r'(\w+)\s*=\s*<([^>]+)>\(\s*([\s\S]*?)'
+        r'(?=\n\s*\)\s*$)'
+    )
     # Regular expression to match each parameter line
     # Match format: key=value or key=value,
     # Capture groups:
     #   1: parameter key (e.g., "cells")
-    #   2: parameter value (e.g., "washed_cells" or "\"tetramer pool (23 nM each)\"")
-    #   (?:,)? : optionally match a trailing comma at the end of the line, ignore the comma
-    param_pattern = r'^\s*(\w+)\s*=\s*(.*?)\s*(?:,)?\s*$'
+    #   2: parameter value (e.g., "washed_cells" or
+    #      "\"tetramer pool (23 nM each)\"")
+    #   (?:,)? : optionally match a trailing comma at the
+    #   end of the line, ignore the comma
+    param_pattern = (
+        r'^\s*(\w+)\s*=\s*(.*?)\s*(?:,)?\s*$'
+    )
     steps = []
 
     for match in re.finditer(step_pattern, text, re.MULTILINE):
@@ -30,14 +43,20 @@ def parse_experiment_steps(text):
         params = match.group(3).strip()      # Extract parameter list
 
         param_dict = {}
-        # Split the parameter list by lines, ignoring empty lines and single-line ")"
-        param_lines = [line.strip() for line in params.split('\n') if line.strip() and line.strip() != ')']
+        # Split the parameter list by lines,
+        # ignoring empty lines and single-line ")"
+        param_lines = [
+            line.strip()
+            for line in params.split('\n')
+            if line.strip() and line.strip() != ')'
+        ]
         for line in param_lines:
             param_match = re.match(param_pattern, line)
             if param_match:
                 key = param_match.group(1)       # Extract parameter key
-                value = param_match.group(2).strip()  # Extract parameter value
-                # If the value starts and ends with double quotes, remove the quotes
+                value = param_match.group(2).strip()
+                # If the value starts and ends with
+                # double quotes, remove the quotes
                 if value.startswith('"') and value.endswith('"'):
                     value = value[1:-1]
                 param_dict[key] = value
@@ -61,7 +80,8 @@ def identify_variable_types(steps):
     Returns:
         original_vars (set): set of raw variables
         generated_vars (set): set of generated variables (function outputs)
-        output_to_step_map (dict): mapping from output variable name to the index of its generating step (for reverse lookup)
+        output_to_step_map (dict): mapping from output variable name to the index of
+            its generating step (for reverse lookup)
     """
     generated_vars = set()
     all_input_vars = set()
@@ -74,10 +94,19 @@ def identify_variable_types(steps):
 
         for input_val in step["input"].values():
             # Simple check whether it is a variable (non-string literal, non-numeric)
-            # If input_val is a string and does not start and end with quotes, and is not purely numeric, consider it a variable
-            if isinstance(input_val, str) and \
-               not (input_val.startswith('"') and input_val.endswith('"')) and \
-               not (input_val.replace('.', '', 1).isdigit() or (input_val.startswith('-') and input_val[1:].replace('.', '', 1).isdigit())):
+            # If input_val is a string and does not start and end with quotes,
+            # and is not purely numeric, consider it a variable
+            if (
+                isinstance(input_val, str)
+                and not (input_val.startswith('"') and input_val.endswith('"'))
+                and not (
+                    input_val.replace('.', '', 1).isdigit()
+                    or (
+                        input_val.startswith('-')
+                        and input_val[1:].replace('.', '', 1).isdigit()
+                    )
+                )
+            ):
                 all_input_vars.add(input_val)
 
     # Raw variables are those input variables that are not in the set of output variables of any step
@@ -113,7 +142,8 @@ def compare_exp_steps(gt_steps, pred_steps):
 
     # Identify variable types and build output mappings
     original_vars_gt, generated_vars_gt, output_to_step_map_gt = identify_variable_types(gt_steps)
-    original_vars_pred, generated_vars_pred, output_to_step_map_pred = identify_variable_types(pred_steps)  # output_to_step_map_pred is only used to judge whether an input is a generated variable
+    original_vars_pred, generated_vars_pred, output_to_step_map_pred = identify_variable_types(pred_steps)
+    # output_to_step_map_pred is only used to judge whether an input is a generated variable
 
     # Dictionary mapping variable names in pred_steps to corresponding variables in gt_steps
     var_map_pred2gt = {}
@@ -171,16 +201,25 @@ def compare_exp_steps(gt_steps, pred_steps):
                     pass  # Match succeeds; continue
                 else:
                     detail["status"] = "❌ error"
-                    detail["message"] += f"Parameter '{key}' generated variable reference mismatch: expected from '{value_gt}', got from '{value_pred}' (mapped as '{mapped_value_pred}'). "
+                    detail["message"] += (
+                        f"Parameter '{key}' generated variable reference mismatch: "
+                        f"expected from '{value_gt}', got from '{value_pred}' "
+                        f"(mapped as '{mapped_value_pred}'). "
+                    )
                     is_step_error = True
             # Case 2: Both inputs are raw variables (literals or inputs not defined as function outputs)
             elif not is_input_var_gt_generated and not is_input_var_pred_generated:
-                # For raw variables, do not strictly require identical values; even if values differ, consider it correct
+                # For raw variables, do not strictly require identical values;
+                # even if values differ, consider it correct
                 pass
             # Case 3: Type mismatch (one is a raw variable, the other is a generated variable)
             else:
                 detail["status"] = "❌ error"
-                detail["message"] += f"Parameter '{key}' type mismatch: expected {'generated variable' if is_input_var_gt_generated else 'raw variable'}, got {'generated variable' if is_input_var_pred_generated else 'raw variable'}. "
+                detail["message"] += (
+                    f"Parameter '{key}' type mismatch: "
+                    f"expected {'generated variable' if is_input_var_gt_generated else 'raw variable'}, "
+                    f"got {'generated variable' if is_input_var_pred_generated else 'raw variable'}. "
+                )
                 is_step_error = True
 
         # If the current step has no parameter errors, update the variable mapping
@@ -216,7 +255,7 @@ def compare_exp_steps(gt_steps, pred_steps):
                     "message": "Missing step."
                 })
 
-    results["parameter_acc"] = 1 - (error_count/max(len(gt_steps), len(pred_steps)))
+    results["parameter_acc"] = 1 - (error_count / max(len(gt_steps), len(pred_steps)))
 
     return results
 
@@ -256,7 +295,6 @@ class SGI_Bench_Wet_Experiment(TextBaseDataset):
             )
             idx += 1
         return pd.DataFrame(rows)
-
 
     def build_prompt(self, line):
         if isinstance(line, int):

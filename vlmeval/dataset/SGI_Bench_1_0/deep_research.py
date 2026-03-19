@@ -17,21 +17,34 @@ def extract_final_answer(answer_with_thinking: str, start_tag='<answer>', end_ta
             return answer_with_thinking[start_index + len(start_tag):end_index].strip()
     return None
 
+
 def eval_model_output(ques_dict, judge):
     newline = '\n'
     prompt = f"""
-You are an expert in systematically validating and evaluating LLM-generated solutions. Your task is to rigorously analyze the correctness of a provided solution by comparing it step-by-step against the reference solution, and output **only** a structured verification list—with no additional text.
+You are an expert in systematically validating and evaluating \
+LLM-generated solutions. Your task is to rigorously analyze the \
+correctness of a provided solution by comparing it step-by-step \
+against the reference solution, and output **only** a structured \
+verification list—with no additional text.
 
 ## Instructions
-1. Break down the given LLM solution into individual steps and evaluate each one against the corresponding reference solution steps.
+1. Break down the given LLM solution into individual steps and \
+evaluate each one against the corresponding reference solution steps.
 2. For each step, include the following three components:
-   - **solution_step**: The specific part of the LLM solution being evaluated.
-   - **reason**: A clear, critical explanation of whether the step contains errors, omissions, or deviations from the reference approach. Be stringent in your assessment.
+   - **solution_step**: The specific part of the LLM solution \
+being evaluated.
+   - **reason**: A clear, critical explanation of whether the \
+step contains errors, omissions, or deviations from the reference \
+approach. Be stringent in your assessment.
    - **judge**: Your verdict: either `"correct"` or `"incorrect"`.
-3. If the final LLM answer is incorrect, you must identify at least one step in your analysis as incorrect.
-4. Justify your judgments rigorously, pointing out even minor inaccuracies or logical flaws.
-5. Do not attempt to answer the original question—your role is strictly to evaluate.
-6. Output **only** a list of dictionaries in the exact format provided below. Do not include any other text or comments.
+3. If the final LLM answer is incorrect, you must identify \
+at least one step in your analysis as incorrect.
+4. Justify your judgments rigorously, pointing out even minor \
+inaccuracies or logical flaws.
+5. Do not attempt to answer the original question—your role \
+is strictly to evaluate.
+6. Output **only** a list of dictionaries in the exact format \
+provided below. Do not include any other text or comments.
 
 ## Question
 {ques_dict['question']}
@@ -50,8 +63,12 @@ You are an expert in systematically validating and evaluating LLM-generated solu
 
 ## Output Example
 [
-    {{"solution_step": "step content", "reason": "reason of the judgement", "judge": "correct or incorrect"}},
-    {{"solution_step": "step content", "reason": "reason of the judgement", "judge": "correct or incorrect"}},
+    {{"solution_step": "step content", \
+"reason": "reason of the judgement", \
+"judge": "correct or incorrect"}},
+    {{"solution_step": "step content", \
+"reason": "reason of the judgement", \
+"judge": "correct or incorrect"}},
 ]
 """
 
@@ -75,8 +92,11 @@ You are an expert in systematically validating and evaluating LLM-generated solu
         step_level_acc = 0
 
     ques_dict['exact_match'] = 1 if (
-                ques_dict['answer'] == ques_dict['prediction'] or ques_dict['answer'] == extract_final_answer(
-            ques_dict['prediction'])) else 0
+        ques_dict['answer'] == ques_dict['prediction']
+        or ques_dict['answer'] == extract_final_answer(
+            ques_dict['prediction']
+        )
+    ) else 0
     ques_dict['llm_judge'] = llm_judge
     ques_dict['step_level_acc'] = step_level_acc
     return ques_dict
@@ -114,7 +134,8 @@ class SGI_Bench_Deep_Research(TextBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
         question = line['question'] + """
-You can reason step by step before giving the final answer. The final answer should be enclosed by <answer> and </answer>.
+You can reason step by step before giving the final answer. \
+The final answer should be enclosed by <answer> and </answer>.
 
 Example:
 Step 1. ...
