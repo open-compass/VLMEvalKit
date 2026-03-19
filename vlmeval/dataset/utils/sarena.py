@@ -155,6 +155,7 @@ def get_task_configs(dataset):
         return TASK_CONFIGS_MINI
     return TASK_CONFIGS_FULL
 
+
 EDIT_TASK_MAP = {
     "Edit-Color-Complex": "color_complex",
     "Edit-Color-Simple": "color_simple",
