@@ -1255,8 +1255,10 @@ class OlympiadBench(ImageBaseDataset):
         return tgt_path_z
 
     def build_prompt(self, line):
-
         from .utils.olympiadbench import get_answer_type_text, make_input
+
+        if isinstance(line, int):
+            line = self.data.iloc[line]
 
         self.is_chinese = 'zh' in line['source']
         self.is_math = 'maths' in line['source']
@@ -3872,8 +3874,12 @@ class OCRBench_v2(ImageBaseDataset):
     DATASET_URL = {
         'OCRBench_v2':
         'https://huggingface.co/datasets/QYWH/ocrbench_v2/resolve/main/OCRBench_v2.tsv?download=true',
+        'OCRBench_v2_MINI': 'https://opencompass.openxlab.space/utils/VLMEval/OCRBench_v2_MINI.tsv',
     }
-    DATASET_MD5 = {'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0'}
+    DATASET_MD5 = {
+        'OCRBench_v2': '65d04fe07b4d4ee33e73fc8e7d4d46b0',
+        'OCRBench_v2_MINI': '11f79b8e1e0b0fe150964de4cb2feb02',
+    }
 
     # It returns a dictionary
     @classmethod
@@ -4095,9 +4101,7 @@ class MathCanvas(ImageBaseDataset):
 
         summary_dict = summarize_mathcanvas_results(eval_results_list)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         with open(score_file, 'w', encoding='utf-8') as f:
             json.dump(summary_dict, f, ensure_ascii=False, indent=4)
 
@@ -4300,9 +4304,7 @@ class VLMsAreBiased(ImageBaseDataset):
 
         summary_dict = vlms_are_biased_aggregate_by_topic(detail_result)
 
-        os.environ['EVAL_FORMAT'] = 'json'
-
-        score_file = get_intermediate_file_path(eval_file, '_metrics')
+        score_file = get_intermediate_file_path(eval_file, '_metrics', target_format='json')
         dump(summary_dict, score_file)
 
         return summary_dict

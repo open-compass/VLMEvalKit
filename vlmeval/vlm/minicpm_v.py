@@ -1269,3 +1269,153 @@ class MiniCPM_V_4_5(MiniCPM_V_4):
         res = self.extract_answer(res, dataset)
 
         return res
+
+
+class MiniCPM_o_4_5(MiniCPM_V_4):
+    INSTALL_REQ = False
+    INTERLEAVE = True
+
+    def __init__(self, model_path='openbmb/MiniCPM-o-4_5', **kwargs):
+        random.seed(0)
+        np.random.seed(0)
+        torch.manual_seed(0)
+        torch.cuda.manual_seed_all(0)
+        assert model_path is not None
+        self.model_path = model_path
+        print(f'load from path {self.model_path}')
+        self.model = AutoModel.from_pretrained(
+            self.model_path,
+            trust_remote_code=True,
+            attn_implementation='sdpa',
+            torch_dtype=torch.bfloat16,
+            init_vision=True,
+            init_audio=False,
+            init_tts=False,
+        )
+        self.model.eval().cuda()
+        self.kwargs = kwargs
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path, trust_remote_code=True)
+        from transformers import AutoProcessor
+        self.processor = AutoProcessor.from_pretrained(self.model_path, trust_remote_code=True)
+        torch.cuda.empty_cache()
+
+        self.num_beams = 3
+        self.max_new_tokens = 2048
+        self.options_suffix_prompt = '''\nAnswer with the option's letter from the given choices directly.'''
+        self.wo_options_system_prompt = 'Carefully read the following question. Answer the question directly.'
+        self.detail_system_prompt = 'Answer this question in detail.'
+        self.vqa_prompt = 'Answer the question using a single word or phrase.'
+        self.multi_choice_cot_prompt = ('''Carefully read the following multichoice question, solve it step '''
+                                        '''by step and finally pick the option associated with the correct '''
+                                        '''answer in the format of "Answer: selected option\n\n''')
+        self.short_ans_cot_prompt = ('''Read the following question carefully, solve it step by step, and '''
+                                     '''then output the final answer in the format of "Answer: single number '''
+                                     '''or single word or phrase".\n\n''')
+        self.ocrbench_cot_prompt = 'Carefully observe the image and answer the OCR-related questions below. \n\n'
+
+    def use_long_cot(self, dataset=None):
+        if dataset is None:
+            return False
+        if listinstr([
+                'MMMU', 'MathVista', 'MMStar', 'MathVision',
+                'MathVerse_MINI', 'MathVerse_MINI_Vision_Only',
+                'DynaMath', 'LogicVista',
+                'MMBench', 'OCRBench', 'AI2D', 'HallusionBench'
+        ], dataset):
+            return True
+        else:
+            return False
+
+    def use_cot(self, dataset=None):
+        if dataset is None:
+            return False
+        if listinstr([
+                'MMMU', 'MathVista', 'MMStar', 'OCRBench',
+                'MathVision', 'MathVerse_MINI',
+                'DynaMath', 'LogicVista',
+                'MMBench', 'AI2D'
+        ], dataset):
+            return True
+        elif listinstr([
+                'MMVet',
+                'RealWorldQA', 'POPE', 'ScienceQA', 'TextVQA', 'DocVQA'
+        ], dataset):
+            return False
+        else:
+            return False
+
+    def use_upsize(self, dataset=None):
+        if dataset is None:
+            return False
+        if listinstr([
+                'MMMU', 'MathVista', 'MMStar', 'OCRBench',
+                'ChartQA', 'TextVQA', 'DocVQA',
+                'AI2D', 'MMBench', 'MMVet',
+        ], dataset):
+            return True
+        else:
+            return False
+
+    def build_prompt(self, line, dataset=None):
+        return MiniCPM_V_4.build_prompt(self, line, dataset)
+
+    def generate_inner(self, message, dataset=None):
+        if self.use_long_cot(dataset):
+            default_kwargs = dict(
+                enable_thinking=True,
+                max_new_tokens=8192,
+                do_sample=True,
+                temperature=0.7,
+                num_beams=1,
+                top_p=1.0,
+                top_k=0,
+                repetition_penalty=1.0,
+                no_repeat_ngram_size=0
+            )
+        else:
+            default_kwargs = dict(
+                max_new_tokens=self.max_new_tokens,
+                do_sample=False,
+                num_beams=self.num_beams,
+            )
+
+        default_kwargs.update(self.kwargs)
+
+        content = []
+        for x in message:
+            if x['type'] == 'text':
+                content.append(x['value'])
+            elif x['type'] == 'image':
+                image = Image.open(x['value']).convert('RGB')
+                if not self.use_upsize(dataset):
+                    content.append(image)
+                else:
+                    img_width, img_height = image.width, image.height
+                    if (img_width * img_height) >= (1344 * 1344):
+                        content.append(image)
+                    else:
+                        ratio = math.sqrt((1344 * 1344) / (img_width * img_height))
+                        max_img_width = int(img_width * ratio)
+                        new_img_width = random.randint(img_width, max_img_width)
+                        new_img_height = int(new_img_width / img_width * img_height)
+                        resized_image = image.resize((new_img_width, new_img_height))
+                        content.append(resized_image)
+        msgs = [{'role': 'user', 'content': content}]
+
+        res = self.model.chat(
+            image=None,
+            msgs=msgs,
+            context=None,
+            tokenizer=self.tokenizer,
+            processor=self.processor,
+            max_inp_length=8192,
+            use_tts_template=False,
+            **default_kwargs
+        )
+
+        if isinstance(res, tuple) and len(res) > 0:
+            res = res[0]
+
+        res = self.extract_answer(res, dataset)
+
+        return res

@@ -28,6 +28,10 @@ LMUDATA/
 """
 
 
+# NOTE: This file is deprecated. For the latest MMSI-Video implementation,
+# see `vlmeval/dataset/mmsibench.py` (class `MMSIVideoBench`).
+
+
 class MMSIVideoBench(ImageBaseDataset):
     TYPE = 'MCQ'
     Settings = ['_U50', '_SC']

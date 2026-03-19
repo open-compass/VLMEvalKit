@@ -23,7 +23,10 @@ from .llava import (
 )
 from .vita import VITA, VITAQwen2
 from .long_vita import LongVITA
-from .minicpm_v import MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6, MiniCPM_o_2_6, MiniCPM_V_4, MiniCPM_V_4_5
+from .minicpm_v import (
+    MiniCPM_V, MiniCPM_Llama3_V, MiniCPM_V_2_6, MiniCPM_o_2_6,
+    MiniCPM_V_4, MiniCPM_V_4_5, MiniCPM_o_4_5
+)
 from .minigpt4 import MiniGPT4
 from .mmalaya import MMAlaya, MMAlaya2
 from .monkey import Monkey, MonkeyChat
@@ -61,6 +64,7 @@ from .phi3_vision import Phi3Vision, Phi3_5Vision
 from .phi4_multimodal import Phi4Multimodal
 from .wemm import WeMM
 from .cambrian import Cambrian
+from .cambrian_s import CambrianS
 from .chameleon import Chameleon
 from .video_llm import (
     VideoLLaVA,
@@ -115,7 +119,10 @@ from .keye_vlm import KeyeChat
 from .qianfan_vl import Qianfan_VL
 from .logics import Logics_Thinking
 from .cosmos import Cosmos
+from .spatial_mllm import SpatialMLLM
 from .liquid import LFM2VL
 from .insight_v import InsightV
 from .covt import CoVTChat
 from .granite_docling import DOCLING
+from .bagel_umm import Bagel
+from .vlm3r import VLM3R

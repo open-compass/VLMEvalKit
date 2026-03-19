@@ -2132,17 +2132,75 @@ class XLRSBench(ImageMCQDataset):
             return "".join(matches)
 
     def evaluate(self, eval_file, **judge_kwargs):
+        from vlmeval.utils import track_progress_rich
+
         data = load(eval_file)
         data['prediction'] = [str(x) for x in data['prediction']]
         task_stats = {}
         micro_metric = {'correct': 0, 'total': 0}
+
+        model = judge_kwargs.get('model', 'exact_matching')
+        if model == 'exact_matching':
+            model = None
+        else:
+            model = build_judge(**judge_kwargs)
+            if not model.working():
+                warnings.warn('OPENAI API is not working properly, will use exact matching for evaluation')
+                warnings.warn(DEBUG_MESSAGE)
+                model = None
+
+        result_file = get_intermediate_file_path(eval_file, '_{model}_result', 'pkl')
+        ans = {}
+        if osp.exists(result_file):
+            ans = load(result_file)
+
+        tups = []
+        indices = []
+        for index, it in data.iterrows():
+            if index in ans:
+                continue
+            indices.append(index)
+            tups.append(
+                dict(
+                    question=it['question'],
+                    pred=it['prediction'],
+                    options=it['multi-choice options'],
+                    model=model,
+                ))
+
+        def extract_aux(question: str, pred: str, options: str, model) -> str:
+            if model is None:
+                return dict(pred=pred, processed_pred=self.extract_characters_regex(pred))
+
+            options = options.partition('Select the best answer')[0]
+            prompt = (
+                'You are an AI assistant who will help me to match '
+                'an answer with several options of a single-choice question. '
+                'You are provided with a question, several options, and an answer, '
+                'and you need to find the options most similar to the answer. '
+                'If the meaning of all options are significantly different from the answer, output Z. '  # noqa: E501
+                f'------\nQuestion: {question}\n{options}\nAnswer: {pred}\n------\n'
+                'Please find the matched options and output uppercase character in A, B, C, ... and Z. \n'  # noqa: E501
+                'If the matched number is more than one, output all options like ABC, BD, etc. '
+                'Do not reply any other content.'
+            )
+            res = model.generate(prompt, temperature=0)
+            res = ''.join(re.findall(r'[a-zA-Z]', res))
+            return dict(pred=pred, processed_pred=res)
+
+        if len(indices) > 0:
+            track_progress_rich(
+                func=extract_aux, tasks=tups,
+                nproc=judge_kwargs.get('nproc', 32), save=result_file, keys=indices)
+            ans = load(result_file)
+
         for index, it in data.iterrows():
             task = f"{it['category']}/{it['l2-category']}"
             if task not in task_stats:
                 task_stats[task] = {'correct': 0, 'total': 0}
             task_stats[task]['total'] += 1
             micro_metric['total'] += 1
-            pred = self.extract_characters_regex(it['prediction'])
+            pred = ans[index]['processed_pred']
             if set(pred) == set(it['answer']):
                 task_stats[task]['correct'] += 1
                 micro_metric['correct'] += 1
