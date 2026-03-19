@@ -94,6 +94,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
             if 'mpo' in name:
                 return 'internvl2-mpo-cot'
             return 'internvl2'
+        if 'qwen3' in name:
+            return 'qwen3'
         return None
 
     # ------------------------------------------------------------------
