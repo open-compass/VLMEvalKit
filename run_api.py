@@ -290,8 +290,10 @@ def main():
         # Construct the dataset.
         try:
             dataset_kwargs = {}
-            if ds_name in ['MMLongBench_DOC', 'DUDE', 'DUDE_MINI',
-                                'SLIDEVQA', 'SLIDEVQA_MINI']:
+            if ds_name in [
+                'MMLongBench_DOC', 'DUDE', 'DUDE_MINI',
+                'SLIDEVQA', 'SLIDEVQA_MINI',
+            ]:
                 dataset_kwargs['model'] = model_name
             dataset = build_dataset(ds_name, **dataset_kwargs)
 
@@ -354,7 +356,7 @@ def main():
     # Create and run pipeline
     # ==============================================
     if len(dataset_configs) == 0:
-        logger.warning(f'No valid datasets to evaluate.')
+        logger.warning('No valid datasets to evaluate.')
         return
 
     logger.info(f"Starting API Pipeline for model: {model_name}")

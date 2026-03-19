@@ -76,6 +76,7 @@ def chat_mt(model, messages: List[dict], dataset_name: str) -> List[str]:
 # Core Data Structures
 # ==========================================
 
+
 class EvalStatus(Enum):
     Pending = 1
     Running = 2
@@ -92,6 +93,7 @@ class InferenceTask:
     sample_index: str      # 样本ID
     prompt_struct: Any     # 已构建的prompt结构
     dataset_type: DatasetType = "image"  # 数据集类型
+
 
 @dataclass
 class DatasetConfig:
@@ -130,6 +132,7 @@ class DatasetConfig:
 # ==========================================
 # Main Pipeline Class
 # ==========================================
+
 
 class APIEvalPipeline:
     """
@@ -237,7 +240,6 @@ class APIEvalPipeline:
 
     def _save_checkpoint(self, dataset_name: str, result: dict):
         """线程安全地保存单个结果到checkpoint"""
-        cfg = self.states[dataset_name]
         checkpoint_file = self._get_checkpoint_file(dataset_name)
 
         with self.file_locks[dataset_name]:
@@ -417,7 +419,6 @@ class APIEvalPipeline:
         2. 使用 dataset.build_prompt(sample, video_llm=...) 构建 prompt
         """
         loop = asyncio.get_running_loop()
-        model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
         data = dataset.data

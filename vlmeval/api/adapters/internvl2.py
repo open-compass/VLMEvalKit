@@ -47,8 +47,8 @@ class InternVL2Adapter(ModelAdapter):
         from vlmeval.dataset import build_dataset, infer_dataset_basename
 
         use_mpo_prompt = self.use_mpo_prompt and (
-            getattr(self, 'use_cot', False) or
-            dataset in ['MMStar', 'HallusionBench', 'OCRBench']
+            getattr(self, 'use_cot', False)
+            or dataset in ['MMStar', 'HallusionBench', 'OCRBench']
         )
 
         assert self.use_custom_prompt(dataset)
@@ -57,7 +57,6 @@ class InternVL2Adapter(ModelAdapter):
         if not listinstr(['ChartMimic'], dataset):
             tgt_path = self.dump_image(line, dataset)
         else:
-            import os
             input_figure_path_rel = line['input_figure']
             ROOT = LMUDataRoot()
             img_root = os.path.join(ROOT, 'images', 'ChartMimic')

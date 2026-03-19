@@ -129,8 +129,8 @@ class LMDeployWrapper(OpenAISDKWrapper):
             input_msgs.append(dict(role='system', content=system_prompt))
         assert isinstance(inputs, list) and isinstance(inputs[0], dict)
         assert (
-            np.all(['type' in x for x in inputs]) or
-            np.all(['role' in x for x in inputs])
+            np.all(['type' in x for x in inputs])
+            or np.all(['role' in x for x in inputs])
         ), inputs
         if 'role' in inputs[0]:
             assert inputs[-1]['role'] == 'user', inputs[-1]

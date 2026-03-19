@@ -231,8 +231,10 @@ class InternS1_1ThinkAdapter(ModelAdapter):
 
         SYSTEM_PROMPTS_EN = (
             'Please answer the problem adhering to the following rules:\n'
-            '1. Please use LaTeX format to represent the variables and formulas used in the solution process and results.\n'
-            '2. Please put the final answer(s) in \\boxed{}, note that the unit of the answer should not be included in \\boxed{}.\n'
+            '1. Please use LaTeX format to represent the variables and formulas '
+            'used in the solution process and results.\n'
+            '2. Please put the final answer(s) in \\boxed{}, note that the unit of '
+            'the answer should not be included in \\boxed{}.\n'
             '3. If the problem requires multiple answers, list them in order, each in a separate \\boxed{}.\n'
             'Problem: Information:{information}\n'
             'Context:{context}\n'
