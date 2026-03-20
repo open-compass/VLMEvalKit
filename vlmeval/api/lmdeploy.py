@@ -1,6 +1,4 @@
-import json
 import os
-import requests
 
 import numpy as np
 
@@ -26,7 +24,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
     """
 
     def __init__(self,
-                 model=None,
+                 model,
                  retry=5,
                  wait=5,
                  key='sk-123456',
@@ -59,15 +57,7 @@ class LMDeployWrapper(OpenAISDKWrapper):
             **kwargs,
         )
 
-        # Resolve model name (auto-detect from API if not given)
-        if model is None:
-            model_url = ''.join([api_base.split('v1')[0], 'v1/models'])
-            resp = requests.get(model_url)
-            model_id_list = [str(data['id']) for data in resp.json()['data']]
-            self.model = model if model in model_id_list else model_id_list[0]
-            logger.info(f'Automatically selected model from api_base: `{self.model}`')
-        else:
-            self.model = model
+        self.model = model
         logger.info(f'lmdeploy evaluate model: {self.model}')
 
         # Resolve and instantiate adapter

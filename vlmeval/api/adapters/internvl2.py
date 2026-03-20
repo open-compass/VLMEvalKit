@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 
 from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
@@ -142,13 +143,17 @@ class InternVL2Adapter(ModelAdapter):
         return 6
 
     def process_payload(self, payload, dataset=None):
-        import copy
         max_num = self.get_max_num(dataset)
-        payload = copy.deepcopy(payload)
-        messages = payload['messages']
-        for msg in messages:
-            if msg.get('type') == 'image_url':
-                msg['image_url']['max_dynamic_patch'] = max_num
+        if max_num is not None:
+            payload = copy.deepcopy(payload)
+            for msg in payload['messages']:
+                content = msg['content']
+                if isinstance(content, dict) and content.get('type') == 'image_url':
+                    content['image_url']['max_dynamic_patch'] = max_num
+                elif isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict) and item.get('type') == 'image_url':
+                            item['image_url']['max_dynamic_patch'] = max_num
         return payload
 
     def postprocess(self, response, dataset=None):

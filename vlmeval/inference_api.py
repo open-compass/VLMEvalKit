@@ -90,9 +90,9 @@ class InferenceTask:
     sample_index: str
     prompt_struct: Any     # Constructed prompt
 
-    dataset_type: DatasetType = "image"
     dataset_name: str      # Dataset name (for naming task)
     model_name: str        # Model name (for naming task)
+    dataset_type: DatasetType = "image"
 
 
 @dataclass
@@ -372,7 +372,6 @@ class APIEvalPipeline:
         model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
-        data = dataset.data
 
         if hasattr(model, 'set_dump_image'):
             model.set_dump_image(dataset.dump_image)
@@ -387,8 +386,8 @@ class APIEvalPipeline:
             logger.info(f"   [{dataset_name}] Using vanilla dataset prompt")
 
         tasks_generated = 0
-        for i in range(len(data)):
-            item = data.iloc[i]
+        for i in range(len(dataset)):
+            item = dataset[i]
             idx_str = str(item['index'])
 
             if idx_str in existing_results:
@@ -404,7 +403,8 @@ class APIEvalPipeline:
                 logger.error(f"   [{dataset_name}] Failed to build prompt "
                              f"for sample {idx_str}: {repr(e)}")
                 logger.debug(traceback.format_exception(e))
-                continue
+                # Skip dataset if has fatal sample.
+                return 0
 
             task = InferenceTask(
                 dataset_name=dataset_name,
@@ -424,7 +424,6 @@ class APIEvalPipeline:
         model = cfg.model_obj
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
-        data = dataset.data
 
         if cfg.video_llm is not None:
             video_llm = cfg.video_llm
@@ -434,8 +433,8 @@ class APIEvalPipeline:
         logger.info(f"   [{dataset_name}] Video mode: video_llm={video_llm}")
 
         tasks_generated = 0
-        for i in range(len(data)):
-            item = data.iloc[i]
+        for i in range(len(dataset)):
+            item = dataset[i]
             idx_str = str(item['index'])
 
             if idx_str in existing_results:
@@ -450,9 +449,12 @@ class APIEvalPipeline:
                 if prompt_struct is None:
                     continue
             except Exception as e:
+                import traceback
                 logger.error(f"   [{dataset_name}] Failed to build prompt "
                              f"for sample {idx_str}: {repr(e)}")
-                continue
+                logger.debug(traceback.format_exception(e))
+                # Skip dataset if has fatal sample.
+                return 0
 
             task = InferenceTask(
                 dataset_name=dataset_name,
@@ -470,13 +472,12 @@ class APIEvalPipeline:
         """Produce multi-turns dataset inference task."""
         dataset = cfg.dataset_obj
         dataset_name = cfg.dataset_name
-        data = dataset.data
 
         logger.info(f"   [{dataset_name}] Multi-turn dialogue mode")
 
         tasks_generated = 0
-        for i in range(len(data)):
-            item = data.iloc[i]
+        for i in range(len(dataset)):
+            item = dataset[i]
             idx_str = str(item['index'])
 
             if idx_str in existing_results:
@@ -485,9 +486,12 @@ class APIEvalPipeline:
             try:
                 prompt_struct = dataset.build_prompt(item)
             except Exception as e:
+                import traceback
                 logger.error(f"   [{dataset_name}] Failed to build prompt "
                              f"for sample {idx_str}: {repr(e)}")
-                continue
+                logger.debug(traceback.format_exception(e))
+                # Skip dataset if has fatal sample.
+                return 0
 
             task = InferenceTask(
                 dataset_name=dataset_name,
