@@ -1,11 +1,10 @@
-import os.path as osp
 import ast
 import json
 import string
 
-from .image_mcq import ImageMCQDataset
 from ..smp.file import load
 from ..smp.misc import toliststr
+from .image_mcq import ImageMCQDataset
 
 
 class EmbSpatialBench(ImageMCQDataset):
@@ -76,7 +75,7 @@ class EmbSpatialBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

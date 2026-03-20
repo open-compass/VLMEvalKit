@@ -1,11 +1,13 @@
-import torch
-from transformers import AutoTokenizer, AutoModel
-import warnings
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import pandas as pd
 import string
+import warnings
+
+import pandas as pd
+import torch
+from transformers import AutoModel, AutoTokenizer
+
+from ..dataset import DATASET_TYPE
+from ..smp.misc import cn_string, listinstr
+from .base import BaseModel
 
 
 class H2OVLChat(BaseModel):

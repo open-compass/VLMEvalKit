@@ -1,12 +1,14 @@
-from collections import defaultdict
-import pandas as pd
-import os.path as osp
 import os
+import os.path as osp
 import string
-from .image_base import ImageBaseDataset
+from collections import defaultdict
+
+import pandas as pd
+
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
 from vlmeval.utils import track_progress_rich
-from vlmeval.smp.file import get_intermediate_file_path, load, dump
-from .utils import build_judge, DEBUG_MESSAGE
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 PROMPT_MCQ_MULTIMODAL = {
     "instruct": [
@@ -272,7 +274,7 @@ class MaCBench(ImageBaseDataset):
                 try:
                     pred = float(pred)
                     answer = float(line['answer'])
-                except:
+                except Exception:
                     continue
 
                 tolarnce = line.get('relative_tolerance', None)

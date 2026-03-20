@@ -1,7 +1,8 @@
 import re
-from vlmeval import *
+
+from ..smp.file import dump, get_intermediate_file_path, load
+from ..smp.misc import d2df
 from .image_base import ImageBaseDataset
-from ..smp.file import get_intermediate_file_path
 
 
 class VisFactor(ImageBaseDataset):

@@ -1,10 +1,15 @@
-from vlmeval import *
-from .image_base import ImageBaseDataset
-from .utils import build_judge
-from .utils.multiple_choice import report_acc, eval_vanilla, eval_circular_group
-from .utils.shortqa import ShortQA_prompt
+import os.path as osp
+import string
+import warnings
+
+import pandas as pd
+
+from ..smp.file import dump, get_intermediate_file_path, load
 from ..utils import track_progress_rich
-from ..smp.file import get_intermediate_file_path
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.multiple_choice import eval_circular_group, eval_vanilla, report_acc
+from .utils.shortqa import ShortQA_prompt
 
 
 def ShortQA_auxeval(model, line):
@@ -70,7 +75,7 @@ class ImageShortQADataset(ImageBaseDataset):
         'LiveMMBench_Reasoning': '',
         'LiveMMBench_Reasoning_circular': '',
         'LiveMMBench_Spatial': '',
-        'hle':'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
+        'hle': 'https://opencompass.openxlab.space/utils/VLMEval/hle.tsv',
     }
 
     DATASET_MD5 = {

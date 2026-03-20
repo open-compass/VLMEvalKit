@@ -1,12 +1,16 @@
 # flake8: noqa
-from .image_base import ImageBaseDataset
+import re
+
 import numpy as np
 import pandas as pd
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from .utils import build_judge, DEBUG_MESSAGE
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.smp.misc import listinstr
+from vlmeval.smp.vlm import decode_base64_to_image_file, read_ok, toliststr
 from ..utils import track_progress_rich
-import re
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 prompt_dict = {}
 prompt_dict['LiveMMBench_Creation'] = {

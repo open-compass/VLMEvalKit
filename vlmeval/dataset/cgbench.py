@@ -1,10 +1,25 @@
+import json
+import os
+import os.path as osp
+
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from PIL import Image
+from tqdm import tqdm
+
+from vlmeval.smp.file import (LMUDataRoot, dump, get_cache_path, get_file_extension,
+                              get_intermediate_file_path, load)
+from vlmeval.smp.misc import md5, modelscope_flag_set
+from vlmeval.utils import track_progress_rich
+from .utils import build_judge
+from .utils.cgbench import (eval_open_first, eval_open_second, get_dimention_rating_mcq_grouding,
+                            get_timestampes, merge_intervals, milliseconds_to_seconds,
+                            post_process, sample_frames_clue_average, save_clue_video_frames,
+                            save_step_1_steps, save_step_2_steps, sys_prompt_open_eval_step_1,
+                            sys_prompt_open_eval_step_2, unzip_hf_zip)
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from .utils.cgbench import *
-from ..utils import track_progress_rich
 
 
 class CGBench_MCQ_Grounding_Mini(VideoBaseDataset):

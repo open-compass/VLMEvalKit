@@ -1,8 +1,10 @@
 import ast
-import numpy as np
 import math
-from .common.metrics import mse
+
+import numpy as np
+
 from .common.conversions import str_to_list
+from .common.metrics import mse
 
 
 class MSE:

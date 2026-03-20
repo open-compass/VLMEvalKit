@@ -1,22 +1,29 @@
 # flake8: noqa
+import glob
+import os
+import os.path as osp
+import zipfile
+
+import cv2
 import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_concat_dataset import ConcatVideoDataset
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
+import imageio
+import numpy as np
+import pandas as pd
+import portalocker
 import torchvision.transforms as T
+from huggingface_hub import snapshot_download
+from PIL import Image
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-import pandas as pd
-import imageio
-import cv2
-import zipfile
-import os
-import glob
-from .utils.qbench_video import *
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
+from vlmeval.utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.qbench_video import (VQA_JUDGE_SYS_PROMPT, check_ans_mcq, check_ans_vqa,
+                                 get_dimension_rating)
+from .video_base import VideoBaseDataset
+from .video_concat_dataset import ConcatVideoDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

@@ -31,7 +31,7 @@ def _eval_subprocess_target(
 ):
     """Evaluate function in child processes."""
     setup_subprocess_logger(log_file)
-    logger.info(f"[Eval Start] {dataset_obj.dataset_name}")
+    logger.info(f"🔔 [Eval Start] {dataset_obj.dataset_name}")
 
     try:
         with open(log_file, 'a') as f:
@@ -200,7 +200,7 @@ class APIEvalPipeline:
             try:
                 cfg.dataset_obj.data = None
                 gc.collect()
-                logger.info(f"   [{dataset_name}] Memory released.")
+                logger.info(f"🧹 [{dataset_name}] Memory released.")
             except Exception as e:
                 logger.warning(f"   [{dataset_name}] Failed to release dataset memory: {e}")
 

@@ -1,19 +1,22 @@
-import os
-import re
-import tempfile
-import itertools
-from functools import partial
-
-import pandas as pd
 import ast
+import itertools
+import json
+import os
+import os.path as osp
+import re
+from collections import defaultdict
 
-from ..image_base import ImageBaseDataset, img_root_map
-from ..utils import build_judge, DEBUG_MESSAGE
-from ...smp import *
-from ...utils import track_progress_rich
-from ipdb import set_trace as st
+import numpy as np
+import pandas as pd
+from PIL import Image
+from tqdm import tqdm
 
-logger = get_logger("RUN")
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp.file import LMUDataRoot, dump, get_intermediate_file_path, load
+from vlmeval.smp.log import get_logger
+from vlmeval.smp.misc import toliststr
+
+logger = get_logger(__name__)
 
 """
 {
@@ -277,7 +280,7 @@ class VBGD(ImageBaseDataset):
                         results_dict[score_key + "_text"].append(score)
                     else:
                         results_dict[score_key + "_icon"].append(score)
-            except:
+            except Exception:
                 click_point = None
                 match = {score_key: False for score_key in scorers.keys() if score_key != "IoU"}
             result.append(

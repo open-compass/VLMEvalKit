@@ -1,12 +1,10 @@
 import re
-import logging
-import os
 import signal
-from sympy import simplify, expand, trigsimp
-from sympy.parsing.latex import parse_latex
-from dotenv import load_dotenv
-import timeout_decorator
 
+import timeout_decorator
+from dotenv import load_dotenv
+from sympy import expand, simplify, trigsimp
+from sympy.parsing.latex import parse_latex
 
 load_dotenv()
 

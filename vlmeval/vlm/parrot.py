@@ -1,11 +1,15 @@
+import logging
 import os
+import string
+from abc import abstractproperty
 
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-from .base import BaseModel
+
 from ..dataset import DATASET_TYPE
-from ..smp import *
+from ..smp.misc import cn_string, listinstr
+from .base import BaseModel
 
 
 class Parrot(BaseModel):
@@ -14,9 +18,9 @@ class Parrot(BaseModel):
 
     def __init__(self, model_path='AIDC-AI/Parrot-7B', **kwargs):
         try:
-            from parrot.model.parrot_arch import ParrotMetaForCausalLM
-            from parrot.utils.constants import DEFAULT_IMAGE_TOKEN, BEGIN_LINE, END_LINE
             from parrot.model.conversation_formatter import ConversationFormatter
+            from parrot.model.parrot_arch import ParrotMetaForCausalLM
+            from parrot.utils.constants import BEGIN_LINE, DEFAULT_IMAGE_TOKEN, END_LINE
             from parrot.utils.mm_utils import process_images
         except Exception as e:
             logging.critical('Please install Parrot before using Parrot')

@@ -1,11 +1,14 @@
+import re
+import string
+
+import pandas as pd
 import torch
 from PIL import Image
-import re
 from transformers import AutoModel, AutoProcessor
 
-from .base import BaseModel
-from ..smp import *
 from ..dataset import DATASET_TYPE
+from ..smp.misc import cn_string, listinstr
+from .base import BaseModel
 
 
 class OmChat(BaseModel):

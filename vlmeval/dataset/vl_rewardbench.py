@@ -1,10 +1,14 @@
+import os.path as osp
 from ast import literal_eval
+from collections import defaultdict
 
+import pandas as pd
+
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.vlm import toliststr
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..utils import track_progress_rich
-
+from .utils import DEBUG_MESSAGE, build_judge
 
 LLM_PARSE_ANSWER_PROMPT = '''
 You are given a pairwise judgement for two responses. Please return the better response according to the judgement.

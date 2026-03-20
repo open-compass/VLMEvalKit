@@ -1,14 +1,18 @@
+import os
+import os.path as osp
+import string
+import sys
+import warnings
+from abc import abstractproperty
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
-from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
-import os
-
 from transformers import CLIPImageProcessor
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp.misc import splitlen
+from ..base import BaseModel
 
 os.environ['LOWRES_RESIZE']="384x32"
 os.environ['HIGHRES_BASE']="0x32"
@@ -30,8 +34,8 @@ class Ola(BaseModel):
                  model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
 
-        from .ola.model.builder import load_pretrained_model
         from .ola.mm_utils import get_model_name_from_path
+        from .ola.model.builder import load_pretrained_model
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
@@ -95,11 +99,11 @@ class Ola(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        from .ola.mm_utils import process_anyres_highres_image_genli, KeywordsStoppingCriteria
-        from .ola.constants import (
-            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
-        from .ola.conversation import conv_templates, SeparatorStyle
+        from .ola.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                    DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
+        from .ola.conversation import SeparatorStyle, conv_templates
         from .ola.datasets.preprocess import tokenizer_image_token
+        from .ola.mm_utils import KeywordsStoppingCriteria, process_anyres_highres_image_genli
 
         # Support interleave text and image
         conv = conv_templates[self.conv_mode].copy()

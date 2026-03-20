@@ -1,16 +1,18 @@
-import json
-import pickle
-import warnings
-import pandas as pd
-import os
 import csv
 import hashlib
-import os.path as osp
-import time
-import numpy as np
-import validators
+import json
 import mimetypes
 import multiprocessing as mp
+import os
+import os.path as osp
+import pickle
+import time
+import warnings
+
+import numpy as np
+import pandas as pd
+import validators
+
 from .misc import toliststr
 from .vlm import decode_base64_to_image_file
 
@@ -274,6 +276,7 @@ def load(f, fmt=None):
 
 def download_file(url, filename=None):
     import urllib.request
+
     from tqdm import tqdm
 
     class DownloadProgressBar(tqdm):
@@ -483,6 +486,7 @@ def get_intermediate_file_path(eval_file, suffix, target_format=None):
 
 def prepare_reuse_files(pred_root_meta, eval_id, model_name, dataset_name, reuse, reuse_aux):
     import shutil
+
     from .misc import timestr
     work_dir = osp.join(pred_root_meta, eval_id)
     os.makedirs(work_dir, exist_ok=True)

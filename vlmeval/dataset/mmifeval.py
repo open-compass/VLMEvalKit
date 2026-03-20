@@ -1,12 +1,19 @@
 # flake8: noqa
+import os
+import os.path as osp
 import re
 
+import pandas as pd
+
+from vlmeval.dataset.utils.mmif.function_and_compare import (check_image_aspect_ratio,
+                                                             check_image_height, check_image_width,
+                                                             get_checkers, parse_constraint)
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.log import get_logger
+from vlmeval.smp.misc import d2df
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
-from ..dataset.utils.mmif.function_and_compare import *
+from .utils import DEBUG_MESSAGE, build_judge
 
 logger = get_logger(__name__)
 

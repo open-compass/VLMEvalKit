@@ -1,16 +1,16 @@
 import ast
-from collections import OrderedDict
 import json
 import os
 import os.path as osp
 import re
-from typing import Optional, List
+from collections import OrderedDict
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 
+from ..smp import decode_base64_to_image_file, dump, load, read_ok
 from .image_base import ImageBaseDataset
-from ..smp import LMUDataRoot, decode_base64_to_image_file, dump, file_size, load, read_ok
 
 
 def _find_first_bracketed_list(text: str) -> Optional[str]:

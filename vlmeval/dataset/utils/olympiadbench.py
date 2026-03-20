@@ -1,19 +1,14 @@
-import re
-import json
-from math import isclose
-from decimal import Decimal, getcontext
-from fractions import Fraction
-import sys
-import math
-import timeout_decorator
 import logging
-from ...smp import *
+import re
+import sys
+from decimal import getcontext
+
+import timeout_decorator
 
 try:
     import sympy as sp
-    from sympy import simplify, Eq, sympify, evalf, Pow
+    from sympy import Eq, Pow, simplify, sympify
     from sympy.parsing.latex import parse_latex
-    import antlr4
 except ImportError:
     logging.warning('sympy or antlr4 is not installed, please install it for OlympiadBench evaluation.')
 
@@ -308,7 +303,7 @@ class MathJudger:
 
         try:
             expression1, expression2 = self.preprocess(expression1, expression2)
-        except:
+        except Exception:
             return False
         if expression1 == expression2:
             # print("原生相等")
@@ -377,7 +372,7 @@ class MathJudger:
                 if self.interval_equal(expression1, expression2):
                     # print("区间等价")
                     return True
-            except:
+            except Exception:
                 return False
 
         # 再判断是否在数值上相等
@@ -385,7 +380,7 @@ class MathJudger:
             if self.numerical_equal(expression1, expression2):
                 # print("数值等价")
                 return True
-        except:
+        except Exception:
             pass
 
         # 再判断是否是表达式相等
@@ -393,7 +388,7 @@ class MathJudger:
             if self.expression_equal(expression1, expression2) and not ("=" in expression1 and "=" in expression2):
                 # print("表达式等价")
                 return True
-        except:
+        except Exception:
             pass
 
         # 再判断是否是等式相等
@@ -401,7 +396,7 @@ class MathJudger:
             if self.equation_equal(expression1, expression2):
                 # print("等式等价")
                 return True
-        except:
+        except Exception:
             pass
 
         return False
@@ -477,7 +472,7 @@ class MathJudger:
                         return True
                     else:
                         return False
-                except:
+                except Exception:
                     return False
             elif exp_too_long:
                 print(f'Expression {exp1} or {exp2} is too long to compute. ')
@@ -489,7 +484,7 @@ class MathJudger:
                     num_value = simplified_expr.evalf()
 
                     return abs(num_value) < 1e-3
-                except:
+                except Exception:
                     return False
 
     def equation_equal(self, expression1, expression2):

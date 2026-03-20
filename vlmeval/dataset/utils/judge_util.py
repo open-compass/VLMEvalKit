@@ -1,11 +1,12 @@
 import os
-from ...smp import load_env
+
+from vlmeval.smp import load_env
 
 INTERNAL = os.environ.get('INTERNAL', 0)
 
 
 def build_judge(**kwargs):
-    from ...api import OpenAIWrapper, SiliconFlowAPI, HFChatModel
+    from vlmeval.api import HFChatModel, OpenAIWrapper, SiliconFlowAPI
     model = kwargs.pop('model', None)
     kwargs.pop('nproc', None)
     load_env()

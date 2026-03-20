@@ -1,14 +1,12 @@
+import logging
+
 import torch
-from transformers import AutoTokenizer, AutoModel
-import math
-from PIL import Image
 import torchvision.transforms as T
+from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
+from transformers import AutoModel, AutoTokenizer
 
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -105,7 +103,8 @@ class NVLM(BaseModel):
         self.use_vllm = kwargs.pop('use_vllm', False)
 
         if self.use_vllm:
-            from vllm import LLM, SamplingParams
+            from vllm import LLM
+
             # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
             gpu_count = torch.cuda.device_count()
             if gpu_count >= 8:

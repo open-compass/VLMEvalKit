@@ -1,21 +1,21 @@
-import os
-import json
 import ast
+import json
+import os
 import string
+import warnings
+from collections import OrderedDict
+
 import decord
 import numpy as np
 import pandas as pd
-import warnings
-
+from huggingface_hub import snapshot_download
 from PIL import Image
 from tqdm import tqdm
-from collections import OrderedDict
-from huggingface_hub import snapshot_download
 
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
 from ..smp.file import LMUDataRoot, dump, load
-from .video_base import VideoBaseDataset
+from ..smp.misc import get_cache_path, modelscope_flag_set, toliststr
 from .image_mcq import ImageMCQDataset
+from .video_base import VideoBaseDataset
 
 
 class SiteBenchBase:
@@ -98,7 +98,8 @@ class SiteBenchBase:
         return dataset_path
 
     def evaluate(self, eval_file, **kwargs):
-        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, compute_caa_score, attach_score_cache
+        from .utils.spatial_bench.cal_scores import (attach_score_cache, build_mcq_score_fn,
+                                                     compute_caa_score)
         from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
         score_fn = build_mcq_score_fn(**kwargs)  # Select MCQ scoring func according to judge_kwargs['model'].

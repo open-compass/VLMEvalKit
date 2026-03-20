@@ -2,9 +2,9 @@ import os
 
 import numpy as np
 
-from .openai_sdk import OpenAISDKWrapper
+from ..smp import encode_image_to_base64, get_logger
 from .adapters import build_adapter
-from ..smp import get_logger, encode_image_to_base64
+from .openai_sdk import OpenAISDKWrapper
 
 logger = get_logger(__name__)
 

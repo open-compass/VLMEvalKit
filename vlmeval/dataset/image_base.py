@@ -1,6 +1,15 @@
-import pandas as pd
+import os
+import os.path as osp
+import warnings
 from abc import abstractmethod
-from ..smp import *
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import load, md5
+from vlmeval.smp.file import LMUDataRoot, download_file, file_size
+from vlmeval.smp.misc import istype
+from vlmeval.smp.vlm import decode_base64_to_image_file, mmqa_display, read_ok, toliststr
 
 
 def img_root_map(dataset):

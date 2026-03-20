@@ -1,8 +1,7 @@
-import numpy as np
 import cv2
-import json
-
+import numpy as np
 from skimage.metrics import structural_similarity as ssim
+
 from ..base_metric import BaseMetric
 from .CLIP_video import sample_frames_from_video
 

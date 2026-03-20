@@ -1,6 +1,6 @@
+from vlmeval.smp.vlm import toliststr
 from .image_base import ImageBaseDataset
 from .utils.uni_svg import evaluate_uni_svg
-from ..smp import *
 
 
 class UniSVG(ImageBaseDataset):

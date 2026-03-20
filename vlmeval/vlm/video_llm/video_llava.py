@@ -1,12 +1,10 @@
-import torch
-import warnings
-import copy as cp
-import numpy as np
-import sys
 import logging
+
+import numpy as np
+import torch
+
+from vlmeval.smp.misc import listinstr
 from ..base import BaseModel
-from ...smp import isimg, listinstr
-from ...dataset import DATASET_TYPE
 
 
 def read_video_pyav(container, indices):
@@ -31,7 +29,7 @@ class VideoLLaVA_HF(BaseModel):
 
     def __init__(self, model_path='LanguageBind/Video-LLaVA-7B-hf', **kwargs):
         try:
-            from transformers import VideoLlavaProcessor, VideoLlavaForConditionalGeneration
+            from transformers import VideoLlavaForConditionalGeneration, VideoLlavaProcessor
         except Exception as err:
             logging.critical('Please install the latest version transformers. \
                           You can install by `pip install transformers==4.42.0` \
@@ -90,13 +88,18 @@ class VideoLLaVA(BaseModel):
     def __init__(self, model_path='LanguageBind/Video-LLaVA-7B', **kwargs):
         assert model_path is not None
         try:
-            from videollava.conversation import conv_templates, SeparatorStyle
-            from videollava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
-            from videollava.constants import DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
-            from videollava.mm_utils import get_model_name_from_path, tokenizer_image_token, KeywordsStoppingCriteria
-            from videollava.model.builder import load_pretrained_model
-            from videollava.model.language_model.llava_llama import LlavaLlamaForCausalLM
-            from videollava.train.train import smart_tokenizer_and_embedding_resize
+            from videollava.constants import DEFAULT_IMAGE_TOKEN  # noqa: F401
+            from videollava.constants import DEFAULT_VID_END_TOKEN  # noqa: F401
+            from videollava.constants import DEFAULT_VID_START_TOKEN  # noqa: F401
+            from videollava.constants import IMAGE_TOKEN_INDEX  # noqa: F401
+            from videollava.conversation import SeparatorStyle, conv_templates  # noqa: F401
+            from videollava.mm_utils import KeywordsStoppingCriteria  # noqa: F401
+            from videollava.mm_utils import get_model_name_from_path  # noqa: F401
+            from videollava.mm_utils import tokenizer_image_token  # noqa: F401
+            from videollava.model.builder import load_pretrained_model  # noqa: F401
+            from videollava.model.language_model.llava_llama import \
+                LlavaLlamaForCausalLM  # noqa: F401
+            from videollava.train.train import smart_tokenizer_and_embedding_resize  # noqa: F401
         except Exception as err:
             logging.critical('Please install Video-LLaVA from https://github.com/FangXinyu-0913/Video-LLaVA.')
             raise err
@@ -112,10 +115,9 @@ class VideoLLaVA(BaseModel):
         self.nframe = 8
 
     def get_model_output(self, model, video_processor, tokenizer, video, qs):
-        from videollava.conversation import conv_templates, SeparatorStyle
         from videollava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
-        from videollava.constants import DEFAULT_VID_START_TOKEN, DEFAULT_VID_END_TOKEN
-        from videollava.mm_utils import tokenizer_image_token, KeywordsStoppingCriteria
+        from videollava.conversation import SeparatorStyle, conv_templates
+        from videollava.mm_utils import KeywordsStoppingCriteria, tokenizer_image_token
 
         if type(qs) is dict and 'user' in qs:
             qs['user'] = ''.join([DEFAULT_IMAGE_TOKEN] * self.nframe) + '\n' + qs['user']

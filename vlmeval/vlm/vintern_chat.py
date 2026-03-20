@@ -1,19 +1,18 @@
-import torch
-from transformers import AutoTokenizer, AutoConfig, AutoModel, CLIPImageProcessor
-import warnings
-from PIL import Image
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
-import pandas as pd
+import re
 import string
-import torch.distributed as dist
+import warnings
+
+import pandas as pd
+import torch
 import torchvision.transforms as T
 import transformers
-
+from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-import re
+from transformers import AutoModel, AutoTokenizer
 
+from ..dataset import DATASET_MODALITY, DATASET_TYPE
+from ..smp.misc import cn_string, listinstr, version_cmp
+from .base import BaseModel
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
@@ -199,7 +198,7 @@ class VinternChat(BaseModel):
         if listinstr(['MTVQA'], dataset):
             kwargs_default["max_new_tokens"] = 256
 
-        if listinstr(['MMMU_DEV_VAL','MMMU_TEST'], dataset):
+        if listinstr(['MMMU_DEV_VAL', 'MMMU_TEST'], dataset):
             kwargs_default["num_beams"] = 1
 
         self.kwargs = kwargs_default

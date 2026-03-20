@@ -1,6 +1,5 @@
-from vlmeval import *
+from ..smp.vlm import toliststr
 from .image_shortqa import ImageShortQADataset
-import os.path as osp
 
 
 class MMESCIDataset(ImageShortQADataset):

@@ -3,14 +3,17 @@ MedQ-Bench Paired Description Dataset
 Paired image low-level description evaluation (description generation)
 """
 
-import os
 import json
-import pandas as pd
+import os
+import os.path as osp
 import time
+
+import pandas as pd
 from huggingface_hub import snapshot_download
+
+from vlmeval.smp.file import dump, get_cache_path, load
 from .image_base import ImageBaseDataset
-from ..smp import *
-from .medqbench_caption import MedQBench_Caption_Scorer, PROMPT_TEMPLATES
+from .medqbench_caption import PROMPT_TEMPLATES
 
 # Prompt templates specific to paired description task
 PAIRED_PROMPT_TEMPLATES = {
@@ -87,8 +90,8 @@ class MedQBench_PairedDescription_Scorer:
     @staticmethod
     def parse_score_from_response(resp):
         # Only extract x from "Score: x"
-        import re
         import json as _json
+        import re
         if isinstance(resp, dict):
             resp = str(resp)
         text = str(resp).strip()
@@ -139,6 +142,7 @@ class MedQBench_PairedDescription_Scorer:
 
     def compute_scores(self, use_threading=False):
         from concurrent.futures import ThreadPoolExecutor, as_completed
+
         # Multi-threading acceleration (optional)
         results = []
         # Dynamically generate default exception result (only for target metrics)
@@ -268,8 +272,9 @@ class MedqbenchPairedDescriptionDataset(ImageBaseDataset):
     def _test_judge_availability(cls, judge_kwargs):
         """Test if judge model API is available"""
         try:
-            from vlmeval.dataset.utils import build_judge
             import requests
+
+            from vlmeval.dataset.utils import build_judge
 
             # Build judge model
             judge_model = build_judge(**judge_kwargs)

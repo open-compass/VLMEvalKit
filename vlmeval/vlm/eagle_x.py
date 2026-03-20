@@ -1,12 +1,15 @@
+import logging
+import os.path as osp
+import string
+import warnings
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
-from .base import BaseModel
-from ..smp import *
+
 from ..dataset import DATASET_TYPE
-import copy
+from ..smp.misc import listinstr, splitlen
+from .base import BaseModel
 
 
 class Eagle(BaseModel):
@@ -17,9 +20,9 @@ class Eagle(BaseModel):
                  model_path='NVEagle/Eagle-X5-7B',
                  **kwargs):
         try:
-            from eagle.model.builder import load_pretrained_model
-            from eagle.utils import disable_torch_init
             from eagle.mm_utils import get_model_name_from_path
+            from eagle.model.builder import load_pretrained_model
+            from eagle.utils import disable_torch_init  # noqa: F401
         except Exception as e:
             logging.critical('''Please install eagle before using Eagle,
             you can install it from "https://github.com/NVlabs/EAGLE.git"''')
@@ -51,11 +54,12 @@ class Eagle(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         try:
-            from eagle import conversation as conversation_lib
-            from eagle.constants import (IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN,
-                                         DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
-            from eagle.conversation import conv_templates, SeparatorStyle
-            from eagle.mm_utils import tokenizer_image_token, process_images, KeywordsStoppingCriteria
+            from eagle import conversation as conversation_lib  # noqa: F401
+            from eagle.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                         DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
+            from eagle.conversation import SeparatorStyle, conv_templates  # noqa: F401
+            from eagle.mm_utils import (KeywordsStoppingCriteria, process_images,  # noqa: F401
+                                        tokenizer_image_token)
         except Exception as e:
             logging.critical('''Please install eagle before using Eagle,
             you can install it from "https://github.com/NVlabs/EAGLE.git"''')

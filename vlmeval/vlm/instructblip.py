@@ -1,9 +1,11 @@
+import logging
+import os.path as osp
+
 import torch
 from PIL import Image
-import os.path as osp
-import sys
+
+from ..smp.misc import splitlen
 from .base import BaseModel
-from ..smp import *
 
 
 class InstructBLIP(BaseModel):
@@ -21,9 +23,9 @@ class InstructBLIP(BaseModel):
         config_root = osp.dirname(self.file_path)
 
         try:
+            from lavis.common.registry import registry
             from lavis.models import load_preprocess
             from omegaconf import OmegaConf
-            from lavis.common.registry import registry
         except Exception as e:
             logging.critical('Please install lavis before using InstructBLIP. ')
             raise e

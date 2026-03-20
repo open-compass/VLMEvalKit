@@ -1,20 +1,21 @@
-import torch
-from transformers import AutoTokenizer, AutoConfig, AutoModel
-import warnings
-from PIL import Image
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE, DATASET_MODALITY
-import pandas as pd
+import os
+import re
 import string
-import torch.distributed as dist
+import warnings
+
+import pandas as pd
+import torch
 import torchvision.transforms as T
 import transformers
-
+from PIL import Image
 from torchvision.transforms.functional import InterpolationMode
-import re
-
+from transformers import AutoConfig, AutoModel, AutoTokenizer
 from transformers.utils import logging
+
+from ..dataset import DATASET_MODALITY, DATASET_TYPE
+from ..smp.misc import cn_string, listinstr, version_cmp
+from .base import BaseModel
+
 logger = logging.get_logger(__name__)
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)

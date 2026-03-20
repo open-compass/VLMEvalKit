@@ -1,29 +1,30 @@
 # flake8: noqa: F401, F403
 import abc
 import argparse
+import copy as cp
 import csv
+import datetime
 import multiprocessing as mp
 import os
 import os.path as osp
-from pathlib import Path
-import copy as cp
 import random as rd
-import requests
 import shutil
 import subprocess
 import warnings
-import pandas as pd
 from collections import OrderedDict, defaultdict
-from multiprocessing import Pool, current_process
-from tqdm import tqdm
-import datetime
-import matplotlib.pyplot as plt
-from tabulate import tabulate
 from json import JSONDecoder
+from multiprocessing import Pool, current_process
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import portalocker
+import requests
 from huggingface_hub import scan_cache_dir
 from huggingface_hub.utils._cache_manager import _scan_cached_repo
-from sty import fg, bg, ef, rs
-import portalocker
+from sty import bg, ef, fg, rs
+from tabulate import tabulate
+from tqdm import tqdm
 
 
 def modelscope_flag_set():
@@ -237,8 +238,9 @@ def pip_install_robust(package):
 
 
 def version_cmp(v1, v2, op='eq'):
-    from packaging import version
     import operator
+
+    from packaging import version
     op_func = getattr(operator, op)
     return op_func(version.parse(v1), version.parse(v2))
 

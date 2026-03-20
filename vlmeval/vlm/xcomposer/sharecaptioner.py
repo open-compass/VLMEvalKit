@@ -1,8 +1,13 @@
+import string
+
+import pandas as pd
 import torch
+from PIL import Image
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from vlmeval.dataset import DATASET_TYPE
+from vlmeval.smp.misc import cn_string
 from ..base import BaseModel
-from ...smp import *
-from ...dataset import DATASET_TYPE
 
 
 class ShareCaptioner(BaseModel):

@@ -1,13 +1,16 @@
-import os
 import json
+import os
 import re
+from typing import Any, Dict, List, Union
+
 import numpy as np
 import pandas as pd
-from vlmeval.smp import *
-
-from typing import Dict, List, Tuple, Any, Union
-from vlmeval.dataset.image_base import ImageBaseDataset
 from huggingface_hub import snapshot_download
+
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp import misc
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.misc import toliststr
 
 
 def weighted_row_sum(data, third_rows, weight_col=1, start_col=2):
@@ -548,7 +551,7 @@ class VLADBench(ImageBaseDataset):
 
     def __init__(self, *args, **kwargs):
         if self.IMAGE_DIR is None:
-            self.IMAGE_DIR = get_vladbench_image_dir(IMAGE_DIR)
+            self.IMAGE_DIR = get_vladbench_image_dir(self.IMAGE_DIR)
         super().__init__(*args, **kwargs)
 
     def build_prompt(self, line: Union[int, pd.Series]) -> List[Dict[str, str]]:
@@ -564,7 +567,7 @@ class VLADBench(ImageBaseDataset):
         if isinstance(line, int):
             line = self.data.iloc[line]
 
-        tgt_path = misc.toliststr(line["image"])
+        tgt_path = toliststr(line["image"])
         question = line['question']
         # form messages
         msgs = []
@@ -578,7 +581,7 @@ class VLADBench(ImageBaseDataset):
         return msgs
 
     def get_scores(self, result_file: str) -> pd.DataFrame:
-        data = file.load(result_file)
+        data = load(result_file)
         model_name = os.path.basename(result_file).split('_')[0]
 
         all_results = []
@@ -604,7 +607,7 @@ class VLADBench(ImageBaseDataset):
                         same_vision_qas['reference'].append(row['answer'])
                         same_vision_qas['prediction'].append(row['prediction'])
                         same_vision_qas['questions'].append(row['question'])
-                        same_vision_qas['dimension'].append(misc.toliststr(row['dimension']))
+                        same_vision_qas['dimension'].append(toliststr(row['dimension']))
                         dindex = row['dindex']
                     third_task_data.append(same_vision_qas)
 
@@ -647,5 +650,5 @@ class VLADBench(ImageBaseDataset):
         """
         score = self.get_scores(eval_file)
         score_file = get_intermediate_file_path(eval_file, '_score', 'csv')
-        file.dump(score, score_file)
+        dump(score, score_file)
         return score

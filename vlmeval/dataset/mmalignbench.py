@@ -1,12 +1,17 @@
 # flake8: noqa
+import os
+import os.path as osp
 import re
 from functools import partial
 
-from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
-from ..utils import track_progress_rich
+import numpy as np
+import pandas as pd
 
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.misc import d2df
+from vlmeval.utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE, build_judge
 
 SYSTEM_PROMPT = """\
 Please act as an impartial evaluator and assess the quality of the responses provided by two AI assistants to a given user prompt and accompanying image. You will be provided with Assistant A's and Assistant B's answers. Your task is to determine which assistant's response is superior.

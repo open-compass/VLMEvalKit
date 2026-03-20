@@ -1,15 +1,21 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_concat_dataset import ConcatVideoDataset
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import torchvision.transforms as T
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
-from .utils.tempcompass import *
+import json
+import os.path as osp
 
+import numpy as np
+import pandas as pd
+import portalocker
+from huggingface_hub import snapshot_download
+from PIL import Image
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import get_cache_path, get_intermediate_file_path
+from vlmeval.smp.misc import modelscope_flag_set
+from ..utils import track_progress_rich
+from .utils import build_judge
+from .utils.tempcompass import (evaluate_tempcompass_captioning, evaluate_tempcompass_mcq,
+                                evaluate_tempcompass_YorN, get_dimension_rating, sys_prompt)
+from .video_base import VideoBaseDataset
+from .video_concat_dataset import ConcatVideoDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

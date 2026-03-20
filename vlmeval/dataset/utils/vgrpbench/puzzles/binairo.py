@@ -1,12 +1,13 @@
-from typing import List, Dict, Any, Tuple
-import random
-import copy
-import os
-import json
 import argparse
+import copy
+import json
+import os
+import random
+from typing import Any, Dict, List, Tuple
 
-from .common_puzzle_factory import PuzzleFactory
 from .common_constriants import Constraint
+from .common_puzzle_factory import PuzzleFactory
+
 
 class ConstraintRowBalance(Constraint):
     def __init__(self) -> None:

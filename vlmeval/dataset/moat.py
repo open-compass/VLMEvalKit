@@ -1,13 +1,22 @@
-from vlmeval.dataset.utils import build_judge
-from vlmeval.smp import *
-from .image_base import ImageBaseDataset
-from ..utils import track_progress_rich
-from ..smp import load, dump, decode_base64_to_image
-from .utils import DEBUG_MESSAGE
-from ..smp.file import get_intermediate_file_path
-
+import json
+import os
+import os.path as osp
+import warnings
 import zipfile
-from random import shuffle, seed
+from random import seed, shuffle
+
+import pandas as pd
+
+from vlmeval.dataset.utils import build_judge
+from vlmeval.smp.file import (LMUDataRoot, download_file, dump, get_intermediate_file_path, load,
+                              md5)
+from vlmeval.smp.log import get_logger
+from vlmeval.smp.vlm import toliststr
+from vlmeval.utils import track_progress_rich
+from .image_base import ImageBaseDataset
+from .utils import DEBUG_MESSAGE
+
+logger = get_logger(__name__)
 
 
 RANDOM_SEED = 0
@@ -33,7 +42,7 @@ EVAL_SYSTEM_PROMPT = json.dumps({
 def str2json(s: str):
     try:
         return json.loads(s)
-    except:
+    except Exception:
         if s.startswith('```json') and s.endswith('```'):
             return json.loads(s[6:-3])
         return s
@@ -111,19 +120,19 @@ class MOAT(ImageBaseDataset):
             def extract_prediction(s: str):
                 try:
                     return json.loads(s)['answer']
-                except:
+                except Exception:
                     pass
                 try:
                     if s.startswith('```json') and s.endswith('```'):
                         return json.loads(s[7:-3])['answer']
-                except:
+                except Exception:
                     print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ", s)
                     return s
 
             def extract_verdict(s: str):
                 try:
                     return json.loads(s)['verdict']
-                except:
+                except Exception:
                     if s.startswith('```json') and s.endswith('```'):
                         return json.loads(s[7:-3])['verdict']
                     raise

@@ -1,3 +1,12 @@
+import os.path as osp
+
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from vlmeval.smp.vlm import toliststr
+from .image_base import ImageBaseDataset
+
 OST_INSTRUCTION = """
 # OST-Bench evaluation on VLMEvalkit
 
@@ -23,44 +32,35 @@ ensure complete reproducibility of the results.  Additionally, when using the LL
 set `self.model.config.image_aspect_ratio` = 'pt'  (under `vlmeval/vlm/llava/llava.py`).
 """
 
-import pandas as pd
-import json
-import numpy as np
-from tqdm import tqdm
-from .image_base import ImageBaseDataset
-from .utils.judge_util import build_judge
-from ..smp import *
-from ..utils import track_progress_rich
-
-num_mapping = {'zero':0,'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,'nine':9,'ten':10}
+num_mapping = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10}  # noqa: E501
 skip_type = ['None']
 
 
 def name_mapping(raw_name):
     if raw_name == 'A_room-size(float)':
         return 'None'
-    new_name = raw_name.replace('float','Estimation')
+    new_name = raw_name.replace('float', 'Estimation')
 
     if 'quantity' not in new_name:
-        new_name = new_name.replace('int','Temporal-loc')
+        new_name = new_name.replace('int', 'Temporal-loc')
     else:
-        new_name = new_name.replace('int','Counting')
+        new_name = new_name.replace('int', 'Counting')
 
-    new_name = new_name.replace('option','Judgement')
-    new_name = new_name.replace('A_object-','Agent_visible_info-')
-    new_name = new_name.replace('AO_','Agent_object_spatial-')
-    new_name = new_name.replace('A_','Agent_state-')
+    new_name = new_name.replace('option', 'Judgement')
+    new_name = new_name.replace('A_object-', 'Agent_visible_info-')
+    new_name = new_name.replace('AO_', 'Agent_object_spatial-')
+    new_name = new_name.replace('A_', 'Agent_state-')
     return new_name
 
 
-def Judgement_evalution(pred,gt,options):
+def Judgement_evalution(pred, gt, options):
     """Evaluation for Judgement Questions.
     Args:
         pred (str): Output of the model.
         gt (str): _description_
         options (list of str): All possible options.
     """
-    gt = gt.replace('\"','')
+    gt = gt.replace('\"', '')
     assert gt in options
 
     def longest_common_subsequence(str1, str2):
@@ -80,7 +80,7 @@ def Judgement_evalution(pred,gt,options):
     return float(gt == options[option_idx])
 
 
-def Estimation_evaluation(pred,gt):
+def Estimation_evaluation(pred, gt):
     """Evaluation for Estimation Questions (follow VSI)
     Args:
         pred (_type_): _description_
@@ -93,7 +93,7 @@ def Estimation_evaluation(pred,gt):
     try:
         pred = float(pred)
         gt = float(gt)
-    except:
+    except Exception:
         return 0.0
     delta_ratio = abs(gt - pred) / abs(gt)
     citerion_list = [0.5 + 0.05 * i for i in range(10)]
@@ -101,7 +101,7 @@ def Estimation_evaluation(pred,gt):
     return metric
 
 
-def Enumeration_evalution(pred,gt):
+def Enumeration_evalution(pred, gt):
     """Evaluation for Temporal-Loc and Counting.
     Args:
         pred (_type_): _description_
@@ -111,14 +111,14 @@ def Enumeration_evalution(pred,gt):
         _type_: _description_
     """
     try:
-        if isinstance(pred,str):
+        if isinstance(pred, str):
             for word in num_mapping:
                 if word in pred.lower():
                     pred = num_mapping[word]
                     break
         pred = int(pred)
         gt = int(gt)
-    except:
+    except Exception:
         return 0.0
     return float(pred == gt)
 
@@ -128,7 +128,7 @@ class OST_evaluator:
     def __init__(self):
         pass
 
-    def evaluation(self,sample):
+    def evaluation(self, sample):
 
         if sample['type'] in skip_type or 'pred' not in sample.keys():
             return sample
@@ -143,18 +143,18 @@ class OST_evaluator:
             return sample
 
         if 'Judgement' in sample['type']:
-            sample['metric'] = eval_function(sample['pred'],sample['answer'],sample['option'])
+            sample['metric'] = eval_function(sample['pred'], sample['answer'], sample['option'])
         else:
-            sample['metric'] = eval_function(sample['pred'],sample['answer'])
+            sample['metric'] = eval_function(sample['pred'], sample['answer'])
 
         return sample
 
 
 def process_answer(raw_answer):
-    if isinstance(raw_answer,list):
+    if isinstance(raw_answer, list):
         raw_answer = raw_answer[0]
 
-    raw_answer = raw_answer.replace('\'','\"')
+    raw_answer = raw_answer.replace('\'', '\"')
     try:
         if 'reason' not in raw_answer or 'answer' not in raw_answer:
             answer_text = raw_answer
@@ -166,7 +166,7 @@ def process_answer(raw_answer):
             answer_text = ''
         answer_text = answer_text.strip('\"')
 
-    except:
+    except Exception:
         print('answer format error:', raw_answer)
     return answer_text
 
@@ -282,16 +282,16 @@ class OSTDataset(ImageILDataset):
             sum_ += 1
             correct_cnt[type] += sample['metric']
         static_results = {k: correct_cnt[k] / total_cnt[k] for k in total_cnt.keys()}
-        full_dict,overall_dict = collect_results(static_results)
+        full_dict, overall_dict = collect_results(static_results)
 
         print('-------------------------- Evaluation Result--------------------------')
-        print('Total Samples:',sum_)
-        print('Overall Accuracy:',overall_dict['Overall'])
+        print('Total Samples:', sum_)
+        print('Overall Accuracy:', overall_dict['Overall'])
         print('-----------------------------------------------------------------------')
-        print('Judgement Accuracy:',overall_dict['Judgement'])
-        print('Estimation Accuracy:',overall_dict['Estimation'])
-        print('Temporal-loc Accuracy:',overall_dict['Temporal-loc'])
-        print('Counting Accuracy:',overall_dict['Counting'])
+        print('Judgement Accuracy:', overall_dict['Judgement'])
+        print('Estimation Accuracy:', overall_dict['Estimation'])
+        print('Temporal-loc Accuracy:', overall_dict['Temporal-loc'])
+        print('Counting Accuracy:', overall_dict['Counting'])
         print('-----------------------------------------------------------------------')
         print('Agent State(Judgement) Accuracy:', overall_dict['A_state(Judge)'])
         print('Agent State(Estimation) Accuracy:', overall_dict['A_state(Esti)'])

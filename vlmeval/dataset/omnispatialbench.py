@@ -1,15 +1,15 @@
-import os
 import ast
+import os
 import string
-import pandas as pd
-
-from tqdm import tqdm
 from collections import OrderedDict
-from huggingface_hub import snapshot_download
 
-from .image_mcq import ImageMCQDataset
+import pandas as pd
+from huggingface_hub import snapshot_download
+from tqdm import tqdm
+
 from ..smp.file import load
-from ..smp.misc import toliststr, get_cache_path
+from ..smp.misc import get_cache_path, toliststr
+from .image_mcq import ImageMCQDataset
 
 # Prompt template adapted from the official OmniSpatial codebase:
 # https://github.com/qizekun/OmniSpatial/tree/main
@@ -256,7 +256,7 @@ class OmniSpatialBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

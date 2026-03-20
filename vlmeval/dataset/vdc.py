@@ -1,14 +1,23 @@
 # flake8: noqa
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import random
-import json
 import ast
+import copy as cp
+import json
+import os
+import os.path as osp
+import random
+from collections import defaultdict
 from glob import glob
+
+import numpy as np
+import pandas as pd
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
+from vlmeval.smp.misc import extract_json_objects
+from vlmeval.utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -345,7 +354,9 @@ class VDC(VideoBaseDataset):
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.vdc import get_dimension_rating, prepare_response_prompt, prepare_score_prompt, SYSTEM_CAL_SCORE_PROMPT, SYSTEM_GENER_PRED_PROMPT
+        from .utils.vdc import (SYSTEM_CAL_SCORE_PROMPT, SYSTEM_GENER_PRED_PROMPT,
+                                get_dimension_rating, prepare_response_prompt,
+                                prepare_score_prompt)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'
         judge = judge_kwargs['model']

@@ -1,7 +1,38 @@
-from vlmeval.vlm import *
-from vlmeval.api import *
-from functools import partial
+import copy as cp
 import os
+from functools import partial
+
+from vlmeval.api import (GPT4V, MUGUAPI, ARM_thinker, BedrockAPI, BlueLM_API, Claude3V, CWWrapper,
+                         DoubaoVL, GCPVertexAPI, Gemini, GLMVisionAPI, HFChatModel, HunyuanVision,
+                         JTVLChatAPI, JTVLChatAPI_2B, JTVLChatAPI_Mini, KimiVLAPI, LMDeployAPI,
+                         OpenAISDKWrapper, OpenAIWrapper, Qwen2VLAPI, QwenAPI, QwenVLAPI,
+                         RBdashChat3_5_API, RBdashMMChat3_5_38B_API, RBdashMMChat3_78B_API,
+                         RBdashMMChat3_API, Reka, SenseChatVisionAPI, SiliconFlowAPI, TaichuVLAPI,
+                         TaichuVLRAPI, TaiyiAPI, TeleMM2_API, TeleMM2Thinking_API, TeleMMAPI,
+                         TogetherAPI, VideoChatOnlineV2API, bailingMMAPI)
+from vlmeval.vlm import (AKI, DOCLING, IDEFICS2, LFM2VL, NVILA, NVLM, POINTS, QH_360VL, VILA, VITA,
+                         VLM3R, VXVERSE, X_VL_HF, Aria, Bagel, BunnyLLama3, Cambrian, CambrianS,
+                         Chameleon, CogVlm, CoVTChat, DeepSeekVL, DeepSeekVL2, Eagle, Emu,
+                         Emu3_chat, Emu3_gen, Falcon2VLM, FlashVL, Gemma3, GLM4v, GLMThinking,
+                         GraniteVision3, H2OVLChat, HawkVL, InsightV, InstructBLIP, InternS1Chat,
+                         InternVLChat, Janus, KeyeChat, KimiVL, Kosmos2, LLaVA, LLaVA_Next,
+                         LLaVA_Next2, LLaVA_OneVision, Logics_Thinking, LongVITA, Mantis,
+                         MiniCPM_o_2_6, MiniCPM_o_4_5, MiniCPM_V, MiniCPM_V_2_6, MiniCPM_V_4,
+                         MiniCPM_V_4_5, MiniGPT4, MiniMonkey, MMAlaya, MMAlaya2, Monkey,
+                         MonkeyChat, Moondream1, Moondream2, Moondream3)
+from vlmeval.vlm import Ola
+from vlmeval.vlm import Ola as OlaModel
+from vlmeval.vlm import (OmChat, OpenFlamingo, Oryx, Ovis, Ovis1_6, Ovis1_6_Plus, Ovis2, Ovis2_5,
+                         OvisU1, PaliGemma, PandaGPT, Parrot, Phi3_5Vision, Phi3Vision,
+                         Phi4Multimodal, Pixtral, PLLaVA, PointsV15, Qianfan_VL, QTuneVL,
+                         QTuneVLChat, Qwen2VLChat, Qwen2VLChatAguvis, Qwen3VLChat, QwenVL,
+                         QwenVLChat, Ristretto, Ross, SailVL, ShareCaptioner, SliME, SmolVLM,
+                         SmolVLM2, SpatialMLLM, Thyme, TransCoreM, TreeVGR, UrsaChat, VarcoVision,
+                         VideoChat2_HD, VideoChatGPT, VideoLLaVA, VideoLLaVA_HF, VinternChat,
+                         VisualGLM, VITAQwen2, VLMR1Chat, WeMM, XComposer, XComposer2,
+                         XComposer2_4KHD, XComposer2d5, Yi_VL, llama4, llama_vision, molmo,
+                         mPLUG_Owl2, mPLUG_Owl3)
+from vlmeval.vlm.video_llm import Chatunivi, LLaMAVID
 
 PandaGPT_ROOT = None
 MiniGPT4_ROOT = None
@@ -858,7 +889,6 @@ api_models = {
     ),
 }
 
-import copy as cp
 api_models['gpt-5'] = cp.deepcopy(api_models['gpt-5-2025-08-07'])
 api_models['gpt-5-mini'] = cp.deepcopy(api_models['gpt-5-mini-2025-08-07'])
 api_models['gpt-5-nano'] = cp.deepcopy(api_models['gpt-5-nano-2025-08-07'])

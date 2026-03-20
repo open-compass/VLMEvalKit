@@ -1,10 +1,19 @@
+import os
+import os.path as osp
 import re
-import pandas as pd
-import numpy as np
 
-from .image_vqa import ImageVQADataset
-from ..smp import *
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import LMUDataRoot
+from vlmeval.smp.log import get_logger
+from vlmeval.smp.misc import d2df
+from vlmeval.smp.vlm import decode_base64_to_image_file
 from ..utils import track_progress_rich
+from .image_vqa import ImageVQADataset
+
+logger = get_logger(__name__)
 
 
 class Asclepius(ImageVQADataset):
@@ -92,7 +101,7 @@ class Asclepius(ImageVQADataset):
 
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
-        from .utils import build_judge, DEBUG_MESSAGE
+        from .utils import DEBUG_MESSAGE, build_judge
 
         # Load prediction data
         data = load(eval_file)
@@ -123,7 +132,6 @@ class Asclepius(ImageVQADataset):
             # Build judge model
             model = build_judge(max_tokens=128, **judge_kwargs)
             if not model.working():
-                logger = get_logger('Asclepius')
                 logger.error('Judge model is not working properly. ' + DEBUG_MESSAGE)
                 return {'Overall': 0.0}
 
@@ -223,6 +231,5 @@ class Asclepius(ImageVQADataset):
             return {'score': score, 'log': log}
 
         except Exception as e:
-            logger = get_logger('Asclepius')
             logger.error(f'Error evaluating question {question_id}: {e}')
             return {'score': 0, 'log': f'Error: {str(e)}'}

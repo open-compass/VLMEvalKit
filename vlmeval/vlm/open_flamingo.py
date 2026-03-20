@@ -1,11 +1,13 @@
-import sys
-import torch
-from PIL import Image
+import logging
 import os.path as osp
 import warnings
-from .base import BaseModel
-from ..smp import *
+
+import torch
 from huggingface_hub import snapshot_download
+from PIL import Image
+
+from ..smp.misc import get_cache_path, splitlen
+from .base import BaseModel
 
 
 class OpenFlamingo(BaseModel):

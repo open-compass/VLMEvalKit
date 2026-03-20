@@ -1,9 +1,11 @@
-import torch
-from PIL import Image
-from .base import BaseModel
-from ..smp import *
-import warnings
+import logging
+import os
+
 from huggingface_hub import snapshot_download
+
+from ..smp.file import get_cache_path
+from ..smp.vlm import encode_image_file_to_base64
+from .base import BaseModel
 
 
 class Pixtral(BaseModel):
@@ -15,8 +17,8 @@ class Pixtral(BaseModel):
 
         self.model_path = model_path
         try:
-            from mistral_inference.transformer import Transformer
             from mistral_common.tokens.tokenizers.mistral import MistralTokenizer
+            from mistral_inference.transformer import Transformer
         except ImportError as err:
             logging.critical('Please install `mistral-inference` and `mistral_common`')
             raise err
@@ -36,9 +38,10 @@ class Pixtral(BaseModel):
 
     def generate_inner(self, message, dataset=None):
         try:
-            from mistral_inference.generate import generate
-            from mistral_common.protocol.instruct.messages import UserMessage, TextChunk, ImageURLChunk
+            from mistral_common.protocol.instruct.messages import (ImageURLChunk, TextChunk,
+                                                                   UserMessage)
             from mistral_common.protocol.instruct.request import ChatCompletionRequest
+            from mistral_inference.generate import generate
         except ImportError as err:
             logging.critical('Please install `mistral-inference` and `mistral_common`')
             raise err

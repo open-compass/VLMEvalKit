@@ -1,7 +1,5 @@
-import re
-import json
-from typing import Dict, List, Any, Optional, Union
 import ast
+from typing import Any, Dict, List, Optional, Union
 
 
 def _parse_grid_like(obj: Union[str, List[List[int]]]) -> Optional[List[List[int]]]:

@@ -1,6 +1,6 @@
-from typing import Dict, Any
-import re
 import ast
+import re
+from typing import Any, Dict
 
 
 class BaseEvaluator:

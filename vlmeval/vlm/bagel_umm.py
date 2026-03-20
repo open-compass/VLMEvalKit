@@ -1,23 +1,21 @@
-import os
-import sys
-import json
-import torch
 import logging
+import os
 import uuid
-
-from PIL import Image
-from typing import Any, Dict, Optional
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import torch
+from accelerate import infer_auto_device_map, init_empty_weights, load_checkpoint_and_dispatch
 from huggingface_hub import snapshot_download
-from accelerate import infer_auto_device_map, load_checkpoint_and_dispatch, init_empty_weights
+from PIL import Image
 
-from .base import BaseModel
-from ..dataset import DATASET_TYPE
-from vlmeval.smp.misc import get_cache_path
-from vlmeval.smp.file import HFCacheRoot
 from vlmeval.smp.log import get_logger
+from vlmeval.smp.misc import get_cache_path
+from ..dataset import DATASET_TYPE
+from .base import BaseModel
 
+logger = get_logger(__name__)
 
 BASE_PARAMS: Dict[str, Dict[str, Any]] = {
     "generate": dict(
@@ -162,8 +160,6 @@ class Bagel(BaseModel):
 
         # 1. Parse params
         self.precision = precision
-        self.logger = get_logger(__name__)
-
         if os.path.exists(model_path):
             cache_path = model_path
         else:
@@ -209,7 +205,7 @@ class Bagel(BaseModel):
             f"out_img_dir = '{self.out_img_dir}' "
             f"(can be overridden with env var BAGEL_OUT_IMG_DIR)"
         )
-        self.logger.info(msg)
+        logger.info(msg)
 
         # 2. Build model
         model, vae_model, tokenizer, new_token_ids, vit_transform, vae_transform = self._build_model()
@@ -235,13 +231,11 @@ class Bagel(BaseModel):
 
     def _build_model(self):
         from bagel.data.transforms import ImageTransform
-        from bagel.modeling.bagel import (
-            BagelConfig, Bagel as BagelModel,
-            Qwen2Config, Qwen2ForCausalLM,
-            SiglipVisionConfig, SiglipVisionModel,
-        )
-        from bagel.modeling.qwen2 import Qwen2Tokenizer
         from bagel.modeling.autoencoder import load_ae
+        from bagel.modeling.bagel import Bagel as BagelModel
+        from bagel.modeling.bagel import (BagelConfig, Qwen2Config, Qwen2ForCausalLM,
+                                          SiglipVisionConfig, SiglipVisionModel)
+        from bagel.modeling.qwen2 import Qwen2Tokenizer
 
         # build llm config
         llm_config = Qwen2Config.from_json_file(os.path.join(self.model_path, "llm_config.json"))
@@ -404,13 +398,13 @@ class Bagel(BaseModel):
         nums_beams = 3
         '''
         if "EDIT" in DATASET_TYPE(dataset):
-            if self.mode in ['edit','think_edit']:
+            if self.mode in ['edit', 'think_edit']:
                 mode = self.mode
             else:
                 print(f'{dataset} only support edit or think_edit, default mode is think_edit')
                 mode = 'think_edit'
         elif "GEN" in DATASET_TYPE(dataset):
-            if self.mode in ['think_generate','generate']:
+            if self.mode in ['think_generate', 'generate']:
                 mode = self.mode
             else:
                 print(f'{dataset} only support generate or think_generate, default mode is think_generate')

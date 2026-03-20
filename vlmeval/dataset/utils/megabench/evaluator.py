@@ -1,12 +1,11 @@
 import argparse
+import ast
 import json
 import os
 from typing import Any, Dict, List
-import ast
-from vlmeval import load, dump
 
-
-from . import MetricType, AggregationType, ResponseParseType
+from vlmeval import dump, load
+from . import AggregationType, MetricType, ResponseParseType
 from .parsing.common.utils import evaluate_as_string
 
 

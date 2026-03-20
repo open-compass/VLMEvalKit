@@ -1,18 +1,18 @@
+import ast
 import os
 import re
-import ast
 import string
+from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
-
-from tqdm import tqdm
-from collections import OrderedDict
 from huggingface_hub import snapshot_download
+from tqdm import tqdm
 
+from ..smp.file import LMUDataRoot, dump, load
+from ..smp.misc import get_cache_path, modelscope_flag_set, toliststr
 from .image_mcq import ImageMCQDataset
 from .video_base import VideoBaseDataset
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
-from ..smp.file import LMUDataRoot, dump, load
 
 
 class MMSIBench(ImageMCQDataset):
@@ -101,7 +101,7 @@ class MMSIBench(ImageMCQDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)
@@ -478,12 +478,9 @@ class MMSIVideoBench(VideoBaseDataset):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import (
-            eval_mcq_score,
-            build_mcq_score_fn,
-            get_intermediate_file_path,
-            get_judge_tag_from_score_fn
-        )
+        from .utils.spatial_bench.cal_scores import (build_mcq_score_fn, eval_mcq_score,
+                                                     get_intermediate_file_path,
+                                                     get_judge_tag_from_score_fn)
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

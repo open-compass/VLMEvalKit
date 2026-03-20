@@ -1,5 +1,5 @@
-import re
 import json
+import re
 
 
 def has_word(sentence, word):
@@ -282,7 +282,7 @@ def is_correct(answer, response):
             response = json.loads(response)
             if isinstance(response, dict):
                 response = sum(list(response.values()), start=[])
-        except:
+        except Exception:
             # print(f"Fail to parse {response_orig} Exception: {e}")
             return 0
 

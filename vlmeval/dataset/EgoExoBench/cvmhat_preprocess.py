@@ -1,6 +1,7 @@
 import json
 import os
 import xml.etree.ElementTree as ET
+
 import cv2
 
 # replace with your actual path
@@ -28,7 +29,7 @@ def add_bbox(bbox_img_path):
         Xmax = int(object.find('rectangle').find('xmax').text)
         Ymax = int(object.find('rectangle').find('ymax').text)
         color = (255, 0, 0)
-        cv2.rectangle(im_copy,(Xmin,Ymin),(Xmax,Ymax),color,3)
+        cv2.rectangle(im_copy, (Xmin, Ymin), (Xmax, Ymax), color, 3)
         cv2.imwrite(bbox_img_path, im_copy)
         return
 

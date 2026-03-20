@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-
 from PIL import Image
-from transformers import AutoModel, AutoImageProcessor
+from transformers import AutoImageProcessor, AutoModel
+
 from .base_metric import BaseMetric
 
 

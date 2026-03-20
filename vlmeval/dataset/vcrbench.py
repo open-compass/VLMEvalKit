@@ -1,10 +1,16 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
+import os
+import os.path as osp
 
+import numpy as np
+import pandas as pd
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp.file import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                              load)
+from vlmeval.smp.misc import extract_json_objects, modelscope_flag_set
+from vlmeval.utils import track_progress_rich
+from .utils import build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -111,16 +117,16 @@ Please analyze these images and provide the answer to the question about the vid
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')
                 res = {}
-                for l in lines:
-                    l = l.strip()
-                    if ': ' in l:
-                        key = l.split(': ')[0].strip()
-                        val = l.split(': ')[1].strip()
+                for line in lines:
+                    line = line.strip()
+                    if ': ' in line:
+                        key = line.split(': ')[0].strip()
+                        val = line.split(': ')[1].strip()
                         key = VCRBench.remove_side_quote(key)
                         val = VCRBench.remove_side_quote(val)
                         if len(key) and len(val):
@@ -130,20 +136,17 @@ Please analyze these images and provide the answer to the question about the vid
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.vcrbench.prompt import (
-            Recall_Evaluation_Prompt, Precision_Evaluation_Prompt,
-            Answer_Extraction_Prompt_part1, Answer_Scoring_Prompt_part1
-        )
-        from .utils.vcrbench.prompt import (
-            build_Extraction_prompt, build_Scoring_prompt,
-            build_Precision_prompt, build_Recall_prompt
-        )
         from .utils.vcrbench.cau_acc import calu_acc_main, xlsx2json
-        from .utils.vcrbench.eval import precision, recall
         from .utils.vcrbench.cau_total import calu_pre_recall
+        from .utils.vcrbench.eval import precision, recall
+        from .utils.vcrbench.prompt import (Answer_Extraction_Prompt_part1,
+                                            Answer_Scoring_Prompt_part1,
+                                            Precision_Evaluation_Prompt, Recall_Evaluation_Prompt,
+                                            build_Extraction_prompt, build_Precision_prompt,
+                                            build_Recall_prompt, build_Scoring_prompt)
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
-        judge = judge_kwargs.pop('model','gpt-4o-0806')
+        judge = judge_kwargs.pop('model', 'gpt-4o-0806')
         nproc = judge_kwargs.pop('nproc', 4)
 
         # step1: extract answer
@@ -249,7 +252,7 @@ Please analyze these images and provide the answer to the question about the vid
                 try:
                     data.loc[index] = precision(row)
                     valid_indices.append(index)
-                except:
+                except Exception:
                     pass
             data = data.loc[valid_indices]
             dump(data, pre_score_file)
@@ -291,7 +294,7 @@ Please analyze these images and provide the answer to the question about the vid
                 try:
                     data.loc[index] = recall(row)
                     valid_indices.append(index)
-                except:
+                except Exception:
                     pass
             data = data.loc[valid_indices]
             dump(data, recall_score_file)

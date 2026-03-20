@@ -1,11 +1,15 @@
+import base64
+import logging
+import string
+from io import BytesIO
+from mimetypes import guess_type
+
+import pandas as pd
 import torch
 from PIL import Image
+
+from ..smp.misc import listinstr
 from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-from io import BytesIO
-import base64
-from mimetypes import guess_type
 
 
 class llama4(BaseModel):
@@ -34,7 +38,8 @@ class llama4(BaseModel):
 
         self.limit_mm_per_prompt = 10  # vLLM support max 10 images per prompt for Llama 4
         if self.use_vllm:
-            from vllm import LLM, SamplingParams
+            from vllm import LLM
+
             # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
             gpu_count = torch.cuda.device_count()
             if gpu_count >= 8:
@@ -65,7 +70,7 @@ class llama4(BaseModel):
             # export VLLM_WORKER_MULTIPROC_METHOD=spawn
 
         elif self.use_lmdeploy:
-            from lmdeploy import TurbomindEngineConfig, pipeline, ChatTemplateConfig
+            from lmdeploy import TurbomindEngineConfig, pipeline
             num_gpus = torch.cuda.device_count()
             self.model = pipeline(
                 model_path,
@@ -227,7 +232,7 @@ class llama4(BaseModel):
         return processed_message, images
 
     def generate_inner_vllm(self, message, dataset=None):
-        from vllm import LLM, SamplingParams
+        from vllm import SamplingParams
         prompt, images = self.message_to_promptimg_vllm(message, dataset=dataset)
         messages = [
             {'role': 'user', 'content': prompt}

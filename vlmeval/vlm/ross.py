@@ -1,12 +1,15 @@
+import os.path as osp
+import string
+import warnings
+from argparse import Namespace
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import copy
-import os.path as osp
-from .base import BaseModel
-from ..smp import *
+
 from ..dataset import DATASET_TYPE
+from ..smp.misc import cn_string, splitlen
+from .base import BaseModel
 
 
 class Ross(BaseModel):
@@ -17,8 +20,8 @@ class Ross(BaseModel):
     def __init__(self,
                  model_path='HaochenWang/ross-qwen2-7b',
                  **kwargs):
-        from ross.model.builder import load_pretrained_model
         from ross.mm_utils import get_model_name_from_path
+        from ross.model.builder import load_pretrained_model
 
         assert osp.exists(model_path) or splitlen(model_path) == 2
 
@@ -118,10 +121,10 @@ class Ross(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
-        from ross.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
-        from ross.constants import (
-            IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN)
-        from ross.conversation import conv_templates, SeparatorStyle
+        from ross.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                    DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX)
+        from ross.conversation import SeparatorStyle, conv_templates
+        from ross.mm_utils import KeywordsStoppingCriteria, process_images, tokenizer_image_token
 
         # Support interleave text and image
         conv = conv_templates[self.conv_mode].copy()
@@ -141,7 +144,7 @@ class Ross(BaseModel):
                 images.append(msg['value'])
 
         images = [Image.open(s).convert('RGB') for s in images]
-        args = abstractproperty()
+        args = Namespace()
         args.image_aspect_ratio = 'pad'
         image_tensor = process_images(images, self.image_processor, args).to('cuda', dtype=torch.float16)
         prompt = prompt.replace('PLACEHOLDER', content)

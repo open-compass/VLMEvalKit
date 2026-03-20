@@ -1,6 +1,5 @@
+from vlmeval.smp.vlm import toliststr
 from .image_base import ImageBaseDataset
-from .utils.sarena import evaluate_sarena
-from ..smp import *
 
 
 class SArena(ImageBaseDataset):
@@ -45,4 +44,5 @@ class SArena(ImageBaseDataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
+        from .utils.sarena import evaluate_sarena
         return evaluate_sarena(eval_file, dataset=self.dataset)

@@ -1,14 +1,14 @@
-import os
 import ast
-import pandas as pd
-import numpy as np
+import os
 
+import numpy as np
+import pandas as pd
 from PIL import Image
 
+from ..smp.file import dump, load
+from ..smp.misc import toliststr
 from .image_vqa import ImageVQADataset
 from .utils.spatial_bench.tools.utils import Point2DParser
-from ..smp.file import load, dump
-from ..smp.misc import toliststr
 
 
 class RoboSpatialBench(ImageVQADataset):

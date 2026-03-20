@@ -1,11 +1,26 @@
+import base64
+import io
+import logging
 import math
+import os
+import os.path as osp
+import warnings
 from typing import List
 
-from .utils.judge_util import build_judge
+import pandas as pd
+from PIL import Image
+from tqdm import tqdm
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import LMUDataRoot, download_file, get_intermediate_file_path
+from vlmeval.smp.log import get_logger
+from vlmeval.smp.misc import listinstr
+from vlmeval.smp.vlm import decode_base64_to_image_file, encode_image_to_base64, read_ok, toliststr
 from .image_base import ImageBaseDataset
-from .mmlongbench import concat_images, MMLongBench_auxeval, anls_compute
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from .mmlongbench import MMLongBench_auxeval, anls_compute, concat_images
+from .utils.judge_util import build_judge
+
+logger = get_logger(__name__)
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -163,7 +178,6 @@ class DUDE(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        logger = get_logger('Evaluation')
         model = judge_kwargs['model']
 
         storage = get_intermediate_file_path(eval_file, f'_{model}')

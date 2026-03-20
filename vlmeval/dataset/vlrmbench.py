@@ -1,12 +1,13 @@
+import re
 from ast import literal_eval
 from collections import defaultdict
-import re
+
 import numpy as np
+import pandas as pd
 from sklearn.metrics import f1_score
 
-from .image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
 
 
 def format_model_answer_tolist(model_answer, task_gt):

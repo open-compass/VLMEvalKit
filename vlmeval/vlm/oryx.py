@@ -1,14 +1,17 @@
+import logging
+import os
+import os.path as osp
+import string
+import warnings
+
+import pandas as pd
 import torch
 from PIL import Image
-from abc import abstractproperty
-import sys
-import os.path as osp
-from .base import BaseModel
-from ..smp import *
-from ..dataset import DATASET_TYPE
-import os
-
 from transformers import CLIPImageProcessor
+
+from ..dataset import DATASET_TYPE
+from ..smp.misc import splitlen
+from .base import BaseModel
 
 os.environ['LOWRES_RESIZE'] = "384x32"
 os.environ['HIGHRES_BASE'] = "0x32"
@@ -19,19 +22,11 @@ os.environ['PAD2STRIDE'] = "1"
 os.environ['REGIONAL_POOL'] = '2x'
 os.environ['FORCE_NO_DOWNSAMPLE'] = "1"
 
-import re
-import argparse
-import math
-import numpy as np
-from typing import Dict, Optional, Sequence, List
-import transformers
-from transformers import AutoConfig
-
 
 def preprocess_qwen(
-    sources, tokenizer: transformers.PreTrainedTokenizer,
-    has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant."
-) -> Dict:
+    sources, tokenizer, has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant."
+):
+    from oryx.constants import DEFAULT_IMAGE_TOKEN, IGNORE_INDEX, IMAGE_TOKEN_INDEX
 
     roles = {"human": "<|im_start|>user", "gpt": "<|im_start|>assistant"}
 
@@ -39,8 +34,6 @@ def preprocess_qwen(
     im_end = tokenizer("<|im_end|>").input_ids[0]
     nl_tokens = tokenizer("\n").input_ids
     _system = tokenizer("system").input_ids + nl_tokens
-    # _user = tokenizer("user").input_ids + nl_tokens
-    # _assistant = tokenizer("assistant").input_ids + nl_tokens
 
     # Apply prompt templates
     input_ids, targets = [], []
@@ -57,10 +50,10 @@ def preprocess_qwen(
     for j, sentence in enumerate(source):
         role = roles[sentence["from"]]
         if has_image and sentence["value"] is not None and "<image>" in sentence["value"]:
-            num_image = len(re.findall(DEFAULT_IMAGE_TOKEN, sentence["value"]))
+            num_image = len(DEFAULT_IMAGE_TOKEN.findall(sentence["value"]))
             texts = sentence["value"].split('<image>')
             _input_id = tokenizer(role).input_ids + nl_tokens
-            for i,text in enumerate(texts):
+            for i, text in enumerate(texts):
                 _input_id += tokenizer(text).input_ids
                 if i < len(texts) - 1:
                     _input_id += [IMAGE_TOKEN_INDEX] + nl_tokens
@@ -96,8 +89,8 @@ class Oryx(BaseModel):
                  model_path='liuhaotian/llava_v1.5_7b',
                  **kwargs):
         try:
-            from oryx.model.builder import load_pretrained_model
             from oryx.mm_utils import get_model_name_from_path
+            from oryx.model.builder import load_pretrained_model
         except Exception as err:
             logging.critical('Please install requirements on https://github.com/Oryx-mllm/Oryx before using Oryx')
             raise err
@@ -126,7 +119,7 @@ class Oryx(BaseModel):
 
         self.device = torch.device('cuda')
 
-        kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1, use_cache=True) # noqa E501
+        kwargs_default = dict(do_sample=False, temperature=0, max_new_tokens=512, top_p=None, num_beams=1, use_cache=True)  # noqa E501
         kwargs_default.update(kwargs)
         self.kwargs = kwargs_default
         warnings.warn(f'Following kwargs received: {self.kwargs}, will use as generation config. ')
@@ -138,13 +131,6 @@ class Oryx(BaseModel):
         return False
 
     def build_prompt(self, line, dataset=None):
-        try:
-            from oryx.conversation import conv_templates
-            from oryx.mm_utils import KeywordsStoppingCriteria, process_anyres_highres_image_genli  # noqa: E501
-            from oryx.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN  # noqa: E501
-        except Exception as err:
-            logging.critical('Please install requirements on https://github.com/Oryx-mllm/Oryx before using Oryx')
-            raise err
         assert self.use_custom_prompt(dataset)
         assert dataset is None or isinstance(dataset, str)
         tgt_path = self.dump_image(line, dataset)
@@ -173,6 +159,11 @@ class Oryx(BaseModel):
         return message
 
     def generate_inner(self, message, dataset=None):
+        from oryx.constants import (DEFAULT_IM_END_TOKEN, DEFAULT_IM_START_TOKEN,
+                                    DEFAULT_IMAGE_TOKEN)
+        from oryx.conversation import conv_templates
+        from oryx.mm_utils import KeywordsStoppingCriteria, process_anyres_highres_image_genli
+
         # Support interleave text and image
         conv = conv_templates[self.conv_mode].copy()
         conv.append_message(conv.roles[0], 'PLACEHOLDER')
@@ -192,8 +183,6 @@ class Oryx(BaseModel):
 
         images = [Image.open(s).convert('RGB') for s in images]
         image_sizes = [img.size for img in images]
-        # args = abstractproperty()
-        # args.image_aspect_ratio = 'pad'
         self.image_processor.do_resize = False
         self.image_processor.do_center_crop = False
         image_tensor, image_highres_tensor = [], []
@@ -212,7 +201,7 @@ class Oryx(BaseModel):
         prompt = prompt.replace('PLACEHOLDER', content)
 
         input_ids = preprocess_qwen(
-            [{'from': 'human','value': prompt},{'from': 'gpt','value': None}], self.tokenizer, has_image=True
+            [{'from': 'human', 'value': prompt}, {'from': 'gpt', 'value': None}], self.tokenizer, has_image=True
         ).cuda()
         stop_str = '<|im_end|>'
         keywords = [stop_str]

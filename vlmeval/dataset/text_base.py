@@ -1,5 +1,15 @@
+import os
+import os.path as osp
+import warnings
 from abc import abstractmethod
-from ..smp import *
+
+import numpy as np
+import pandas as pd
+
+from vlmeval.smp import load, md5
+from vlmeval.smp.file import LMUDataRoot, download_file, file_size
+from vlmeval.smp.misc import istype
+from vlmeval.smp.vlm import mmqa_display
 
 
 class TextBaseDataset:

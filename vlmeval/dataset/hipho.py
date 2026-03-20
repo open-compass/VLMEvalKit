@@ -1,25 +1,19 @@
-import os
-import re
 import json
-import pandas as pd
-import numpy as np
+import os.path as osp
+import re
 import warnings
-import time
-import base64
-from io import BytesIO
 
+import pandas as pd
+
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.vlm import toliststr
+from vlmeval.utils import track_progress_rich
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from .utils.hipho_verifier import grade, extract_boxed_answer, get_answer_str, answer_tag_reward_fn_for_r1
-from .utils.hipho_prompt_inference import (
-    SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH,
-    JUDGE_GRADING_PROMPT_TEMPLATE,
-    TOTAL_SCORE_WARNING_TEMPLATE,
-    RETRY_WARNING_TEMPLATE)
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
-
+from .utils import build_judge
+from .utils.hipho_prompt_inference import (JUDGE_GRADING_PROMPT_TEMPLATE, RETRY_WARNING_TEMPLATE,
+                                           SYSTEM_PROMPTS_EN, SYSTEM_PROMPTS_ZH,
+                                           TOTAL_SCORE_WARNING_TEMPLATE)
+from .utils.hipho_verifier import answer_tag_reward_fn_for_r1
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

@@ -1,8 +1,15 @@
-from ..smp import *
-import os
-import sys
-from .base import BaseAPI
+import json
 import math
+import os
+
+import numpy as np
+import requests
+from PIL import Image
+
+from vlmeval.smp import encode_image_to_base64, get_logger
+from .base import BaseAPI
+
+logger = get_logger(__name__)
 
 APIBASES = {
     'OFFICIAL': 'https://api.openai.com/v1/chat/completions',
@@ -139,7 +146,7 @@ class OpenAIWrapper(BaseAPI):
         else:
             if api_base is None:
                 if 'OPENAI_API_BASE' in os.environ and os.environ['OPENAI_API_BASE'] != '':
-                    self.logger.info('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
+                    logger.info('Environment variable OPENAI_API_BASE is set. Will use it as api_base. ')
                     api_base = os.environ['OPENAI_API_BASE']
                 else:
                     api_base = 'OFFICIAL'
@@ -151,13 +158,13 @@ class OpenAIWrapper(BaseAPI):
             elif api_base.startswith('http'):
                 self.api_base = api_base
             else:
-                self.logger.error('Unknown API Base. ')
+                logger.error('Unknown API Base. ')
                 raise NotImplementedError
             if os.environ.get('BOYUE', None):
                 self.api_base = os.environ.get('BOYUE_API_BASE')
                 self.key = os.environ.get('BOYUE_API_KEY')
 
-        self.logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
+        logger.info(f'Using API Base: {self.api_base}; API Key: {self.key}')
 
     # inputs can be a lvl-2 nested list: [content1, content2, content3, ...]
     # content can be a string or a list of image & text
@@ -257,8 +264,8 @@ class OpenAIWrapper(BaseAPI):
             answer = resp_struct['choices'][0]['message']['content'].strip()
         except Exception as err:
             if self.verbose:
-                self.logger.error(f'{type(err)}: {err}')
-                self.logger.error(response.text if hasattr(response, 'text') else response)
+                logger.error(f'{type(err)}: {err}')
+                logger.error(response.text if hasattr(response, 'text') else response)
 
         return ret_code, answer, response
 
@@ -284,12 +291,13 @@ class OpenAIWrapper(BaseAPI):
 
     def get_token_len(self, inputs) -> int:
         import tiktoken
+
         try:
             enc = tiktoken.encoding_for_model(self.model)
         except Exception as err:
             if 'gpt' in self.model.lower():
                 if self.verbose:
-                    self.logger.warning(f'{type(err)}: {err}')
+                    logger.warning(f'{type(err)}: {err}')
                 enc = tiktoken.encoding_for_model('gpt-4')
             else:
                 return 0

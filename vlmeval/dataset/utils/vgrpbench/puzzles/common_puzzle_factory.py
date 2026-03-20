@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Union
+import argparse
 import copy
-import random
 import json
 import os
+import random
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Union
 
-import argparse
 
 def hint_type(value):
     if value == "random":

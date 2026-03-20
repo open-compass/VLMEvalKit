@@ -1,9 +1,15 @@
-import sys
+import copy as cp
+import logging
+import string
+import warnings
+
+import pandas as pd
 import torch
 from PIL import Image
-from .base import BaseModel
-from ..smp import *
+
 from ..dataset import DATASET_TYPE
+from ..smp.misc import listinstr
+from .base import BaseModel
 
 
 class mPLUG_Owl2(BaseModel):
@@ -13,8 +19,8 @@ class mPLUG_Owl2(BaseModel):
 
     def __init__(self, model_path='MAGAer13/mplug-owl2-llama2-7b', **kwargs):
         try:
-            from mplug_owl2.model.builder import load_pretrained_model
             from mplug_owl2.mm_utils import get_model_name_from_path
+            from mplug_owl2.model.builder import load_pretrained_model
         except Exception as e:
             logging.critical('Please install mPLUG_Owl2 before using mPLUG_Owl2. ')
             raise e

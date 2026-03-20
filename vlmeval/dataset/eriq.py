@@ -1,11 +1,11 @@
-import os
 import ast
-
-from .image_mcq import ImageMCQDataset
-from ..smp.file import load
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
+import os
 
 from huggingface_hub import snapshot_download
+
+from ..smp.file import load
+from ..smp.misc import get_cache_path, modelscope_flag_set, toliststr
+from .image_mcq import ImageMCQDataset
 
 
 class ERIQBench(ImageMCQDataset):
@@ -136,7 +136,7 @@ class ERIQBench(ImageMCQDataset):
         return [s for s in segs if s['value']]
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

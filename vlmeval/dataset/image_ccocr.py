@@ -1,15 +1,17 @@
 # flake8: noqa
 
+import json
 import os
 import re
 import tempfile
-import json
 from functools import partial
-import pandas as pd
 
-from .image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
+import pandas as pd
+from tqdm import tqdm
+
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.misc import d2df
 
 # should be the same as  FAIL_MSG definded in vlmeval/inference.py
 FAIL_MSG = 'Failed to obtain answer via API.'

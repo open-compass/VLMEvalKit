@@ -1,6 +1,4 @@
-from ...smp import *
-from ...utils import can_infer
-
+from vlmeval.utils import can_infer
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 

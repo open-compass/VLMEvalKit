@@ -1,19 +1,19 @@
-import os
-import re
 import ast
 import base64
-import pandas as pd
+import os
+import re
 import warnings
-
-from io import BytesIO
-from PIL import Image
 from collections import OrderedDict
-from huggingface_hub import snapshot_download
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import BytesIO
 
-from .image_mcq import ImageMCQDataset
+import pandas as pd
+from huggingface_hub import snapshot_download
+from PIL import Image
+
 from ..smp.file import load
-from ..smp.misc import toliststr, get_cache_path, modelscope_flag_set
+from ..smp.misc import get_cache_path, modelscope_flag_set, toliststr
+from .image_mcq import ImageMCQDataset
 
 
 class StareBench(ImageMCQDataset):
@@ -432,7 +432,7 @@ class StareBench(ImageMCQDataset):
             (2D, 3D, cube, tangram, temporal, perspective)
           where MCQ uses accuracy, binary uses F1.
         """
-        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, attach_score_cache
+        from .utils.spatial_bench.cal_scores import attach_score_cache, build_mcq_score_fn
         from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
         score_fn = build_mcq_score_fn(**kwargs)

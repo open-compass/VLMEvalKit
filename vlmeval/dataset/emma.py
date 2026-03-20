@@ -1,6 +1,10 @@
-from vlmeval import *
-from .image_shortqa import ImageShortQADataset
+import string
+
+import pandas as pd
+
+from vlmeval.smp.misc import toliststr
 from .image_mcq import MMMUDataset
+from .image_shortqa import ImageShortQADataset
 
 
 class EMMADataset(ImageShortQADataset):

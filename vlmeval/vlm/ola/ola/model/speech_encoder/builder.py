@@ -1,4 +1,4 @@
-from .speech_encoder import WhisperWrappedEncoder, DualWrappedEncoder
+from .speech_encoder import DualWrappedEncoder, WhisperWrappedEncoder
 
 
 def build_speech_encoder(config):

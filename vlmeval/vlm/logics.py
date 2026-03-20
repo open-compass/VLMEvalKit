@@ -1,11 +1,11 @@
 import torch
-from .base import BaseModel
-from ..smp import *
 from transformers import AutoModelForCausalLM, AutoProcessor
 
+from .base import BaseModel
+
 try:
-    import av
-    from decord import VideoReader, cpu
+    import av  # noqa: F401
+    from decord import VideoReader, cpu  # noqa: F401
 except ImportError:
     print("Please install pyav to use video processing functions.")
 

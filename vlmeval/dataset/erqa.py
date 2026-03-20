@@ -1,17 +1,13 @@
-import logging
-import os
 import os.path as osp
-from collections import defaultdict
-from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import LMUDataRoot, get_intermediate_file_path
+from vlmeval.smp.log import get_logger
 from .image_vqa import ImageVQADataset
-from ..smp import *  # noqa: F401,F403
-from ..smp.file import LMUDataRoot, get_intermediate_file_path
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class ERQADataset(ImageVQADataset):

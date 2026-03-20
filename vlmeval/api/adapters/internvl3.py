@@ -2,9 +2,8 @@ import copy
 import io
 import os
 
-from vlmeval.dataset import DATASET_TYPE, DATASET_MODALITY
+from vlmeval.dataset import DATASET_MODALITY, DATASET_TYPE
 from vlmeval.smp import listinstr
-
 from .base import ModelAdapter, register_adapter
 
 _GUI_TEMPLATE = None
@@ -13,8 +12,9 @@ _GUI_TEMPLATE = None
 def _get_gui_template():
     global _GUI_TEMPLATE
     if _GUI_TEMPLATE is None:
-        import yaml
         from pathlib import Path
+
+        import yaml
         vlmeval_root = Path(__file__).parent.parent.parent
         tmpl_path = os.path.join(vlmeval_root, 'vlm/internvl/gui_template.yaml')
         with open(tmpl_path, 'r') as f:
@@ -71,12 +71,11 @@ class InternVL3Adapter(ModelAdapter):
         return False
 
     def build_prompt(self, line, dataset=None):
-        from vlmeval.vlm.internvl.utils import (
-            build_mcq_cot_prompt, build_multi_choice_prompt,
-            build_qa_cot_prompt, format_nav_prompt, pile_action_history,
-        )
         from vlmeval.dataset import build_dataset, infer_dataset_basename
         from vlmeval.smp import LMUDataRoot
+        from vlmeval.vlm.internvl.utils import (build_mcq_cot_prompt, build_multi_choice_prompt,
+                                                build_qa_cot_prompt, format_nav_prompt,
+                                                pile_action_history)
 
         assert self.use_custom_prompt(dataset)
 
@@ -145,7 +144,8 @@ class InternVL3Adapter(ModelAdapter):
 
     def process_inputs(self, inputs, dataset=None):
         from PIL import Image
-        from vlmeval.vlm.internvl.utils import reorganize_prompt, build_video_prompt
+
+        from vlmeval.vlm.internvl.utils import build_video_prompt, reorganize_prompt
 
         image_items = [x.copy() for x in inputs if x['type'] == 'image']
         image_num = len(image_items)

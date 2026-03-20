@@ -1,13 +1,16 @@
-import torch
-from PIL import Image
+import hashlib
+import logging
+import os
 import os.path as osp
-from .base import BaseModel
-from ..smp import *
 import subprocess
 import tempfile
-import hashlib
 import time
-import os
+import warnings
+
+import torch
+from PIL import Image
+
+from .base import BaseModel
 
 
 class VILA(BaseModel):
@@ -18,11 +21,13 @@ class VILA(BaseModel):
                  model_path='Efficient-Large-Model/Llama-3-VILA1.5-8b',
                  **kwargs):
         try:
+            from llava.constants import DEFAULT_IM_END_TOKEN  # noqa: F401
+            from llava.constants import DEFAULT_IM_START_TOKEN  # noqa: F401
+            from llava.constants import DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_INDEX
+            from llava.conversation import SeparatorStyle, conv_templates
+            from llava.mm_utils import (KeywordsStoppingCriteria, get_model_name_from_path,
+                                        process_images, tokenizer_image_token)
             from llava.model.builder import load_pretrained_model
-            from llava.mm_utils import get_model_name_from_path
-            from llava.mm_utils import process_images, tokenizer_image_token, KeywordsStoppingCriteria
-            from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN # noqa E501
-            from llava.conversation import conv_templates, SeparatorStyle
         except Exception as err:
             logging.critical('Please install VILA before using VILA')
             logging.critical('Please install VILA from https://github.com/NVlabs/VILA')

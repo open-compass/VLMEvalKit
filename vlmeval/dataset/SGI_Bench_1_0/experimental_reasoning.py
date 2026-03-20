@@ -9,13 +9,11 @@ from typing import Any, Dict, List
 import pandas as pd
 from datasets import load_dataset
 
-from ...smp.file import dump, get_intermediate_file_path, load
-from ...smp.misc import toliststr
-from ...smp.vlm import (decode_base64_to_image_file, encode_image_to_base64,
-                        read_ok)
+from vlmeval.smp import (decode_base64_to_image_file, dump, encode_image_to_base64,
+                         get_intermediate_file_path, load, read_ok, toliststr)
+from vlmeval.utils.mp_util import track_progress_rich
 from ..image_base import ImageBaseDataset
 from ..utils.judge_util import build_judge
-from vlmeval.utils.mp_util import track_progress_rich
 
 
 def extract_answer_from_response(response):
@@ -29,7 +27,7 @@ def extract_answer_from_response(response):
 def mm_reasoning_is_correct(pred, gold):
     try:
         ans = extract_answer_from_response(pred).strip()
-    except:
+    except Exception:
         return False
     return ans.lower() == gold.lower()
 
@@ -119,7 +117,7 @@ def judge_aux(judge, row):
     try:
         msgs = []
         msgs.append({'role': 'system', 'value': 'You are a helpful assistant.'})
-        msgs.append({'role': 'user', 'type':'text','value': judge_prompt})
+        msgs.append({'role': 'user', 'type': 'text', 'value': judge_prompt})
 
         images = ast.literal_eval(row['step_images'])
         for image in images:

@@ -1,15 +1,11 @@
-import json
 import os
-import copy
-import pandas as pd
-import tempfile
-import base64
-import numpy as np
-from tqdm import tqdm
-import torch.distributed as dist
-from .image_base import ImageBaseDataset
-from ..smp import *
 import re
+import string
+
+import pandas as pd
+from tqdm import tqdm
+
+from .image_base import ImageBaseDataset
 
 
 def is_chinese(text):
@@ -161,11 +157,11 @@ class MATBench(ImageBaseDataset):
     MODALITY = 'IMAGE'
     TYPE = 'QA'
 
-    DATASET_URL = {'MATBench':'https://opencompass.openxlab.space/utils/VLMEval/MATBench.tsv'}
+    DATASET_URL = {'MATBench': 'https://opencompass.openxlab.space/utils/VLMEval/MATBench.tsv'}
     DATASET_MD5 = {'MATBench': '8c79a75ade70384c9918fad1c2a146cb'}  # 测试版本的tsv文件 4e1f4f80f753325f6a471d2ae0f9654e
 
-    def __init__(self,dataset='MATBench',**kwargs):
-        super().__init__(dataset,**kwargs)
+    def __init__(self, dataset='MATBench', **kwargs):
+        super().__init__(dataset, **kwargs)
         print(f'self.img_root:{self.img_root}')
 
     def build_prompt(self, line):

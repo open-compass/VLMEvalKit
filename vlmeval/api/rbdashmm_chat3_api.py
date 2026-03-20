@@ -1,8 +1,14 @@
+import json
 import os
-import requests
-from vlmeval.api.base import BaseAPI
-from vlmeval.smp import *
 import re
+
+import numpy as np
+import requests
+
+from vlmeval.api.base import BaseAPI
+from vlmeval.smp import encode_image_to_base64, get_logger, listinstr
+
+logger = get_logger(__name__)
 
 
 def process_prediction_text(text):
@@ -54,10 +60,8 @@ class RBdashMMChat3_PromptUtil:
         return True
 
     def build_prompt(self, line, dataset=None):
-        from ..vlm.internvl.utils import (build_multi_choice_prompt,
-                                          build_mcq_cot_prompt,
-                                          build_qa_cot_prompt,
-                                          build_yesorno_cot_prompt,
+        from ..vlm.internvl.utils import (build_mcq_cot_prompt, build_multi_choice_prompt,
+                                          build_qa_cot_prompt, build_yesorno_cot_prompt,
                                           reorganize_prompt)
         tgt_path = self.dump_image(line, dataset)
         max_num = self.get_max_num(dataset)
@@ -131,10 +135,8 @@ class RBdashMMChat3_5_PromptUtil:
         return True
 
     def build_prompt(self, line, dataset=None):
-        from ..vlm.internvl.utils import (build_multi_choice_prompt,
-                                          build_mcq_cot_prompt,
-                                          build_qa_cot_prompt,
-                                          build_yesorno_cot_prompt,
+        from ..vlm.internvl.utils import (build_mcq_cot_prompt, build_multi_choice_prompt,
+                                          build_qa_cot_prompt, build_yesorno_cot_prompt,
                                           reorganize_prompt)
         tgt_path = self.dump_image(line, dataset)
         max_num = self.get_max_num(dataset)
@@ -261,16 +263,16 @@ class RBdashMMChat3Wrapper(BaseAPI):
         resp = requests.get(model_url)
         model_id_list = [str(data['id']) for data in resp.json()['data']]
         self.model = model if model in model_id_list else model_id_list[0]
-        self.logger.info(f'lmdeploy evaluate model: {self.model}')
+        logger.info(f'lmdeploy evaluate model: {self.model}')
 
         self.custom_prompt = "rbdashmm3chat"
         self.max_tokens = 16384
         self.temperature = 0.0
         if hasattr(self, 'custom_prompt'):
-            self.logger.info(f'using custom prompt {self.custom_prompt}')
+            logger.info(f'using custom prompt {self.custom_prompt}')
 
         self.temperature = temperature
-        self.logger.info(f'Init temperature: {self.temperature}')
+        logger.info(f'Init temperature: {self.temperature}')
 
         self.system_prompt = None
 
@@ -336,7 +338,7 @@ class RBdashMMChat3Wrapper(BaseAPI):
 
     def generate_inner(self, inputs, **kwargs) -> str:
         temperature = kwargs.pop('temperature', self.temperature)
-        self.logger.info(f'Generate temperature: {temperature}')
+        logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
 
@@ -362,7 +364,7 @@ class RBdashMMChat3Wrapper(BaseAPI):
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
             answer = process_prediction_text(answer)
-        except:
+        except Exception:
             pass
         return ret_code, answer, response
 
@@ -411,16 +413,16 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
         resp = requests.get(model_url)
         model_id_list = [str(data['id']) for data in resp.json()['data']]
         self.model = model if model in model_id_list else model_id_list[0]
-        self.logger.info(f'lmdeploy evaluate model: {self.model}')
+        logger.info(f'lmdeploy evaluate model: {self.model}')
 
         self.custom_prompt = "rbdashmm3_5chat"
         self.max_tokens = 20480
         self.temperature = 0.0
         if hasattr(self, 'custom_prompt'):
-            self.logger.info(f'using custom prompt {self.custom_prompt}')
+            logger.info(f'using custom prompt {self.custom_prompt}')
 
         self.temperature = temperature
-        self.logger.info(f'Init temperature: {self.temperature}')
+        logger.info(f'Init temperature: {self.temperature}')
 
         self.system_prompt = None
 
@@ -448,6 +450,7 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
                     content_list.append(dict(type='text', text=msg['value']))
                 elif msg['type'] == 'image':
                     from PIL import Image
+
                     img = Image.open(msg['value'])
                     b64 = encode_image_to_base64(img)
                     extra_args = msg.copy()
@@ -487,7 +490,7 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
 
     def generate_inner(self, inputs, **kwargs) -> str:
         temperature = kwargs.pop('temperature', self.temperature)
-        self.logger.info(f'Generate temperature: {temperature}')
+        logger.info(f'Generate temperature: {temperature}')
         max_tokens = kwargs.pop('max_tokens', self.max_tokens)
         dataset = kwargs.pop('dataset', None)
 
@@ -513,7 +516,7 @@ class RBdashMMChat3_5_Wrapper(BaseAPI):
             resp_struct = json.loads(response.text)
             answer = resp_struct['choices'][0]['message']['content'].strip()
             answer = process_prediction_text(answer)
-        except:
+        except Exception:
             pass
         return ret_code, answer, response
 

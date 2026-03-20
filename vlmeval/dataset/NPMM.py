@@ -1,20 +1,21 @@
-from typing import Any
 import ast
-
-from vlmeval.smp import *
-from vlmeval.dataset.image_base import ImageBaseDataset
-import pandas as pd
 from collections import defaultdict
-from vlmeval.dataset.utils.NPMM.tsp import validation as tsp_validation
-from vlmeval.dataset.utils.NPMM.hamiltonian_cycle import validation as hamiltonian_cycle_validation
-from vlmeval.dataset.utils.NPMM.maximum_set import validation as maximum_set_validation
-from vlmeval.dataset.utils.NPMM.minimum_cut import validation as minimum_cut_validation
-from vlmeval.dataset.utils.NPMM.gcp import validation as gcp_validation
-from vlmeval.dataset.utils.NPMM.mcp import validation as mcp_validation
-from vlmeval.dataset.utils.NPMM.feedback_vertex import validation as feedback_vertex_validation
+from typing import Any
+
+import pandas as pd
+
+from vlmeval.dataset.image_base import ImageBaseDataset
 from vlmeval.dataset.utils.NPMM.dominating_set import validation as dominating_set_validation
-from vlmeval.dataset.utils.NPMM.vertex_cover import validation as vertex_cover_validation
+from vlmeval.dataset.utils.NPMM.feedback_vertex import validation as feedback_vertex_validation
+from vlmeval.dataset.utils.NPMM.gcp import validation as gcp_validation
+from vlmeval.dataset.utils.NPMM.hamiltonian_cycle import validation as hamiltonian_cycle_validation
 from vlmeval.dataset.utils.NPMM.maximum_cut import validation as maximum_cut_validation
+from vlmeval.dataset.utils.NPMM.maximum_set import validation as maximum_set_validation
+from vlmeval.dataset.utils.NPMM.mcp import validation as mcp_validation
+from vlmeval.dataset.utils.NPMM.minimum_cut import validation as minimum_cut_validation
+from vlmeval.dataset.utils.NPMM.tsp import validation as tsp_validation
+from vlmeval.dataset.utils.NPMM.vertex_cover import validation as vertex_cover_validation
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
 
 
 class NPMM(ImageBaseDataset):
@@ -82,7 +83,8 @@ class NPMM(ImageBaseDataset):
                 is_invalid = True
             if not is_invalid:
                 stats[task]['valid'] += 1
-                if task in ["NpGcpD", "NpMinimumCut","NpTsp","NpVertexCover","NpDominatingSet","NpFeedbackVertexSet"]:
+                if task in ["NpGcpD", "NpMinimumCut", "NpTsp", "NpVertexCover",
+                            "NpDominatingSet", "NpFeedbackVertexSet"]:
                     stats[task]['ar_accum'] += float(ground_truth) / value
                 else:
                     ratio = value / float(ground_truth)

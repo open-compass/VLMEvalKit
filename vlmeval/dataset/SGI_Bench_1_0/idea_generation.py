@@ -1,6 +1,7 @@
 import ast
 import json
 import os.path as osp
+import re
 import time
 from datetime import datetime
 from typing import Any, Dict, List
@@ -9,13 +10,14 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 from datasets import load_dataset
+
+from vlmeval.smp import dump, get_intermediate_file_path, load
 from vlmeval.smp.log import get_logger
 from vlmeval.utils.mp_util import track_progress_rich
-
-from ...smp.file import dump, get_intermediate_file_path, load
 from ..text_base import TextBaseDataset
 from ..utils.judge_util import build_judge
-from .utils import *
+from .utils import (flip_evaluation_result, format_idea_data, get_context_from_data,
+                    get_evaluation_prompt_modified, parse_evaluation_result)
 
 embedding_model = None
 logger = get_logger(__name__)

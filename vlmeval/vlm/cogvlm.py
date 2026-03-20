@@ -1,9 +1,17 @@
+import copy as cp
+import logging
+import os
 import re
+import string
+
+import pandas as pd
 import torch
 from PIL import Image
-from .base import BaseModel
-from ..smp import *
+
 from ..dataset import DATASET_TYPE
+from ..smp.misc import cn_string
+from ..smp.vlm import encode_image_file_to_base64
+from .base import BaseModel
 
 
 class GLM4v(BaseModel):
@@ -12,7 +20,7 @@ class GLM4v(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path='THUDM/glm-4v-9b', **kwargs):
-        from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         assert model_path is not None
         self.model_path = model_path
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -65,6 +73,7 @@ class GLMThinking(BaseModel):
         )
         if self.use_vllm:
             from vllm import LLM
+
             # Set tensor_parallel_size [8, 4, 2, 1] based on the number of available GPUs
             gpu_count = torch.cuda.device_count()
             if gpu_count >= 8:
@@ -240,7 +249,7 @@ class CogVlm(BaseModel):
     INTERLEAVE = False
 
     def __init__(self, model_path='THUDM/cogvlm2-llama3-chat-19B', tokenizer_name=None, **kwargs):
-        from transformers import AutoModelForCausalLM, LlamaTokenizer, AutoTokenizer
+        from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
         assert model_path is not None
         model = AutoModelForCausalLM.from_pretrained(
             model_path,

@@ -1,13 +1,16 @@
-import torch
-import re
-from PIL import Image
-from abc import abstractproperty
-import sys
+import logging
 import os.path as osp
-from .base import BaseModel
-from ..smp import *
+import re
+import string
+import warnings
+
+import pandas as pd
+import torch
+from PIL import Image
+
 from ..dataset import DATASET_TYPE
-import copy
+from ..smp.misc import listinstr, splitlen
+from .base import BaseModel
 
 
 class Kosmos2(BaseModel):

@@ -1,7 +1,18 @@
+import base64
+import io
+import json
 import math
-from vlmeval.smp import *
+import os
+import os.path as osp
+
+import requests
+from PIL import Image
+
 from vlmeval.api.base import BaseAPI
 from vlmeval.dataset import img_root_map
+from vlmeval.smp import LMUDataRoot, decode_base64_to_image_file, get_logger, read_ok, toliststr
+
+logger = get_logger(__name__)
 
 API_BASE = "https://api.siliconflow.cn/v1/chat/completions"
 
@@ -126,7 +137,7 @@ class SiliconFlowAPI(BaseAPI):
                 answer = {'content': msg['content'], 'reasoning': msg['reasoning_content']}
             else:
                 answer = resp_struct["choices"][0]["message"]["content"].strip()
-        except:
+        except Exception:
             pass
         return ret_code, answer, response
 
@@ -272,6 +283,6 @@ class TeleMMAPI(SiliconFlowAPI):
 
             traceback.print_exc()
             if self.verbose:
-                self.logger.error(f"{type(err)}: {err}")
-                self.logger.error(f"The input messages are {inputs}.")
+                logger.error(f"{type(err)}: {err}")
+                logger.error(f"The input messages are {inputs}.")
             return -1, "", ""

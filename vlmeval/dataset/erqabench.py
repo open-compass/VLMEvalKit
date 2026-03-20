@@ -1,8 +1,9 @@
 import json
+
 import pandas as pd
 
-from ..smp.misc import toliststr
 from ..smp.file import load
+from ..smp.misc import toliststr
 from .image_vqa import ImageVQADataset
 
 
@@ -108,7 +109,7 @@ class ERQABench(ImageVQADataset):
         return msgs
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)

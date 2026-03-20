@@ -1,12 +1,22 @@
-import re
 import math
+import os
+import os.path as osp
+import re
 from typing import List
 
+import pandas as pd
+from tqdm import tqdm
+
 from vlmeval.dataset.utils.judge_util import build_judge
-from vlmeval.smp import *
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.smp.log import get_logger
+from vlmeval.smp.misc import listinstr
+from vlmeval.smp.vlm import decode_base64_to_image_file, encode_image_to_base64, read_ok, toliststr
 from .image_base import ImageBaseDataset
-from .mmlongbench import concat_images, MMLongBench_auxeval, anls_compute
-from ..smp.file import get_intermediate_file_path
+from .mmlongbench import MMLongBench_auxeval, anls_compute, concat_images
+
+logger = get_logger(__name__)
 
 
 FAIL_MSG = 'Failed to obtain answer via API.'
@@ -141,7 +151,6 @@ class SlideVQA(ImageBaseDataset):
 
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        logger = get_logger('Evaluation')
         model = judge_kwargs['model']
 
         storage = get_intermediate_file_path(eval_file, f'_{model}')

@@ -1,20 +1,20 @@
-import re
-import os
 import ast
-import decord
-import pickle
 import fnmatch
+import os
+import pickle
+import re
 import warnings
+from collections import OrderedDict
+
+import decord
 import numpy as np
 import pandas as pd
-
+from huggingface_hub import snapshot_download
 from PIL import Image
 from tqdm import tqdm
-from collections import OrderedDict
-from huggingface_hub import snapshot_download
 
-from ..smp.misc import get_cache_path, modelscope_flag_set
 from ..smp.file import LMUDataRoot, load
+from ..smp.misc import get_cache_path, modelscope_flag_set
 from .video_base import VideoBaseDataset
 
 
@@ -240,9 +240,8 @@ class VsiBench(VideoBaseDataset):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import (
-            build_mcq_score_fn, build_na_score_fn, attach_score_cache
-        )
+        from .utils.spatial_bench.cal_scores import (attach_score_cache, build_mcq_score_fn,
+                                                     build_na_score_fn)
         from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
         data = load(eval_file)
@@ -625,7 +624,7 @@ class VsiSuperRecall(VsiSuperBase):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import eval_mcq_score, build_mcq_score_fn
+        from .utils.spatial_bench.cal_scores import build_mcq_score_fn, eval_mcq_score
 
         # Select MCQ scoring function (rule-based or LLM-based) according to judge_kwargs['model'].
         score_fn = build_mcq_score_fn(**judge_kwargs)
@@ -741,12 +740,8 @@ class VsiSuperCount(VsiSuperBase):
         return message
 
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.spatial_bench.cal_scores import (
-            build_na_score_fn, attach_score_cache
-        )
-        from .utils.spatial_bench.tools.files import (
-            build_eval_paths, get_judge_tag_from_score_fn
-        )
+        from .utils.spatial_bench.cal_scores import attach_score_cache, build_na_score_fn
+        from .utils.spatial_bench.tools.files import build_eval_paths, get_judge_tag_from_score_fn
 
         data = load(eval_file)
         data = data.sort_values(by='index')

@@ -1,10 +1,20 @@
-from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
+import copy as cp
+import json
+import os
+import os.path as osp
+import pickle
+from collections import defaultdict
 
+import numpy as np
+import pandas as pd
+from huggingface_hub import snapshot_download
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
+from vlmeval.smp.misc import extract_json_objects, istype, modelscope_flag_set
+from ..utils import track_progress_rich
+from .utils import DEBUG_MESSAGE, build_judge
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -157,16 +167,16 @@ Please directly reply with your response to the only question.
             jsons = list(extract_json_objects(s))
             assert len(jsons) == 1
             return jsons[0]
-        except:
+        except Exception:
             if '{' in s and s.find('{') == s.rfind('{'):
                 sub_str = s[s.find('{') + 1:].strip()
                 lines = sub_str.split('\n')
                 res = {}
-                for l in lines:
-                    l = l.strip()
-                    if ': ' in l:
-                        key = l.split(': ')[0].strip()
-                        val = l.split(': ')[1].strip()
+                for line in lines:
+                    line = line.strip()
+                    if ': ' in line:
+                        key = line.split(': ')[0].strip()
+                        val = line.split(': ')[1].strip()
                         key = MMBenchVideo.remove_side_quote(key)
                         val = MMBenchVideo.remove_side_quote(val)
                         if len(key) and len(val):
@@ -207,7 +217,7 @@ Please directly reply with your response to the only question.
     # It returns a dictionary
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
-        from .utils.mmbench_video import get_dimension_rating, system_prompt, build_prompt
+        from .utils.mmbench_video import build_prompt, get_dimension_rating, system_prompt
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
         judge = judge_kwargs['model']

@@ -1,18 +1,29 @@
-import huggingface_hub
-from huggingface_hub import snapshot_download
-from ..smp import *
-from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..utils import track_progress_rich
-import torchvision.transforms as T
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
-import imageio
-import cv2
-import zipfile
-import os
 import glob
-from .utils.mvbench import *
+import json
+import os
+import os.path as osp
+import shutil
+import warnings
+import zipfile
+
+import cv2
+import huggingface_hub
+import imageio
+import numpy as np
+import pandas as pd
+import portalocker
+import torch
+import torchvision.transforms as T
+from huggingface_hub import snapshot_download
+from PIL import Image
+from torchvision import transforms
+
+from vlmeval.smp.file import (dump, get_cache_path, get_file_extension, get_intermediate_file_path,
+                              load)
+from vlmeval.smp.misc import md5, modelscope_flag_set
+from .utils import DEBUG_MESSAGE, build_judge
+from .utils.mvbench import Stack, ToTorchFormatTensor, check_ans_with_model, get_dimension_rating
+from .video_base import VideoBaseDataset
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -286,8 +297,8 @@ Based on your observations, select the best option that accurately addresses the
 
     def load_into_video_and_process(self, line):
         try:
-            from moviepy.editor import VideoFileClip, ImageSequenceClip
-        except:
+            from moviepy.editor import ImageSequenceClip, VideoFileClip
+        except Exception:
             raise ImportError(
                 'MoviePy is not installed, please install it by running "pip install moviepy==1.0.3"'
             )

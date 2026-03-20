@@ -1,9 +1,9 @@
 
-import numpy as np
-import Levenshtein
-import re
 import json
-from ...smp import *
+import re
+
+import Levenshtein
+import numpy as np
 
 # --- SCRM Logic ---
 

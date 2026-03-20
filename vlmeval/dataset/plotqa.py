@@ -1,6 +1,11 @@
+from functools import partial
+
+import numpy as np
+
+from vlmeval.smp import dump, load
+from vlmeval.smp.file import get_intermediate_file_path
+from vlmeval.smp.misc import d2df, mp
 from .image_base import ImageBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
-from ..smp import *
 
 
 class PlotQA(ImageBaseDataset):
@@ -16,7 +21,7 @@ class PlotQA(ImageBaseDataset):
 
     @classmethod
     def evaluate(cls, eval_file, **judge_kwargs):
-        from .utils.vqa_eval import process_line, hit_calculate
+        from .utils.vqa_eval import process_line
 
         print("Evaluating PlotQA results...")
         data = load(eval_file)

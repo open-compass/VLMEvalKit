@@ -1,5 +1,13 @@
-from vlmeval.dataset import *
 from functools import partial
+
+from vlmeval.dataset import (DREAM, MLVU, VDC, AVSpeakerBench, CGAVCounting, CGBench_MCQ_Grounding,
+                             CGBench_MCQ_Grounding_Mini, CGBench_OpenEnded, CGBench_OpenEnded_Mini,
+                             DSRBench, EgoExoBench_MCQ, LongVideoBench, MEGABench, MMBenchVideo,
+                             MMSIVideoBench, MovieChat1k, MVBench, MVBench_MP4, MVTamperBench,
+                             MVUEval, OMTGBench, QBench_Video, SiteBenchVideo, STIBench,
+                             TempCompass, V2PBench, VCRBench, Video_Holmes, Video_MMLU_CAP,
+                             Video_MMLU_QA, VideoMME, VideoMMMU, VideoTT, VsiBench, VsiSuperCount,
+                             VsiSuperRecall, WorldSense)
 
 vcrbench_dataset = {
     'VCRBench_8frame_nopack': partial(VCRBench, dataset='VCR-Bench', nframe=8, pack=False),

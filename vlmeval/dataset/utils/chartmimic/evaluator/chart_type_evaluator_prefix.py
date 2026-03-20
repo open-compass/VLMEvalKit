@@ -1,23 +1,26 @@
 import os
 import sys
+
 # sys.path.insert(0, os.environ['PROJECT_PATH'])
 if os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"] not in sys.path:
     sys.path.insert(0, os.environ["VLMEVAL_CHARTMIMIC_UTILS_PATH"])
 
-from matplotlib.projections.polar import PolarAxes
-import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
-from matplotlib.axes._base import _process_plot_var_args
-import squarify
-import networkx.drawing.nx_pylab as nx_pylab
-import networkx as nx
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.image import NonUniformImage
-from matplotlib.patches import Ellipse, Circle
-from matplotlib.tri._tripcolor import tripcolor
-from matplotlib_venn._common import VennDiagram
 import inspect
 import warnings
+
+import matplotlib.pyplot as plt
+import networkx as nx
+import networkx.drawing.nx_pylab as nx_pylab
+import squarify
+from matplotlib.axes import Axes
+from matplotlib.axes._base import _process_plot_var_args
+from matplotlib.image import NonUniformImage
+from matplotlib.patches import Circle, Ellipse
+from matplotlib.projections.polar import PolarAxes
+from matplotlib.tri._tripcolor import tripcolor
+from matplotlib_venn._common import VennDiagram
+from mpl_toolkits.mplot3d import Axes3D
+
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)

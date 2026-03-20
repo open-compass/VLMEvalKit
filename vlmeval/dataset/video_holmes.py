@@ -1,8 +1,20 @@
+import json
+import os
+import os.path as osp
+import pickle
+import warnings
+
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
-from ..smp import *
-from ..smp.file import get_intermediate_file_path, get_file_extension
+from PIL import Image
+
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
+from vlmeval.smp.misc import modelscope_flag_set
+from .utils import DEBUG_MESSAGE, build_judge
 from .video_base import VideoBaseDataset
-from .utils import build_judge, DEBUG_MESSAGE
 
 FAIL_MSG = 'Failed to obtain answer via API.'
 
@@ -110,7 +122,7 @@ class Video_Holmes(VideoBaseDataset):
 
                     video_id = item.get('video ID')
                     options = item.get('Options', {})
-                    candidates = [f"{k}. {options.get(k, '')}".replace("'","")
+                    candidates = [f"{k}. {options.get(k, '')}".replace("'", "")
                                   for k in ['A', 'B', 'C', 'D', 'E', 'F'] if k in options]
                     row = {
                         'index': idx,
@@ -195,7 +207,7 @@ class Video_Holmes(VideoBaseDataset):
             for im in frames:
                 message.append(dict(type='image', value=im))
 
-        text_prompt = self.QUESTION_TMPL.format(line['question'],line['candidates'])
+        text_prompt = self.QUESTION_TMPL.format(line['question'], line['candidates'])
         message.append(dict(type='text', value=text_prompt))
         # print(f"Build message OK {line[1]}")
         return message
@@ -204,7 +216,7 @@ class Video_Holmes(VideoBaseDataset):
     @classmethod
     def evaluate(self, eval_file, **judge_kwargs):
 
-        from .utils.videoholmes import get_dimension_rating, extract_option
+        from .utils.videoholmes import extract_option, get_dimension_rating
 
         assert get_file_extension(eval_file) in ['xlsx', 'json', 'tsv'], 'data file should be an supported format (xlsx/json/tsv) file'  # noqa: E501
 

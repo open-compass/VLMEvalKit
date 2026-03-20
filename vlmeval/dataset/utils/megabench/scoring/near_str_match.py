@@ -1,5 +1,6 @@
 import rapidfuzz
 import unidecode
+
 from .common.transformations import remove_def_indef_articles
 
 

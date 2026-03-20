@@ -1,11 +1,17 @@
 import ast
-from pathlib import Path
+import os
+import os.path as osp
+import warnings
 
+import numpy as np
+import pandas as pd
+import portalocker
 from huggingface_hub import snapshot_download
+from PIL import Image
 
-from ..smp import *
+from vlmeval.smp import dump, load, md5
+from vlmeval.smp.file import get_cache_path, get_file_extension, get_intermediate_file_path
 from .video_base import VideoBaseDataset
-import json
 
 
 def _parse_multi_choice_response(response, all_choices):

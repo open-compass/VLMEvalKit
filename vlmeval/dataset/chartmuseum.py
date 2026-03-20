@@ -1,21 +1,22 @@
 # flake8: noqa
 import os
-import json
-from typing import Dict, List, Tuple, Any, Union
-import pandas as pd
+import os.path as osp
+import re
 import warnings
+from collections import defaultdict
+from typing import Any, Dict, List, Union
 
-from vlmeval.dataset.image_base import ImageBaseDataset
-from ..smp import *
-from ..smp.file import get_intermediate_file_path
-from ..utils import track_progress_rich
-from .utils import build_judge
+import pandas as pd
+from datasets import load_dataset
 from openai import OpenAI
 from tqdm import tqdm
-from datasets import load_dataset
-import re
-from collections import defaultdict
 
+from vlmeval.dataset.image_base import ImageBaseDataset
+from vlmeval.smp.file import dump, get_intermediate_file_path, load
+from vlmeval.smp.misc import toliststr
+from vlmeval.smp.vlm import misc
+from vlmeval.utils import track_progress_rich
+from .utils import build_judge
 
 # gpt4_key = "your-key"
 # client = OpenAI(api_key = gpt4_key)

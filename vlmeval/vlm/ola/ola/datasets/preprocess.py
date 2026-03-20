@@ -1,17 +1,15 @@
 import copy
-import torch
-import transformers
-import tokenizers
-
 from typing import Dict, Sequence
 
-from ...ola.constants import IGNORE_INDEX, DEFAULT_SPEECH_TOKEN, IMAGE_TOKEN_INDEX
-from ...ola import conversation as conversation_lib
-from ...ola.model import *
-from ...ola.arguments import DataArguments
-from ...ola.constants import SPEECH_TOKEN_INDEX
-
+import tokenizers
+import torch
+import transformers
 from packaging import version
+
+from .. import conversation as conversation_lib
+from ..arguments import DataArguments
+from ..constants import DEFAULT_SPEECH_TOKEN, IGNORE_INDEX, IMAGE_TOKEN_INDEX, SPEECH_TOKEN_INDEX
+from ..model import OlaQwenForCausalLM
 
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse('0.14')
 
