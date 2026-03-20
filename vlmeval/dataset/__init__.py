@@ -145,6 +145,12 @@ from .design2code import Design2Code
 from .chartcap import ChartCapDataset
 from .asclepius import Asclepius
 
+from .SGI_Bench_1_0.experimental_reasoning import SGI_Bench_Experimental_Reasoning
+from .SGI_Bench_1_0.deep_research import SGI_Bench_Deep_Research
+from .SGI_Bench_1_0.dry_experiment import SGI_Bench_Dry_Experiment
+from .SGI_Bench_1_0.wet_experiment import SGI_Bench_Wet_Experiment
+from .SGI_Bench_1_0.idea_generation import SGI_Bench_Idea_Generation
+
 
 class ConcatDataset(ImageBaseDataset):
     # This dataset takes multiple dataset names as input and aggregate them into a single dataset.
@@ -277,7 +283,7 @@ IMAGE_DATASET = [
     ERQADataset, SimpleVQA, HiPhODataset, MaCBench,
     UniSVG, SArena_MINI, VLMsAreBiased, MMESCIDataset, CoreCognition, GroundingME,
     FoxBench, VTCBench, Asclepius, PlotQA, ChartX, ChartCapDataset, WorldVQA, PuzzleVQA, VisualPuzzles,
-    Design2Code, VLADBench, SSIBenchDataset, NPMM
+    Design2Code, VLADBench, SSIBenchDataset, NPMM, SGI_Bench_Experimental_Reasoning
 ]
 
 # add by EASI team
@@ -302,7 +308,8 @@ VIDEO_DATASET = [
 # add by EASI team
 VIDEO_DATASET += [SiteBenchVideo, VsiBench, VsiSuperRecall, VsiSuperCount, MMSIVideoBench, STIBench, DSRBench]
 TEXT_DATASET = [
-    TextMCQDataset
+    TextMCQDataset, SGI_Bench_Wet_Experiment, SGI_Bench_Dry_Experiment,
+    SGI_Bench_Deep_Research, SGI_Bench_Idea_Generation
 ]
 
 CUSTOM_DATASET = [
