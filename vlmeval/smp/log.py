@@ -67,11 +67,10 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
         name: Please use `__name__` of the module.
 
     Example:
-        logger = get_logger(__name__)
         logger.info("Hello")
     """
     if name:
-        # 如果已经包含项目前缀，直接使用
+        # Add ROOT_LOGGER_NAME if needed.
         if name.startswith(ROOT_LOGGER_NAME):
             logger_name = name
         else:
@@ -81,7 +80,8 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 
     logger = logging.getLogger(logger_name)
 
-    # 如果根 logger 未配置，添加 NullHandler 避免警告
+    # Avoid warning if `setup_logger` is not called.
+    # (If vlmeval package is used as a third-party module)
     if not logging.getLogger(ROOT_LOGGER_NAME).handlers:
         logger.addHandler(logging.NullHandler())
 
@@ -100,7 +100,6 @@ def setup_subprocess_logger(log_file: str):
     Example:
         def subprocess_task(log_file):
             setup_subprocess_logger(log_file)
-            logger = get_logger(__name__)
             logger.info('This goes to the subprocess log file')
     """
     log_path = Path(log_file)
