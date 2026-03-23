@@ -219,7 +219,7 @@ def load_env():
     values = dotenv_values(pth)
     for k, v in values.items():
         if v is not None and len(v):
-            os.environ[k] = v
+            os.environ.setdefault(k, v)
     logging.info(f'API Keys successfully loaded from {pth}')
 
 def pip_install_robust(package):
